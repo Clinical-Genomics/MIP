@@ -156,13 +156,13 @@ sub pipeline_rna {
 
     build_rna_meta_files(
         {
-            parameter_href          => $parameter_href,
             active_parameter_href   => $active_parameter_href,
-            sample_info_href        => $sample_info_href,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
             log                     => $log,
+            parameter_href          => $parameter_href,
+            sample_info_href        => $sample_info_href,
         }
     );
 
@@ -181,16 +181,16 @@ sub pipeline_rna {
                 $sample_id, $fastqc_program_name );
             analysis_fastqc(
                 {
-                    parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    infiles_ref             => \@{ $infile_href->{$sample_id} },
                     infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
+                    infiles_ref             => \@{ $infile_href->{$sample_id} },
                     insample_directory      => $indir_path_href->{$sample_id},
+                    job_id_href             => $job_id_href,
                     outsample_directory     => $fastq_outsample_directory,
-                    sample_id               => $sample_id,
+                    parameter_href          => $parameter_href,
                     program_name            => $fastqc_program_name,
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
                 }
             );
         }
@@ -210,17 +210,17 @@ sub pipeline_rna {
 
             analysis_star_aln(
                 {
-                    parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
                     file_info_href          => $file_info_href,
-                    infiles_ref             => \@{ $infile_href->{$sample_id} },
                     infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
+                    infiles_ref             => \@{ $infile_href->{$sample_id} },
                     insample_directory      => $indir_path_href->{$sample_id},
+                    job_id_href             => $job_id_href,
                     outsample_directory     => $star_outsample_directory,
-                    sample_id               => $sample_id,
+                    parameter_href          => $parameter_href,
                     program_name            => q{star_aln},
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
                 }
             );
         }
@@ -273,16 +273,16 @@ sub pipeline_rna {
 
             analysis_star_fusion(
                 {
-                    parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
                     file_info_href          => $file_info_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
                     insample_directory      => $star_insample_directory,
+                    job_id_href             => $job_id_href,
                     outsample_directory     => $star_outsample_directory,
-                    sample_id               => $sample_id,
+                    parameter_href          => $parameter_href,
                     program_name            => q{star_fusion},
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
                 }
             );
         }
@@ -306,16 +306,16 @@ sub pipeline_rna {
 
             analysis_gatk_realigner(
                 {
-                    parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
                     file_info_href          => $file_info_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
                     insample_directory      => $insample_directory,
+                    job_id_href             => $job_id_href,
                     outsample_directory     => $outsample_directory,
+                    parameter_href          => $parameter_href,
                     program_name            => q{gatk_realigner},
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
                 }
             );
         }
@@ -339,16 +339,16 @@ sub pipeline_rna {
 
             analysis_gatk_baserecalibration(
                 {
-                    parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
                     file_info_href          => $file_info_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
                     insample_directory      => $insample_directory,
+                    job_id_href             => $job_id_href,
                     outsample_directory     => $outsample_directory,
+                    parameter_href          => $parameter_href,
                     program_name            => q{gatk_baserecalibration},
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
                 }
             );
         }
