@@ -1,5 +1,5 @@
 ---
-## Version: 2.1.0
+## Version: 2.1.1
 ## HumanGenomeReference
 human_genome_reference:
   associated_program:
@@ -11,6 +11,42 @@ human_genome_reference:
   exists_check: file
   reference: reference_dir
   type: path
+## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
+gatk_bundle_download_version:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 2.8
+  type: program_argument
+gatk_disable_auto_index_and_file_lock:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+gatk_downsample_to_coverage:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 1000
+  type: program_argument
+gatk_logging_level:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+  default: INFO
+  type: program_argument
+gatk_path:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
 ## java large pages - affects all modules using java
 java_use_large_pages:
   associated_program:
@@ -139,3 +175,84 @@ pstar_fusion:
   outfile_suffix: ".tsv"
   outdir_name: star
   type: program
+## GATK BAM Calibration
+pgatk_realigner:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _rreal
+  file_endings:
+   - .bam
+  type: program
+gatk_realigner_indel_known_sites:
+  associated_program:
+   - pgatk_realigner
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - GRCh37_1000g_indels_-phase1-.vcf
+   - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+  exists_check: file
+  reference: reference_dir
+  type: path
+pgatk_baserecalibration:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _brecal
+  file_endings:
+   - .bam
+  type: program
+gatk_baserecalibration_covariates:
+  associated_program:
+   - pgatk_baserecalibration
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - ReadGroupCovariate
+   - ContextCovariate
+   - CycleCovariate
+   - QualityScoreCovariate
+  type: program_argument
+gatk_baserecalibration_disable_indel_qual:
+  associated_program:
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+gatk_baserecalibration_known_sites:
+  associated_program:
+   - pgatk_baserecalibration
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - GRCh37_dbsnp_-138-.vcf
+   - GRCh37_1000g_indels_-phase1-.vcf
+   - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+  exists_check: file
+  reference: reference_dir
+  type: path
+gatk_baserecalibration_read_filters:
+  associated_program:
+   - pgatk_baserecalibration
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - OverclippedRead
+  type: program_argument
+gatk_baserecalibration_static_quantized_quals:
+  associated_program:
+   - pgatk_baserecalibration
+  element_separator: ,
+  data_type: ARRAY
+  mandatory: no
+  default:
+   - 10
+   - 20
+   - 30
+   - 40
+  type: program_argument
