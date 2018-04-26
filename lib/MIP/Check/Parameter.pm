@@ -417,19 +417,20 @@ q{Could not retrieve VEP version. Skipping checking that VEP api and cache match
       abs_path( catdir( $vep_directory_cache, q{homo_sapiens} ) );
 
     ## Get folders in cache directory
-    my @vep_cache_version_folders = File::Find::Rule
+    # Build rule
+    my $rule = File::Find::Rule->new();
 
-      # Find directories
-      ->directory
+    # Find directories
+    $rule->directory;
 
-      # Only get directories in the current folder
-      ->maxdepth(1)
+    # Only get directories in the current folder
+    $rule->maxdepth(1);
 
-      # Get relative paths
-      ->relative
+    # Get relative paths
+    $rule->relative;
 
-      # Directory to search
-      ->in($vep_cache_dir_path);
+    # Apply rule to find directories
+    my @vep_cache_version_folders = $rule->in($vep_cache_dir_path);
 
     ## Check that
     if ( not @vep_cache_version_folders ) {
@@ -441,8 +442,7 @@ q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache
 
     ## Check if the VEP api version and cache versions matches
     if ( any { $_ !~ m/$vep_version/xms } @vep_cache_version_folders ) {
-        print $log->fatal(
-                q{Differing versions between '--vep_directory_path':}
+        $log->fatal( q{Differing versions between '--vep_directory_path':}
               . $SPACE
               . $vep_directory_path
               . $SPACE
