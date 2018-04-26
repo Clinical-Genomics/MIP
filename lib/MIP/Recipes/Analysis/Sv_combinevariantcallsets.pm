@@ -468,7 +468,7 @@ sub analysis_sv_combinevariantcallsets {
         my $program_source_command = get_program_parameters(
             {
                 active_parameter_href => $active_parameter_href,
-                mip_program_name      => q{pgenmod},
+                mip_program_name      => q{genmod},
             }
         );
 

@@ -143,6 +143,8 @@ my @definition_files = (
 );
 
 my %parameter;
+
+DEFINITION_FILE:
 foreach my $definition_file (@definition_files) {
 
     %parameter = (
@@ -158,6 +160,7 @@ foreach my $definition_file (@definition_files) {
 my @custom_default_parameters =
   qw{ analysis_type exome_target_bed bwa_build_reference exome_target_bed rtg_vcfeval_reference_genome sample_info_file };
 
+PARAMETER_NAME:
 foreach my $parameter_name (@custom_default_parameters) {
 
     set_custom_default_to_active_parameter(
@@ -184,6 +187,7 @@ is(
     q{Set human_genome_reference default for rtg vcfeval reference genome}
 );
 
+CAPTURE_KIT:
 foreach my $capture_kit ( keys %{ $active_parameter{exome_target_bed} } ) {
 
     is(
@@ -239,7 +243,9 @@ my %test_hash = (
       catdir( $active_parameter{conda_path}, qw{ envs test_env ensembl-vep } ),
 );
 
+TEST_PATH:
 foreach my $test_path ( keys %test_hash ) {
+
     set_custom_default_to_active_parameter(
         {
             active_parameter_href => \%active_parameter,

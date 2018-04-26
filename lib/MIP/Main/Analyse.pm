@@ -38,7 +38,8 @@ use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
   qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_vep_directories check_pprogram_exists_in_hash };
-use MIP::Check::Path qw{ check_target_bed_file_suffix check_parameter_files };
+use MIP::Check::Path
+  qw{ check_command_in_path check_parameter_files check_target_bed_file_suffix };
 use MIP::Check::Reference
   qw{ check_human_genome_file_endings check_parameter_metafiles };
 use MIP::File::Format::Pedigree
@@ -613,8 +614,9 @@ sub mip_analyse {
 ## Check programs in path, and executable
     check_command_in_path(
         {
-            parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
+            log                   => $log,
+            parameter_href        => \%parameter,
         }
     );
 
@@ -2785,80 +2787,6 @@ sub detect_sample_id_gender {
         }
     }
     return $found_male, $found_female, $found_other, $found_other_count;
-}
-
-sub check_command_in_path {
-
-##check_command_in_path
-
-##Function : Checking commands in your path and executable
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Unix qw{check_binary_in_path};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    # Track program paths that have already been checked
-    my %seen;
-
-    foreach my $parameter_name ( keys %$active_parameter_href ) {
-
-        if (   ( exists( $parameter_href->{$parameter_name}{type} ) )
-            && ( $parameter_href->{$parameter_name}{type} eq "program" ) )
-        {
-
-            my $program_name_paths_ref =
-              \@{ $parameter_href->{$parameter_name}{program_name_path} }
-              ;    #Alias
-
-            if (   (@$program_name_paths_ref)
-                && ( $active_parameter_href->{$parameter_name} > 0 ) )
-            {      #Only check path(s) for active programs
-
-                foreach my $program ( @{$program_name_paths_ref} ) {
-
-                    unless ( $seen{$program} ) {
-
-                        $seen{$program} = check_binary_in_path(
-                            {
-                                binary => $program,
-                                log    => $log,
-                            }
-                        );
-                    }
-                }
-            }
-        }
-    }
 }
 
 sub add_to_sample_info {

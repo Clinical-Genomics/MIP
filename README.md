@@ -162,7 +162,7 @@ $ perl t/mip_analyse_rare_disease.test
 
   ```Yml
   program_source_environment_command:
-    pgenmod: "source activate MIP_py3.6"
+    genmod: "source activate MIP_py3.6"
   module_source_environment_command:
     pchanjo_sexcheck: "source activate MIP_py3.6"
     pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/MIP_cnvnator/root/bin/thisroot.sh; source activate MIP_cnvnator"

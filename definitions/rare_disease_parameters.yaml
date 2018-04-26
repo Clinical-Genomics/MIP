@@ -493,6 +493,8 @@ pchanjo_sexcheck:
   default: 0
   file_tag: _sex
   outfile_suffix: ".tsv"
+  program_name_path:
+   - chanjo
   type: program
 chanjo_sexcheck_log_level:
   associated_program:
@@ -623,11 +625,12 @@ pcnvnator:
   data_type: SCALAR
   default: 0
   file_tag: _cnvnator
-  program_name_path:
-   - bcftools
-   - samtools
   outdir_name: cnvnator
   outfile_suffix: ".vcf"
+  program_name_path:
+   - bcftools
+   - cnvnator
+   - samtools
   program_type: structural_variant_callers
   type: program
 cnv_bin_size:
@@ -752,8 +755,9 @@ psv_combinevariantcallsets:
   file_tag: _comb_
   outfile_suffix: ".vcf"
   program_name_path:
-   - vt
    - bcftools
+   - svdb
+   - vt
   type: program
 sv_bcftools_view_filter:
   associated_program:
@@ -899,6 +903,8 @@ psv_varianteffectpredictor:
   data_type: SCALAR
   default: 0
   file_tag: vep_
+  program_name_path:
+   - vep
   type: program
 sv_vep_features:
   associated_program:
@@ -1399,6 +1405,8 @@ pfrequency_filter:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
+  program_name_path:
+   - genmod
   type: program
 frequency_genmod_filter:
   associated_program:
@@ -1475,6 +1483,8 @@ pvarianteffectpredictor:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
+  program_name_path:
+   - vep
   type: program
 vep_directory_cache:
   associated_program:
@@ -1675,6 +1685,8 @@ ppeddy:
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
+  program_name_path:
+   - peddy
   type: program
 pplink:
   associated_program:
@@ -1693,6 +1705,8 @@ pvariant_integrity:
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
+  program_name_path:
+   - variant_integrity
   type: program
 prtg_vcfeval:
   associated_program:
@@ -1757,6 +1771,8 @@ prankvariant:
   default: 0
   file_tag: ranked_
   outfile_suffix: ".vcf"
+  program_name_path:
+   - genmod
   type: program
 genmod_annotate_cadd_files:
   associated_program:
@@ -1871,6 +1887,8 @@ pmultiqc:
   default: 0
   file_tag: nofile_tag
   outdir_name: multiqc
+  program_name_path:
+   - multiqc
   type: program
 ## AnalysisRunStatus
 panalysisrunstatus:
