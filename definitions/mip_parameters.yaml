@@ -2,6 +2,12 @@
 ## Version: 1.0.0
 ## Enable MIP
 ## Bash
+conda_path:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
 bash_set_errexit:
   associated_program:
    - mip

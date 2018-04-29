@@ -34,6 +34,14 @@ sub _build_usage {
 ## Arguments:
 
     option(
+        q{conda_path} => (
+            cmd_aliases   => [qw{ conp }],
+            documentation => q{Conda path},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+    option(
         q{bash_set_errexit} => (
             cmd_aliases   => [qw{ bse }],
             documentation => q{Set errexit in bash scripts},
