@@ -102,7 +102,7 @@ psv_reformat: 1
 psv_varianteffectpredictor: 1
 psv_vcfparser: 1
 ptiddit: 1
-pvarianteffectpredictor: 0
+pvarianteffectpredictor: 1
 pvariant_integrity: 1
 pvcfparser: 1
 pvcf2cytosure: 1

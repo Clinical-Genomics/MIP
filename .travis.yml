@@ -33,7 +33,7 @@ install:
 script:
 ## Run MIP install script for the rare disease piplines's main environment programs 
   - perl t/mip_install.test
-  - perl mip install rare_disease --config definitions/install_rare_disease_parameters.yaml --quiet --bash_set_errexit --install emip esvdb epeddy epy3 evep --envn emip=mip_travis --vepf a --snpg GRCh37.75 --skip gatk
+  - perl mip install rare_disease --config definitions/install_rare_disease_parameters.yaml --quiet --bash_set_errexit --install emip esvdb epeddy epy3 --envn emip=mip_travis --snpg GRCh37.75 --skip gatk
   # Set user specific path to data
   #- echo 'cluster_constant_path:' /home/travis/build/${TRAVIS_REPO_SLUG}/t/data >> /home/travis/build/${TRAVIS_REPO_SLUG}/templates/mip_travis_config.yaml
   - bash mip.sh
