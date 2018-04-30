@@ -199,7 +199,7 @@ sub analysis_gatk_variantrecalibration_wgs {
       $active_parameter_href->{gatk_variantrecalibration_resource_indel};
     my $resource_snv_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_snv};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -267,7 +267,7 @@ sub analysis_gatk_variantrecalibration_wgs {
             program_directory =>
               catfile( $outaligner_dir, $program_outdirectory_name ),
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
@@ -730,7 +730,7 @@ sub analysis_gatk_variantrecalibration_wes {
       $active_parameter_href->{gatk_variantrecalibration_resource_indel};
     my $resource_snv_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_snv};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -798,7 +798,7 @@ sub analysis_gatk_variantrecalibration_wes {
             program_directory =>
               catfile( $outaligner_dir, $program_outdirectory_name ),
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );

@@ -29,7 +29,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -211,7 +211,7 @@ like( $trap->stderr, qr/FATAL/xms,
 %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
     module_source_environment_command => {
-        prankvariant => q{source activate test_env_1},
+        prankvariant => [ qw{ source activate test_env_1 }, ],
     },
     prankvariant => 1,
 );
@@ -243,7 +243,7 @@ like( $trap->stderr, qr/INFO/xms,
 %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
     module_source_environment_command => {
-        prankvariant => q{source activate test_env_1},
+        prankvariant => [ qw{ source activate test_env_1 }, ],
     },
     prankvariant => 1,
 );
@@ -275,7 +275,7 @@ like( $trap->stderr, qr/FATAL/xms,
 %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
     program_source_environment_command => {
-        genmod => q{source activate test_env_1},
+        genmod => [ qw{ source activate test_env_1}, ],
     },
 );
 
@@ -300,7 +300,7 @@ q{Found bin and executable in program source env cmd: Throw INFO log message}
 %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
     program_source_environment_command => {
-        not_a_binary => q{source activate test_env_1},
+        not_a_binary => [ qw{ source activate test_env_1 }, ],
     },
 );
 

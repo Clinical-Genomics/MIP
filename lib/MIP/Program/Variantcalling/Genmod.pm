@@ -48,7 +48,7 @@ sub genmod_annotate {
 ##          : $infile_path                          => Infile path to read from
 ##          : $max_af                               => If the MAX AF should be annotated
 ##          : $outfile_path                         => Outfile path to write to
-##          : $program_source_command               => Program specific source environment commmand
+##          : $program_source_commands_ref          => Program specific source environment commmand
 ##          : $source_main_environment_commands_ref => Source main environment command {REF}
 ##          : $spidex_file_path                     => Specify the path to a bgzipped tsv file (with index) with spidex information
 ##          : $stderrfile_path                      => Stderrfile path
@@ -66,7 +66,7 @@ sub genmod_annotate {
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
-    my $program_source_command;
+    my $program_source_commands_ref;
     my $source_main_environment_commands_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -115,8 +115,11 @@ sub genmod_annotate {
             store       => \$max_af,
         },
         outfile_path => { strict_type => 1, store => \$outfile_path, },
-        program_source_command =>
-          { strict_type => 1, store => \$program_source_command },
+        program_source_commands_ref => {
+            default     => [],
+            store       => \$program_source_commands_ref,
+            strict_type => 1,
+        },
         source_main_environment_commands_ref => {
             default     => [],
             strict_type => 1,
@@ -149,12 +152,12 @@ sub genmod_annotate {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Write source program specific environment
-    if ($program_source_command) {
+    if ( @{$program_source_commands_ref} ) {
 
         write_source_environment_command(
             {
                 FILEHANDLE                      => $FILEHANDLE,
-                source_environment_commands_ref => [$program_source_command],
+                source_environment_commands_ref => $program_source_commands_ref,
             }
         );
     }
@@ -372,7 +375,7 @@ sub genmod_filter {
 ##          : $deactive_program_source              => Deactivate program specific environment
 ##          : $infile_path                          => Infile path to read from
 ##          : $outfile_path                         => Outfile path to write to
-##          : $program_source_command               => Program specific source environment commmand
+##          : $program_source_commands_ref          => Program specific source environment commmand
 ##          : $source_main_environment_commands_ref => Source main environment command {REF}
 ##          : $stderrfile_path                      => Stderrfile path
 ##          : $stderrfile_path_append               => Append stderr info to file path
@@ -387,7 +390,7 @@ sub genmod_filter {
     my $deactive_program_source;
     my $infile_path;
     my $outfile_path;
-    my $program_source_command;
+    my $program_source_commands_ref;
     my $source_main_environment_commands_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -412,8 +415,11 @@ sub genmod_filter {
             store       => \$infile_path
         },
         outfile_path => { strict_type => 1, store => \$outfile_path },
-        program_source_command =>
-          { strict_type => 1, store => \$program_source_command },
+        program_source_commands_ref => {
+            default     => [],
+            store       => \$program_source_commands_ref,
+            strict_type => 1,
+        },
         source_main_environment_commands_ref => {
             default     => [],
             strict_type => 1,
@@ -446,12 +452,12 @@ sub genmod_filter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Write source program specific environment
-    if ($program_source_command) {
+    if ( @{$program_source_commands_ref} ) {
 
         write_source_environment_command(
             {
                 FILEHANDLE                      => $FILEHANDLE,
-                source_environment_commands_ref => [$program_source_command],
+                source_environment_commands_ref => $program_source_commands_ref,
             }
         );
     }

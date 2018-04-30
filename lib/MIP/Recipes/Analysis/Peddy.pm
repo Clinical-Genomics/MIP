@@ -174,7 +174,7 @@ sub analysis_peddy {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -200,7 +200,7 @@ sub analysis_peddy {
             process_time                    => $time,
             program_directory               => $program_directory,
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
         }
     );
 

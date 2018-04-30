@@ -779,9 +779,29 @@ sub set_parameter_to_broadcast {
         }
         elsif ( ref $active_parameter_href->{$parameter_name} eq q{HASH} ) {
 
-            $info .= join q{,},
-              map { qq{$_=$active_parameter_href->{$parameter_name}{$_}} }
-              ( keys %{ $active_parameter_href->{$parameter_name} } );
+          PARAMETER_KEY:
+            while ( my ( $key, $value ) =
+                each %{ $active_parameter_href->{$parameter_name} } )
+            {
+
+                if ( ref $value eq q{ARRAY} ) {
+
+                    $info .= join q{,}, map {
+                        qq{$_=} . join $SPACE,
+                          @{ $active_parameter_href->{$parameter_name}{$_} }
+                    } ( keys %{ $active_parameter_href->{$parameter_name} } );
+
+                    last PARAMETER_KEY;
+                }
+                else {
+
+                    $info .= join q{,}, map {
+                        qq{$_=$active_parameter_href->{$parameter_name}{$_}}
+                    } ( keys %{ $active_parameter_href->{$parameter_name} } );
+
+                    last PARAMETER_KEY;
+                }
+            }
 
             ## Add info to broadcasts
             push @{$broadcasts_ref}, $info;

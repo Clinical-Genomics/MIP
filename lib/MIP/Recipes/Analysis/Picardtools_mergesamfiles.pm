@@ -221,7 +221,7 @@ sub analysis_picardtools_mergesamfiles {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -247,7 +247,7 @@ sub analysis_picardtools_mergesamfiles {
             process_time                    => $time,
             program_directory               => $outaligner_dir,
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
@@ -705,7 +705,7 @@ sub analysis_picardtools_mergesamfiles_rio {
     my $job_id_chain  = $parameter_href->{$mip_program_name}{chain};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,

@@ -179,7 +179,7 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $gatk_jar =
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -235,7 +235,7 @@ sub analysis_gatk_concatenate_genotypegvcfs {
             process_time          => $time,
             program_directory     => catfile( $outaligner_dir, q{gatk} ),
             program_name          => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );

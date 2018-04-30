@@ -85,12 +85,10 @@ sub get_bin_file_path {
     my $environment;
     my $bin_file_path;
 
-    ## Check environments
+    ## Check environments special case env first
     if ( $environment_key and $environment_href->{$environment_key} ) {
 
-        my @environment_commands = split $SPACE,
-          $environment_href->{$environment_key};
-        $environment = pop @environment_commands;
+        $environment = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
         $bin_file_path =
           catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
     }
@@ -310,7 +308,7 @@ sub get_dynamic_conda_path {
 sub get_module_parameters {
 
 ## Function : Get core number, time and source environment command
-## Returns  : $core_number, $time, $source_environment_cmd
+## Returns  : $core_number, $time, @source_environment_cmds
 ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
 ##          : $mip_program_name      => MIP program name
 
@@ -339,35 +337,35 @@ sub get_module_parameters {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Initilize variable
-    my $source_environment_cmd;
+    my @source_environment_cmds;
 
     if (
         exists $active_parameter_href->{module_source_environment_command}
         {$mip_program_name} )
     {
 
-        $source_environment_cmd =
-          $active_parameter_href->{module_source_environment_command}
-          {$mip_program_name};
+        @source_environment_cmds =
+          @{ $active_parameter_href->{module_source_environment_command}
+              {$mip_program_name} };
     }
     elsif ( $active_parameter_href->{source_main_environment_commands}
         && @{ $active_parameter_href->{source_main_environment_commands} } )
     {
 
-        $source_environment_cmd = join $SPACE,
+        @source_environment_cmds =
           @{ $active_parameter_href->{source_main_environment_commands} };
     }
     my $core_number =
       $active_parameter_href->{module_core_number}{$mip_program_name};
     my $time = $active_parameter_href->{module_time}{$mip_program_name};
 
-    return $core_number, $time, $source_environment_cmd;
+    return $core_number, $time, @source_environment_cmds;
 }
 
 sub get_program_parameters {
 
 ##Function : Get specific source environment command for program
-##Returns  : $source_environment_cmd
+##Returns  : @source_environment_cmds
 ##Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
 ##         : $mip_program_name      => MIP program name
 
@@ -396,18 +394,18 @@ sub get_program_parameters {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Initilize variable
-    my $source_environment_cmd;
+    my @source_environment_cmds;
 
     if (
         exists $active_parameter_href->{program_source_environment_command}
         {$mip_program_name} )
     {
 
-        $source_environment_cmd =
-          $active_parameter_href->{program_source_environment_command}
-          {$mip_program_name};
+        @source_environment_cmds =
+          @{ $active_parameter_href->{program_source_environment_command}
+              {$mip_program_name} };
     }
-    return $source_environment_cmd;
+    return @source_environment_cmds;
 }
 
 sub get_user_supplied_info {

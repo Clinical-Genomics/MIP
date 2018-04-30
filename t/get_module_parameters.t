@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -105,7 +105,7 @@ my %active_parameter = (
     source_main_environment_commands => [ qw{ source activate mip }, ],
 );
 
-my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
     {
         active_parameter_href => \%active_parameter,
         mip_program_name      => $mip_program_name,
@@ -116,31 +116,28 @@ is( $core_number, 1, q{Got module core_number} );
 
 is( $time, 1, q{Got module time} );
 
-is(
-    $source_environment_cmd,
-    q{source activate mip},
-    q{Got main source environment command}
-);
+is_deeply( \@source_environment_cmds, [qw{source activate mip}],
+    q{Got main source environment command} );
 
 ## Test module specific source command
 %active_parameter = (
     module_time        => { pchanjo_sexcheck => 1, },
     module_core_number => { pchanjo_sexcheck => 1, },
     module_source_environment_command =>
-      { pchanjo_sexcheck => q{source activate python_v3.6_tools}, },
+      { pchanjo_sexcheck => [ qw{ source activate python_v3.6_tools }, ], },
 );
 
-( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
     {
         active_parameter_href => \%active_parameter,
         mip_program_name      => $mip_program_name,
     }
 );
 
-is(
-    $source_environment_cmd,
-    q{source activate python_v3.6_tools},
-    q{Got source environment commmand}
+is_deeply(
+    \@source_environment_cmds,
+    [qw{ source activate python_v3.6_tools }],
+    q{Got module source environment commmand}
 );
 
 done_testing();

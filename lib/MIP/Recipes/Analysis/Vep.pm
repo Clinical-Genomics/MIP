@@ -182,7 +182,7 @@ sub analysis_vep {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -220,7 +220,7 @@ sub analysis_vep {
             process_time                    => $time,
             program_directory               => $outaligner_dir,
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
@@ -636,7 +636,7 @@ sub analysis_vep_rio {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -664,12 +664,12 @@ sub analysis_vep_rio {
     $core_number = floor( $core_number / $VEP_FORK_NUMBER );
 
     ## If program needs special environment variables set
-    if ($source_environment_cmd) {
+    if (@source_environment_cmds) {
 
         write_source_environment_command(
             {
                 FILEHANDLE                      => $FILEHANDLE,
-                source_environment_commands_ref => [$source_environment_cmd],
+                source_environment_commands_ref => \@source_environment_cmds,
             }
         );
     }
@@ -1065,7 +1065,7 @@ sub analysis_vep_sv {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -1103,7 +1103,7 @@ sub analysis_vep_sv {
             process_time                    => $time,
             program_directory               => catfile( lc $outaligner_dir ),
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );

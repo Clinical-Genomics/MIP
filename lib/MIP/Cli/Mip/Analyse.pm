@@ -13,6 +13,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use MooseX::App::Command;
 use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
+use MooseX::Types::Structured qw{ Dict Optional };
 use Moose::Util::TypeConstraints;
 
 our $VERSION = 0.02;
@@ -217,18 +218,6 @@ sub _build_usage {
             documentation => q{Set the number of cores for each module},
             is            => q{rw},
             isa           => HashRef,
-        )
-    );
-
-    option(
-        q{module_source_environment_command} => (
-            cmd_aliases => [qw{ mse }],
-            cmd_flag    => q{mod_src_env},
-            cmd_tags    => [q{program_name=command}],
-            documentation =>
-              q{Set environment variables specific for each module},
-            is  => q{rw},
-            isa => HashRef,
         )
     );
 

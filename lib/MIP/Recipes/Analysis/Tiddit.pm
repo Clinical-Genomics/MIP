@@ -182,7 +182,7 @@ sub analysis_tiddit {
       scalar( @{ $active_parameter_href->{sample_ids} } );
     my $program_outdirectory_name =
       $parameter_href->{$mip_program_name}{outdir_name};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -213,7 +213,7 @@ sub analysis_tiddit {
             program_directory =>
               catfile( $outaligner_dir, $program_outdirectory_name ),
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
@@ -531,7 +531,7 @@ sub analysis_tiddit_coverage {
       scalar( @{ $active_parameter_href->{sample_ids} } );
     my $program_outdirectory_name =
       $parameter_href->{$mip_program_name}{outdir_name};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -562,7 +562,7 @@ sub analysis_tiddit_coverage {
             program_directory =>
               catfile( $outaligner_dir, $program_outdirectory_name ),
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );

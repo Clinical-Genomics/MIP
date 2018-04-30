@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -101,20 +101,20 @@ my $mip_program_name = q{pgenmod};
 
 my %active_parameter = (
     program_source_environment_command => {
-        $mip_program_name => q{source activate mip_pyv3.6},
+        $mip_program_name => [ qw{ source activate mip_pyv3.6 }, ],
     },
 );
 
-my $program_source_environment_cmd = get_program_parameters(
+my @program_source_environment_cmds = get_program_parameters(
     {
         active_parameter_href => \%active_parameter,
         mip_program_name      => $mip_program_name,
     }
 );
 
-is(
-    $program_source_environment_cmd,
-    q{source activate mip_pyv3.6},
+is_deeply(
+    \@program_source_environment_cmds,
+    [qw{ source activate mip_pyv3.6 }],
     q{Got program specific source environment command}
 );
 
