@@ -37,7 +37,7 @@ use Readonly;
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
-  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_pprogram_exists_in_hash check_sample_ids check_vep_directories };
+  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_pprogram_exists_in_hash check_sample_ids check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_vep_directories };
 use MIP::Check::Path
   qw{ check_command_in_path check_parameter_files check_target_bed_file_suffix };
 use MIP::Check::Reference
@@ -630,22 +630,24 @@ sub mip_analyse {
     );
 
 ## Check sample_id provided in hash parameter is included in the analysis and only represented once
-    check_sample_id_in_parameter(
+    check_sample_id_in_hash_parameter(
         {
             active_parameter_href => \%active_parameter,
-            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
+            log                   => $log,
             parameter_names_ref =>
               [qw{ analysis_type expected_coverage sample_origin }],
             parameter_href => \%parameter,
+            sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
     );
 
 ## Check sample_id provided in hash path parameter is included in the analysis and only represented once
-    check_sample_id_in_parameter_path(
+    check_sample_id_in_hash_parameter_path(
         {
             active_parameter_href => \%active_parameter,
-            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
+            log                   => $log,
             parameter_names_ref   => [qw{ infile_dirs exome_target_bed }],
+            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
         }
     );
 
@@ -3271,217 +3273,6 @@ sub check_program_mode {
                   . q{'. Set to: }
                   . join( "|", @allowed_values ) );
             exit 1;
-        }
-    }
-}
-
-sub check_sample_id_in_parameter_path {
-
-##check_sample_id_in_parameter_path
-
-##Function : Check sample_id provided in hash path parameter is included in the analysis and only represented once
-##Returns  : ""
-##Tags     : check, sampleids, hash
-##Arguments: $active_parameter_href, $sample_ids_ref, $parameter_name
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_ids_ref        => Array to loop in for parameter {REF}
-##         : $parameter_names_ref   => Parameter name list {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_ids_ref;
-    my $parameter_names_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_ids_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$sample_ids_ref
-        },
-        parameter_names_ref => {
-            required => 1,
-            defined  => 1,
-            default  => [],
-            store    => \$parameter_names_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    foreach my $parameter_name (@$parameter_names_ref)
-    {    #Lopp through all hash parameters supplied
-
-        my %seen;    #Hash to test duplicate sample_ids later
-
-        foreach my $key ( keys %{ $active_parameter_href->{$parameter_name} } )
-        {
-
-            my @parameter_samples =
-              split( ",", $active_parameter_href->{$parameter_name}{$key} );
-
-            foreach my $sample_id (@parameter_samples) {
-
-                $seen{$sample_id}++
-                  ;    #Increment instance to check duplicates later
-
-                if ( $seen{$sample_id} > 1 ) {    #Check sample_id are unique
-
-                    $log->fatal(
-                        "Sample_id: "
-                          . $sample_id
-                          . " is not uniqe in '-"
-                          . $parameter_name . " '"
-                          . $key . "="
-                          . join( ",", @parameter_samples ),
-                        "\n"
-                    );
-                    exit 1;
-                }
-            }
-        }
-        foreach my $sample_id (@$sample_ids_ref) {
-
-            if ( !( any { $_ eq $sample_id } ( keys %seen ) ) )
-            {    #If sample_id is not present in parameter_name hash
-
-                $log->fatal(
-                    "Could not detect "
-                      . $sample_id
-                      . " for '--"
-                      . $parameter_name
-                      . "'. Provided sample_ids are: "
-                      . join( ", ", ( keys %seen ) ),
-                    "\n"
-                );
-                exit 1;
-            }
-        }
-    }
-}
-
-sub check_sample_id_in_parameter {
-
-## Function : Check sample_id provided in hash parameter is included in the analysis and only represented once
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_href        => Holds all parameters {REF}
-##          : $parameter_names_ref   => Parameter name list {REF}
-##          : $sample_ids_ref        => Array to loop in for parameter {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_names_ref;
-    my $parameter_href;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        parameter_names_ref => {
-            required => 1,
-            defined  => 1,
-            default  => [],
-            store    => \$parameter_names_ref
-        },
-        sample_ids_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$sample_ids_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    ## Loop through all hash parameters supplied
-  PARAMETER:
-    foreach my $parameter_name ( @{$parameter_names_ref} ) {
-
-        if ( defined $active_parameter_href->{$parameter_name} ) {
-
-            foreach my $sample_id ( @{$sample_ids_ref} ) {
-
-                ## Check that a value exists
-                if (
-                    !defined(
-                        $active_parameter_href->{$parameter_name}{$sample_id}
-                    )
-                  )
-                {
-
-                    next PARAMETER
-                      if ( $parameter_href->{$parameter_name}{mandatory} eq
-                        q{no} );
-
-                    $log->fatal(
-                        "Could not find value for "
-                          . $sample_id
-                          . " for parameter '--"
-                          . $parameter_name . "'",
-                        "\n"
-                    );
-                    exit 1;
-                }
-
-                ## If sample_id is not present in parameter_name hash
-                if (
-                    !(
-                        any { $_ eq $sample_id }
-                        ( keys %{ $active_parameter_href->{$parameter_name} } )
-                    )
-                  )
-                {
-
-                    $log->fatal(
-                        "Could not detect "
-                          . $sample_id
-                          . " for parameter '--"
-                          . $parameter_name
-                          . "'. Provided sample_ids for parameter are: "
-                          . join(
-                            ", ",
-                            (
-                                keys
-                                  %{ $active_parameter_href->{$parameter_name} }
-                            )
-                          ),
-                        "\n"
-                    );
-                    exit 1;
-                }
-            }
         }
     }
 }
