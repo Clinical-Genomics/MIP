@@ -13,7 +13,6 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use MooseX::App::Command;
 use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
-use MooseX::Types::Structured qw{ Dict Optional };
 use Moose::Util::TypeConstraints;
 
 our $VERSION = 0.02;

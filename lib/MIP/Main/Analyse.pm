@@ -37,7 +37,7 @@ use Readonly;
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
-  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_vep_directories check_pprogram_exists_in_hash };
+  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_pprogram_exists_in_hash check_sample_ids check_vep_directories };
 use MIP::Check::Path
   qw{ check_command_in_path check_parameter_files check_target_bed_file_suffix };
 use MIP::Check::Reference
@@ -621,10 +621,11 @@ sub mip_analyse {
     );
 
 ## Test that the family_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
-    check_unique_ids(
+    check_sample_ids(
         {
-            active_parameter_href => \%active_parameter,
-            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
+            family_id      => $active_parameter{family_id},
+            log            => $log,
+            sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
     );
 
@@ -2534,92 +2535,6 @@ sub write_cmd_mip_log {
         "\n"
     );
     return;
-}
-
-sub check_unique_ids {
-
-##check_unique_ids
-
-##Function : Test that the family_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
-##Returns  : ""
-##Arguments: $active_parameter_href, $sample_ids_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_ids_ref        => Array to loop in for parameter {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_ids_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$sample_ids_ref
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my %seen;    #Hash to test duplicate sample_ids later
-
-    if ( !@$sample_ids_ref ) {
-
-        $log->fatal("Please provide sample_id(s)\n");
-        exit 1;
-    }
-
-    foreach my $sample_id ( @{$sample_ids_ref} ) {
-
-        $seen{$sample_id}++;    #Increment instance to check duplicates later
-
-        if ( $$family_id_ref eq $sample_id )
-        {                       #Family_id cannot be the same as sample_id
-
-            $log->fatal( "Family_id: "
-                  . $$family_id_ref
-                  . " equals sample_id: "
-                  . $sample_id
-                  . ". Please make sure that the family_id and sample_id(s) are unique.\n"
-            );
-            exit 1;
-        }
-        if ( $seen{$sample_id} > 1 ) {    #Check sample_id are unique
-
-            $log->fatal( "Sample_id: " . $sample_id . " is not uniqe.\n" );
-            exit 1;
-        }
-        if ( $sample_id =~ /_/ )
-        { #Sample_id contains "_", which is not allowed according to filename conventions
-
-            $log->fatal( "Sample_id: "
-                  . $sample_id
-                  . " contains '_'. Please rename sample_id according to MIP's filename convention, removing the '_'.\n"
-            );
-            exit 1;
-        }
-    }
 }
 
 sub size_sort_select_file_contigs {

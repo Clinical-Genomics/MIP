@@ -34,6 +34,7 @@ BEGIN {
       check_parameter_hash
       check_pprogram_exists_in_hash
       check_gzipped
+      check_sample_ids
       check_vep_directories
     };
 }
@@ -45,6 +46,7 @@ Readonly my $FORWARD_SLASH => q{/};
 Readonly my $NEWLINE       => qq{\n};
 Readonly my $SINGLE_QUOTE  => q{'};
 Readonly my $SPACE         => q{ };
+Readonly my $UNDERSCORE    => q{_};
 
 sub check_allowed_array_values {
 
@@ -354,6 +356,164 @@ sub check_gzipped {
     return $file_compression_status;
 }
 
+sub check_pprogram_exists_in_hash {
+
+## Function : Test if parameter "mip_program name" from query parameter exists truth hash
+## Returns  :
+## Arguments: $log            => Log object
+##          : $parameter_name => Parameter name
+##          : $query_ref      => Query (ARRAY|HASH) {REF}
+##          : $truth_href     => Truth hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $parameter_name;
+    my $query_ref;
+    my $truth_href;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+        truth_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$truth_href,
+            strict_type => 1,
+        },
+        query_ref => {
+            defined  => 1,
+            required => 1,
+            store    => \$query_ref,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $error_msg =
+      qq{$SINGLE_QUOTE - Does not exist as module program parameter in MIP};
+
+    if ( ref $query_ref eq q{HASH} ) {
+
+      PROGRAM_NAME:
+        foreach my $mip_program_name ( keys %{$query_ref} ) {
+
+            next PROGRAM_NAME if ( exists $truth_href->{$mip_program_name} );
+
+            $log->fatal( $parameter_name
+                  . qq{ key $SINGLE_QUOTE}
+                  . $mip_program_name
+                  . $error_msg );
+            exit 1;
+        }
+    }
+    if ( ref $query_ref eq q{ARRAY} ) {
+
+      PROGRAM_NAME:
+        foreach my $mip_program_name ( @{$query_ref} ) {
+
+            next PROGRAM_NAME if ( exists $truth_href->{$mip_program_name} );
+
+            $log->fatal( $parameter_name
+                  . qq{ element $SINGLE_QUOTE}
+                  . $mip_program_name
+                  . $error_msg );
+            exit 1;
+        }
+    }
+    return;
+}
+
+sub check_sample_ids {
+
+## Function : Test that the family_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
+## Returns  :
+## Arguments: $family_id      => Family id
+##          : $log            => Log object
+##          : $sample_ids_ref => Sample ids {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $family_id;
+    my $log;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+        family_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$family_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Hash to test duplicate sample_ids later
+    my %seen;
+
+    if ( not @{$sample_ids_ref} ) {
+
+        $log->fatal(q{Please provide sample_id(s)});
+        exit 1;
+    }
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+        ## Increment instance to check duplicates later
+        $seen{$sample_id}++;
+
+        ## Family_id cannot be the same as sample_id
+        if ( $family_id eq $sample_id ) {
+
+            $log->fatal( q{Family_id: }
+                  . $family_id
+                  . q{ equals sample_id: }
+                  . $sample_id
+                  . q{. Please make sure that the family_id and sample_id(s) are unique.}
+            );
+            exit 1;
+        }
+        ## Check for unique sample_ids
+        if ( $seen{$sample_id} > 1 ) {
+
+            $log->fatal( q{Sample_id: } . $sample_id . q{ is not uniqe.} );
+            exit 1;
+        }
+        ## Sample_id contains "_", not allowed in filename convention
+        if ( $sample_id =~ /$UNDERSCORE/sxm ) {
+
+            $log->fatal( q{Sample_id: }
+                  . $sample_id
+                  . q{ contains '_'. Please rename sample_id according to MIP's filename convention, removing the '_'.}
+            );
+            exit 1;
+        }
+    }
+    return 1;
+}
+
 sub check_vep_directories {
 
 ## Function : Compare VEP directory and VEP chache versions. Exit if non-match
@@ -441,7 +601,7 @@ q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache
     }
 
     ## Check if the VEP api version and cache versions matches
-    if ( any { $_ !~ m/$vep_version/xms } @vep_cache_version_folders ) {
+    if ( any { not /$vep_version/xms } @vep_cache_version_folders ) {
         $log->fatal( q{Differing versions between '--vep_directory_path':}
               . $SPACE
               . $vep_directory_path
@@ -452,81 +612,6 @@ q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache
         exit 1;
     }
     return 1;
-}
-
-sub check_pprogram_exists_in_hash {
-
-## Function : Test if parameter "mip_program name" from query parameter exists truth hash
-## Returns  :
-## Arguments: $log            => Log object
-##          : $parameter_name => Parameter name
-##          : $query_ref      => Query (ARRAY|HASH) {REF}
-##          : $truth_href     => Truth hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $parameter_name;
-    my $query_ref;
-    my $truth_href;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
-        truth_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$truth_href,
-            strict_type => 1,
-        },
-        query_ref => {
-            defined  => 1,
-            required => 1,
-            store    => \$query_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $error_msg =
-      qq{$SINGLE_QUOTE - Does not exist as module program parameter in MIP};
-
-    if ( ref $query_ref eq q{HASH} ) {
-
-      PROGRAM_NAME:
-        foreach my $mip_program_name ( keys %{$query_ref} ) {
-
-            next PROGRAM_NAME if ( exists $truth_href->{$mip_program_name} );
-
-            $log->fatal( $parameter_name
-                  . qq{ key $SINGLE_QUOTE}
-                  . $mip_program_name
-                  . $error_msg );
-            exit 1;
-        }
-    }
-    if ( ref $query_ref eq q{ARRAY} ) {
-
-      PROGRAM_NAME:
-        foreach my $mip_program_name ( @{$query_ref} ) {
-
-            next PROGRAM_NAME if ( exists $truth_href->{$mip_program_name} );
-
-            $log->fatal( $parameter_name
-                  . qq{ element $SINGLE_QUOTE}
-                  . $mip_program_name
-                  . $error_msg );
-            exit 1;
-        }
-    }
-    return;
 }
 
 sub _check_parameter_mandatory_keys_exits {
