@@ -162,18 +162,62 @@ $ perl t/mip_analyse_rare_disease.test
 
   ```Yml
   program_source_environment_command:
-    genmod: "source activate MIP_py3.6"
+    genmod:
+     - source
+     - activate
+     - MIP_py3
   module_source_environment_command:
-    pchanjo_sexcheck: "source activate MIP_py3.6"
-    pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/MIP_cnvnator/root/bin/thisroot.sh; source activate MIP_cnvnator"
-    pmultiqc: "source activate MIP_pyv3.6"
-    ppeddy: "source activate MIP_peddy"
-    prankvariant: "source activate MIP_pyv3.6"
-    psv_rankvariant: "source activate MIP_pyv3.6"
-    psv_combinevariantcallsets: "source activate MIP_svdb"
-    psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate MIP_vep"
-    pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate MIP_vep"
-    pvariant_integrity: "source activate MIP_py3.6"
+    pchanjo_sexcheck:
+     - source
+     - activate
+     - MIP_py3
+    pcnvnator:
+     - LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH;
+     - export
+     - LD_LIBRARY_PATH;
+     - source
+     - [CONDA_PATH]/envs/MIP_cnvnator/root/bin/thisroot.sh;
+     - source
+     - activate
+     - MIP_cnvnator
+    pmultiqc:
+     - source
+     - activate
+     - MIP_py3
+    ppeddy:
+     - source
+     - activate
+     - MIP_peddy
+    prankvariant:
+     - source
+     - activate
+     - MIP_py3
+    psv_rankvariant:
+     - source
+     - activate
+     - MIP_py3
+    psv_combinevariantcallsets:
+     - source
+     - activate
+     - MIP_svdb
+    psv_varianteffectpredictor:
+     - LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH;
+     - export
+     - LD_LIBRARY_PATH;
+     - source
+     - activate
+     - MIP_vep
+    pvarianteffectpredictor:
+     - LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH;
+     - export
+     - LD_LIBRARY_PATH;
+     - source
+     - activate
+     - MIP_vep
+    pvariant_integrity:
+     - source
+     - activate
+     - MIP_py3
   source_main_environment_commands:
     - source
     - activate
