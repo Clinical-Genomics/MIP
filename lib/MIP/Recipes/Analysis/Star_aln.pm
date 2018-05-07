@@ -188,12 +188,13 @@ sub analysis_star_aln {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -328,20 +329,21 @@ sub analysis_star_aln {
         picardtools_addorreplacereadgroups(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                infile_path => $outfile_path_prefix . $DOT .  q{Aligned.sortedByCoord.out}  . $outfile_suffix,
-                java_jar    => catfile(
+                infile_path => $outfile_path_prefix
+                  . $DOT
+                  . q{Aligned.sortedByCoord.out}
+                  . $outfile_suffix,
+                java_jar => catfile(
                     $active_parameter_href->{picardtools_path},
                     q{picard.jar}
                 ),
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                memory_allocation => q{Xmx1g},
-                outfile_path      => $outfile_path_prefix
-                  . $DOT . q{RG}
-                  . $outfile_suffix,
-                readgroup_id            => $infile_prefix,
-                readgroup_library       => q{RNA},
-                readgroup_platform      => $active_parameter_href->{platform},
+                memory_allocation  => q{Xmx1g},
+                outfile_path       => $outfile_path_prefix . $outfile_suffix,
+                readgroup_id       => $infile_prefix,
+                readgroup_library  => q{RNA},
+                readgroup_platform => $active_parameter_href->{platform},
                 readgroup_platform_unit => q{0},
                 readgroup_sample        => $sample_id,
             },

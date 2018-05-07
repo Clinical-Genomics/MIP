@@ -163,7 +163,7 @@ sub analysis_star_fusion {
     use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_dead_end };
+      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -254,7 +254,7 @@ sub analysis_star_fusion {
 
     if ( $mip_program_mode == 1 ) {
 
-        slurm_submit_job_sample_id_dependency_dead_end(
+        slurm_submit_job_sample_id_dependency_add_to_sample(
             {
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,

@@ -26,7 +26,8 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{slurm_submit_job_no_dependency_dead_end
+    our @EXPORT_OK = qw{
+      slurm_submit_job_no_dependency_dead_end
       slurm_submit_job_no_dependency_add_to_sample
       slurm_submit_job_no_dependency_add_to_samples
       slurm_submit_job_sample_id_dependency_dead_end
