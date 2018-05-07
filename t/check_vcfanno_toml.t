@@ -5,12 +5,14 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
+use File::Temp;
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
+use Test::Trap;
 use utf8;
 use warnings qw{ FATAL utf8 };
 
@@ -21,6 +23,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
@@ -69,7 +72,10 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
+        q{MIP::Script::Utils}     => [qw{ help }],
+    );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -78,7 +84,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Check::Path});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +92,10 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Check::Path qw{ check_vcfanno_toml };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test check_vcfanno_toml from Path.pm v}
+      . $MIP::Check::Path::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -97,9 +103,53 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-########################
-#### YOUR TEST HERE ####
-########################
+## Create temp logger
+my $test_dir = File::Temp->newdir();
+my $test_log_path = catfile( $test_dir, q{test.log} );
+
+## Creates log object
+my $log = initiate_logger(
+    {
+        file_path => $test_log_path,
+        log_name  => q{TEST},
+    }
+);
+
+## Given a frequency file and toml file, when matching records
+my $sv_vcfanno_config_file =
+  catfile(qw{ a test dir GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz });
+
+my $sv_vcfanno_config =
+  catfile( $Bin, qw{ data references GRCh37_vcfanno_config_-v1.0-.toml  } );
+
+my $is_ok = check_vcfanno_toml(
+    {
+        log               => $log,
+        vcfanno_file_freq => $sv_vcfanno_config_file,
+        vcfanno_file_toml => $sv_vcfanno_config,
+    }
+);
+
+## Then all is ok
+ok( $is_ok, q{Found frequency file within toml file} );
+
+## Given a frequency file and toml file, when records do not match
+$sv_vcfanno_config_file = catfile(qw{ a test dir for file not matching });
+
+trap {
+    check_vcfanno_toml(
+        {
+            log               => $log,
+            vcfanno_file_freq => $sv_vcfanno_config_file,
+            vcfanno_file_toml => $sv_vcfanno_config,
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if the record does not match} );
+like( $trap->stderr, qr/FATAL/xms,
+    q{Throw fatal log message for non matching reference} );
 
 done_testing();
 

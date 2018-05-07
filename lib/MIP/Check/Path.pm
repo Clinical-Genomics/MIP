@@ -2,6 +2,7 @@ package MIP::Check::Path;
 
 use Carp;
 use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -19,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_command_in_path
@@ -29,6 +30,7 @@ BEGIN {
       check_file_version_exist
       check_parameter_files
       check_target_bed_file_suffix
+      check_vcfanno_toml
     };
 }
 
@@ -560,6 +562,78 @@ sub check_target_bed_file_suffix {
         exit 1;
     }
     return 1;
+}
+
+sub check_vcfanno_toml {
+
+## Function : Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
+## Returns  :
+## Arguments: $log               => Log object
+##          : $vcfanno_file_freq => Frequency file recorded inside toml file
+##          : $vcfanno_file_toml => Toml config file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $vcfanno_file_freq;
+    my $vcfanno_file_toml;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        vcfanno_file_freq => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfanno_file_freq,
+            strict_type => 1,
+        },
+        vcfanno_file_toml => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfanno_file_toml,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Create anonymous filehandle
+    my $FILEHANDLE = IO::Handle->new();
+
+    open $FILEHANDLE, q{<}, $vcfanno_file_toml
+      or $log->logdie(
+        q{Cannot open '} . $vcfanno_file_toml . q{': } . $OS_ERROR );
+
+  LINE:
+    while (<$FILEHANDLE>) {
+
+        ## Remove newline
+        chomp;
+
+        my ($file_path_freq) = /^file="(\S+)"/sxm;
+
+        next LINE if ( not $file_path_freq );
+
+        if ( $file_path_freq ne $vcfanno_file_freq ) {
+
+            $log->fatal( q{The supplied vcfanno_config_file: }
+                  . $vcfanno_file_freq
+                  . q{ does not match record 'file=}
+                  . $file_path_freq
+                  . q{' in the sv_vcfanno_config file: }
+                  . $vcfanno_file_toml );
+            exit 1;
+        }
+        else {
+            close $FILEHANDLE;
+            return 1;
+        }
+    }
+    return;
 }
 
 sub _check_program_name_path_binaries {

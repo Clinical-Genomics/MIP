@@ -39,7 +39,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
   qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_pprogram_exists_in_hash check_sample_ids check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_vep_directories };
 use MIP::Check::Path
-  qw{ check_command_in_path check_parameter_files check_target_bed_file_suffix };
+  qw{ check_command_in_path check_parameter_files check_target_bed_file_suffix check_vcfanno_toml };
 use MIP::Check::Reference
   qw{ check_human_genome_file_endings check_parameter_metafiles };
 use MIP::File::Format::Pedigree
@@ -661,14 +661,15 @@ sub mip_analyse {
     );
 
 ## Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
-    if (   ( $active_parameter{psv_combinevariantcallsets} > 0 )
-        && ( $active_parameter{sv_vcfanno} > 0 ) )
+    if (    $active_parameter{psv_combinevariantcallsets} > 0
+        and $active_parameter{sv_vcfanno} > 0 )
     {
 
         check_vcfanno_toml(
             {
-                vcfanno_file_toml => $active_parameter{sv_vcfanno_config},
+                log               => $log,
                 vcfanno_file_freq => $active_parameter{sv_vcfanno_config_file},
+                vcfanno_file_toml => $active_parameter{sv_vcfanno_config},
             }
         );
     }
@@ -3327,72 +3328,6 @@ sub get_matching_values_key {
 
         return $reversed{$$query_value_ref};
     }
-}
-
-sub check_vcfanno_toml {
-
-##check_vcfanno_toml
-
-##Function : Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
-##Returns  : ""
-##Arguments: $vcfanno_file_toml, $vcfanno_file_freq
-##         : $vcfanno_file_toml => Toml config file
-##         : $vcfanno_file_freq => Frequency file recorded inside toml file
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $vcfanno_file_toml;
-    my $vcfanno_file_freq;
-
-    my $tmpl = {
-        vcfanno_file_toml => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$vcfanno_file_toml
-        },
-        vcfanno_file_freq => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$vcfanno_file_freq
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    open( $FILEHANDLE, "<", $vcfanno_file_toml )
-      or
-      $log->logdie( "Can't open '" . $vcfanno_file_toml . "': " . $! . "\n" );
-
-    while (<$FILEHANDLE>) {
-
-        chomp $_;                          #Remove newline
-
-        if ( $_ =~ /^file="(\S+)"/ ) {
-
-            my $file_path_freq = $1;
-
-            if ( $file_path_freq ne $vcfanno_file_freq ) {
-
-                $log->fatal( "The supplied vcfanno_config_file: "
-                      . $vcfanno_file_freq
-                      . " does not match record 'file="
-                      . $file_path_freq
-                      . "' in the sv_vcfanno_config file: "
-                      . $vcfanno_file_toml );
-                exit 1;
-            }
-            last;
-        }
-    }
-    close $FILEHANDLE;
 }
 
 sub check_snpsift_keys {
