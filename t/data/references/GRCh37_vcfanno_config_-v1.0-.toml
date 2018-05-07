@@ -1,5 +1,5 @@
 [[annotation]]
-file="a/test/dir/GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz"
+file="/home/travis/build/Clinical-Genomics/MIP/t/data/references/GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz"
 # the special name 'ID' pulls out the rs id from the VCF
 fields = ["AF", "ID"]
 ops=["first", "first"]
