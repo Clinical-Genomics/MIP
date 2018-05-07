@@ -170,7 +170,7 @@ two_pass_mode:
 pstar_fusion:
   associated_program:
    - mip
-  chain: fusion
+  chain: FUSION
   data_type: SCALAR
   default: 0
   file_tag: _fusion

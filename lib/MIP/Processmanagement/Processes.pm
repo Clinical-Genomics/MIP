@@ -1,19 +1,19 @@
 package MIP::Processmanagement::Processes;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;    # Allow unicode characters in this script
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
-use autodie;
-use Params::Check qw{check allow last_error};
-
+use charnames qw{ :full :short };
 use FindBin qw{$Bin};    # Find directory of script
 use File::Basename qw{dirname};
 use File::Spec::Functions qw{catdir};
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{check allow last_error};
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
 
+## CPANM
+use autodie;
 use Readonly;
 
 ## MIPs lib/
@@ -1097,12 +1097,13 @@ sub create_job_id_string_for_sample_id {
 ##Function : Create job id string from the job id chain and path associated with sample for SLURM submission using dependencies
 ##Returns  : "$job_ids_string"
 ##Arguments: $job_id_href, $family_id, $sample_id, $family_id_chain_key, $sample_id_chain_key, $path
-##         : $job_id_href         => The info on job ids hash {REF}
-##         : $family_id           => Family id
-##         : $sample_id           => Sample id
-##         : $family_id_chain_key => Family ID chain hash key
-##         : $sample_id_chain_key => Sample ID chain hash key
-##         : $path                => Trunk or branch
+##         : $job_id_href           => The info on job ids hash {REF}
+##         : $family_id             => Family id
+##         : $sample_id             => Sample id
+##         : $family_id_chain_key   => Family ID chain hash key
+##         : $sample_id_chain_key   => Sample ID chain hash key
+##         : $sbatch_script_tracker => Track the number of parallel processes (e.g. sbatch scripts for a module)
+##         : $path                  => Trunk or branch
 
     my ($arg_href) = @_;
 
@@ -1110,6 +1111,7 @@ sub create_job_id_string_for_sample_id {
     my $job_id_href;
     my $family_id_chain_key;
     my $sample_id_chain_key;
+    my $sbatch_script_tracker;
     my $family_id;
     my $sample_id;
     my $path;
@@ -1131,6 +1133,12 @@ sub create_job_id_string_for_sample_id {
         sample_id => {
             strict_type => 1,
             store       => \$sample_id
+        },
+        sbatch_script_tracker => {
+            allow       => qr/^\d+$/,
+            defined     => 1,
+            store       => \$sbatch_script_tracker,
+            strict_type => 1,
         },
         family_id_chain_key => {
             required    => 1,
@@ -1171,7 +1179,20 @@ sub create_job_id_string_for_sample_id {
 
         my $sample_id_chain_key_main = $sample_id . $UNDERSCORE . $path_main;
         my $family_id_chain_key_main = $family_id . $UNDERSCORE . $path_main;
+        ## For sample parallel MAIN jobs
+        my $sample_id_parallel_chain_key_main;
 
+        # Inheritance from MAIN parallel jobs
+        if ( defined $sbatch_script_tracker ) {
+
+            $sample_id_parallel_chain_key_main =
+                $sample_id
+              . $UNDERSCORE
+              . q{parallel}
+              . $UNDERSCORE
+              . $path_main
+              . $sbatch_script_tracker;
+        }
         ## Second or later in branch chain
         if ( $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} ) {
 
@@ -1197,6 +1218,21 @@ sub create_job_id_string_for_sample_id {
                     job_id_href         => $job_id_href,
                     family_id_chain_key => $family_id_chain_key_main,
                     chain_key           => $sample_id_chain_key_main,
+                }
+            );
+        }
+        elsif ( $job_id_href->{$family_id_chain_key_main}
+            {$sample_id_parallel_chain_key_main} )
+        {
+            ## No previous job_ids within MAIN path.
+            ## Inherit from potential parallel jobs MAIN. Trunk
+
+            ## Add to job_id string
+            $job_ids_string = add_to_job_id_dependency_string(
+                {
+                    job_id_href         => $job_id_href,
+                    family_id_chain_key => $family_id_chain_key_main,
+                    chain_key           => $sample_id_parallel_chain_key_main,
                 }
             );
         }

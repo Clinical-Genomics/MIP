@@ -163,7 +163,7 @@ sub analysis_star_fusion {
     use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+      qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -177,12 +177,13 @@ sub analysis_star_fusion {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -204,67 +205,68 @@ sub analysis_star_fusion {
         ## Paths
         $infile_path = catfile( $insample_directory,
             $infile_prefix . $infile_star_aln_prefix . $DOT . $infile_suffix );
-    }
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+        my ( $file_path, $program_info_path ) = setup_script(
+            {
+                active_parameter_href => $active_parameter_href,
+                core_number           => $core_number,
+                directory_id          => $sample_id,
+                FILEHANDLE            => $FILEHANDLE,
+                job_id_href           => $job_id_href,
+                process_time          => $time,
+                program_directory => catfile( $outaligner_dir, q{star_fusion} ),
+                program_name      => $program_name,
+                source_environment_commands_ref => \@source_environment_cmds,
+            }
+        );
+
+        my $process_batches_count = 1;
+
+        while ( my ( $sample_id_index, ) =
+            each @{ $active_parameter_href->{sample_ids} } )
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            process_time          => $time,
-            program_directory     => catfile( $outaligner_dir, q{star_fusion} ),
-            program_name          => $program_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+
+            $process_batches_count = print_wait(
+                {
+                    FILEHANDLE            => $FILEHANDLE,
+                    max_process_number    => $core_number,
+                    process_batches_count => $process_batches_count,
+                    process_counter       => $sample_id_index,
+                }
+            );
+
+            ## Star_fusion
+            star_fusion(
+                {
+                    FILEHANDLE            => $FILEHANDLE,
+                    genome_lib_dir_path   => $genome_lib_dir_path,
+                    infile_path           => $infile_path,
+                    output_directory_path => $outsample_directory,
+                }
+            );
+            say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
         }
-    );
+        say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    my $process_batches_count = 1;
+        ## Close FILEHANDLES
+        close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    while ( my ( $sample_id_index, ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+        if ( $mip_program_mode == 1 ) {
 
-        $process_batches_count = print_wait(
-            {
-                FILEHANDLE            => $FILEHANDLE,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                process_counter       => $sample_id_index,
-            }
-        );
-
-        ## Star_fusion
-        star_fusion(
-            {
-                FILEHANDLE            => $FILEHANDLE,
-                genome_lib_dir_path   => $genome_lib_dir_path,
-                infile_path           => $infile_path,
-                output_directory_path => $outsample_directory,
-            }
-        );
-        say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
-    }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-
-    if ( $mip_program_mode == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_add_to_sample(
-            {
-                family_id               => $family_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
-                path                    => $job_id_chain,
-                sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
-            }
-        );
+            slurm_submit_job_sample_id_dependency_step_in_parallel(
+                {
+                    family_id               => $family_id,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    log                     => $log,
+                    path                    => $job_id_chain,
+                    sample_id               => $sample_id,
+                    sbatch_file_name        => $file_path,
+                    sbatch_script_tracker   => $infile_index,
+                }
+            );
+        }
     }
     return;
 }

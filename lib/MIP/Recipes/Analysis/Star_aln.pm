@@ -402,7 +402,7 @@ sub analysis_star_aln {
                     path                    => $job_id_chain,
                     sample_id               => $sample_id,
                     sbatch_file_name        => $file_name,
-                    sbatch_script_tracker   => $infile_index
+                    sbatch_script_tracker   => $infile_index,
                 }
             );
         }
@@ -411,3 +411,4 @@ sub analysis_star_aln {
 }
 
 1;
+
