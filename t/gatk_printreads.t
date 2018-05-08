@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -116,10 +116,6 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    intervals_ref => {
-        inputs_ref      => [qw{ chr1 chr2}],
-        expected_output => q{--intervals chr1 --intervals chr2},
-    },
     referencefile_path => {
         input           => catfile(qw{reference_dir human_genome_build.fasta }),
         expected_output => q{--reference_sequence}

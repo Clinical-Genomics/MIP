@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln };
@@ -290,7 +290,6 @@ sub analysis_star_aln {
         say {$FILEHANDLE} q{## Aligning reads with } . $program_name;
 
         ### Get parameters
-
         ## Infile(s)
         my @fastq_files =
           ( catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] ) );
@@ -299,7 +298,7 @@ sub analysis_star_aln {
         if ( $sequence_run_mode eq q{paired-end} ) {
 
             # Increment to collect correct read 2 from %infile
-            $paired_end_tracker = $paired_end_tracker + 1;
+            $paired_end_tracker++;
             push @fastq_files,
               catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
             catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
@@ -325,6 +324,9 @@ sub analysis_star_aln {
             },
         );
         say {$FILEHANDLE} $NEWLINE;
+
+        ## Increment paired end tracker
+        $paired_end_tracker++;
 
         picardtools_addorreplacereadgroups(
             {

@@ -674,9 +674,9 @@ sub mip_analyse {
     }
 
 ## Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
-    if (   ( exists $active_parameter{psv_combinevariantcallsets} )
-        and ( $active_parameter{psv_combinevariantcallsets} > 0 )
-        and ( $active_parameter{sv_vcfanno} > 0 ) )
+    if (    exists $active_parameter{psv_combinevariantcallsets}
+        and $active_parameter{psv_combinevariantcallsets} > 0
+        and $active_parameter{sv_vcfanno} > 0 )
     {
 
         check_vcfanno_toml(
