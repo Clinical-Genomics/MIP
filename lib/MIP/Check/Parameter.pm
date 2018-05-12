@@ -37,6 +37,7 @@ BEGIN {
       check_sample_ids
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
+      check_snpsift_keys
       check_vep_directories
     };
 }
@@ -719,6 +720,66 @@ sub check_sample_id_in_hash_parameter_path {
                 exit 1;
             }
         }
+    }
+    return 1;
+}
+
+sub check_snpsift_keys {
+
+## Function : Check that the supplied snpsift outinfo keys match annotation files
+## Returns  :
+## Arguments: $log                                 => Log object
+##          : $snpsift_annotation_files_href       => Snpsift annotation files {REF}
+##          : $snpsift_annotation_outinfo_key_href => File and outinfo key to add to vcf {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $snpsift_annotation_files_href;
+    my $snpsift_annotation_outinfo_key_href;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        snpsift_annotation_files_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$snpsift_annotation_files_href,
+            strict_type => 1,
+        },
+        snpsift_annotation_outinfo_key_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$snpsift_annotation_outinfo_key_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  FILE:
+    foreach my $file ( keys %{$snpsift_annotation_outinfo_key_href} ) {
+
+        ## Matching files
+        next FILE if ( exists $snpsift_annotation_files_href->{$file} );
+
+        ## Else croak and exist
+        $log->fatal( q{The supplied snpsift_annotation_outinfo_key file: }
+              . $file
+              . q{ does not match any file in '--snpsift_annotation_files'} );
+        $log->fatal(
+            q{Supplied snpsift_annotation_files files:}
+              . $NEWLINE
+              . join $NEWLINE,
+            keys %{$snpsift_annotation_files_href}
+        );
+        exit 1;
     }
     return 1;
 }

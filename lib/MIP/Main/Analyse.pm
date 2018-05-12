@@ -37,7 +37,7 @@ use Readonly;
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
-  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_pprogram_exists_in_hash check_sample_ids check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_vep_directories };
+  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_pprogram_exists_in_hash check_sample_ids check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_snpsift_keys check_vep_directories };
 use MIP::Check::Path
   qw{ check_command_in_path check_parameter_files check_target_bed_file_suffix check_vcfanno_toml };
 use MIP::Check::Reference
@@ -676,6 +676,7 @@ sub mip_analyse {
 
     check_snpsift_keys(
         {
+            log => $log,
             snpsift_annotation_files_href =>
               \%{ $active_parameter{snpsift_annotation_files} },
             snpsift_annotation_outinfo_key_href =>
@@ -686,7 +687,6 @@ sub mip_analyse {
 ## Adds dynamic aggregate information from definitions to parameter hash
     set_dynamic_parameter(
         {
-            parameter_href => \%parameter,
             aggregates_ref => [
                 ## Collects all programs that MIP can handle
                 q{type:program},
@@ -699,6 +699,7 @@ sub mip_analyse {
                 ## Collects all references in that are supposed to be in reference directory
                 q{reference:reference_dir},
             ],
+            parameter_href => \%parameter,
         }
     );
 
@@ -3327,59 +3328,6 @@ sub get_matching_values_key {
     if ( exists $reversed{$$query_value_ref} ) {
 
         return $reversed{$$query_value_ref};
-    }
-}
-
-sub check_snpsift_keys {
-
-##check_snpsift_keys
-
-##Function : Check that the supplied
-##Returns  : ""
-##Arguments: $snpsift_annotation_files_href, $snpsift_annotation_outinfo_key_href
-##         : $snpsift_annotation_files_href       => Snpsift annotation files {REF}
-##         : $snpsift_annotation_outinfo_key_href => File and outinfo key to add to vcf {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $snpsift_annotation_files_href;
-    my $snpsift_annotation_outinfo_key_href;
-
-    my $tmpl = {
-        snpsift_annotation_files_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$snpsift_annotation_files_href
-        },
-        snpsift_annotation_outinfo_key_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$snpsift_annotation_outinfo_key_href
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    foreach my $file ( keys %$snpsift_annotation_outinfo_key_href ) {
-
-        unless ( exists( $snpsift_annotation_files_href->{$file} ) ) {
-
-            $log->fatal( "The supplied snpsift_annotation_outinfo_key file: "
-                  . $file
-                  . " does not match any file in '--snpsift_annotation_files'"
-            );
-            $log->fatal( "Supplied snpsift_annotation_files files:\n"
-                  . join( "\n", keys %$snpsift_annotation_files_href ) );
-            exit 1;
-        }
     }
 }
 
