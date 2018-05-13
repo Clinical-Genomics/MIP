@@ -55,9 +55,10 @@ use MIP::Check::Reference
 use MIP::File::Format::Pedigree
   qw{ create_fam_file detect_founders detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
-use MIP::Get::Analysis qw{ get_dependency_tree get_overall_analysis_type };
+use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
+use MIP::Parse::Parameter qw{parse_start_with_program};
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
@@ -67,7 +68,7 @@ use MIP::Update::Parameters
   qw{ update_dynamic_config_parameters update_exome_target_bed update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Programs
-  qw{ update_prioritize_flag update_program_mode_for_analysis_type update_program_mode_with_dry_run_all update_program_mode_with_start_with };
+  qw{ update_prioritize_flag update_program_mode_for_analysis_type update_program_mode_with_dry_run_all };
 
 ## Recipes
 use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
@@ -722,41 +723,15 @@ sub mip_analyse {
         }
     );
 
-## Get initiation program, downstream dependencies and update program modes
-    if ( $active_parameter{start_with_program} ) {
-
-        my %dependency_tree = load_yaml(
-            {
-                yaml_file => catfile(
-                    $Bin, qw{ definitions rare_disease_initiation.yaml }
-                ),
-            }
-        );
-
-        my @start_with_programs;
-        my $is_program_found = 0;
-        my $is_chain_found   = 0;
-
-        ## Collects all downstream programs from initation point
-        get_dependency_tree(
-            {
-                dependency_tree_href => \%dependency_tree,
-                is_program_found_ref => \$is_program_found,
-                is_chain_found_ref   => \$is_chain_found,
-                program              => $active_parameter{start_with_program},
-                start_with_programs_ref => \@start_with_programs,
-            }
-        );
-
-        ## Update program mode depending on start with flag
-        update_program_mode_with_start_with(
-            {
-                active_parameter_href => \%active_parameter,
-                programs_ref => \@{ $parameter{dynamic_parameter}{program} },
-                start_with_programs_ref => \@start_with_programs,
-            }
-        );
-    }
+## Get initiation program, downstream dependencies and update program modes for start_with_program parameter
+    parse_start_with_program(
+        {
+            active_parameter_href => \%active_parameter,
+            initiation_file =>
+              catfile( $Bin, qw{ definitions rare_disease_initiation.yaml } ),
+            parameter_href => \%parameter,
+        },
+    );
 
 ## Update program mode depending on dry_run_all flag
     update_program_mode_with_dry_run_all(
