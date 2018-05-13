@@ -36,8 +36,18 @@ use Readonly;
 # Add MIPs internal lib
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Check::Parameter
-  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_pprogram_exists_in_hash check_sample_ids check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_snpsift_keys check_vep_directories };
+use MIP::Check::Parameter qw{ check_allowed_temp_directory
+  check_cmd_config_vs_definition_file
+  check_email_address
+  check_parameter_hash
+  check_pprogram_exists_in_hash
+  check_program_mode
+  check_sample_ids
+  check_sample_id_in_hash_parameter
+  check_sample_id_in_hash_parameter_path
+  check_snpsift_keys
+  check_vep_directories
+};
 use MIP::Check::Path
   qw{ check_command_in_path check_parameter_files check_target_bed_file_suffix check_vcfanno_toml };
 use MIP::Check::Reference
@@ -706,8 +716,9 @@ sub mip_analyse {
 ## Check correct value for program mode in MIP
     check_program_mode(
         {
+            active_parameter_href => \%active_parameter,
+            log                   => $log,
             parameter_href        => \%parameter,
-            active_parameter_href => \%active_parameter
         }
     );
 
@@ -3215,68 +3226,6 @@ q?perl -ne 'if ($_!~/@/) {chomp($_);my $seq_length = length($_);print $seq_lengt
     chdir($pwd);
 
     return $ret;
-}
-
-sub check_program_mode {
-
-##check_program_mode
-
-##Function : Check correct value for program mode in MIP.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my @allowed_values = ( 0, 1, 2 );
-
-  PROGRAMS:
-    foreach my $program ( @{ $parameter_href->{dynamic_parameter}{program} } ) {
-
-        if (
-            !(
-                any { $_ eq $active_parameter_href->{$program} }
-                @allowed_values
-            )
-          )
-        {    #If element is not part of array
-
-            $log->fatal( q{'}
-                  . $active_parameter_href->{$program}
-                  . q{' Is not an allowed mode for program '--}
-                  . $program
-                  . q{'. Set to: }
-                  . join( "|", @allowed_values ) );
-            exit 1;
-        }
-    }
 }
 
 sub get_matching_values_key {

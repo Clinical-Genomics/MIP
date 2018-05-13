@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -31,9 +31,10 @@ BEGIN {
       check_allowed_temp_directory
       check_cmd_config_vs_definition_file
       check_email_address
+      check_gzipped
       check_parameter_hash
       check_pprogram_exists_in_hash
-      check_gzipped
+      check_program_mode
       check_sample_ids
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
@@ -48,6 +49,7 @@ Readonly my $DOLLAR_SIGN   => q{$};
 Readonly my $DOT           => q{.};
 Readonly my $FORWARD_SLASH => q{/};
 Readonly my $NEWLINE       => qq{\n};
+Readonly my $PIPE          => q{|};
 Readonly my $SINGLE_QUOTE  => q{'};
 Readonly my $SPACE         => q{ };
 Readonly my $UNDERSCORE    => q{_};
@@ -256,6 +258,37 @@ sub check_email_address {
     return;
 }
 
+sub check_gzipped {
+
+## Function : Check if a file is gzipped.
+## Returns  : "0 (=uncompressed)| 1 (=compressed)"
+## Arguments: $file_name => File name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_name;
+
+    my $tmpl = {
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $file_compression_status = 0;
+
+    if ( $file_name =~ / [.]gz$ /xms ) {
+
+        $file_compression_status = 1;
+    }
+    return $file_compression_status;
+}
+
 sub check_parameter_hash {
 
 ## Function : Evaluate parameters in parameters hash
@@ -327,37 +360,6 @@ sub check_parameter_hash {
         );
     }
     return;
-}
-
-sub check_gzipped {
-
-## Function : Check if a file is gzipped.
-## Returns  : "0 (=uncompressed)| 1 (=compressed)"
-## Arguments: $file_name => File name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name;
-
-    my $tmpl = {
-        file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $file_compression_status = 0;
-
-    if ( $file_name =~ / [.]gz$ /xms ) {
-
-        $file_compression_status = 1;
-    }
-    return $file_compression_status;
 }
 
 sub check_pprogram_exists_in_hash {
@@ -433,6 +435,71 @@ sub check_pprogram_exists_in_hash {
         }
     }
     return;
+}
+
+sub check_program_mode {
+
+## Function : Check correct value for program mode in MIP.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $log                   => Log object
+##          : $parameter_href        => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set allowed values
+    my %is_allowed = map { $_ => 1 } ( 0 .. 2 );
+
+  PROGRAM:
+    foreach my $program ( @{ $parameter_href->{dynamic_parameter}{program} } ) {
+
+        ## Alias
+        my $program_mode = $active_parameter_href->{$program};
+
+        next PROGRAM if ( $is_allowed{$program_mode} );
+
+        #If not an allowed value in active parameters
+        $log->fatal(
+            $SINGLE_QUOTE
+              . $active_parameter_href->{$program}
+              . q{' Is not an allowed mode for program '--}
+              . $program
+              . q{'. Set to: }
+              . join $PIPE,
+            ( sort keys %is_allowed )
+        );
+        exit 1;
+    }
+    return 1;
 }
 
 sub check_sample_ids {
