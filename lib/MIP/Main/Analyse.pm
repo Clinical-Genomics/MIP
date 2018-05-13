@@ -737,8 +737,8 @@ sub mip_analyse {
     update_program_mode_with_dry_run_all(
         {
             active_parameter_href => \%active_parameter,
-            programs_ref => \@{ $parameter{dynamic_parameter}{program} },
             dry_run_all  => $active_parameter{dry_run_all},
+            programs_ref => \@{ $parameter{dynamic_parameter}{program} },
         }
     );
 
