@@ -36,10 +36,12 @@ sub star_fusion {
 
 ## Function :
 ## Returns  :
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $fastq_r1_path          => The path of the R1 fastq
+##          : $fastq_r2_path          => The path of the R2 fastq
+##          : $FILEHANDLE             => Filehandle to write to
 ##          : $genome_lib_dir_path    => Path to the directory containing the genome library
-##          : $infile_path            => Infile path (the junctions tab file)
 ##          : $output_directory_path  => output directory path
+##          : $sjdb_path              => Splice junction database file path (the junctions tab file)
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -47,27 +49,30 @@ sub star_fusion {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $fastq_r1_path;
+    my $fastq_r2_path;
     my $FILEHANDLE;
     my $genome_lib_dir_path;
-    my $infile_path;
+    my $sjdb_path;
     my $output_directory_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE => {
+        fastq_r1_path  => { strict_type => 1, store => \$fastq_r1_path, },
+        sfastq_r2_path => { strict_type => 1, store => \$fastq_r2_path, },
+        FILEHANDLE     => {
             store => \$FILEHANDLE,
         },
         genome_lib_dir_path =>
           { required => 1, strict_type => 1, store => \$genome_lib_dir_path, },
-        infile_path =>
-          { required => 1, strict_type => 1, store => \$infile_path, },
         output_directory_path => {
             required    => 1,
             strict_type => 1,
             store       => \$output_directory_path,
         },
+        sjdb_path       => { strict_type => 1, store => \$sjdb_path, },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -88,8 +93,23 @@ sub star_fusion {
     my @commands = q{STAR-Fusion};
 
     push @commands, q{--genome_lib_dir} . $SPACE . $genome_lib_dir_path;
-
-    push @commands, q{-J} . $SPACE . $infile_path;
+    if ( $sjdb_path and not $fastq_r1_path ) {
+        push @commands, q{-J} . $SPACE . $sjdb_path;
+    }
+    elsif ( $fastq_r1_path and $fastq_r2_path ) {
+        push @commands,
+            q{--right_fq}
+          . $SPACE
+          . $fastq_r1_path
+          . $SPACE
+          . q{--left_fq}
+          . $SPACE
+          . $fastq_r2_path;
+    }
+    else {
+        croak
+q{Error: You must either specify the fastq file paths or a splice junction database (SJDB) file.};
+    }
 
     push @commands, q{--output_dir} . $SPACE . $output_directory_path;
 
