@@ -26,11 +26,11 @@ before_install:
   - sed -i '/DB_File/d' ./definitions/cpanfile
   - cd definitions; cpanm --quiet --notest --installdeps .
   - cd -
-## Set up for test
+## Set up for cpanm dependencies test
   - cpanm --notest Devel::Cover::Report::Coveralls
 
 install: 
-## Test installation script
+## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
 ## Generate installation script 
   - perl mip install rare_disease --config definitions/install_rare_disease_parameters.yaml --quiet --bash_set_errexit --install emip esvdb epeddy epy3 --envn emip=mip_travis --snpg GRCh37.75 --skip gatk
@@ -43,6 +43,7 @@ script:
   - cd /lib/x86_64-linux-gnu
   - sudo ln -s "$ROOTSYS"/lib/*so .
   - cd -
+## Set-up test coverage for test directory "t" and "analyse rare disease pipeline
   - PERL5OPT=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine prove -lr t
   - PERL5OPT=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rare_disease.test
   - cover
