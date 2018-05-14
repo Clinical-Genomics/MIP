@@ -4,7 +4,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ fileparse };
-use File::Spec::Functions qw{ catfile splitpath };
+use File::Spec::Functions qw{ catdir catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -20,13 +20,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       set_config_to_active_parameters
       set_custom_default_to_active_parameter
       set_default_config_dynamic_parameters
+      set_default_to_active_parameter
       set_dynamic_parameter
       set_human_genome_reference_features
       set_parameter_reference_dir_path
@@ -35,6 +36,8 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $MINUS_ONE  => -1;
+Readonly my $MINUS_TWO  => -2;
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $TAB        => qq{\t};
@@ -168,7 +171,7 @@ sub set_custom_default_to_active_parameter {
             {
                 capture_kit => q{latest},
                 supported_capture_kit_href =>
-                  $parameter_href->{supported_capture_kit},
+                  $parameter_href->{supported_capture_kit}{default},
             }
         );
 
@@ -210,6 +213,7 @@ q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit:
 
         return;
     }
+    ## Set sample info file
     if ( $parameter_name eq q{sample_info_file} ) {
 
         $parameter_href->{sample_info_file}{default} = catfile(
@@ -224,6 +228,59 @@ q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit:
           $parameter_href->{sample_info_file}{default};
         return;
     }
+
+    ## Set default path to expansionhunter repeat specs if needed
+    if (    ( $parameter_name eq q{expansionhunter_repeat_specs_dir} )
+        and ( not $active_parameter_href->{expansionhunter_repeat_specs_dir} ) )
+    {
+
+        $active_parameter_href->{expansionhunter_repeat_specs_dir} =
+          _get_default_repeat_specs_dir_path(
+            {
+                reference_genome_path =>
+                  $active_parameter_href->{human_genome_reference},
+            }
+          );
+        return;
+    }
+
+    ## Set default dynamic path if needed
+    my %dynamic_path = (
+        gatk_path => {
+            bin_file        => q{gatk},
+            environment_key => q{pgatk},
+        },
+        picardtools_path => {
+            bin_file        => q{picard.jar},
+            environment_key => q{ppicardtools},
+        },
+        snpeff_path => {
+            bin_file        => q{snpEff.jar},
+            environment_key => q{psnpeff},
+        },
+        vep_directory_path => {
+            bin_file        => q{vep},
+            environment_key => q{pvarianteffectpredictor},
+        },
+    );
+
+    use MIP::Get::Parameter qw{ get_dynamic_conda_path };
+
+    if (    ( defined $dynamic_path{$parameter_name} )
+        and ( not $active_parameter_href->{$parameter_name} ) )
+    {
+
+        $active_parameter_href->{$parameter_name} = get_dynamic_conda_path(
+            {
+                active_parameter_href => $active_parameter_href,
+                bin_file => $dynamic_path{$parameter_name}{bin_file},
+                environment_key =>
+                  $dynamic_path{$parameter_name}{environment_key},
+            }
+        );
+        return;
+    }
+
     return;
 }
 
@@ -278,6 +335,133 @@ sub set_default_config_dynamic_parameters {
             ## Transfer to active parameter
             $active_parameter_href->{$parameter_name} =
               $parameter_href->{$parameter_name}{default};
+        }
+    }
+    return;
+}
+
+sub set_default_to_active_parameter {
+
+## Function : Checks and sets user input or default values to active_parameters.
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $associated_programs   => The parameters program(s) {array, REF}
+##          : $log                   => Log object
+##          : $parameter_href        => Holds all parameters
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $associated_programs_ref;
+    my $log;
+    my $parameter_href;
+    my $parameter_name;
+
+    ## Default(s)
+    my $family_id;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        associated_programs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$associated_programs_ref,
+            strict_type => 1,
+        },
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
+
+    ## Alias
+    my $consensus_analysis_type =
+      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+
+    ## Do nothing since parameter is not required unless exome mode is enabled
+    return
+      if ( exists $only_wgs{$parameter_name}
+        && $consensus_analysis_type =~ / wgs /xsm );
+
+    ## Check all programs that use parameter
+  ASSOCIATED_PROGRAM:
+    foreach my $associated_program ( @{$associated_programs_ref} ) {
+
+        ## Only add active programs parameters
+        next ASSOCIATED_PROGRAM
+          if ( not defined $active_parameter_href->{$associated_program} );
+
+        next ASSOCIATED_PROGRAM
+          if ( not $active_parameter_href->{$associated_program} );
+
+        ## Default exists
+        if ( exists $parameter_href->{$parameter_name}{default} ) {
+
+            ## Array reference
+            if ( $parameter_href->{$parameter_name}{data_type} eq q{ARRAY} ) {
+
+                push
+                  @{ $active_parameter_href->{$parameter_name} },
+                  @{ $parameter_href->{$parameter_name}{default} };
+            }
+            elsif ( $parameter_href->{$parameter_name}{data_type} eq q{HASH} ) {
+                ## Hash reference
+
+                $active_parameter_href->{$parameter_name} =
+                  $parameter_href->{$parameter_name}{default};
+            }
+            else {
+                ## Scalar
+
+                $active_parameter_href->{$parameter_name} =
+                  $parameter_href->{$parameter_name}{default};
+            }
+
+            ## Set default - no use in continuing
+            return;
+        }
+        else {
+            ## No default
+
+            ## Not mandatory - skip
+            return
+              if ( exists $parameter_href->{$parameter_name}{mandatory}
+                && $parameter_href->{$parameter_name}{mandatory} eq q{no} );
+
+            ## Mandatory parameter not supplied
+            $log->fatal( q{Supply '-}
+                  . $parameter_name
+                  . q{' if you want to run }
+                  . $associated_program );
+            exit 1;
         }
     }
     return;
@@ -396,8 +580,8 @@ sub set_human_genome_reference_features {
     ## Different regexes for the two sources.
     ## i.e. Don't allow subversion of Refseq genome
     my %genome_source = (
-        GRCh => qr/GRCh(\d+\.\d+|\d+)/,
-        hg   => qr/hg(\d+)/,
+        GRCh => qr/GRCh(\d+[.]\d+ | \d+)/xsm,
+        hg   => qr/hg(\d+)/xsm,
     );
 
   GENOME_PREFIX:
@@ -426,7 +610,7 @@ q{MIP cannot detect what version of human_genome_reference you have supplied.}
 
     ## Removes ".file_ending" in filename.FILENDING(.gz)
     $file_info_href->{human_genome_reference_name_prefix} =
-      fileparse( $human_genome_reference, qr/\.fasta|\.fasta\.gz/ );
+      fileparse( $human_genome_reference, qr/[.]fasta | [.]fasta[.]gz/xsm );
 
     $file_info_href->{human_genome_compressed} =
       check_gzipped( { file_name => $human_genome_reference, } );
@@ -595,9 +779,29 @@ sub set_parameter_to_broadcast {
         }
         elsif ( ref $active_parameter_href->{$parameter_name} eq q{HASH} ) {
 
-            $info .= join q{,},
-              map { qq{$_=$active_parameter_href->{$parameter_name}{$_}} }
-              ( keys %{ $active_parameter_href->{$parameter_name} } );
+          PARAMETER_KEY:
+            while ( my ( $key, $value ) =
+                each %{ $active_parameter_href->{$parameter_name} } )
+            {
+
+                if ( ref $value eq q{ARRAY} ) {
+
+                    $info .= join q{,}, map {
+                        qq{$_=} . join $SPACE,
+                          @{ $active_parameter_href->{$parameter_name}{$_} }
+                    } ( keys %{ $active_parameter_href->{$parameter_name} } );
+
+                    last PARAMETER_KEY;
+                }
+                else {
+
+                    $info .= join q{,}, map {
+                        qq{$_=$active_parameter_href->{$parameter_name}{$_}}
+                    } ( keys %{ $active_parameter_href->{$parameter_name} } );
+
+                    last PARAMETER_KEY;
+                }
+            }
 
             ## Add info to broadcasts
             push @{$broadcasts_ref}, $info;
@@ -611,6 +815,85 @@ sub set_parameter_to_broadcast {
         }
     }
     return;
+}
+
+sub _get_default_repeat_specs_dir_path {
+
+## Function : Return the path to the repeat specs directory in the Expansionhunter directory
+## Returns  : $repeat_specs_dir_path
+## Arguments: $reference_genome_path => Path to the reference genome used
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $reference_genome_path;
+
+    my $tmpl = {
+        reference_genome_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_genome_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Cwd qw{ abs_path };
+    use File::Basename qw{ fileparse };
+    use File::Find::Rule;
+    use IPC::Cmd qw{ can_run };
+
+    ## Path to set
+    my $repeat_specs_dir_path;
+
+    ## Get path to binary
+    my $expansionhunter_bin_path = can_run(q{ExpansionHunter});
+
+    ## Return if path not found,
+    ## MIP requires a defined variable in order to flag that it can't find the dir
+    if ( not $expansionhunter_bin_path ) {
+        return q{Failed to find default path};
+    }
+
+    ## Follow potential link
+    $expansionhunter_bin_path = abs_path($expansionhunter_bin_path);
+
+    ## Get the path to the repeat specs dirs
+    my @expansionhunter_dirs = File::Spec->splitdir($expansionhunter_bin_path);
+    splice @expansionhunter_dirs, $MINUS_TWO;
+    my $parent_repeat_specs_dir_path =
+      catdir( @expansionhunter_dirs, qw{ data repeat-specs } );
+
+    ## Get list of genome version directories
+    my @repeat_specs_dir_paths =
+      File::Find::Rule->directory->in($parent_repeat_specs_dir_path);
+
+    ## Remove top directory
+    @repeat_specs_dir_paths =
+      grep { !/^$parent_repeat_specs_dir_path$/xms } @repeat_specs_dir_paths;
+
+    ## Find correct repeat spec folder
+    my $genome_reference = fileparse($reference_genome_path);
+  REPEAT_SPECS_VERSION:
+    foreach my $repeat_specs_version (@repeat_specs_dir_paths) {
+
+        ## Get version
+        my @genome_version_dirs = File::Spec->splitdir($repeat_specs_version);
+        my $genome_version_dir = splice @genome_version_dirs, $MINUS_ONE;
+
+        ## Match version to reference used
+        if ( $genome_reference =~ / $genome_version_dir /ixms ) {
+            $repeat_specs_dir_path = $repeat_specs_version;
+            last;
+        }
+    }
+
+    ## MIP requires a defined variable in order to flag that it can't find the dir
+    if ( not -d $repeat_specs_dir_path ) {
+        return q{Failed to find default path};
+    }
+    return $repeat_specs_dir_path;
 }
 
 1;

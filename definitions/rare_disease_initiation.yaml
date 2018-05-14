@@ -45,6 +45,7 @@ initiation:
    - CHAIN_SV:
       - PARALLEL:
          - pcnvnator
+         - pexpansionhunter
          - pmanta
          - ptiddit
          - pdelly_call:

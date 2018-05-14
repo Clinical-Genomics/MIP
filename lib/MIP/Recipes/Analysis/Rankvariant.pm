@@ -194,7 +194,7 @@ sub analysis_rankvariant {
     my $job_id_chain            = $parameter_href->{$mip_program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -239,7 +239,7 @@ sub analysis_rankvariant {
             process_time                    => $time,
             program_directory               => catfile($outaligner_dir),
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
@@ -743,7 +743,7 @@ sub analysis_rankvariant_rio {
     my $job_id_chain            = $parameter_href->{$mip_program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -777,12 +777,12 @@ sub analysis_rankvariant_rio {
     );
 
     ## If program needs special environment variables set
-    if ($source_environment_cmd) {
+    if (@source_environment_cmds) {
 
         write_source_environment_command(
             {
                 FILEHANDLE                      => $FILEHANDLE,
-                source_environment_commands_ref => [$source_environment_cmd],
+                source_environment_commands_ref => \@source_environment_cmds,
             }
         );
     }
@@ -1258,7 +1258,7 @@ sub analysis_rankvariant_rio_unaffected {
     my $job_id_chain            = $parameter_href->{$mip_program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -1292,12 +1292,12 @@ sub analysis_rankvariant_rio_unaffected {
     );
 
     ## If program needs special environment variables set
-    if ($source_environment_cmd) {
+    if (@source_environment_cmds) {
 
         write_source_environment_command(
             {
                 FILEHANDLE                      => $FILEHANDLE,
-                source_environment_commands_ref => [$source_environment_cmd],
+                source_environment_commands_ref => \@source_environment_cmds,
             }
         );
     }
@@ -1680,7 +1680,7 @@ sub analysis_rankvariant_unaffected {
     my $job_id_chain            = $parameter_href->{$mip_program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -1725,7 +1725,7 @@ sub analysis_rankvariant_unaffected {
             process_time                    => $time,
             program_directory               => catfile($outaligner_dir),
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
@@ -2123,7 +2123,7 @@ sub analysis_sv_rankvariant {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -2153,7 +2153,7 @@ sub analysis_sv_rankvariant {
             process_time                    => $time,
             program_directory               => catfile($outaligner_dir),
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
@@ -2555,7 +2555,7 @@ sub analysis_sv_rankvariant_unaffected {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -2585,7 +2585,7 @@ sub analysis_sv_rankvariant_unaffected {
             process_time                    => $time,
             program_directory               => catfile($outaligner_dir),
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );

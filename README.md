@@ -1,6 +1,6 @@
 # MIP - Mutation Identification Pipeline
 
-[![Build Status](https://travis-ci.org/henrikstranneheim/MIP.svg?branch=develop)](https://travis-ci.org/henrikstranneheim/MIP)
+[![Build Status](https://travis-ci.org/Clinical-Genomics/MIP.svg?branch=develop)](https://travis-ci.org/Clinical-Genomics/MIP)
 
 MIP enables identification of potential disease causing variants from sequencing data.
 
@@ -90,13 +90,14 @@ $ mip analyse rare_disease --family_id [family_id] --pbwa_mem 1 --config_file [m
 MIP is written in perl and therefore requires that perl is installed on your OS.
 
 #### Prerequisites
-* [Perl], version 5.26.0 or above
+* [Perl], version 5.22.0 or above
 * [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
 * [Miniconda]
 
 We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/perl/installation/installation.md).
 
-#### Automated Installation \(Linux x86\_64\)  
+#### Automated Installation \(Linux x86\_64\)
+Below are instructions for installing MIP for analysis of rare diseases. Installation of the RNA pipeline (under development) follows a similar syntax.
 ##### 1.Clone the official git repository
 
 ```Bash
@@ -111,32 +112,38 @@ $ cpanm --installdeps .
 $ cd -
 ```  
 
-##### 3.Test conda and mip_installation (optional)
+##### 3.Test conda and mip installation files (optional)
 
 ```Bash
-$ cd t; prove mip_install.t
-$ cd -
+$ perl t/mip_install.test
 ```
 
 ##### 4.Create the install instructions for MIP  
 ```Bash
-$ perl mip_install.pl
+$ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --installations full --environment_name emip=MIP
 ```
-This will generate a batch script "mip.sh" for the install in your working directory.
+This will generate a batch script called "mip.sh" in your working directory.
 
   ###### *Note:*  
-  - The batch script will install the MIP dependencies in Conda's root environment. Often it is beneficial to create a separate environment for each of your applications. In order to create a separate environment for MIP supply the ``-env [env_name]`` flag when running *mip_install.pl*.  
+  The batch script will attempt to install the MIP dependencies in a conda environment called MIP. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:  
+  * MIP's base environment (named MIP in the example above)
+  * MIP_cnvnator
+  * MIP_peddy
+  * MIP_py3
+  * MIP_svdb
+  * MIP_vep  
 
-  - For a full list of available options and parameters, run: ``$ perl mip_install.pl --help``
+It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.   
 
-  - For a full list of parameter defaults, run: ``$ perl mip_install.pl -ppd``
+  - For a full list of available options and parameters, run: ``$ perl mip install rare_disease --help``
+  - For a full list of parameter defaults, run: ``$ perl mip install rare_disease --ppd``
 
 ##### 5.Run the bash script
 
 ```Bash
 $ bash mip.sh
 ```
-This will install MIP and most of its dependencies into a conda environment.
+A conda environment will be created where MIP with most of its dependencies will be installed.
 
   ###### *Note:*  
   - Some references are quite large and will take time to download. You might want to run this using screen or tmux.
@@ -146,66 +153,79 @@ This will install MIP and most of its dependencies into a conda environment.
 Make sure to activate your conda environment if that option was used above.  
 
 ```Bash
-$ cd t; prove -r
-$ cd -
+$ prove t -r
+$ perl t/mip_analyse_rare_disease.test
 ```
-##### 7.Install tools with conflicting dependencies  
-Tools that have conflicting dependencies needs to be installed in separate conda environments. Currently these programs requires separate environments:  
 
-  * Genmod, Chanjo, Multiqc and Variant_integrity
-    - requires python 3
-  * Peddy
-  * CNVnator  
-    - Requires access to ROOT which disturbs the normal linking of C libraries  
-  * SVDB  
-  * VEP
-
-
-  ```bash
-  ## Python 3 tools
-  $ perl mip_install.pl -env mip_pyv3.6 --python_version 3.6 --select_program genmod --select_program chanjo --select_program variant_integrity --select_program multiqc
-  $ bash mip.sh
-
-  ## Peddy
-  $ perl mip_install.pl -env mip_peddy --select_program peddy
-  $ bash mip.sh
-
-  ## CNVnator
-  $ perl mip_install.pl -env mip_cnvnator --select_program cnvnator
-  $ bash mip.sh
-
-  ## SVDB
-  $ perl mip_install.pl -env mip_svdb --select_program svdb
-  $ bash mip.sh
-
-  ## VEP
-  $ perl mip_install.pl -env mip_vep --select_program vep
-  $ bash mip.sh
-  ```
-
+###### When setting up your analysis config file
   In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator, SVDB and VEP in each own, with some extra initialization:
 
   ```Yml
   program_source_environment_command:
-    pgenmod: "source activate mip_pyv3.6"
+    genmod:
+     - source
+     - activate
+     - MIP_py3
   module_source_environment_command:
-    pchanjo_sexcheck: "source activate mip_pyv3.6"
-    pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
-    pmultiqc: "source activate mip_pyv3.6"
-    ppeddy: "source activate mip_peddy"
-    prankvariant: "source activate mip_pyv3.6"
-    psv_rankvariant: "source activate mip_pyv3.6"
-    psv_combinevariantcallsets: "source activate mip_svdb"
-    psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
-    pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
-    pvariant_integrity: "source activate mip_pyv3.6"
+    pchanjo_sexcheck:
+     - source
+     - activate
+     - MIP_py3
+    pcnvnator:
+     - LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH;
+     - export
+     - LD_LIBRARY_PATH;
+     - source
+     - [CONDA_PATH]/envs/MIP_cnvnator/root/bin/thisroot.sh;
+     - source
+     - activate
+     - MIP_cnvnator
+    pmultiqc:
+     - source
+     - activate
+     - MIP_py3
+    ppeddy:
+     - source
+     - activate
+     - MIP_peddy
+    prankvariant:
+     - source
+     - activate
+     - MIP_py3
+    psv_rankvariant:
+     - source
+     - activate
+     - MIP_py3
+    psv_combinevariantcallsets:
+     - source
+     - activate
+     - MIP_svdb
+    psv_varianteffectpredictor:
+     - LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH;
+     - export
+     - LD_LIBRARY_PATH;
+     - source
+     - activate
+     - MIP_vep
+    pvarianteffectpredictor:
+     - LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH;
+     - export
+     - LD_LIBRARY_PATH;
+     - source
+     - activate
+     - MIP_vep
+    pvariant_integrity:
+     - source
+     - activate
+     - MIP_py3
   source_main_environment_commands:
     - source
     - activate
-    - mip
+    - MIP
   ```
 
   MIP will execute this on the node before executing the program and then revert to the ``--source_main_environment_command`` if set. Otherwise ``source deactivate`` is used to return to the conda root environment.
+
 
 ### Usage
 
@@ -254,7 +274,6 @@ MIP will place any generated datafiles in the output data directory specified by
 
 [Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_config.yaml
 [CPAN]: https://www.cpan.org/
-[GATK]:https://software.broadinstitute.org/gatk/
 [Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/aggregated_master.txt
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml

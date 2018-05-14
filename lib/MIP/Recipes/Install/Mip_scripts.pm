@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -118,13 +118,14 @@ sub install_mip_scripts {
     my $pwd = cwd();
 
     ## Define MIP scripts and yaml files
-    my @mip_scripts =
-      qw{ download_reference.pl vcfparser.pl qccollect.pl };
+    my @mip_scripts = qw{ mip vcfparser.pl qccollect.pl };
 
     my %mip_sub_script = (
         utility_scripts =>
           [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
-        t         => [qw{ mip_install.t mip.t mip_core.t mip_analysis.test }],
+        t => [
+            qw{ mip_install.test mip_analyse_rare_disease.test mip_core.t mip_analysis.test }
+        ],
         templates => [qw{ mip_config.yaml }],
     );
 

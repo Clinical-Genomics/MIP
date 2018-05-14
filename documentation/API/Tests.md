@@ -1,10 +1,11 @@
 # Tests
-MIP uses the core perl module TEST::More, which is a framework for writing test. All test scripts are located in the standard perl [t dir]. The entire test suite should be run prior to making a pull request. This is done by:
+MIP uses the core perl module TEST::More, which is a framework for writing test.  All test scripts are located in the standard perl [t dir]. The entire test suite should be run prior to making a pull request. This is done by:
 ```Perl
 perl run_tests.t
-``` 
+```
 
-The input to run_tests.t is the [run_test_files.txt] file located in the test directory. This file contains a test script on each line.  
+## Test structure
+When applicable the tests should follow the structure [Given-When-Then]. An example of test with such a structure can be found [here]
 
 ## Sub routines
 Input parameters to each sub routine are validated via the core module validate params. Each sub routine should be accompanied by a test script checking the function of the sub routine.
@@ -19,7 +20,7 @@ Are tested by using sbatch traps upon execution. MIP thus relies on the processe
 MIP will check that all files that are supposed to be produced by an analysis exist and have a file size larger than zero. Furthermore, several key qc parameters are evaluated and existence off certain vcf key value pairs are checked using Test::Harness and the mip_analysis.t script. All this is done in the analysis recipe analysisrunstatus.
 
 ## Templates
-Basic templates for writing tests to new MIP modules is provided in [code dir] and have the standard `.t` file suffix:
+Basic templates for writing tests to new MIP modules is provided in [code dir] and have the standard `.t` file suffix.
 
 ## test.t
 This is a basic template for writing tests for modules with sub routines that do not return a commands array and thus do not utilize the MIP/lib/MIP/Test/Commands.pm module for testing. The template includes a test to check the availability of the module that is to be tested as well as the module required to display the help message.
@@ -106,5 +107,6 @@ env_name => {
 },
 ```
 [t dir]: https://github.com/Clinical-Genomics/MIP/tree/master/t
-[run_test_files.txt]: https://github.com/Clinical-Genomics/MIP/tree/master/t/config/run_test_files.txt
+[Given-When-Then]: https://www.agilealliance.org/glossary/gwt/#q=~(filters~(postType~(~'page~'post~'aa_book~'aa_event_session~'aa_experience_report~'aa_glossary~'aa_research_paper~'aa_video)~tags~(~'given*20when*20then))~searchTerm~'~sort~false~sortDirection~'asc~page~1)
+[here]: Tests/Exit_signals.md
 [code dir]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/code/

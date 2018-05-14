@@ -93,7 +93,7 @@ Readonly my $SPACE   => q{ };
 
 my $config_file = catfile( dirname($Bin), qw(templates mip_config.yaml) );
 my $VERBOSE = 1;
-our $VERSION = '0.0.3';
+our $VERSION = '0.0.4';
 
 ###User Options
 GetOptions(
@@ -305,8 +305,7 @@ sub mip_scripts {
 ## Returns  :
 ## Arguments:
 
-    my @mip_scripts = qw{ download_reference.pl
-      qccollect.pl
+    my @mip_scripts = qw{ qccollect.pl
       vcfparser.pl };
 
   SCRIPT:
@@ -319,13 +318,14 @@ sub mip_scripts {
     my %mip_sub_scripts = (
         utility_scripts =>
           [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
-        definitions =>
-          [qw{ define_download_references.yaml define_parameters.yaml }],
-        t         => [qw{ mip_install.t mip.t mip_core.t mip_analysis.test }],
+        definitions => [
+            qw{ analyse_parameters.yaml cancer_parameters.yaml cpanfile download_rare_disease.yaml install_rare_disease_parameters.yaml install_rna_parameters.yaml mandatory_parameter_keys.yaml mip_parameters.yaml non_mandatory_parameter_keys.yaml rare_disease_initiation.yaml rare_disease_parameters.yaml rna_parameters.yaml }
+        ],
+        t => [
+            qw{ mip_install.test mip_analyse_rare_disease.test mip_core.t mip_analysis.test }
+        ],
         templates => [
-            qw{ mip_config.yaml mip_travis_config.yaml
-              643594-miptest_pedigree.yaml
-              mip_log.yaml }
+            qw{ 643594-miptest_pedigree.yaml aggregated_master.txt mip_config.yaml mip_log.yaml mip_travis_config.yaml qc_regexp_-v1.17-.yaml rank_model_cmms_-v1.20-.ini svrank_model_cmms_-v1.2-.ini }
         ],
     );
 

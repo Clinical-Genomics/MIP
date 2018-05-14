@@ -13,7 +13,7 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -100,7 +100,7 @@ diag(   q{Test download_reference from Download_reference.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{download_reference};
+my $function_base_command = q{mip download rare_disease};
 
 my %base_argument = (
     stdoutfile_path => {
@@ -142,6 +142,12 @@ q{--reference_genome_versions test_v1 --reference_genome_versions test_v2},
 );
 
 my %specific_argument = (
+    config_file_path => {
+        input           => catfile(qw{ a test file }),
+        expected_output => q{--config_file}
+          . $SPACE
+          . catfile(qw{ a test file }),
+    },
     reference_genome_versions_ref => {
         inputs_ref => [qw{ test_v1 test_v2 }],
         expected_output =>

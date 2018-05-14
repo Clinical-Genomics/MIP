@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -122,7 +122,15 @@ sub install_vep {
     my $auto = $vep_parameters_href->{vep_auto_flag};
 
     # Set destination directory for cache files
-    my $cache_directory = catdir( $vep_parameters_href->{vep_cache_dir} );
+    my $cache_directory;
+    if ( not $vep_parameters_href->{vep_cache_dir} ) {
+        $cache_directory =
+          catdir( $conda_prefix_path, q{ensembl-tools-release-} . $vep_version,
+            q{cache} );
+    }
+    else {
+        $cache_directory = catdir( $vep_parameters_href->{vep_cache_dir} );
+    }
 
     # Set vep api installation directory
     my $vep_dir_path = catdir( $conda_prefix_path, q{ensembl-vep} );
@@ -275,6 +283,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
             FILEHANDLE      => $FILEHANDLE,
             plugins_ref     => \@plugins,
             species_ref     => [qw{ homo_sapiens }],
+            version         => $vep_version,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -303,6 +312,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
                     assembly        => $assemblies[$assembly_version],
                     auto            => $cf_auto,
                     cache_directory => $cache_directory,
+                    cache_version   => $vep_version,
                     FILEHANDLE      => $FILEHANDLE,
                     species_ref     => [qw{ homo_sapiens }],
                 }
@@ -387,20 +397,6 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.tx
                 link_path   => $link_path,
                 symbolic    => 1,
                 target_path => $target_path,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Clean up
-        say {$FILEHANDLE} q{## Clean up};
-        gnu_rm(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                force       => 1,
-                infile_path => catdir(
-                    $conda_prefix_path,
-                    q{VariantEffectPredictor-} . $vep_version . $DOT . q{zip}
-                ),
             }
         );
         say {$FILEHANDLE} $NEWLINE;

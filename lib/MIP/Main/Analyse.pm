@@ -34,30 +34,41 @@ use Readonly;
 
 ## MIPs lib/
 # Add MIPs internal lib
-use lib catdir( $Bin, q{lib} );
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Check::Parameter
-  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash };
-use MIP::Check::Path qw{ check_target_bed_file_suffix check_parameter_files };
+use MIP::Check::Parameter qw{ check_allowed_temp_directory
+  check_cmd_config_vs_definition_file
+  check_email_address
+  check_parameter_hash
+  check_pprogram_exists_in_hash
+  check_program_mode
+  check_sample_ids
+  check_sample_id_in_hash_parameter
+  check_sample_id_in_hash_parameter_path
+  check_snpsift_keys
+  check_vep_directories
+};
+use MIP::Check::Path
+  qw{ check_command_in_path check_parameter_files check_target_bed_file_suffix check_vcfanno_toml };
 use MIP::Check::Reference
   qw{ check_human_genome_file_endings check_parameter_metafiles };
 use MIP::File::Format::Pedigree
-  qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
+  qw{ create_fam_file detect_founders detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
-use MIP::Get::Analysis qw{ get_dependency_tree get_overall_analysis_type };
+use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
+use MIP::Parse::Parameter qw{parse_start_with_program};
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_dynamic_parameter set_human_genome_reference_features set_parameter_reference_dir_path set_parameter_to_broadcast };
+  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_dynamic_parameter set_human_genome_reference_features set_parameter_reference_dir_path set_parameter_to_broadcast };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
 use MIP::Update::Parameters
-  qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
+  qw{ update_dynamic_config_parameters update_exome_target_bed update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Programs
-  qw{ update_prioritize_flag update_program_mode_for_analysis_type update_program_mode_with_dry_run_all update_program_mode_with_start_with };
+  qw{ update_prioritize_flag update_program_mode_for_analysis_type update_program_mode_with_dry_run_all };
 
 ## Recipes
 use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
@@ -73,18 +84,19 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
 }
 
 ## Constants
-Readonly my $DOT       => q{.};
-Readonly my $EMPTY_STR => q{};
-Readonly my $NEWLINE   => qq{\n};
-Readonly my $SPACE     => q{ };
-Readonly my $TAB       => qq{\t};
+Readonly my $DOT          => q{.};
+Readonly my $EMPTY_STR    => q{};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $SINGLE_QUOTE => q{'};
+Readonly my $SPACE        => q{ };
+Readonly my $TAB          => qq{\t};
 
 sub mip_analyse {
 
@@ -319,8 +331,19 @@ sub mip_analyse {
             and not ref $active_parameter{$parameter_name} );
 
         ### Special case for parameters that are dependent on other parameters values
-        my @custom_default_parameters =
-          qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file rtg_vcfeval_reference_genome };
+        my @custom_default_parameters = qw{
+          analysis_type
+          bwa_build_reference
+          exome_target_bed
+          expansionhunter_repeat_specs_dir
+          gatk_path
+          infile_dirs
+          picardtools_path
+          sample_info_file
+          snpeff_path
+          rtg_vcfeval_reference_genome
+          vep_directory_path
+        };
 
         if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
 
@@ -340,6 +363,7 @@ sub mip_analyse {
                 active_parameter_href => \%active_parameter,
                 associated_programs_ref =>
                   \@{ $parameter{$parameter_name}{associated_program} },
+                log            => $log,
                 parameter_href => \%parameter,
                 parameter_name => $parameter_name,
             }
@@ -364,28 +388,31 @@ sub mip_analyse {
         }
     );
 
-## Update exome_target_bed files with human_genome_reference_source_ref and human_genome_reference_version_ref
+## Update exome_target_bed files with human_genome_reference_source and human_genome_reference_version
     update_exome_target_bed(
         {
             exome_target_bed_file_href => $active_parameter{exome_target_bed},
-            human_genome_reference_source_ref =>
-              \$file_info{human_genome_reference_source},
-            human_genome_reference_version_ref =>
-              \$file_info{human_genome_reference_version},
+            human_genome_reference_source =>
+              $file_info{human_genome_reference_source},
+            human_genome_reference_version =>
+              $file_info{human_genome_reference_version},
         }
     );
 
     # Holds all active parameters values for broadcasting
     my @broadcasts;
 
-    set_parameter_to_broadcast(
-        {
-            parameter_href        => \%parameter,
-            active_parameter_href => \%active_parameter,
-            order_parameters_ref  => \@order_parameters,
-            broadcasts_ref        => \@broadcasts,
-        }
-    );
+    if ( $active_parameter{verbose} ) {
+
+        set_parameter_to_broadcast(
+            {
+                parameter_href        => \%parameter,
+                active_parameter_href => \%active_parameter,
+                order_parameters_ref  => \@order_parameters,
+                broadcasts_ref        => \@broadcasts,
+            }
+        );
+    }
 
 ## Reference in MIP reference directory
   PARAMETER:
@@ -415,13 +442,14 @@ sub mip_analyse {
 
             check_parameter_files(
                 {
-                    parameter_href        => \%parameter,
                     active_parameter_href => \%active_parameter,
                     associated_programs_ref =>
                       \@{ $parameter{$parameter_name}{associated_program} },
-                    parameter_name => $parameter_name,
+                    log => $log,
                     parameter_exists_check =>
                       $parameter{$parameter_name}{exists_check},
+                    parameter_href => \%parameter,
+                    parameter_name => $parameter_name,
                 }
             );
         }
@@ -430,7 +458,7 @@ sub mip_analyse {
 ## Updates sample_info hash with previous run pedigree info
     reload_previous_pedigree_info(
         {
-            active_parameter_href => \%active_parameter,
+            log                   => $log,
             sample_info_href      => \%sample_info,
             sample_info_file_path => $active_parameter{sample_info_file},
         }
@@ -440,9 +468,10 @@ sub mip_analyse {
 ## Check the existance of associated human genome files
     check_human_genome_file_endings(
         {
-            parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
+            log                   => $log,
+            parameter_href        => \%parameter,
             parameter_name        => q{human_genome_reference},
         }
     );
@@ -491,6 +520,7 @@ sub mip_analyse {
     $parameter{dynamic_parameter}{trio} = detect_trio(
         {
             active_parameter_href => \%active_parameter,
+            log                   => $log,
             sample_info_href      => \%sample_info,
         }
     );
@@ -514,31 +544,65 @@ sub mip_analyse {
         );
     }
 
-    if (
-        not check_allowed_temp_directory(
-            { temp_directory => $active_parameter{temp_directory}, }
-        )
-      )
-    {
-
-        $log->fatal( q{'--temp_directory }
-              . $active_parameter{temp_directory}
-              . q{' is not allowed because MIP will remove the temp directory after processing.}
-              . "\n" );
-        exit 1;
-    }
+## Check that the temp directory value is allowed
+    check_allowed_temp_directory(
+        {
+            log            => $log,
+            temp_directory => $active_parameter{temp_directory},
+        }
+    );
 
 ## Parameters that have keys as MIP program names
     my @parameter_keys_to_check =
       (qw{ module_time module_core_number module_source_environment_command });
+  PARAMETER_NAME:
     foreach my $parameter_name (@parameter_keys_to_check) {
 
         ## Test if key from query hash exists truth hash
-        check_key_exists_in_hash(
+        check_pprogram_exists_in_hash(
             {
-                truth_href     => \%parameter,
-                query_href     => \%{ $active_parameter{$parameter_name} },
+                log            => $log,
                 parameter_name => $parameter_name,
+                query_ref      => \%{ $active_parameter{$parameter_name} },
+                truth_href     => \%parameter,
+            }
+        );
+    }
+
+## Parameters with key(s) that have elements as MIP program names
+    my @parameter_element_to_check = qw(associated_program);
+  PARAMETER:
+    foreach my $parameter ( keys %parameter ) {
+
+      KEY:
+        foreach my $parameter_name (@parameter_element_to_check) {
+
+            next KEY if ( not exists $parameter{$parameter}{$parameter_name} );
+
+            ## Test if element from query array exists truth hash
+            check_pprogram_exists_in_hash(
+                {
+                    log            => $log,
+                    parameter_name => $parameter_name,
+                    query_ref  => \@{ $parameter{$parameter}{$parameter_name} },
+                    truth_href => \%parameter,
+                }
+            );
+        }
+    }
+
+## Parameters that have elements as MIP program names
+    my @parameter_elements_to_check =
+      (qw(associated_program decompose_normalize_references));
+    foreach my $parameter_name (@parameter_elements_to_check) {
+
+        ## Test if element from query array exists truth hash
+        check_pprogram_exists_in_hash(
+            {
+                log            => $log,
+                parameter_name => $parameter_name,
+                query_ref      => \@{ $active_parameter{$parameter_name} },
+                truth_href     => \%parameter,
             }
         );
     }
@@ -558,103 +622,72 @@ sub mip_analyse {
           );
     }
 
-## Parameters that have elements as MIP program names
-    my @parameter_elements_to_check =
-      (qw(associated_program decompose_normalize_references));
-    foreach my $parameter_name (@parameter_elements_to_check) {
-
-        ## Test if element from query array exists truth hash
-        check_element_exists_in_hash(
-            {
-                truth_href     => \%parameter,
-                queryies       => \@{ $active_parameter{$parameter_name} },
-                parameter_name => $parameter_name,
-            }
-        );
-    }
-
-## Parameters with key(s) that have elements as MIP program names
-    my @parameter_key_to_check = qw(associated_program);
-  PARAMETER:
-    foreach my $parameter ( keys %parameter ) {
-
-      KEY:
-        foreach my $parameter_name (@parameter_key_to_check) {
-
-            if ( exists $parameter{$parameter}{$parameter_name} ) {
-
-                ## Test if element from query array exists truth hash
-                check_element_exists_in_hash(
-                    {
-                        truth_href => \%parameter,
-                        queryies =>
-                          \@{ $parameter{$parameter}{$parameter_name} },
-                        parameter_name => $parameter_name,
-                    }
-                );
-            }
-        }
-    }
-
 ## Check programs in path, and executable
     check_command_in_path(
         {
-            parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
+            log                   => $log,
+            parameter_href        => \%parameter,
         }
     );
 
 ## Test that the family_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
-    check_unique_ids(
+    check_sample_ids(
         {
-            active_parameter_href => \%active_parameter,
-            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
+            family_id      => $active_parameter{family_id},
+            log            => $log,
+            sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
     );
 
 ## Check sample_id provided in hash parameter is included in the analysis and only represented once
-    check_sample_id_in_parameter(
+    check_sample_id_in_hash_parameter(
         {
             active_parameter_href => \%active_parameter,
-            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
+            log                   => $log,
             parameter_names_ref =>
               [qw{ analysis_type expected_coverage sample_origin }],
             parameter_href => \%parameter,
+            sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
     );
 
 ## Check sample_id provided in hash path parameter is included in the analysis and only represented once
-    check_sample_id_in_parameter_path(
+    check_sample_id_in_hash_parameter_path(
         {
             active_parameter_href => \%active_parameter,
-            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
+            log                   => $log,
             parameter_names_ref   => [qw{ infile_dirs exome_target_bed }],
+            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
         }
     );
 
 ## Check that VEP directory and VEP cache match
     check_vep_directories(
         {
-            vep_directory_path_ref  => \$active_parameter{vep_directory_path},
-            vep_directory_cache_ref => \$active_parameter{vep_directory_cache},
+            log                 => $log,
+            vep_directory_path  => $active_parameter{vep_directory_path},
+            vep_directory_cache => $active_parameter{vep_directory_cache},
         }
     );
 
 ## Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
-    if (   ( $active_parameter{psv_combinevariantcallsets} > 0 )
-        && ( $active_parameter{sv_vcfanno} > 0 ) )
+    if (    $active_parameter{psv_combinevariantcallsets} > 0
+        and $active_parameter{sv_vcfanno} > 0 )
     {
 
         check_vcfanno_toml(
             {
-                vcfanno_file_toml => $active_parameter{sv_vcfanno_config},
+                log               => $log,
                 vcfanno_file_freq => $active_parameter{sv_vcfanno_config_file},
+                vcfanno_file_toml => $active_parameter{sv_vcfanno_config},
             }
         );
     }
 
     check_snpsift_keys(
         {
+            log => $log,
             snpsift_annotation_files_href =>
               \%{ $active_parameter{snpsift_annotation_files} },
             snpsift_annotation_outinfo_key_href =>
@@ -665,7 +698,6 @@ sub mip_analyse {
 ## Adds dynamic aggregate information from definitions to parameter hash
     set_dynamic_parameter(
         {
-            parameter_href => \%parameter,
             aggregates_ref => [
                 ## Collects all programs that MIP can handle
                 q{type:program},
@@ -678,52 +710,28 @@ sub mip_analyse {
                 ## Collects all references in that are supposed to be in reference directory
                 q{reference:reference_dir},
             ],
+            parameter_href => \%parameter,
         }
     );
 
 ## Check correct value for program mode in MIP
     check_program_mode(
         {
+            active_parameter_href => \%active_parameter,
+            log                   => $log,
             parameter_href        => \%parameter,
-            active_parameter_href => \%active_parameter
         }
     );
 
-## Get initiation program, downstream dependencies and update program modes
-    if ( $active_parameter{start_with_program} ) {
-
-        my %dependency_tree = load_yaml(
-            {
-                yaml_file => catfile(
-                    $Bin, qw{ definitions rare_disease_initiation.yaml }
-                ),
-            }
-        );
-
-        my @start_with_programs;
-        my $is_program_found = 0;
-        my $is_chain_found   = 0;
-
-        ## Collects all downstream programs from initation point
-        get_dependency_tree(
-            {
-                dependency_tree_href => \%dependency_tree,
-                is_program_found_ref => \$is_program_found,
-                is_chain_found_ref   => \$is_chain_found,
-                program              => $active_parameter{start_with_program},
-                start_with_programs_ref => \@start_with_programs,
-            }
-        );
-
-        ## Update program mode depending on start with flag
-        update_program_mode_with_start_with(
-            {
-                active_parameter_href => \%active_parameter,
-                programs_ref => \@{ $parameter{dynamic_parameter}{program} },
-                start_with_programs_ref => \@start_with_programs,
-            }
-        );
-    }
+## Get initiation program, downstream dependencies and update program modes for start_with_program parameter
+    parse_start_with_program(
+        {
+            active_parameter_href => \%active_parameter,
+            initiation_file =>
+              catfile( $Bin, qw{ definitions rare_disease_initiation.yaml } ),
+            parameter_href => \%parameter,
+        },
+    );
 
 ## Update program mode depending on dry_run_all flag
     update_program_mode_with_dry_run_all(
@@ -737,9 +745,10 @@ sub mip_analyse {
 ## Check that the correct number of aligners is used in MIP and sets the aligner flag accordingly
     check_aligner(
         {
-            parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
             broadcasts_ref        => \@broadcasts,
+            parameter_href        => \%parameter,
+            verbose               => $active_parameter{verbose},
         }
     );
 
@@ -791,7 +800,7 @@ sub mip_analyse {
               $parameter{dynamic_parameter}{consensus_analysis_type},
             log          => $log,
             programs_ref => [
-                qw{ cnvnator delly_call delly_reformat tiddit samtools_subsample_mt }
+                qw{ cnvnator delly_call delly_reformat expansionhunter tiddit samtools_subsample_mt }
             ],
         }
     );
@@ -879,17 +888,19 @@ sub mip_analyse {
         }
     );
 
+    if ( $active_parameter{verbose} ) {
 ## Write CMD to MIP log file
-    write_cmd_mip_log(
-        {
-            parameter_href        => \%parameter,
-            active_parameter_href => \%active_parameter,
-            order_parameters_ref  => \@order_parameters,
-            script_ref            => \$script,
-            log_file_ref          => \$active_parameter{log_file},
-            mip_version_ref       => \$VERSION,
-        }
-    );
+        write_cmd_mip_log(
+            {
+                parameter_href        => \%parameter,
+                active_parameter_href => \%active_parameter,
+                order_parameters_ref  => \@order_parameters,
+                script_ref            => \$script,
+                log_file_ref          => \$active_parameter{log_file},
+                mip_version_ref       => \$VERSION,
+            }
+        );
+    }
 
 ## Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any of the files exist
     collect_infiles(
@@ -2024,129 +2035,6 @@ q?perl -nae 'chomp($_); if( ($_=~/^@\w+-\w+:\w+:\w+:\w+:\w+:\w+:\w+\/(\w+)/) && 
     return;
 }
 
-sub set_default_to_active_parameter {
-
-## Function : Checks and sets user input or default values to active_parameters.
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis
-##          : $associated_programs   => The parameters program(s) {array, REF}
-##          : $parameter_href        => Holds all parameters
-##          : $parameter_name        => Parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $associated_programs_ref;
-    my $parameter_href;
-    my $parameter_name;
-
-    ## Default(s)
-    my $family_id;
-
-    my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        associated_programs_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$associated_programs_ref,
-            strict_type => 1,
-        },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
-
-    ## Alias
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-
-    ## Do nothing since parameter is not required unless exome mode is enabled
-    return
-      if ( exists $only_wgs{$parameter_name}
-        && $consensus_analysis_type =~ / wgs /xsm );
-
-    ## Check all programs that use parameter
-  ASSOCIATED_PROGRAM:
-    foreach my $associated_program ( @{$associated_programs_ref} ) {
-
-        ## Only add active programs parameters
-        next ASSOCIATED_PROGRAM
-          if ( not defined $active_parameter_href->{$associated_program} );
-
-        next ASSOCIATED_PROGRAM
-          if ( not $active_parameter_href->{$associated_program} );
-
-        if ( exists $parameter_href->{$parameter_name}{default} ) {
-            ## Default exists
-
-            ## Array reference
-            if ( $parameter_href->{$parameter_name}{data_type} eq q{ARRAY} ) {
-
-                push
-                  @{ $active_parameter_href->{$parameter_name} },
-                  @{ $parameter_href->{$parameter_name}{default} };
-            }
-            elsif ( $parameter_href->{$parameter_name}{data_type} eq q{HASH} ) {
-                ## Hash reference
-
-                $active_parameter_href->{$parameter_name} =
-                  $parameter_href->{$parameter_name}{default};
-            }
-            else {
-                ## Scalar
-
-                $active_parameter_href->{$parameter_name} =
-                  $parameter_href->{$parameter_name}{default};
-            }
-
-            ## Set default - no use in continuing
-            return;
-        }
-        else {
-            ## No default
-
-            ## Not mandatory - skip
-            return
-              if ( exists $parameter_href->{$parameter_name}{mandatory}
-                && $parameter_href->{$parameter_name}{mandatory} eq q{no} );
-
-            ## Mandatory parameter not supplied
-            $log->fatal( q{Supply '-}
-                  . $parameter_name
-                  . q{' if you want to run }
-                  . $associated_program );
-            exit 1;
-        }
-    }
-    return;
-}
-
 sub create_file_endings {
 
 ## Function : Creates the file_tags depending on which modules are used by the user to relevant chain.
@@ -2639,369 +2527,6 @@ sub write_cmd_mip_log {
     return;
 }
 
-sub check_unique_array_element {
-
-##check_unique_array_element
-
-##Function : Detects if there are items in query_ref that are not present in array_to_check_ref. If unique adds the unique element to array_to_check_ref.
-##Returns  : ""
-##Arguments: $array_to_check_ref, $array_query_ref
-##         : $array_to_check_ref => The arrayref to be queried {REF}
-##         : $query_ref          => The query reference can be either array or scalar {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $array_to_check_ref;
-    my $query_ref;
-
-    my $tmpl = {
-        array_to_check_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$array_to_check_ref
-        },
-        query_ref => { required => 1, defined => 1, store => \$query_ref },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $array_query_ref;
-
-    if ( ref($query_ref) eq "ARRAY" ) {    #Array reference
-
-        $array_query_ref = $query_ref;
-    }
-    if ( ref($query_ref) eq "SCALAR" ) {    #Scalar reference
-
-        push( @{$array_query_ref}, $$query_ref );    #Standardize to array
-    }
-
-    ##For each array_query_ref element, loop through corresponding array_to_check_ref element(s), add if there are none or an updated/unique entry.
-    foreach my $query (@$array_query_ref) {
-
-        if ( !( any { $_ eq $query } @$array_to_check_ref ) )
-        {    #If element is not part of array
-
-            push( @$array_to_check_ref, $query );    #Go ahead and add
-        }
-    }
-}
-
-sub determine_nr_of_rapid_nodes {
-
-##determine_nr_of_rapid_nodes
-
-##Function : Determines the number of nodes to allocate depending on the sequence read length, which affects the infile size.
-##Returns  : $number_nodes, $read_nr_of_lines
-##Arguments: $seq_length, $infile_size
-##         : $seq_length  => Length of sequence reads
-##         : $infile_size => Size of the infile
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $seq_length;
-    my $infile_size;
-
-    my $tmpl = {
-        seq_length => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$seq_length
-        },
-        infile_size => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_size
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $number_nodes         = 0;  #Nodes to allocate
-    my $read_position_weight = 1;  #Scales the read_start and read_stop position
-    my $read_nr_of_lines;
-
-    if ( $seq_length > 75 && $seq_length <= 101 ) {
-
-        $read_nr_of_lines = 190000000;    #Read batch size
-        $number_nodes = floor( $infile_size / ( 12 * $read_nr_of_lines ) )
-          ; #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-        $log->info( "Number of Nodes: " . $number_nodes, "\n" );
-    }
-    if ( $seq_length > 50 && $seq_length <= 75 ) {
-
-        $read_nr_of_lines = 190000000;    #Read batch size
-        $number_nodes = floor( $infile_size / ( 9.75 * $read_nr_of_lines ) )
-          ; #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-        $log->info( "Number of Nodes: " . $number_nodes, "\n" );
-    }
-    if ( $seq_length >= 50 && $seq_length < 75 ) {
-
-        $read_nr_of_lines = 130000000;    #Read batch size
-        $number_nodes = floor( $infile_size / ( 7 * $read_nr_of_lines ) )
-          ; #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-        $log->info( "Number of Nodes: " . $number_nodes, "\n" );
-    }
-    if ( $seq_length >= 35 && $seq_length < 50 ) {
-
-        $read_nr_of_lines = 95000000;    #Read batch size
-        $number_nodes = floor( $infile_size / ( 6 * $read_nr_of_lines ) )
-          ; #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-        $log->info( "Number of Nodes: " . $number_nodes, "\n" );
-    }
-    if ( $number_nodes <= 1 ) {
-
-        $number_nodes = 2;    #Ensure that at least 1 readbatch is processed
-    }
-    return $number_nodes, $read_nr_of_lines;
-}
-
-sub check_unique_ids {
-
-##check_unique_ids
-
-##Function : Test that the family_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
-##Returns  : ""
-##Arguments: $active_parameter_href, $sample_ids_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_ids_ref        => Array to loop in for parameter {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_ids_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$sample_ids_ref
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my %seen;    #Hash to test duplicate sample_ids later
-
-    if ( !@$sample_ids_ref ) {
-
-        $log->fatal("Please provide sample_id(s)\n");
-        exit 1;
-    }
-
-    foreach my $sample_id ( @{$sample_ids_ref} ) {
-
-        $seen{$sample_id}++;    #Increment instance to check duplicates later
-
-        if ( $$family_id_ref eq $sample_id )
-        {                       #Family_id cannot be the same as sample_id
-
-            $log->fatal( "Family_id: "
-                  . $$family_id_ref
-                  . " equals sample_id: "
-                  . $sample_id
-                  . ". Please make sure that the family_id and sample_id(s) are unique.\n"
-            );
-            exit 1;
-        }
-        if ( $seen{$sample_id} > 1 ) {    #Check sample_id are unique
-
-            $log->fatal( "Sample_id: " . $sample_id . " is not uniqe.\n" );
-            exit 1;
-        }
-        if ( $sample_id =~ /_/ )
-        { #Sample_id contains "_", which is not allowed according to filename conventions
-
-            $log->fatal( "Sample_id: "
-                  . $sample_id
-                  . " contains '_'. Please rename sample_id according to MIP's filename convention, removing the '_'.\n"
-            );
-            exit 1;
-        }
-    }
-}
-
-sub check_user_supplied_info {
-
-##check_user_supplied_info
-
-##Function : Determine if the user supplied info on parameter either via cmd or config
-##Returns  : "0|1"
-##Arguments: $active_parameter_href, $data_ref, $parameter_name
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $data_ref              => Data to check for existence {REF}
-##         : $parameter_name        => MIP parameter to evaluate
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $data_ref;
-    my $parameter_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        data_ref => { required => 1, defined => 1, store => \$data_ref },
-        parameter_name => { strict_type => 1, store => \$parameter_name },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $user_supplied_info_switch;
-
-    if ( ref($data_ref) eq "ARRAY" ) {    #Array reference
-
-        if ( !@$data_ref ) {              #No user supplied sample info
-
-            if ( defined( $active_parameter_href->{$parameter_name} ) )
-            {                             #User supplied info in config file
-
-                $user_supplied_info_switch = 0
-                  ; #No user supplied cmd info, but present in config file overwrite using info from pedigree file
-            }
-            else {    #No sample_ids info in config file
-
-                $user_supplied_info_switch = 0
-                  ; #No user supplied cmd info, not defined in config file, ADD vit from pedigree file
-            }
-        }
-        else {
-
-            $user_supplied_info_switch = 1
-              ; #User supplied cmd info, do NOT overwrite using info from pedigree file
-        }
-    }
-    elsif ( ref($data_ref) eq "HASH" ) {
-
-        if ( !%$data_ref ) {
-
-            if ( defined( $active_parameter_href->{$parameter_name} ) )
-            {    #User supplied info in config file
-
-                $user_supplied_info_switch = 0
-                  ; #No user supplied cmd info, but present in config file overwrite using info from pedigree file
-            }
-            else {    #No sample_ids info in config file
-
-                $user_supplied_info_switch = 0
-                  ; #No user supplied cmd info, not defined in config file, ADD it from pedigree file
-            }
-        }
-        else {
-
-            $user_supplied_info_switch = 1
-              ; #User supplied cmd info, do NOT overwrite using info from pedigree file
-        }
-    }
-    return $user_supplied_info_switch;
-}
-
-sub compare_array_elements {
-
-##compare_array_elements
-
-##Function : Compares the number of elements in two arrays and exits if the elements are not equal.
-##Returns  : ""
-##Arguments: $elements_ref, $array_queries_ref, $parameter_name, $parameter_name_query
-##         : $elements_ref         => Array to match {REF}
-##         : $array_queries_ref    => Array to be compared {REF}
-##         : $parameter_name       => MIP reference parameter
-##         : $parameter_name_query => MIP query parameter
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $elements_ref;
-    my $array_queries_ref;
-    my $parameter_name;
-    my $parameter_name_query;
-
-    my $tmpl = {
-        elements_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$elements_ref
-        },
-        array_queries_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$array_queries_ref
-        },
-        parameter_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter_name,
-        },
-        parameter_name_query => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter_name_query
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    if ( scalar(@$elements_ref) != scalar(@$array_queries_ref) ) {
-
-        $log->fatal(
-            "The number of supplied '-"
-              . $parameter_name_query . "' (="
-              . scalar(@$array_queries_ref)
-              . ") do not equal the number of '-"
-              . $parameter_name . "' (="
-              . scalar(@$elements_ref)
-              . "). Please specify a equal number of elements for both parameters",
-            "\n"
-        );
-        exit 1;
-    }
-}
-
 sub size_sort_select_file_contigs {
 
 ## Function : Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
@@ -3107,129 +2632,6 @@ sub size_sort_select_file_contigs {
     return @sorted_contigs;
 }
 
-sub modify_file_ending {
-
-##modify_file_ending
-
-##Function  : Modify fileending of file to include e.g. .bai for bams
-##Returns   : ""
-##Arguments : $file_path_ref, $file_ending
-##          : $file_path_ref => Current file {REF}
-##          : $file_ending   => File ending of $file_path_ref
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_path_ref;
-    my $file_ending;
-
-    my $tmpl = {
-        file_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_path_ref
-        },
-        file_ending => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_ending
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Removes ".file_ending" in filename.FILENDING
-    my ( $file_name, $dir_path ) = fileparse( $$file_path_ref, $file_ending );
-    my $file_path_prefix = catfile( $dir_path, $file_name );
-
-    if ( defined($file_path_prefix) ) {    #Successfully removed file ending
-
-        my $end = ".*";    #Remove all files with ending with ".*"
-
-        if ( $file_ending eq q{.bam} ) {    #For BAM files
-
-            $end = ".ba*";                  #Removes both .bam and .bai
-        }
-        if ( $file_ending eq ".vcf" ) {     #For VCF files
-
-            $end = ".vcf*";                 #Removes both .vcf and .vcf.idx
-        }
-        return $file_path_prefix . $end;
-    }
-    else {
-
-        return $$file_path_ref;
-    }
-}
-
-sub concatenate_vcfs {
-
-##concatenate_vcfs
-
-##Function : Concatenate VCFs
-##Returns  : ""
-##Arguments: $active_parameter_href, $FILEHANDLE, $arrays_ref, $infile_prefix, $infile_postfix, $outfile, $reorder_swith
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $FILEHANDLE            => SBATCH script FILEHANDLE to print to
-##         : $arrays_ref            => Holding the number and part of file names to be combined
-##         : $infile_prefix         => Will be combined with the each array element
-##         : $infile_postfix        => Will be combined with the each array element
-##         : $outfile               => The combined outfile
-##         : $reorder_swith         => Reorder header
-
-    my $active_parameter_href = $_[0];
-    my $FILEHANDLE            = $_[1];
-    my $arrays_ref            = $_[2];
-    my $infile_prefix         = $_[3];
-    my $infile_postfix        = $_[4];
-    my $outfile               = $_[5];
-    my $reorder_swith         = $_[6];
-
-    use MIP::Language::Java qw{java_core};
-
-    unless ( defined($infile_postfix) ) {
-
-        $infile_postfix = "";    #No postfix
-    }
-    unless ( defined($outfile) ) {
-
-        $outfile = $infile_prefix . ".vcf";
-    }
-
-    ## Writes java core commands to filehandle.
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => "Xmx4g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            java_jar =>
-              catfile( $active_parameter_href->{snpeff_path}, "SnpSift.jar" ),
-        }
-    );
-
-    print {$FILEHANDLE} "split -j ";    #Joinf VCFs together
-
-    foreach my $element (@$arrays_ref) {
-
-        print {$FILEHANDLE} $infile_prefix
-          . $element
-          . $infile_postfix
-          . " ";                        #files to combined
-    }
-    if ( ( defined( $_[6] ) ) && $reorder_swith eq "reorder_header" ) {
-
-        print {$FILEHANDLE} "| ";            #Pipe
-        print {$FILEHANDLE} "vcfparser ";    #Parses the vcf output
-    }
-
-    print {$FILEHANDLE} "> " . $outfile;     #OutFile
-}
-
 sub detect_sample_id_gender {
 
 ##detect_sample_id_gender
@@ -3290,354 +2692,6 @@ sub detect_sample_id_gender {
         }
     }
     return $found_male, $found_female, $found_other, $found_other_count;
-}
-
-sub remove_pedigree_elements {
-
-## Function : Removes ALL keys at third level except keys in allowed_entries hash.
-## Returns  :
-## Arguments: $hash_ref => Hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $hash_ref;
-
-    my $tmpl = {
-        hash_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$hash_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @allowed_entries =
-      qw{ family default_gene_panels sample sample_id sample_name capture_kit sex mother father phenotype sequence_type expected_coverage sample_origin };
-
-  FAMILY_INFO:
-    for my $key ( keys %{$hash_ref} ) {
-
-        ## If element is not part of array
-        if ( not any { $_ eq $key } @allowed_entries ) {
-
-            delete( $hash_ref->{$key} );
-        }
-    }
-
-  SAMPLE:
-    foreach my $sample_id ( keys %{ $hash_ref->{sample} } ) {
-
-      SAMPLE_INFO:
-        for my $pedigree_element ( keys %{ $hash_ref->{sample}{$sample_id} } ) {
-
-            ## If element is not part of array
-            if ( not any { $_ eq $pedigree_element } @allowed_entries ) {
-
-                delete( $hash_ref->{sample}{$sample_id}{$pedigree_element} );
-            }
-        }
-    }
-}
-
-sub break_string {
-
-##break_string
-
-##Function : Breaks the string supplied on format key1:value1_value2,keyN:valueN_valueN,..n . Add key to %file_info_href and values as array. This enables association of values to key supplied in config or cmd.
-##Returns  : ""
-##Arguments: $file_info_href, $parameter_value_ref, $parameter_name, $associated_program
-##         : $file_info_href      => File info hash {REF}
-##         : $parameter_value_ref => MIP parameter value {REF}
-##         : $parameter_name      => MIP parameter name {REF}
-##         : $associated_program  => The parameters program {REF}
-
-    my $file_info_href         = $_[0];
-    my $parameter_value_ref    = $_[1];
-    my $parameter_name_ref     = $_[2];
-    my $associated_program_ref = $_[3];
-
-    ## Break string into key value pairs
-    my @file_keys = split( ',', join( ',', $$parameter_value_ref ) );
-
-    foreach my $element (@file_keys) {
-
-        my @temps = split( /:/, $element );
-        @{ $file_info_href->{$$associated_program_ref}{$$parameter_name_ref}
-              { $temps[0] } } =
-          split( '_', $temps[1] );    #Save info_key associated with file_name
-    }
-}
-
-sub split_bam {
-
-##split_bam
-
-##Function : Split BAM file per contig and index new BAM. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
-##Returns  : ""
-##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $contigs_ref, $xargs_file_counter, $file_path, $program_info_path, $core_number, $infile, $temp_directory_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $FILEHANDLE            => Sbatch filehandle to write to
-##         : $XARGSFILEHANDLE       => XARGS filehandle to write to
-##         : $xargs_file_counter    => The xargs file counter
-##         : $memory_allocation     => Memory allocation for ja
-##         : $contigs_ref           => The contigs to process
-##         : $file_path             => File name - ususally sbatch
-##         : $program_info_path     => The program info path
-##         : $core_number           => The number of cores to use
-##         : $infile                => The infile
-##         : $temp_directory_ref    => Temporary directory
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $temp_directory_ref;
-    my $first_command;
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $contigs_ref;
-    my $FILEHANDLE;
-    my $XARGSFILEHANDLE;
-    my $file_path;
-    my $program_info_path;
-    my $core_number;
-    my $infile;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
-        XARGSFILEHANDLE =>
-          { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
-        file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_path
-        },
-        program_info_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_info_path
-        },
-        core_number => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$core_number
-        },
-        infile =>
-          { required => 1, defined => 1, strict_type => 1, store => \$infile, },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref,
-        },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$xargs_file_counter,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Alignment::Samtools qw(samtools_view);
-    use MIP::Language::Java qw{java_core};
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-
-    my $xargs_file_path_prefix;
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
-    ## Split by contig
-    foreach my $contig (@$contigs_ref) {
-
-        samtools_view(
-            {
-                infile_path =>
-                  catfile( $$temp_directory_ref, $infile . q{.bam} ),
-                outfile_path => catfile(
-                    $$temp_directory_ref, $infile . "_" . $contig . q{.bam}
-                ),
-                stderrfile_path => $xargs_file_path_prefix . "."
-                  . $contig
-                  . ".stderr.txt",
-                regions_ref              => $contig,
-                FILEHANDLE               => $XARGSFILEHANDLE,
-                auto_detect_input_format => 1,
-                with_header              => 1,
-                uncompressed_bam_output  => 1,
-            }
-        );
-        print $XARGSFILEHANDLE "; ";    #Wait
-
-        ## Writes java core commands to filehandle.
-        java_core(
-            {
-                FILEHANDLE        => $XARGSFILEHANDLE,
-                memory_allocation => "Xmx4g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $$temp_directory_ref,
-                java_jar       => catfile(
-                    $active_parameter_href->{picardtools_path},
-                    q{picard.jar}
-                ),
-            }
-        );
-
-        print $XARGSFILEHANDLE "BuildBamIndex ";
-        print $XARGSFILEHANDLE "INPUT="
-          . catfile( $$temp_directory_ref, $infile . "_" . $contig . q{.bam} )
-          . " ";    #InFile
-        say {$XARGSFILEHANDLE} "2> "
-          . $xargs_file_path_prefix . "."
-          . $contig
-          . ".stderr.txt "
-          ;         #Redirect xargs output to program specific stderr file
-    }
-    return $xargs_file_counter;
-}
-
-sub find_max_seq_length_for_sample_id {
-
-##find_max_seq_length_for_sample_id
-
-##Function : Finds the maximum sequence length of the reads for all sequencing file(s).
-##Returns  : $max_sequence_length
-##Arguments: $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $sample_id_ref
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $sample_id_ref              => Sample id {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href   = $arg_href->{active_parameter_href};
-    my $sample_info_href        = $arg_href->{sample_info_href};
-    my $infile_lane_prefix_href = $arg_href->{infile_lane_prefix_href};
-    my $sample_id_ref           = $arg_href->{sample_id_ref};
-
-    my $max_sequence_length = 0;
-
-    foreach my $infile ( @{ $infile_lane_prefix_href->{$$sample_id_ref} } )
-    {    #For all infiles per lane
-
-        my $seq_length =
-          $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile}
-          {sequence_length};
-
-        if ( $seq_length > $max_sequence_length ) {
-
-            $max_sequence_length = $seq_length;
-        }
-    }
-    return $max_sequence_length;
-}
-
-sub check_command_in_path {
-
-##check_command_in_path
-
-##Function : Checking commands in your path and executable
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Unix qw{check_binary_in_path};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    # Track program paths that have already been checked
-    my %seen;
-
-    foreach my $parameter_name ( keys %$active_parameter_href ) {
-
-        if (   ( exists( $parameter_href->{$parameter_name}{type} ) )
-            && ( $parameter_href->{$parameter_name}{type} eq "program" ) )
-        {
-
-            my $program_name_paths_ref =
-              \@{ $parameter_href->{$parameter_name}{program_name_path} }
-              ;    #Alias
-
-            if (   (@$program_name_paths_ref)
-                && ( $active_parameter_href->{$parameter_name} > 0 ) )
-            {      #Only check path(s) for active programs
-
-                foreach my $program ( @{$program_name_paths_ref} ) {
-
-                    unless ( $seen{$program} ) {
-
-                        $seen{$program} = check_binary_in_path(
-                            {
-                                binary => $program,
-                                log    => $log,
-                            }
-                        );
-                    }
-                }
-            }
-        }
-    }
 }
 
 sub add_to_sample_info {
@@ -3753,7 +2807,6 @@ sub add_to_sample_info {
         && $active_parameter_href->{picardtools_path} )
     {
         ## To enable addition of version to sample_info
-
         my $picardtools_version;
         if ( $active_parameter_href->{picardtools_path} =~
             /picard-tools-([^,]+)/ )
@@ -3846,278 +2899,6 @@ sub add_to_sample_info {
           $path;    #Add log_file_dir to SampleInfoFile
         $sample_info_href->{last_log_file_path} =
           $active_parameter_href->{log_file};
-    }
-}
-
-sub check_vep_directories {
-
-##check_vep_directories
-
-##Function : Compare VEP directory and VEP chache versions
-##Returns  : ""
-##Arguments: $vep_directory_path_ref, $vep_directory_cache_ref
-##         : $vep_directory_path_ref  => VEP directory path {REF}
-##         : $vep_directory_cache_ref => VEP cache directory path {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $vep_directory_path_ref;
-    my $vep_directory_cache_ref;
-
-    my $tmpl = {
-        vep_directory_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$vep_directory_path_ref
-        },
-        vep_directory_cache_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$vep_directory_cache_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    if ( $$vep_directory_path_ref =~ /ensembl-tools-release-(\d+)/ ) {
-
-        my $vep_directory_path_version = $1;
-
-        unless ( $$vep_directory_cache_ref =~
-            /ensembl-tools-release-$vep_directory_path_version/ )
-        {
-
-            print $log->fatal(
-                "Differing versions between '-vep_directory_path': "
-                  . $$vep_directory_path_ref
-                  . " and '-vep_directory_cache': "
-                  . $$vep_directory_cache_ref,
-                "\n"
-            );
-            exit 1;
-        }
-    }
-
-}
-
-sub remove_array_element {
-
-##remove_array_element
-
-##Function : Removes contigs from supplied contigs_ref
-##Returns  : ""
-##Arguments: $contigs_ref, $remove_contigs_ref
-##         : $contigs_ref        => The select file contigs {REF}
-##         : $remove_contigs_ref => Remove this contig
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $contigs_ref;
-    my $remove_contigs_ref;
-
-    my $tmpl = {
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        remove_contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$remove_contigs_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    for ( my $index = 0 ; $index < scalar(@$contigs_ref) ; $index++ ) {
-
-        foreach my $remove_contig (@$remove_contigs_ref) {
-
-            if (   ( $contigs_ref->[$index] eq $remove_contig )
-                || ( $contigs_ref->[$index] eq "chr" . $remove_contig ) )
-            {
-
-                splice( @$contigs_ref, $index, 1 );  #Remove $element from array
-            }
-        }
-    }
-}
-
-sub detect_founders {
-
-##detect_founders
-
-##Function : Detect number of founders (i.e. parents ) based on pedigree file
-##Returns  : ""|1
-##Arguments: $active_parameter_href,
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_info_href      => Info on samples and family hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @founders;
-
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        my $father_info =
-          $sample_info_href->{sample}{$sample_id}{father};    #Alias
-        my $mother_info =
-          $sample_info_href->{sample}{$sample_id}{mother};    #Alias
-
-        if ( ( defined($father_info) ) && ( $father_info ne 0 ) ) {    #Child
-
-            if (
-                any { $_ eq $father_info }
-                @{ $active_parameter_href->{sample_ids} }
-              )
-            {    #If element is part of array
-
-                push( @founders, $father_info );
-            }
-        }
-        if ( ( defined($mother_info) ) && ( $mother_info ne 0 ) ) {    #Child
-
-            if (
-                any { $_ eq $mother_info }
-                @{ $active_parameter_href->{sample_ids} }
-              )
-            {    #If element is part of array
-
-                push( @founders, $mother_info );
-            }
-        }
-    }
-    return scalar(@founders);
-}
-
-sub detect_trio {
-
-##detect_trio
-
-##Function : Detect family constellation based on pedigree file
-##Returns  : ""|1
-##Arguments: $active_parameter_href, $sample_info_href
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_info_href      => Info on samples and family hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my %trio;
-
-    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) eq 1 ) {
-
-        $log->info(
-            "Found single sample: " . $active_parameter_href->{sample_ids}[0],
-            "\n" );
-        return;
-    }
-    elsif ( scalar( @{ $active_parameter_href->{sample_ids} } ) eq 3 ) {
-
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            my $father_info =
-              $sample_info_href->{sample}{$sample_id}{father};    #Alias
-            my $mother_info =
-              $sample_info_href->{sample}{$sample_id}{mother};    #Alias
-
-            if ( ( $father_info ne 0 ) && ( $mother_info ne 0 ) ) {    #Child
-
-                $trio{child} = $sample_id;
-
-                if (
-                    any { $_ eq $father_info }
-                    @{ $active_parameter_href->{sample_ids} }
-                  )
-                {    #If element is part of array
-
-                    $trio{father} = $father_info;
-                }
-                if (
-                    any { $_ eq $mother_info }
-                    @{ $active_parameter_href->{sample_ids} }
-                  )
-                {    #If element is part of array
-
-                    $trio{mother} = $mother_info;
-                }
-            }
-        }
-        if ( scalar( keys %trio ) == 3 ) {
-
-            $log->info(
-                "Found trio: Child = "
-                  . $trio{child}
-                  . ", Father = "
-                  . $trio{father}
-                  . ", Mother = "
-                  . $trio{mother},
-                "\n"
-            );
-            return 1;
-        }
     }
 }
 
@@ -4275,11 +3056,13 @@ sub check_aligner {
 ##         : $active_parameter_href => Active parameters for this analysis hash {REF}
 ##         : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
 ##         : $outaligner_dir_ref    => Outaligner_dir used in the analysis {REF}
+##         : $verbose               => Verbosity level
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $outaligner_dir_ref;
+    my $verbose;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -4313,6 +3096,11 @@ sub check_aligner {
             strict_type => 1,
             store       => \$outaligner_dir_ref,
         },
+        verbose => {
+            default     => 0,
+            store       => \$verbose,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -4337,8 +3125,14 @@ sub check_aligner {
                 $$outaligner_dir_ref = $parameter_href->{$aligner}{outdir_name}
                   ;    #Set outaligner_dir parameter depending on active aligner
 
-                my $info = "Set outaligner_dir to: " . $$outaligner_dir_ref;
-                push( @$broadcasts_ref, $info );    #Add info to broadcasts
+                if ($verbose) {
+
+                    my $info =
+                      q{Set outaligner_dir to: } . $$outaligner_dir_ref;
+
+                    ## Add info to broadcasts
+                    push( @$broadcasts_ref, $info );
+                }
             }
         }
     }
@@ -4409,343 +3203,6 @@ q?perl -ne 'if ($_!~/@/) {chomp($_);my $seq_length = length($_);print $seq_lengt
     return $ret;
 }
 
-sub check_program_mode {
-
-##check_program_mode
-
-##Function : Check correct value for program mode in MIP.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my @allowed_values = ( 0, 1, 2 );
-
-  PROGRAMS:
-    foreach my $program ( @{ $parameter_href->{dynamic_parameter}{program} } ) {
-
-        if (
-            !(
-                any { $_ eq $active_parameter_href->{$program} }
-                @allowed_values
-            )
-          )
-        {    #If element is not part of array
-
-            $log->fatal( q{'}
-                  . $active_parameter_href->{$program}
-                  . q{' Is not an allowed mode for program '--}
-                  . $program
-                  . q{'. Set to: }
-                  . join( "|", @allowed_values ) );
-            exit 1;
-        }
-    }
-}
-
-sub update_exome_target_bed {
-
-##update_exome_target_bed
-
-##Function : Update exome_target_bed files with human_genome_reference_source_ref and human_genome_reference_version_ref
-##Returns  : ""
-##Arguments: $exome_target_bed_file_href, $human_genome_reference_source_ref, human_genome_reference_version_ref
-##         : $exome_target_bed_file_href        => ExomeTargetBedTestFile hash {REF}
-##         : human_genome_reference_source_ref  => The human genome reference source {REF}
-##         : human_genome_reference_version_ref => The human genome reference version {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $exome_target_bed_file_href;
-    my $human_genome_reference_source_ref;
-    my $human_genome_reference_version_ref;
-
-    my $tmpl = {
-        exome_target_bed_file_href =>
-          { required => 1, store => \$exome_target_bed_file_href },
-        human_genome_reference_source_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$human_genome_reference_source_ref
-        },
-        human_genome_reference_version_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$human_genome_reference_version_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( defined $$human_genome_reference_source_ref ) {
-
-      EXOME_FILE:
-        foreach
-          my $exome_target_bed_file ( keys %{$exome_target_bed_file_href} )
-        {
-
-            my $original_file_name = $exome_target_bed_file;
-
-            ## Replace with actual version
-            if ( $exome_target_bed_file =~
-                s/genome_reference_source/$$human_genome_reference_source_ref/
-                && $exome_target_bed_file =~
-                s/_version/$$human_genome_reference_version_ref/ )
-            {
-
-                ## The delete operator returns the value being deleted i.e. updating hash key while preserving original info
-                $exome_target_bed_file_href->{$exome_target_bed_file} =
-                  delete $exome_target_bed_file_href->{$original_file_name};
-            }
-        }
-    }
-    return;
-}
-
-sub check_sample_id_in_parameter_path {
-
-##check_sample_id_in_parameter_path
-
-##Function : Check sample_id provided in hash path parameter is included in the analysis and only represented once
-##Returns  : ""
-##Tags     : check, sampleids, hash
-##Arguments: $active_parameter_href, $sample_ids_ref, $parameter_name
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_ids_ref        => Array to loop in for parameter {REF}
-##         : $parameter_names_ref   => Parameter name list {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_ids_ref;
-    my $parameter_names_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_ids_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$sample_ids_ref
-        },
-        parameter_names_ref => {
-            required => 1,
-            defined  => 1,
-            default  => [],
-            store    => \$parameter_names_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    foreach my $parameter_name (@$parameter_names_ref)
-    {    #Lopp through all hash parameters supplied
-
-        my %seen;    #Hash to test duplicate sample_ids later
-
-        foreach my $key ( keys %{ $active_parameter_href->{$parameter_name} } )
-        {
-
-            my @parameter_samples =
-              split( ",", $active_parameter_href->{$parameter_name}{$key} );
-
-            foreach my $sample_id (@parameter_samples) {
-
-                $seen{$sample_id}++
-                  ;    #Increment instance to check duplicates later
-
-                if ( $seen{$sample_id} > 1 ) {    #Check sample_id are unique
-
-                    $log->fatal(
-                        "Sample_id: "
-                          . $sample_id
-                          . " is not uniqe in '-"
-                          . $parameter_name . " '"
-                          . $key . "="
-                          . join( ",", @parameter_samples ),
-                        "\n"
-                    );
-                    exit 1;
-                }
-            }
-        }
-        foreach my $sample_id (@$sample_ids_ref) {
-
-            if ( !( any { $_ eq $sample_id } ( keys %seen ) ) )
-            {    #If sample_id is not present in parameter_name hash
-
-                $log->fatal(
-                    "Could not detect "
-                      . $sample_id
-                      . " for '--"
-                      . $parameter_name
-                      . "'. Provided sample_ids are: "
-                      . join( ", ", ( keys %seen ) ),
-                    "\n"
-                );
-                exit 1;
-            }
-        }
-    }
-}
-
-sub check_sample_id_in_parameter {
-
-## Function : Check sample_id provided in hash parameter is included in the analysis and only represented once
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_href        => Holds all parameters {REF}
-##          : $parameter_names_ref   => Parameter name list {REF}
-##          : $sample_ids_ref        => Array to loop in for parameter {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_names_ref;
-    my $parameter_href;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        parameter_names_ref => {
-            required => 1,
-            defined  => 1,
-            default  => [],
-            store    => \$parameter_names_ref
-        },
-        sample_ids_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$sample_ids_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    ## Loop through all hash parameters supplied
-  PARAMETER:
-    foreach my $parameter_name ( @{$parameter_names_ref} ) {
-
-        if ( defined $active_parameter_href->{$parameter_name} ) {
-
-            foreach my $sample_id ( @{$sample_ids_ref} ) {
-
-                ## Check that a value exists
-                if (
-                    !defined(
-                        $active_parameter_href->{$parameter_name}{$sample_id}
-                    )
-                  )
-                {
-
-                    next PARAMETER
-                      if ( $parameter_href->{$parameter_name}{mandatory} eq
-                        q{no} );
-
-                    $log->fatal(
-                        "Could not find value for "
-                          . $sample_id
-                          . " for parameter '--"
-                          . $parameter_name . "'",
-                        "\n"
-                    );
-                    exit 1;
-                }
-
-                ## If sample_id is not present in parameter_name hash
-                if (
-                    !(
-                        any { $_ eq $sample_id }
-                        ( keys %{ $active_parameter_href->{$parameter_name} } )
-                    )
-                  )
-                {
-
-                    $log->fatal(
-                        "Could not detect "
-                          . $sample_id
-                          . " for parameter '--"
-                          . $parameter_name
-                          . "'. Provided sample_ids for parameter are: "
-                          . join(
-                            ", ",
-                            (
-                                keys
-                                  %{ $active_parameter_href->{$parameter_name} }
-                            )
-                          ),
-                        "\n"
-                    );
-                    exit 1;
-                }
-            }
-        }
-    }
-}
-
 sub get_matching_values_key {
 
 ##get_matching_values_key
@@ -4795,234 +3252,6 @@ sub get_matching_values_key {
     if ( exists $reversed{$$query_value_ref} ) {
 
         return $reversed{$$query_value_ref};
-    }
-}
-
-sub check_vcfanno_toml {
-
-##check_vcfanno_toml
-
-##Function : Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
-##Returns  : ""
-##Arguments: $vcfanno_file_toml, $vcfanno_file_freq
-##         : $vcfanno_file_toml => Toml config file
-##         : $vcfanno_file_freq => Frequency file recorded inside toml file
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $vcfanno_file_toml;
-    my $vcfanno_file_freq;
-
-    my $tmpl = {
-        vcfanno_file_toml => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$vcfanno_file_toml
-        },
-        vcfanno_file_freq => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$vcfanno_file_freq
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    open( $FILEHANDLE, "<", $vcfanno_file_toml )
-      or
-      $log->logdie( "Can't open '" . $vcfanno_file_toml . "': " . $! . "\n" );
-
-    while (<$FILEHANDLE>) {
-
-        chomp $_;                          #Remove newline
-
-        if ( $_ =~ /^file="(\S+)"/ ) {
-
-            my $file_path_freq = $1;
-
-            if ( $file_path_freq ne $vcfanno_file_freq ) {
-
-                $log->fatal( "The supplied vcfanno_config_file: "
-                      . $vcfanno_file_freq
-                      . " does not match record 'file="
-                      . $file_path_freq
-                      . "' in the sv_vcfanno_config file: "
-                      . $vcfanno_file_toml );
-                exit 1;
-            }
-            last;
-        }
-    }
-    close $FILEHANDLE;
-}
-
-sub check_snpsift_keys {
-
-##check_snpsift_keys
-
-##Function : Check that the supplied
-##Returns  : ""
-##Arguments: $snpsift_annotation_files_href, $snpsift_annotation_outinfo_key_href
-##         : $snpsift_annotation_files_href       => Snpsift annotation files {REF}
-##         : $snpsift_annotation_outinfo_key_href => File and outinfo key to add to vcf {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $snpsift_annotation_files_href;
-    my $snpsift_annotation_outinfo_key_href;
-
-    my $tmpl = {
-        snpsift_annotation_files_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$snpsift_annotation_files_href
-        },
-        snpsift_annotation_outinfo_key_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$snpsift_annotation_outinfo_key_href
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    foreach my $file ( keys %$snpsift_annotation_outinfo_key_href ) {
-
-        unless ( exists( $snpsift_annotation_files_href->{$file} ) ) {
-
-            $log->fatal( "The supplied snpsift_annotation_outinfo_key file: "
-                  . $file
-                  . " does not match any file in '--snpsift_annotation_files'"
-            );
-            $log->fatal( "Supplied snpsift_annotation_files files:\n"
-                  . join( "\n", keys %$snpsift_annotation_files_href ) );
-            exit 1;
-        }
-    }
-}
-
-sub check_key_exists_in_hash {
-
-##Function : Test if key from query hash exists truth hash
-##Returns  :
-##Arguments: $parameter_name => Parameter name
-##         : $truth_href     => Truth hash
-##         : $query_href     => Query hash
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_name;
-    my $truth_href;
-    my $query_href;
-
-    my $tmpl = {
-        parameter_name =>
-          { required => 1, defined => 1, store => \$parameter_name },
-        truth_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$truth_href
-        },
-        query_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$query_href
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-  QUERY_KEY:
-    foreach my $key ( keys %{$query_href} ) {
-
-        if ( not exists( $truth_href->{$key} ) ) {
-
-            $log->fatal( $parameter_name
-                  . q{ key '}
-                  . $key
-                  . q{' - Does not exist as module program parameter in MIP} );
-            exit 1;
-        }
-    }
-    return;
-}
-
-sub check_element_exists_in_hash {
-
-##check_element_exists_in_hash
-
-##Function : Test if element from query array exists truth hash
-##Returns  : ""
-##Arguments: $truth_href, $queryies, $parameter_name
-##         : $truth_href     => Truth hash
-##         : $queryies       => Query array
-##         : $parameter_name => Parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $truth_href;
-    my $queryies;
-    my $parameter_name;
-
-    my $tmpl = {
-        truth_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$truth_href
-        },
-        queryies => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$queryies
-        },
-        parameter_name =>
-          { required => 1, defined => 1, store => \$parameter_name },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    foreach my $element ( @{$queryies} ) {
-
-        if ( !exists( $truth_href->{$element} ) ) {
-
-            $log->fatal( $parameter_name
-                  . " element '"
-                  . $element
-                  . "' - Does not exist as module program parameter in MIP" );
-            exit 1;
-        }
     }
 }
 

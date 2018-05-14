@@ -200,7 +200,7 @@ sub analysis_markduplicates {
     my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -261,7 +261,7 @@ sub analysis_markduplicates {
             process_time                    => $time,
             program_directory               => $outaligner_dir,
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );

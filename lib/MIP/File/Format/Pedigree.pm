@@ -14,6 +14,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie;
+use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
@@ -24,54 +25,50 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ create_fam_file gatk_pedigree_flag parse_yaml_pedigree_file reload_previous_pedigree_info };
+      qw{ create_fam_file detect_founders detect_trio gatk_pedigree_flag parse_yaml_pedigree_file reload_previous_pedigree_info };
 }
 
 ## Constants
-Readonly my $DOUBLE_QUOTE => q{"};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $QUOTE        => q{'};
-Readonly my $SPACE        => q{ };
-Readonly my $TAB          => qq{\t};
-Readonly my $UNDERSCORE   => q{_};
+Readonly my $DOUBLE_QUOTE       => q{"};
+Readonly my $NEWLINE            => qq{\n};
+Readonly my $QUOTE              => q{'};
+Readonly my $SPACE              => q{ };
+Readonly my $TAB                => qq{\t};
+Readonly my $TRIO_MEMBERS_COUNT => 3;
+Readonly my $UNDERSCORE         => q{_};
 
 sub create_fam_file {
 
 ## Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using execution_mode=sbatch.
 ## Returns  :
-## Arguments: $parameter_href        => Hash with paremters from yaml file {REF}
-##          : $active_parameter_href => The ac:tive parameters for this analysis hash {REF}
-##          : $sample_info_href      => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href => The ac:tive parameters for this analysis hash {REF}
 ##          : $execution_mode        => Either system (direct) or via sbatch
 ##          : $fam_file_path         => The family file path
-##          : $include_header        => Wether to include header ("1") or not ("0")
-##          : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
 ##          : $family_id_ref         => The family_id {REF}
+##          : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
+##          : $include_header        => Wether to include header ("1") or not ("0")
+##          : $parameter_href        => Hash with paremters from yaml file {REF}
+##          : $sample_info_href      => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $fam_file_path;
     my $FILEHANDLE;
+    my $parameter_href;
+    my $sample_info_href;
 
     ## Default(s)
-    my $family_id_ref;
     my $execution_mode;
+    my $family_id_ref;
     my $include_header;
 
     my $tmpl = {
-        parameter_href => {
-            default     => {},
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
         active_parameter_href => {
             default     => {},
             defined     => 1,
@@ -79,11 +76,10 @@ sub create_fam_file {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
+        execution_mode => {
+            allow       => [qw{sbatch system}],
+            default     => q{sbatch},
+            store       => \$execution_mode,
             strict_type => 1,
         },
         fam_file_path => {
@@ -92,14 +88,13 @@ sub create_fam_file {
             store       => \$fam_file_path,
             strict_type => 1,
         },
+        family_id_ref => {
+            default     => \$arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id_ref,
+            strict_type => 1,
+        },
         FILEHANDLE => {
             store => \$FILEHANDLE
-        },
-        execution_mode => {
-            allow       => [qw{sbatch system}],
-            default     => q{sbatch},
-            store       => \$execution_mode,
-            strict_type => 1,
         },
         include_header => {
             allow       => [ 0, 1 ],
@@ -107,9 +102,16 @@ sub create_fam_file {
             store       => \$include_header,
             strict_type => 1,
         },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id_ref,
+        parameter_href => {
+            default     => {},
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
         },
     };
@@ -193,11 +195,11 @@ sub create_fam_file {
                 my @strings = map { $_ . q{\n} } @pedigree_lines;
                 gnu_echo(
                     {
-                        strings_ref           => \@strings,
-                        outfile_path          => $fam_file_path,
                         enable_interpretation => 1,
-                        no_trailing_newline   => 1,
                         FILEHANDLE            => $FILEHANDLE,
+                        no_trailing_newline   => 1,
+                        outfile_path          => $fam_file_path,
+                        strings_ref           => \@strings,
                     }
                 );
                 say {$FILEHANDLE} $NEWLINE;
@@ -207,7 +209,7 @@ sub create_fam_file {
                 $log->fatal(
 q{Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a }
                       . q{filehandle to write to. Please supply filehandle to subroutine call}
-                      . $NEWLINE );
+                );
                 exit 1;
             }
         }
@@ -216,6 +218,150 @@ q{Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a }
     ## Add newly created family file to qc_sample_info
     $sample_info_href->{pedigree_minimal} = $fam_file_path;
 
+    return;
+}
+
+sub detect_founders {
+
+## Function  : Detect number of founders (i.e. parents ) based on pedigree file
+## Returns   : "scalar @founders"
+## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
+##           : $sample_info_href      => Info on samples and family hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @founders;
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        ## Alias
+        my $father_id =
+          $sample_info_href->{sample}{$sample_id}{father};
+        my $mother_id =
+          $sample_info_href->{sample}{$sample_id}{mother};
+
+        my %parent = (
+            father => $father_id,
+            mother => $mother_id,
+        );
+
+      PARENT:
+        foreach my $parent_id ( values %parent ) {
+
+            ## Child for true parent_id
+            next PARENT if ( not defined $parent_id and not $parent_id );
+
+            ## If parent is present in current analysis
+            if (
+                any { $_ eq $parent_id }
+                @{ $active_parameter_href->{sample_ids} }
+              )
+            {
+
+                push @founders, $parent_id;
+            }
+        }
+    }
+    return scalar @founders;
+}
+
+sub detect_trio {
+
+## Function  : Detect family constellation based on pedigree file
+## Returns   : undef | 1
+## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
+##           : $log                   => Log
+##           : $sample_info_href      => Info on samples and family hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( scalar @{ $active_parameter_href->{sample_ids} } == 1 ) {
+
+        $log->info( q{Found single sample: }
+              . $active_parameter_href->{sample_ids}[0] );
+        return;
+    }
+    elsif (
+        scalar @{ $active_parameter_href->{sample_ids} } ==
+        $TRIO_MEMBERS_COUNT )
+    {
+
+        my $is_trio;
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            ## Alias
+            my $father_id =
+              $sample_info_href->{sample}{$sample_id}{father};
+            my $mother_id =
+              $sample_info_href->{sample}{$sample_id}{mother};
+            $is_trio = _parse_trio_members(
+                {
+                    father_id      => $father_id,
+                    log            => $log,
+                    mother_id      => $mother_id,
+                    sample_id      => $sample_id,
+                    sample_ids_ref => $active_parameter_href->{sample_ids},
+                }
+            );
+            ## Return if a trio is found
+            return $is_trio if ($is_trio);
+        }
+    }
     return;
 }
 
@@ -496,23 +642,23 @@ sub reload_previous_pedigree_info {
 
 ## Function : Updates sample_info hash with previous run pedigree info
 ## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis
-##          : $sample_info_href      => Info on samples and family hash {REF}
+## Arguments: $log                   => Log object to write to
 ##          : $sample_info_file_path => Previuos sample info file
+##          : $sample_info_href      => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
+    my $log;
     my $sample_info_file_path;
+    my $sample_info_href;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
+        log                   => { required => 1, store => \$log, },
+        sample_info_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$active_parameter_href,
+            store       => \$sample_info_file_path,
             strict_type => 1,
         },
         sample_info_href => {
@@ -522,33 +668,23 @@ sub reload_previous_pedigree_info {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        sample_info_file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_file_path,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Yaml qw{ load_yaml };
 
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    if ( -f $active_parameter_href->{sample_info_file} ) {
-
-        $log->info( q{Loaded: } . $active_parameter_href->{sample_info_file},
-            $NEWLINE );
+    if ( -f $sample_info_file_path ) {
 
         ## Loads a YAML file into an arbitrary hash and returns it.
         # Load parameters from previous run from sample_info_file
         my %previous_sample_info = load_yaml(
             {
-                yaml_file => $active_parameter_href->{sample_info_file},
+                yaml_file => $sample_info_file_path,
             }
         );
+
+        $log->info( q{Loaded: } . $sample_info_file_path, $NEWLINE );
 
         ## Update sample_info with pedigree information from previous run
         ## Should be only pedigree keys in %allowed_entries
@@ -613,22 +749,22 @@ sub _update_sample_info_hash {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_info_href;
     my $previous_sample_info_href;
+    my $sample_info_href;
 
     my $tmpl = {
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
         previous_sample_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$previous_sample_info_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
         },
     };
@@ -666,6 +802,96 @@ sub _update_sample_info_hash {
         }
     }
     return %{$previous_sample_info_href};
+}
+
+sub _parse_trio_members {
+
+## Function  : Parse trio constellation
+## Returns   : %trio
+## Arguments : $father_id      => Potential father
+##           : $log            => Log
+##           : $mother_id      => Potential mother
+##           : $sample_id      => Sample under investigation
+##           : $sample_ids_ref => Sample_ids in current analysis {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $father_id;
+    my $log;
+    my $mother_id;
+    my $sample_id;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        father_id => {
+            required => 1,
+            store    => \$father_id,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        mother_id => {
+            required => 1,
+            store    => \$mother_id,
+        },
+        sample_id => {
+            required => 1,
+            store    => \$sample_id,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %trio;
+
+    ## Not a child
+    return if ( not $father_id and not $mother_id );
+
+    ## Sample_id must be a child
+    $trio{child} = $sample_id;
+
+    my %parent = (
+        father => $father_id,
+        mother => $mother_id,
+    );
+
+  PARENT:
+    while ( my ( $parent_role, $parent_id ) = each %parent ) {
+
+        ## If parent is present in current analysis
+        if (
+            any { $_ eq $parent_id }
+            @{$sample_ids_ref}
+          )
+        {
+
+            ## Set as parents
+            $trio{$parent_role} = $parent_id;
+        }
+    }
+    if ( scalar( keys %trio ) == $TRIO_MEMBERS_COUNT ) {
+
+        $log->info(
+                q{Found trio: Child = "}
+              . $trio{child}
+              . q{", Father = "}
+              . $trio{father}
+              . q{", Mother = "}
+              . $trio{mother} . q{"},
+        );
+        return 1;
+    }
+    return;
 }
 
 1;

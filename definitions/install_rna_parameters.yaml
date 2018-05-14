@@ -3,55 +3,67 @@
 bash_set_errexit: 0
 bash_set_nounset: 0
 
-# Conda packages and versions be installed via the bioconda channel
-bioconda:
-  cufflinks: 2.2
-  fastqc: 0.11.4
-  htslib: 1.7
-  picard: 2.18
-  salmon: 0.9.1
-  samtools: 1.7
-  star:  2.5.4a
-
 # Path to conda
 conda_dir_path: ~
 
-# Optional name of conda envronment. Defaults to root
-conda_environment: ~
-
-# Packages and versionsthat are to be installed via conda's default channels
-conda_packages:
-  pip: ~
-  python: 2.7
-  java-jdk:
-
 # Optionally update conda
-conda_update: ~
+conda_update: 0
 
 # Disable environment check
 disable_env_check: 0
+
+# MIP main environment spec
+emip: 
+  bioconda:
+    cufflinks: 2.2
+    fastqc: 0.11.4
+    gatk: 3.8
+    htslib: 1.7
+    java-jdk:
+    picard: 2.18
+    salmon: 0.9.1
+    star: 2.5.4a
+  conda:
+    python: 2.7
+    pip:
+  shell:
+    mip_scripts: 
+      version: Your current MIP version
+    picard: 
+      version: 2.17.11
+    star_fusion: 
+      version: 1.3.2 
+
+# Trinity environment spec
+etrinity:
+  bioconda:
+    trinity: 2.5.1
+  conda: 
+    python: 2.7
+    pip:
+
+# Specify environment names
+environment_name:
+  emip: MIP_rna
+  etrinity:
+
+# Environments to install
+installations:
+  - emip
+  - etrinity
 
 # Optional name of log file
 log_file: ~
 
 # Skip updating existing packages
-noupdate: ~
-
-# Python packages to be installed via pip
-pip:
+noupdate: 0
 
 # Prefer installation via shell instead of via conda,
 # only applicaple for shell programs that overlap with existing conda packages
-prefer_shell: ~
-
-# Python 3 packages
-py3_packages: 
-
-# Specify python version
-python_version: ~
+prefer_shell: 0
 
 # Supress output, both when generating the install script and running it
-quiet: ~
+quiet: 0
 
 # Path to directory to which reference genomes are to be downloaded
 reference_dir: ~
@@ -67,18 +79,8 @@ select_programs: []
 # Select programs that are to be installed via shell instead of conda
 shell_install: []
 
-# Shell programs
-shell:
-  mip_scripts:
-    version: Your current MIP version
-  picard:
-    version: 2.17.11
-  star_fusion:
-    version: 1.3.2
-
-
 # Don't write installation instructions for these programs
 skip_programs: []
 
 # Verbose output when running the generated install script
-verbose: ~
+verbose: 0

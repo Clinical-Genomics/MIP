@@ -386,15 +386,15 @@ sub get_seq_dict_contigs {
 
     my $tmpl = {
         dict_file_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$dict_file_path,
+            strict_type => 1,
         },
         log => {
-            required => 1,
             defined  => 1,
-            store    => \$log
+            required => 1,
+            store    => \$log,
         },
     };
 

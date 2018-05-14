@@ -1,0 +1,190 @@
+#!/usr/bin/env perl
+
+use 5.018;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use File::Basename qw{ basename dirname };
+use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
+use Getopt::Long;
+use Params::Check qw{ allow check last_error };
+use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2014 };
+use Readonly;
+
+## MIPs lib/
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Script::Utils qw{ help };
+
+our $USAGE = build_usage( {} );
+
+my $VERBOSE = 1;
+our $VERSION = '1.0.0';
+
+## Constants
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
+
+### User Options
+GetOptions(
+
+    # Display help text
+    q{h|help} => sub {
+        done_testing();
+        say {*STDOUT} $USAGE;
+        exit;
+    },
+
+    # Display version number
+    q{v|version} => sub {
+        done_testing();
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
+        exit;
+    },
+    q{vb|verbose} => $VERBOSE,
+  )
+  or (
+    done_testing(),
+    help(
+        {
+            USAGE     => $USAGE,
+            exit_code => 1,
+        }
+    )
+  );
+
+BEGIN {
+
+### Check all internal dependency modules and imports
+## Modules with import
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+
+  PERL_MODULE:
+    while ( my ( $module, $module_import ) = each %perl_module ) {
+        use_ok( $module, @{$module_import} )
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
+    }
+
+## Modules
+    my @modules = (q{MIP::Update::Parameters});
+
+  MODULE:
+    for my $module (@modules) {
+        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
+    }
+}
+
+use MIP::Update::Parameters qw{ update_reference_parameters };
+
+diag(   q{Test update_reference_parameters from Parameters.pm v}
+      . $MIP::Update::Parameters::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
+
+my $reference_dir = catdir(qw{ test ref_dir });
+
+my %parameter = (
+    array       => { associated_program => [qw{ program_1 }], },
+    file_name_1 => { associated_program => [qw{ program_1 }], },
+    file_name_2 => { associated_program => [qw{ program_2 }], },
+    hash        => { associated_program => [qw{ program_1 }], },
+);
+
+my %active_parameter = (
+    array         => [qw{ file_1 file_2 }],
+    file_name_1   => q{file_0},
+    file_name_2   => q{file_2},
+    hash          => { file_3 => q{info_key_1} },
+    program_1     => 1,
+    reference_dir => $reference_dir,
+);
+
+PARAMETER:
+foreach my $parameter_name ( keys %parameter ) {
+
+    update_reference_parameters(
+        {
+            active_parameter_href => \%active_parameter,
+            associated_programs_ref =>
+              \@{ $parameter{$parameter_name}{associated_program} },
+            parameter_name => $parameter_name,
+        }
+    );
+}
+
+is( $active_parameter{file_name_2},
+    q{file_2}, q{Skipped setting file reference path} );
+
+is(
+    $active_parameter{file_name_1},
+    catfile( $reference_dir, q{file_0} ),
+    q{Set file reference path}
+);
+
+is(
+    $active_parameter{array}[0],
+    catfile( $reference_dir, q{file_1} ),
+    q{Set array reference path}
+);
+
+UPDATED_FILE:
+foreach my $updated_file ( keys %{ $active_parameter{hash} } ) {
+
+    is(
+        $updated_file,
+        catfile( $reference_dir, q{file_3} ),
+        q{Set hash reference path}
+    );
+
+}
+
+done_testing();
+
+######################
+####SubRoutines#######
+######################
+
+sub build_usage {
+
+## Function  : Build the USAGE instructions
+## Returns   :
+## Arguments : $program_name => Name of the script
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $program_name;
+
+    my $tmpl = {
+        program_name => {
+            default     => basename($PROGRAM_NAME),
+            store       => \$program_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return <<"END_USAGE";
+ $program_name [options]
+    -vb/--verbose Verbose
+    -h/--help     Display this help message
+    -v/--version  Display version
+END_USAGE
+}

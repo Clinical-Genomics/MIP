@@ -16,7 +16,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib/
 use MIP::Cli::Mip;
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 ## Enable strict mode
 app_strict 1;
@@ -59,6 +59,16 @@ sub _build_usage {
             isa           => Bool,
         )
     );
+
+    option(
+        q{conda_path} => (
+            cmd_aliases   => [qw{ conp }],
+            documentation => q{Conda path},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
     option(
         q{config_file} => (
             cmd_aliases => [qw{ config c }],
@@ -96,6 +106,17 @@ sub _build_usage {
             is            => q{rw},
             isa           => Str,
         )
+    );
+
+    option(
+        q{verbose} => (
+            cmd_aliases   => [qw{ vb }],
+            cmd_flag      => q{verbose},
+            documentation => q{Turn on chatty output},
+            is            => q{rw},
+            isa           => Bool,
+            required      => 0,
+        ),
     );
 
     option(

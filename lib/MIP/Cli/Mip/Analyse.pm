@@ -15,7 +15,7 @@ use MooseX::App::Command;
 use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -131,41 +131,12 @@ sub _build_usage {
     );
 
     option(
-        q{gatk_path} => (
-            cmd_aliases   => [qw{ gtp }],
-            documentation => q{Path to GATK},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{gatk_logging_level} => (
-            cmd_aliases   => [qw{ gll }],
-            cmd_tags      => [q{Default: INFO}],
-            documentation => q{Set the GATK log level},
-            is            => q{rw},
-            isa           => enum( [qw{ DEBUG INFO ERROR FATAL }] ),
-        )
-    );
-
-    option(
         q{gatk_bundle_download_version} => (
             cmd_aliases   => [qw{ gbdv }],
             cmd_tags      => [q{Default: 2.8}],
             documentation => q{GATK FTP bundle download version},
             is            => q{rw},
             isa           => Num,
-        )
-    );
-
-    option(
-        q{gatk_downsample_to_coverage} => (
-            cmd_aliases   => [qw{ gdco }],
-            cmd_tags      => [q{Default: 1000}],
-            documentation => q{Coverage to downsample to at any given locus},
-            is            => q{rw},
-            isa           => Int,
         )
     );
 
@@ -181,10 +152,29 @@ sub _build_usage {
     );
 
     option(
-        q{human_genome_reference} => (
-            cmd_aliases   => [qw{ hgr }],
-            cmd_tags      => [q{Default: GRCh37_homo_sapiens_-d5-.fasta}],
-            documentation => q{Human genome reference},
+        q{gatk_downsample_to_coverage} => (
+            cmd_aliases   => [qw{ gdco }],
+            cmd_tags      => [q{Default: 1000}],
+            documentation => q{Coverage to downsample to at any given locus},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{gatk_logging_level} => (
+            cmd_aliases   => [qw{ gll }],
+            cmd_tags      => [q{Default: INFO}],
+            documentation => q{Set the GATK log level},
+            is            => q{rw},
+            isa           => enum( [qw{ DEBUG INFO ERROR FATAL }] ),
+        )
+    );
+
+    option(
+        q{gatk_path} => (
+            cmd_aliases   => [qw{ gtp }],
+            documentation => q{Path to GATK},
             is            => q{rw},
             isa           => Str,
         )
@@ -197,15 +187,6 @@ sub _build_usage {
             documentation => q{Infile directory(s)},
             is            => q{rw},
             isa           => HashRef,
-        )
-    );
-
-    option(
-        q{java_use_large_pages} => (
-            cmd_aliases   => [qw{ jul }],
-            documentation => q{Use large page memory},
-            is            => q{rw},
-            isa           => Bool,
         )
     );
 
@@ -240,34 +221,12 @@ sub _build_usage {
     );
 
     option(
-        q{module_source_environment_command} => (
-            cmd_aliases => [qw{ mse }],
-            cmd_flag    => q{mod_src_env},
-            cmd_tags    => [q{program_name=command}],
-            documentation =>
-              q{Set environment variables specific for each module},
-            is  => q{rw},
-            isa => HashRef,
-        )
-    );
-
-    option(
         q{module_time} => (
             cmd_aliases   => [qw{ mot }],
             cmd_tags      => [q{program_name=time(hours)}],
             documentation => q{Set the time allocation for each module},
             is            => q{rw},
             isa           => HashRef,
-        )
-    );
-
-    option(
-        q{outaligner_dir} => (
-            cmd_aliases => [qw{ ald }],
-            documentation =>
-q{Sets which aligner out directory was used for alignment in previous analysis},
-            is  => q{rw},
-            isa => enum( [qw{ bwa star }] ),
         )
     );
 
@@ -300,6 +259,107 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{pgatk_realigner} => (
+            cmd_aliases => [qw{ pgra }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+q{Realignments of reads using GATK ReAlignerTargetCreator/IndelRealigner},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_realigner_indel_known_sites} => (
+            cmd_aliases => [qw{ graks }],
+            cmd_flag    => q{gatk_realigner_ind_ks},
+            cmd_tags    => [
+q{Default: GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
+            ],
+            documentation =>
+              q{GATK ReAlignerTargetCreator/IndelRealigner known indel site},
+            is  => q{rw},
+            isa => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{pgatk_baserecalibration} => (
+            cmd_aliases => [qw{ pgbr }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Recalibration of bases using GATK BaseReCalibrator/PrintReads},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_covariates} => (
+            cmd_aliases => [qw{ gbrcov }],
+            cmd_flag    => q{gatk_baserecal_covariates},
+            cmd_tags    => [
+q{Default: ReadGroupCovariate, ContextCovariate, CycleCovariate, QualityScoreCovariate}
+            ],
+            documentation => q{GATK BaseReCalibration covariates},
+            is            => q{rw},
+            isa           => ArrayRef [
+                enum(
+                    [
+                        qw{ ContextCovariate CycleCovariate QualityScoreCovariate ReadGroupCovariate RepeatLengthCovariate RepeatUnitCovariate RepeatUnitAndLengthCovariate }
+                    ]
+                )
+            ],
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_disable_indel_qual} => (
+            cmd_aliases   => [qw{ gbrdiq }],
+            cmd_flag      => q{gatk_baserecal_dis_indel_q},
+            documentation => q{Disable indel quality scores},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_known_sites} => (
+            cmd_aliases => [qw{ gbrkst }],
+            cmd_flag    => q{gatk_baserecal_ks},
+            cmd_tags    => [
+q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
+            ],
+            documentation =>
+              q{GATK BaseReCalibration known SNV and INDEL sites},
+            is  => q{rw},
+            isa => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_read_filters} => (
+            cmd_aliases   => [qw{ gbrrf }],
+            cmd_flag      => q{gatk_baserecal_read_filts},
+            cmd_tags      => [q{Default: OverclippedRead}],
+            documentation => q{Filter out reads according to set filter},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_static_quantized_quals} => (
+            cmd_aliases   => [qw{ gbrsqq }],
+            cmd_flag      => q{gatk_baserecal_sta_qua_qua},
+            cmd_tags      => [q{Default: 10,20,30,40}],
+            documentation => q{Static binning of base quality scores},
+            is            => q{rw},
+            isa           => ArrayRef [Int],
+        )
+    );
+
+    option(
         q{platform} => (
             cmd_aliases   => [qw{ pla }],
             cmd_tags      => [q{Default: ILLUMINA}],
@@ -310,11 +370,11 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{picardtools_path} => (
-            cmd_aliases   => [qw{ ptp }],
-            documentation => q{Path to Picardtools},
+        q{print_programs} => (
+            cmd_aliases   => [qw{ pp }],
+            documentation => q{Print all programs that are supported},
             is            => q{rw},
-            isa           => Str,
+            isa           => Bool,
         )
     );
 
@@ -337,49 +397,11 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{print_programs} => (
-            cmd_aliases   => [qw{ pp }],
-            documentation => q{Print all programs that are supported},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{slurm_quality_of_service} => (
-            cmd_aliases   => [qw{ qos }],
-            cmd_flag      => q{slurm_quly_sri},
-            documentation => q{SLURM quality of service},
-            is            => q{rw},
-            isa           => enum( [qw{ low normal high }] ),
-        )
-    );
-
-    option(
         q{reference_dir} => (
             cmd_aliases   => [qw{ rd }],
             documentation => q{Reference(s) directory},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{reduce_io} => (
-            cmd_aliases   => [qw{ rio }],
-            documentation => q{Run consecutive models at node},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{replace_iupac} => (
-            cmd_aliases => [qw{ riu }],
-            documentation =>
-              q{Replace IUPAC code in alternative alleles with N},
-            is  => q{rw},
-            isa => Bool,
         )
     );
 
@@ -404,6 +426,27 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{slurm_quality_of_service} => (
+            cmd_aliases   => [qw{ qos }],
+            cmd_flag      => q{slurm_quly_sri},
+            documentation => q{SLURM quality of service},
+            is            => q{rw},
+            isa           => enum( [qw{ low normal high }] ),
+        )
+    );
+
+    option(
+        q{source_main_environment_commands} => (
+            cmd_aliases => [qw{ sen }],
+            cmd_flag    => q{src_main_env},
+            documentation =>
+              q{Source main environment command in sbatch scripts},
+            is  => q{rw},
+            isa => ArrayRef,
+        )
+    );
+
+    option(
         q{start_with_program} => (
             cmd_aliases   => [qw{ swp }],
             documentation => q{Start analysis with program},
@@ -420,17 +463,6 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
               q{Set the capture kit acronym shortcut in pedigree file},
             is  => q{rw},
             isa => HashRef,
-        )
-    );
-
-    option(
-        q{source_main_environment_commands} => (
-            cmd_aliases => [qw{ sen }],
-            cmd_flag    => q{src_main_env},
-            documentation =>
-              q{Source main environment command in sbatch scripts},
-            is  => q{rw},
-            isa => ArrayRef,
         )
     );
 

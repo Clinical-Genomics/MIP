@@ -27,7 +27,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.1';
+our $VERSION = q{1.1.1};
 
 ## Constants
 Readonly my $COMMA      => q{,};
@@ -121,22 +121,46 @@ my $log = initiate_logger(
 
 my %active_parameter = (
     cluster_constant_path  => catfile(qw{constant path}),
+    conda_path             => catdir( $Bin, qw{ data modules miniconda } ),
     family_id              => 1,
     human_genome_reference => q{human_genom_reference.fasta},
-    outdata_dir            => catfile(qw{ a outdata dir }),
-    sample_ids             => [qw{ sample_1 }],
+    module_source_environment_command => {
+        pgatk                   => [ qw{ source activate test_env }, ],
+        pvarianteffectpredictor => [ qw{ source activate test_env }, ],
+    },
+    outdata_dir                        => catfile(qw{ a outdata dir }),
+    program_source_environment_command => {
+        ppicardtools => [ qw{ source activate test_env_1 }, ],
+    },
+    sample_ids => [qw{ sample_1 }],
 );
 
-my %parameter = load_yaml(
-    {
-        yaml_file =>
-          catfile( dirname($Bin), qw{ definitions define_parameters.yaml } ),
-    }
+## Mip analyse rare_disease parameters
+## The order of files in @definition_files should follow commands inheritance
+my @definition_files = (
+    catfile( dirname($Bin), qw{ definitions analyse_parameters.yaml } ),
+    catfile( dirname($Bin), qw{ definitions rare_disease_parameters.yaml } ),
 );
+
+my %parameter;
+
+DEFINITION_FILE:
+foreach my $definition_file (@definition_files) {
+
+    %parameter = (
+        %parameter,
+        load_yaml(
+            {
+                yaml_file => $definition_file,
+            }
+        ),
+    );
+}
 
 my @custom_default_parameters =
-  qw{ analysis_type bwa_build_reference exome_target_bed rtg_vcfeval_reference_genome sample_info_file };
+  qw{ analysis_type exome_target_bed bwa_build_reference exome_target_bed rtg_vcfeval_reference_genome sample_info_file };
 
+PARAMETER_NAME:
 foreach my $parameter_name (@custom_default_parameters) {
 
     set_custom_default_to_active_parameter(
@@ -163,6 +187,7 @@ is(
     q{Set human_genome_reference default for rtg vcfeval reference genome}
 );
 
+CAPTURE_KIT:
 foreach my $capture_kit ( keys %{ $active_parameter{exome_target_bed} } ) {
 
     is(
@@ -205,6 +230,33 @@ my $path = catfile(
 );
 is( $active_parameter{infile_dirs}{$path},
     q{sample_1}, q{Set default infile_dirs} );
+
+## Test setting custom paths
+my %test_hash = (
+    gatk_path        => catdir( $Bin, qw{ data modules GenomeAnalysisTK-3.7 } ),
+    picardtools_path => catdir(
+        $active_parameter{conda_path},
+        qw{ envs test_env_1 share picard-2.14.1-0 }
+    ),
+    snpeff_path => catdir( $active_parameter{conda_path}, qw{ share snpeff } ),
+    vep_directory_path =>
+      catdir( $active_parameter{conda_path}, qw{ envs test_env ensembl-vep } ),
+);
+
+TEST_PATH:
+foreach my $test_path ( keys %test_hash ) {
+
+    set_custom_default_to_active_parameter(
+        {
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
+            parameter_name        => $test_path,
+        }
+    );
+
+    is( $active_parameter{$test_path},
+        $test_hash{$test_path}, q{Set default} . $SPACE . $test_path );
+}
 
 done_testing();
 

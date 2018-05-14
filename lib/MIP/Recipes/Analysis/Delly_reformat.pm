@@ -191,7 +191,7 @@ sub analysis_delly_reformat {
     my $program_outdirectory_name =
       $parameter_href->{$mip_program_name}{outdir_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -217,7 +217,7 @@ sub analysis_delly_reformat {
             process_time                    => $time,
             program_directory               => $program_directory,
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );

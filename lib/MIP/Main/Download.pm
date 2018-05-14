@@ -1,6 +1,6 @@
-#!/usr/bin/env perl
+package MIP::Main::Download;
 
-use autodie qw{ open close :all };
+use 5.018;
 use Carp;
 use charnames qw( :full :short );
 use Cwd;
@@ -15,25 +15,22 @@ use warnings qw{ FATAL utf8 };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use utf8;
-use 5.018;
 
 ## CPANM
+use autodie qw{ open close :all };
 use List::Util qw{ any };
 use Modern::Perl qw{ 2014 };
 use Readonly;
 
-##MIPs lib/
-use lib catdir( $Bin, q{lib} );
-use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Script::Utils qw{ create_temp_dir };
+## MIPs lib/
 use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Language::Shell qw{ create_bash_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
-use MIP::Script::Utils qw{ help set_default_array_parameters };
-
-our $USAGE = build_usage( {} );
+use MIP::Script::Utils qw{ create_temp_dir };
 
 ## Constants
+Readonly my $COLON        => q{:};
 Readonly my $DOT          => q{.};
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $SINGLE_QUOTE => q{'};
@@ -41,136 +38,131 @@ Readonly my $SPACE        => q{ };
 Readonly my $UNDERSCORE   => q{_};
 
 BEGIN {
+    use base qw{ Exporter };
 
-    require MIP::Check::Modules;
+    # Set the version for version checking
+    our $VERSION = q{0.0.4};
 
-    my @modules = qw{ autodie Log::Log4perl Modern::Perl
-      MIP::File::Format::Yaml MIP::Log::MIP_log4perl
-      MIP::Script::Utils YAML
-    };
+    # Functions and variables that can be optionally exported
+    our @EXPORT_OK = qw{ mip_download };
 
-    ## Evaluate that all modules required are installed
-    check_perl_modules(
-        {
-            modules_ref  => \@modules,
-            program_name => $PROGRAM_NAME,
-        }
-    );
 }
 
-### Set parameter default
+sub mip_download {
 
-## Loads a YAML file into an arbitrary hash and returns it.
-my %parameter = load_yaml(
-    {
-        yaml_file =>
-          catfile( $Bin, qw(definitions define_download_references.yaml) ),
+## Function : Main script for generating MIP download scripts
+## Returns  :
+## Arguments: $parameter_href => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments};
+
+    ## Transfer to lexical variables
+    my %parameter = %{$parameter_href};
+
+    ## Create default log name
+    if ( not $parameter{log_file} ) {
+
+        ## Get local time
+        my $date_time       = localtime;
+        my $date_time_stamp = $date_time->datetime;
+
+        $parameter{log_file} = catfile(
+            q{mip_donwload} . $UNDERSCORE . $date_time_stamp . $DOT . q{log} );
     }
-);
+
+    ## Initiate logger
+    my $log = initiate_logger(
+        {
+            file_path => $parameter{log_file},
+            log_name  => q{mip_download},
+        }
+    );
+    $log->info(
+        q{Writing log messages to} . $COLON . $SPACE . $parameter{log_file} );
 
 ## Set parameter default
-$parameter{reference_dir} = cwd();
+    if ( not $parameter{reference_dir} ) {
 
-## Define default parameters
-my %array_parameter =
-  ( reference_genome_versions => { default => [qw(GRCh37 hg38)] }, );
-
-our $VERSION = '0.0.3';
-
-###User Options
-GetOptions(
-    q{rd|reference_dir:s} => \$parameter{reference_dir},
-    q{r|reference:s}      => \%{ $parameter{cmd_reference} },
-    q{rg|reference_genome_versions:s} =>
-      \@{ $parameter{reference_genome_versions} },
-    q{l|log_file:s} => \$parameter{log_file},
-    q{h|help}       => sub {
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-    q{ver|version} => sub {
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    'v|verbose' => \$parameter{verbose},
-  )
-  or help(
-    {
-        USAGE     => $USAGE,
-        exit_code => 1,
+        $parameter{reference_dir} = cwd();
     }
-  );
 
-## Creates log object
-my $log = initiate_logger(
-    {
-        file_path => $parameter{log_file},
-        log_name  => q{Download_reference},
-    }
-);
+    our $VERSION = q{0.0.4};
 
-check_user_reference(
-    {
-        cmd_reference_ref => \%{ $parameter{cmd_reference} },
-        reference_ref     => \%{ $parameter{reference} },
-    }
-);
-
-## Set default for array parameters
-set_default_array_parameters(
-    {
-        parameter_href       => \%parameter,
-        array_parameter_href => \%array_parameter,
-    }
-);
+    check_user_reference(
+        {
+            cmd_reference_ref => \%{ $parameter{cmd_reference} },
+            reference_ref     => \%{ $parameter{reference} },
+        }
+    );
 
 ## Change relative path to absolute path for certain parameters
-update_to_absolute_path( { parameter_href => \%parameter, } );
+    update_to_absolute_path( { parameter_href => \%parameter, } );
 
-##########
-###MAIN###
-##########
+    # Create anonymous filehandle
+    my $FILEHANDLE = IO::Handle->new();
 
-# Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+    # Downloads instruction file
+    my $bash_file_path = catfile( cwd(), q{download_reference} . $DOT . q{sh} );
 
-# Downloads instruction file
-my $bash_file_path = catfile( cwd(), q{download_reference} . $DOT . q{sh} );
+    open $FILEHANDLE, '>', $bash_file_path
+      or $log->logdie(
+        q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . "\n" );
 
-open $FILEHANDLE, '>', $bash_file_path
-  or $log->logdie(
-    q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . "\n" );
-
-# Install temp directory
-my $temp_dir = create_temp_dir( { FILEHANDLE => $FILEHANDLE } );
+    # Install temp directory
+    my $temp_dir = create_temp_dir( {} );
 
 ## Create bash file for writing install instructions
-create_bash_file(
-    {
-        file_name   => $bash_file_path,
-        FILEHANDLE  => $FILEHANDLE,
-        remove_dir  => $temp_dir,
-        log         => $log,
-        set_errexit => 1,
-        set_nounset => 1,
-    }
-);
-$log->info( q{Will write install instructions to '} . $bash_file_path,
-    $SINGLE_QUOTE );
+    create_bash_file(
+        {
+            file_name   => $bash_file_path,
+            FILEHANDLE  => $FILEHANDLE,
+            remove_dir  => $temp_dir,
+            log         => $log,
+            set_errexit => 1,
+            set_nounset => 1,
+        }
+    );
+
+    say {$FILEHANDLE} q{## Create temp dir};
+
+    gnu_mkdir(
+        {
+            FILEHANDLE       => $FILEHANDLE,
+            indirectory_path => $temp_dir,
+            parents          => 1,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    $log->info( q{Will write install instructions to '} . $bash_file_path,
+        $SINGLE_QUOTE );
 
 ## Build install references recipe in bash file
-build_reference_install_recipe(
-    {
-        parameter_href => \%parameter,
-        FILEHANDLE     => $FILEHANDLE,
-    }
-);
+    build_reference_install_recipe(
+        {
+            parameter_href => \%parameter,
+            FILEHANDLE     => $FILEHANDLE,
+        }
+    );
 
-close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    return;
+}
 
 #################
 ###SubRoutines###
@@ -254,7 +246,6 @@ sub build_reference_install_recipe {
         ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
 
         my @reference_versions;
-
         if ( ref $versions_ref eq q{ARRAY} ) {
 
             @reference_versions = @{$versions_ref};
@@ -762,12 +753,12 @@ sub update_to_absolute_path {
     use MIP::Set::File qw{ set_absolute_path };
 
     ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger(q{Download_reference});
+    my $log = Log::Log4perl->get_logger(q{mip_download});
 
   PARAMETER:
     foreach my $parameter_name ( @{ $parameter_href->{absolute_paths} } ) {
 
-        next PARAMETER if ( not $parameter{$parameter_name} );
+        next PARAMETER if ( not $parameter_href->{$parameter_name} );
 
         ## Alias
         my $parameter = \$parameter_href->{$parameter_name};
@@ -851,6 +842,9 @@ sub check_user_reference {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger(q{mip_download});
+
   REFERENCE:
     while ( my ( $reference_id, $version ) = each %{$cmd_reference_ref} ) {
 
@@ -919,35 +913,4 @@ sub write_post_processing_command {
     return;
 }
 
-sub build_usage {
-
-##Function : Build the USAGE instructions
-##Returns  :
-##Arguments: $script_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $script_name;
-
-    my $tmpl = {
-        script_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$script_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $script_name [options]
-    -rd/--reference_dir Reference(s) directory (Default: "")
-    -r/--reference Reference to download (e.g. 'clinvar=20170104')
-    -rg/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
-     -l/--log_file Log file (Default: "download_reference.log")
-     -h/--help Display this help message
-     -ver/--version Display version
-     -v/--verbose Set verbosity
-END_USAGE
-}
+1;

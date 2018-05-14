@@ -10,6 +10,7 @@ This will show the usage, global parameters and all available commands and subco
 There is currently two main commands:
 - Installation
   - rare_disease
+  - rna
 - Analyse
   - rare_disease
   - rna

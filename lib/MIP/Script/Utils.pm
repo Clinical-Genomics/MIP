@@ -21,15 +21,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ 
-        create_temp_dir 
-        help 
-        nest_hash 
-        print_install_defaults 
-        set_default_array_parameters };
+    our @EXPORT_OK = qw{
+      create_temp_dir
+      help
+      nest_hash
+      print_install_defaults
+      print_parameter_defaults
+      update_program_versions };
 }
 
 ## Constants
@@ -61,11 +62,11 @@ sub help {
             store       => \$exit_code,
             strict_type => 1,
         },
-        USAGE => { 
-            defined => 1, 
-            required => 1, 
-            store => \$USAGE, 
-            strict_type => 1, 
+        USAGE => {
+            defined     => 1,
+            required    => 1,
+            store       => \$USAGE,
+            strict_type => 1,
         },
     };
 
@@ -73,52 +74,6 @@ sub help {
 
     say {*STDOUT} $USAGE;
     exit $exit_code;
-}
-
-sub set_default_array_parameters {
-
-## Function : Set default for array parameters unless parameter already exists in parameter hash
-## Returns  :
-## Arguments: $array_parameter_href => Hold the array parameter defaults as {REF}
-##          : $parameter_href       => Parameters hash {REF}
-
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $array_parameter_href;
-
-    my $tmpl = {
-        array_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$array_parameter_href,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  PARAMETER:
-    foreach my $parameter_name ( keys %{$array_parameter_href} ) {
-
-        ## Unless parameter already exists
-        if ( not @{ $parameter_href->{$parameter_name} } ) {
-
-            $parameter_href->{$parameter_name} =
-              $array_parameter_href->{$parameter_name}{default};
-        }
-    }
-    return;
 }
 
 sub create_temp_dir {
@@ -129,7 +84,6 @@ sub create_temp_dir {
 ##          : $directory_path       => Where to create the temporary directory
 ##          : $FILEHANDLE           => Filehandle to write to
 ##          : $max_expression_value => Max integrer to add to directory_name
-
 
     my ($arg_href) = @_;
 
@@ -153,9 +107,7 @@ sub create_temp_dir {
             strict_type => 1,
         },
         FILEHANDLE => {
-            defined  => 1,
-            required => 1,
-            store    => \$FILEHANDLE,
+            store => \$FILEHANDLE,
         },
         max_expression_value => {
             default     => 1000,
@@ -172,29 +124,52 @@ sub create_temp_dir {
     my $temp_dir_path = catdir( $directory_path,
         $directory_base_name . $UNDERSCORE . int rand $max_expression_value );
 
-    gnu_mkdir(
-        {
-            FILEHANDLE       => $FILEHANDLE,
-            indirectory_path => $temp_dir_path,
-            parents          => 1,
-        }
-    );
+    if ($FILEHANDLE) {
+
+        gnu_mkdir(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                indirectory_path => $temp_dir_path,
+                parents          => 1,
+            }
+        );
+    }
 
     return $temp_dir_path;
 }
 
-sub print_install_defaults {
+sub print_parameter_defaults {
 
 ## Function : Print all parameters and their default values
 ## Returns  :
 ## Arguments: $parameter_href => Holds all parameters {REF}
+##          : $colored        => Colorize output
+##          : $index          => Display array indices
+##          : $scalar_quotes  => Quote symbols to enclose scalar values
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
 
+    ## Default
+    my $colored;
+    my $index;
+    my $scalar_quotes;
+
     my $tmpl = {
+        colored => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$colored,
+            strict_type => 1,
+        },
+        index => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$index,
+            strict_type => 1,
+        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -202,100 +177,32 @@ sub print_install_defaults {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        scalar_quotes => {
+            allow       => [ undef, q{"} ],
+            default     => q{"},
+            store       => \$scalar_quotes,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Set default for vep cache dir
-    if ( $parameter_href->{shell}{vep} ) {
-        $parameter_href->{shell}{vep}{vep_cache_dir} = catdir( qw{ PATH TO CONDA },
-            q{ensembl-tools-release-} . $parameter_href->{shell}{vep}{version},
-            q{cache} );
-    }
+    use Data::Printer;
 
-    ## Looping over the parameter hash to extract keys and values
-  KEY:
-    foreach my $key ( keys %{$parameter_href} ) {
-        ## If the first level value is not a hash or array ref
-        if ( ref( $parameter_href->{$key} ) !~ / ARRAY | HASH /xms ) {
-            print {*STDOUT} $key . $SPACE;
-            ## Check if scalar exists and print
-            if ( $parameter_href->{$key} ) {
-                say {*STDOUT} $parameter_href->{$key};
-            }
-            ## Boolean value
-            else {
-                say {*STDOUT} q{0};
-            }
-        }
-        ## If the first level value is a hash ref
-        elsif ( ref( $parameter_href->{$key} ) =~ /HASH/xms ) {
-            ## Loop over the next set of hash keys
-          PROGRAM:
-            foreach my $program ( keys %{ $parameter_href->{$key} } ) {
-                ## If the value is a hash ref
-                if ( ref( $parameter_href->{$key}{$program} ) =~ /HASH/xms ) {
-                    ## Loop over the next set of hash keys
-                  NESTED_PARAM:
-                    foreach my $nested_param (
-                        keys %{ $parameter_href->{$key}{$program} } )
-                    {
-                        ## Print the key
-                        print {*STDOUT} $key
-                          . $SPACE
-                          . $program
-                          . $SPACE
-                          . $nested_param
-                          . $COLON
-                          . $SPACE;
-                        ## If the value is an array ref
-                        if (
-                            ref(
-                                $parameter_href->{$key}{$program}{$nested_param}
-                            ) =~ /ARRAY/xms
-                          )
-                        {
-                            ## Print array
-                            say {*STDOUT} join $SPACE,
-                              @{ $parameter_href->{$key}{$program}
-                                  {$nested_param} };
-                        }
-                        else {
-                            ## Otherwise print the hash value
-                            say {*STDOUT}
-                              $parameter_href->{$key}{$program}{$nested_param};
-                        }
-                    }
-                }
-                ## Print values
-                else {
-                    ## Don't print value if it is undef
-                    if ( not $parameter_href->{$key}{$program} ) {
-                        say {*STDOUT} $key . $SPACE . $program;
-                    }
-                    else {
-                        ## Print hash value
-                        say {*STDOUT} $key
-                          . $SPACE
-                          . $program
-                          . $COLON
-                          . $SPACE
-                          . $parameter_href->{$key}{$program};
-                    }
-                }
-            }
-        }
-        ## Check for ref to array and print
-        elsif ( ref( $parameter_href->{$key} ) =~ /ARRAY/xms ) {
-            say {*STDOUT} $key . $COLON . $SPACE . join $SPACE,
-              @{ $parameter_href->{$key} };
-        }
-    }
+    ## Print parameter hash an exit
+    say {*STDERR} q{Default values from config file:};
+    p(
+        %{$parameter_href},
+        colored       => $colored,
+        index         => $index,
+        scalar_quotes => $scalar_quotes,
+    );
+
     exit 0;
 }
 
 sub nest_hash {
-## Function : If necessary, nests the command line hash to fit the structure used in mip_install. 
+## Function : If necessary, nests the command line hash to fit the structure used in mip_install.
 ##          : Splits the key string on ":" and creates nested keys from the split.
 ## Returns  :
 ## Arguments: $cmd_ref => Arguments from command line {REF}
@@ -315,32 +222,86 @@ sub nest_hash {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Fix the shell programs into the hash
-    if ( $cmd_href->{shell_programs} ) {
-      PROGRAM:
-        foreach my $program ( keys %{ $cmd_href->{shell_programs} } ) {
-
-            $cmd_href->{shell}{$program}{version} =
-              $cmd_href->{shell_programs}{$program};
-            delete $cmd_href->{shell_programs}{$program};
-        }
-    }
-
     ## Nest the shell parameters
-    my @colon_keys = grep { /:/ } keys %{$cmd_href};
+    my @installations = @{ $cmd_href->{installations} };
+    my @colon_keys = grep { /:/xms } keys %{$cmd_href};
   PARAMETER:
     foreach my $parameter (@colon_keys) {
 
         my $final_value = $cmd_href->{$parameter};
-        _recursive_nesting(
-            {
-                array_to_shift_ref => [ ( split /:/, $parameter ) ],
-                final_value => $final_value,
-                hash_to_populate_href => $cmd_href,
-            }
-        );
+        foreach my $installation (@installations) {
+            _recursive_nesting(
+                {
+                    array_to_shift_ref => [ ( split /:/xms, $parameter ) ],
+                    final_value           => $final_value,
+                    hash_to_populate_href => $cmd_href->{$installation},
+                }
+            );
+        }
         delete $cmd_href->{$parameter};
     }
+    return;
+}
+
+sub update_program_versions {
+## Function : Set program versions in paramter hash
+## Returns  :
+## Arguments: $parameter_href => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @programs = keys %{ $parameter_href->{program_versions} };
+
+    ## Check if any versions needs to be updated
+    return if scalar @programs == 0;
+
+  INSTALLATION:
+    foreach my $installation ( @{ $parameter_href->{installations} } ) {
+
+      PROGRAM:
+        foreach my $program (@programs) {
+
+          INSTALL_MODE:
+            foreach
+              my $install_mode ( keys %{ $parameter_href->{$installation} } )
+            {
+                if ( $install_mode eq q{shell} ) {
+                    if ( $parameter_href->{$installation}{$install_mode}
+                        {$program} )
+                    {
+                        $parameter_href->{$installation}{$install_mode}
+                          {$program}{version} =
+                          $parameter_href->{program_versions}{$program};
+                    }
+                }
+                else {
+                    if ( $parameter_href->{$installation}{$install_mode}
+                        {$program} )
+                    {
+                        $parameter_href->{$installation}{$install_mode}
+                          {$program} =
+                          $parameter_href->{program_versions}{$program};
+                    }
+                }
+            }
+        }
+    }
+    delete $parameter_href->{program_versions};
     return;
 }
 
@@ -381,10 +342,14 @@ sub _recursive_nesting {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Assign and remove the first value from the array
-    my $value = shift @{ $array_to_shift_ref };
+    my $value = shift @{$array_to_shift_ref};
+
+    if ( not $hash_to_populate_href->{$value} ) {
+        return;
+    }
 
     ## If the array is empty, give the last hash key the final value and return
-    if ( scalar @{ $array_to_shift_ref } == 0 ) {
+    if ( scalar @{$array_to_shift_ref} == 0 ) {
         return $hash_to_populate_href->{$value} = $final_value;
     }
 
@@ -396,6 +361,7 @@ sub _recursive_nesting {
             array_to_shift_ref    => $array_to_shift_ref,
         }
     );
+    return;
 }
 
 1;

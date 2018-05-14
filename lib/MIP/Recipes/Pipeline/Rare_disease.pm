@@ -162,6 +162,7 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock };
+    use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
     use MIP::Recipes::Analysis::Frequency_filter
@@ -837,6 +838,42 @@ sub pipeline_rare_disease {
                 outfamily_directory     => $outfamily_directory,
             }
         );
+    }
+    if ( $active_parameter_href->{pexpansionhunter} ) {
+
+        $log->info(q{[ExpansionHunter]});
+
+        my $expansionhunter_program_name = q{expansionhunter};
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            ## Assign directories
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            my $outsample_directory = catdir(
+                $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir},
+                $expansionhunter_program_name
+            );
+
+            analysis_expansionhunter(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    insample_directory      => $insample_directory,
+                    job_id_href             => $job_id_href,
+                    outsample_directory     => $outsample_directory,
+                    parameter_href          => $parameter_href,
+                    program_name            => $expansionhunter_program_name,
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
+                }
+            );
+        }
     }
     if ( $active_parameter_href->{psv_combinevariantcallsets} ) {
 

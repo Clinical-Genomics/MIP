@@ -23,45 +23,46 @@ MIP requires pedigree information recorded in a pedigree.yaml file and a config 
 * [Configuration file] \(YAML-format\)
 
 ## Dependencies
-Make sure you have installed all dependencies and that they are in your ``$PATH``. 
-You only need to install the dependencies that are required for the modules that you want to run. If you have not installed a dependency for a module, MIP will tell you what dependencies you need to install (or add to your ``$PATH``) and exit. MIP comes with an install script ``mip_install.pl``, which will install all necessary programs to execute models in MIP via bioconda and/or $SHELL.
+Make sure you have installed all dependencies and that they are in your ``$PATH``.
+You only need to install the dependencies that are required for the modules that you want to run. If you have not installed a dependency for a module, MIP will tell you what dependencies you need to install (or add to your ``$PATH``) and exit. MIP comes with an install script, which will install all necessary programs to execute models in MIP via bioconda and/or $SHELL.
 
 ### **Programs**
 
 - Simple Linux Utility for Resource Management ([SLURM]) (version: 2.6.0)
-- [FastQC] (version: 0.11.5)
+- [Bcftools] (version: 1.6)
+- [BedTools] (version: 2.26.0)
 - [BWA] (version: 0.7.15)
 - [BWAKit] (version: 0.7.12)
-- [Sambamba] (version: 0.6.6)
-- [Samtools] (version: 1.4.1)
-- [BedTools] (version: 2.26.0)
-- [PicardTools] (version: 2.9.2)
-- [Chanjo] (version: 4.0.0)
-- [Manta] (version: 1.1.0)
-- [Delly] (version: 0.7.7)
+- [Chanjo] (version: 4.2.0)
 - [Cnvnator] (version: 0.3.3)
-- [Tiddit] (version: 1.1.4)
-- [Svdb] (version: 1.0.6)
-- [GATK] (version: 3.7)
+- [Delly] (version: 0.7.7)
+- [FastQC] (version: 0.11.5)
 - [Freebayes] (version: 1.1.0)
-- [VT] (version: 20151110)
-- [Vcfanno] (version: 0.1.0)
-- [VEP] (version: 88) with plugin "UpDownDistance, LoFtool, LoF"
-- [SnpEff] (version: 4.3.1)
-- [GENMOD] (version: 3.7.1)
-- [Variant_integrity] (version: 0.0.4)
-- [Bcftools] (version: 1.4.1)
-- [Htslib] (version: 1.4.1)
+- [GATK] (version: 3.8)
+- [GENMOD] (version: 3.7.2)
+- [Htslib] (version: 1.6)
+- [Manta] (version: 1.1.0)
+- [MultiQC] (version: 1.4)
+- [Peddy] (version: 0.3.1)
+- [PicardTools] (version: 2.14.1)
 - [PLINK2] (version: 1.90b3x35)
-- [Peddy] (version: 0.2.9)
-- [MultiQC] (version: 0.9.1)
+- [Sambamba] (version: 0.6.6)
+- [Samtools] (version: 1.6)
+- [SnpEff] (version: 4.3.1)
+- [Svdb] (version: 1.0.7)
+- [Tiddit] (version: 2.2.1)
+- [Variant_integrity] (version: 0.0.4)
+- [Vcf2cytosure] (version: 0.2.0)
+- [Vcfanno] (version: 0.1.0)
+- [VEP] (version: 91) with plugin "MaxEntScan, LoFtool"
+- [VT] (version: 20151110)
 
-The version number after the software name are tested for compatibility with MIP. 
+The version number after the software name are tested for compatibility with MIP.
 
 ### Databases/References
 
 MIP can build/download many program prerequisites automatically via the mip_install script using flag ``--reference_dir [reference_dir]``, which will use the MIP script ``download_reference.pl``.
-   
+
 ### **Automatic Build:**
 
 Human Genome Reference Meta Files:
@@ -69,10 +70,10 @@ Human Genome Reference Meta Files:
  2. The ".fasta.fai" file
 
 BWA:
- 1. The BWA index of the human genome. 
+ 1. The BWA index of the human genome.
 
 #### *Note*
-If you do not supply these parameters (Bwa) MIP will create these from scratch using the supplied human reference genom as template. 
+If you do not supply these parameters (Bwa) MIP will create these from scratch using the supplied human reference genom as template.
 
 Capture target files:
  1. The "infile_list" and .pad100.infile_list files used in ``ppicardtoolscollecthsmetrics``.
@@ -81,33 +82,34 @@ Capture target files:
 #### *Note*
 If you do not supply these parameters MIP will create these from scratch using the supplied "latest" supported capture kit ".bed" file and the supplied human reference genome as template.
 
-[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml   
-[Configuration file]: https://github.com/henrikstranneheim/MIP/blob/master/templates/mip_config.yaml
+[Bcftools]: http://www.htslib.org/
+[BedTools]: http://bedtools.readthedocs.org/en/latest/
 [BWA]: https://github.com/lh3/bwa
 [BWAKit]: https://github.com/lh3/bwa/tree/master/bwakit
-[FastQC]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
-[Samtools]: http://www.htslib.org/
-[Sambamba]: http://lomereiter.github.io/sambamba/
-[BedTools]: http://bedtools.readthedocs.org/en/latest/
-[SLURM]: http://slurm.schedmd.com/
-[PicardTools]: http://broadinstitute.github.io/picard/
 [Chanjo]: https://chanjo.readthedocs.org/en/latest/
-[GATK]: http://www.broadinstitute.org/gatk/
-[Freebayes]: https://github.com/ekg/freebayes
-[Manta]: https://github.com/Illumina/manta
-[Delly]: https://github.com/dellytools/delly/
 [Cnvnator]: https://github.com/abyzovlab/CNVnator
-[Tiddit]: https://github.com/J35P312/TIDDIT
+[Configuration file]: https://github.com/henrikstranneheim/MIP/blob/master/templates/mip_config.yaml
+[Delly]: https://github.com/dellytools/delly/
+[FastQC]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
+[Freebayes]: https://github.com/ekg/freebayes
+[GATK]: http://www.broadinstitute.org/gatk/
+[GENMOD]: https://github.com/moonso/genmod/
+[Htslib]: http://www.htslib.org/
+[Manta]: https://github.com/Illumina/manta
+[MultiQC]: https://github.com/ewels/MultiQC
+[Peddy]: https://github.com/brentp/peddy
+[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml   
+[PicardTools]: http://broadinstitute.github.io/picard/
+[PLINK2]: https://www.cog-genomics.org/plink2
+[Sambamba]: http://lomereiter.github.io/sambamba/
+[Samtools]: http://www.htslib.org/
+[SLURM]: http://slurm.schedmd.com/
+[SnpEff]: http://snpeff.sourceforge.net/
 [Svdb]: https://github.com/J35P312/SVDB
-[VT]: https://github.com/atks/vt
+[Tabix]: http://samtools.sourceforge.net/tabix.shtml
+[Tiddit]: https://github.com/J35P312/TIDDIT
+[Variant_integrity]: https://github.com/moonso/variant_integrity
+[Vcf2cytosure]: https://github.com/NBISweden/vcf2cytosure
 [Vcfanno]: https://github.com/brentp/vcfanno
 [VEP]: https://github.com/Ensembl/ensembl-vep
-[SnpEff]: http://snpeff.sourceforge.net/
-[GENMOD]: https://github.com/moonso/genmod/
-[Variant_integrity]: https://github.com/moonso/variant_integrity
-[Bcftools]: http://www.htslib.org/
-[Htslib]: http://www.htslib.org/
-[PLINK2]: https://www.cog-genomics.org/plink2
-[Peddy]: https://github.com/brentp/peddy
-[MultiQC]: https://github.com/ewels/MultiQC
-[Tabix]: http://samtools.sourceforge.net/tabix.shtml
+[VT]: https://github.com/atks/vt

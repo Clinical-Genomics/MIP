@@ -197,7 +197,7 @@ sub analysis_frequency_filter {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -230,7 +230,7 @@ sub analysis_frequency_filter {
             process_time                    => $time,
             program_directory               => $outaligner_dir,
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
@@ -547,7 +547,7 @@ sub analysis_frequency_filter_rio {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -571,12 +571,12 @@ sub analysis_frequency_filter_rio {
     $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
 
     ## If program needs special environment variables set
-    if ($source_environment_cmd) {
+    if (@source_environment_cmds) {
 
         write_source_environment_command(
             {
                 FILEHANDLE                      => $FILEHANDLE,
-                source_environment_commands_ref => [$source_environment_cmd],
+                source_environment_commands_ref => \@source_environment_cmds,
             }
         );
     }

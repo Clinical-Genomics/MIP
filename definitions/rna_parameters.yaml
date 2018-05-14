@@ -1,155 +1,5 @@
 ---
-## Version: 2.0.0
-##Enable/activate MIP
-cluster_constant_path:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-### Project specific
-analysis_constant_path:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: analysis
-  type: path
-family_id:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: mip
-outdata_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-project_id:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: mip
-platform:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: ILLUMINA
-  type: mip
-outscript_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-config_file_analysis:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  type: path
-  update_path: absolute_path
-supported_capture_kit:
-  associated_program:
-   - mip
-  data_type: HASH
-  default:
-    nimblegen_seqcapezexome.v2: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v2-.bed
-    nimblegen_seqcapezexome.v3: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v3-.bed
-    agilent_sureselect.v2: genome_reference_source_version_agilent_sureselect_targets_-v2-.bed
-    agilent_sureselect.v3: genome_reference_source_version_agilent_sureselect_targets_-v3-.bed
-    agilent_sureselect.v4: genome_reference_source_version_agilent_sureselect_targets_-v4-.bed
-    agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
-    agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
-    agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
-    latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
-  type: mip
-pedigree_file:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-sample_ids:
-  associated_program:
-   - mip
-  element_separator: ,
-  data_type: ARRAY
-  type: mip
-analysis_type:
-  associated_program:
-   - mip
-  data_type: HASH
-  type: mip
-expected_coverage:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
-sample_origin:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
-infile_dirs:
-  associated_program:
-   - mip
-  exists_check: directory
-  data_type: HASH
-  type: path
-  update_path: absolute_path
-sample_info_file:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-reference_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
-dry_run_all:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-start_with_program:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-genomic_set:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  exists_check: file
-  mandatory: no
-  reference: reference_dir
-  type: path
-reduce_io:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
-replace_iupac:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
-print_program_mode:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 2
-  type: mip
+## Version: 2.1.1
 ## HumanGenomeReference
 human_genome_reference:
   associated_program:
@@ -161,6 +11,49 @@ human_genome_reference:
   exists_check: file
   reference: reference_dir
   type: path
+## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
+gatk_bundle_download_version:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 2.8
+  type: program_argument
+gatk_disable_auto_index_and_file_lock:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+gatk_downsample_to_coverage:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 1000
+  type: program_argument
+gatk_logging_level:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+  default: INFO
+  type: program_argument
+gatk_path:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
+## java large pages - affects all modules using java
+java_use_large_pages:
+  associated_program:
+   - pstar_aln
+  data_type: SCALAR
+  default: 0
+  type: program_argument
 ####Bash
 module_time:
   associated_program:
@@ -184,95 +77,21 @@ module_core_number:
     pstar_aln: 16
     pstar_fusion: 1
   type: mip
-max_cores_per_node:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 16
-  type: mip
-node_ram_memory:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 128
-  type: mip
-email:
+## Choosen MIP Aligner
+outaligner_dir:
   associated_program:
    - mip
   data_type: SCALAR
   mandatory: no
   type: mip
-email_types:
+picardtools_path:
   associated_program:
-   - mip
-  element_separator: ","
-  data_type: ARRAY
-  mandatory: no
-  default:
-   - FAIL
-  type: mip
-slurm_quality_of_service:
-  associated_program:
-   - mip
+   - pstar_aln
   data_type: SCALAR
-  default: normal
-  type: mip
-program_source_environment_command:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
-module_source_environment_command:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
-source_main_environment_commands:
-  associated_program:
-   - mip
-  element_separator: " "
-  data_type: ARRAY
-  mandatory: no
-  type: mip
+  exists_check: directory
+  type: path
+  update_path: absolute_path
 ###Programs
-## GZip
-pgzip_fastq:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 1
-  file_tag: nofile_tag
-  infile_suffix: ".fastq"
-  program_name_path:
-   - gzip
-  type: program
-## FastQC
-pfastqc:
-  associated_program:
-   - mip
-  chain: RawSeqQC
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  infile_suffix: ".fastq"
-  program_name_path:
-   - fastqc
-  type: program
-## Cutadapt
-pcutadapt:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: _cuta
-  infile_suffix: ".fastq"
-  program_name_path:
-   - cutadapt
-  type: program
 ## Salmon
 psalmon_quant:
   associated_program:
@@ -346,13 +165,6 @@ two_pass_mode:
   data_type: SCALAR
   default: Basic
   type: program_argument
-## Choosen MIP Aligner
-outaligner_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
 pstar_fusion:
   associated_program:
    - mip
@@ -363,17 +175,84 @@ pstar_fusion:
   outfile_suffix: ".tsv"
   outdir_name: star
   type: program
-picardtools_path:
+## GATK BAM Calibration
+pgatk_realigner:
   associated_program:
-   - pstar_aln
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
-## java large pages - effects all modules using java
-java_use_large_pages:
-  associated_program:
-   - pstar_aln
+   - mip
+  chain: MAIN
   data_type: SCALAR
   default: 0
+  file_tag: _rreal
+  file_endings:
+   - .bam
+  type: program
+gatk_realigner_indel_known_sites:
+  associated_program:
+   - pgatk_realigner
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - GRCh37_1000g_indels_-phase1-.vcf
+   - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+  exists_check: file
+  reference: reference_dir
+  type: path
+pgatk_baserecalibration:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _brecal
+  file_endings:
+   - .bam
+  type: program
+gatk_baserecalibration_covariates:
+  associated_program:
+   - pgatk_baserecalibration
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - ReadGroupCovariate
+   - ContextCovariate
+   - CycleCovariate
+   - QualityScoreCovariate
+  type: program_argument
+gatk_baserecalibration_disable_indel_qual:
+  associated_program:
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+gatk_baserecalibration_known_sites:
+  associated_program:
+   - pgatk_baserecalibration
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - GRCh37_dbsnp_-138-.vcf
+   - GRCh37_1000g_indels_-phase1-.vcf
+   - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+  exists_check: file
+  reference: reference_dir
+  type: path
+gatk_baserecalibration_read_filters:
+  associated_program:
+   - pgatk_baserecalibration
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - OverclippedRead
+  type: program_argument
+gatk_baserecalibration_static_quantized_quals:
+  associated_program:
+   - pgatk_baserecalibration
+  element_separator: ,
+  data_type: ARRAY
+  mandatory: no
+  default:
+   - 10
+   - 20
+   - 30
+   - 40
   type: program_argument

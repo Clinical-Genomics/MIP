@@ -12,9 +12,9 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
-use MooseX::Types::Moose qw{ Str Int HashRef Num Bool };
+use MooseX::Types::Moose qw{ Str Int HashRef Bool };
 
-our $VERSION = 0.0.2;
+our $VERSION = 0.0.5;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -54,18 +54,6 @@ sub _build_usage {
     );
 
     option(
-        q{conda_environment} => (
-            cmd_aliases   => [qw{ env }],
-            cmd_flag      => q{conda_environment},
-            cmd_tags      => [q{Default: root/base environment}],
-            documentation => q{Name of conda environmnet to use},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
         q{conda_update} => (
             cmd_aliases   => [qw{ cdu }],
             cmd_flag      => q{conda_update},
@@ -88,7 +76,7 @@ sub _build_usage {
     );
 
     option(
-        q{no_update} => (
+        q{noupdate} => (
             cmd_aliases   => [qw{ nup }],
             cmd_flag      => q{noupdate},
             documentation => q{Do not update existing shell programs},
@@ -115,17 +103,6 @@ q{Shell will be used for overlapping shell and biconda installations},
             cmd_aliases   => [qw{ ppd }],
             cmd_flag      => q{print_parameter_default},
             documentation => q{print the default parameters},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{verbose} => (
-            cmd_aliases   => [qw{ vb }],
-            cmd_flag      => q{verbose},
-            documentation => q{Turn on chatty output},
             is            => q{rw},
             isa           => Bool,
             required      => 0,

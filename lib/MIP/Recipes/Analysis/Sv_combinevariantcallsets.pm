@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
@@ -182,7 +182,7 @@ sub analysis_sv_combinevariantcallsets {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
@@ -205,7 +205,7 @@ sub analysis_sv_combinevariantcallsets {
             process_time                    => $time,
             program_directory               => catfile($outaligner_dir),
             program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
@@ -465,10 +465,10 @@ sub analysis_sv_combinevariantcallsets {
     ## Remove common variants
     if ( $active_parameter_href->{sv_genmod_filter} ) {
 
-        my $program_source_command = get_program_parameters(
+        my @program_source_commands = get_program_parameters(
             {
                 active_parameter_href => $active_parameter_href,
-                mip_program_name      => q{pgenmod},
+                mip_program_name      => q{genmod},
             }
         );
 
@@ -480,7 +480,7 @@ sub analysis_sv_combinevariantcallsets {
                   . $alt_file_tag
                   . $outfile_suffix,
                 outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-                program_source_command => $program_source_command,
+                program_source_commands_ref => \@program_source_commands,
                 temp_directory_path    => $temp_directory,
                 thousand_g_file_path =>
                   $active_parameter_href->{sv_genmod_filter_1000g},
@@ -501,7 +501,7 @@ sub analysis_sv_combinevariantcallsets {
                   . $alt_file_tag
                   . $outfile_suffix,
                 source_main_environment_commands_ref =>
-                  [$source_environment_cmd],
+                  \@source_environment_cmds,
                 threshold =>
                   $active_parameter_href->{sv_genmod_filter_threshold},
                 verbosity => q{v},
