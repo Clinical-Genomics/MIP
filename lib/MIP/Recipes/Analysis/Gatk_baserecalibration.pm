@@ -1273,7 +1273,7 @@ sub analysis_gatk_baserecalibration_rna {
     use MIP::Program::Alignment::Gatk
       qw{ gatk_baserecalibrator gatk_printreads };
     use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info };
+      qw{ add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
@@ -1316,8 +1316,9 @@ sub analysis_gatk_baserecalibration_rna {
         }
     );
 
+    ## Used downstream
     $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
-      $outsample_directory;    #Used downstream
+      $outsample_directory;
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
@@ -1400,7 +1401,7 @@ sub analysis_gatk_baserecalibration_rna {
               \@{ $active_parameter_href->{gatk_baserecalibration_known_sites}
               },
             logging_level     => $active_parameter_href->{gatk_logging_level},
-            memory_allocation => q{Xmx6g},
+            memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             num_cpu_threads_per_data_thread =>
               $active_parameter_href->{max_cores_per_node},
             outfile_path       => $outfile_path,
@@ -1414,7 +1415,7 @@ sub analysis_gatk_baserecalibration_rna {
 
     $outfile_path = $outfile_path_prefix . $outfile_suffix;
     my $base_quality_score_recalibration_file =
-      $file_path_prefix . $UNDERSCORE . $DOT . q{grp};
+      $file_path_prefix . $DOT . q{grp};
     gatk_printreads(
         {
             base_quality_score_recalibration_file =>
@@ -1434,7 +1435,7 @@ sub analysis_gatk_baserecalibration_rna {
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             logging_level     => $active_parameter_href->{gatk_logging_level},
-            memory_allocation => q{Xmx6g},
+            memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             num_cpu_threads_per_data_thread =>
               $active_parameter_href->{max_cores_per_node},
             outfile_path => $outfile_path,

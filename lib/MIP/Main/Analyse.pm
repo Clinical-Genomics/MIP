@@ -667,8 +667,8 @@ sub mip_analyse {
         check_vep_directories(
             {
                 log                 => $log,
-                vep_directory_path  => $active_parameter{vep_directory_path},
                 vep_directory_cache => $active_parameter{vep_directory_cache},
+                vep_directory_path  => $active_parameter{vep_directory_path},
             }
         );
     }
