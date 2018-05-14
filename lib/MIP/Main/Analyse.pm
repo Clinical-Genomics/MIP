@@ -666,7 +666,9 @@ sub mip_analyse {
     if ( exists $active_parameter{pvarianteffectpredictor} ) {
         check_vep_directories(
             {
-                log => $log,
+                log                 => $log,
+                vep_directory_cache => $active_parameter{vep_directory_cache},
+                vep_directory_path  => $active_parameter{vep_directory_path},
             }
         );
     }
