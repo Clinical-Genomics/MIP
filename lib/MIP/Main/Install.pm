@@ -63,13 +63,15 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $COLON      => q{:};
-Readonly my $COMMA      => q{,};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $TAB        => qq{\t};
-Readonly my $UNDERSCORE => q{_};
+Readonly my $CLOSED_BRACKET => q{]};
+Readonly my $COLON          => q{:};
+Readonly my $COMMA          => q{,};
+Readonly my $DOT            => q{.};
+Readonly my $NEWLINE        => qq{\n};
+Readonly my $OPEN_BRACKET   => q{[};
+Readonly my $SPACE          => q{ };
+Readonly my $TAB            => qq{\t};
+Readonly my $UNDERSCORE     => q{_};
 
 sub mip_install {
 
@@ -175,7 +177,9 @@ sub mip_install {
     foreach my $installation ( @{ $parameter{installations} } ) {
 
         ## Create some space
-        $log->info($NEWLINE);
+        $log->info( $OPEN_BRACKET
+              . $parameter{environment_name}{$installation}
+              . $CLOSED_BRACKET );
         $log->info( q{Working on environment: }
               . $parameter{environment_name}{$installation} );
 
