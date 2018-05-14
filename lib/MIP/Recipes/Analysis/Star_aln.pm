@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln };
@@ -188,12 +188,13 @@ sub analysis_star_aln {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -289,7 +290,6 @@ sub analysis_star_aln {
         say {$FILEHANDLE} q{## Aligning reads with } . $program_name;
 
         ### Get parameters
-
         ## Infile(s)
         my @fastq_files =
           ( catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] ) );
@@ -298,7 +298,7 @@ sub analysis_star_aln {
         if ( $sequence_run_mode eq q{paired-end} ) {
 
             # Increment to collect correct read 2 from %infile
-            $paired_end_tracker = $paired_end_tracker + 1;
+            $paired_end_tracker++;
             push @fastq_files,
               catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
             catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
@@ -325,23 +325,27 @@ sub analysis_star_aln {
         );
         say {$FILEHANDLE} $NEWLINE;
 
+        ## Increment paired end tracker
+        $paired_end_tracker++;
+
         picardtools_addorreplacereadgroups(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                infile_path => $outfile_path_prefix . $DOT .  q{Aligned.sortedByCoord.out}  . $outfile_suffix,
-                java_jar    => catfile(
+                infile_path => $outfile_path_prefix
+                  . $DOT
+                  . q{Aligned.sortedByCoord.out}
+                  . $outfile_suffix,
+                java_jar => catfile(
                     $active_parameter_href->{picardtools_path},
                     q{picard.jar}
                 ),
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                memory_allocation => q{Xmx1g},
-                outfile_path      => $outfile_path_prefix
-                  . $DOT . q{RG}
-                  . $outfile_suffix,
-                readgroup_id            => $infile_prefix,
-                readgroup_library       => q{RNA},
-                readgroup_platform      => $active_parameter_href->{platform},
+                memory_allocation  => q{Xmx1g},
+                outfile_path       => $outfile_path_prefix . $outfile_suffix,
+                readgroup_id       => $infile_prefix,
+                readgroup_library  => q{RNA},
+                readgroup_platform => $active_parameter_href->{platform},
                 readgroup_platform_unit => q{0},
                 readgroup_sample        => $sample_id,
             },
@@ -400,7 +404,7 @@ sub analysis_star_aln {
                     path                    => $job_id_chain,
                     sample_id               => $sample_id,
                     sbatch_file_name        => $file_name,
-                    sbatch_script_tracker   => $infile_index
+                    sbatch_script_tracker   => $infile_index,
                 }
             );
         }
@@ -409,3 +413,4 @@ sub analysis_star_aln {
 }
 
 1;
+

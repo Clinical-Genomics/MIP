@@ -84,7 +84,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -663,16 +663,19 @@ sub mip_analyse {
     );
 
 ## Check that VEP directory and VEP cache match
-    check_vep_directories(
-        {
-            log                 => $log,
-            vep_directory_path  => $active_parameter{vep_directory_path},
-            vep_directory_cache => $active_parameter{vep_directory_cache},
-        }
-    );
+    if ( exists $active_parameter{pvarianteffectpredictor} ) {
+        check_vep_directories(
+            {
+                log                 => $log,
+                vep_directory_cache => $active_parameter{vep_directory_cache},
+                vep_directory_path  => $active_parameter{vep_directory_path},
+            }
+        );
+    }
 
 ## Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
-    if (    $active_parameter{psv_combinevariantcallsets} > 0
+    if (    exists $active_parameter{psv_combinevariantcallsets}
+        and $active_parameter{psv_combinevariantcallsets} > 0
         and $active_parameter{sv_vcfanno} > 0 )
     {
 
