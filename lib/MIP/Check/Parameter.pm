@@ -23,12 +23,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_allowed_array_values
       check_allowed_temp_directory
+      check_aligner
       check_cmd_config_vs_definition_file
       check_email_address
       check_gzipped
@@ -151,6 +152,116 @@ sub check_allowed_temp_directory {
 
     # All ok
     return 1;
+}
+
+sub check_aligner {
+
+## Function : Check that the correct number of aligners is used in MIP and sets the outaligner_dir flag accordingly.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
+##          : $log                   => Log object
+##          : $outaligner_dir        => Outaligner_dir used in the analysis
+##          : $parameter_href        => Parameter hash {REF}
+##          : $verbose               => Verbosity level
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $broadcasts_ref;
+    my $log;
+    my $parameter_href;
+
+    ## Default(s)
+    my $outaligner_dir;
+    my $verbose;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        broadcasts_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$broadcasts_ref,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        verbose => {
+            default     => 0,
+            store       => \$verbose,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %aligner;
+
+  ALIGNER:
+    foreach my $aligner ( @{ $parameter_href->{dynamic_parameter}{aligners} } )
+    {
+
+        ## Active aligner
+        if ( $active_parameter_href->{$aligner} ) {
+
+            # Increment aligner count
+            $aligner{total_active_aligner_count}++;
+
+            # Store aligner
+            push @{ $aligner{active_aligners} }, $aligner;
+
+            # Set active aligner for downstream use
+            $parameter_href->{active_aligner} = $aligner;
+
+            if ( not defined $outaligner_dir ) {
+
+                # Set outaligner_dir parameter depending on active aligner
+                $active_parameter_href->{outaligner_dir} = $outaligner_dir =
+                  $parameter_href->{$aligner}{outdir_name};
+
+                next ALIGNER if ( not $verbose );
+
+                my $info = q{Set outaligner_dir to: } . $outaligner_dir;
+
+                ## Add info to broadcasts
+                push @{$broadcasts_ref}, $info;
+            }
+        }
+    }
+
+    if ( exists $aligner{total_active_aligner_count}
+        and $aligner{total_active_aligner_count} > 1 )
+    {
+
+        $log->fatal( q{You have activate more than 1 aligner: }
+              . join( q{, }, @{ $aligner{active_aligners} } )
+              . q{. MIP currently only supports 1 aligner per analysis.} );
+        exit 1;
+    }
+    return;
 }
 
 sub check_cmd_config_vs_definition_file {

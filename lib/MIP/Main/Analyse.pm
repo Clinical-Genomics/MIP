@@ -37,6 +37,7 @@ use Readonly;
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
+  check_aligner
   check_cmd_config_vs_definition_file
   check_email_address
   check_parameter_hash
@@ -737,7 +738,7 @@ sub mip_analyse {
     update_program_mode_with_dry_run_all(
         {
             active_parameter_href => \%active_parameter,
-            dry_run_all  => $active_parameter{dry_run_all},
+            dry_run_all           => $active_parameter{dry_run_all},
             programs_ref => \@{ $parameter{dynamic_parameter}{program} },
         }
     );
@@ -747,6 +748,7 @@ sub mip_analyse {
         {
             active_parameter_href => \%active_parameter,
             broadcasts_ref        => \@broadcasts,
+            log                   => $log,
             parameter_href        => \%parameter,
             verbose               => $active_parameter{verbose},
         }
@@ -3042,111 +3044,6 @@ sub check_prioritize_variant_callers {
                   . "'" );
             exit 1;
         }
-    }
-}
-
-sub check_aligner {
-
-##check_aligner
-
-##Function : Check that the correct number of aligners is used in MIP and sets the outaligner_dir flag accordingly.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $broadcasts_ref, $outaligner_dir_ref
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
-##         : $outaligner_dir_ref    => Outaligner_dir used in the analysis {REF}
-##         : $verbose               => Verbosity level
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $outaligner_dir_ref;
-    my $verbose;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $broadcasts_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        broadcasts_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$broadcasts_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        verbose => {
-            default     => 0,
-            store       => \$verbose,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my %aligner;
-
-    foreach my $aligner ( @{ $parameter_href->{dynamic_parameter}{aligners} } )
-    {
-
-        if ( $active_parameter_href->{$aligner} > 0 ) {    #Active aligner
-
-            $aligner{total_active_aligner_count}++;
-            push( @{ $aligner{active_aligners} }, $aligner );
-            $parameter_href->{active_aligner} =
-              $aligner;    #Save the active aligner for downstream use
-
-            if ( not defined $$outaligner_dir_ref ) {
-
-                $$outaligner_dir_ref = $parameter_href->{$aligner}{outdir_name}
-                  ;    #Set outaligner_dir parameter depending on active aligner
-
-                if ($verbose) {
-
-                    my $info =
-                      q{Set outaligner_dir to: } . $$outaligner_dir_ref;
-
-                    ## Add info to broadcasts
-                    push( @$broadcasts_ref, $info );
-                }
-            }
-        }
-    }
-    if (   ( exists( $aligner{total_active_aligner_count} ) )
-        && ( $aligner{total_active_aligner_count} > 1 ) )
-    {
-
-        $log->fatal(
-            "You have activate more than 1 aligner: "
-              . join( ", ", @{ $aligner{active_aligners} } )
-              . ". MIP currently only supports 1 aligner per analysis.",
-            "\n"
-        );
-        exit 1;
     }
 }
 
