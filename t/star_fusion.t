@@ -131,7 +131,7 @@ my %required_argument = (
           . catfile(qw{ dir genome_lib_dir_path }),
     },
 
-    infile_path => {
+    sjdb_path => {
         input           => catfile(qw{ dir junctions.tab }),
         expected_output => q{-J} . $SPACE . catfile(qw{ dir junctions.tab }),
     },
@@ -150,7 +150,7 @@ my %specific_argument = (
           . catfile(qw{ dir genome_lib_dir_path }),
     },
 
-    infile_path => {
+    sjdb_path => {
         input           => catfile(qw{ dir junctions.tab }),
         expected_output => q{-J} . $SPACE . catfile(qw{ dir junctions.tab }),
     },
