@@ -54,7 +54,7 @@ use MIP::Check::Reference
   qw{ check_human_genome_file_endings check_parameter_metafiles };
 use MIP::File::Format::Config qw{ write_mip_config };
 use MIP::File::Format::Pedigree
-  qw{ create_fam_file detect_founders detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
+  qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::File qw{ get_select_file_contigs };
@@ -806,7 +806,7 @@ sub mip_analyse {
         }
     );
 
-## Detect the gender included in current analysis
+## Detect the gender(s) included in current analysis
     (
 
         $active_parameter{found_male},
@@ -2592,68 +2592,6 @@ sub size_sort_select_file_contigs {
         }
     }
     return @sorted_contigs;
-}
-
-sub detect_sample_id_gender {
-
-##detect_sample_id_gender
-
-##Function : Detect gender of the current analysis
-##Returns  : "$found_male $found_female $found_other"
-##Arguments: $active_parameter_href, $sample_info_href
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_info_href      => Info on samples and family hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $found_male        = 0;
-    my $found_female      = 0;
-    my $found_other       = 0;
-    my $found_other_count = 0;
-
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        if ( $sample_info_href->{sample}{$sample_id}{sex} =~ /1|^male/ ) { #Male
-
-            $found_male = 1;                                               #Male
-        }
-        elsif ( $sample_info_href->{sample}{$sample_id}{sex} =~ /2|female/ )
-        {    #Female
-
-            $found_female = 1;
-        }
-        else {    #Other
-
-            $found_male =
-              1;    #Include since it might be male to enable analysis of Y.
-            $found_other = 1;
-            $found_other_count++;
-        }
-    }
-    return $found_male, $found_female, $found_other, $found_other_count;
 }
 
 sub add_to_sample_info {
