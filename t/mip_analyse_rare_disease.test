@@ -76,6 +76,8 @@ GetOptions(
 
 ok( can_run(q{mip}), q{Checking can run mip} );
 
+## Update path in vcfanno_config to cluster specific path
+
 ## Test execution of mip
 # Create array ref for cmd
 my $cmds_ref = [
@@ -88,6 +90,11 @@ my $cmds_ref = [
     $conda_path,
     q{--ccp},
     $cluster_constant_path,
+    q{--sv_vcfanno_config},
+    catfile(
+        $cluster_constant_path,
+        qw{ references GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz }
+    ),
     q{--ifd},
     catfile(
         $cluster_constant_path,

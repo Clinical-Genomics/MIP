@@ -14,34 +14,30 @@ human_genome_reference:
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 gatk_bundle_download_version:
   associated_program:
-   - pgatk_realigner
    - pgatk_baserecalibration
   data_type: SCALAR
   default: 2.8
   type: program_argument
 gatk_disable_auto_index_and_file_lock:
   associated_program:
-   - pgatk_realigner
    - pgatk_baserecalibration
   data_type: SCALAR
   default: 0
   type: program_argument
 gatk_downsample_to_coverage:
   associated_program:
-   - pgatk_realigner
    - pgatk_baserecalibration
   data_type: SCALAR
   default: 1000
   type: program_argument
 gatk_logging_level:
   associated_program:
-   - pgatk_realigner
    - pgatk_baserecalibration
+  data_type: SCALAR
   default: INFO
   type: program_argument
 gatk_path:
   associated_program:
-   - pgatk_realigner
    - pgatk_baserecalibration
   data_type: SCALAR
   exists_check: directory
@@ -61,7 +57,9 @@ module_time:
   data_type: HASH
   default:
     pfastqc: 10
+    pgatk_baserecalibration: 10
     pgzip_fastq: 2
+    ppicardtools_mergesamfiles: 10
     psalmon_quant: 5
     pstar_aln: 5
     pstar_fusion: 1
@@ -72,7 +70,9 @@ module_core_number:
   data_type: HASH
   default:
     pfastqc: 0
+    pgatk_baserecalibration: 16
     pgzip_fastq: 0
+    ppicardtools_mergesamfiles: 16
     psalmon_quant: 1
     pstar_aln: 16
     pstar_fusion: 1
@@ -87,6 +87,7 @@ outaligner_dir:
 picardtools_path:
   associated_program:
    - pstar_aln
+   - ppicardtools_mergesamfiles
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -96,7 +97,7 @@ picardtools_path:
 psalmon_quant:
   associated_program:
    - mip
-  chain: MAIN
+  chain: DE
   data_type: SCALAR
   default: 0
   file_tag: _salmon
@@ -120,7 +121,7 @@ pstar_aln:
   chain: MAIN
   data_type: SCALAR
   default: 0
-  file_tag: _star
+  file_tag: _star_sorted
   outfile_suffix: ".bam"
   outdir_name: star
   program_name_path:
@@ -165,38 +166,31 @@ two_pass_mode:
   data_type: SCALAR
   default: Basic
   type: program_argument
+## Star Fusion
 pstar_fusion:
   associated_program:
    - mip
-  chain: MAIN
+  chain: FUSION
   data_type: SCALAR
   default: 0
   file_tag: _fusion
   outfile_suffix: ".tsv"
   outdir_name: star
+  program_name_path: 
+    - STAR-Fusion
   type: program
-## GATK BAM Calibration
-pgatk_realigner:
+## Merge bam files
+ppicardtools_mergesamfiles:
   associated_program:
    - mip
   chain: MAIN
   data_type: SCALAR
   default: 0
-  file_tag: _rreal
+  file_tag: _merged
   file_endings:
    - .bam
   type: program
-gatk_realigner_indel_known_sites:
-  associated_program:
-   - pgatk_realigner
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - GRCh37_1000g_indels_-phase1-.vcf
-   - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
-  exists_check: file
-  reference: reference_dir
-  type: path
+## GATK BAM Calibration
 pgatk_baserecalibration:
   associated_program:
    - mip

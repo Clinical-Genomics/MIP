@@ -1,21 +1,20 @@
 package MIP::Workloadmanager::Slurm;
 
-#### Copyright 2017 Henrik Stranneheim
-
-use strict;
-use warnings;
-use warnings qw(FATAL utf8);
-use utf8;    #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
 use Carp;
-use autodie;
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
-
-use FindBin qw($Bin);                 #Find directory of script
+use charnames qw( :full :short );
+use FindBin qw($Bin);
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(catdir);
+use open qw( :encoding(UTF-8) :std );
+use Params::Check qw[check allow last_error];
+$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+use strict;
+use utf8;
+use warnings;
+use warnings qw(FATAL utf8);
+
+## CPANM
+use autodie;
 use Readonly;
 
 ## MIPs lib/
@@ -29,7 +28,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -143,9 +142,8 @@ sub slurm_reformat_sacct_output {
             strict_type => 1,
             store       => \$reformat_sacct_headers_ref
         },
-        log_file_path =>
-          { strict_type => 1, store => \$log_file_path },
-        FILEHANDLE => { required => 1, store => \$FILEHANDLE },
+        log_file_path => { strict_type => 1, store => \$log_file_path },
+        FILEHANDLE    => { required    => 1, store => \$FILEHANDLE },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);

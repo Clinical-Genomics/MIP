@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -127,10 +127,6 @@ q{--knownSites GRCh37_1000g_indels_-phase1-.vcf --knownSites GRCh37_mills_and_10
         inputs_ref => [qw{ ReadGroupCovariate ContextCovariate }],
         expected_output =>
           q{--covariate ReadGroupCovariate --covariate ContextCovariate},
-    },
-    intervals_ref => {
-        inputs_ref      => [qw{ chr1 chr2}],
-        expected_output => q{--intervals chr1 --intervals chr2},
     },
     referencefile_path => {
         input           => catfile(qw{reference_dir human_genome_build.fasta }),

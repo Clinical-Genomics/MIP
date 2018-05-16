@@ -179,13 +179,13 @@ sub get_file_suffix {
         ## Broadcast no suffix was found
         if ( defined $job_id_chain ) {
 
-            say $log->fatal(
+            $log->fatal(
                 q{Could not get requested infile_suffix for jobid_chain:}
                   . $job_id_chain );
         }
         elsif ( defined $program_name ) {
 
-            say $log->fatal(
+            $log->fatal(
                 q{Could not get requested infile_suffix for program:}
                   . $program_name );
         }

@@ -8,13 +8,16 @@ my $FILEHANDLE = IO::Handle->new();
 my $file_content;
 
 ## Store file content in memory by using referenced variable
-    open $FILEHANDLE, q{>}, \$file_content
-      or croak q{Cannot write to}
-      . $SPACE
-      . $file_content
-      . $COLON
-      . $SPACE
-      . $OS_ERROR;
+open $FILEHANDLE, q{>}, \$file_content
+    or croak q{Cannot write to}
+    . $SPACE
+    . $file_content
+    . $COLON
+    . $SPACE
+    . $OS_ERROR;
+
+# Close the filehandle
+    close $FILEHANDLE;
 ```
 
 Then you can use this as variable to access the content of the file, for instance:
