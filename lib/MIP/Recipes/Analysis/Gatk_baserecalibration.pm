@@ -1287,7 +1287,6 @@ sub analysis_gatk_baserecalibration_rna {
     my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
-    my $xargs_file_path_prefix;
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -1330,7 +1329,7 @@ sub analysis_gatk_baserecalibration_rna {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{pstar_aln}{file_tag};
+      $file_info_href->{$sample_id}{pgatk_splitncigarreads}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
 

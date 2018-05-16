@@ -35,6 +35,7 @@ BEGIN {
 Readonly my $ASTERIX      => q{*};
 Readonly my $DOT          => q{.};
 Readonly my $EMPTY_STRING => q{};
+Readonly my $MINUS_ONE    => -1;
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $SEMICOLON    => q{;};
 Readonly my $SPACE        => q{ };
@@ -1180,9 +1181,11 @@ sub analysis_picardtools_mergesamfiles_rna {
     ## Copies files from source to destination
     migrate_files(
         {
-            core_number  => $core_number,
-            FILEHANDLE   => $FILEHANDLE,
-            file_ending  => $infile_tag . $infile_suffix . $ASTERIX,
+            core_number => $core_number,
+            FILEHANDLE  => $FILEHANDLE,
+            file_ending => $infile_tag
+              . substr( $infile_suffix, 0, $MINUS_ONE )
+              . $ASTERIX,
             indirectory  => $insample_directory,
             infiles_ref  => \@{ $infile_lane_prefix_href->{$sample_id} },
             outfile_path => $temp_directory,

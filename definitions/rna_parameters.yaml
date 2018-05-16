@@ -58,6 +58,7 @@ module_time:
   default:
     pfastqc: 10
     pgatk_baserecalibration: 10
+    pgatk_splitncigarreads: 1
     pgzip_fastq: 2
     ppicardtools_mergesamfiles: 10
     psalmon_quant: 5
@@ -71,6 +72,7 @@ module_core_number:
   default:
     pfastqc: 0
     pgatk_baserecalibration: 16
+    pgatk_splitncigarreads: 1
     pgzip_fastq: 0
     ppicardtools_mergesamfiles: 16
     psalmon_quant: 1
@@ -189,6 +191,17 @@ ppicardtools_mergesamfiles:
   file_tag: _merged
   file_endings:
    - .bam
+  type: program
+## GATK SplitNCigarReads
+pgatk_splitncigarreads:
+  associated_program:
+    - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _splitcigar
+  file_endings: 
+    - .bam
   type: program
 ## GATK BAM Calibration
 pgatk_baserecalibration:
