@@ -10,9 +10,8 @@ use charnames qw{ :full :short };
 use Cwd;
 use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename fileparse };
+use File::Basename qw{ basename dirname fileparse };
 use File::Copy qw{ copy };
-use File::Path qw{ make_path };
 use File::Spec::Functions qw{ catdir catfile devnull splitpath };
 use FindBin qw{ $Bin };
 use Getopt::Long;
@@ -53,6 +52,7 @@ use MIP::Check::Path
   qw{ check_command_in_path check_parameter_files check_target_bed_file_suffix check_vcfanno_toml };
 use MIP::Check::Reference
   qw{ check_human_genome_file_endings check_parameter_metafiles };
+use MIP::File::Format::Config qw{ write_mip_config };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file detect_founders detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
@@ -789,41 +789,22 @@ sub mip_analyse {
 ## Update prioritize flag depending on analysis run value as some programs are not applicable for e.g. wes
     $active_parameter{sv_svdb_merge_prioritize} = update_prioritize_flag(
         {
-            prioritize_key => $active_parameter{sv_svdb_merge_prioritize},
-            programs_ref   => [qw{ cnvnator delly_call delly_reformat tiddit }],
             consensus_analysis_type =>
               $parameter{dynamic_parameter}{consensus_analysis_type},
+            prioritize_key => $active_parameter{sv_svdb_merge_prioritize},
+            programs_ref   => [qw{ cnvnator delly_call delly_reformat tiddit }],
         }
     );
 
 ## Write config file for family
-    if ( $active_parameter{config_file_analysis} ne 0 ) {
-
-        ## Create directory unless it already exists
-        make_path( dirname( $active_parameter{config_file_analysis} ) );
-
-        ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
-        my @remove_keys = (qw{ associated_program });
-
-      KEY:
-        foreach my $key (@remove_keys) {
-
-            delete $active_parameter{$key};
+    write_mip_config(
+        {
+            active_parameter_href => \%active_parameter,
+            log                   => $log,
+            remove_keys_ref       => [qw{ associated_program }],
+            sample_info_href      => \%sample_info,
         }
-
-        ## Writes a YAML hash to file
-        write_yaml(
-            {
-                yaml_href      => \%active_parameter,
-                yaml_file_path => $active_parameter{config_file_analysis},
-            }
-        );
-        $log->info( 'Wrote: ' . $active_parameter{config_file_analysis}, "\n" );
-
-        ## Add to qc_sample_info
-        $sample_info{config_file_analysis} =
-          $active_parameter{config_file_analysis};
-    }
+    );
 
 ## Detect the gender included in current analysis
     (
