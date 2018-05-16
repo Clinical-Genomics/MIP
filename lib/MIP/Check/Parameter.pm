@@ -35,6 +35,7 @@ BEGIN {
       check_gzipped
       check_parameter_hash
       check_pprogram_exists_in_hash
+      check_prioritize_variant_callers
       check_program_mode
       check_sample_ids
       check_sample_id_in_hash_parameter
@@ -546,6 +547,123 @@ sub check_pprogram_exists_in_hash {
         }
     }
     return;
+}
+
+sub check_prioritize_variant_callers {
+
+## Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $log                   => Log object
+##          : $parameter_href        => Parameter hash {REF}
+##          : $parameter_name        => Parameter name
+##          : $variant_callers_ref   => Variant callers to check {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $parameter_href;
+    my $parameter_name;
+    my $variant_callers_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+        variant_callers_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$variant_callers_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @priority_order_names =
+      split $COMMA, $active_parameter_href->{$parameter_name};
+
+    ## Alias
+    my @variant_caller_aliases;
+
+    ## Check that all active variant callers have a priority order
+  CALLER:
+    foreach my $variant_caller ( @{$variant_callers_ref} ) {
+
+        my $variant_caller_alias =
+          $parameter_href->{$variant_caller}{outdir_name};
+        push @variant_caller_aliases, $variant_caller_alias;
+
+        ## Only active programs
+        if ( $active_parameter_href->{$variant_caller} ) {
+
+            ## If variant caller alias is not part of priority order names
+            if ( not any { $_ eq $variant_caller_alias } @priority_order_names )
+            {
+
+                $log->fatal( $parameter_name
+                      . q{ does not contain active variant caller: '}
+                      . $variant_caller_alias
+                      . $SINGLE_QUOTE );
+                exit 1;
+            }
+        }
+        else {
+            ## Only NOT active programs
+
+            ## If variant caller alias is part of priority order names
+            if ( any { $_ eq $variant_caller_alias } @priority_order_names ) {
+
+                $log->fatal( $parameter_name
+                      . q{ contains deactivated variant caller: '}
+                      . $variant_caller_alias
+                      . $SINGLE_QUOTE );
+                exit 1;
+            }
+        }
+    }
+
+    ## Check that prioritize string contains valid variant call names
+  PRIO_CALL:
+    foreach my $prioritize_call (@priority_order_names) {
+
+        # If priority order names is not part of variant caller alias
+        if ( not any { $_ eq $prioritize_call } @variant_caller_aliases ) {
+
+            $log->fatal( $parameter_name . q{: '}
+                  . $prioritize_call
+                  . q{' does not match any supported variant caller: '}
+                  . join( $COMMA, @variant_caller_aliases )
+                  . $SINGLE_QUOTE );
+            exit 1;
+        }
+    }
+    return 1;
 }
 
 sub check_program_mode {

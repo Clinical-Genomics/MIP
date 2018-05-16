@@ -59,7 +59,8 @@ use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
-use MIP::Parse::Parameter qw{parse_start_with_program};
+use MIP::Parse::Parameter
+  qw{ parse_prioritize_variant_callers parse_start_with_program };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
@@ -757,39 +758,14 @@ sub mip_analyse {
         }
     );
 
-## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
-    my %priority_call_parameter = (
-        variant_callers            => 'gatk_combinevariants_prioritize_caller',
-        structural_variant_callers => 'sv_svdb_merge_prioritize',
-    );
-    while ( my ( $variant_caller_type, $prioritize_parameter_name ) =
-        each %priority_call_parameter )
-    {
-
-        ## Check if we have any active callers
-        my $activate_caller_tracker = 0;
-        foreach my $variant_caller (
-            @{ $parameter{dynamic_parameter}{$variant_caller_type} } )
+## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller
+    parse_prioritize_variant_callers(
         {
-
-            if ( $active_parameter{$variant_caller} > 0 ) {
-
-                $activate_caller_tracker++;
-            }
+            active_parameter_href => \%active_parameter,
+            log                   => $log,
+            parameter_href        => \%parameter,
         }
-        if ( $activate_caller_tracker > 0 ) {
-
-            check_prioritize_variant_callers(
-                {
-                    parameter_href        => \%parameter,
-                    active_parameter_href => \%active_parameter,
-                    variant_callers_ref =>
-                      \@{ $parameter{dynamic_parameter}{$variant_caller_type} },
-                    parameter_names_ref => \$prioritize_parameter_name,
-                }
-            );
-        }
-    }
+    );
 
 ## Broadcast set parameters info
     foreach my $parameter_info (@broadcasts) {
@@ -2935,118 +2911,6 @@ sub check_string {
     if ( $string =~ /$regexp/ ) {
 
         return 1;
-    }
-}
-
-sub check_prioritize_variant_callers {
-
-## Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
-## Returns  :
-## Arguments: $parameter_href        => Parameter hash {REF}
-##          : $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $variant_callers_ref   => Variant callers to check {REF}
-##          : $parameter_names_ref   => Parameter name list {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $variant_callers_ref;
-    my $parameter_names_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-            ,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-            ,
-        },
-        parameter_names_ref => {
-            required => 1,
-            defined  => 1,
-            default  => [],
-            store    => \$parameter_names_ref,
-        },
-        variant_callers_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$variant_callers_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my @priority_calls =
-      split( ",", $active_parameter_href->{$$parameter_names_ref} );
-
-    ## No matching variant caller
-    my @variant_caller_aliases;
-
-    ## Check that all active variant callers have a priority order
-  CALLER:
-    foreach my $variant_caller ( @{$variant_callers_ref} ) {
-
-        my $variant_caller_alias =
-          $parameter_href->{$variant_caller}{outdir_name};
-        push @variant_caller_aliases, $variant_caller_alias;
-
-        ## Only active programs
-        if ( $active_parameter_href->{$variant_caller} > 0 ) {
-
-            ## If element is not part of string
-            if ( !( any { $_ eq $variant_caller_alias } @priority_calls ) ) {
-
-                $log->fatal( $$parameter_names_ref
-                      . q{ does not contain active variant caller: '}
-                      . $variant_caller_alias
-                      . q{'} );
-                exit 1;
-            }
-        }
-        ## Only NOT active programs
-        if ( $active_parameter_href->{$variant_caller} == 0 ) {
-
-            ## If element is part of string
-            if ( ( any { $_ eq $variant_caller_alias } @priority_calls ) ) {
-
-                $log->fatal( $$parameter_names_ref
-                      . q{ contains deactivated variant caller: '}
-                      . $variant_caller_alias
-                      . q{'} );
-                exit 1;
-            }
-        }
-    }
-
-    ## Check that prioritize string contains valid variant call names
-    foreach my $prioritize_call (@priority_calls) {
-
-        if ( !( any { $_ eq $prioritize_call } @variant_caller_aliases ) )
-        {    #If element is not part of string
-
-            $log->fatal( $$parameter_names_ref . ": '"
-                  . $prioritize_call
-                  . "' does not match any supported variant caller: '"
-                  . join( ",", @variant_caller_aliases )
-                  . "'" );
-            exit 1;
-        }
     }
 }
 
