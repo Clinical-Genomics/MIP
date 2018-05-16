@@ -1,0 +1,31 @@
+default_gene_panels:
+  - IEM
+family: '118-rnatest'
+samples:
+  - analysis_type: wts
+    sample_id: 118-1-2A
+    capture_kit: agilent_sureselect.v5
+    father: 118-2-1U
+    mother: 118-2-2U
+    sample_name: 118-1-2A
+    phenotype: affected
+    sex: unknown
+    expected_coverage: 150
+  - analysis_type: wts
+    sample_id: 118-2-1U
+    capture_kit: agilent_sureselect.v5
+    father: '0'
+    mother: '0'
+    sample_name: 118-2-1U
+    phenotype: unaffected
+    sex: unknown
+    expected_coverage: 150
+  - analysis_type: wts
+    sample_id: 118-2-2U
+    capture_kit: agilent_sureselect.v5
+    father: '0'
+    mother: '0'
+    sample_name: 118-2-2U
+    phenotype: unaffected
+    sex: unknown
+    expected_coverage: 150

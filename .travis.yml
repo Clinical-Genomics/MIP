@@ -32,20 +32,28 @@ before_install:
 install: 
 ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
-## Generate installation script 
-  - perl mip install rare_disease --config definitions/install_rare_disease_parameters.yaml --quiet --bash_set_errexit --install emip esvdb epeddy epy3 --envn emip=mip_travis --snpg GRCh37.75 --skip gatk
+## Generate rare disease installation script 
+  - PERL5OPT=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine perl mip install rare_disease --config definitions/install_rare_disease_parameters.yaml --quiet --bash_set_errexit --install emip esvdb epeddy epy3 --envn emip=mip_travis --snpg GRCh37.75 --skip gatk
 ## Install MIP rare disease
+  - bash mip.sh
+## Generate rna installation script
+  - PERL5OPT=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine perl mip install rna --config definitions/install_rna_parameters.yaml --quiet --bash_set_errexit --install emip --skip gatk
+## Install MIP rna
   - bash mip.sh
 
 script:
-## Test MIP
+## Test MIP rare_disease
   - source activate mip_travis
   - cd /lib/x86_64-linux-gnu
   - sudo ln -s "$ROOTSYS"/lib/*so .
   - cd -
-## Set-up test coverage for test directory "t" and "analyse rare disease pipeline
+## Set-up test coverage for test directory "t"
   - PERL5OPT=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine prove -lr t
+## Set-up test coverage for mip_analyse_rare_disease.test
   - PERL5OPT=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rare_disease.test
+## Set-up test coverage for mip_analyse_rna.test
+  - PERL5OPT=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rna.test 
+## Get some coverage statistics
   - cover
 
 after_success:
