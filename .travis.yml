@@ -52,6 +52,7 @@ script:
 ## Set-up test coverage for mip_analyse_rare_disease.test
   - PERL5OPT=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rare_disease.test
 ## Set-up test coverage for mip_analyse_rna.test
+  - source activate MIP_rna
   - PERL5OPT=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rna.test 
 ## Get some coverage statistics
   - cover
