@@ -29,6 +29,8 @@ our $USAGE = build_usage( {} );
 ##Constants
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
+Readonly my $COMMA   => q{,};
+
 my $VERBOSE = 1;
 our $VERSION = q{1.0.2};
 
