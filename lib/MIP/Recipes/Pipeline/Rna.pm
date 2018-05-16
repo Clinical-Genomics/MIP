@@ -146,6 +146,8 @@ sub pipeline_rna {
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration_rna };
     use MIP::Recipes::Analysis::Gatk_realigner qw{ analysis_gatk_realigner };
+    use MIP::Recipes::Analysis::Gatk_splitncigarreads
+      qw{ analysis_gatk_splitncigarreads };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles_rna };
     use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
@@ -315,6 +317,39 @@ sub pipeline_rna {
                     outsample_directory     => $outsample_directory,
                     parameter_href          => $parameter_href,
                     program_name            => q{picardtools_mergesamfiles},
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
+                }
+            );
+        }
+    }
+
+    ## GATK SplitNCigarReads
+    if ( $active_parameter_href->{pgatk_splitncigarreads} ) {
+
+        $log->info(q{[GATK SplitNCigarReads]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            ## Assign directories
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_gatk_splitncigarreads(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    insample_directory      => $insample_directory,
+                    job_id_href             => $job_id_href,
+                    outsample_directory     => $outsample_directory,
+                    parameter_href          => $parameter_href,
+                    program_name            => q{gatk_splitncigarreads},
                     sample_id               => $sample_id,
                     sample_info_href        => $sample_info_href,
                 }
