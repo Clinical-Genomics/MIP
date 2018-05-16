@@ -219,8 +219,9 @@ sub analysis_gatk_splitncigarreads {
         }
     );
 
+    ## Used downstream
     $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
-      $outsample_directory;    #Used downstream
+      $outsample_directory;
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
