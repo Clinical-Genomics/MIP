@@ -30,7 +30,7 @@ our $USAGE = build_usage( {} );
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 my $VERBOSE = 1;
-our $VERSION = q{1.0.1};
+our $VERSION = q{1.0.2};
 
 ###User Options
 GetOptions(
@@ -79,7 +79,14 @@ BEGIN {
 use MIP::Gnu::Coreutils qw(gnu_sort);
 use MIP::Test::Commands qw(test_function);
 
-diag("Test gnu_sort $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag(   q{Test gnu_sort from Coreutils.pm v}
+      . $MIP::Gnu::Coreutils::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
 my $function_base_command = q{sort};
@@ -120,6 +127,10 @@ my %specific_argument = (
     infile_path => {
         input           => q{infile.test},
         expected_output => q{infile.test},
+    },
+    outfile_path => {
+        input           => q{outfile.test},
+        expected_output => q{> outfile.test},
     },
 );
 
