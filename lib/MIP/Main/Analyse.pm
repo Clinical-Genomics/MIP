@@ -287,6 +287,11 @@ sub mip_analyse {
         }
     );
 
+## Write MIP VERSION and log file path
+    $log->info( q{MIP Version: } . $VERSION );
+    $log->info( q{Script parameters and info from are saved in file: }
+          . $active_parameter{log_file} );
+
 ## Parse pedigree file
 ## Reads family_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
     # Meta data in YAML format
@@ -852,26 +857,13 @@ sub mip_analyse {
         }
     );
 
-    if ( $active_parameter{verbose} ) {
-## Write CMD to MIP log file
-        write_cmd_mip_log(
-            {
-                parameter_href        => \%parameter,
-                active_parameter_href => \%active_parameter,
-                order_parameters_ref  => \@order_parameters,
-                script_ref            => \$script,
-                log_file_ref          => \$active_parameter{log_file},
-                mip_version_ref       => \$VERSION,
-            }
-        );
-    }
-
 ## Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any of the files exist
     collect_infiles(
         {
             active_parameter_href => \%active_parameter,
             indir_path_href       => \%indir_path,
             infile_href           => \%infile,
+            log                   => $log,
         }
     );
 
@@ -1113,62 +1105,64 @@ sub mip_analyse {
 
 sub collect_infiles {
 
-##collect_infiles
-
-##Function : Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist.
-##Returns  : ""
-##Arguments: $active_parameter_href, $indir_path_href, $infile_href
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $indir_path_href       => Indirectories path(s) hash {REF}
-##         : $infile_href           => Infiles hash {REF}
+## Function : Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $indir_path_href       => Indirectories path(s) hash {REF}
+##          : $infile_href           => Infiles hash {REF}
+##          : $log                   => Log object
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $log;
     my $indir_path_href;
     my $infile_href;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         indir_path_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$indir_path_href,
             strict_type => 1,
-            store       => \$indir_path_href
         },
         infile_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_href,
             strict_type => 1,
-            store       => \$infile_href
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    $log->info(q{Reads from platform:});
 
-    $log->info("Reads from platform:\n");
-
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-    {    #Collects inputfiles govern by sample_ids
+    ## Collects inputfiles governed by sample_ids
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Return the key if the hash value and query match
         my $infile_directory_ref = \get_matching_values_key(
             {
                 active_parameter_href => $active_parameter_href,
+                parameter_name        => q{infile_dirs},
                 query_value_ref       => \$sample_id,
-                parameter_name        => "infile_dirs",
             }
         );
 
@@ -1176,58 +1170,71 @@ sub collect_infiles {
 
         ## Collect all fastq files in supplied indirectories
         my $rule = Path::Iterator::Rule->new;
-        $rule->skip_subdirs("original_fastq_files")
-          ;    #Ignore if original fastq files sub directory
-        $rule->name("*.fastq*");    #Only look for fastq or fastq.gz files
-        my $it = $rule->iter($$infile_directory_ref);
 
-        while ( my $file = $it->() ) {    #Iterate over directory
+        # Ignore if original fastq files sub directory
+        $rule->skip_subdirs(q{original_fastq_files});
+
+        # Only look for fastq or fastq.gz files
+        $rule->name(q{*.fastq*});
+
+        my $iter = $rule->iter($$infile_directory_ref);
+
+      DIRECTORY:
+        while ( my $file = $iter->() ) {
 
             my ( $volume, $directory, $fastq_file ) = splitpath($file);
             push( @infiles, $fastq_file );
         }
-        chomp(@infiles);    #Remove newline from every entry in array
 
-        if ( !@infiles ) {  #No "*.fastq*" infiles
+        # Remove newline from every entry in array
+        chomp(@infiles);
+
+        #No "*.fastq*" infiles
+        if ( !@infiles ) {
 
             $log->fatal(
-"Could not find any '.fastq' files in supplied infiles directory "
+q{Could not find any '.fastq' files in supplied infiles directory }
                   . $$infile_directory_ref,
-                "\n"
             );
             exit 1;
         }
-        foreach my $infile (@infiles)
-        {    #Check that inFileDirs/infile contains sample_id in filename
+
+        ## Check that inFileDirs/infile contains sample_id in filename
+      INFILE:
+        foreach my $infile (@infiles) {
 
             unless ( $infile =~ /$sample_id/ ) {
 
                 $log->fatal(
-                    "Could not detect sample_id: "
+                        q{Could not detect sample_id: }
                       . $sample_id
-                      . " in supplied infile: "
-                      . $$infile_directory_ref . "/"
+                      . q{ in supplied infile: }
+                      . $$infile_directory_ref . q{/}
                       . $infile,
-                    "\n"
                 );
                 $log->fatal(
-"Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.",
-                    "\n"
+q{Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
                 );
                 exit 1;
             }
         }
-        $log->info( "Sample id: " . $sample_id . "\n" );
-        $log->info("\tInputfiles:\n");
+
+        $log->info( q{Sample id: } . $sample_id );
+        $log->info(qq{\tInputfiles:});
 
         ## Log each file from platform
+      FILE:
         foreach my $file (@infiles) {
 
-            $log->info( "\t\t", $file, "\n" );    #Indent for visability
+            # Indent for visability
+            $log->info( qq{\t\t}, $file );
         }
-        $indir_path_href->{$sample_id} =
-          $$infile_directory_ref;                 #Catch inputdir path
-        $infile_href->{$sample_id} = [@infiles];  #Reload files into hash
+
+        #Catch inputdir path
+        $indir_path_href->{$sample_id} = $$infile_directory_ref;
+
+        ## Reload files into hash
+        $infile_href->{$sample_id} = [@infiles];
     }
 }
 
@@ -2325,172 +2332,6 @@ sub create_file_endings {
     return;
 }
 
-sub write_cmd_mip_log {
-
-##write_cmd_mip_log
-
-##Function : Write CMD to MIP log file
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $order_parameters_ref, $script_ref, $log_file_ref
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $order_parameters_ref  => Order of addition to parameter array {REF}
-##         : $script_ref            => The script that is being executed {REF}
-##         : $log_file_ref          => The log file {REF}
-##         : $mip_version_ref       => The MIP version
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $order_parameters_ref;
-    my $script_ref;
-    my $log_file_ref;
-    my $mip_version_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        order_parameters_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$order_parameters_ref
-        },
-        script_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$script_ref
-        },
-        log_file_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$log_file_ref
-        },
-        mip_version_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$mip_version_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $cmd_line = $$script_ref . " ";
-
-    my @nowrite = (
-        "mip",                  "bwa_build_reference",
-        "pbamcalibrationblock", "pvariantannotationblock",
-        q{associated_program},  q{rtg_build_reference},
-    );
-
-  PARAMETER_KEY:
-    foreach my $order_parameter_element ( @{$order_parameters_ref} ) {
-
-        if ( defined $active_parameter_href->{$order_parameter_element} ) {
-
-            ## If no config file do not print
-            if (   $order_parameter_element eq q{config_file}
-                && $active_parameter_href->{config_file} eq 0 )
-            {
-            }
-            else {
-
-                ## If element is part of array - do nothing
-                if ( any { $_ eq $order_parameter_element } @nowrite ) {
-                }
-                elsif (
-                    ## Array reference
-                    (
-                        exists $parameter_href->{$order_parameter_element}
-                        {data_type}
-                    )
-                    && ( $parameter_href->{$order_parameter_element}{data_type}
-                        eq q{ARRAY} )
-                  )
-                {
-
-                    my $separator = $parameter_href->{$order_parameter_element}
-                      {element_separator};
-                    $cmd_line .= "-"
-                      . $order_parameter_element . " "
-                      . join(
-                        $separator,
-                        @{
-                            $active_parameter_href->{$order_parameter_element}
-                        }
-                      ) . " ";
-                }
-                elsif (
-                    ## HASH reference
-                    (
-                        exists $parameter_href->{$order_parameter_element}
-                        {data_type}
-                    )
-                    && ( $parameter_href->{$order_parameter_element}{data_type}
-                        eq q{HASH} )
-                  )
-                {
-
-                    # First key
-                    $cmd_line .= "-" . $order_parameter_element . " ";
-                    $cmd_line .= join(
-                        "-" . $order_parameter_element . " ",
-                        map {
-"$_=$active_parameter_href->{$order_parameter_element}{$_} "
-                        } (
-                            keys %{
-                                $active_parameter_href
-                                  ->{$order_parameter_element}
-                            }
-                        )
-                    );
-                }
-                else {
-
-                    $cmd_line .= "-"
-                      . $order_parameter_element . " "
-                      . $active_parameter_href->{$order_parameter_element}
-                      . " ";
-                }
-            }
-        }
-    }
-    $log->info( $cmd_line,                            "\n" );
-    $log->info( q{MIP Version: } . $$mip_version_ref, "\n" );
-    $log->info(
-        q{Script parameters and info from }
-          . $$script_ref
-          . q{ are saved in file: }
-          . $$log_file_ref,
-        "\n"
-    );
-    return;
-}
-
 sub add_to_sample_info {
 
 ##add_to_sample_info
@@ -2785,49 +2626,46 @@ q?perl -ne 'if ($_!~/@/) {chomp($_);my $seq_length = length($_);print $seq_lengt
 
 sub get_matching_values_key {
 
-##get_matching_values_key
-
-##Function : Return the key if the hash value and query match
-##Returns  : "key pointing to matched value"
-##Arguments: $active_parameter_href, $query_value_ref, $parameter_name
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $query_value_ref       => The value to query in the hash {REF}
-##         : $parameter_name        => MIP parameter name
+## Function : Return the key if the hash value and query match
+## Returns  : "key pointing to matched value"
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_name        => MIP parameter name
+##          : $query_value_ref       => Value to query in the hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $query_value_ref;
     my $parameter_name;
+    my $query_value_ref;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        query_value_ref => {
-            required    => 1,
             defined     => 1,
-            default     => \$$,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$query_value_ref
         },
         parameter_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$parameter_name,
+            strict_type => 1,
+        },
+        query_value_ref => {
+            default     => \$$,
+            defined     => 1,
+            required    => 1,
+            store       => \$query_value_ref,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my %reversed = reverse %{ $active_parameter_href->{$parameter_name} }
-      ;    #Values are now keys and vice versa
+    ## Values are now keys and vice versa
+    my %reversed = reverse %{ $active_parameter_href->{$parameter_name} };
 
     if ( exists $reversed{$$query_value_ref} ) {
 
