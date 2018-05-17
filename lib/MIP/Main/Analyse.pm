@@ -65,7 +65,8 @@ use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
   qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_dynamic_parameter set_human_genome_reference_features set_parameter_reference_dir_path set_parameter_to_broadcast };
-use MIP::Update::Contigs qw{ update_contigs_for_run };
+use MIP::Update::Contigs
+  qw{ size_sort_select_file_contigs update_contigs_for_run };
 use MIP::Update::Parameters
   qw{ update_dynamic_config_parameters update_exome_target_bed update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
@@ -842,11 +843,12 @@ sub mip_analyse {
 ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
     @{ $file_info{sorted_select_file_contigs} } = size_sort_select_file_contigs(
         {
-            file_info_href => \%file_info,
-            consensus_analysis_type_ref =>
-              \$parameter{dynamic_parameter}{consensus_analysis_type},
-            hash_key_to_sort        => 'select_file_contigs',
-            hash_key_sort_reference => 'contigs_size_ordered',
+            consensus_analysis_type =>
+              $parameter{dynamic_parameter}{consensus_analysis_type},
+            file_info_href          => \%file_info,
+            hash_key_sort_reference => q{contigs_size_ordered},
+            hash_key_to_sort        => q{select_file_contigs},
+            log                     => $log,
         }
     );
 
@@ -2487,111 +2489,6 @@ sub write_cmd_mip_log {
         "\n"
     );
     return;
-}
-
-sub size_sort_select_file_contigs {
-
-## Function : Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-## Returns  : @sorted_contigs
-## Arguments: $consensus_analysis_type_ref => Consensus analysis_type {REF}
-##          : $file_info_href              => File info hash {REF}
-##          : $hash_key_sort_reference     => The hash keys sort reference
-##          : $hash_key_to_sort            => The keys to sort
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $consensus_analysis_type_ref;
-    my $file_info_href;
-    my $hash_key_sort_reference;
-    my $hash_key_to_sort;
-
-    my $tmpl = {
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        consensus_analysis_type_ref => {
-            default     => \$$,
-            defined     => 1,
-            required    => 1,
-            store       => \$consensus_analysis_type_ref,
-            strict_type => 1,
-        },
-        hash_key_to_sort => {
-            defined     => 1,
-            required    => 1,
-            store       => \$hash_key_to_sort,
-            strict_type => 1,
-        },
-        hash_key_sort_reference => {
-            defined     => 1,
-            required    => 1,
-            store       => \$hash_key_sort_reference,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Hash qw{ check_element_exist_hash_of_array };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my @sorted_contigs;
-
-    ## Sort the contigs depending on reference array
-    if ( $file_info_href->{$hash_key_to_sort} ) {
-
-        foreach my $element ( @{ $file_info_href->{$hash_key_sort_reference} } )
-        {
-
-            if (
-                not check_element_exist_hash_of_array(
-                    {
-                        element  => $element,
-                        hash_ref => $file_info_href,
-                        key      => $hash_key_to_sort,
-                    }
-                )
-              )
-            {
-
-                push @sorted_contigs, $element;
-            }
-        }
-    }
-
-    ## Test if all contigs collected from select file was sorted by reference contig array
-    if ( @sorted_contigs
-        && scalar @{ $file_info_href->{$hash_key_to_sort} } !=
-        scalar @sorted_contigs )
-    {
-
-        foreach my $element ( @{ $file_info_href->{$hash_key_to_sort} } ) {
-
-            ## If element is not part of array
-            if ( not any { $_ eq $element } @sorted_contigs ) {
-
-                ## Special case when analysing wes since Mitochondrial contigs have no baits in exome capture kits
-                unless ( $$consensus_analysis_type_ref eq q{wes}
-                    && $element =~ /MT$|M$/ )
-                {
-
-                    $log->fatal( q{Could not detect '##contig'= }
-                          . $element
-                          . q{ from meta data header in '-vcfparser_select_file' in reference contigs collected from '-human_genome_reference'}
-                    );
-                    exit 1;
-                }
-            }
-        }
-    }
-    return @sorted_contigs;
 }
 
 sub add_to_sample_info {
