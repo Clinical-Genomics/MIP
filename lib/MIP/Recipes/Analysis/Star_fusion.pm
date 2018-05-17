@@ -241,7 +241,7 @@ sub analysis_star_fusion {
                 {
                     FILEHANDLE            => $FILEHANDLE,
                     genome_lib_dir_path   => $genome_lib_dir_path,
-                    infile_path           => $infile_path,
+                    sjdb_path             => $infile_path,
                     output_directory_path => $outsample_directory,
                 }
             );
