@@ -30,43 +30,40 @@ BEGIN {
 
 sub update_contigs_for_run {
 
-## update_contigs_for_run
-
 ## Function : Update contigs depending on settings in run
 ## Returns  :
-## Arguments: $file_info_href, $analysis_type_href, $found_male
+## Arguments: $analysis_type_href => Analysis_type hash {REF}
 ##          : $file_info_href     => File info hash {REF}
-##          : $analysis_type_href => Analysis_type hash {REF}
 ##          : $found_male         => Male was included in the analysis
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $file_info_href;
     my $analysis_type_href;
+    my $file_info_href;
     my $found_male;
 
     my $tmpl = {
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
         analysis_type_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_type_href,
             strict_type => 1,
-            store       => \$analysis_type_href
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
         },
         found_male => {
-            required    => 1,
-            defined     => 1,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$found_male,
+            strict_type => 1,
         },
     };
 
