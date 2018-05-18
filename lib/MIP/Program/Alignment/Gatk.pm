@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -353,7 +353,6 @@ sub gatk_haplotypecaller {
         intervals_ref => {
             default     => [],
             defined     => 1,
-            required    => 1,
             store       => \$intervals_ref,
             strict_type => 1,
         },
@@ -441,11 +440,12 @@ sub gatk_haplotypecaller {
     if ($java_jar) {
 
         @commands = java_core(
-            java_jar             => $java_jar,
-            java_use_large_pages => $java_use_large_pages,
-            memory_allocation    => $memory_allocation,
-            temp_directory       => $temp_directory,
-            {}
+            {
+                java_jar             => $java_jar,
+                java_use_large_pages => $java_use_large_pages,
+                memory_allocation    => $memory_allocation,
+                temp_directory       => $temp_directory,
+            }
         );
     }
 

@@ -1,5 +1,5 @@
 ---
-## Version: 2.1.1
+## Version: 2.1.2
 ## HumanGenomeReference
 human_genome_reference:
   associated_program:
@@ -15,30 +15,35 @@ human_genome_reference:
 gatk_bundle_download_version:
   associated_program:
    - pgatk_baserecalibration
+   - pgatk_haplotypecaller
   data_type: SCALAR
   default: 2.8
   type: program_argument
 gatk_disable_auto_index_and_file_lock:
   associated_program:
    - pgatk_baserecalibration
+   - pgatk_haplotypecaller
   data_type: SCALAR
   default: 0
   type: program_argument
 gatk_downsample_to_coverage:
   associated_program:
    - pgatk_baserecalibration
+   - pgatk_haplotypecaller
   data_type: SCALAR
   default: 1000
   type: program_argument
 gatk_logging_level:
   associated_program:
    - pgatk_baserecalibration
+   - pgatk_haplotypecaller
   data_type: SCALAR
   default: INFO
   type: program_argument
 gatk_path:
   associated_program:
    - pgatk_baserecalibration
+   - pgatk_haplotypecaller
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -46,6 +51,8 @@ gatk_path:
 ## java large pages - affects all modules using java
 java_use_large_pages:
   associated_program:
+   - pgatk_baserecalibration
+   - pgatk_haplotypecaller
    - pstar_aln
   data_type: SCALAR
   default: 0
@@ -59,6 +66,7 @@ module_time:
     pfastqc: 10
     pgatk_baserecalibration: 10
     pgatk_splitncigarreads: 1
+    pgatk_haplotypecaller: 20
     pgzip_fastq: 2
     ppicardtools_mergesamfiles: 10
     psalmon_quant: 5
@@ -73,6 +81,7 @@ module_core_number:
     pfastqc: 0
     pgatk_baserecalibration: 16
     pgatk_splitncigarreads: 1
+    pgatk_haplotypecaller: 16
     pgzip_fastq: 0
     ppicardtools_mergesamfiles: 16
     psalmon_quant: 1
@@ -263,3 +272,62 @@ gatk_baserecalibration_static_quantized_quals:
    - 30
    - 40
   type: program_argument
+## GATK Genotype
+pgatk_haplotypecaller:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _haptc
+  file_endings:
+   - .vcf
+  outfile_suffix: ".vcf"
+  type: program
+gatk_haplotypecaller_annotation:
+  associated_program:
+   - pgatk_haplotypecaller
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - BaseQualityRankSumTest
+   - ChromosomeCounts
+   - Coverage
+   - DepthPerAlleleBySample
+   - FisherStrand
+   - MappingQualityRankSumTest
+   - QualByDepth
+   - RMSMappingQuality
+   - ReadPosRankSumTest
+   - StrandOddsRatio
+  type: program_argument
+#BaseQualityRankSumTest;  #Rank Sum Test of REF versus ALT base quality scores
+#ChromosomeCounts;  #Counts and frequency of alleles in called genotypes
+#Coverage;  #Total depth of coverage per sample and over all samples
+#DepthPerAlleleBySample;  #Depth of coverage of each allele per sample
+#FisherStrand;  #Strand bias estimated using Fisher's Exact Test
+#MappingQualityRankSumTest;  #Rank Sum Test for mapping qualities of REF versus ALT reads
+#QualByDepth;  #Variant confidence normalized by unfiltered depth of variant samples
+#RMSMappingQuality;  #Root Mean Square of the mapping quality of reads across all samples
+#ReadPosRankSumTest;  #Rank Sum Test for relative positioning of REF versus ALT alleles within reads
+#StrandOddsRatio ;  #Strand bias estimated by the Symmetric Odds Ratio test
+gatk_haplotypecaller_no_soft_clipped_bases:
+  associated_program:
+   - pgatk_haplotypecaller
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+gatk_haplotypecaller_pcr_indel_model:
+  associated_program:
+   - pgatk_haplotypecaller
+  data_type: SCALAR
+  default: CONSERVATIVE
+  type: program_argument
+gatk_haplotypecaller_snp_known_set:
+  associated_program:
+   - pgatk_haplotypecaller
+  data_type: SCALAR
+  default: GRCh37_dbsnp_-138-.vcf
+  exists_check: file
+  reference: reference_dir
+  type: path
