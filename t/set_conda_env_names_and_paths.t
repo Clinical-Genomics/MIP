@@ -114,59 +114,72 @@ my $log = initiate_logger(
     }
 );
 
+## Given a test hash with a defined name for MIP main env (emip) and two sub
+## environments whereof one is named.
 my %parameter = (
-    installations    => [qw{ emip test_env_1 test_env_2 }],
+    conda_dir_path   => catdir( $Bin, qw{ data modules miniconda } ),
     environment_name => {
         emip       => q{Test},
         test_env_1 => undef,
         test_env_2 => q{test_2},
     },
-    conda_dir_path => catdir( $Bin, qw{ data modules miniconda } ),
+    installations => [qw{ emip test_env_1 test_env_2 }],
 );
 
+## When the subroutine is being ran
 set_conda_env_names_and_paths(
     {
-        parameter_href => \%parameter,
         log            => $log,
+        parameter_href => \%parameter,
     }
 );
-
+## Then:
+## The unnamed sub environment shall be named with the main environment name
+## followed by the sub environment
 is( $parameter{environment_name}{test_env_1},
     q{Test_test_env_1}, q{Set undefined environment name} );
+## The named sub environment shall retain it's name
 is( $parameter{environment_name}{test_env_2},
     q{test_2}, q{Leave defined environment name} );
+## The path to MIP's conda env shall be set
 is(
     $parameter{emip}{conda_prefix_path},
     catdir( $parameter{conda_dir_path}, qw{ envs Test } ),
     q{Set main environment specific conda paths}
 );
+## The path to the MIP's sub environment shall be set
 is(
     $parameter{test_env_2}{conda_prefix_path},
     catdir( $parameter{conda_dir_path}, qw{ envs test_2 } ),
     q{Set sub environment specific conda paths}
 );
 
-## Test undef main env name
+## Given that MIP's main and sub environments are unnamed
 $parameter{environment_name}{emip}       = undef;
 $parameter{environment_name}{test_env_1} = undef;
 
+## When the subroutine is being ran
 trap {
     set_conda_env_names_and_paths(
         {
-            parameter_href => \%parameter,
             log            => $log,
+            parameter_href => \%parameter,
         }
       )
 };
 
+## Then:
+## The name of sub environemnt shall be the environemnt
 is( $parameter{environment_name}{test_env_1},
     q{test_env_1},
     q{Set undefined environment name when emip env name is undefined} );
+## The conda path for MIP's main environment shall be conda's base environment
 is(
     $parameter{emip}{conda_prefix_path},
     $parameter{conda_dir_path},
     q{Set main environment to base }
 );
+## The Log shall warn
 like( $trap->stderr, qr/WARN/xms,
     q{Warn when installing in conda's base environment} );
 
