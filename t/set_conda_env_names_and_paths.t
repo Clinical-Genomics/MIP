@@ -147,7 +147,9 @@ is(
 );
 
 ## Test undef main env name
-$parameter{environment_name}{emip} = undef;
+$parameter{environment_name}{emip}       = undef;
+$parameter{environment_name}{test_env_1} = undef;
+
 trap {
     set_conda_env_names_and_paths(
         {
@@ -157,6 +159,9 @@ trap {
       )
 };
 
+is( $parameter{environment_name}{test_env_1},
+    q{test_env_1},
+    q{Set undefined environment name when emip env name is undefined} );
 is(
     $parameter{emip}{conda_prefix_path},
     $parameter{conda_dir_path},
