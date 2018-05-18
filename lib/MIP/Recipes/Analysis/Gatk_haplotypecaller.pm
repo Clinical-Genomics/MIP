@@ -591,9 +591,9 @@ sub analysis_gatk_haplotypecaller_rna {
             strict_type => 1,
         },
         sample_id => {
-            defined  => 1,
-            required => 1,
-            store    => \$sample_id, 
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
         },
         sample_info_href => {
@@ -756,13 +756,6 @@ sub analysis_gatk_haplotypecaller_rna {
     ## GATK HaplotypeCaller
     say {$FILEHANDLE} q{## GATK HaplotypeCaller};
 
-    my $pcr_indel_model;
-    if ( $active_parameter_href->{gatk_haplotypecaller_pcr_indel_model} ) {
-        ## Set to GATK default (CONSERVATIVE) for RNA-seq
-        $pcr_indel_model =
-          $active_parameter_href->{gatk_haplotypecaller_pcr_indel_model};
-    }
-
     ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
     my %commands = gatk_pedigree_flag(
         {
@@ -796,7 +789,8 @@ sub analysis_gatk_haplotypecaller_rna {
             memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             num_cpu_threads_per_data_thread => $core_number,
             outfile_path                    => $outfile_path,
-            pcr_indel_model                 => $pcr_indel_model,
+            pcr_indel_model =>
+              $active_parameter_href->{gatk_haplotypecaller_pcr_indel_model},
             pedigree_validation_type => $commands{pedigree_validation_type},
             pedigree                 => $commands{pedigree},
             referencefile_path =>
