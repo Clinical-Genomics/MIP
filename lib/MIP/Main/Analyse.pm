@@ -12,7 +12,7 @@ use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname fileparse };
 use File::Copy qw{ copy };
-use File::Spec::Functions qw{ catdir catfile devnull splitpath };
+use File::Spec::Functions qw{ catdir catfile devnull };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use IPC::Cmd qw{ can_run run};
@@ -60,7 +60,7 @@ use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Parse::Parameter
-  qw{ parse_prioritize_variant_callers parse_start_with_program };
+  qw{ parse_infiles parse_prioritize_variant_callers parse_start_with_program };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
@@ -857,8 +857,8 @@ sub mip_analyse {
         }
     );
 
-## Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any of the files exist
-    collect_infiles(
+## Get the ".fastq(.gz)" files from the supplied infiles directory. Checks if the files exist
+    parse_infiles(
         {
             active_parameter_href => \%active_parameter,
             indir_path_href       => \%indir_path,
@@ -1102,141 +1102,6 @@ sub mip_analyse {
 ######################
 ####Sub routines######
 ######################
-
-sub collect_infiles {
-
-## Function : Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist.
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $indir_path_href       => Indirectories path(s) hash {REF}
-##          : $infile_href           => Infiles hash {REF}
-##          : $log                   => Log object
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $indir_path_href;
-    my $infile_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        indir_path_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$indir_path_href,
-            strict_type => 1,
-        },
-        infile_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    $log->info(q{Reads from platform:});
-
-    ## Collects inputfiles governed by sample_ids
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        ## Return the key if the hash value and query match
-        my $infile_directory_ref = \get_matching_values_key(
-            {
-                active_parameter_href => $active_parameter_href,
-                parameter_name        => q{infile_dirs},
-                query_value_ref       => \$sample_id,
-            }
-        );
-
-        my @infiles;
-
-        ## Collect all fastq files in supplied indirectories
-        my $rule = Path::Iterator::Rule->new;
-
-        # Ignore if original fastq files sub directory
-        $rule->skip_subdirs(q{original_fastq_files});
-
-        # Only look for fastq or fastq.gz files
-        $rule->name(q{*.fastq*});
-
-        my $iter = $rule->iter($$infile_directory_ref);
-
-      DIRECTORY:
-        while ( my $file = $iter->() ) {
-
-            my ( $volume, $directory, $fastq_file ) = splitpath($file);
-            push( @infiles, $fastq_file );
-        }
-
-        # Remove newline from every entry in array
-        chomp(@infiles);
-
-        #No "*.fastq*" infiles
-        if ( !@infiles ) {
-
-            $log->fatal(
-q{Could not find any '.fastq' files in supplied infiles directory }
-                  . $$infile_directory_ref,
-            );
-            exit 1;
-        }
-
-        ## Check that inFileDirs/infile contains sample_id in filename
-      INFILE:
-        foreach my $infile (@infiles) {
-
-            unless ( $infile =~ /$sample_id/ ) {
-
-                $log->fatal(
-                        q{Could not detect sample_id: }
-                      . $sample_id
-                      . q{ in supplied infile: }
-                      . $$infile_directory_ref . q{/}
-                      . $infile,
-                );
-                $log->fatal(
-q{Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
-                );
-                exit 1;
-            }
-        }
-
-        $log->info( q{Sample id: } . $sample_id );
-        $log->info(qq{\tInputfiles:});
-
-        ## Log each file from platform
-      FILE:
-        foreach my $file (@infiles) {
-
-            # Indent for visability
-            $log->info( qq{\t\t}, $file );
-        }
-
-        #Catch inputdir path
-        $indir_path_href->{$sample_id} = $$infile_directory_ref;
-
-        ## Reload files into hash
-        $infile_href->{$sample_id} = [@infiles];
-    }
-}
 
 sub infiles_reformat {
 
@@ -2622,55 +2487,6 @@ q?perl -ne 'if ($_!~/@/) {chomp($_);my $seq_length = length($_);print $seq_lengt
     chdir($pwd);
 
     return $ret;
-}
-
-sub get_matching_values_key {
-
-## Function : Return the key if the hash value and query match
-## Returns  : "key pointing to matched value"
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_name        => MIP parameter name
-##          : $query_value_ref       => Value to query in the hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_name;
-    my $query_value_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-        query_value_ref => {
-            default     => \$$,
-            defined     => 1,
-            required    => 1,
-            store       => \$query_value_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Values are now keys and vice versa
-    my %reversed = reverse %{ $active_parameter_href->{$parameter_name} };
-
-    if ( exists $reversed{$$query_value_ref} ) {
-
-        return $reversed{$$query_value_ref};
-    }
 }
 
 ##Investigate potential autodie error

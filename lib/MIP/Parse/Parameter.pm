@@ -24,7 +24,131 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ parse_prioritize_variant_callers parse_start_with_program };
+      qw{ parse_infiles parse_prioritize_variant_callers parse_start_with_program };
+
+}
+
+sub parse_infiles {
+
+## Function : Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $indir_path_href       => Indirectories path(s) hash {REF}
+##          : $infile_href           => Infiles hash {REF}
+##          : $log                   => Log object
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $indir_path_href;
+    my $infile_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        indir_path_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$indir_path_href,
+            strict_type => 1,
+        },
+        infile_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::File qw{ get_files get_matching_values_key };
+
+    $log->info(q{Reads from platform:});
+
+    ## Collects inputfiles governed by sample_ids
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        ## Return the key if the hash value and query match
+        my $infile_directory = get_matching_values_key(
+            {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => q{infile_dirs},
+                query_value           => $sample_id,
+            }
+        );
+
+        my @infiles = get_files(
+            {
+                file_directory   => $infile_directory,
+                rule_name        => q{*.fastq*},
+                rule_skip_subdir => q{original_fastq_files},
+            }
+        );
+
+        #No "*.fastq*" infiles
+        if ( !@infiles ) {
+
+            $log->fatal(
+q{Could not find any '.fastq' files in supplied infiles directory }
+                  . $infile_directory,
+            );
+            exit 1;
+        }
+
+        ## Check that inFileDirs/infile contains sample_id in filename
+      INFILE:
+        foreach my $infile (@infiles) {
+
+            unless ( $infile =~ /$sample_id/ ) {
+
+                $log->fatal(
+                        q{Could not detect sample_id: }
+                      . $sample_id
+                      . q{ in supplied infile: }
+                      . $infile_directory . q{/}
+                      . $infile,
+                );
+                $log->fatal(
+q{Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
+                );
+                exit 1;
+            }
+        }
+
+        $log->info( q{Sample id: } . $sample_id );
+        $log->info(qq{\tInputfiles:});
+
+        ## Log each file from platform
+      FILE:
+        foreach my $file (@infiles) {
+
+            # Indent for visability
+            $log->info( qq{\t\t}, $file );
+        }
+
+        #Catch inputdir path
+        $indir_path_href->{$sample_id} = $infile_directory;
+
+        ## Reload files into hash
+        $infile_href->{$sample_id} = [@infiles];
+    }
+    return;
 }
 
 sub parse_prioritize_variant_callers {
