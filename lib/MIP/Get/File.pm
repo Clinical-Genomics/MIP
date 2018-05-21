@@ -3,7 +3,7 @@ package MIP::Get::File;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -14,17 +14,25 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use Readonly;
 use List::MoreUtils qw{ any };
+use Path::Iterator::Rule;
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ get_exom_target_bed_file get_file_suffix get_merged_infile_prefix get_path_entries get_select_file_contigs get_seq_dict_contigs };
+    our @EXPORT_OK = qw{
+      get_exom_target_bed_file
+      get_files
+      get_file_suffix
+      get_matching_values_key
+      get_merged_infile_prefix
+      get_path_entries
+      get_select_file_contigs
+      get_seq_dict_contigs };
 }
 
 ## Constants
@@ -117,6 +125,71 @@ sub get_exom_target_bed_file {
     return;
 }
 
+sub get_files {
+
+## Function : Get the file(s) from filesystem
+## Returns  : @files
+## Arguments: $file_directory   => File directory
+##          : $rule_name        => Rule name string
+##          : $rule_skip_subdir => Rule skip sub directories
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_directory;
+    my $rule_name;
+    my $rule_skip_subdir;
+
+    my $tmpl = {
+        file_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_directory,
+            strict_type => 1,
+        },
+        rule_name => {
+            store       => \$rule_name,
+            strict_type => 1,
+        },
+        rule_skip_subdir => {
+            store       => \$rule_skip_subdir,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @files;
+
+    ## Get all files in supplied indirectories
+    my $rule = Path::Iterator::Rule->new;
+
+    ### Set rules
+    ## Ignore if sub directory
+    if ($rule_skip_subdir) {
+
+        $rule->skip_subdirs($rule_skip_subdir);
+    }
+
+    ## Look for particular file name
+    if ($rule_name) {
+
+        $rule->name($rule_name);
+    }
+
+    # Initilize iterator
+    my $iter = $rule->iter($file_directory);
+
+  DIRECTORY:
+    while ( my $file = $iter->() ) {
+
+        my ( $volume, $directory, $file_name ) = splitpath($file);
+        push @files, $file_name;
+    }
+
+    return @files;
+}
+
 sub get_file_suffix {
 
 ## Function : Return the current file suffix for this jobid chain or program
@@ -190,6 +263,55 @@ sub get_file_suffix {
                   . $program_name );
         }
         exit 1;
+    }
+    return;
+}
+
+sub get_matching_values_key {
+
+## Function : Return the key if the hash value and query match
+## Returns  : "key pointing to matched value"
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_name        => MIP parameter name
+##          : $query_value       => Value to query in the hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+    my $query_value;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+        query_value => {
+            defined     => 1,
+            required    => 1,
+            store       => \$query_value,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Values are now keys and vice versa
+    my %reversed = reverse %{ $active_parameter_href->{$parameter_name} };
+
+    if ( exists $reversed{$query_value} ) {
+
+        return $reversed{$query_value};
     }
     return;
 }
