@@ -126,7 +126,7 @@ my %parameter = (
     installations => [qw{ emip test_env_1 test_env_2 }],
 );
 
-## When the subroutine is being ran
+## When the subroutine is executed
 set_conda_env_names_and_paths(
     {
         log            => $log,
@@ -158,7 +158,7 @@ is(
 $parameter{environment_name}{emip}       = undef;
 $parameter{environment_name}{test_env_1} = undef;
 
-## When the subroutine is being ran
+## When the subroutine is executed
 trap {
     set_conda_env_names_and_paths(
         {
