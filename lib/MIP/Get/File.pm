@@ -24,7 +24,8 @@ BEGIN {
     our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ get_exom_target_bed_file
+    our @EXPORT_OK = qw{
+      get_exom_target_bed_file
       get_files
       get_file_suffix
       get_matching_values_key
@@ -128,7 +129,7 @@ sub get_files {
 
 ## Function : Get the file(s) from filesystem
 ## Returns  : @files
-## Arguments: $file_directory   => Active parameters for this analysis hash {REF}
+## Arguments: $file_directory   => File directory
 ##          : $rule_name        => Rule name string
 ##          : $rule_skip_subdir => Rule skip sub directories
 

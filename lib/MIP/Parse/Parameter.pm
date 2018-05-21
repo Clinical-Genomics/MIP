@@ -76,9 +76,9 @@ sub parse_infiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Parameter qw{ check_infiles };
     use MIP::Get::File qw{ get_files get_matching_values_key };
-
-    $log->info(q{Reads from platform:});
+    use MIP::Set::File qw{ set_infiles };
 
     ## Collects inputfiles governed by sample_ids
   SAMPLE_ID:
@@ -93,6 +93,7 @@ sub parse_infiles {
             }
         );
 
+        ## Get the file(s) from filesystem
         my @infiles = get_files(
             {
                 file_directory   => $infile_directory,
@@ -101,36 +102,29 @@ sub parse_infiles {
             }
         );
 
-        #No "*.fastq*" infiles
-        if ( !@infiles ) {
-
-            $log->fatal(
-q{Could not find any '.fastq' files in supplied infiles directory }
-                  . $infile_directory,
-            );
-            exit 1;
-        }
-
-        ## Check that inFileDirs/infile contains sample_id in filename
-      INFILE:
-        foreach my $infile (@infiles) {
-
-            unless ( $infile =~ /$sample_id/ ) {
-
-                $log->fatal(
-                        q{Could not detect sample_id: }
-                      . $sample_id
-                      . q{ in supplied infile: }
-                      . $infile_directory . q{/}
-                      . $infile,
-                );
-                $log->fatal(
-q{Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
-                );
-                exit 1;
+        ## Check infiles found and that they contain sample_id
+        check_infiles(
+            {
+                infiles_ref      => \@infiles,
+                infile_directory => $infile_directory,
+                log              => $log,
+                sample_id        => $sample_id,
             }
-        }
+        );
 
+        ## Set the infile features i.e. dir and files
+        set_infiles(
+            {
+                indir_path_href  => $indir_path_href,
+                infiles_ref      => \@infiles,
+                infile_directory => $infile_directory,
+                infile_href      => $infile_href,
+                sample_id        => $sample_id,
+            }
+        );
+
+        ## Broadcast to user
+        $log->info(q{Reads from platform:});
         $log->info( q{Sample id: } . $sample_id );
         $log->info(qq{\tInputfiles:});
 
@@ -141,14 +135,8 @@ q{Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and t
             # Indent for visability
             $log->info( qq{\t\t}, $file );
         }
-
-        #Catch inputdir path
-        $indir_path_href->{$sample_id} = $infile_directory;
-
-        ## Reload files into hash
-        $infile_href->{$sample_id} = [@infiles];
     }
-    return;
+    return 1;
 }
 
 sub parse_prioritize_variant_callers {

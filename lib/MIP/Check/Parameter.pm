@@ -33,6 +33,7 @@ BEGIN {
       check_cmd_config_vs_definition_file
       check_email_address
       check_gzipped
+      check_infiles
       check_parameter_hash
       check_pprogram_exists_in_hash
       check_prioritize_variant_callers
@@ -399,6 +400,79 @@ sub check_gzipped {
         $file_compression_status = 1;
     }
     return $file_compression_status;
+}
+
+sub check_infiles {
+
+## Function : Check infiles found and that they contain sample_id
+## Returns  :
+## Arguments: $infiles_ref      => Infiles to check {REF}
+##          : $infile_directory => Infile directory
+##          : $sample_id        => Sample id
+##          : $log              => Log object
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infiles_ref;
+    my $infile_directory;
+    my $log;
+    my $sample_id;
+
+    my $tmpl = {
+        infile_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_directory,
+            strict_type => 1,
+        },
+        infiles_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infiles_ref,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## No "*.fastq*" infiles
+    if ( not @{$infiles_ref} ) {
+
+        $log->fatal(
+            q{Could not find any '.fastq' files in supplied infiles directory }
+              . $infile_directory,
+        );
+        exit 1;
+    }
+
+    ## Check that infiledirs/infile contains sample_id in filename
+  INFILE:
+    foreach my $infile ( @{$infiles_ref} ) {
+
+        next INFILE if ( $infile =~ /$sample_id/sxm );
+
+        $log->fatal( q{Could not detect sample_id: }
+              . $sample_id
+              . q{ in supplied infile: }
+              . catfile( $infile_directory, $infile ) );
+        $log->fatal(
+q{Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
+        );
+        exit 1;
+    }
+    return 1;
 }
 
 sub check_parameter_hash {
