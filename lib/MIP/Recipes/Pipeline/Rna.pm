@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rna };
@@ -144,7 +144,14 @@ sub pipeline_rna {
 
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
-      qw{ analysis_gatk_baserecalibration };
+      qw{ analysis_gatk_baserecalibration_rna };
+    use MIP::Recipes::Analysis::Gatk_haplotypecaller
+      qw{ analysis_gatk_haplotypecaller_rna };
+    use MIP::Recipes::Analysis::Gatk_realigner qw{ analysis_gatk_realigner };
+    use MIP::Recipes::Analysis::Gatk_splitncigarreads
+      qw{ analysis_gatk_splitncigarreads };
+    use MIP::Recipes::Analysis::Picardtools_mergesamfiles
+      qw{ analysis_picardtools_mergesamfiles_rna };
     use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
     use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
@@ -286,6 +293,71 @@ sub pipeline_rna {
             );
         }
     }
+    ## Always run merge even for single samples to rename them correctly for standardised downstream processing.
+    if ( $active_parameter_href->{ppicardtools_mergesamfiles} ) {
+
+        $log->info(q{[Picardtools mergesamfiles]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_picardtools_mergesamfiles_rna(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    insample_directory      => $insample_directory,
+                    job_id_href             => $job_id_href,
+                    lane_href               => $lane_href,
+                    outsample_directory     => $outsample_directory,
+                    parameter_href          => $parameter_href,
+                    program_name            => q{picardtools_mergesamfiles},
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
+                }
+            );
+        }
+    }
+
+    ## GATK SplitNCigarReads
+    if ( $active_parameter_href->{pgatk_splitncigarreads} ) {
+
+        $log->info(q{[GATK SplitNCigarReads]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            ## Assign directories
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_gatk_splitncigarreads(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    insample_directory      => $insample_directory,
+                    job_id_href             => $job_id_href,
+                    outsample_directory     => $outsample_directory,
+                    parameter_href          => $parameter_href,
+                    program_name            => q{gatk_splitncigarreads},
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
+                }
+            );
+        }
+    }
 
     ## Base recalibration
     if ( $active_parameter_href->{pgatk_baserecalibration} ) {
@@ -303,7 +375,7 @@ sub pipeline_rna {
               catdir( $active_parameter_href->{outdata_dir},
                 $sample_id, $active_parameter_href->{outaligner_dir} );
 
-            analysis_gatk_baserecalibration(
+            analysis_gatk_baserecalibration_rna(
                 {
                     active_parameter_href   => $active_parameter_href,
                     file_info_href          => $file_info_href,
@@ -320,6 +392,38 @@ sub pipeline_rna {
         }
     }
 
+    ## GATK HaplotypeCaller
+    if ( $active_parameter_href->{pgatk_haplotypecaller} ) {
+
+        $log->info(q{[GATK HaplotypeCaller]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            ## Assign directories
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_gatk_haplotypecaller_rna(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    insample_directory      => $insample_directory,
+                    job_id_href             => $job_id_href,
+                    outsample_directory     => $outsample_directory,
+                    parameter_href          => $parameter_href,
+                    program_name            => q{gatk_haplotypecaller},
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
+                }
+            );
+        }
+    }
     return;
 }
 

@@ -29,6 +29,7 @@ use MIP::Language::Shell qw{ create_bash_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Package_manager::Conda
   qw{ conda_source_activate conda_source_deactivate };
+use MIP::Set::Parameter qw{ set_conda_env_names_and_paths  };
 
 ## Recipes
 use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
@@ -55,7 +56,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.2.1};
+    our $VERSION = q{1.2.2};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -63,13 +64,15 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $COLON      => q{:};
-Readonly my $COMMA      => q{,};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $TAB        => qq{\t};
-Readonly my $UNDERSCORE => q{_};
+Readonly my $CLOSED_BRACKET => q{]};
+Readonly my $COLON          => q{:};
+Readonly my $COMMA          => q{,};
+Readonly my $DOT            => q{.};
+Readonly my $NEWLINE        => qq{\n};
+Readonly my $OPEN_BRACKET   => q{[};
+Readonly my $SPACE          => q{ };
+Readonly my $TAB            => qq{\t};
+Readonly my $UNDERSCORE     => q{_};
 
 sub mip_install {
 
@@ -173,11 +176,16 @@ sub mip_install {
 
     ## Loop over the selected installations
     foreach my $installation ( @{ $parameter{installations} } ) {
+        my $env_name = $parameter{environment_name}{$installation};
+
+        ## If the main MIP installation is to be installed in conda base env
+        if ( not $env_name ) {
+            $env_name = q{conda base};
+        }
 
         ## Create some space
-        $log->info($NEWLINE);
-        $log->info( q{Working on environment: }
-              . $parameter{environment_name}{$installation} );
+        $log->info( $OPEN_BRACKET . $installation . $CLOSED_BRACKET );
+        $log->info( q{Working on environment: } . $env_name );
 
         ## Process input parameters to get a correct combination of programs that are to be installed
         get_programs_for_installation(
@@ -311,82 +319,6 @@ sub mip_install {
 #################
 ###SubRoutines###
 #################
-
-sub set_conda_env_names_and_paths {
-## Function : Set environmnet specific names and paths
-## Returns  :
-## Arguments: $log            => Log
-##          : $parameter_href => The entire parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $log;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @environments = @{ $parameter_href->{installations} };
-
-    ## Set up conda prefix path for MIP main environment
-    if ( any { $_ eq q{emip} } @environments ) {
-
-        if ( $parameter_href->{environment_name}{emip} ) {
-            $parameter_href->{emip}{conda_prefix_path} =
-              catdir( $parameter_href->{conda_dir_path},
-                q{envs}, $parameter_href->{environment_name}{emip} );
-        }
-        else {
-            $log->warn(
-q{No environment name has been specified for MIP's main environment.}
-            );
-            $log->warn(q{MIP will be installed in conda's base environment.});
-            $parameter_href->{emip}{conda_prefix_path} =
-              $parameter_href->{conda_dir_path};
-        }
-    }
-
-    ## Set up conda environment names and prefix paths for non mip environmnents
-    foreach my $environment (@environments) {
-
-        ## Give the env a default name if not given
-        if ( not $parameter_href->{environment_name}{$environment} ) {
-
-            ## Add the env name to mip base name if it is named
-            if ( $parameter_href->{environment_name}{emip} ) {
-
-                $parameter_href->{environment_name}{$environment} =
-                  $parameter_href->{environment_name}{emip} . q{_}
-                  . substr $environment, 1;
-            }
-            else {
-                $parameter_href->{environment_name}{$environment} =
-                  $environment;
-            }
-        }
-
-        ## Add environmnet specific conda prefix path
-        $parameter_href->{$environment}{conda_prefix_path} =
-          catdir( $parameter_href->{conda_dir_path},
-            q{envs}, $parameter_href->{environment_name}{$environment} );
-    }
-    return;
-}
 
 sub get_programs_for_installation {
 

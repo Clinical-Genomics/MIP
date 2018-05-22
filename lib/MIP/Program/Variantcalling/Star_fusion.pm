@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_fusion };
@@ -61,7 +61,7 @@ sub star_fusion {
 
     my $tmpl = {
         fastq_r1_path  => { strict_type => 1, store => \$fastq_r1_path, },
-        sfastq_r2_path => { strict_type => 1, store => \$fastq_r2_path, },
+        fastq_r2_path => { strict_type => 1, store => \$fastq_r2_path, },
         FILEHANDLE     => {
             store => \$FILEHANDLE,
         },

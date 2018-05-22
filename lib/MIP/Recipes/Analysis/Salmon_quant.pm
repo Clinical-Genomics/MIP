@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_salmon_quant };
@@ -186,12 +186,13 @@ sub analysis_salmon_quant {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -311,10 +312,9 @@ sub analysis_salmon_quant {
                     index_path        => $referencefile_dir_path,
                     outfile_path      => $outfile_path_prefix,
                     read_1_fastq_path => $fastq_files[0],
-               },
+                },
             );
             say {$FILEHANDLE} $NEWLINE;
-
         }
         else {
             salmon_quant(
@@ -324,11 +324,13 @@ sub analysis_salmon_quant {
                     outfile_path      => $outfile_path_prefix,
                     read_1_fastq_path => $fastq_files[0],
                     read_2_fastq_path => $fastq_files[1],
-               },
+                },
             );
             say {$FILEHANDLE} $NEWLINE;
-
         }
+
+        ## Increment paired end tracker
+        $paired_end_tracker++;
 
         ## Copies file from temporary directory.
         say {$FILEHANDLE} q{## Copy file from temporary directory};

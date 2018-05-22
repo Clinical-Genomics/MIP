@@ -29,7 +29,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ create_fam_file detect_founders detect_trio gatk_pedigree_flag parse_yaml_pedigree_file reload_previous_pedigree_info };
+      qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio gatk_pedigree_flag parse_yaml_pedigree_file reload_previous_pedigree_info };
 }
 
 ## Constants
@@ -287,6 +287,73 @@ sub detect_founders {
         }
     }
     return scalar @founders;
+}
+
+sub detect_sample_id_gender {
+
+## Function : Detect gender of the current analysis
+## Returns  : "$found_male $found_female $found_other $found_other_count"
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $sample_info_href      => Info on samples and family hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Initialize
+    my $found_male        = 0;
+    my $found_female      = 0;
+    my $found_other       = 0;
+    my $found_other_count = 0;
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        ## If male
+        if ( $sample_info_href->{sample}{$sample_id}{sex} =~ / 1 | ^male/sxm ) {
+
+            $found_male = 1;
+        }
+        elsif (
+            $sample_info_href->{sample}{$sample_id}{sex} =~ / 2 | female /sxm )
+        {
+            ## If female
+
+            $found_female = 1;
+        }
+        else {
+            ## Must be other
+
+            ## Include since it might be male to enable analysis of Y.
+            $found_male = 1;
+
+            # "Other" metrics
+            $found_other = 1;
+            $found_other_count++;
+        }
+    }
+    return $found_male, $found_female, $found_other, $found_other_count;
 }
 
 sub detect_trio {

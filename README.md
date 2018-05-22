@@ -1,6 +1,7 @@
 # MIP - Mutation Identification Pipeline
 
 [![Build Status](https://travis-ci.org/Clinical-Genomics/MIP.svg?branch=develop)](https://travis-ci.org/Clinical-Genomics/MIP)
+[![Coverage Status](https://coveralls.io/repos/github/Clinical-Genomics/MIP/badge.svg?branch=develop)](https://coveralls.io/github/Clinical-Genomics/MIP?branch=develop)  
 
 MIP enables identification of potential disease causing variants from sequencing data.
 

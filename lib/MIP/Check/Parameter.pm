@@ -23,17 +23,20 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_allowed_array_values
       check_allowed_temp_directory
+      check_aligner
       check_cmd_config_vs_definition_file
       check_email_address
       check_gzipped
+      check_infiles
       check_parameter_hash
       check_pprogram_exists_in_hash
+      check_prioritize_variant_callers
       check_program_mode
       check_sample_ids
       check_sample_id_in_hash_parameter
@@ -151,6 +154,116 @@ sub check_allowed_temp_directory {
 
     # All ok
     return 1;
+}
+
+sub check_aligner {
+
+## Function : Check that the correct number of aligners is used in MIP and sets the outaligner_dir flag accordingly.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
+##          : $log                   => Log object
+##          : $outaligner_dir        => Outaligner_dir used in the analysis
+##          : $parameter_href        => Parameter hash {REF}
+##          : $verbose               => Verbosity level
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $broadcasts_ref;
+    my $log;
+    my $parameter_href;
+
+    ## Default(s)
+    my $outaligner_dir;
+    my $verbose;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        broadcasts_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$broadcasts_ref,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        verbose => {
+            default     => 0,
+            store       => \$verbose,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %aligner;
+
+  ALIGNER:
+    foreach my $aligner ( @{ $parameter_href->{dynamic_parameter}{aligners} } )
+    {
+
+        ## Active aligner
+        if ( $active_parameter_href->{$aligner} ) {
+
+            # Increment aligner count
+            $aligner{total_active_aligner_count}++;
+
+            # Store aligner
+            push @{ $aligner{active_aligners} }, $aligner;
+
+            # Set active aligner for downstream use
+            $parameter_href->{active_aligner} = $aligner;
+
+            if ( not defined $outaligner_dir ) {
+
+                # Set outaligner_dir parameter depending on active aligner
+                $active_parameter_href->{outaligner_dir} = $outaligner_dir =
+                  $parameter_href->{$aligner}{outdir_name};
+
+                next ALIGNER if ( not $verbose );
+
+                my $info = q{Set outaligner_dir to: } . $outaligner_dir;
+
+                ## Add info to broadcasts
+                push @{$broadcasts_ref}, $info;
+            }
+        }
+    }
+
+    if ( exists $aligner{total_active_aligner_count}
+        and $aligner{total_active_aligner_count} > 1 )
+    {
+
+        $log->fatal( q{You have activate more than 1 aligner: }
+              . join( q{, }, @{ $aligner{active_aligners} } )
+              . q{. MIP currently only supports 1 aligner per analysis.} );
+        exit 1;
+    }
+    return;
 }
 
 sub check_cmd_config_vs_definition_file {
@@ -287,6 +400,79 @@ sub check_gzipped {
         $file_compression_status = 1;
     }
     return $file_compression_status;
+}
+
+sub check_infiles {
+
+## Function : Check infiles found and that they contain sample_id
+## Returns  :
+## Arguments: $infiles_ref      => Infiles to check {REF}
+##          : $infile_directory => Infile directory
+##          : $sample_id        => Sample id
+##          : $log              => Log object
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infiles_ref;
+    my $infile_directory;
+    my $log;
+    my $sample_id;
+
+    my $tmpl = {
+        infile_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_directory,
+            strict_type => 1,
+        },
+        infiles_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infiles_ref,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## No "*.fastq*" infiles
+    if ( not @{$infiles_ref} ) {
+
+        $log->fatal(
+            q{Could not find any '.fastq' files in supplied infiles directory }
+              . $infile_directory,
+        );
+        exit 1;
+    }
+
+    ## Check that infiledirs/infile contains sample_id in filename
+  INFILE:
+    foreach my $infile ( @{$infiles_ref} ) {
+
+        next INFILE if ( $infile =~ /$sample_id/sxm );
+
+        $log->fatal( q{Could not detect sample_id: }
+              . $sample_id
+              . q{ in supplied infile: }
+              . catfile( $infile_directory, $infile ) );
+        $log->fatal(
+q{Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
+        );
+        exit 1;
+    }
+    return 1;
 }
 
 sub check_parameter_hash {
@@ -435,6 +621,123 @@ sub check_pprogram_exists_in_hash {
         }
     }
     return;
+}
+
+sub check_prioritize_variant_callers {
+
+## Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $log                   => Log object
+##          : $parameter_href        => Parameter hash {REF}
+##          : $parameter_name        => Parameter name
+##          : $variant_callers_ref   => Variant callers to check {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $parameter_href;
+    my $parameter_name;
+    my $variant_callers_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+        variant_callers_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$variant_callers_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @priority_order_names =
+      split $COMMA, $active_parameter_href->{$parameter_name};
+
+    ## Alias
+    my @variant_caller_aliases;
+
+    ## Check that all active variant callers have a priority order
+  CALLER:
+    foreach my $variant_caller ( @{$variant_callers_ref} ) {
+
+        my $variant_caller_alias =
+          $parameter_href->{$variant_caller}{outdir_name};
+        push @variant_caller_aliases, $variant_caller_alias;
+
+        ## Only active programs
+        if ( $active_parameter_href->{$variant_caller} ) {
+
+            ## If variant caller alias is not part of priority order names
+            if ( not any { $_ eq $variant_caller_alias } @priority_order_names )
+            {
+
+                $log->fatal( $parameter_name
+                      . q{ does not contain active variant caller: '}
+                      . $variant_caller_alias
+                      . $SINGLE_QUOTE );
+                exit 1;
+            }
+        }
+        else {
+            ## Only NOT active programs
+
+            ## If variant caller alias is part of priority order names
+            if ( any { $_ eq $variant_caller_alias } @priority_order_names ) {
+
+                $log->fatal( $parameter_name
+                      . q{ contains deactivated variant caller: '}
+                      . $variant_caller_alias
+                      . $SINGLE_QUOTE );
+                exit 1;
+            }
+        }
+    }
+
+    ## Check that prioritize string contains valid variant call names
+  PRIO_CALL:
+    foreach my $prioritize_call (@priority_order_names) {
+
+        # If priority order names is not part of variant caller alias
+        if ( not any { $_ eq $prioritize_call } @variant_caller_aliases ) {
+
+            $log->fatal( $parameter_name . q{: '}
+                  . $prioritize_call
+                  . q{' does not match any supported variant caller: '}
+                  . join( $COMMA, @variant_caller_aliases )
+                  . $SINGLE_QUOTE );
+            exit 1;
+        }
+    }
+    return 1;
 }
 
 sub check_program_mode {

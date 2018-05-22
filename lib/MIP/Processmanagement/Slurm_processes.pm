@@ -1,18 +1,19 @@
 package MIP::Processmanagement::Slurm_processes;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;    # Allow unicode characters in this script
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
-use autodie;
-use Params::Check qw{check allow last_error};
-
-use FindBin qw{$Bin};    # Find directory of script
+use charnames qw{ :full :short };
+use FindBin qw{$Bin};
 use File::Basename qw{dirname};
 use File::Spec::Functions qw{catdir};
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{check allow last_error};
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie;
 use Readonly;
 
 ## MIPs lib/
@@ -23,20 +24,23 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{slurm_submit_job_no_dependency_dead_end
+    our @EXPORT_OK = qw{
+      slurm_submission_info
+      slurm_submit_chain_job_ids_dependency_add_to_path
+      slurm_submit_job_no_dependency_dead_end
       slurm_submit_job_no_dependency_add_to_sample
       slurm_submit_job_no_dependency_add_to_samples
-      slurm_submit_job_sample_id_dependency_dead_end
       slurm_submit_job_sample_id_dependency_add_to_sample
+      slurm_submit_job_sample_id_dependency_add_to_family
+      slurm_submit_job_sample_id_dependency_dead_end
+      slurm_submit_job_sample_id_dependency_family_dead_end
       slurm_submit_job_sample_id_dependency_step_in_parallel
       slurm_submit_job_sample_id_dependency_step_in_parallel_to_family
-      slurm_submit_job_sample_id_dependency_add_to_family
-      slurm_submit_job_sample_id_dependency_family_dead_end
-      slurm_submit_chain_job_ids_dependency_add_to_path
-      submit_jobs_to_sbatch slurm_submission_info};
+      submit_jobs_to_sbatch
+    };
 
 }
 
@@ -1389,11 +1393,11 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
             store       => \$sbatch_file_name
         },
         sbatch_script_tracker => {
-            required    => 1,
-            defined     => 1,
             allow       => qr/^\d+$/,
+            defined     => 1,
+            required    => 1,
+            store       => \$sbatch_script_tracker,
             strict_type => 1,
-            store       => \$sbatch_script_tracker
         },
         job_dependency_type => {
             default     => q{afterok},
@@ -1462,12 +1466,13 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
     ## SLURM submission using dependencies
     $job_ids_string = create_job_id_string_for_sample_id(
         {
-            job_id_href         => $job_id_href,
-            family_id           => $family_id,
-            sample_id           => $sample_id,
-            family_id_chain_key => $family_id_chain_key,
-            sample_id_chain_key => $sample_id_chain_key,
-            path                => $path,
+            job_id_href           => $job_id_href,
+            family_id             => $family_id,
+            sample_id             => $sample_id,
+            family_id_chain_key   => $family_id_chain_key,
+            sample_id_chain_key   => $sample_id_chain_key,
+            path                  => $path,
+            sbatch_script_tracker => $sbatch_script_tracker,
         }
     );
 
