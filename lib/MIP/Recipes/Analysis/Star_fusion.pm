@@ -217,6 +217,8 @@ sub analysis_star_fusion {
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
 
         # Read 1
+        my $paired_end_tracker = 0;
+
         my $insample_dir_fastqc_path_read_one =
           catfile( $insample_directory, $infiles_ref->[$paired_end_tracker] );
         migrate_file(
@@ -246,9 +248,9 @@ sub analysis_star_fusion {
         say {$FILEHANDLE} q{wait}, $NEWLINE;
 
         ### Get parameters
-        my $paired_end_tracker = 0;
 
         ## Infile(s)
+        $paired_end_tracker = 0;
         my $fastq_r1_path = catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] ) ;
         my $fastq_r2_path;
 
