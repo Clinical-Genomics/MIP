@@ -53,6 +53,7 @@ sub analysis_star_fusion {
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -73,6 +74,7 @@ sub analysis_star_fusion {
     ## Default(s)
     my $family_id;
     my $outaligner_dir;
+    my $temp_directory;
 
     my $tmpl = {
         active_parameter_href => {
@@ -161,6 +163,11 @@ sub analysis_star_fusion {
             defined     => 1,
             required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
         },
     };
