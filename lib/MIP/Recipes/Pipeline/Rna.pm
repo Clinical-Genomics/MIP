@@ -270,9 +270,6 @@ sub pipeline_rna {
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-            my $star_insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
             my $star_outsample_directory =
               catdir( $active_parameter_href->{outdata_dir},
                 $sample_id, $active_parameter_href->{outaligner_dir} );

@@ -328,14 +328,14 @@ sub analysis_star_fusion {
         }
         my $genome_lib_dir_path = $active_parameter_href->{reference_dir};
 
-            star_fusion(
-                {
+        star_fusion(
+            {
                     FILEHANDLE            => $FILEHANDLE,
                     genome_lib_dir_path   => $genome_lib_dir_path,
                     fastq_r1_path         => $fastq_r1_path,
                     fastq_r2_path         => $fastq_r2_path,
                     output_directory_path => $outsample_directory,
-                }
+            }
         );
 
         say {$FILEHANDLE} $NEWLINE;
