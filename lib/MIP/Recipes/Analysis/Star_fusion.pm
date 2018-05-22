@@ -330,17 +330,6 @@ sub analysis_star_fusion {
         ## Increment paired end tracker
         $paired_end_tracker++;
 
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $outfile_path_prefix . $ASTERIX,
-                outfile_path => $outsample_directory,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
-
         ## Close FILEHANDLES
         close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
