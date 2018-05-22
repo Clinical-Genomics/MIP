@@ -221,6 +221,10 @@ sub analysis_star_fusion {
             }
         );
 
+    ## Assign file_tags
+    my $outfile_tag =
+      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+
     ### Assign suffix
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
