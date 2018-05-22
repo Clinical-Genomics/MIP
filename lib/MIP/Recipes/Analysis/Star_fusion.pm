@@ -210,20 +210,6 @@ sub analysis_star_fusion {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
-            {
-                active_parameter_href => $active_parameter_href,
-                core_number           => $core_number,
-                directory_id          => $sample_id,
-                FILEHANDLE            => $FILEHANDLE,
-                job_id_href           => $job_id_href,
-                process_time          => $time,
-                program_directory => catfile( $outaligner_dir, q{star_fusion} ),
-                program_name      => $program_name,
-                source_environment_commands_ref => \@source_environment_cmds,
-            }
-        );
 
     ## Assign file_tags
     my $outfile_tag =
@@ -239,9 +225,6 @@ sub analysis_star_fusion {
             suffix_key     => q{fusion_file_suffix},
         }
     );
-
-       ## Copies file to temporary directory.
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
 
 
     # Too avoid adjusting infile_index in submitting to jobs
