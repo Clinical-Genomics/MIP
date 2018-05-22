@@ -187,8 +187,6 @@ sub analysis_star_fusion {
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 
-
-
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
@@ -210,7 +208,6 @@ sub analysis_star_fusion {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-
     ## Assign file_tags
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
@@ -225,7 +222,6 @@ sub analysis_star_fusion {
             suffix_key     => q{fusion_file_suffix},
         }
     );
-
 
     # Too avoid adjusting infile_index in submitting to jobs
     my $paired_end_tracker = 0;
@@ -299,11 +295,14 @@ sub analysis_star_fusion {
         say {$FILEHANDLE} q{wait}, $NEWLINE;
 
         ## Star aln
-        say {$FILEHANDLE} q{## Performing fusion transcript detections using star fusion } . $program_name;
+        say {$FILEHANDLE}
+          q{## Performing fusion transcript detections using star fusion }
+          . $program_name;
 
         ### Get parameters
         ## Infile(s)
-        my $fastq_r1_path = catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
+        my $fastq_r1_path =
+          catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
         my $fastq_r2_path;
 
         # If second read direction is present
@@ -311,17 +310,18 @@ sub analysis_star_fusion {
 
             # Increment to collect correct read 2 from %infile
             $paired_end_tracker++;
-            $fastq_r2_path = catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
+            $fastq_r2_path =
+              catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
         }
         my $genome_lib_dir_path = $active_parameter_href->{reference_dir};
 
         star_fusion(
             {
-                    FILEHANDLE            => $FILEHANDLE,
-                    genome_lib_dir_path   => $genome_lib_dir_path,
-                    fastq_r1_path         => $fastq_r1_path,
-                    fastq_r2_path         => $fastq_r2_path,
-                    output_directory_path => $outsample_directory,
+                FILEHANDLE            => $FILEHANDLE,
+                genome_lib_dir_path   => $genome_lib_dir_path,
+                fastq_r1_path         => $fastq_r1_path,
+                fastq_r2_path         => $fastq_r2_path,
+                output_directory_path => $outsample_directory,
             }
         );
 
