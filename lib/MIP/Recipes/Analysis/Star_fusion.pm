@@ -30,6 +30,7 @@ BEGIN {
 
 ## Constants
 Readonly my $AMPERSAND  => q{&};
+Readonly my $ASTERIX    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
@@ -220,6 +221,17 @@ sub analysis_star_fusion {
             }
         );
 
+    ### Assign suffix
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix(
+        {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
+            parameter_href => $parameter_href,
+            suffix_key     => q{fusion_file_suffix},
+        }
+    );
+
        ## Copies file to temporary directory.
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
 
@@ -300,7 +312,7 @@ sub analysis_star_fusion {
 
         ### Get parameters
         ## Infile(s)
-        my $fastq_r1_path = catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] )
+        my $fastq_r1_path = catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
         my $fastq_r2_path;
 
         # If second read direction is present
