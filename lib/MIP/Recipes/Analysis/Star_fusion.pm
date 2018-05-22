@@ -189,25 +189,8 @@ sub analysis_star_fusion {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Paths
-    my $infile_path;
-
-  INFILE_PREFIX:
-    while ( my ( $infile_index, $infile_prefix ) =
-        each @{ $infile_lane_prefix_href->{$sample_id} } )
-    {
-
-        ## Assign tags
-        my $infile_star_aln_prefix =
-          $file_info_href->{$sample_id}{pstar_aln}{file_tag};
-        my $infile_suffix = q{Chimeric.out.junction};
-
-        ## Paths
-        $infile_path = catfile( $insample_directory,
-            $infile_prefix . $infile_star_aln_prefix . $DOT . $infile_suffix );
-
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $file_path, $program_info_path ) = setup_script(
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 core_number           => $core_number,
@@ -220,6 +203,58 @@ sub analysis_star_fusion {
                 source_environment_commands_ref => \@source_environment_cmds,
             }
         );
+
+       ## Copies file to temporary directory.
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
+
+        # Read 1
+        my $insample_dir_fastqc_path_read_one =
+          catfile( $insample_directory, $infiles_ref->[$paired_end_tracker] );
+        migrate_file(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $insample_dir_fastqc_path_read_one,
+                outfile_path => $temp_directory,
+            }
+        );
+
+        # If second read direction is present
+        if ( $sequence_run_mode eq q{paired-end} ) {
+
+            my $insample_dir_fastqc_path_read_two =
+              catfile( $insample_directory,
+                $infiles_ref->[ $paired_end_tracker + 1 ] );
+
+            # Read 2
+            migrate_file(
+                {
+                    FILEHANDLE   => $FILEHANDLE,
+                    infile_path  => $insample_dir_fastqc_path_read_two,
+                    outfile_path => $temp_directory,
+                }
+            );
+        }
+        say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+        ### Get parameters
+
+        ## Infile(s)
+        my $fastq_r1_path = catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] ) ;
+        my $fastq_r2_path;
+
+        # If second read direction is present
+        if ( $sequence_run_mode eq q{paired-end} ) {
+
+            # Increment to collect correct read 2 from %infile
+            $paired_end_tracker = $paired_end_tracker + 1;
+            $fastq_r2_path = catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
+
+        }
+        my $referencefile_dir_path = $active_parameter_href->{reference_dir};
+
+
+
+
 
         my $process_batches_count = 1;
 
@@ -241,7 +276,8 @@ sub analysis_star_fusion {
                 {
                     FILEHANDLE            => $FILEHANDLE,
                     genome_lib_dir_path   => $genome_lib_dir_path,
-                    sjdb_path             => $infile_path,
+                    fastq_r1_path         => $fastq_r1_path,
+                    fastq_r2_path         => $fastq_r2_path,
                     output_directory_path => $outsample_directory,
                 }
             );
