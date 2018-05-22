@@ -43,6 +43,7 @@ sub analysis_star_fusion {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $genome_lib_dir_path     => Path to the directory containing the genome library
+##          : infiles_ref              => \@{ $infile_href->{$sample_id} },
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
@@ -59,6 +60,7 @@ sub analysis_star_fusion {
     my $active_parameter_href;
     my $file_info_href;
     my $genome_lib_dir_path;
+    my $infiles_ref;
     my $infile_lane_prefix_href;
     my $insample_directory;
     my $job_id_href;
@@ -95,6 +97,13 @@ sub analysis_star_fusion {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infiles_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infiles_ref,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -237,6 +246,7 @@ sub analysis_star_fusion {
         say {$FILEHANDLE} q{wait}, $NEWLINE;
 
         ### Get parameters
+        my $paired_end_tracker = 0;
 
         ## Infile(s)
         my $fastq_r1_path = catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] ) ;

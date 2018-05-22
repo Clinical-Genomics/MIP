@@ -281,6 +281,7 @@ sub pipeline_rna {
                 {
                     active_parameter_href   => $active_parameter_href,
                     file_info_href          => $file_info_href,
+                    infiles_ref             => \@{ $infile_href->{$sample_id} },
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     insample_directory      => $star_insample_directory,
                     job_id_href             => $job_id_href,
