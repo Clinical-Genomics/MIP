@@ -177,6 +177,7 @@ sub analysis_star_fusion {
 
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::IO::Files qw{ migrate_file };
     use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
