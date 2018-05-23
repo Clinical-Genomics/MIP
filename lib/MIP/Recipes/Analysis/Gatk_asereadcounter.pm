@@ -1,13 +1,12 @@
-package MIP::Recipes::Analysis::Gatk_splitncigarreads;
+package MIP::Recipes::Analysis::Gatk_asereadcounter;
 
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use POSIX;
+use POSIX qw{ floor };
 use strict;
 use utf8;
 use warnings;
@@ -16,6 +15,9 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Readonly;
+
+## MIPs lib/
+use MIP::Check::Cluster qw{ check_max_core_number };
 
 BEGIN {
 
@@ -26,32 +28,27 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
+    our @EXPORT_OK = qw{ analysis_gatk_asereadcounter };
 
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $MINUS_ONE  => -1;
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
+Readonly my $ASTERIX => q{*};
+Readonly my $NEWLINE => qq{\n};
 
-sub analysis_gatk_splitncigarreads {
+sub analysis_gatk_asereadcounter {
 
-## Function : GATK SplitNCigarReads to splits reads into exon segments and hard-clip any sequences overhanging into the intronic regions and reassign mapping qualities from STAR.
+## Function : Gatk haplotypecaller analysis for rna recipe
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -62,16 +59,14 @@ sub analysis_gatk_splitncigarreads {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $file_path;
     my $infile_lane_prefix_href;
     my $insample_directory;
     my $job_id_href;
     my $outsample_directory;
     my $parameter_href;
-    my $program_info_path;
     my $program_name;
-    my $sample_info_href;
     my $sample_id;
+    my $sample_info_href;
 
     ## Default(s)
     my $family_id;
@@ -86,7 +81,7 @@ sub analysis_gatk_splitncigarreads {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
+        family_id_ref => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
             strict_type => 1,
@@ -98,18 +93,17 @@ sub analysis_gatk_splitncigarreads {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        file_path          => { store => \$file_path, strict_type => 1, },
-        insample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$insample_directory,
-            strict_type => 1,
-        },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        insample_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$insample_directory,
             strict_type => 1,
         },
         job_id_href => {
@@ -137,12 +131,16 @@ sub analysis_gatk_splitncigarreads {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
         program_name => {
             defined     => 1,
             required    => 1,
             store       => \$program_name,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
         },
         sample_info_href => {
@@ -150,12 +148,6 @@ sub analysis_gatk_splitncigarreads {
             defined     => 1,
             required    => 1,
             store       => \$sample_info_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
             strict_type => 1,
         },
         temp_directory => {
@@ -167,17 +159,19 @@ sub analysis_gatk_splitncigarreads {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{ check_max_core_number };
+    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
-    use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::Program::Alignment::Gatk qw{ gatk_splitncigarreads };
-    use MIP::QC::Record
-      qw{ add_processing_metafile_to_sample_info add_program_outfile_to_sample_info };
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_asereadcounter };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
+
+    ## Constants
+    Readonly my $JAVA_MEMORY_ALLOCATION => 8;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -187,9 +181,8 @@ sub analysis_gatk_splitncigarreads {
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
     ## Alias
-    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
-    my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
+    my $analysis_type = \$active_parameter_href->{analysis_type}{$sample_id};
+    my $job_id_chain  = $parameter_href->{$mip_program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -203,20 +196,37 @@ sub analysis_gatk_splitncigarreads {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
-            job_id_href                     => $job_id_href,
-            process_time                    => $time,
-            program_directory               => catfile($outaligner_dir),
-            program_name                    => $program_name,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $sample_id,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            process_time          => $time,
+            program_directory     => catfile( $outaligner_dir, q{gatk} ),
+            program_name          => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
+
+    # Division by X according to the java heap
+    $core_number = floor(
+        $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
+
+    ## Limit number of cores requested to the maximum number of cores available per node
+    $core_number = check_max_core_number(
+        {
+            core_number_requested => $core_number,
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+        }
+    );
+
+    ## Assign directories
+    # For ".fam" file
+    my $outfamily_file_directory =
+      catdir( $active_parameter_href->{outdata_dir}, $family_id );
 
     ## Used downstream
     $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
@@ -232,24 +242,46 @@ sub analysis_gatk_splitncigarreads {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{ppicardtools_mergesamfiles}{file_tag};
+      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+    my $sitesfile_tag =
+      $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
 
     ## Files
-    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
+    my $infile_prefix    = $merged_infile_prefix . $infile_tag;
+    my $outfile_prefix   = $merged_infile_prefix . $outfile_tag;
+    my $sitesfile_prefix = $merged_infile_prefix . $sitesfile_tag;
 
     ## Paths
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
+    my $file_path_prefix      = catfile( $temp_directory, $infile_prefix );
+    my $outfile_path_prefix   = catfile( $temp_directory, $outfile_prefix );
+    my $sitesfile_path_prefix = catfile( $temp_directory, $sitesfile_prefix );
 
     ## Assign suffix
-    my $infile_suffix = my $outfile_suffix = get_file_suffix(
+    my $infile_suffix = get_file_suffix(
         {
-            jobid_chain    => $job_id_chain,
+            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
+        }
+    );
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix(
+        {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
+            parameter_href => $parameter_href,
+            suffix_key     => q{variant_file_suffix},
+        }
+    );
+
+    my $sitesfile_suffix = get_file_suffix(
+        {
+            jobid_chain    => $parameter_href->{pgatk_haplotypecaller}{chain},
+            parameter_href => $parameter_href,
+            suffix_key     => q{variant_file_suffix},
         }
     );
 
@@ -260,34 +292,33 @@ sub analysis_gatk_splitncigarreads {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $infile_prefix
-                  . substr( $infile_suffix, 0, $MINUS_ONE )
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX
+            ),
+            outfile_path => $temp_directory,
+        }
+    );
+    migrate_file(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => catfile(
+                $insample_directory,
+                $sitesfile_prefix
+                  . substr( $sitesfile_suffix, 0, 2 )
                   . $ASTERIX
             ),
             outfile_path => $temp_directory,
         }
     );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$FILEHANDLE} q{wait} . $NEWLINE;
 
-    ## Division by X according to the java heap
-    Readonly my $JAVA_MEMORY_ALLOCATION => 6;
-    $core_number = floor(
-        $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
+    ## GATK HaplotypeCaller
+    say {$FILEHANDLE} q{## GATK ASEReadCounter};
 
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
-        {
-            core_number_requested => $core_number,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-        }
-    );
-
-    ## GATK SplitNCigarReads
-    say {$FILEHANDLE} q{## GATK SplitNCigarReads};
-
+    ## Set file paths
     my $infile_path  = $file_path_prefix . $infile_suffix;
     my $outfile_path = $outfile_path_prefix . $outfile_suffix;
-    gatk_splitncigarreads(
+
+    gatk_asereadcounter(
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $infile_path,
@@ -297,26 +328,28 @@ sub analysis_gatk_splitncigarreads {
             ),
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            logging_level      => $active_parameter_href->{gatk_logging_level},
-            memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            outfile_path       => $outfile_path,
-            referencefile_path => $referencefile_path,
+            logging_level     => $active_parameter_href->{gatk_logging_level},
+            memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            num_cpu_threads_per_data_thread => $core_number,
+            outfile_path                    => $outfile_path,
+            referencefile_path =>
+              $active_parameter_href->{human_genome_reference},
+            gatk_sites_vcffile => $sitesfile_path_prefix . $sitesfile_suffix,
             temp_directory     => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Copies bam and bai file from temporary directory.
+    ## Copies file from temporary directory.
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => substr( $outfile_path, 1, $MINUS_ONE ) . $ASTERIX,
+            infile_path  => $outfile_path,
             outfile_path => $outsample_directory,
         }
     );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
+    say {$FILEHANDLE} q{wait};
     close $FILEHANDLE;
 
     if ( $mip_program_mode == 1 ) {
@@ -329,17 +362,7 @@ sub analysis_gatk_splitncigarreads {
             {
                 infile           => $infile_prefix,
                 path             => $program_outfile_path,
-                program_name     => q{gatk_splitncigarreads},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-        my $most_complete_format_key =
-          q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        add_processing_metafile_to_sample_info(
-            {
-                metafile_tag     => $most_complete_format_key,
-                path             => $program_outfile_path,
+                program_name     => q{gatk_asereadcounter},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

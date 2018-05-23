@@ -5,6 +5,7 @@ human_genome_reference:
   associated_program:
    - mip
    - pstar_aln
+   - pgatk_asereadcounter
   build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
@@ -14,6 +15,7 @@ human_genome_reference:
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 gatk_bundle_download_version:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
   data_type: SCALAR
@@ -21,6 +23,7 @@ gatk_bundle_download_version:
   type: program_argument
 gatk_disable_auto_index_and_file_lock:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
   data_type: SCALAR
@@ -28,6 +31,7 @@ gatk_disable_auto_index_and_file_lock:
   type: program_argument
 gatk_downsample_to_coverage:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
   data_type: SCALAR
@@ -35,6 +39,7 @@ gatk_downsample_to_coverage:
   type: program_argument
 gatk_logging_level:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
   data_type: SCALAR
@@ -42,6 +47,7 @@ gatk_logging_level:
   type: program_argument
 gatk_path:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
   data_type: SCALAR
@@ -51,6 +57,7 @@ gatk_path:
 ## java large pages - affects all modules using java
 java_use_large_pages:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
    - pstar_aln
@@ -64,6 +71,7 @@ module_time:
   data_type: HASH
   default:
     pfastqc: 10
+    pgatk_asereadcounter: 10
     pgatk_baserecalibration: 10
     pgatk_splitncigarreads: 1
     pgatk_haplotypecaller: 20
@@ -79,6 +87,7 @@ module_core_number:
   data_type: HASH
   default:
     pfastqc: 0
+    pgatk_asereadcounter: 16
     pgatk_baserecalibration: 16
     pgatk_splitncigarreads: 1
     pgatk_haplotypecaller: 16
@@ -111,13 +120,13 @@ psalmon_quant:
   chain: DE
   data_type: SCALAR
   default: 0
+  file_endings:
+   - .sf
   file_tag: _salmon
   outfile_suffix: ".sf"
   outdir_name: salmon
   program_name_path:
    - salmon
-  file_endings:
-   - .sf
   type: program
 salmon_rna_lib_configuration:
   associated_program:
@@ -331,3 +340,15 @@ gatk_haplotypecaller_snp_known_set:
   exists_check: file
   reference: reference_dir
   type: path
+## GATK Genotype
+pgatk_asereadcounter:
+  associated_program:
+   - mip
+  chain: ase
+  data_type: SCALAR
+  default: 0
+  file_tag: _ase
+  file_endings:
+   - .csv
+  outfile_suffix: ".csv"
+  type: program
