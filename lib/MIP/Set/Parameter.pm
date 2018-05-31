@@ -20,10 +20,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      set_conda_env_names_and_paths
       set_config_to_active_parameters
       set_custom_default_to_active_parameter
       set_default_config_dynamic_parameters
@@ -813,6 +814,92 @@ sub set_parameter_to_broadcast {
             ## Add info to broadcasts
             push @{$broadcasts_ref}, $info;
         }
+    }
+    return;
+}
+
+sub set_conda_env_names_and_paths {
+
+## Function : Set conda environmnet specific names and paths
+## Returns  :
+## Arguments: $log            => Log
+##          : $parameter_href => The entire parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $log;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use List::Util qw{ first };
+
+    my @environments = @{ $parameter_href->{installations} };
+
+    ## Get array index for the emip environment
+    my $emip_idx = first { $environments[$_] eq q{emip} } 0 .. $#environments;
+
+    ## Set up conda prefix path for MIP main environment
+    if ( defined $emip_idx ) {
+
+        if ( $parameter_href->{environment_name}{emip} ) {
+            $parameter_href->{emip}{conda_prefix_path} =
+              catdir( $parameter_href->{conda_dir_path},
+                q{envs}, $parameter_href->{environment_name}{emip} );
+        }
+        else {
+            $log->warn(
+q{No environment name has been specified for MIP's main environment.}
+            );
+            $log->warn(q{MIP will be installed in conda's base environment.});
+            $parameter_href->{emip}{conda_prefix_path} =
+              $parameter_href->{conda_dir_path};
+        }
+
+        ## Remove emip from environments array so that the emip conda path is not overwritten later
+        splice @environments, $emip_idx, 1;
+    }
+
+    ## Set up conda environment names and prefix paths for non mip environmnents
+    foreach my $environment (@environments) {
+
+        ## Give the env a default name if not given
+        if ( not $parameter_href->{environment_name}{$environment} ) {
+
+            ## Add the env name to mip base name if it is named
+            if ( $parameter_href->{environment_name}{emip} ) {
+
+                $parameter_href->{environment_name}{$environment} =
+                    $parameter_href->{environment_name}{emip}
+                  . $UNDERSCORE
+                  . $environment;
+            }
+            else {
+                $parameter_href->{environment_name}{$environment} =
+                  $environment;
+            }
+        }
+
+        ## Add environment specific conda prefix path
+        $parameter_href->{$environment}{conda_prefix_path} =
+          catdir( $parameter_href->{conda_dir_path},
+            q{envs}, $parameter_href->{environment_name}{$environment} );
     }
     return;
 }
