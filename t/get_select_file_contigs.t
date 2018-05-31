@@ -3,12 +3,12 @@
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use open qw{ :encoding(UTF-8) :std };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir catfile };
 use File::Temp;
 use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use Test::More;
 use warnings qw{ FATAL utf8 };
@@ -19,6 +19,7 @@ use 5.018;
 use autodie;
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -27,12 +28,13 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.1';
+our $VERSION = '1.0.2';
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
+Readonly my $COMMA               => q{,};
+Readonly my $NEWLINE             => qq{\n};
+Readonly my $AUTOSOMAL_CONTIG_NR => 22;
+Readonly my $SPACE               => q{ };
 
 ### User Options
 GetOptions(
@@ -102,9 +104,6 @@ diag(   q{Test get_select_file_contigs from File.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Constants
-Readonly my $NUMBER_OF_CONTIGS => 25;
-
 ## Create temp logger
 my $test_dir = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
@@ -117,11 +116,10 @@ my $log = initiate_logger(
     }
 );
 
+## Given proper input data
 my %file_info;
 my $select_file_path =
   catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
-my $wrong_file =
-  catfile( $Bin, qw{ data 643594-miptest 643594-miptest_pedigree.yaml } );
 
 @{ $file_info{select_file_contigs} } = get_select_file_contigs(
     {
@@ -129,9 +127,29 @@ my $wrong_file =
         log              => $log,
     }
 );
+my @expected_contigs = ( 1 .. $AUTOSOMAL_CONTIG_NR, qw{ X Y MT} );
 
-is( scalar @{ $file_info{select_file_contigs} },
-    $NUMBER_OF_CONTIGS, q{Got select file contigs} );
+## Then return the expected contigs
+is_deeply( \@{ $file_info{select_file_contigs} },
+    \@expected_contigs, q{Got select file contigs} );
+
+## Given inproper file path
+my $wrong_file =
+  catfile( $Bin, qw{ data 643594-miptest 643594-miptest_pedigree.yaml } );
+
+trap {
+    get_select_file_contigs(
+        {
+            select_file_path => $wrong_file,
+            log              => $log,
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if contigs cannot be found} );
+like( $trap->stderr, qr/FATAL/xms,
+    q{Throw fatal log message if contigs cannot be found} );
 
 done_testing();
 

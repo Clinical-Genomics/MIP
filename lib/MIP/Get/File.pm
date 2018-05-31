@@ -2,6 +2,7 @@ package MIP::Get::File;
 
 use Carp;
 use charnames qw{ :full :short };
+use Cwd;
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
@@ -26,11 +27,13 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_exom_target_bed_file
+      get_fastq_file_header_info
       get_files
       get_file_suffix
       get_matching_values_key
       get_merged_infile_prefix
       get_path_entries
+      get_read_length
       get_select_file_contigs
       get_seq_dict_contigs };
 }
@@ -123,6 +126,96 @@ sub get_exom_target_bed_file {
         exit 1;
     }
     return;
+}
+
+sub get_fastq_file_header_info {
+
+## Function : Get run info from fastq file header
+## Returns  : @fastq_info_headers
+## Arguments: $file_path         => File path to parse
+##          : $log               => Log object
+##          : $read_file_command => Command used to read file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+    my $log;
+    my $read_file_command;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
+        read_file_command => {
+            defined     => 1,
+            required    => 1,
+            store       => \$read_file_command,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Casava qw{ casava_header_regexp };
+    use MIP::Unix::System qw{ system_cmd_call };
+
+    my $fastq_info_header_string;
+
+    my %fastq_header_info;
+
+    my %casava_header_regexp = casava_header_regexp();
+    my %regexp;
+
+    ## Select relevant regexps from hash
+    @regexp{qw{ 1.4 1.8 }} = @casava_header_regexp{qw{ 1.4 1.8 }};
+
+  REGEXP:
+    while ( my ( $casava_version, $regexp ) = each %regexp ) {
+
+        ## Define cmd
+        my $get_header_cmd = qq{$read_file_command $file_path | $regexp;};
+
+        ## Collect fastq header info
+        my %return = system_cmd_call( { command_string => $get_header_cmd, } );
+
+        $fastq_info_header_string = $return{output}[0];
+
+        ## If successful regexp
+        if ($fastq_info_header_string) {
+
+            # Get features
+            my @features =
+              @{ $casava_header_regexp{ $casava_version . q{_header_features} }
+              };
+
+            # Parse header string into array
+            my @fastq_info_headers = split $SPACE, $fastq_info_header_string;
+
+            # Add to hash to be returned
+            @fastq_header_info{@features} = @fastq_info_headers;
+            last REGEXP;
+        }
+    }
+
+    if ( not $fastq_info_header_string ) {
+
+        $log->fatal( q{Error parsing file header: } . $file_path );
+        $log->fatal(
+q{Could not detect required sample sequencing run info from fastq file header - Please proved MIP file in MIP file convention format to proceed}
+        );
+        exit 1;
+    }
+
+    return %fastq_header_info;
 }
 
 sub get_files {
@@ -434,6 +527,63 @@ sub get_path_entries {
     return;
 }
 
+sub get_read_length {
+
+## Function : Collect read length from an infile
+## Returns  : $read_length
+## Arguments: $file_path => File to parse
+##          : $read_file => Command used to read file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+    my $read_file_command;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        read_file_command => {
+            defined     => 1,
+            required    => 1,
+            store       => \$read_file_command,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Unix::System qw{ system_cmd_call };
+
+    ## Prints sequence length and exits
+    # Execute perl
+    my $seq_length_regexp = q?perl -ne '?;
+
+    # Skip header line
+    $seq_length_regexp .= q?if ($_!~/@/) {?;
+
+    # Remove newline
+    $seq_length_regexp .= q?chomp;?;
+
+    # Count chars
+    $seq_length_regexp .= q?my $seq_length = length;?;
+
+    # Print and exit
+    $seq_length_regexp .= q?print $seq_length;last;}' ?;
+
+    my $read_length_cmd =
+      qq{$read_file_command $file_path | $seq_length_regexp;};
+
+    my %return = system_cmd_call( { command_string => $read_length_cmd, } );
+
+    ## Return read length
+    return $return{output}[0];
+}
+
 sub get_select_file_contigs {
 
 ## Function : Collects sequences contigs used in select file
@@ -463,25 +613,31 @@ sub get_select_file_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Execute perl
+    use MIP::Unix::System qw{ system_cmd_call };
+
+    # Execute perl
     my $find_contig_name = q?perl -nae ?;
 
-    ## Get contig name
+    # Get contig name
     $find_contig_name .= q?'if ($_=~/ contig=(\w+) /xsm) { ?;
 
-    ## Alias capture
+    # Alias capture
     $find_contig_name .= q?my $contig_name = $1; ?;
 
-    ## Write contig name and comma
+    # Write contig name and comma
     $find_contig_name .= q?print $contig_name, q{,};} ?;
 
-    ## Quit if #CHROM found in line
+    # Quit if #CHROM found in line
     $find_contig_name .= q?if($_=~/ [#]CHROM /xsm) {last;}' ?;
 
-    ## Returns a comma seperated string of sequence contigs from file
-    my @contigs = `$find_contig_name $select_file_path `;
+    # Returns a comma seperated string of sequence contigs from file
+    my $find_contig_cmd = qq{$find_contig_name $select_file_path};
 
-    @contigs = split $COMMA, join $COMMA, @contigs;
+    # System call
+    my %return = system_cmd_call( { command_string => $find_contig_cmd, } );
+
+    # Save contigs
+    my @contigs = split $COMMA, join $COMMA, @{ $return{output} };
 
     if ( not @contigs ) {
 
@@ -522,31 +678,36 @@ sub get_seq_dict_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### Build regexp to find contig names
-    ## Execute perl
+    use MIP::Unix::System qw{ system_cmd_call };
+
+    ## Build regexp to find contig names
+    # Execute perl
     my $find_contig_name = q?perl -nae '?;
 
-    ## Find contig line
+    # Find contig line
     $find_contig_name .= q?if($F[0]=~/^\@SQ/) { ?;
 
-    ## Collect contig name
+    # Collect contig name
     $find_contig_name .= q? if($F[1]=~/SN\:(\S+)/) { ?;
 
-    ## Alias capture
+    # Alias capture
     $find_contig_name .= q?my $contig_name = $1; ?;
 
-    ## Write to STDOUT
+    # Write to STDOUT
     $find_contig_name .= q?print $contig_name, q{,};} }' ?;
 
-    ## Returns a comma seperated string of sequence contigs from dict file
-    my @contigs = `$find_contig_name $dict_file_path `;
+    # Returns a comma seperated string of sequence contigs from dict file
+    my $find_contig_cmd = qq{$find_contig_name $dict_file_path};
 
-    ## Save contigs
-    @contigs = split $COMMA, join $COMMA, @contigs;
+    # System call
+    my %return = system_cmd_call( { command_string => $find_contig_cmd, } );
+
+    # Save contigs
+    my @contigs = split $COMMA, join $COMMA, @{ $return{output} };
 
     if ( not @contigs ) {
 
-        log->fatal( q{Could not detect any 'SN:contig_names' in dict file: }
+        $log->fatal( q{Could not detect any 'SN:contig_names' in dict file: }
               . $dict_file_path );
         exit 1;
     }

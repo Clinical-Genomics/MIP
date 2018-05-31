@@ -105,7 +105,7 @@ sub update_core_number_to_seq_mode {
             strict_type => 1,
         },
         sequence_run_type => {
-            allow       => [qw(paired-end single-end)],
+            allow       => [qw{ paired-end single-end }],
             required    => 1,
             store       => \$sequence_run_type,
             strict_type => 1,

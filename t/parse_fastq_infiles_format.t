@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
@@ -32,6 +32,7 @@ our $VERSION = '1.0.0';
 Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
+Readonly my $DATE    => q{161011};
 
 ### User Options
 GetOptions(
@@ -78,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Get::File});
+    my @modules = (q{MIP::Parse::File});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +87,10 @@ BEGIN {
     }
 }
 
-use MIP::Get::File qw{ get_files };
+use MIP::Parse::File qw{ parse_fastq_infiles_format };
 
-diag(   q{Test get_files from File.pm v}
-      . $MIP::Get::File::VERSION
+diag(   q{Test parse_fastq_infiles_format from File.pm v}
+      . $MIP::Parse::File::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -97,47 +98,44 @@ diag(   q{Test get_files from File.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given an infile directory, when applying rules
-my $infile_directory =
-  catfile( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq } );
+## Given compressed file, when following MIP filename convention
+my $file_name = q{1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz};
 
-my @infiles = get_files(
-    {
-        file_directory   => $infile_directory,
-        rule_name        => q{*.fastq*},
-        rule_skip_subdir => q{original_fastq_files},
-    }
+## Parse infile according to filename convention
+my %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
+
+my %expected_features = (
+    lane             => 1,
+    date             => $DATE,
+    flowcell         => q{TestFilev2},
+    infile_sample_id => q{ADM1059A1},
+    index            => q{TCCGGAGA},
+    direction        => 1,
 );
 
-my @expected_files =
-  qw{ 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_2.fastq.gz 2_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz 8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz };
+## Then return all features from filename
+is_deeply( \%infile_info, \%expected_features,
+    q{Compressed file follows file convention} );
 
-## Then skip sub dir
-is_deeply( \@infiles, \@expected_files,
-    q{Found all files when skipping sub dir} );
+## Given compressed file, when followinf MIP filename convention
+$file_name = q{1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq};
 
-## Given an infile directory, when applying rule file name
-@infiles = get_files(
-    {
-        file_directory => $infile_directory,
-        rule_name      => q{*.fastq*},
-    }
-);
+## Parse infile according to filename convention
+%infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
 
-push @expected_files, q{test.fastq.gz};
+## Then return all features from filename
+is_deeply( \%infile_info, \%expected_features,
+    q{Uncompressed file follows file convention} );
 
-## Then find all files recursively
-is_deeply( \@infiles, \@expected_files, q{Found all files recursively} );
+## Given file, when not following MIP filename convention
+$file_name = q{TestFilev2_ADM1059A1_TCCGGAGA_1.fastq};
 
-## Given an infile directory, when applying no rules
-@infiles = get_files( { file_directory => $infile_directory, } );
+## Parse infile according to filename convention
+%infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
 
-my @expected_file_objects =
-  qw{ fastq 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_2.fastq.gz 2_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz 8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz original_fastq_files test.fastq.gz test.txt };
-
-## Then find all files and dir recursively
-is_deeply( \@infiles, \@expected_file_objects,
-    q{Found all files and dirs recursively} );
+## Then return no features from filename
+is( keys %infile_info,
+    0, q{Return 0 features for file not following file convention} );
 
 done_testing();
 

@@ -33,6 +33,7 @@ BEGIN {
       check_cmd_config_vs_definition_file
       check_email_address
       check_gzipped
+      check_infile_contain_sample_id
       check_infiles
       check_parameter_hash
       check_pprogram_exists_in_hash
@@ -400,6 +401,89 @@ sub check_gzipped {
         $file_compression_status = 1;
     }
     return $file_compression_status;
+}
+
+sub check_infile_contain_sample_id {
+
+## Function : Check that the sample_id provided and sample_id in infile name match.
+## Returns  :
+## Arguments: $file_index            => Counts the number of infiles
+##          : $infile_href           => Infiles hash {REF}
+##          : $infile_sample_id      => Sample_id collect with regexp from infile
+##          : $log                   => Log object
+##          : $sample_id             => Sample id from user
+##          : $sample_ids_ref        => Sample ids from user
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_index;
+    my $infile_href;
+    my $infile_sample_id;
+    my $log;
+    my $sample_id;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        file_index => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_index,
+            strict_type => 1,
+        },
+        infile_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_href,
+            strict_type => 1,
+        },
+        infile_sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_sample_id,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Track seen sample ids
+    my %seen;
+
+    ## Increment for all sample ids
+    map { $seen{$_}++ } ( @{$sample_ids_ref}, $infile_sample_id );
+
+    if ( not $seen{$infile_sample_id} > 1 ) {
+
+        $log->fatal( $sample_id
+              . q{ supplied and sample_id }
+              . $infile_sample_id
+              . q{ found in file : }
+              . $infile_href->{$sample_id}[$file_index]
+              . q{ does not match. Please rename file to match sample_id: }
+              . $sample_id );
+        exit 1;
+    }
+    return 1;
 }
 
 sub check_infiles {

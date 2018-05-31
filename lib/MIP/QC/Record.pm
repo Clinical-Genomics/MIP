@@ -3,9 +3,11 @@ package MIP::QC::Record;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
+use Time::Piece;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,13 +26,15 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ add_gene_panel add_most_complete_vcf add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+      qw{ add_gene_panel add_infile_info add_most_complete_vcf add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
 
 }
 
 ## Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
+Readonly my $DOT        => q{.};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $SPACE      => q{ };
+Readonly my $UNDERSCORE => q{_};
 
 sub add_gene_panel {
 
@@ -178,6 +182,255 @@ q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
             }
         );
     }
+    return;
+}
+
+sub add_infile_info {
+
+## Function : Adds information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elements.
+## Returns  :
+## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
+##          : $date                            => Flow-cell sequencing date
+##          : $direction                       => Sequencing read direction
+##          : $file_index                      => Index of file
+##          : $file_info_href                  => File info hash {REF}
+##          : $flowcell                        => Flow-cell id
+##          : $index                           => The DNA library preparation molecular barcode
+##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
+##          : $infile_href                     => Infiles hash {REF}
+##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
+##          : $is_interleaved                  => Infile is interleaved
+##          : $lane                            => Flow-cell lane
+##          : $lane_href                       => The lane info hash {REF}
+##          : $lane_tracker                    => Counts the number of lanes sequenced {REF}
+##          : $read_length                     => Sequence read length
+##          : $sample_id                       => Sample id
+##          : $sample_info_href                => Info on samples and family hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $date;
+    my $direction;
+    my $file_index;
+    my $file_info_href;
+    my $flowcell;
+    my $index;
+    my $infile_both_strands_prefix_href;
+    my $infile_href;
+    my $infile_lane_prefix_href;
+    my $is_interleaved;
+    my $lane;
+    my $lane_href;
+    my $lane_tracker;
+    my $read_length;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        date =>
+          { defined => 1, required => 1, store => \$date, strict_type => 1, },
+        direction => {
+            allow       => [ 1, 2 ],
+            defined     => 1,
+            required    => 1,
+            store       => \$direction,
+            strict_type => 1,
+        },
+        file_index => {
+            allow       => qr/ ^\d+$ /xsm,
+            defined     => 1,
+            required    => 1,
+            store       => \$file_index,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        flowcell => {
+            defined     => 1,
+            required    => 1,
+            store       => \$flowcell,
+            strict_type => 1,
+        },
+        index =>
+          { defined => 1, required => 1, store => \$index, strict_type => 1, },
+        infile_both_strands_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_both_strands_prefix_href,
+            strict_type => 1,
+        },
+        infile_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_href,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        is_interleaved => {
+            required    => 1,
+            store       => \$is_interleaved,
+            strict_type => 1,
+        },
+        lane => {
+            allow       => qr/ ^\d+$ /xsm,
+            defined     => 1,
+            required    => 1,
+            store       => \$lane,
+            strict_type => 1,
+        },
+        lane_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$lane_href,
+            strict_type => 1,
+        },
+        lane_tracker => {
+            defined     => 1,
+            required    => 1,
+            store       => \$lane_tracker,
+            strict_type => 1,
+        },
+        read_length => {
+            required    => 1,
+            store       => \$read_length,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $parsed_date = Time::Piece->strptime( $date, q{%y%m%d} );
+    $parsed_date = $parsed_date->ymd;
+
+    my ( $mip_file_format, $mip_file_format_with_direction,
+        $original_file_name_prefix, $run_barcode )
+      = _file_name_formats(
+        {
+            date      => $date,
+            direction => $direction,
+            flowcell  => $flowcell,
+            index     => $index,
+            lane      => $lane,
+            sample_id => $sample_id,
+        }
+      );
+
+    ## Read 1
+    if ( $direction == 1 ) {
+
+        ## Add lane
+        push @{ $lane_href->{$sample_id} }, $lane;
+
+# Save new format (sample_id_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
+        $infile_lane_prefix_href->{$sample_id}[$lane_tracker] =
+          $mip_file_format;
+
+        ## Detect Undetermined in flowcell id
+        if ( $flowcell =~ /Undetermined/xsm ) {
+
+            ## Set Undetermined to true for file
+            $file_info_href->{undetermined_in_file_name}{$mip_file_format} = 1;
+        }
+
+        my %direction_one_metric = (
+            interleaved       => $is_interleaved,
+            sequence_length   => $read_length,
+            sequence_run_type => q{single-end},
+        );
+
+        ## Alias
+        my $file_level_href =
+          \%{ $sample_info_href->{sample}{$sample_id}{file}{$mip_file_format} };
+      INFO:
+        while ( my ( $file_key, $file_value ) = each %direction_one_metric ) {
+
+            $file_level_href->{$file_key} = $file_value;
+        }
+
+        $lane_tracker++;
+    }
+    if ( $direction == 2 ) {
+        ## 2nd read direction
+
+        ## $lane_tracker -1 since it gets incremented after direction eq 1
+        # Alias
+        $mip_file_format =
+          $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ];
+
+        my %direction_two_metric = ( sequence_run_type => q{paired-end}, );
+
+        ## Alias
+        my $file_level_href =
+          \%{ $sample_info_href->{sample}{$sample_id}{file}{$mip_file_format} };
+      INFO:
+        while ( my ( $file_key, $file_value ) = each %direction_two_metric ) {
+
+            $file_level_href->{$file_key} = $file_value;
+        }
+    }
+
+# Save new format in hash with sample id as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and the file suffix is removed (.fastq).
+    $infile_both_strands_prefix_href->{$sample_id}[$file_index] =
+      $mip_file_format_with_direction;
+
+    my %both_directions_metric = (
+        date                      => $parsed_date,
+        flowcell                  => $flowcell,
+        lane                      => $lane,
+        original_file_name        => $infile_href->{$sample_id}[$file_index],
+        original_file_name_prefix => $original_file_name_prefix,
+        read_direction            => $direction,
+        run_barcode               => $run_barcode,
+        sample_barcode            => $index,
+    );
+
+    ## Alias
+    my $direction_level_href =
+      \%{ $sample_info_href->{sample}{$sample_id}{file}{$mip_file_format}
+          {read_direction_file}{$mip_file_format_with_direction} };
+
+  INFO:
+    while ( my ( $file_key, $file_value ) = each %both_directions_metric ) {
+
+        $direction_level_href->{$file_key} = $file_value;
+    }
+
     return;
 }
 
@@ -543,6 +796,101 @@ sub add_program_metafile_to_sample_info {
         }
     }
     return;
+}
+
+sub _file_name_formats {
+
+## Function : Define format using information derived from infile name.
+## Returns  : $mip_file_format, $mip_file_format_with_direction, $original_file_name_prefix, $run_barcode;
+## Arguments: $date                            => Flow-cell sequencing date
+##          : $direction                       => Sequencing read direction
+##          : $flowcell                        => Flow-cell id
+##          : $index                           => The DNA library preparation molecular barcode
+##          : $lane                            => Flow-cell lane
+##          : $sample_id                       => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $date;
+    my $direction;
+    my $flowcell;
+    my $index;
+    my $lane;
+    my $sample_id;
+
+    my $tmpl = {
+        date =>
+          { defined => 1, required => 1, store => \$date, strict_type => 1, },
+        direction => {
+            allow       => [ 1, 2 ],
+            defined     => 1,
+            required    => 1,
+            store       => \$direction,
+            strict_type => 1,
+        },
+        flowcell => {
+            defined     => 1,
+            required    => 1,
+            store       => \$flowcell,
+            strict_type => 1,
+        },
+        index =>
+          { defined => 1, required => 1, store => \$index, strict_type => 1, },
+        lane => {
+            allow       => qr/ ^\d+$ /xsm,
+            defined     => 1,
+            required    => 1,
+            store       => \$lane,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $mip_file_format =
+        $sample_id
+      . $DOT
+      . $date
+      . $UNDERSCORE
+      . $flowcell
+      . $UNDERSCORE
+      . $index
+      . $DOT . q{lane}
+      . $lane;
+
+    my $mip_file_format_with_direction =
+      $mip_file_format . $UNDERSCORE . $direction;
+
+    my $original_file_name_prefix =
+        $lane
+      . $UNDERSCORE
+      . $date
+      . $UNDERSCORE
+      . $flowcell
+      . $UNDERSCORE
+      . $sample_id
+      . $UNDERSCORE
+      . $index
+      . $UNDERSCORE
+      . $direction;
+
+    my $run_barcode =
+        $date
+      . $UNDERSCORE
+      . $flowcell
+      . $UNDERSCORE
+      . $lane
+      . $UNDERSCORE
+      . $index;
+    return $mip_file_format, $mip_file_format_with_direction,
+      $original_file_name_prefix, $run_barcode;
 }
 
 1;

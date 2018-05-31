@@ -29,9 +29,10 @@ my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
+Readonly my $COMMA       => q{,};
+Readonly my $NEWLINE     => qq{\n};
+Readonly my $READ_LENGTH => 151;
+Readonly my $SPACE       => q{ };
 
 ### User Options
 GetOptions(
@@ -86,9 +87,9 @@ BEGIN {
     }
 }
 
-use MIP::Get::File qw{ get_files };
+use MIP::Get::File qw{ get_read_length };
 
-diag(   q{Test get_files from File.pm v}
+diag(   q{Test get_read_length from File.pm v}
       . $MIP::Get::File::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -97,47 +98,24 @@ diag(   q{Test get_files from File.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given an infile directory, when applying rules
-my $infile_directory =
-  catfile( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq } );
+## Given a compressed fastq file
+my $directory =
+  catdir( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq } );
 
-my @infiles = get_files(
+my $file = q{1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz};
+
+# For compressed file
+my $read_file_command = q{zcat};
+
+my $read_length = get_read_length(
     {
-        file_directory   => $infile_directory,
-        rule_name        => q{*.fastq*},
-        rule_skip_subdir => q{original_fastq_files},
+        file_path         => catfile( $directory, $file ),
+        read_file_command => $read_file_command,
     }
 );
 
-my @expected_files =
-  qw{ 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_2.fastq.gz 2_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz 8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz };
-
-## Then skip sub dir
-is_deeply( \@infiles, \@expected_files,
-    q{Found all files when skipping sub dir} );
-
-## Given an infile directory, when applying rule file name
-@infiles = get_files(
-    {
-        file_directory => $infile_directory,
-        rule_name      => q{*.fastq*},
-    }
-);
-
-push @expected_files, q{test.fastq.gz};
-
-## Then find all files recursively
-is_deeply( \@infiles, \@expected_files, q{Found all files recursively} );
-
-## Given an infile directory, when applying no rules
-@infiles = get_files( { file_directory => $infile_directory, } );
-
-my @expected_file_objects =
-  qw{ fastq 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_2.fastq.gz 2_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz 8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz original_fastq_files test.fastq.gz test.txt };
-
-## Then find all files and dir recursively
-is_deeply( \@infiles, \@expected_file_objects,
-    q{Found all files and dirs recursively} );
+## Then read length should be returned
+is( $read_length, $READ_LENGTH, q{Return read length} );
 
 done_testing();
 

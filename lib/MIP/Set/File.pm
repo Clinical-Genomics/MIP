@@ -27,7 +27,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_absolute_path set_file_suffix set_infiles set_merged_infile_prefix };
+      qw{ set_absolute_path set_file_compression_features set_file_suffix set_infiles set_merged_infile_prefix };
 }
 
 ## Constants
@@ -73,6 +73,44 @@ sub set_absolute_path {
               . q{. Please check the supplied path!} );
     }
     return $path;
+}
+
+sub set_file_compression_features {
+
+## Function : Set file compression features
+## Returns  : $is_compressed, $read_file_command
+## Arguments: $file_name => File name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_name;
+
+    my $tmpl = {
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Parameter qw{ check_gzipped };
+
+    my $read_file_command = q{zcat};
+
+    ## Check if a file is gzipped.
+    my $is_compressed = check_gzipped( { file_name => $file_name, } );
+
+    ## Not compressed
+    if ( not $is_compressed ) {
+
+        ## File needs compression before starting analysis
+        $read_file_command = q{cat};
+    }
+    return $is_compressed, $read_file_command;
 }
 
 sub set_file_suffix {

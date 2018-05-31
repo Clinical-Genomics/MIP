@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Get::File});
+    my @modules = (q{MIP::Set::File});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::Get::File qw{ get_files };
+use MIP::Set::File qw{ set_file_compression_features };
 
-diag(   q{Test get_files from File.pm v}
-      . $MIP::Get::File::VERSION
+diag(   q{Test set_file_compression_features from File.pm v}
+      . $MIP::Set::File::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -97,47 +97,30 @@ diag(   q{Test get_files from File.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given an infile directory, when applying rules
-my $infile_directory =
-  catfile( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq } );
+## Given uncompressed file
+my $file_name = q{a_file.fastq};
 
-my @infiles = get_files(
-    {
-        file_directory   => $infile_directory,
-        rule_name        => q{*.fastq*},
-        rule_skip_subdir => q{original_fastq_files},
-    }
-);
+my ( $is_file_compressed, $read_file_command ) =
+  set_file_compression_features( { file_name => $file_name, } );
 
-my @expected_files =
-  qw{ 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_2.fastq.gz 2_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz 8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz };
+## Then return false
+is( $is_file_compressed, 0, q{File was not compressed} );
 
-## Then skip sub dir
-is_deeply( \@infiles, \@expected_files,
-    q{Found all files when skipping sub dir} );
+## Then set read command to handle uncompressed file
+is( $read_file_command, q{cat},
+    q{Set read file command for uncompressed file} );
 
-## Given an infile directory, when applying rule file name
-@infiles = get_files(
-    {
-        file_directory => $infile_directory,
-        rule_name      => q{*.fastq*},
-    }
-);
+## Given compressed file
+$file_name .= q{.gz};
 
-push @expected_files, q{test.fastq.gz};
+( $is_file_compressed, $read_file_command ) =
+  set_file_compression_features( { file_name => $file_name, } );
 
-## Then find all files recursively
-is_deeply( \@infiles, \@expected_files, q{Found all files recursively} );
+## Then return true
+ok( $is_file_compressed, q{File was compressed} );
 
-## Given an infile directory, when applying no rules
-@infiles = get_files( { file_directory => $infile_directory, } );
-
-my @expected_file_objects =
-  qw{ fastq 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_2.fastq.gz 2_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz 8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz original_fastq_files test.fastq.gz test.txt };
-
-## Then find all files and dir recursively
-is_deeply( \@infiles, \@expected_file_objects,
-    q{Found all files and dirs recursively} );
+## Then set read command to handle uncompressed file
+is( $read_file_command, q{zcat}, q{Set read file command for compressed file} );
 
 done_testing();
 
