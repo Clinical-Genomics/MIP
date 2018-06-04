@@ -27,7 +27,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_absolute_path set_file_compression_features set_file_suffix set_infiles set_merged_infile_prefix };
+      qw{ set_absolute_path set_file_compression_features set_file_prefix_tag set_file_suffix set_infiles set_merged_infile_prefix };
 }
 
 ## Constants
@@ -111,6 +111,164 @@ sub set_file_compression_features {
         $read_file_command = q{cat};
     }
     return $is_compressed, $read_file_command;
+}
+
+sub set_file_prefix_tag {
+
+## Function : Set the file tag depending on active programs.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $current_chain         => Name of current chain
+##          : $family_id             => Family id {REF}
+##          : $file_tag              => File tag to set
+##          : $file_info_href        => Info on files hash {REF}
+##          : $id                    => To change id for
+##          : $mip_program_name      => The program to add file tag for
+##          : $temp_file_ending_href => Store sequential build of file tag
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $current_chain;
+    my $file_tag;
+    my $file_info_href;
+    my $id;
+    my $mip_program_name;
+    my $temp_file_ending_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        current_chain => {
+            defined     => 1,
+            required    => 1,
+            store       => \$current_chain,
+            strict_type => 1,
+        },
+        file_tag => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_tag,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        mip_program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$mip_program_name,
+            strict_type => 1,
+        },
+        temp_file_ending_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$temp_file_ending_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## File_ending should be added for this program
+    if ( $active_parameter_href->{$mip_program_name} ) {
+
+        _inherit_chain_main(
+            {
+                current_chain         => $current_chain,
+                id                    => $id,
+                temp_file_ending_href => $temp_file_ending_href,
+            }
+        );
+
+        if ( defined $temp_file_ending_href->{$current_chain}{$id} ) {
+
+            ## Add new file tag to build-up
+            $file_info_href->{$id}{$mip_program_name}{file_tag} =
+              $temp_file_ending_href->{$current_chain}{$id} . $file_tag;
+        }
+        else {
+            ## First module that should add filending
+
+            $file_info_href->{$id}{$mip_program_name}{file_tag} = $file_tag;
+        }
+    }
+    else {
+        ## Do not add module file_tag for this program but for previous programs
+
+        $file_info_href->{$id}{$mip_program_name}{file_tag} =
+          $temp_file_ending_href->{$current_chain}{$id};
+    }
+
+    return $file_info_href->{$id}{$mip_program_name}{file_tag};
+}
+
+sub _inherit_chain_main {
+
+## Function : Inherit file tags from MAIN chain.
+## Returns  :
+## Arguments: $current_chain         => Name of current chain
+##          : $id                    => To change id for
+##          : $temp_file_ending_href => Store sequential build of file tag
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $current_chain;
+    my $id;
+    my $temp_file_ending_href;
+
+    my $tmpl = {
+        current_chain => {
+            defined     => 1,
+            required    => 1,
+            store       => \$current_chain,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        temp_file_ending_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$temp_file_ending_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Check if branch and first program on branch
+    if ( $current_chain ne q{MAIN}
+        and not defined $temp_file_ending_href->{$current_chain}{$id} )
+    {
+
+        ## Inherit current MAIN chain.
+        $temp_file_ending_href->{$current_chain}{$id} =
+          $temp_file_ending_href->{MAIN}{$id};
+    }
+    return;
 }
 
 sub set_file_suffix {

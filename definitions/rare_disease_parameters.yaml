@@ -357,7 +357,7 @@ ppicardtools_mergesamfiles:
   chain: MAIN
   data_type: SCALAR
   default: 0
-  file_tag: _merged
+  file_tag: ""
   file_endings:
    - .bam
   type: program
