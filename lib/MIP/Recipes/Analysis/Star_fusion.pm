@@ -44,7 +44,7 @@ sub analysis_star_fusion {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $genome_lib_dir_path     => Path to the directory containing the genome library
-##          : infiles_ref              => \@{ $infile_href->{$sample_id} },
+##          : infiles_ref              => Infiles per sample id
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
