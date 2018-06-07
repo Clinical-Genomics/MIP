@@ -23,7 +23,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ get_bin_file_path get_capture_kit get_conda_path get_dynamic_conda_path get_module_parameters get_program_parameters get_user_supplied_info };
+      qw{ get_bin_file_path get_capture_kit get_conda_path get_dynamic_conda_path get_module_parameters get_program_parameters get_program_version get_user_supplied_info };
 }
 
 ## Constants
@@ -406,6 +406,88 @@ sub get_program_parameters {
               {$mip_program_name} };
     }
     return @source_environment_cmds;
+}
+
+sub get_program_version {
+
+## Function : Get program version by 1. regexp or 2. cmd
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $cmd                   => Command line call
+##          : $parameter_name        => Parameter to add version from
+##          : $regexp                => Regexp to use for getting version
+##          : $sample_info_href      => Info on samples and family hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $cmd;
+    my $parameter_name;
+    my $regexp;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        cmd => {
+            defined     => 1,
+            required    => 1,
+            store       => \$cmd,
+            strict_type => 1,
+        },
+        parameter_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+        regexp => {
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Unix::System qw{ system_cmd_call };
+
+    if ( exists $active_parameter_href->{$parameter_name}
+        && $active_parameter_href->{$parameter_name} )
+    {
+
+        ## Dry run mode for all program
+        return if ( $active_parameter_href->{dry_run_all} );
+
+        ## Dry run mode for this program
+        return if ( $active_parameter_href->{$parameter_name} eq q{2} );
+
+        my ($version) =
+          $active_parameter_href->{$parameter_name} =~ /$regexp/xsm;
+
+        # If not set - fall back on actually calling program
+        if ( not $version ) {
+
+            my %return = system_cmd_call( { command_string => $cmd, } );
+            chomp( $version = $return{output}[0] );
+        }
+        return $version;
+    }
+    return;
 }
 
 sub get_user_supplied_info {

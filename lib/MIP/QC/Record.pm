@@ -3,6 +3,7 @@ package MIP::QC::Record;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -26,12 +27,13 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ add_gene_panel add_infile_info add_most_complete_vcf add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+      qw{ add_gene_panel add_infile_info add_most_complete_vcf add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_parameter_to_sample_info add_program_outfile_to_sample_info add_to_sample_info };
 
 }
 
 ## Constants
 Readonly my $DOT        => q{.};
+Readonly my $EMPTY_STR  => q{};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
@@ -509,6 +511,55 @@ sub add_most_complete_vcf {
     return;
 }
 
+sub add_parameter_to_sample_info {
+
+##Function : Adds parameter to sample info
+##Returns  :
+##Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##         : $key_to_add            => Key and value to add
+##         : $sample_info_href      => Info on samples and family hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $key_to_add;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        key_to_add => {
+            defined     => 1,
+            required    => 1,
+            store       => \$key_to_add,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( exists $active_parameter_href->{$key_to_add} ) {
+
+        $sample_info_href->{$key_to_add} =
+          $active_parameter_href->{$key_to_add};
+    }
+
+    return;
+}
+
 sub add_program_outfile_to_sample_info {
 
 ## Function : Adds path and/or outdirectory and/or outfile and/or version from programs to sample_info to track all outfiles and extract downstream
@@ -798,6 +849,144 @@ sub add_program_metafile_to_sample_info {
     return;
 }
 
+sub add_to_sample_info {
+
+## Function : Adds parameter info to sample_info
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $family_id_ref              => The family_id_ref {REF}
+##          : $file_info_href             => File info hash {REF}
+##          : $human_genome_reference => Human genome reference
+##          : $outdata_dir                => Outdata directory
+##          : $sample_info_href           => Info on samples and family hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref;
+    my $human_genome_reference;
+    my $outdata_dir;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        family_id_ref => {
+            default     => \$arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id_ref,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        human_genome_reference => {
+            default =>
+              $arg_href->{active_parameter_href}{human_genome_reference},
+            store       => \$human_genome_reference,
+            strict_type => 1,
+        },
+        outdata_dir => {
+            default     => $arg_href->{active_parameter_href}{outdata_dir},
+            store       => \$outdata_dir,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_program_version };
+
+    ## Add parameter key to sample info
+    my @add_keys = qw{ analysis_type expected_coverage sample_origin };
+
+  PARAMETER:
+    foreach my $key_to_add (@add_keys) {
+
+        add_parameter_to_sample_info(
+            {
+                active_parameter_href => $active_parameter_href,
+                key_to_add            => $key_to_add,
+                sample_info_href      => $sample_info_href,
+            }
+        );
+    }
+
+    ## Define program features to find version of program that do not print version to log file or can be collected from the parameter
+    my %program_feature = define_program_features(
+        { active_parameter_href => $active_parameter_href, } );
+
+  PARAMETER:
+    foreach my $parameter_name ( keys %program_feature ) {
+
+        ## Get program version
+        my $version = get_program_version(
+            {
+                active_parameter_href => $active_parameter_href,
+                cmd                   => $program_feature{$parameter_name}{cmd},
+                parameter_name        => $parameter_name,
+                regexp           => $program_feature{$parameter_name}{regexp},
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name => $program_feature{$parameter_name}{program_name},
+                version      => $version,
+            }
+        );
+    }
+
+    ## Addition of genome build version to sample_info
+    if ( defined $human_genome_reference ) {
+
+        $sample_info_href->{human_genome_build}{path} = $human_genome_reference;
+
+        my @human_genome_features = qw{ source version };
+        foreach my $feature (@human_genome_features) {
+
+            $sample_info_href->{human_genome_build}{$feature} =
+              $file_info_href->{ q{human_genome_reference_} . $feature };
+        }
+    }
+    if ( exists( $active_parameter_href->{pedigree_file} ) ) {
+
+        ## Add pedigree_file to sample_info
+        $sample_info_href->{pedigree_file}{path} =
+          $active_parameter_href->{pedigree_file};
+    }
+    if ( exists( $active_parameter_href->{log_file} ) ) {
+
+        ## Add log_file_dir to sample info file
+        my $path = dirname( dirname( $active_parameter_href->{log_file} ) );
+        $sample_info_href->{log_file_dir} = $path;
+        $sample_info_href->{last_log_file_path} =
+          $active_parameter_href->{log_file};
+    }
+    return;
+}
+
 sub _file_name_formats {
 
 ## Function : Define format using information derived from infile name.
@@ -891,6 +1080,77 @@ sub _file_name_formats {
       . $index;
     return $mip_file_format, $mip_file_format_with_direction,
       $original_file_name_prefix, $run_barcode;
+}
+
+sub define_program_features {
+
+    ## Function : Define program features to find version of program
+    ## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Define program features
+    my $gatk_cmd   = $EMPTY_STR;
+    my $picard_cmd = $EMPTY_STR;
+
+    if ( exists $active_parameter_href->{gatk_path} ) {
+
+        $gatk_cmd = q{java -jar }
+          . catfile( $active_parameter_href->{gatk_path},
+            q{GenomeAnalysisTK.jar} )
+          . $SPACE
+          . q{--version 2>&1};
+    }
+    if ( exists $active_parameter_href->{picardtools_path} ) {
+        $picard_cmd =
+            q{java -jar }
+          . catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} )
+          . $SPACE
+          . q{CreateSequenceDictionary --version 2>&1};
+    }
+    my $sambamba_cmd =
+      q?sambamba 2>&1 | perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
+
+    my %program_feature = (
+        gatk_path => {
+            cmd          => $gatk_cmd,
+            regexp       => q?gatk-([^,]+)?,
+            program_name => q{gatk},
+        },
+        picardtools_path => {
+            cmd          => $picard_cmd,
+            regexp       => q?picard-tools-([^,]+)?,
+            program_name => q{picardtools},
+        },
+        pbwa_mem => {
+            cmd    => $sambamba_cmd,     #pbwa_mem uses sambamba post alignment
+            regexp => q?Not relevant?,
+            program_name => q{sambamba},
+        },
+        psambamba_depth => {
+            cmd          => $sambamba_cmd,
+            regexp       => q?Not relevant?,
+            program_name => q{sambamba},
+        },
+    );
+
+    return %program_feature;
 }
 
 1;

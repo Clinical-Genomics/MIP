@@ -74,6 +74,7 @@ use MIP::Update::Parameters
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Programs
   qw{ update_prioritize_flag update_program_mode_for_analysis_type update_program_mode_with_dry_run_all };
+use MIP::QC::Record qw{ add_to_sample_info };
 
 ## Recipes
 use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
@@ -177,7 +178,7 @@ sub mip_analyse {
 
     if ( $active_parameter{version} ) {
 
-        say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
           $NEWLINE;
         exit;
     }
@@ -909,12 +910,12 @@ sub mip_analyse {
         }
     );
 
-## Add to SampleInfo
+## Add to sample info
     add_to_sample_info(
         {
             active_parameter_href => \%active_parameter,
-            sample_info_href      => \%sample_info,
             file_info_href        => \%file_info,
+            sample_info_href      => \%sample_info,
         }
     );
 
@@ -985,7 +986,7 @@ sub mip_analyse {
 
                 my $infile_suffix = $parameter{pgzip_fastq}{infile_suffix};
 
-                if ( $infile =~ /$infile_suffix$/ ) {
+                if ( $infile =~ /$infile_suffix$/sxm ) {
 
                     ## Automatically gzips fastq files
                     analysis_gzip_fastq(
@@ -1096,240 +1097,32 @@ sub mip_analyse {
         );
         $log->info( q{Wrote: } . $active_parameter{sample_info_file} );
     }
-
+    return;
 }
 
 ######################
 ####Sub routines######
 ######################
 
-sub add_to_sample_info {
-
-##add_to_sample_info
-
-##Function : Adds parameter info to sample_info
-##Returns  : ""
-##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $family_id_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_info_href      => Info on samples and family hash {REF}
-##         : $file_info_href        => File info hash {REF}
-##         : $family_id_ref         => The family_id_ref {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $human_genome_reference_ref;
-    my $outdata_dir;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        human_genome_reference_ref => {
-            default =>
-              \$arg_href->{active_parameter_href}{human_genome_reference},
-            strict_type => 1,
-            store       => \$human_genome_reference_ref
-        },
-        outdata_dir => {
-            default     => $arg_href->{active_parameter_href}{outdata_dir},
-            strict_type => 1,
-            store       => \$outdata_dir
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-
-    if ( exists( $active_parameter_href->{analysis_type} ) ) {
-
-        $sample_info_href->{analysis_type} =
-          $active_parameter_href->{analysis_type};
-    }
-    if ( exists( $active_parameter_href->{expected_coverage} ) ) {
-
-        $sample_info_href->{expected_coverage} =
-          $active_parameter_href->{expected_coverage};
-    }
-    if ( exists $active_parameter_href->{sample_origin} ) {
-
-        $sample_info_href->{sample_origin} =
-          $active_parameter_href->{sample_origin};
-    }
-    if ( exists $active_parameter_href->{gatk_path}
-        && $active_parameter_href->{gatk_path} )
-    {
-
-        my $gatk_version;
-        if ( $active_parameter_href->{gatk_path} =~ /GenomeAnalysisTK-([^,]+)/ )
-        {
-
-            $gatk_version = $1;
-        }
-        else {
-            # Fall back on actually calling program
-
-            my $jar_path = catfile( $active_parameter_href->{gatk_path},
-                "GenomeAnalysisTK.jar" );
-            $gatk_version = (`java -jar $jar_path --version 2>&1`);
-            chomp $gatk_version;
-        }
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => 'gatk',
-                version          => $gatk_version,
-            }
-        );
-    }
-    if ( exists $active_parameter_href->{picardtools_path}
-        && $active_parameter_href->{picardtools_path} )
-    {
-        ## To enable addition of version to sample_info
-        my $picardtools_version;
-        if ( $active_parameter_href->{picardtools_path} =~
-            /picard-tools-([^,]+)/ )
-        {
-
-            $picardtools_version = $1;
-        }
-        else {    #Fall back on actually calling program
-
-            my $jar_path = catfile( $active_parameter_href->{picardtools_path},
-                q{picard.jar} );
-            $picardtools_version =
-              (`java -jar $jar_path CreateSequenceDictionary --version 2>&1`);
-            chomp $picardtools_version;
-        }
-
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => 'picardtools',
-                version          => $picardtools_version,
-            }
-        );
-    }
-    my @sambamba_programs =
-      ( "pbwa_mem", "psambamba_depth", "markduplicates_sambamba_markdup" );
-    foreach my $program (@sambamba_programs) {
-
-        if (   ( defined $active_parameter_href->{$program} )
-            && ( $active_parameter_href->{$program} == 1 ) )
-        {
-
-            if ( !$active_parameter_href->{dry_run_all} ) {
-
-                my $regexp =
-                  q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
-                my $sambamba_version = (`sambamba 2>&1 | $regexp`);
-                chomp $sambamba_version;
-                add_program_outfile_to_sample_info(
-                    {
-                        sample_info_href => $sample_info_href,
-                        program_name     => 'sambamba',
-                        version          => $sambamba_version,
-                    }
-                );
-                last;    #Only need to check once
-            }
-        }
-    }
-    if ( exists $active_parameter_href->{pcnvnator} )
-    {                    #To enable addition of version to sample_info
-
-        if (   ( $active_parameter_href->{pcnvnator} == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
-
-            my $regexp =
-              q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1;last;}'?;
-            my $cnvnator_version = (`cnvnator 2>&1 | $regexp`);
-            chomp $cnvnator_version;
-            add_program_outfile_to_sample_info(
-                {
-                    sample_info_href => $sample_info_href,
-                    program_name     => 'cnvnator',
-                    version          => $cnvnator_version,
-                }
-            );
-        }
-    }
-    if ( defined($$human_genome_reference_ref) )
-    {    #To enable addition of version to sample_info
-
-        $sample_info_href->{human_genome_build}{path} =
-          $$human_genome_reference_ref;
-        $sample_info_href->{human_genome_build}{source} =
-          $file_info_href->{human_genome_reference_source};
-        $sample_info_href->{human_genome_build}{version} =
-          $file_info_href->{human_genome_reference_version};
-    }
-    if ( exists( $active_parameter_href->{pedigree_file} ) ) {
-
-        ## Add pedigree_file to sample_info
-        $sample_info_href->{pedigree_file}{path} =
-          $active_parameter_href->{pedigree_file};
-    }
-    if ( exists( $active_parameter_href->{log_file} ) ) {
-
-        my $path = dirname( dirname( $active_parameter_href->{log_file} ) );
-        $sample_info_href->{log_file_dir} =
-          $path;    #Add log_file_dir to SampleInfoFile
-        $sample_info_href->{last_log_file_path} =
-          $active_parameter_href->{log_file};
-    }
-}
-
 ##Investigate potential autodie error
-if ( $@ and $@->isa("autodie::exception") ) {
+if ( $EVAL_ERROR and $EVAL_ERROR->isa(q{autodie::exception}) ) {
 
-    if ( $@->matches("default") ) {
+    if ( $EVAL_ERROR->matches(q{default}) ) {
 
-        say "Not an autodie error at all";
+        say {*STDERR} q{Not an autodie error at all};
     }
-    if ( $@->matches("open") ) {
+    if ( $EVAL_ERROR->matches(q{open}) ) {
 
-        say "Error from open";
+        say {*STDERR} q{Error from open};
     }
-    if ( $@->matches(":io") ) {
+    if ( $EVAL_ERROR->matches(q{:io}) ) {
 
-        say "Non-open, IO error.\n";
+        say {*STDERR} q{Non-open, IO error.};
     }
 }
-elsif ($@) {
+elsif ($EVAL_ERROR) {
 
-    say "A non-autodie exception.";
+    say {*STDERR} q{A non-autodie exception.};
 }
 
 1;
