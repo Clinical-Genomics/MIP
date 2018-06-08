@@ -1092,47 +1092,58 @@ sub add_sample_job_id_to_family_id_dependency_tree {
 
 sub create_job_id_string_for_sample_id {
 
-##create_job_id_string_for_sample_id
-
-##Function : Create job id string from the job id chain and path associated with sample for SLURM submission using dependencies
-##Returns  : "$job_ids_string"
-##Arguments: $job_id_href, $family_id, $sample_id, $family_id_chain_key, $sample_id_chain_key, $path
-##         : $job_id_href           => The info on job ids hash {REF}
-##         : $family_id             => Family id
-##         : $sample_id             => Sample id
-##         : $family_id_chain_key   => Family ID chain hash key
-##         : $sample_id_chain_key   => Sample ID chain hash key
-##         : $sbatch_script_tracker => Track the number of parallel processes (e.g. sbatch scripts for a module)
-##         : $path                  => Trunk or branch
+## Function : Create job id string from the job id chain and path associated with sample for SLURM submission using dependencies
+## Returns  : $job_ids_string
+## Arguments: $family_id             => Family id
+##          : $family_id_chain_key   => Family ID chain hash key
+##          : $job_id_href           => The info on job ids hash {REF}
+##          : $path                  => Trunk or branch
+##          : $sample_id             => Sample id
+##          : $sample_id_chain_key   => Sample ID chain hash key
+##          : $sbatch_script_tracker => Track the number of parallel processes (e.g. sbatch scripts for a module)
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $job_id_href;
+    my $family_id;
     my $family_id_chain_key;
+    my $path;
+    my $sample_id;
     my $sample_id_chain_key;
     my $sbatch_script_tracker;
-    my $family_id;
-    my $sample_id;
-    my $path;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         family_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
-        sample_id => {
+        family_id_chain_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$family_id_chain_key,
             strict_type => 1,
-            store       => \$sample_id
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        path =>
+          { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        sample_id => {
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_id_chain_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id_chain_key,
+            strict_type => 1,
         },
         sbatch_script_tracker => {
             allow       => qr/^\d+$/,
@@ -1140,20 +1151,6 @@ sub create_job_id_string_for_sample_id {
             store       => \$sbatch_script_tracker,
             strict_type => 1,
         },
-        family_id_chain_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$family_id_chain_key
-        },
-        sample_id_chain_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sample_id_chain_key
-        },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
