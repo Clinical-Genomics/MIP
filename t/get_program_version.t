@@ -151,24 +151,12 @@ is( $return{picardtools_path}{regexp_return},
 PARAMETER:
 foreach my $parameter_name ( keys %program_feature ) {
 
-    if ( $parameter_name eq q{psambamba_depth} ) {
-
-        $program_feature{$parameter_name}{cmd} = get_dynamic_conda_path(
-            {
-                active_parameter_href => \%active_parameter,
-                bin_file => $program_feature{$parameter_name}{program_name},
-            }
-        );
-    }
-    else {
-
-        $active_parameter{$parameter_name} = get_dynamic_conda_path(
-            {
-                active_parameter_href => \%active_parameter,
-                bin_file => $program_feature{$parameter_name}{program_name},
-            }
-        );
-    }
+    $active_parameter{$parameter_name} = get_dynamic_conda_path(
+        {
+            active_parameter_href => \%active_parameter,
+            bin_file => $program_feature{$parameter_name}{program_name},
+        }
+    );
 }
 
 ## Build cmd for system call to get version from program output
@@ -188,15 +176,14 @@ my $sambamba_cmd =
 ## Set in program features hash
 $program_feature{gatk_path}{cmd}        = $gatk_cmd;
 $program_feature{picardtools_path}{cmd} = $picard_cmd;
-$program_feature{psambamba_depth}{cmd} =
-  catfile( $program_feature{psambamba_depth}{cmd}, $sambamba_cmd );
+$program_feature{psambamba_depth}{cmd}  = $sambamba_cmd;
 
 ## Scramble the regexps, that need scrambling
 $program_feature{gatk_path}{regexp}        = q{Not valid};
 $program_feature{picardtools_path}{regexp} = q{Not valid};
 
 ## Activate parameter
-$active_parameter{psambamba_depth} = 1;
+$active_parameter{psambamba_depth} = 2;
 
 PARAMETER:
 foreach my $parameter_name ( keys %program_feature ) {
@@ -216,29 +203,6 @@ foreach my $parameter_name ( keys %program_feature ) {
 ## Then version should be true
 ok( $return{gatk_path}{cmd_return},        q{Added gatk version by cmd} );
 ok( $return{picardtools_path}{cmd_return}, q{Added picard version by cmd} );
-ok( $return{psambamba_depth}{cmd_return},  q{Added sambamba version by cmd} );
-
-## Given a deactivated parameter
-$active_parameter{psambamba_depth} = 2;
-
-## Clean-up
-delete @program_feature{qw{ gatk_path picardtools_path }};
-PARAMETER:
-foreach my $parameter_name ( keys %program_feature ) {
-
-    my $version = get_program_version(
-        {
-            active_parameter_href => \%active_parameter,
-            cmd                   => $program_feature{$parameter_name}{cmd},
-            parameter_name        => $parameter_name,
-            regexp                => $program_feature{$parameter_name}{regexp},
-            sample_info_href      => \%sample_info,
-        }
-    );
-    $return{$parameter_name}{cmd_return} = $version;
-}
-
-## Then version should be undef
 is( $return{psambamba_depth}{cmd_return}, undef, q{Skipped sambamba version} );
 
 done_testing();
