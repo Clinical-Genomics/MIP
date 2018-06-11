@@ -100,6 +100,7 @@ diag(   q{Test gatk_haplotypecaller from Alignment::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
+Readonly my $SAMPLE_PLOIDY                                 => 3;
 Readonly my $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING => 10;
 Readonly my $VARIANT_INDEX_PARAMETER                       => 128_000;
 
@@ -197,6 +198,10 @@ my %specific_argument = (
     variant_index_type => {
         input           => q{LINEAR},
         expected_output => q{--variant_index_type LINEAR},
+    },
+    sample_ploidy => {
+        input           => $SAMPLE_PLOIDY,
+        expected_output => q{--sample_ploidy} . $SPACE . $SAMPLE_PLOIDY,
     },
 );
 
