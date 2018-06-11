@@ -49,8 +49,12 @@ q?perl -nae 'chomp; my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x
         ],
         q{1.4_interleaved} =>
 q?perl -nae 'chomp; if($.==5) { my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $direction) = /^(@\w+-\w+):(\d+):(\w+):(\d+):(\d+):(\d+):(\d+)[\/](\d+)/; if($instrument_id) { print $direction;last;} } elsif ($.==6) {last;}'?,
+        q{1.4_interleaved_no_dash_inst_id} =>
+q?perl -nae 'chomp; if($.==5) { my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $direction) = /^(@\w+):(\d+):(\w+):(\d+):(\d+):(\d+):(\d+)[\/](\d+)/; if($instrument_id) { print $direction;last;} } elsif ($.==6) {last;}'?,
         q{1.8_interleaved} =>
 q?perl -nae 'chomp; if($.==5) { my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $direction, $filtered, $control_bit, $index,) = /^(@\w+-\w+):(\d+):(\w+):(\d+):(\d+):(\d+):(\d+)\s(\d+):(\w+):(\d+):(\w+)/; if($instrument_id) { print $direction;last;} } elsif ($.==6) {last;}'?,
+        q{1.8_interleaved_no_dash_inst_id} =>
+q?perl -nae 'chomp; if($.==5) { my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $direction, $filtered, $control_bit, $index,) = /^(@\w+):(\d+):(\w+):(\d+):(\d+):(\d+):(\d+)\s(\d+):(\w+):(\d+):(\w+)/; if($instrument_id) { print $direction;last;} } elsif ($.==6) {last;}'?,
     );
 
     return %casava_header_regexp;

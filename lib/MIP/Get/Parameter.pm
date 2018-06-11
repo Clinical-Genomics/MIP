@@ -483,7 +483,10 @@ sub get_program_version {
         if ( not $version ) {
 
             my %return = system_cmd_call( { command_string => $cmd, } );
-            chomp( $version = $return{output}[0] );
+            if ( $return{output}[0] ) {
+
+                chomp( $version = $return{output}[0] );
+            }
         }
         return $version;
     }

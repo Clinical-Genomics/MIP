@@ -79,7 +79,6 @@ use MIP::QC::Record qw{ add_to_sample_info };
 ## Recipes
 use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
-use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
 use MIP::Recipes::Pipeline::Rare_disease qw{ pipeline_rare_disease };
 use MIP::Recipes::Pipeline::Rna qw{ pipeline_rna };
 use MIP::Recipes::Pipeline::Cancer qw{ pipeline_cancer };

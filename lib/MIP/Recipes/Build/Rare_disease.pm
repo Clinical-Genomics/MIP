@@ -106,8 +106,13 @@ sub build_rare_disease_meta_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Reference
-      qw{ check_bwa_prerequisites check_capture_file_prerequisites check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt check_rtg_prerequisites };
+    use MIP::Check::Reference qw{ check_bwa_prerequisites
+      check_capture_file_prerequisites
+      check_human_genome_prerequisites
+      check_parameter_metafiles
+      check_references_for_vt
+      check_rtg_prerequisites };
+    use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
 
 ## Check capture file prerequistes exists
   PROGRAM:

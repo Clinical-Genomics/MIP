@@ -136,13 +136,31 @@ my @returns = trap {
 ## Then return true if detected interleaved
 ok( $returns[0], q{Detected interleaved casava < 1.4 fastq file} );
 
-## Given file, when casava version >= 1.8
-my $file = q{8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
+## Given file, when casava version < 1.4 without dash in instrument id
+$interleaved_file = q{2_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz};
 
 @returns = trap {
     check_interleaved(
         {
-            file_path         => catfile( $directory, $file ),
+            file_path         => catfile( $directory, $interleaved_file ),
+            log               => $log,
+            read_file_command => $read_file_command,
+        }
+      )
+};
+
+## Then return true if detected interleaved
+ok( $returns[0],
+q{Detected interleaved casava < 1.4 fastq file without dash in instrument id}
+);
+
+## Given file, when casava version >= 1.8
+$interleaved_file = q{8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
+
+@returns = trap {
+    check_interleaved(
+        {
+            file_path         => catfile( $directory, $interleaved_file ),
             log               => $log,
             read_file_command => $read_file_command,
         }
@@ -151,6 +169,24 @@ my $file = q{8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
 
 ## Then return true if detected interleaved
 ok( $returns[0], q{Detected interleaved casava >= 1.8 fastq file} );
+
+## Given file, when casava version >= 1.8 without dash in instrument id
+$interleaved_file = q{7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
+
+@returns = trap {
+    check_interleaved(
+        {
+            file_path         => catfile( $directory, $interleaved_file ),
+            log               => $log,
+            read_file_command => $read_file_command,
+        }
+      )
+};
+
+## Then return true if detected interleaved
+ok( $returns[0],
+q{Detected interleaved casava >= 1.8 fastq file without dash in instrument id}
+);
 
 ## Given wrong read direction file
 $directory = catdir( $Bin, qw{ data 643594-miptest test_data bad_input } );
@@ -173,8 +209,8 @@ like( $trap->stderr, qr/FATAL/xms,
     q{Throw fatal log message if interleaved file format cannot be found} );
 
 ## Given malformed file
-$directory         = catdir( $Bin, qw{ data 643594-miptest } );
-$file              = q{643594-miptest_pedigree.yaml};
+$directory = catdir( $Bin, qw{ data 643594-miptest } );
+my $file = q{643594-miptest_pedigree.yaml};
 $read_file_command = q{cat};
 
 trap {

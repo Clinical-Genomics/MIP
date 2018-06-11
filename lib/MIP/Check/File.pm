@@ -73,7 +73,9 @@ sub check_interleaved {
     ## Select relevant regexps from hash
     my @regexps = (
         $casava_header_regexp{q{1.4_interleaved}},
+        $casava_header_regexp{q{1.4_interleaved_no_dash_inst_id}},
         $casava_header_regexp{q{1.8_interleaved}},
+        $casava_header_regexp{q{1.8_interleaved_no_dash_inst_id}},
     );
 
     ## Store return from regexp
@@ -91,7 +93,7 @@ sub check_interleaved {
 
     if ( not $fastq_read_direction ) {
 
-        $log->fatal(q{Malformed fastq file!});
+        $log->fatal( q{Malformed fastq file: } . $file_path );
         $log->fatal(q{Could not find a read direction });
         exit 1;
     }
