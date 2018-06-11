@@ -100,6 +100,7 @@ diag(   q{Test gatk_haplotypecaller from Alignment::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
+Readonly my $MITOCHONDRIA_PLOIDY                           => 3;
 Readonly my $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING => 10;
 Readonly my $VARIANT_INDEX_PARAMETER                       => 128_000;
 
@@ -171,6 +172,10 @@ my %specific_argument = (
         input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
         expected_output => q{--dbsnp }
           . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+    },
+    sample_ploidy => {
+        input           => $MITOCHONDRIA_PLOIDY,
+        expected_output => q{--sample_ploidy} . $SPACE . $MITOCHONDRIA_PLOIDY,
     },
     standard_min_confidence_threshold_for_calling => {
         input           => $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
