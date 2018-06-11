@@ -13,4 +13,4 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Moved vcfcytosure processing to the last sv module
 
 ## [6.0.0]
-- Version 6.0.0 #186
+- Version 6.0.0. https://github.com/Clinical-Genomics/MIP/issues/186
