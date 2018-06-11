@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -260,6 +260,7 @@ sub gatk_haplotypecaller {
 ##          : $pedigree_validation_type                      => Validation strictness for pedigree
 ##          : $read_filters_ref                              => Filters to apply to reads before analysis {REF}
 ##          : $referencefile_path                            => Reference sequence file
+##          : $sample_ploidy                                 => Ploidy per sample
 ##          : $standard_min_confidence_threshold_for_calling => The minimum phred-scaled confidence threshold at which variants should be called
 ##          : $static_quantized_quals_ref                    => Use static quantized quality scores to a given number of levels (with -BQSR) {REF}
 ##          : $stderrfile_path                               => Stderrfile path
@@ -286,6 +287,7 @@ sub gatk_haplotypecaller {
     my $pedigree;
     my $read_filters_ref;
     my $referencefile_path;
+    my $sample_ploidy;
     my $standard_min_confidence_threshold_for_calling;
     my $static_quantized_quals_ref;
     my $stderrfile_path;
@@ -405,6 +407,11 @@ sub gatk_haplotypecaller {
             store       => \$referencefile_path,
             strict_type => 1,
         },
+        sample_ploidy => {
+            allow       => [ undef, qr/ ^\d+$ /sxm ],
+            store       => \$sample_ploidy,
+            strict_type => 1,
+        },
         standard_min_confidence_threshold_for_calling => {
             allow       => qr/ ^\d+$ /sxm,
             store       => \$standard_min_confidence_threshold_for_calling,
@@ -500,6 +507,10 @@ sub gatk_haplotypecaller {
 
         push @commands,
           q{--variant_index_parameter} . $SPACE . $variant_index_parameter;
+    }
+    if ($sample_ploidy) {
+
+        push @commands, q{--sample_ploidy} . $SPACE . $sample_ploidy;
     }
 
     push @commands, q{--emitRefConfidence} . $SPACE . $emit_ref_confidence;

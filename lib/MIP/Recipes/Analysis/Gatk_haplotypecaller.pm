@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -184,6 +184,7 @@ sub analysis_gatk_haplotypecaller {
     use MIP::Set::File qw{ set_file_suffix };
 
     ## Constants
+    Readonly my $MITOCHONDRIA_PLOIDY           => 3;
     Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
     Readonly my $JAVA_MEMORY_ALLOCATION        => 4;
     Readonly my $VARIANT_INDEX_PARAMETER       => 128_000;
@@ -381,6 +382,7 @@ sub analysis_gatk_haplotypecaller {
         ## Get parameters
         my @intervals;
         my $pcr_indel_model;
+        my $sample_ploidy;
         ## Exome analysis
         if ( $analysis_type eq q{wes} ) {
 
@@ -407,6 +409,11 @@ sub analysis_gatk_haplotypecaller {
                   $active_parameter_href
                   ->{gatk_haplotypecaller_pcr_indel_model};
             }
+        }
+
+        ## Special case for the mitochondria
+        if ( $contig =~ /MT|M/xms ) {
+            $sample_ploidy = $MITOCHONDRIA_PLOIDY;
         }
 
         ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
@@ -443,6 +450,7 @@ sub analysis_gatk_haplotypecaller {
                 pedigree                 => $commands{pedigree},
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
+                sample_ploidy => $sample_ploidy,
                 standard_min_confidence_threshold_for_calling =>
                   $STANDARD_MIN_CONFIDENCE_THRSD,
                 stderrfile_path         => $stderrfile_path,
