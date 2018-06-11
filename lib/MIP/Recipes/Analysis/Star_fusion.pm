@@ -30,6 +30,7 @@ BEGIN {
 
 ## Constants
 Readonly my $AMPERSAND  => q{&};
+Readonly my $ASTERIX    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
@@ -43,6 +44,7 @@ sub analysis_star_fusion {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $genome_lib_dir_path     => Path to the directory containing the genome library
+##          : infiles_ref              => Infiles per sample id
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
@@ -52,6 +54,7 @@ sub analysis_star_fusion {
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -59,6 +62,7 @@ sub analysis_star_fusion {
     my $active_parameter_href;
     my $file_info_href;
     my $genome_lib_dir_path;
+    my $infiles_ref;
     my $infile_lane_prefix_href;
     my $insample_directory;
     my $job_id_href;
@@ -71,6 +75,7 @@ sub analysis_star_fusion {
     ## Default(s)
     my $family_id;
     my $outaligner_dir;
+    my $temp_directory;
 
     my $tmpl = {
         active_parameter_href => {
@@ -95,6 +100,13 @@ sub analysis_star_fusion {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infiles_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infiles_ref,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -154,12 +166,18 @@ sub analysis_star_fusion {
             store       => \$sample_info_href,
             strict_type => 1,
         },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::IO::Files qw{ migrate_file };
     use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
@@ -167,6 +185,7 @@ sub analysis_star_fusion {
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -189,70 +208,158 @@ sub analysis_star_fusion {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Paths
-    my $infile_path;
+    ## Assign file_tags
+    my $outfile_tag =
+      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
 
+    ### Assign suffix
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix(
+        {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
+            parameter_href => $parameter_href,
+            suffix_key     => q{fusion_file_suffix},
+        }
+    );
+
+    # Too avoid adjusting infile_index in submitting to jobs
+    my $paired_end_tracker = 0;
+
+    ## Perform per single-end or read pair
   INFILE_PREFIX:
     while ( my ( $infile_index, $infile_prefix ) =
         each @{ $infile_lane_prefix_href->{$sample_id} } )
     {
 
-        ## Assign tags
-        my $infile_star_aln_prefix =
-          $file_info_href->{$sample_id}{pstar_aln}{file_tag};
-        my $infile_suffix = q{Chimeric.out.junction};
+        ## Assign file tags
+        my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
+        my $outfile_path_prefix = $file_path_prefix . $outfile_tag;
 
-        ## Paths
-        $infile_path = catfile( $insample_directory,
-            $infile_prefix . $infile_star_aln_prefix . $DOT . $infile_suffix );
+        # Collect paired-end or single-end sequence run mode
+        my $sequence_run_mode =
+          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
+          {sequence_run_type};
+
+        # Collect interleaved info
+        my $interleaved_fastq_file =
+          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
+          {interleaved};
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ( $file_path, $program_info_path ) = setup_script(
             {
-                active_parameter_href => $active_parameter_href,
-                core_number           => $core_number,
-                directory_id          => $sample_id,
-                FILEHANDLE            => $FILEHANDLE,
-                job_id_href           => $job_id_href,
-                process_time          => $time,
-                program_directory => catfile( $outaligner_dir, q{star_fusion} ),
-                program_name      => $program_name,
+                active_parameter_href           => $active_parameter_href,
+                core_number                     => $core_number,
+                directory_id                    => $sample_id,
+                FILEHANDLE                      => $FILEHANDLE,
+                job_id_href                     => $job_id_href,
+                program_directory               => lc $outaligner_dir,
+                program_name                    => $program_name,
+                process_time                    => $time,
                 source_environment_commands_ref => \@source_environment_cmds,
+                temp_directory                  => $temp_directory,
             }
         );
 
-        my $process_batches_count = 1;
+        ## Copies file to temporary directory.
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
 
-        while ( my ( $sample_id_index, ) =
-            each @{ $active_parameter_href->{sample_ids} } )
-        {
+        # Read 1
+        my $insample_dir_fastqc_path_read_one =
+          catfile( $insample_directory, $infiles_ref->[$paired_end_tracker] );
+        migrate_file(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $insample_dir_fastqc_path_read_one,
+                outfile_path => $temp_directory,
+            }
+        );
 
-            $process_batches_count = print_wait(
+        # If second read direction is present
+        if ( $sequence_run_mode eq q{paired-end} ) {
+
+            my $insample_dir_fastqc_path_read_two =
+              catfile( $insample_directory,
+                $infiles_ref->[ $paired_end_tracker + 1 ] );
+
+            # Read 2
+            migrate_file(
                 {
-                    FILEHANDLE            => $FILEHANDLE,
-                    max_process_number    => $core_number,
-                    process_batches_count => $process_batches_count,
-                    process_counter       => $sample_id_index,
+                    FILEHANDLE   => $FILEHANDLE,
+                    infile_path  => $insample_dir_fastqc_path_read_two,
+                    outfile_path => $temp_directory,
                 }
             );
-
-            ## Star_fusion
-            star_fusion(
-                {
-                    FILEHANDLE            => $FILEHANDLE,
-                    genome_lib_dir_path   => $genome_lib_dir_path,
-                    sjdb_path             => $infile_path,
-                    output_directory_path => $outsample_directory,
-                }
-            );
-            say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
         }
         say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+        ## Star aln
+        say {$FILEHANDLE}
+          q{## Performing fusion transcript detections using star fusion }
+          . $program_name;
+
+        ### Get parameters
+        ## Infile(s)
+        my $fastq_r1_path =
+          catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
+        my $fastq_r2_path;
+
+        # If second read direction is present
+        if ( $sequence_run_mode eq q{paired-end} ) {
+
+            # Increment to collect correct read 2 from %infile
+            $paired_end_tracker++;
+            $fastq_r2_path =
+              catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
+        }
+        my $genome_lib_dir_path = $active_parameter_href->{reference_dir};
+
+        star_fusion(
+            {
+                FILEHANDLE            => $FILEHANDLE,
+                genome_lib_dir_path   => $genome_lib_dir_path,
+                fastq_r1_path         => $fastq_r1_path,
+                fastq_r2_path         => $fastq_r2_path,
+                output_directory_path => $outsample_directory,
+            }
+        );
+
+        say {$FILEHANDLE} $NEWLINE;
+
+        ## Increment paired end tracker
+        $paired_end_tracker++;
 
         ## Close FILEHANDLES
         close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
         if ( $mip_program_mode == 1 ) {
+
+            my $program_outfile_path =
+              $outfile_path_prefix . $UNDERSCORE . q{bam};
+
+            ## Collect QC metadata info for later use
+            add_program_outfile_to_sample_info(
+                {
+                    path             => $program_outfile_path,
+                    program_name     => $program_name,
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+
+            my $most_complete_format_key =
+              q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
+            my $qc_metafile_path =
+              catfile( $outsample_directory, $infile_prefix . $outfile_suffix );
+            add_processing_metafile_to_sample_info(
+                {
+                    metafile_tag     => $most_complete_format_key,
+                    path             => $qc_metafile_path,
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
+                }
+            );
 
             slurm_submit_job_sample_id_dependency_step_in_parallel(
                 {
