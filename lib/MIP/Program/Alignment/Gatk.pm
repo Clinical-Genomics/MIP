@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -423,7 +423,7 @@ sub gatk_haplotypecaller {
             strict_type => 1,
         },
         variant_index_type => {
-            allow       => [qw{ DYNAMIC_SEEK DYNAMIC_SIZE LINEAR INTERVAL }],
+            allow       => [qw{ 0 DYNAMIC_SEEK DYNAMIC_SIZE LINEAR INTERVAL }],
             default     => q{LINEAR},
             store       => \$variant_index_type,
             strict_type => 1,
@@ -502,9 +502,11 @@ sub gatk_haplotypecaller {
           q{--variant_index_parameter} . $SPACE . $variant_index_parameter;
     }
 
-    push @commands, q{--emitRefConfidence} . $SPACE . $emit_ref_confidence;
+    if ($variant_index_type) {
+        push @commands, q{--variant_index_type} . $SPACE . $variant_index_type;
+    }
 
-    push @commands, q{--variant_index_type} . $SPACE . $variant_index_type;
+    push @commands, q{--emitRefConfidence} . $SPACE . $emit_ref_confidence;
 
     ## Infile
     push @commands, q{--input_file} . $SPACE . $infile_path;

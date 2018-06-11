@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -99,7 +99,7 @@ diag(   q{Test salmon_quant from Salmon.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $READ_FILES_COMMAND => q{bunzip2};
+Readonly my $READ_FILES_COMMAND => q{pigz -dc};
 
 my $function_base_command = q{salmon quant};
 

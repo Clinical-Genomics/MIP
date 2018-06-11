@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -56,6 +56,7 @@ sub analysis_gatk_splitncigarreads {
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
+##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
@@ -77,6 +78,7 @@ sub analysis_gatk_splitncigarreads {
     my $family_id;
     my $outaligner_dir;
     my $temp_directory;
+    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
@@ -163,6 +165,12 @@ sub analysis_gatk_splitncigarreads {
             store       => \$temp_directory,
             strict_type => 1,
         },
+        xargs_file_counter => {
+            default     => 0,
+            allow       => qr/ ^\d+$ /xsm,
+            strict_type => 1,
+            store       => \$xargs_file_counter,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -170,13 +178,12 @@ sub analysis_gatk_splitncigarreads {
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file };
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Gatk qw{ gatk_splitncigarreads };
-    use MIP::QC::Record
-      qw{ add_processing_metafile_to_sample_info add_program_outfile_to_sample_info };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
@@ -200,7 +207,8 @@ sub analysis_gatk_splitncigarreads {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $FILEHANDLE      = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
@@ -232,7 +240,7 @@ sub analysis_gatk_splitncigarreads {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{ppicardtools_mergesamfiles}{file_tag};
+      $file_info_href->{$sample_id}{pmarkduplicates}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
 
@@ -243,6 +251,7 @@ sub analysis_gatk_splitncigarreads {
     ## Paths
     my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
+    my $xargs_file_path_prefix;
 
     ## Assign suffix
     my $infile_suffix = my $outfile_suffix = get_file_suffix(
@@ -255,19 +264,21 @@ sub analysis_gatk_splitncigarreads {
 
     ## Copy file(s) to temporary directory
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
+    ($xargs_file_counter) = xargs_migrate_contig_files(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $insample_directory,
-                $infile_prefix
-                  . substr( $infile_suffix, 0, $MINUS_ONE )
-                  . $ASTERIX
-            ),
-            outfile_path => $temp_directory,
+            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+            core_number        => $core_number,
+            indirectory        => $insample_directory,
+            infile             => $infile_prefix,
+            FILEHANDLE         => $FILEHANDLE,
+            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_path          => $file_path,
+            program_info_path  => $program_info_path,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargs_file_counter => $xargs_file_counter,
+            temp_directory     => $temp_directory,
         }
     );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Division by X according to the java heap
     Readonly my $JAVA_MEMORY_ALLOCATION => 6;
@@ -285,65 +296,72 @@ sub analysis_gatk_splitncigarreads {
     ## GATK SplitNCigarReads
     say {$FILEHANDLE} q{## GATK SplitNCigarReads};
 
-    my $infile_path  = $file_path_prefix . $infile_suffix;
-    my $outfile_path = $outfile_path_prefix . $outfile_suffix;
-    gatk_splitncigarreads(
+    ## Create file commands for xargs
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $infile_path,
-            java_jar    => catfile(
+            core_number   => $core_number,
+            FILEHANDLE    => $FILEHANDLE,
+            file_path     => $file_path,
+            first_command => q{java},
+            java_jar      => catfile(
                 $active_parameter_href->{gatk_path},
                 q{GenomeAnalysisTK.jar},
             ),
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            logging_level      => $active_parameter_href->{gatk_logging_level},
             memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            outfile_path       => $outfile_path,
-            referencefile_path => $referencefile_path,
+            program_info_path  => $program_info_path,
             temp_directory     => $temp_directory,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargs_file_counter => $xargs_file_counter,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
 
-    ## Copies bam and bai file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
+  CONTIG:
+    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+
+        my $infile_path =
+          $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
+        my $outfile_path =
+          $outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
+        my $stderrfile_path =
+          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+
+        gatk_splitncigarreads(
+            {
+                FILEHANDLE    => $XARGSFILEHANDLE,
+                infile_path   => $infile_path,
+                logging_level => $active_parameter_href->{gatk_logging_level},
+                outfile_path  => $outfile_path,
+                referencefile_path => $referencefile_path,
+                temp_directory     => $temp_directory,
+                stderrfile_path    => $stderrfile_path,
+            }
+        );
+        print {$XARGSFILEHANDLE} $NEWLINE;
+    }
+
+    ## Copies bam and bai files from temporary directory.
+    say {$FILEHANDLE} q{## Copy file(s) from temporary directory};
+    ($xargs_file_counter) = xargs_migrate_contig_files(
         {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => substr( $outfile_path, 1, $MINUS_ONE ) . $ASTERIX,
-            outfile_path => $outsample_directory,
+            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+            core_number        => $core_number,
+            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_path          => $file_path,
+            FILEHANDLE         => $FILEHANDLE,
+            outdirectory       => $insample_directory,
+            outfile            => $outfile_prefix,
+            program_info_path  => $program_info_path,
+            temp_directory     => $temp_directory,
+            xargs_file_counter => $xargs_file_counter,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
         }
     );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
     close $FILEHANDLE;
+    close $XARGSFILEHANDLE;
 
     if ( $mip_program_mode == 1 ) {
-
-        my $program_outfile_path =
-          catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
-
-        ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                infile           => $infile_prefix,
-                path             => $program_outfile_path,
-                program_name     => q{gatk_splitncigarreads},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-        my $most_complete_format_key =
-          q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        add_processing_metafile_to_sample_info(
-            {
-                metafile_tag     => $most_complete_format_key,
-                path             => $program_outfile_path,
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {

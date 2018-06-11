@@ -2197,7 +2197,7 @@ sub gatk_asereadcounter {
 
     ## Infile
     if ($infile_path) {
-        push @commands, q{--variant} . $SPACE . $infile_path;
+        push @commands, q{--input_file} . $SPACE . $infile_path;
     }
 
     ## Output

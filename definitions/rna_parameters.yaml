@@ -4,8 +4,11 @@
 human_genome_reference:
   associated_program:
    - mip
-   - pstar_aln
    - pgatk_asereadcounter
+   - pgatk_baserecalibration
+   - pgatk_haplotypecaller
+   - pgatk_splitncigarreads
+   - pstar_aln
   build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
@@ -26,6 +29,7 @@ gatk_disable_auto_index_and_file_lock:
    - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
+   - pgatk_splitncigarreads
   data_type: SCALAR
   default: 0
   type: program_argument
@@ -42,6 +46,7 @@ gatk_logging_level:
    - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
+   - pgatk_splitncigarreads
   data_type: SCALAR
   default: INFO
   type: program_argument
@@ -50,6 +55,7 @@ gatk_path:
    - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
+   - pgatk_splitncigarreads
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -71,12 +77,13 @@ module_time:
   data_type: HASH
   default:
     pfastqc: 10
-    pgatk_asereadcounter: 10
+    pgatk_asereadcounter: 5
     pgatk_baserecalibration: 10
+    pgatk_haplotypecaller: 5
     pgatk_splitncigarreads: 1
-    pgatk_haplotypecaller: 20
     pgzip_fastq: 2
-    ppicardtools_mergesamfiles: 10
+    pmarkduplicates: 10
+    ppicardtools_mergesamfiles: 5
     psalmon_quant: 5
     pstar_aln: 5
     pstar_fusion: 1
@@ -87,11 +94,12 @@ module_core_number:
   data_type: HASH
   default:
     pfastqc: 0
-    pgatk_asereadcounter: 16
+    pgatk_asereadcounter: 1
     pgatk_baserecalibration: 16
-    pgatk_splitncigarreads: 1
     pgatk_haplotypecaller: 16
+    pgatk_splitncigarreads: 16
     pgzip_fastq: 0
+    pmarkduplicates: 16
     ppicardtools_mergesamfiles: 16
     psalmon_quant: 1
     pstar_aln: 16
@@ -106,8 +114,9 @@ outaligner_dir:
   type: mip
 picardtools_path:
   associated_program:
-   - pstar_aln
+   - pmarkduplicates
    - ppicardtools_mergesamfiles
+   - pstar_aln
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -210,6 +219,49 @@ ppicardtools_mergesamfiles:
   file_endings:
    - .bam
   type: program
+## Mark duplicates
+pmarkduplicates:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _md
+  program_name_path:
+   - sambamba
+  file_endings:
+   - .bam
+  type: program
+markduplicates_picardtools_markduplicates:
+  associated_program:
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+markduplicates_sambamba_markdup:
+  associated_program:
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+markduplicates_sambamba_markdup_hash_table_size:
+  associated_program:
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 262144
+  type: program_argument
+markduplicates_sambamba_markdup_io_buffer_size:
+  associated_program:
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 2048
+  type: program_argument
+markduplicates_sambamba_markdup_overflow_list_size:
+  associated_program:
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 200000
+  type: program_argument
 ## GATK SplitNCigarReads
 pgatk_splitncigarreads:
   associated_program:
@@ -238,10 +290,10 @@ gatk_baserecalibration_covariates:
   element_separator: ,
   data_type: ARRAY
   default:
-   - ReadGroupCovariate
    - ContextCovariate
    - CycleCovariate
    - QualityScoreCovariate
+   - ReadGroupCovariate
   type: program_argument
 gatk_baserecalibration_disable_indel_qual:
   associated_program:
@@ -255,8 +307,8 @@ gatk_baserecalibration_known_sites:
   element_separator: ,
   data_type: ARRAY
   default:
-   - GRCh37_dbsnp_-138-.vcf
    - GRCh37_1000g_indels_-phase1-.vcf
+   - GRCh37_dbsnp_-138-.vcf
    - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
   exists_check: file
   reference: reference_dir
@@ -340,7 +392,7 @@ gatk_haplotypecaller_snp_known_set:
   exists_check: file
   reference: reference_dir
   type: path
-## GATK Genotype
+## GATK ASE
 pgatk_asereadcounter:
   associated_program:
    - mip

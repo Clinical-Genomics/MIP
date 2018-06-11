@@ -330,8 +330,7 @@ sub analysis_gatk_asereadcounter {
               $active_parameter_href->{java_use_large_pages},
             logging_level     => $active_parameter_href->{gatk_logging_level},
             memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            num_cpu_threads_per_data_thread => $core_number,
-            outfile_path                    => $outfile_path,
+            outfile_path      => $outfile_path,
             referencefile_path =>
               $active_parameter_href->{human_genome_reference},
             gatk_sites_vcffile => $sitesfile_path_prefix . $sitesfile_suffix,

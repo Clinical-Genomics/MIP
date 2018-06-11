@@ -122,7 +122,7 @@ my %required_argument = (
     },
     infile_path => {
         input           => catfile(qw{ path_to_analysis_dir infile.vcf }),
-        expected_output => q{--variant}
+        expected_output => q{--input_file}
           . $SPACE
           . catfile(qw{ path_to_analysis_dir infile.vcf }),
     },
