@@ -112,6 +112,15 @@ sub _build_usage {
     );
 
     option(
+        q{exclude_contigs} => (
+            cmd_aliases   => [qw{ exc }],
+            documentation => q{Exclude contigs from analysis},
+            is            => q{rw},
+            isa           => ArrayRef,
+        )
+    );
+
+    option(
         q{expected_coverage} => (
             cmd_aliases   => [qw{ ec }],
             cmd_tags      => [q{sample_id=expected_coverage}],

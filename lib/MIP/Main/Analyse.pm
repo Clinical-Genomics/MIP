@@ -841,9 +841,10 @@ sub mip_analyse {
 ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
         {
-            file_info_href     => \%file_info,
-            analysis_type_href => \%{ $active_parameter{analysis_type} },
-            found_male         => $active_parameter{found_male},
+            analysis_type_href  => \%{ $active_parameter{analysis_type} },
+            exclude_contigs_ref => \@{ $active_parameter{exclude_contigs} },
+            file_info_href      => \%file_info,
+            found_male          => $active_parameter{found_male},
         }
     );
 

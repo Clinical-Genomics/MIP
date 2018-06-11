@@ -44,6 +44,13 @@ email_types:
   default:
    - FAIL
   type: mip
+exclude_contigs:
+  associated_program:
+   - mip
+  element_separator: ,
+  data_type: ARRAY
+  mandatory: no
+  type: mip
 expected_coverage:
   associated_program:
    - mip

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ size_sort_select_file_contigs update_contigs_for_run };
@@ -154,14 +154,16 @@ sub update_contigs_for_run {
 
 ## Function : Update contigs depending on settings in run
 ## Returns  :
-## Arguments: $analysis_type_href => Analysis_type hash {REF}
-##          : $file_info_href     => File info hash {REF}
-##          : $found_male         => Male was included in the analysis
+## Arguments: $analysis_type_href  => Analysis_type hash {REF}
+##          : $exclude_contigs_ref => Exclude contigs from analysis {REF}
+##          : $file_info_href      => File info hash {REF}
+##          : $found_male          => Male was included in the analysis
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $analysis_type_href;
+    my $exclude_contigs_ref;
     my $file_info_href;
     my $found_male;
 
@@ -171,6 +173,12 @@ sub update_contigs_for_run {
             defined     => 1,
             required    => 1,
             store       => \$analysis_type_href,
+            strict_type => 1,
+        },
+        exclude_contigs_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$exclude_contigs_ref,
             strict_type => 1,
         },
         file_info_href => {
@@ -191,9 +199,27 @@ sub update_contigs_for_run {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
+    use MIP::Delete::List
+      qw{ delete_contig_elements delete_non_wes_contig delete_male_contig };
 
-    ## Delete contig chrM|MT from contigs array if consensus analysis type is wes
+    my @exclude_contig_arrays = (
+        \@{ $file_info_href->{contigs_size_ordered} },
+        \@{ $file_info_href->{contigs} },
+        \@{ $file_info_href->{select_file_contigs} },
+    );
+
+  ARRAY_REF:
+    foreach my $array_ref (@exclude_contig_arrays) {
+
+        ## Delete user specified contigs from contigs array
+        @{$array_ref} = delete_contig_elements(
+            {
+                elements_ref       => $array_ref,
+                remove_contigs_ref => $exclude_contigs_ref,
+            }
+        );
+    }
+
     my @wes_contig_arrays = (
         \@{ $file_info_href->{contigs_size_ordered} },
         \@{ $file_info_href->{contigs} },
@@ -203,6 +229,7 @@ sub update_contigs_for_run {
   ARRAY_REF:
     foreach my $array_ref (@wes_contig_arrays) {
 
+        ## Delete contig chrM|MT from contigs array if consensus analysis type is wes
         @{$array_ref} = delete_non_wes_contig(
             {
                 analysis_type_href => $analysis_type_href,
@@ -212,8 +239,8 @@ sub update_contigs_for_run {
     }
 
     my @male_contig_arrays = (
-        \@{ $file_info_href->{contigs_sv_size_ordered} },
-        \@{ $file_info_href->{contigs_sv} },
+        \@{ $file_info_href->{contigs_size_ordered} },
+        \@{ $file_info_href->{contigs} },
         \@{ $file_info_href->{select_file_contigs} },
     );
 
