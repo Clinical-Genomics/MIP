@@ -247,7 +247,7 @@ sub analysis_star_fusion {
           {interleaved};
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $file_name, $program_info_path ) = setup_script(
+        my ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $core_number,
@@ -369,7 +369,7 @@ sub analysis_star_fusion {
                     log                     => $log,
                     path                    => $job_id_chain,
                     sample_id               => $sample_id,
-                    sbatch_file_name        => $file_name,
+                    sbatch_file_name        => $file_path,
                     sbatch_script_tracker   => $infile_index,
                 }
             );
