@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [7.0.0]
-- Added exclude contig option. Fix #509.
+- Added exclude contig option. Fix https://github.com/Clinical-Genomics/MIP/issues/509.
 
 ## [6.0.7]
 - Increased ploidy when calling variants in the mitochondria #510
