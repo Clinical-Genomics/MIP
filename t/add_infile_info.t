@@ -29,7 +29,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA       => q{,};
@@ -266,10 +266,12 @@ is_deeply(
 ## Given another file to mimic read direction 2
 %infile = ( $sample_id => [qw{ file-1 file-2}], );
 
+my $lane_tracker = 0;
+
 SAMPLE_ID:
 for my $sample_id ( keys %infile ) {
 
-    my $lane_tracker = 0;
+    $lane_tracker = 0;
 
   INFILE:
     while ( my ( $file_index, $file_name ) = each @{ $infile{$sample_id} } ) {
@@ -279,7 +281,7 @@ for my $sample_id ( keys %infile ) {
             ## Update infile info to mimic second read direction
             $infile_info{direction} = 2;
 
-            ## Rdefine file format for new direction
+            ## Redefine file format for new direction
             (
                 $mip_file_format, $mip_file_format_with_direction,
                 $original_file_name_prefix, $run_barcode
@@ -304,7 +306,7 @@ for my $sample_id ( keys %infile ) {
         push @{ $expected_result{infile_both_strands_prefix}{$sample_id} },
           $mip_file_format_with_direction;
 
-        add_infile_info(
+        $lane_tracker = add_infile_info(
             {
                 active_parameter_href           => \%active_parameter,
                 date                            => $infile_info{date},
@@ -371,6 +373,8 @@ $expected_result{lane}{$sample_id} = [ 1, 1 ];
 
 $expected_result{sample_info}{sample}{$sample_id}{file}{$mip_file_format}
   {sequence_run_type} = q{paired-end};
+
+is( $lane_tracker, 1, q{Tracked lane} );
 
 is_deeply(
     \%lane,

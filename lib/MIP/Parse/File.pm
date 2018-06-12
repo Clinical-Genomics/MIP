@@ -211,7 +211,7 @@ sub parse_fastq_infiles {
                 );
 
                 ## Adds information derived from infile name to hashes
-                add_infile_info(
+                $lane_tracker = add_infile_info(
                     {
                         active_parameter_href => $active_parameter_href,
                         date                  => $infile_info{date},
@@ -270,7 +270,7 @@ q{Please check that the file name contains the sample_id.}
                     $fastq_info_header{index} = $EMPTY_STR;
                 }
                 ## Adds information derived from infile name to hashes
-                add_infile_info(
+                $lane_tracker = add_infile_info(
                     {
                         active_parameter_href => $active_parameter_href,
                         ## fastq format does not contain a date of the run,

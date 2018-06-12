@@ -190,7 +190,7 @@ q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
 sub add_infile_info {
 
 ## Function : Adds information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elements.
-## Returns  :
+## Returns  : $lane_tracker
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##          : $date                            => Flow-cell sequencing date
 ##          : $direction                       => Sequencing read direction
@@ -433,7 +433,7 @@ sub add_infile_info {
         $direction_level_href->{$file_key} = $file_value;
     }
 
-    return;
+    return $lane_tracker;
 }
 
 sub add_most_complete_vcf {
