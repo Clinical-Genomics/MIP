@@ -137,7 +137,7 @@ This will generate a batch script called "mip.sh" in your working directory.
 It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.   
 
   - For a full list of available options and parameters, run: ``$ perl mip install rare_disease --help``
-  - For a full list of parameter defaults, run: ``$ perl mip install rare_disease --ppd``
+  - For a full list of parameter defaults, run: ``$ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --ppd``
 
 ##### 5.Run the bash script
 
