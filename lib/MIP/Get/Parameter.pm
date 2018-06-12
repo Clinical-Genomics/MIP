@@ -19,14 +19,24 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ get_bin_file_path get_capture_kit get_conda_path get_dynamic_conda_path get_module_parameters get_program_parameters get_program_version get_user_supplied_info };
+    our @EXPORT_OK = qw{
+      get_bin_file_path
+      get_capture_kit
+      get_conda_path
+      get_dynamic_conda_path
+      get_module_parameters
+      get_program_parameters
+      get_program_version
+      get_programs_for_shell_installation
+      get_user_supplied_info
+    };
 }
 
 ## Constants
+Readonly my $COLON      => q{:};
 Readonly my $MINUS_FOUR => -4;
 Readonly my $MINUS_ONE  => -1;
 Readonly my $MINUS_TWO  => -2;
@@ -557,6 +567,108 @@ sub get_user_supplied_info {
         }
     }
     return %user_supply_switch;
+}
+
+sub get_programs_for_shell_installation {
+
+## Function  : Get the programs that are to be installed via SHELL
+## Returns   : @shell_programs
+## Arguments : $conda_programs_href        => Hash with conda progrmas {REF}
+##           : $log                        => Log
+##           : $prefer_shell               => Path to conda environment
+##           : $shell_install_programs_ref => Array with programs selected for shell installation {REF}
+##           : $shell_programs_href        => Hash with shell programs {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $conda_programs_href;
+    my $log;
+    my $prefer_shell;
+    my $shell_install_programs_ref;
+    my $shell_programs_href;
+
+    my $tmpl = {
+        conda_programs_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$conda_programs_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        prefer_shell => {
+            allow       => [ undef, 0, 1 ],
+            required    => 1,
+            store       => \$prefer_shell,
+            strict_type => 1,
+        },
+        shell_install_programs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$shell_install_programs_ref,
+            strict_type => 1,
+        },
+        shell_programs_href => {
+            default  => {},
+            required => 1,
+            store    => \$shell_programs_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Array::Utils qw{ intersect array_minus unique };
+
+    return if not keys %{$shell_programs_href};
+
+    my @shell_programs = keys %{$shell_programs_href};
+    my @conda_programs = keys %{$conda_programs_href};
+
+    if ($prefer_shell) {
+
+        # Only get the selected programs otherwise leave the array unaltered
+        if ( @{$shell_install_programs_ref} ) {
+
+            # Get the intersect between the two arrays
+            @shell_programs =
+              intersect( @shell_programs, @{$shell_install_programs_ref} );
+        }
+    }
+    elsif ( @{$shell_install_programs_ref} ) {
+
+        # Assert that the selected program has shell install instructions.
+        my @faulty_selects =
+          array_minus( @{$shell_install_programs_ref}, @shell_programs );
+        if (@faulty_selects) {
+            $log->fatal(
+                q{No shell installation instructions available for}
+                  . $COLON
+                  . join $SPACE,
+                @faulty_selects
+            );
+            exit 1;
+        }
+
+        # Get elements in @shell_programs that are not part of the conda hash
+        my @shell_only_programs =
+          array_minus( @shell_programs, @conda_programs );
+
+        # Add the selected program(s) and remove possible duplicates
+        @shell_programs =
+          unique( @shell_only_programs, @{$shell_install_programs_ref} );
+    }
+    else {
+        # If no shell preferences only add programs lacking conda counterpart
+        @shell_programs = array_minus( @shell_programs, @conda_programs );
+    }
+
+    return @shell_programs;
 }
 
 1;
