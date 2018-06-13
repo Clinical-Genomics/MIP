@@ -56,7 +56,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.2.3};
+    our $VERSION = q{1.2.4};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -360,6 +360,7 @@ sub get_programs_for_installation {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_programs_for_shell_installation };
+    use MIP::Check::Installation qw{ check_python_compability };
 
     ## Set install modes to loop over
     my @install_modes = qw{ bioconda conda pip shell };
@@ -376,12 +377,13 @@ sub get_programs_for_installation {
     @programs = uniq @programs;
 
     ## Exit if a python 2 env has ben specified for a python 3 program
-    _assure_python_compability(
+    check_python_compability(
         {
             installation_set_href => $parameter_href->{$installation},
+            python3_programs_ref  => $parameter_href->{python3_programs},
             python_version => $parameter_href->{$installation}{conda}{python},
             select_programs_ref => $parameter_href->{select_programs},
-            sublog              => $log,
+            log                 => $log,
         }
     );
 
@@ -461,104 +463,6 @@ q{Please select a single installation environment when using the option select_p
     $parameter_href->{$installation}{shell_programs_to_install} =
       [@shell_programs_to_install];
 
-    return;
-}
-
-sub _assure_python_compability {
-
-## Function : Test if specified programs are to be installed in a python 3 environment
-## Returns  :
-## Arguments: $installation_set_href => The environment specific installation hash {REF}
-##          : $python_version        => The python version that are to be used for the environment
-##          : $select_programs_ref   => Programs selected for installation by the user {REF}
-##          : $sub_log               => Log
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $installation_set_href;
-    my $python_version;
-    my $select_programs_ref;
-    my $sub_log;
-
-    my $tmpl = {
-        sublog => {
-            defined  => 1,
-            required => 1,
-            store    => \$sub_log,
-        },
-        installation_set_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$installation_set_href,
-            strict_type => 1,
-        },
-        python_version => {
-            required => 1,
-            store    => \$python_version,
-        },
-        select_programs_ref => {
-            default  => [],
-            required => 1,
-            store    => \$select_programs_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Array::Utils qw{ intersect unique };
-
-    ## Display warning if python isn't part of the installation
-    if ( not $python_version ) {
-        $sub_log->warn(
-q{Python is not part of the installation. Skipping python compability check.}
-        );
-        return;
-    }
-
-    ## Check format of python version
-    if (
-        $python_version !~ m{
-        ^(?: [23] )      # Assert that the python major version starts with 2 or 3
-        [.]              # Major version separator
-        (?: \d+$         # Assert that the minor version is a digit
-        | \d+ [.] \d+$ ) # Case when minor and patch version has been supplied, allow only digits 
-        }xms
-      )
-    {
-        $sub_log->fatal( q{Please specify a python 2 or 3 version, given: }
-              . $python_version );
-        exit 1;
-    }
-
-    ## Define python 3 programs
-    my @py3_programs = qw{ chanoj genmod variant_integrity multiqc };
-
-    ## Cover the case where no program has ben actively chosen for installation
-    my @programs_to_check;
-    if ( not defined $select_programs_ref ) {
-        @programs_to_check = unique(
-            keys %{ $installation_set_href->{conda} },
-            keys %{ $installation_set_href->{shell} },
-            keys %{ $installation_set_href->{bioconda} },
-            keys %{ $installation_set_href->{pip} },
-        );
-    }
-    else {
-        @programs_to_check = @{$select_programs_ref};
-    }
-
-    my @conflicts = intersect( @programs_to_check, @py3_programs );
-
-    ## Check if a python 2 environment has been specified and a python 3
-    ## program has been specified for installation in that environment
-    if ( ( $python_version =~ m/^2/xms ) and ( scalar @conflicts > 0 ) ) {
-        $sub_log->fatal(
-            q{Please use a python 3 environment for:} . $NEWLINE . join $TAB,
-            @conflicts );
-        exit 1;
-    }
     return;
 }
 

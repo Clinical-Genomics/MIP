@@ -62,6 +62,9 @@ noupdate: 0
 # only applicaple for shell programs that overlap with existing conda packages
 prefer_shell: 0
 
+# Programs that needs to be installed with pyhton 3, only tuch if you know what you're doing 
+python3_programs: []
+
 # Supress output, both when generating the install script and running it
 quiet: 0
 

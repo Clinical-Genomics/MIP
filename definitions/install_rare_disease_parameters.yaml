@@ -189,6 +189,13 @@ noupdate: 0
 # only applicaple for shell programs that overlap with existing conda packages
 prefer_shell: 0
 
+# Programs that needs to be installed together with pyhton 3, only tuch if you know what you're doing 
+python3_programs:
+  - chanjo
+  - genmod
+  - variant_integrity
+  - multiqc
+
 # Supress output, both when generating the install script and running it
 quiet: 0
 
