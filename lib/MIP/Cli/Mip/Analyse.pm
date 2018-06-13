@@ -202,7 +202,7 @@ sub _build_usage {
     option(
         q{node_ram_memory} => (
             cmd_aliases   => [qw{ nrm }],
-            cmd_tags      => [q{Default: 24}],
+            cmd_tags      => [q{Default: 128}],
             documentation => q{RAM memory size of the node(s) in GigaBytes},
             is            => q{rw},
             isa           => Int,

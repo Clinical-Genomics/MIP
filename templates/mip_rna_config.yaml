@@ -27,6 +27,7 @@ human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
 ### Analysis
 ## Programs
 pfastqc: 1
+pgatk_asereadcounter: 1
 pgatk_baserecalibration: 1
 pgatk_haplotypecaller: 1
 pgatk_splitncigarreads: 1

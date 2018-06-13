@@ -18,7 +18,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -130,7 +130,7 @@ sub _build_usage {
 ## Returns  :
 ## Arguments:
 
-   option(
+    option(
         q{java_use_large_pages} => (
             cmd_aliases   => [qw{ jul }],
             documentation => q{Use large page memory},
@@ -139,7 +139,7 @@ sub _build_usage {
         )
     );
 
-   option(
+    option(
         q{module_core_number} => (
             cmd_aliases   => [qw{ mcn }],
             cmd_tags      => [q{program_name=X(cores)}],
@@ -159,7 +159,7 @@ sub _build_usage {
         )
     );
 
-   option(
+    option(
         q{outaligner_dir} => (
             cmd_aliases => [qw{ ald }],
             documentation =>
@@ -169,12 +169,22 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
         )
     );
 
-   option(
+    option(
         q{picardtools_path} => (
             cmd_aliases   => [qw{ ptp }],
             documentation => q{Path to Picardtools},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{ppicardtools_mergesamfiles} => (
+            cmd_aliases   => [qw{ ppms }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge bam files using Picardtools},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -273,6 +283,196 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_aliases   => [qw{ pstf }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Detect fusion transcripts with star fusion},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{pgatk_haplotypecaller} => (
+            cmd_aliases   => [qw{ pghc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Variant discovery using GATK HaplotypeCaller},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_haplotypecaller_annotation} => (
+            cmd_aliases => [qw{ ghcann }],
+            cmd_flag    => q{gatk_haplotype_ann},
+            cmd_tags    => [
+q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleBySample, FisherStrand, MappingQualityRankSumTest, QualByDepth, RMSMappingQuality, ReadPosRankSumTest, StrandOddsRatio}
+            ],
+            documentation => q{GATK HaploTypeCaller annotations},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{gatk_haplotypecaller_pcr_indel_model} => (
+            cmd_aliases   => [qw{ ghcpim }],
+            cmd_flag      => q{gatk_haplotype_pcr_ind_mod},
+            cmd_tags      => [q{Default: None; Set to "0" to disable}],
+            documentation => q{PCR indel model to use},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{gatk_haplotypecaller_snp_known_set} => (
+            cmd_aliases => [qw{ ghckse }],
+            cmd_flag    => q{gatk_haplotype_snp_ks},
+            cmd_tags    => [q{Default: GRCh37_dbsnp_-138-.vcf}],
+            documentation =>
+              q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{pmarkduplicates} => (
+            cmd_aliases   => [qw{ pmd }],
+            cmd_flag      => q{pmarkduplicates},
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Markduplicate reads},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{markduplicates_picardtools_markduplicates} => (
+            cmd_aliases   => [qw{ mdpmd }],
+            cmd_flag      => q{picard_markduplicates},
+            documentation => q{Markduplicates using Picardtools markduplicates},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{markduplicates_sambamba_markdup} => (
+            cmd_aliases   => [qw{ mdsmd }],
+            cmd_flag      => q{sambamba_markdup},
+            documentation => q{Markduplicates using Sambamba markduplicates},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{markduplicates_sambamba_markdup_hash_table_size} => (
+            cmd_aliases => [qw{ mdshts }],
+            cmd_flag    => q{sba_mdup_hts},
+            cmd_tags    => [q{Default: 262144}],
+            documentation =>
+              q{Sambamba size of hash table for finding read pairs},
+            is  => q{rw},
+            isa => Int,
+        )
+    );
+
+    option(
+        q{markduplicates_sambamba_markdup_io_buffer_size} => (
+            cmd_aliases => [qw{ mdsibs }],
+            cmd_flag    => q{sba_mdup_ibs},
+            cmd_tags    => [q{Default: 2048}],
+            documentation =>
+q{Sambamba size of the io buffer for reading and writing BAM during the second pass},
+            is  => q{rw},
+            isa => Int,
+        )
+    );
+
+    option(
+        q{markduplicates_sambamba_markdup_overflow_list_size} => (
+            cmd_aliases   => [qw{ mdsols }],
+            cmd_flag      => q{sba_mdup_ols},
+            cmd_tags      => [q{Default: 200000}],
+            documentation => q{Sambamba size of the overflow list},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{pgatk_splitncigarrreads} => (
+            cmd_aliases   => [qw{ pgs }],
+            cmd_flag      => q{pgatk_splitncigarreads},
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Split reads that contain Ns in their cigar},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{pgatk_haplotypecaller} => (
+            cmd_aliases   => [qw{ pghc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Variant discovery using GATK HaplotypeCaller},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_haplotypecaller_annotation} => (
+            cmd_aliases => [qw{ ghcann }],
+            cmd_flag    => q{gatk_haplotype_ann},
+            cmd_tags    => [
+q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleBySample, FisherStrand, MappingQualityRankSumTest, QualByDepth, RMSMappingQuality, ReadPosRankSumTest, StrandOddsRatio}
+            ],
+            documentation => q{GATK HaploTypeCaller annotations},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{gatk_haplotypecaller_no_soft_clipped_bases} => (
+            cmd_aliases => [qw{ ghcscb }],
+            cmd_flag    => q{gatk_haplotype_no_soft_cb},
+            documentation =>
+              q{Do not include soft clipped bases in the variant calling},
+            is  => q{rw},
+            isa => Bool,
+        )
+    );
+
+    option(
+        q{gatk_haplotypecaller_pcr_indel_model} => (
+            cmd_aliases   => [qw{ ghcpim }],
+            cmd_flag      => q{gatk_haplotype_pcr_ind_mod},
+            cmd_tags      => [q{Default: None; Set to "0" to disable}],
+            documentation => q{PCR indel model to use},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{gatk_haplotypecaller_snp_known_set} => (
+            cmd_aliases => [qw{ ghckse }],
+            cmd_flag    => q{gatk_haplotype_snp_ks},
+            cmd_tags    => [q{Default: GRCh37_dbsnp_-138-.vcf}],
+            documentation =>
+              q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{pgatk_asereadcounter} => (
+            cmd_aliases   => [qw{ pgae }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Allel specific expression},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )

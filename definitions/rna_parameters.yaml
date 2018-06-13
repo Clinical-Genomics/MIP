@@ -4,6 +4,10 @@
 human_genome_reference:
   associated_program:
    - mip
+   - pgatk_asereadcounter
+   - pgatk_baserecalibration
+   - pgatk_haplotypecaller
+   - pgatk_splitncigarreads
    - pstar_aln
   build_file: 1
   data_type: SCALAR
@@ -14,6 +18,7 @@ human_genome_reference:
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 gatk_bundle_download_version:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
   data_type: SCALAR
@@ -21,13 +26,16 @@ gatk_bundle_download_version:
   type: program_argument
 gatk_disable_auto_index_and_file_lock:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
+   - pgatk_splitncigarreads
   data_type: SCALAR
   default: 0
   type: program_argument
 gatk_downsample_to_coverage:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
   data_type: SCALAR
@@ -35,15 +43,19 @@ gatk_downsample_to_coverage:
   type: program_argument
 gatk_logging_level:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
+   - pgatk_splitncigarreads
   data_type: SCALAR
   default: INFO
   type: program_argument
 gatk_path:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
+   - pgatk_splitncigarreads
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -51,6 +63,7 @@ gatk_path:
 ## java large pages - affects all modules using java
 java_use_large_pages:
   associated_program:
+   - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
    - pstar_aln
@@ -64,11 +77,13 @@ module_time:
   data_type: HASH
   default:
     pfastqc: 10
+    pgatk_asereadcounter: 5
     pgatk_baserecalibration: 10
+    pgatk_haplotypecaller: 5
     pgatk_splitncigarreads: 1
-    pgatk_haplotypecaller: 20
     pgzip_fastq: 2
-    ppicardtools_mergesamfiles: 10
+    pmarkduplicates: 10
+    ppicardtools_mergesamfiles: 5
     psalmon_quant: 5
     pstar_aln: 5
     pstar_fusion: 1
@@ -79,10 +94,12 @@ module_core_number:
   data_type: HASH
   default:
     pfastqc: 0
+    pgatk_asereadcounter: 1
     pgatk_baserecalibration: 16
-    pgatk_splitncigarreads: 1
     pgatk_haplotypecaller: 16
+    pgatk_splitncigarreads: 16
     pgzip_fastq: 0
+    pmarkduplicates: 16
     ppicardtools_mergesamfiles: 16
     psalmon_quant: 1
     pstar_aln: 16
@@ -97,8 +114,9 @@ outaligner_dir:
   type: mip
 picardtools_path:
   associated_program:
-   - pstar_aln
+   - pmarkduplicates
    - ppicardtools_mergesamfiles
+   - pstar_aln
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -111,13 +129,13 @@ psalmon_quant:
   chain: DE
   data_type: SCALAR
   default: 0
+  file_endings:
+   - .sf
   file_tag: _salmon
   outfile_suffix: ".sf"
   outdir_name: salmon
   program_name_path:
    - salmon
-  file_endings:
-   - .sf
   type: program
 salmon_rna_lib_configuration:
   associated_program:
@@ -201,6 +219,49 @@ ppicardtools_mergesamfiles:
   file_endings:
    - .bam
   type: program
+## Mark duplicates
+pmarkduplicates:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _md
+  program_name_path:
+   - sambamba
+  file_endings:
+   - .bam
+  type: program
+markduplicates_picardtools_markduplicates:
+  associated_program:
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+markduplicates_sambamba_markdup:
+  associated_program:
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+markduplicates_sambamba_markdup_hash_table_size:
+  associated_program:
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 262144
+  type: program_argument
+markduplicates_sambamba_markdup_io_buffer_size:
+  associated_program:
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 2048
+  type: program_argument
+markduplicates_sambamba_markdup_overflow_list_size:
+  associated_program:
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 200000
+  type: program_argument
 ## GATK SplitNCigarReads
 pgatk_splitncigarreads:
   associated_program:
@@ -229,10 +290,10 @@ gatk_baserecalibration_covariates:
   element_separator: ,
   data_type: ARRAY
   default:
-   - ReadGroupCovariate
    - ContextCovariate
    - CycleCovariate
    - QualityScoreCovariate
+   - ReadGroupCovariate
   type: program_argument
 gatk_baserecalibration_disable_indel_qual:
   associated_program:
@@ -246,8 +307,8 @@ gatk_baserecalibration_known_sites:
   element_separator: ,
   data_type: ARRAY
   default:
-   - GRCh37_dbsnp_-138-.vcf
    - GRCh37_1000g_indels_-phase1-.vcf
+   - GRCh37_dbsnp_-138-.vcf
    - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
   exists_check: file
   reference: reference_dir
@@ -331,3 +392,15 @@ gatk_haplotypecaller_snp_known_set:
   exists_check: file
   reference: reference_dir
   type: path
+## GATK ASE
+pgatk_asereadcounter:
+  associated_program:
+   - mip
+  chain: ase
+  data_type: SCALAR
+  default: 0
+  file_tag: _ase
+  file_endings:
+   - .csv
+  outfile_suffix: ".csv"
+  type: program

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ picardtools_base };
@@ -54,21 +54,23 @@ sub picardtools_base {
     my $create_index;
 
     my $tmpl = {
-        commands_ref =>
-          { default => [], strict_type => 1, store => \$commands_ref },
-        create_index => {
-            default     => q{false},
-            allow       => [qw{ true false }],
+        commands_ref => {
+            default     => [],
+            store       => \$commands_ref,
             strict_type => 1,
-            store       => \$create_index
+        },
+        create_index => {
+            allow       => [qw{ true false }],
+            default     => q{false},
+            store       => \$create_index,
+            strict_type => 1,
         },
         referencefile_path => {
-            required    => 1,
             defined     => 1,
+            store       => \$referencefile_path,
             strict_type => 1,
-            store       => \$referencefile_path
         },
-        FILEHANDLE => { store => \$FILEHANDLE },
+        FILEHANDLE => { store => \$FILEHANDLE, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -87,8 +89,8 @@ sub picardtools_base {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;

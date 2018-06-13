@@ -430,7 +430,7 @@ sub gatk_haplotypecaller {
             strict_type => 1,
         },
         variant_index_type => {
-            allow       => [qw{ DYNAMIC_SEEK DYNAMIC_SIZE LINEAR INTERVAL }],
+            allow       => [qw{ 0 DYNAMIC_SEEK DYNAMIC_SIZE LINEAR INTERVAL }],
             default     => q{LINEAR},
             store       => \$variant_index_type,
             strict_type => 1,
@@ -513,9 +513,11 @@ sub gatk_haplotypecaller {
         push @commands, q{--sample_ploidy} . $SPACE . $sample_ploidy;
     }
 
-    push @commands, q{--emitRefConfidence} . $SPACE . $emit_ref_confidence;
+    if ($variant_index_type) {
+        push @commands, q{--variant_index_type} . $SPACE . $variant_index_type;
+    }
 
-    push @commands, q{--variant_index_type} . $SPACE . $variant_index_type;
+    push @commands, q{--emitRefConfidence} . $SPACE . $emit_ref_confidence;
 
     ## Infile
     push @commands, q{--input_file} . $SPACE . $infile_path;
