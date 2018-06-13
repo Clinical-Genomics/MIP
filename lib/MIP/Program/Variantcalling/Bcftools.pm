@@ -379,7 +379,7 @@ sub bcftools_concat {
         regions_ref =>
           { default => [], store => \$regions_ref, strict_type => 1, },
         rm_dups => {
-            allow       => [qw{ snps indels both all none }],
+            allow       => [qw{ 0 snps indels both all none }],
             default     => q{all},
             store       => \$rm_dups,
             strict_type => 1,

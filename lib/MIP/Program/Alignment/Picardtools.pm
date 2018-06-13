@@ -28,11 +28,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ picardtools_addorreplacereadgroups picardtools_mergesamfiles  picardtools_markduplicates picardtools_gatherbamfiles picardtools_collectmultiplemetrics picardtools_collecthsmetrics };
+      qw{ picardtools_addorreplacereadgroups picardtools_mergesamfiles picardtools_markduplicates picardtools_gatherbamfiles picardtools_collectmultiplemetrics picardtools_collecthsmetrics };
 }
 
 ## Constants
@@ -41,19 +41,20 @@ Readonly my $SPACE => q{ };
 sub picardtools_addorreplacereadgroups {
 ## Function : Perl wrapper for writing picardtools addorreplacereadgroups recipe to $FILEHANDLE. Based on picardtools 2.5.0.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                     => Sbatch filehandle to write to
-##          : $infile_path                    => Infile paths
-##          : $java_jar                       => Java jar
-##          : $java_use_large_pages           => Use java large pages
-##          : $memory_allocation              => Memory allocation for java
-##          : $outfile_path                   => Outfile path
-##          : $readgroup_id                   => Readgroup id value
-##          : $readgroup_library              => Readgroup library
-##          : $readgroup_platform             => Reagroup platform
-##          : $readgroup_platform_unit        => ID of the sequencing unit
-##          : $readgroup_sample               => Sample id
-##          : $stderrfile_path                => Stderrfile path
-##          : $temp_directory                 => Redirect tmp files to java temp
+## Arguments: $create_index            => Create index
+##          : $FILEHANDLE              => Sbatch filehandle to write to
+##          : $infile_path             => Infile paths
+##          : $java_jar                => Java jar
+##          : $java_use_large_pages    => Use java large pages
+##          : $memory_allocation       => Memory allocation for java
+##          : $outfile_path            => Outfile path
+##          : $readgroup_id            => Readgroup id value
+##          : $readgroup_library       => Readgroup library
+##          : $readgroup_platform      => Reagroup platform
+##          : $readgroup_platform_unit => ID of the sequencing unit
+##          : $readgroup_sample        => Sample id
+##          : $stderrfile_path         => Stderrfile path
+##          : $temp_directory          => Redirect tmp files to java temp
 
     my ($arg_href) = @_;
 
@@ -69,6 +70,7 @@ sub picardtools_addorreplacereadgroups {
     my $temp_directory;
 
     ## Default(s)
+    my $create_index;
     my $java_use_large_pages;
     my $readgroup_id;
     my $readgroup_library;
@@ -76,6 +78,12 @@ sub picardtools_addorreplacereadgroups {
     my $readgroup_platform_unit;
 
     my $tmpl = {
+        create_index => {
+            allow       => [qw{ true false }],
+            default     => q{false},
+            store       => \$create_index,
+            strict_type => 1,
+        },
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
             defined     => 1,
@@ -83,59 +91,60 @@ sub picardtools_addorreplacereadgroups {
             store       => \$infile_path,
             strict_type => 1,
         },
-        java_jar             => { store => \$java_jar, strict_type => 1, },
+        java_jar             => { strict_type => 1, store => \$java_jar, },
         java_use_large_pages => {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$java_use_large_pages,
             strict_type => 1,
         },
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        readgroup_id      => {
+        memory_allocation =>
+          { store => \$memory_allocation, strict_type => 1, },
+        readgroup_id => {
             default     => 1,
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$readgroup_id,
+            strict_type => 1,
         },
         outfile_path => {
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$outfile_path,
+            strict_type => 1,
         },
         readgroup_library => {
             default     => q{undefined},
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$readgroup_library,
+            strict_type => 1,
         },
         readgroup_platform => {
             default     => q{Illumina},
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$readgroup_platform,
+            strict_type => 1,
         },
         readgroup_platform_unit => {
             default     => q{undefined},
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$readgroup_platform_unit,
+            strict_type => 1,
         },
         readgroup_sample => {
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$readgroup_sample,
+            strict_type => 1,
         },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
+          { store => \$stderrfile_path_append, strict_type => 1, },
 
-        temp_directory => { strict_type => 1, store => \$temp_directory },
+        temp_directory => { store => \$temp_directory, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -158,6 +167,14 @@ sub picardtools_addorreplacereadgroups {
 
     ## Picardtools addorreaplacereadgroups
     push @commands, q{AddOrReplaceReadGroups};
+
+    ## Picardtools base args
+    @commands = picardtools_base(
+        {
+            commands_ref => \@commands,
+            create_index => $create_index,
+        }
+    );
 
     ## Infile
     push @commands, q{INPUT=} . $infile_path;
@@ -191,8 +208,8 @@ sub picardtools_addorreplacereadgroups {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;

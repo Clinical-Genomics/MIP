@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -2038,6 +2038,7 @@ sub gatk_asereadcounter {
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $logging_level                         => Set the minimum level of logging
 ##          : $memory_allocation                     => Memory allocation to run Gatk
+##          : $num_cpu_threads_per_data_thread       => Number of CPU threads to allocate per data thread
 ##          : $outfile_path                          => Outfile path
 ##          : $pedigree                              => Pedigree files for samples
 ##          : $pedigree_validation_type              => Validation strictness for pedigree
@@ -2055,6 +2056,7 @@ sub gatk_asereadcounter {
     my $intervals_ref;
     my $java_jar;
     my $memory_allocation;
+    my $num_cpu_threads_per_data_thread;
     my $outfile_path;
     my $pedigree;
     my $referencefile_path;
@@ -2119,6 +2121,12 @@ sub gatk_asereadcounter {
             store       => \$memory_allocation,
             strict_type => 1,
         },
+        num_cpu_threads_per_data_thread => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => undef,
+            store       => \$num_cpu_threads_per_data_thread,
+            strict_type => 1,
+        },
         outfile_path => {
             defined     => 1,
             required    => 1,
@@ -2175,11 +2183,12 @@ sub gatk_asereadcounter {
             downsample_to_coverage => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            intervals_ref            => $intervals_ref,
-            logging_level            => $logging_level,
-            pedigree                 => $pedigree,
-            pedigree_validation_type => $pedigree_validation_type,
-            referencefile_path       => $referencefile_path,
+            intervals_ref                   => $intervals_ref,
+            logging_level                   => $logging_level,
+            num_cpu_threads_per_data_thread => $num_cpu_threads_per_data_thread,
+            pedigree                        => $pedigree,
+            pedigree_validation_type        => $pedigree_validation_type,
+            referencefile_path              => $referencefile_path,
         }
     );
 
@@ -2188,7 +2197,7 @@ sub gatk_asereadcounter {
 
     ## Infile
     if ($infile_path) {
-        push @commands, q{--variant} . $SPACE . $infile_path;
+        push @commands, q{--input_file} . $SPACE . $infile_path;
     }
 
     ## Output

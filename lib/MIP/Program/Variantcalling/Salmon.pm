@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ salmon_index salmon_quant };
@@ -178,7 +178,7 @@ sub salmon_quant {
             strict_type => 1,
         },
         read_files_command => {
-            default     => q{bunzip2},
+            default     => q{pigz -dc},
             store       => \$read_files_command,
             strict_type => 1,
         },
@@ -203,12 +203,12 @@ sub salmon_quant {
 
     push @commands, q{--index} . $SPACE . $index_path;
 
-    # Library type, defines if the library is stranded or not, and the orientation of the reads, according to the documentation http://salmon.readthedocs.io/en/latest/library_type.html
+# Library type, defines if the library is stranded or not, and the orientation of the reads, according to the documentation http://salmon.readthedocs.io/en/latest/library_type.html
     push @commands, q{--libType} . $SPACE . $lib_type;
 
     push @commands, q{--output} . $SPACE . $outfile_path;
 
-    # The input Fastq files, either single reads or paired. Salmon uses a bash command to stream the reads. Here, the default is <( bunzip2 file.fastq.gz )
+# The input Fastq files, either single reads or paired. Salmon uses a bash command to stream the reads. Here, the default is <( pigz -dc file.fastq.gz )
     push @commands,
         q{-1}
       . $SPACE . q{<(}
