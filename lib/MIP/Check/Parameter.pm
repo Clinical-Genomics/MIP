@@ -318,10 +318,10 @@ sub check_cmd_config_vs_definition_file {
         ## Do not print if allowed_unique_keys that have been created dynamically from previous runs
         if ( not any { $_ eq $unique_key } @allowed_unique_keys ) {
 
-            croak(  q{Found illegal key: }
-                  . $unique_key
-                  . q{ in config file or command line that is not defined in define_parameters.yaml}
-            );
+            say {*STDERR} q{Found illegal key: }
+              . $unique_key
+              . q{ in config file or command line that is not defined in define_parameters.yaml};
+            croak();
         }
     }
     return;
@@ -369,7 +369,7 @@ sub check_email_address {
               . Email::Valid->details() );
         exit 1;
     }
-    return;
+    return 1;
 }
 
 sub check_gzipped {
@@ -629,7 +629,7 @@ sub check_parameter_hash {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub check_pprogram_exists_in_hash {
@@ -1385,14 +1385,15 @@ sub _check_parameter_mandatory_keys_exits {
             ## Mandatory key exists
             if ( not exists $parameter_href->{$parameter}{$mandatory_key} ) {
 
-                croak(  q{Missing mandatory key: '}
-                      . $mandatory_key
-                      . q{' for parameter: '}
-                      . $parameter
-                      . q{' in file: '}
-                      . $file_path
-                      . $SINGLE_QUOTE
-                      . $NEWLINE );
+                say {*STDERR} q{Missing mandatory key: '}
+                  . $mandatory_key
+                  . q{' for parameter: '}
+                  . $parameter
+                  . q{' in file: '}
+                  . $file_path
+                  . $SINGLE_QUOTE
+                  . $NEWLINE;
+                croak();
             }
         }
     }
@@ -1530,20 +1531,21 @@ sub _check_parameter_values {
 
         if ( not( any { $_ eq $value } @{ $key_href->{$key}{values} } ) ) {
 
-            croak(  q{Found illegal value '}
-                  . $value
-                  . q{' for parameter: '}
-                  . $parameter
-                  . q{' in key: '}
-                  . $key
-                  . q{' in file: '}
-                  . $file_path
-                  . $SINGLE_QUOTE
-                  . $NEWLINE
-                  . q{Allowed entries: '}
-                  . join( q{', '}, @{ $key_href->{$key}{values} } )
-                  . $SINGLE_QUOTE
-                  . $NEWLINE );
+            say {*STDERR} q{Found illegal value '}
+              . $value
+              . q{' for parameter: '}
+              . $parameter
+              . q{' in key: '}
+              . $key
+              . q{' in file: '}
+              . $file_path
+              . $SINGLE_QUOTE
+              . $NEWLINE
+              . q{Allowed entries: '}
+              . join( q{', '}, @{ $key_href->{$key}{values} } )
+              . $SINGLE_QUOTE
+              . $NEWLINE;
+            croak();
         }
     }
     return;
@@ -1557,7 +1559,7 @@ sub _check_parameter_data_type {
 ##          : $key            => Hash with non key
 ##          : $key_href       => Hash with key {REF}
 ##          : $parameter      => Parameter
-##          : $parameter_href => Hash with paremters from yaml file {REF}
+##          : $parameter_href => Hash with parameters from yaml file {REF}
 
     my ($arg_href) = @_;
 
@@ -1608,24 +1610,9 @@ sub _check_parameter_data_type {
         ## Wrong data_type
         if ( not $data_type eq $key_href->{$key}{key_data_type} ) {
 
-            croak(  q{Found '}
-                  . $data_type
-                  . q{' but expected datatype '}
-                  . $key_href->{$key}{key_data_type}
-                  . q{' for parameter: '}
-                  . $parameter
-                  . q{' in key: '}
-                  . $key
-                  . q{' in file: '}
-                  . $file_path
-                  . $SINGLE_QUOTE
-                  . $NEWLINE );
-        }
-    }
-    elsif ( $key_href->{$key}{key_data_type} ne q{SCALAR} ) {
-
-        ## Wrong data_type
-        croak(  q{Found 'SCALAR' but expected datatype '}
+            say {*STDERR} q{Found '}
+              . $data_type
+              . q{' but expected datatype '}
               . $key_href->{$key}{key_data_type}
               . q{' for parameter: '}
               . $parameter
@@ -1634,7 +1621,24 @@ sub _check_parameter_data_type {
               . q{' in file: '}
               . $file_path
               . $SINGLE_QUOTE
-              . $NEWLINE );
+              . $NEWLINE;
+            croak();
+        }
+    }
+    elsif ( $key_href->{$key}{key_data_type} ne q{SCALAR} ) {
+
+        ## Wrong data_type
+        say {*STDERR} q{Found 'SCALAR' but expected datatype '}
+          . $key_href->{$key}{key_data_type}
+          . q{' for parameter: '}
+          . $parameter
+          . q{' in key: '}
+          . $key
+          . q{' in file: '}
+          . $file_path
+          . $SINGLE_QUOTE
+          . $NEWLINE;
+        croak();
     }
     return;
 }

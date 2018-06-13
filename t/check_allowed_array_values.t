@@ -1,39 +1,37 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use open qw{ :encoding(UTF-8) :std };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Basename qw{ basename dirname };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use Getopt::Long;
-use Params::Check qw{ check allow last_error };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
-use autodie;
+use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
-use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
-use MIP::File::Format::Yaml qw{ load_yaml };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.1';
+our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ### User Options
 GetOptions(
@@ -88,9 +86,9 @@ BEGIN {
     }
 }
 
-use MIP::Check::Parameter qw{ check_cmd_config_vs_definition_file };
+use MIP::Check::Parameter qw{ check_allowed_array_values };
 
-diag(   q{Test check_cmd_config_vs_definition_file from Check::Parameter.pm v}
+diag(   q{Test check_allowed_array_values from Parameter.pm v}
       . $MIP::Check::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -99,46 +97,31 @@ diag(   q{Test check_cmd_config_vs_definition_file from Check::Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given no unique andn hence illegal keys
-my %parameter = load_yaml(
+## Given valid input
+my @allowed_values = qw{ ok allowed permitted };
+my @values         = qw{ ok permitted };
+
+my $return = check_allowed_array_values(
     {
-        yaml_file =>
-          catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
+        allowed_values_ref => \@allowed_values,
+        values_ref         => \@values,
     }
 );
 
-my %active_parameter = (
-    pbwa_mem                => 1,
-    vcfparser_outfile_count => 1,
-    family_id               => q{family_1},    #Add mandatory key default
-    family_1                => 1,
-);
+## Then return true
+ok( $return, q{All elements are allowed} );
 
-my $return = check_cmd_config_vs_definition_file(
+push @values, q{not_valid};
+
+$return = check_allowed_array_values(
     {
-        active_parameter_href => \%active_parameter,
-        parameter_href        => \%parameter,
+        allowed_values_ref => \@allowed_values,
+        values_ref         => \@values,
     }
 );
 
-## Then return undef
-is( $return, undef, q{No unique parameters} );
-
-## Given illegal key
-$active_parameter{illegal_key} = q{you shall not pass};
-
-trap {
-    check_cmd_config_vs_definition_file(
-        {
-            active_parameter_href => \%active_parameter,
-            parameter_href        => \%parameter,
-        }
-      )
-};
-
-## Then fatal message should be thrown
-like( $trap->stderr, qr/illegal\s+key/xms,
-    q{Throw fatal message if illegal key} );
+## Then return false
+is( $return, 0, q{Found not allowed element} );
 
 done_testing();
 
@@ -160,8 +143,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 
@@ -170,7 +153,7 @@ sub build_usage {
     return <<"END_USAGE";
  $program_name [options]
     -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
+    -h/--help     Display this help message
+    -v/--version  Display version
 END_USAGE
 }

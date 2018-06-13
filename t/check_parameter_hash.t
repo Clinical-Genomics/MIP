@@ -18,6 +18,7 @@ use 5.018;
 use Modern::Perl qw{ 2014 };
 use autodie;
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -123,7 +124,8 @@ my %non_mandatory_key = load_yaml(
     }
 );
 
-check_parameter_hash(
+## Given valid input
+my $is_ok = check_parameter_hash(
     {
         parameter_href         => \%parameter,
         mandatory_key_href     => \%mandatory_key,
@@ -132,9 +134,92 @@ check_parameter_hash(
     }
 );
 
-## Made it this far without croakin
-my $error;
-is( $error, undef, q{No errors detected} );
+## Then return true
+ok( $is_ok, q{No errors in parameters detected} );
+
+## Given wrong data type, when SCALAR
+$parameter{family_id}{data_type} = [q{wrong_data_type}];
+
+trap {
+    check_parameter_hash(
+        {
+            parameter_href         => \%parameter,
+            mandatory_key_href     => \%mandatory_key,
+            non_mandatory_key_href => \%non_mandatory_key,
+            file_path              => $definitions_file,
+        }
+      )
+};
+
+## Then throw FATAL log message and croak
+like( $trap->stderr, qr/ARRAY/xms,
+    q{Throw fatal log message for wrong data type - array} );
+
+## Reset parameter
+$parameter{family_id}{data_type} = q{SCALAR};
+
+## Given wrong data type, when ARRAY or HASH
+$parameter{family_id}{associated_program} = q{not_an_array};
+
+trap {
+    check_parameter_hash(
+        {
+            parameter_href         => \%parameter,
+            mandatory_key_href     => \%mandatory_key,
+            non_mandatory_key_href => \%non_mandatory_key,
+            file_path              => $definitions_file,
+        }
+      )
+};
+
+## Then throw FATAL log message and croak
+like( $trap->stderr, qr/SCALAR/xms,
+    q{Throw fatal log message for wrong data type - scalar} );
+
+## Reset parameter
+$parameter{family_id}{associated_program} = [qw{ mip }];
+
+## Given not allowed value
+$parameter{family_id}{data_type} = q{not_valid_value};
+
+trap {
+    check_parameter_hash(
+        {
+            parameter_href         => \%parameter,
+            mandatory_key_href     => \%mandatory_key,
+            non_mandatory_key_href => \%non_mandatory_key,
+            file_path              => $definitions_file,
+        }
+      )
+};
+
+## Then throw FATAL log message and croak
+like(
+    $trap->stderr,
+    qr/Found\s+illegal\s+value/xms,
+    q{Throw fatal log message for illegal value}
+);
+
+## Given a missing mandatory key
+delete $parameter{family_id}{data_type};
+
+trap {
+    check_parameter_hash(
+        {
+            parameter_href         => \%parameter,
+            mandatory_key_href     => \%mandatory_key,
+            non_mandatory_key_href => \%non_mandatory_key,
+            file_path              => $definitions_file,
+        }
+      )
+};
+
+## Then throw FATAL log message and croak
+like(
+    $trap->stderr,
+    qr/Missing\s+mandatory\s+key/xms,
+    q{Throw fatal log message for missing mandatory key}
+);
 
 done_testing();
 

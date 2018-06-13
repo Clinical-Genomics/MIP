@@ -1,39 +1,40 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use open qw{ :encoding(UTF-8) :std };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ basename dirname };
 use File::Spec::Functions qw{ catdir catfile };
+use File::Temp;
 use FindBin qw{ $Bin };
 use Getopt::Long;
-use Params::Check qw{ check allow last_error };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
-use autodie;
+use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
-use MIP::File::Format::Yaml qw{ load_yaml };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.1';
+our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ### User Options
 GetOptions(
@@ -71,7 +72,10 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
+        q{MIP::Script::Utils}     => [qw{ help }],
+    );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -88,9 +92,9 @@ BEGIN {
     }
 }
 
-use MIP::Check::Parameter qw{ check_cmd_config_vs_definition_file };
+use MIP::Check::Parameter qw{ check_email_address };
 
-diag(   q{Test check_cmd_config_vs_definition_file from Check::Parameter.pm v}
+diag(   q{Test check_email_address from Parameter.pm v}
       . $MIP::Check::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -99,46 +103,46 @@ diag(   q{Test check_cmd_config_vs_definition_file from Check::Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given no unique andn hence illegal keys
-my %parameter = load_yaml(
+## Create temp logger
+my $test_dir = File::Temp->newdir();
+my $test_log_path = catfile( $test_dir, q{test.log} );
+
+## Creates log object
+my $log = initiate_logger(
     {
-        yaml_file =>
-          catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
+        file_path => $test_log_path,
+        log_name  => q{TEST},
     }
 );
 
-my %active_parameter = (
-    pbwa_mem                => 1,
-    vcfparser_outfile_count => 1,
-    family_id               => q{family_1},    #Add mandatory key default
-    family_1                => 1,
-);
+## Given valid email
+my $valid_email = q{mip@scilifelab.se};
 
-my $return = check_cmd_config_vs_definition_file(
+my $is_ok = check_email_address(
     {
-        active_parameter_href => \%active_parameter,
-        parameter_href        => \%parameter,
+        log   => $log,
+        email => $valid_email,
     }
 );
+## Then return true
+ok( $is_ok, q{Valid email} );
 
-## Then return undef
-is( $return, undef, q{No unique parameters} );
-
-## Given illegal key
-$active_parameter{illegal_key} = q{you shall not pass};
+## Given not valid email
+my $not_valid_email = q{mip@clinical_genomics.se};
 
 trap {
-    check_cmd_config_vs_definition_file(
+    check_email_address(
         {
-            active_parameter_href => \%active_parameter,
-            parameter_href        => \%parameter,
+            log   => $log,
+            email => $not_valid_email,
         }
       )
 };
 
-## Then fatal message should be thrown
-like( $trap->stderr, qr/illegal\s+key/xms,
-    q{Throw fatal message if illegal key} );
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if not valid email} );
+like( $trap->stderr, qr/FATAL/xms,
+    q{Throw fatal log message if not valid email} );
 
 done_testing();
 
@@ -160,8 +164,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 
@@ -170,7 +174,7 @@ sub build_usage {
     return <<"END_USAGE";
  $program_name [options]
     -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
+    -h/--help     Display this help message
+    -v/--version  Display version
 END_USAGE
 }
