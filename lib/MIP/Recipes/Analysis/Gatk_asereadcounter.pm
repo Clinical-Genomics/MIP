@@ -311,7 +311,7 @@ sub analysis_gatk_asereadcounter {
     );
     say {$FILEHANDLE} q{wait} . $NEWLINE;
 
-    ## GATK HaplotypeCaller
+    ## GATK ASEReadCounter
     say {$FILEHANDLE} q{## GATK ASEReadCounter};
 
     ## Set file paths

@@ -208,7 +208,7 @@ sub salmon_quant {
 
     push @commands, q{--output} . $SPACE . $outfile_path;
 
-# The input Fastq files, either single reads or paired. Salmon uses a bash command to stream the reads. Here, the default is <( bunzip2 file.fastq.gz )
+# The input Fastq files, either single reads or paired. Salmon uses a bash command to stream the reads. Here, the default is <( pigz -dc file.fastq.gz )
     push @commands,
         q{-1}
       . $SPACE . q{<(}
