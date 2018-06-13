@@ -116,8 +116,6 @@ psalmon_quant:
   outdir_name: salmon
   program_name_path:
    - salmon
-  file_endings:
-   - .sf
   type: program
 salmon_rna_lib_configuration:
   associated_program:
@@ -138,8 +136,6 @@ pstar_aln:
   program_name_path:
    - STAR
   program_type: aligners
-  file_endings:
-   - .bam
   type: program
 align_intron_max:
   associated_program:
@@ -198,8 +194,6 @@ ppicardtools_mergesamfiles:
   data_type: SCALAR
   default: 0
   file_tag: _merged
-  file_endings:
-   - .bam
   type: program
 ## GATK SplitNCigarReads
 pgatk_splitncigarreads:
@@ -209,8 +203,6 @@ pgatk_splitncigarreads:
   data_type: SCALAR
   default: 0
   file_tag: _splitcigar
-  file_endings: 
-    - .bam
   type: program
 ## GATK BAM Calibration
 pgatk_baserecalibration:
@@ -220,8 +212,6 @@ pgatk_baserecalibration:
   data_type: SCALAR
   default: 0
   file_tag: _brecal
-  file_endings:
-   - .bam
   type: program
 gatk_baserecalibration_covariates:
   associated_program:
@@ -280,8 +270,6 @@ pgatk_haplotypecaller:
   data_type: SCALAR
   default: 0
   file_tag: _haptc
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   type: program
 gatk_haplotypecaller_annotation:

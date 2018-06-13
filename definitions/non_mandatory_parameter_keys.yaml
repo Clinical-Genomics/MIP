@@ -36,8 +36,6 @@ program_type:
     - structural_variant_callers
 outdir_name:
   key_data_type: SCALAR
-file_endings:
-  key_data_type: ARRAY
 reference:
   key_data_type: SCALAR
   values:

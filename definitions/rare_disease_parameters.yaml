@@ -306,8 +306,6 @@ pbwa_mem:
    - samtools
    - sambamba
   program_type: aligners
-  file_endings:
-   - .bam
   type: program
 bwa_build_reference:
   associated_program:
@@ -358,8 +356,6 @@ ppicardtools_mergesamfiles:
   data_type: SCALAR
   default: 0
   file_tag: ""
-  file_endings:
-   - .bam
   type: program
 pmarkduplicates:
   associated_program:
@@ -370,8 +366,6 @@ pmarkduplicates:
   file_tag: _md
   program_name_path:
    - sambamba
-  file_endings:
-   - .bam
   type: program
 markduplicates_picardtools_markduplicates:
   associated_program:
@@ -411,8 +405,6 @@ pgatk_realigner:
   data_type: SCALAR
   default: 0
   file_tag: _rreal
-  file_endings:
-   - .bam
   type: program
 gatk_realigner_indel_known_sites:
   associated_program:
@@ -432,8 +424,6 @@ pgatk_baserecalibration:
   data_type: SCALAR
   default: 0
   file_tag: _brecal
-  file_endings:
-   - .bam
   type: program
 gatk_baserecalibration_covariates:
   associated_program:
@@ -1077,8 +1067,6 @@ pbcftools_mpileup:
   program_name_path:
    - bcftools
   program_type: variant_callers
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   type: program
 bcftools_mpileup_filter_variant:
@@ -1100,8 +1088,6 @@ pfreebayes:
    - bcftools
   outdir_name: freebayes
   program_type: variant_callers
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   type: program
 ## GATK Genotype
@@ -1112,8 +1098,6 @@ pgatk_haplotypecaller:
   data_type: SCALAR
   default: 0
   file_tag: _haptc
-  file_endings:
-   - .vcf
   outfile_suffix: ".g.vcf"
   type: program
 gatk_haplotypecaller_annotation:
@@ -1171,8 +1155,6 @@ pgatk_genotypegvcfs:
   data_type: SCALAR
   default: 0
   file_tag: _
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   type: program
 gatk_concatenate_genotypegvcfs_bcf_file:
@@ -1205,8 +1187,6 @@ pgatk_variantrecalibration:
    - bcftools
   outdir_name: gatk
   program_type: variant_callers
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   type: program
 gatk_calculategenotypeposteriors_support_set:
@@ -1289,8 +1269,6 @@ pgatk_combinevariantcallsets:
   data_type: SCALAR
   default: 0
   file_tag: comb_
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   type: program
 gatk_combinevariantcallsets_bcf_file:
@@ -1342,8 +1320,6 @@ prhocall:
   program_name_path:
    - rhocall
    - bcftools
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   type: program
 rhocall_frequency_file:
@@ -1367,8 +1343,6 @@ pvt:
    - sed
    - bgzip
    - tabix
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   type: program
 vt_decompose:
@@ -1402,8 +1376,6 @@ pfrequency_filter:
   data_type: SCALAR
   default: 0
   file_tag: frqf_
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   program_name_path:
    - genmod
@@ -1480,8 +1452,6 @@ pvarianteffectpredictor:
   data_type: SCALAR
   default: 0
   file_tag: vep_
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   program_name_path:
    - vep
@@ -1550,8 +1520,6 @@ pvcfparser:
   data_type: SCALAR
   default: 0
   file_tag: parsed_
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   type: program
 vcfparser_outfile_count:
@@ -1609,8 +1577,6 @@ psnpeff:
   data_type: SCALAR
   default: 0
   file_tag: snpeff_
-  file_endings:
-   - .vcf
   outfile_suffix: ".vcf"
   type: program
 snpeff_ann:
