@@ -380,10 +380,10 @@ sub get_programs_for_installation {
     check_python_compability(
         {
             installation_set_href => $parameter_href->{$installation},
+            log                   => $log,
             python3_programs_ref  => $parameter_href->{python3_programs},
             python_version => $parameter_href->{$installation}{conda}{python},
             select_programs_ref => $parameter_href->{select_programs},
-            log                 => $log,
         }
     );
 
