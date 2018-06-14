@@ -1,5 +1,4 @@
 #!/usr/bin/env perl
-
 use 5.018;
 use Carp;
 use charnames qw{ :full :short };
@@ -145,7 +144,7 @@ my %required_argument = (
           . $SPACE
           . catfile(qw{ dir B2 quant.sf }),
     },
-    in_samples_ref => {
+    insamples_ref => {
         inputs_ref      => [ q{A}, q{A}, q{B}, q{B} ],
         expected_output => q{--sample}
           . $SPACE . q{B}
@@ -165,6 +164,29 @@ my %specific_argument = (
         expected_output => q{--tx}
           . $SPACE
           . catfile(qw{ path to gene2tx.csv }),
+    },
+    infile_paths_ref => {
+        inputs_ref => [
+            catfile(qw{ dir A1 quant.sf }), catfile(qw{ dir A2 quant.sf }),
+            catfile(qw{ dir B1 quant.sf }), catfile(qw{ dir B2 quant.sf })
+        ],
+        expected_output => q{--paths}
+          . $SPACE
+          . catfile(qw{ dir A1 quant.sf })
+          . $SPACE
+          . catfile(qw{ dir A2 quant.sf })
+          . $SPACE
+          . catfile(qw{ dir B1 quant.sf })
+          . $SPACE
+          . catfile(qw{ dir B2 quant.sf }),
+    },
+    insamples_ref => {
+        inputs_ref      => [ q{A}, q{A}, q{B}, q{B} ],
+        expected_output => q{--sample}
+          . $SPACE . q{A}
+          . $SPACE . q{A}
+          . $SPACE . q{B}
+          . $SPACE . q{B},
     },
 );
 

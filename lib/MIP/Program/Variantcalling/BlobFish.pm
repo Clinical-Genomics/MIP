@@ -37,20 +37,20 @@ sub blobfish_all_vs_all {
 ## Function : Perl wrapper for BlobFish --allvsall, version 0.1.0.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : $infile_paths_ref       => list of input salmon quant.sf files
-##          : $in_samples_ref         => list of input sample ids, these should match the infile path list
-##          : $outdir_path            => Output Directory path
+##          : $infile_paths_ref       => List of input salmon quant.sf files
+##          : $insamples_ref          => List of input sample ids, these should match the infile path list
+##          : $outdir_path            => Output directory path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $tx_to_gene_path            => the path to the transcripts to gene conversion file
+##          : $tx_to_gene_path        => Path to the transcripts to gene conversion file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_paths_ref;
-    my $in_samples_ref;
+    my $insamples_ref;
     my $outdir_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -68,11 +68,11 @@ sub blobfish_all_vs_all {
             store       => \$infile_paths_ref,
             strict_type => 1,
         },
-        in_samples_ref => {
+        insamples_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$in_samples_ref,
+            store       => \$insamples_ref,
             strict_type => 1,
         },
         outdir_path => {
@@ -109,7 +109,7 @@ sub blobfish_all_vs_all {
     # Options
     push @commands, q{--dir} . $SPACE . $outdir_path;
     push @commands, q{--paths} . $SPACE . join $SPACE, @{$infile_paths_ref};
-    push @commands, q{--sample} . $SPACE . join $SPACE, @{$in_samples_ref};
+    push @commands, q{--sample} . $SPACE . join $SPACE, @{$insamples_ref};
     push @commands, q{--tx} . $SPACE . $tx_to_gene_path;
 
     push @commands,
@@ -123,8 +123,8 @@ sub blobfish_all_vs_all {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
