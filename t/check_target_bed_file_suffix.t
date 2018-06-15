@@ -20,15 +20,17 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -71,7 +73,10 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
+        q{MIP::Script::Utils}     => [qw{ help }],
+    );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -99,17 +104,49 @@ diag(   q{Test check_target_bed_file_suffix from Path.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Test file name
+## Create temp logger
+my $test_dir = File::Temp->newdir();
+my $test_log_path = catfile( $test_dir, q{test.log} );
+
+## Creates log object
+my $log = initiate_logger(
+    {
+        file_path => $test_log_path,
+        log_name  => q{TEST},
+    }
+);
+
+## Given a proper file suffix
 my $file_name = catfile( q{path_to_bed_file}, q{test_bed_file.bed} );
 
-my $run = check_target_bed_file_suffix(
+my $is_ok = check_target_bed_file_suffix(
     {
+        log            => $log,
         parameter_name => q{file_name},
         path           => $file_name,
     }
 );
 
-is( $run, 1, q{The provided file has a .bed extension} );
+## Then return true
+ok( $is_ok, q{Provided file has a .bed extension} );
+
+## Given a not valid file suffix
+my $wrong_file_suffix = catfile( q{path_to_bed_file}, q{test_bed_file.gz} );
+
+trap {
+    check_target_bed_file_suffix(
+        {
+            log            => $log,
+            parameter_name => q{wrong_file_suffix},
+            path           => $wrong_file_suffix,
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if wrong file suffix} );
+like( $trap->stderr, qr/FATAL/xms,
+    q{Throw fatal log message if wrong file suffix} );
 
 done_testing();
 

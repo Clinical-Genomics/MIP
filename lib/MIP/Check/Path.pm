@@ -23,8 +23,8 @@ BEGIN {
     our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_command_in_path
-      check_dir_path_exist
+    our @EXPORT_OK = qw{
+      check_command_in_path
       check_filesystem_objects_existance
       check_filesystem_objects_and_index_existance
       check_file_version_exist
@@ -102,36 +102,6 @@ sub check_command_in_path {
     return;
 }
 
-sub check_dir_path_exist {
-
-## Function  : Checks if any of the supplied paths exists. Returns an array that holds the existing paths.
-## Returns   : @existing_dir_paths
-## Arguments : $dir_paths_ref => Ref to array of supplied paths
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $dir_paths_ref;
-
-    my $tmpl = {
-        dir_paths_ref => {
-            default     => [],
-            required    => 1,
-            store       => \$dir_paths_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @existing_dir_paths;
-
-    ## Search for directory in supplied paths
-    @existing_dir_paths = grep { -d } @{$dir_paths_ref};
-
-    return @existing_dir_paths;
-}
-
 sub check_filesystem_objects_existance {
 
 ## Function : Checks if a file or directory file exists
@@ -187,27 +157,24 @@ sub check_filesystem_objects_existance {
               . $object_name;
             return ( 0, $error_msg );
         }
+        ## File was found
         return 1;
     }
-    elsif ( $object_type eq q{file} ) {
+    ## Then object type must be file
 
-        ## Check existence of supplied file
-        if ( not -f $object_name ) {
+    ## Check existence of supplied file
+    if ( not -f $object_name ) {
 
-            $error_msg =
-                q{Could not find intended }
-              . $parameter_name
-              . q{ file: }
-              . $object_name;
+        $error_msg =
+            q{Could not find intended }
+          . $parameter_name
+          . q{ file: }
+          . $object_name;
 
-            return 0, $error_msg;
-        }
-        else {
-            ## File was found
-            return 1;
-        }
+        return 0, $error_msg;
     }
-    return;
+    ## File was found
+    return 1;
 }
 
 sub check_filesystem_objects_and_index_existance {
@@ -313,7 +280,7 @@ sub check_filesystem_objects_and_index_existance {
             exit 1;
         }
     }
-    return;
+    return 1;
 }
 
 sub check_file_version_exist {
@@ -525,16 +492,23 @@ sub check_target_bed_file_suffix {
 
 ## Function : Check that supplied target file ends with ".bed" and otherwise exists.
 ## Returns  :
-## Arguments: $parameter_name => MIP parameter name
-##            $path           => Path to check for ".bed" file ending
+## Arguments: $log            => Log object
+##          : $parameter_name => MIP parameter name
+##          : $path           => Path to check for ".bed" file ending
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $log;
     my $parameter_name;
     my $path;
 
     my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
         parameter_name => {
             defined     => 1,
             required    => 1,
@@ -546,9 +520,6 @@ sub check_target_bed_file_suffix {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     if ( $path !~ m{[.]bed$}xsm ) {
 

@@ -494,6 +494,7 @@ sub mip_analyse {
 
         check_target_bed_file_suffix(
             {
+                log            => $log,
                 parameter_name => q{exome_target_bed},
                 path           => $target_bed_file,
             }
