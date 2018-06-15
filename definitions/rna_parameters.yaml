@@ -8,6 +8,7 @@ human_genome_reference:
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
    - pgatk_splitncigarreads
+   - pgatk_variantfiltration
    - pstar_aln
   build_file: 1
   data_type: SCALAR
@@ -30,6 +31,7 @@ gatk_disable_auto_index_and_file_lock:
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
    - pgatk_splitncigarreads
+   - pgatk_variantfiltration
   data_type: SCALAR
   default: 0
   type: program_argument
@@ -47,6 +49,7 @@ gatk_logging_level:
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
    - pgatk_splitncigarreads
+   - pgatk_variantfiltration
   data_type: SCALAR
   default: INFO
   type: program_argument
@@ -56,6 +59,7 @@ gatk_path:
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
    - pgatk_splitncigarreads
+   - pgatk_variantfiltration
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -66,6 +70,7 @@ java_use_large_pages:
    - pgatk_asereadcounter
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
+   - pgatk_variantfiltration
    - pstar_aln
   data_type: SCALAR
   default: 0
@@ -76,14 +81,15 @@ module_time:
    - mip
   data_type: HASH
   default:
-    pfastqc: 10
-    pgatk_asereadcounter: 5
-    pgatk_baserecalibration: 10
-    pgatk_haplotypecaller: 5
+    pfastqc: 1
+    pgatk_asereadcounter: 2
+    pgatk_baserecalibration: 5
+    pgatk_haplotypecaller: 2
     pgatk_splitncigarreads: 1
+    pgatk_variantfiltration: 1
     pgzip_fastq: 2
-    pmarkduplicates: 10
-    ppicardtools_mergesamfiles: 5
+    pmarkduplicates: 4
+    ppicardtools_mergesamfiles: 2
     psalmon_quant: 5
     pstar_aln: 5
     pstar_fusion: 1
@@ -98,6 +104,7 @@ module_core_number:
     pgatk_baserecalibration: 16
     pgatk_haplotypecaller: 16
     pgatk_splitncigarreads: 16
+    pgatk_variantfiltration: 1
     pgzip_fastq: 0
     pmarkduplicates: 16
     ppicardtools_mergesamfiles: 16
@@ -129,8 +136,6 @@ psalmon_quant:
   chain: DE
   data_type: SCALAR
   default: 0
-  file_endings:
-   - .sf
   file_tag: _salmon
   outfile_suffix: ".sf"
   outdir_name: salmon
@@ -390,3 +395,33 @@ pgatk_asereadcounter:
   file_tag: _ase
   outfile_suffix: ".csv"
   type: program
+## GATK VariantFiltration
+pgatk_variantfiltration: 
+  associated_program:
+    - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _filtered
+  outfile_suffix: ".vcf"
+  type: program
+gatk_variantfiltration_cluster:
+  associated_program:
+    - pgatk_variantfiltration
+  data_type: SCALAR
+  default: 3
+  type: program_argument
+gatk_variantfiltration_filter:
+  associated_program:
+    - pgatk_variantfiltration
+  data_type: HASH
+  default: 
+    FS: "FS > 30.0"
+    QD: "QD < 2.0"
+  type: program_argument
+gatk_variantfiltration_window:
+  associated_program:
+    - pgatk_variantfiltration
+  data_type: SCALAR
+  default: 35
+  type: program_argument

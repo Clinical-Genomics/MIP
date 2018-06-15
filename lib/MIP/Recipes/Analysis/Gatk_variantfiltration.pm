@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Gatk_asereadcounter;
+package MIP::Recipes::Analysis::Gatk_variantfiltration;
 
 use Carp;
 use charnames qw{ :full :short };
@@ -28,7 +28,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_gatk_asereadcounter };
+    our @EXPORT_OK = qw{ analysis_gatk_variantfiltration };
 
 }
 
@@ -36,9 +36,9 @@ BEGIN {
 Readonly my $ASTERIX => q{*};
 Readonly my $NEWLINE => qq{\n};
 
-sub analysis_gatk_asereadcounter {
+sub analysis_gatk_variantfiltration {
 
-## Function : Gatk asereadcounter analysis for rna recipe
+## Function : Gatk variant filtration analysis for rna recipe
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
@@ -165,7 +165,7 @@ sub analysis_gatk_asereadcounter {
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_asereadcounter };
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_variantfiltration };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
@@ -242,28 +242,24 @@ sub analysis_gatk_asereadcounter {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
+      $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
-    my $sitesfile_tag =
-      $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
 
     ## Files
-    my $infile_prefix    = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix   = $merged_infile_prefix . $outfile_tag;
-    my $sitesfile_prefix = $merged_infile_prefix . $sitesfile_tag;
+    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
+    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
 
     ## Paths
-    my $file_path_prefix      = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix   = catfile( $temp_directory, $outfile_prefix );
-    my $sitesfile_path_prefix = catfile( $temp_directory, $sitesfile_prefix );
+    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
+    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix(
         {
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
+            jobid_chain    => $parameter_href->{pgatk_haplotypecaller}{chain},
             parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
+            suffix_key     => q{variant_file_suffix},
         }
     );
 
@@ -272,14 +268,6 @@ sub analysis_gatk_asereadcounter {
         {
             file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-
-    my $sitesfile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{pgatk_haplotypecaller}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
         }
@@ -297,30 +285,21 @@ sub analysis_gatk_asereadcounter {
             outfile_path => $temp_directory,
         }
     );
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $insample_directory,
-                $sitesfile_prefix
-                  . substr( $sitesfile_suffix, 0, 2 )
-                  . $ASTERIX
-            ),
-            outfile_path => $temp_directory,
-        }
-    );
     say {$FILEHANDLE} q{wait} . $NEWLINE;
 
-    ## GATK ASEReadCounter
-    say {$FILEHANDLE} q{## GATK ASEReadCounter};
+    ## GATK VariantFiltration
+    say {$FILEHANDLE} q{## GATK VariantFiltration};
 
     ## Set file paths
     my $infile_path  = $file_path_prefix . $infile_suffix;
     my $outfile_path = $outfile_path_prefix . $outfile_suffix;
 
-    gatk_asereadcounter(
+    gatk_variantfiltration(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            cluster => $active_parameter_href->{gatk_variantfiltration_cluster},
+            FILEHANDLE => $FILEHANDLE,
+            filter_href =>
+              $active_parameter_href->{gatk_variantfiltration_filter},
             infile_path => $infile_path,
             java_jar    => catfile(
                 $active_parameter_href->{gatk_path},
@@ -333,8 +312,8 @@ sub analysis_gatk_asereadcounter {
             outfile_path      => $outfile_path,
             referencefile_path =>
               $active_parameter_href->{human_genome_reference},
-            gatk_sites_vcffile => $sitesfile_path_prefix . $sitesfile_suffix,
-            temp_directory     => $temp_directory,
+            temp_directory => $temp_directory,
+            window => $active_parameter_href->{gatk_variantfiltration_window},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -344,7 +323,7 @@ sub analysis_gatk_asereadcounter {
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path,
+            infile_path  => $outfile_path_prefix . $ASTERIX,
             outfile_path => $outsample_directory,
         }
     );
@@ -361,7 +340,7 @@ sub analysis_gatk_asereadcounter {
             {
                 infile           => $infile_prefix,
                 path             => $program_outfile_path,
-                program_name     => q{gatk_asereadcounter},
+                program_name     => q{gatk_variantfiltration},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

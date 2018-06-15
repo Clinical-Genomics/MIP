@@ -18,7 +18,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -492,6 +492,51 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             documentation => q{Allel specific expression},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{pgatk_variantfiltration} => (
+            cmd_aliases   => [qw{ pgvf }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Hard filterering of variants},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_variantfiltration_cluster} => (
+            cmd_aliases => [qw{ gvfc }],
+            cmd_flag    => q{gatk_variantfiltration_cluster},
+            cmd_tags    => [q{Default: 3}],
+            documentation =>
+q{GATK VariantFiltration, the number of SNPs which make up a cluster},
+            is  => q{rw},
+            isa => Int,
+        )
+    );
+
+    option(
+        q{gatk_variantfiltration_filter} => (
+            cmd_aliases   => [qw{ gvff }],
+            cmd_flag      => q{gatk_variantfiltration_filter},
+            cmd_tags      => [q{filter_name=filter_expression}],
+            documentation => q{GATK VariantFiltration, the filter to apply},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{gatk_variantfiltration_window} => (
+            cmd_aliases => [qw{ gvfw }],
+            cmd_flag    => q{gatk_variantfiltration_window},
+            cmd_tags    => [q{Default: 35}],
+            documentation =>
+q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered SNPs},
+            is  => q{rw},
+            isa => Int,
         )
     );
 

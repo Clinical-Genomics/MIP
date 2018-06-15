@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -183,7 +183,7 @@ sub analysis_star_fusion {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
     use MIP::QC::Record
-      qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+      qw{ add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 
@@ -313,7 +313,7 @@ sub analysis_star_fusion {
             $fastq_r2_path =
               catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
         }
-        my $genome_lib_dir_path = $active_parameter_href->{reference_dir};
+        $genome_lib_dir_path = $active_parameter_href->{reference_dir};
 
         star_fusion(
             {
