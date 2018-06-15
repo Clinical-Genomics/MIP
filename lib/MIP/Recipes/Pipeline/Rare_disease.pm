@@ -1764,12 +1764,12 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
 
         analysis_multiqc(
             {
-                parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 program_name            => q{multiqc},
+                parameter_href          => $parameter_href,
+                sample_info_href        => $sample_info_href,
             }
         );
     }

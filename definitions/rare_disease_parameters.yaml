@@ -1856,6 +1856,12 @@ pmultiqc:
   program_name_path:
    - multiqc
   type: program
+multiqc_per_sample:
+  associated_program:
+   - pmultiqc
+  data_type: SCALAR
+  default: 0
+  type: program_argument
 ## AnalysisRunStatus
 panalysisrunstatus:
   associated_program:

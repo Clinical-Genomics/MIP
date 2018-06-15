@@ -2004,6 +2004,15 @@ q{Create aggregate bioinformatics analysis report across many samples},
     );
 
     option(
+        q{multiqc_per_sample} => (
+            cmd_aliases   => [qw{ mqcps }],
+            documentation => q{Generate sample specific reports},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{panalysisrunstatus} => (
             cmd_aliases => [qw{ pars }],
             cmd_tags    => [q{Analysis recipe switch}],
