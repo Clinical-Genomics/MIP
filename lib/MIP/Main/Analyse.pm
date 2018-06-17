@@ -105,20 +105,22 @@ Readonly my $TAB          => qq{\t};
 
 sub mip_analyse {
 
-## Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
+## Function : Execute mip analyse pre pipeline parsing
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $file_info_href                       => File info hash {REF}
-##          : $parameter_href        => Parameter hash {REF}
+##          : $file_info_href        => File info hash {REF}
 #           : $order_parameters_ref  => Order of addition to parameter array {REF}
+##          : $order_programs_ref    => Order of programs {REF}
+##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_href;
     my $file_info_href;
     my $order_parameters_ref;
+    my $order_programs_ref;
+    my $parameter_href;
 
     my $tmpl = {
         active_parameter_href => {
@@ -135,18 +137,25 @@ sub mip_analyse {
             strict_type => 1,
             store       => \$file_info_href,
         },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
         order_parameters_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
             store       => \$order_parameters_ref,
+            strict_type => 1,
+        },
+        order_programs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_programs_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
         },
     };
@@ -157,6 +166,7 @@ sub mip_analyse {
     my %active_parameter = %{$active_parameter_href};
     my %file_info        = %{$file_info_href};
     my @order_parameters = @{$order_parameters_ref};
+    my @order_programs   = @{$order_programs_ref};
     my %parameter        = %{$parameter_href};
 
 #### Script parameters
@@ -258,7 +268,7 @@ sub mip_analyse {
 
         ## Loop through all parameters and update info
       PARAMETER:
-        foreach my $parameter_name (@order_parameters) {
+        foreach my $parameter_name ( keys %parameter ) {
 
             ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
             update_dynamic_config_parameters(
@@ -323,7 +333,7 @@ sub mip_analyse {
 
 ### Populate uninitilized active_parameters{parameter_name} with default from parameter
   PARAMETER:
-    foreach my $parameter_name (@order_parameters) {
+    foreach my $parameter_name ( keys %parameter ) {
 
         ## If hash and set - skip
         next PARAMETER
@@ -891,7 +901,7 @@ sub mip_analyse {
         {
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
-            order_parameters_ref  => \@order_parameters,
+            order_programs_ref    => \@order_programs,
             parameter_href        => \%parameter,
         }
     );

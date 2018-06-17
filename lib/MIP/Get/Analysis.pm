@@ -31,7 +31,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ get_dependency_tree get_overall_analysis_type print_program };
+      qw{ get_dependency_tree get_dependency_tree_order get_overall_analysis_type print_program };
 
 }
 
@@ -43,7 +43,8 @@ sub get_dependency_tree {
 
 ## Function  : Collects all downstream programs from initation point.
 ## Returns   :
-## Arguments : $is_program_found_ref    => Found initiation program {REF}
+## Arguments : $current_chain       => Current chain
+##           : $is_program_found_ref    => Found initiation program {REF}
 ##           : $is_chain_found_ref      => Found program chain
 ##           : $program                 => Initiation point
 ##           : $start_with_programs_ref => Store programs
@@ -52,6 +53,7 @@ sub get_dependency_tree {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $current_chain;
     my $is_program_found_ref;
     my $is_chain_found_ref;
     my $program;
@@ -59,6 +61,10 @@ sub get_dependency_tree {
     my $dependency_tree_href;
 
     my $tmpl = {
+        current_chain => {
+            store       => \$current_chain,
+            strict_type => 1,
+        },
         is_program_found_ref => {
             default     => \$$,
             store       => \$is_program_found_ref,
@@ -102,13 +108,19 @@ sub get_dependency_tree {
         next KEY_VALUE_PAIR
           if ( $key =~ /CHAIN_/sxm
             && ${$is_program_found_ref}
-            && ${$is_chain_found_ref} );
+            && ${$is_chain_found_ref} ne q{CHAIN_MAIN} );
 
+        ## Do not add program name or PARALLEL
+        if ( $key =~ /CHAIN_/sxm ) {
+
+            $current_chain = $key;
+        }
         ## Call recursive
         if ( ref $value eq q{HASH} ) {
 
             get_dependency_tree(
                 {
+                    current_chain           => $current_chain,
                     dependency_tree_href    => $value,
                     is_program_found_ref    => $is_program_found_ref,
                     is_chain_found_ref      => $is_chain_found_ref,
@@ -128,6 +140,7 @@ sub get_dependency_tree {
 
                     get_dependency_tree(
                         {
+                            current_chain           => $current_chain,
                             dependency_tree_href    => $element,
                             is_program_found_ref    => $is_program_found_ref,
                             is_chain_found_ref      => $is_chain_found_ref,
@@ -145,12 +158,10 @@ sub get_dependency_tree {
                     ${$is_program_found_ref} = 1;
 
                     ## Found chain that program belongs to
-                    if ( $key !~ /initiation/sxm
-                        && ${$is_program_found_ref} )
-                    {
+                    if ( $key ne q{ALL} ) {
 
                         ## Set is part of chain signal
-                        ${$is_chain_found_ref} = 1;
+                        ${$is_chain_found_ref} = $current_chain;
                     }
 
                     ## Hash in PARALLEL section take all elements in list
@@ -182,6 +193,85 @@ sub get_dependency_tree {
                 {
 
                     push @{$start_with_programs_ref}, $element;
+                }
+            }
+        }
+
+        ## Remove identifier
+        delete $tree{$key};
+    }
+    return;
+}
+
+sub get_dependency_tree_order {
+
+## Function  : Collects order of all programs from initiation.
+## Returns   :
+## Arguments : $programs_ref         => Programs {REF}
+##           : $dependency_tree_href => Dependency hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $programs_ref;
+    my $dependency_tree_href;
+
+    my $tmpl = {
+        programs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$programs_ref,
+            strict_type => 1,
+        },
+        dependency_tree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$dependency_tree_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Copy hash to enable recursive removal of keys
+    my %tree = %{$dependency_tree_href};
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %tree ) {
+
+        ## Call recursive
+        if ( ref $value eq q{HASH} ) {
+
+            get_dependency_tree_order(
+                {
+                    dependency_tree_href => $value,
+                    programs_ref         => $programs_ref,
+                }
+            );
+        }
+        elsif ( ref $value eq q{ARRAY} ) {
+            ## Inspect element
+
+          ELEMENT:
+            foreach my $element ( @{$value} ) {
+
+                ## Call recursive
+                if ( ref $element eq q{HASH} ) {
+
+                    get_dependency_tree_order(
+                        {
+                            dependency_tree_href => $element,
+                            programs_ref         => $programs_ref,
+                        }
+                    );
+                }
+                ## Found program
+                if ( ref $element ne q{HASH} ) {
+
+                    ## Add to order
+                    push @{$programs_ref}, $element;
                 }
             }
         }

@@ -1,22 +1,47 @@
-initiation:
-   - pgzip_fastq
-   - pfastqc
-   - pbwa_mem
-   - ppicardtools_mergesamfiles
-   - pmarkduplicates
-   - pgatk_realigner
-   - pgatk_baserecalibration
-   - CHAIN_BAM_QCCOV:
-      - PARALLEL:
-         - pchanjo_sexcheck
-         - psamtools_subsample_mt
-         - psambamba_depth
-         - ppicardtools_collectmultiplemetrics
-         - ppicardtools_collecthsmetrics
-         - pbedtools_genomecov:
-            - pbedtools_genomecov
-            - prcovplots
+ALL:
    - CHAIN_MAIN:
+      - pgzip_fastq
+# Parallel chain (branch)
+   - CHAIN_FASTQ:
+      - pfastqc
+   - CHAIN_MAIN:
+      - pbwa_mem
+      - ppicardtools_mergesamfiles
+      - pmarkduplicates
+      - pgatk_realigner
+      - pgatk_baserecalibration
+# Parallel chains (branches), which inherit from MAIN in initiation
+      - CHAIN_CHSEX:
+         - pchanjo_sexcheck
+      - CHAIN_STSUBSMT:
+         - psamtools_subsample_mt
+      - CHAIN_SBCOV:
+         - psambamba_depth
+      - CHAIN_PTMME:
+         - ppicardtools_collectmultiplemetrics
+      - CHAIN_PTCHSM:
+         - ppicardtools_collecthsmetrics
+      - CHAIN_BEDCOV:
+         - pbedtools_genomecov
+         - prcovplots
+      - CHAIN_SV:
+# PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_SV after execution
+         - PARALLEL:
+            - pcnvnator
+            - pexpansionhunter
+            - pmanta
+            - ptiddit
+            - pdelly_call:
+               - pdelly_call
+               - pdelly_reformat
+         - psv_combinevariantcallsets
+         - psv_varianteffectpredictor
+         - psv_vcfparser
+         - psv_rankvariant
+         - psv_reformat
+         - pvcf2cytosure
+   - CHAIN_MAIN:
+# PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
       - PARALLEL: 
          - pfreebayes
          - pbcftools_mpileup
@@ -25,13 +50,20 @@ initiation:
             - pgatk_genotypegvcfs
             - pgatk_variantrecalibration
       - pgatk_combinevariantcallsets
-      - PARALLEL:
+# Parallel chains (branches), which inherit from MAIN in initiation
+      - CHAIN_PEDDY:
          - ppeddy
+      - CHAIN_PLINK:
          - pplink
+      - CHAIN_VINTEGRITY:
          - pvariant_integrity
+      - CHAIN_RTEVAL:
          - prtg_vcfeval
+      - CHAIN_PTEVAL:
          - pevaluation
+      - CHAIN_GATKEVALALL:
          - pgatk_variantevalall
+   - CHAIN_MAIN:
       - pprepareforvariantannotationblock
       - prhocall
       - pvt
@@ -41,22 +73,8 @@ initiation:
       - psnpeff
       - prankvariant
       - pendvariantannotationblock
-      - pgatk_variantevalexome
-   - CHAIN_SV:
-      - PARALLEL:
-         - pcnvnator
-         - pexpansionhunter
-         - pmanta
-         - ptiddit
-         - pdelly_call:
-            - pdelly_call
-            - pdelly_reformat
-      - psv_combinevariantcallsets
-      - psv_varianteffectpredictor
-      - psv_vcfparser
-      - psv_rankvariant
-      - psv_reformat
-      - pvcf2cytosure
+      - CHAIN_GATKEVALEXO:
+         - pgatk_variantevalexome
    - pqccollect
    - pmultiqc
    - panalysisrunstatus

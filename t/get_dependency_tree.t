@@ -27,7 +27,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -98,62 +98,91 @@ diag(   q{Test get_dependency_tree from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Given an initiation map
 my %dependency_tree = (
-    initiation => [
-        q{program_0},
-        q{program_1},
+    ALL => [
+        q{program_12},
         {
-            CHAIN_0 => {
-                PARALLEL => [
-                    q{parallel_program_0},
-                    q{parallel_program_1},
-                    {
-                        parallel_program_2 =>
-                          [ q{parallel_program_2}, q{parallel_program_3}, ],
-                    },
-                ],
-            },
+            CHAIN_MAIN => [ qw{ program_0 }, ],
+        },
+        {
+            CHAIN_0 => [ qw{ program_1 }, ],
         },
         q{program_2},
         {
-            CHAIN_1 => {
-                PARALLEL => [
-                    q{parallel_program_4},
-                    q{parallel_program_5},
-                    {
-                        parallel_program_6 =>
-                          [ q{parallel_program_6}, q{parallel_program_7}, ],
-                    },
-                ],
-            },
+            CHAIN_MAIN => [
+                qw{ program_3 program_4 },
+                {
+                    CHAIN_1 => [qw{ program_5 }],
+                },
+                {
+                    CHAIN_2 => [
+                        {
+                            PARALLEL => [
+                                qw{ parallel_program_0 parallel_program_1 },
+                                {
+                                    parallel_program_2 => [
+                                        qw{ parallel_program_2 parallel_program_3 },
+                                    ],
+                                },
+                            ],
+                        },
+                        qw{ program_6 program_7 },
+                    ],
+                },
+            ],
         },
-        q{program_3},
+        {
+            CHAIN_MAIN => [
+                {
+                    PARALLEL => [
+                        qw{ parallel_program_4 parallel_program_5 },
+                        {
+                            parallel_program_6 =>
+                              [ qw{ parallel_program_6 parallel_program_7 }, ],
+                        },
+                    ],
+                },
+                qw{ program_8 program_9 },
+                {
+                    CHAIN_3 => [ qw{ program_10 }, ],
+                },
+            ],
+        },
+        q{program_11},
     ],
 );
-## Expected results from traversing the dependency tree
-my @expected_programs_0 =
-  qw{ program_0 program_1 parallel_program_0 parallel_program_1 parallel_program_2 parallel_program_3 program_2 parallel_program_4 parallel_program_5 parallel_program_6 parallel_program_7 program_3 };
-my @expected_parallel_programs_0 = qw{ parallel_program_0 program_2 program_3 };
-my @expected_parallel_programs_2 =
-  qw{ parallel_program_2 parallel_program_3 program_2 program_3 };
-my @expected_parallel_programs_3 = qw{ parallel_program_3 program_2 program_3 };
-my @expected_program_2 =
-  qw{ program_2 parallel_program_4 parallel_program_5 parallel_program_6 parallel_program_7 program_3 program_3};
-my @expected_parallel_programs_5 = qw{ parallel_program_5 program_3 };
-my @expected_program_3           = qw{ program_3 };
 
-## Tests to run
+## Expected results from traversing the dependency tree with different starting points
+my @expected_programs_12 = qw{ program_12 program_2 program_11 };
+my @expected_programs_0 =
+  qw{ program_0 program_1 program_2 program_3 program_4 program_5 parallel_program_0 parallel_program_1 parallel_program_2 parallel_program_3 program_6 program_7 parallel_program_4 parallel_program_5 parallel_program_6 parallel_program_7 program_8 program_9 program_10 program_11 };
+my @expected_programs_1 = qw{ program_1 program_2 program_11 };
+my @expected_parallel_programs_0 =
+  qw{ parallel_program_0 program_6 program_7 program_11 };
+my @expected_parallel_programs_2 =
+  qw{ parallel_program_2 parallel_program_3 program_6 program_7 program_11 };
+my @expected_parallel_programs_3 =
+  qw{ parallel_program_3 program_6 program_7 program_11 };
+my @expected_program_2 = qw{ program_2 program_11 };
+my @expected_parallel_programs_5 =
+  qw{ parallel_program_5 program_8 program_9 program_10 program_11 };
+my @expected_program_11 = qw{ program_11 };
+
+## Define tests
 my %test = (
+    program_12         => \@expected_programs_12,
     program_0          => \@expected_programs_0,
+    program_1          => \@expected_programs_1,
     parallel_program_0 => \@expected_parallel_programs_0,
     parallel_program_2 => \@expected_parallel_programs_2,
     parallel_program_3 => \@expected_parallel_programs_3,
     program_2          => \@expected_program_2,
     parallel_program_5 => \@expected_parallel_programs_5,
-    program_3          => \@expected_program_3,
+    program_11         => \@expected_program_11,
 );
 
-## Test
+## Run tests
 while ( my ( $test_key, $expected_programs_ref ) = each %test ) {
 
     my @start_with_programs;
@@ -171,8 +200,12 @@ while ( my ( $test_key, $expected_programs_ref ) = each %test ) {
         }
     );
 
-    is( array_diff( @start_with_programs, @{$expected_programs_ref} ),
-        0, q{Start with } . $test_key );
+## Then match the expected result
+    is_deeply(
+        \@start_with_programs,
+        \@{$expected_programs_ref},
+        q{Start with } . $test_key
+    );
 }
 
 done_testing();

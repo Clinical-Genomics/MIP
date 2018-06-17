@@ -36,7 +36,7 @@ sub build_file_prefix_tag {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id {REF}
 ##          : $file_info_href          => Info on files hash {REF}
-##          : $order_parameters_ref    => Order of addition to parameter array {REF}
+##          : $order_programs_ref    => Order of addition to parameter array {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 
     my ($arg_href) = @_;
@@ -44,7 +44,7 @@ sub build_file_prefix_tag {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $order_parameters_ref;
+    my $order_programs_ref;
     my $parameter_href;
 
     ## Default(s)
@@ -70,11 +70,11 @@ sub build_file_prefix_tag {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        order_parameters_ref => {
+        order_programs_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$order_parameters_ref,
+            store       => \$order_programs_ref,
             strict_type => 1,
         },
         parameter_href => {
@@ -94,22 +94,15 @@ sub build_file_prefix_tag {
     my %temp_file_ending;
 
   PARAMETER:
-    foreach my $order_parameter_element ( @{$order_parameters_ref} ) {
+    foreach my $program_name ( @{$order_programs_ref} ) {
 
         ## Alias
-        my $current_chain = $parameter_href->{$order_parameter_element}{chain};
-        my $file_tag = $parameter_href->{$order_parameter_element}{file_tag};
+        my $current_chain = $parameter_href->{$program_name}{chain};
+        my $file_tag      = $parameter_href->{$program_name}{file_tag};
 
         ## Only active parameters
         next PARAMETER
-          if ( not defined $active_parameter_href->{$order_parameter_element} );
-
-        ## Only process programs
-        next PARAMETER
-          if (
-            not any { $_ eq $order_parameter_element }
-            @{ $parameter_href->{dynamic_parameter}{program} }
-          );
+          if ( not defined $active_parameter_href->{$program_name} );
 
         ## Skip parameters with no file tag
         next PARAMETER if ( $file_tag eq q{nofile_tag} );
@@ -126,7 +119,7 @@ sub build_file_prefix_tag {
                     file_tag              => $file_tag,
                     file_info_href        => $file_info_href,
                     id                    => $sample_id,
-                    mip_program_name      => $order_parameter_element,
+                    mip_program_name      => $program_name,
                     temp_file_ending_href => \%temp_file_ending,
                 }
             );
@@ -141,7 +134,7 @@ sub build_file_prefix_tag {
                 file_tag              => $file_tag,
                 file_info_href        => $file_info_href,
                 id                    => $family_id,
-                mip_program_name      => $order_parameter_element,
+                mip_program_name      => $program_name,
                 temp_file_ending_href => \%temp_file_ending,
             }
         );

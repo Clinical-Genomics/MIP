@@ -41,11 +41,11 @@ sub run {
     my %active_parameter = %{$arg_href};
 
     use MIP::File::Format::Parameter qw{ parse_definition_file  };
-    use MIP::File::Format::Yaml qw{ order_parameter_names };
-    use MIP::Get::Analysis qw{ print_program };
+    use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
+    use MIP::Get::Analysis qw{ get_dependency_tree_order print_program };
 
     ## Mip analyse rna parameters
-    ## The order of files in @definition_files should follow commands inheritance
+    ## CLI commands inheritance
     my @definition_files = (
         catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
         catfile( $Bin, qw{ definitions analyse_parameters.yaml } ),
@@ -92,8 +92,24 @@ sub run {
         exit;
     }
 
-    ### To add/write parameters in the correct order
-    ## Adds the order of first level keys from yaml file to array
+    ## Order programs - Parsed from initiation file
+    my %dependency_tree = load_yaml(
+        {
+            yaml_file => catfile( $Bin, qw{ definitions rna_initiation.yaml } ),
+        }
+    );
+
+    my @order_programs;
+    get_dependency_tree_order(
+        {
+            dependency_tree_href => \%dependency_tree,
+            programs_ref         => \@order_programs
+        }
+    );
+
+    ### To write parameters and their values to log in logical order
+    ### Actual order of parameters in definition parameters file(s) does not matter
+    ## Adds the order of first level keys from yaml files to array
     my @order_parameters;
     foreach my $define_parameters_file (@definition_files) {
 
@@ -116,8 +132,9 @@ sub run {
         {
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
-            parameter_href        => \%parameter,
             order_parameters_ref  => \@order_parameters,
+            order_programs_ref    => \@order_programs,
+            parameter_href        => \%parameter,
         }
     );
 

@@ -225,8 +225,6 @@ pmarkduplicates:
   file_tag: _md
   program_name_path:
    - sambamba
-  file_endings:
-   - .bam
   type: program
 markduplicates_picardtools_markduplicates:
   associated_program:
@@ -390,7 +388,5 @@ pgatk_asereadcounter:
   data_type: SCALAR
   default: 0
   file_tag: _ase
-  file_endings:
-   - .csv
   outfile_suffix: ".csv"
   type: program

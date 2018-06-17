@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::File::Format::Mip});
+    my @modules = (q{MIP::Get::Analysis});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::File::Format::Mip qw{ build_file_prefix_tag };
+use MIP::Get::Analysis qw{ get_dependency_tree_order };
 
-diag(   q{Test build_file_prefix_tag from Mip.pm v}
-      . $MIP::File::Format::Mip::VERSION
+diag(   q{Test get_dependency_tree_order from Analysis.pm v}
+      . $MIP::Get::Analysis::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -97,68 +97,53 @@ diag(   q{Test build_file_prefix_tag from Mip.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $sample_id     = q{homer};
-my $current_chain = q{MAIN};
-my $other_chain   = q{SV};
-
-my @order_programs = qw{ pbwa_mem pmerge pmark pmanta };
-
-my %active_parameter = (
-    family_id             => q{simpsons},
-    pbwa_mem              => 1,
-    pmanta                => 1,
-    pmark                 => 1,
-    pmerge                => 0,
-    random_test_parameter => undef,
-    random_test_parameter => q{not_a_program},
-    sample_ids            => [$sample_id],
-);
-my %file_info;
-my %parameter = (
-    dynamic_parameter => { program => [qw{ pbwa_mem pmark pmanta pmerge }], },
-    pbwa_mem          => {
-        chain    => $current_chain,
-        file_tag => q{mem},
-    },
-    pmark => {
-        chain    => $current_chain,
-        file_tag => q{md},
-    },
-    pmanta => {
-        chain    => $other_chain,
-        file_tag => q{manta},
-    },
-    pmerge => {
-        chain    => $current_chain,
-        file_tag => q{nofile_tag},
-    },
+my %dependency_tree = (
+    ALL_CHAINS => [
+        q{program_0},
+        q{program_1},
+        {
+            CHAIN_0 => {
+                PARALLEL => [
+                    q{parallel_program_0},
+                    q{parallel_program_1},
+                    {
+                        parallel_program_2 =>
+                          [ q{parallel_program_2}, q{parallel_program_3}, ],
+                    },
+                ],
+            },
+        },
+        q{program_2},
+        {
+            CHAIN_1 => {
+                PARALLEL => [
+                    q{parallel_program_4},
+                    q{parallel_program_5},
+                    {
+                        parallel_program_6 =>
+                          [ q{parallel_program_6}, q{parallel_program_7}, ],
+                    },
+                ],
+            },
+        },
+        q{program_3},
+    ],
 );
 
-## Given file tags, when multiple chains
-build_file_prefix_tag(
+## Expected results from traversing the dependency tree
+my @expected_programs =
+  qw{ program_0 program_1 parallel_program_0 parallel_program_1 parallel_program_2 parallel_program_3 program_2 parallel_program_4 parallel_program_5 parallel_program_6 parallel_program_7 program_3 };
+
+my @programs;
+
+get_dependency_tree_order(
     {
-        active_parameter_href => \%active_parameter,
-        file_info_href        => \%file_info,
-        order_programs_ref    => \@order_programs,
-        parameter_href        => \%parameter,
+        dependency_tree_href => \%dependency_tree,
+        programs_ref         => \@programs,
     }
 );
 
-my %expected_file_tag = (
-    $sample_id => {
-        pbwa_mem => { file_tag => q{mem}, },
-        pmark    => { file_tag => q{memmd}, },
-        pmanta   => { file_tag => q{memmdmanta}, },
-    },
-    q{simpsons} => {
-        pbwa_mem => { file_tag => q{mem}, },
-        pmark    => { file_tag => q{memmd}, },
-        pmanta   => { file_tag => q{memmdmanta}, },
-    },
-);
-
-## Then these file tags should be set according to %expected_file_tag
-is_deeply( \%file_info, \%expected_file_tag, q{Built file endings} );
+is_deeply( \@programs, \@expected_programs, q{Got order of programs } );
 
 done_testing();
 
