@@ -747,13 +747,24 @@ sub mip_analyse {
         }
     );
 
-## Get initiation program, downstream dependencies and update program modes for start_with_program parameter
+    my $consensus_analysis_type =
+      $parameter{dynamic_parameter}{consensus_analysis_type};
+
+## Get initiation program, downstream dependencies and update program modes for start_with_program parameter depending on pipeline
+    my $initiation_file =
+      catfile( $Bin, qw{ definitions rare_disease_initiation.yaml } );
+
+    # For RNA pipeline
+    if ( $consensus_analysis_type eq q{wts} ) {
+
+        $initiation_file =
+          catfile( $Bin, qw{ definitions rna_initiation.yaml } );
+    }
     parse_start_with_program(
         {
             active_parameter_href => \%active_parameter,
-            initiation_file =>
-              catfile( $Bin, qw{ definitions rare_disease_initiation.yaml } ),
-            parameter_href => \%parameter,
+            initiation_file       => $initiation_file,
+            parameter_href        => \%parameter,
         },
     );
 
@@ -948,9 +959,6 @@ sub mip_analyse {
             $sample_info{$key} = $value;
         }
     }
-
-    my $consensus_analysis_type =
-      $parameter{dynamic_parameter}{consensus_analysis_type};
 
 ## Split of fastq files in batches
     if ( $active_parameter{psplit_fastq_file} ) {

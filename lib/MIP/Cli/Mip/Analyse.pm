@@ -416,11 +416,10 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
 
     option(
         q{sample_ids} => (
-            cmd_aliases => [qw{ spi }],
-            documentation =>
-              q{Sets all programs to dry run mode i.e. no sbatch submission},
-            is  => q{rw},
-            isa => q{ArrayRef[Str]},
+            cmd_aliases   => [qw{ spi }],
+            documentation => q{Sample ids},
+            is            => q{rw},
+            isa           => q{ArrayRef[Str]},
         )
     );
 
