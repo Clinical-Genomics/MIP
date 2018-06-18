@@ -2239,7 +2239,7 @@ sub gatk_variantfiltration {
 
 ## Function : Perl wrapper for writing GATK VariantFiltration recipe to $FILEHANDLE. Based on GATK 3.8.0.
 ## Returns  : @commands
-## Arguments: $cluster                               => The number of SNPs which make up a cluster
+## Arguments: $cluster_size                          => Number of SNPs which make up a cluster
 ##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
 ##          : $FILEHANDLE                            => Sbatch filehandle to write to
 ##          : $filter_href                           => Hash with the name of the filter as key and the filter expression as value {REF}
@@ -2256,12 +2256,12 @@ sub gatk_variantfiltration {
 ##          : $referencefile_path                    => Reference sequence file
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $window                                => The window size (in bases) in which to evaluate clustered SNPs
+##          : $cluster_window_size                   => Window size (in bases) in which to evaluate clustered SNPs
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $cluster;
+    my $cluster_size;
     my $downsample_to_coverage;
     my $FILEHANDLE;
     my $filter_href;
@@ -2275,7 +2275,7 @@ sub gatk_variantfiltration {
     my $referencefile_path;
     my $stderrfile_path;
     my $temp_directory;
-    my $window;
+    my $cluster_window_size;
 
     ## Default(s)
     my $gatk_disable_auto_index_and_file_lock;
@@ -2283,9 +2283,9 @@ sub gatk_variantfiltration {
     my $pedigree_validation_type;
 
     my $tmpl = {
-        cluster => {
+        cluster_size => {
             allow       => qr/ ^\d+$ /sxm,
-            store       => \$cluster,
+            store       => \$cluster_size,
             strict_type => 1,
         },
         downsample_to_coverage => {
@@ -2368,9 +2368,9 @@ sub gatk_variantfiltration {
             store       => \$temp_directory,
             strict_type => 1,
         },
-        window => {
+        cluster_window_size => {
             allow       => qr/ ^\d+$ /xms,
-            store       => \$window,
+            store       => \$cluster_window_size,
             strict_type => 1,
         },
     };
@@ -2415,10 +2415,11 @@ sub gatk_variantfiltration {
     ## Output
     push @commands, q{--out} . $SPACE . $outfile_path;
 
-    if ($cluster) {
-        push @commands, q{--clusterSize} . $SPACE . $cluster;
+    if ($cluster_size) {
+        push @commands, q{--clusterSize} . $SPACE . $cluster_size;
     }
     if ($filter_href) {
+      FILTERNAME:
         foreach my $filtername ( keys %{$filter_href} ) {
             push @commands,
                 q{--filterName}
@@ -2432,8 +2433,8 @@ sub gatk_variantfiltration {
               . $DOUBLE_QOUTE;
         }
     }
-    if ($window) {
-        push @commands, q{--clusterWindowSize} . $SPACE . $window;
+    if ($cluster_window_size) {
+        push @commands, q{--clusterWindowSize} . $SPACE . $cluster_window_size;
     }
 
     push @commands,
@@ -2452,6 +2453,6 @@ sub gatk_variantfiltration {
     );
 
     return @commands;
-
 }
+
 1;

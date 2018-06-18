@@ -102,8 +102,8 @@ diag(   q{Test gatk_variantfiltration from Varinatcalling::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $CLUSTER => 3;
-Readonly my $WINDOW  => 35;
+Readonly my $CLUSTER_SIZE        => 3;
+Readonly my $CLUSTER_WINDOW_SIZE => 35;
 
 ## Base arguments
 my $function_base_command = q{--analysis_type VariantFiltration};
@@ -138,9 +138,9 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    cluster => {
-        input           => $CLUSTER,
-        expected_output => q{--clusterSize} . $SPACE . $CLUSTER,
+    cluster_size => {
+        input           => $CLUSTER_SIZE,
+        expected_output => q{--clusterSize} . $SPACE . $CLUSTER_SIZE,
     },
     infile_path => {
         input           => catfile(qw{ dir infile.vcf }),
@@ -155,9 +155,11 @@ my %specific_argument = (
         expected_output => q{--reference_sequence }
           . catfile(qw{ reference_dir human_genome_build.fasta }),
     },
-    window => {
-        input           => $WINDOW,
-        expected_output => q{--clusterWindowSize} . $SPACE . $WINDOW,
+    cluster_window_size => {
+        input           => $CLUSTER_WINDOW_SIZE,
+        expected_output => q{--clusterWindowSize}
+          . $SPACE
+          . $CLUSTER_WINDOW_SIZE,
     },
 );
 
@@ -181,7 +183,7 @@ foreach my $argument_href (@arguments) {
 }
 
 ## Special case for hash input.
-## Given a hash with fitler names and filter expressions
+## Given a hash with filter names and filter expressions
 my %filter = ( filter_1 => q{test_1 > 1}, );
 
 ## When the subroutine is executed

@@ -296,7 +296,8 @@ sub analysis_gatk_variantfiltration {
 
     gatk_variantfiltration(
         {
-            cluster => $active_parameter_href->{gatk_variantfiltration_cluster},
+            cluster_size =>
+              $active_parameter_href->{gatk_variantfiltration_cluster_size},
             FILEHANDLE => $FILEHANDLE,
             filter_href =>
               $active_parameter_href->{gatk_variantfiltration_filter},
@@ -312,8 +313,9 @@ sub analysis_gatk_variantfiltration {
             outfile_path      => $outfile_path,
             referencefile_path =>
               $active_parameter_href->{human_genome_reference},
-            temp_directory => $temp_directory,
-            window => $active_parameter_href->{gatk_variantfiltration_window},
+            temp_directory      => $temp_directory,
+            cluster_window_size => $active_parameter_href
+              ->{gatk_variantfiltration_cluster_window_size},
         }
     );
     say {$FILEHANDLE} $NEWLINE;

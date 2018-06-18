@@ -208,7 +208,7 @@ pstar_fusion:
   file_tag: _fusion
   outfile_suffix: ".tsv"
   outdir_name: star
-  program_name_path: 
+  program_name_path:
     - STAR-Fusion
   type: program
 ## Merge bam files
@@ -396,7 +396,7 @@ pgatk_asereadcounter:
   outfile_suffix: ".csv"
   type: program
 ## GATK VariantFiltration
-pgatk_variantfiltration: 
+pgatk_variantfiltration:
   associated_program:
     - mip
   chain: MAIN
@@ -405,7 +405,7 @@ pgatk_variantfiltration:
   file_tag: _filtered
   outfile_suffix: ".vcf"
   type: program
-gatk_variantfiltration_cluster:
+gatk_variantfiltration_cluster_size:
   associated_program:
     - pgatk_variantfiltration
   data_type: SCALAR
@@ -415,11 +415,11 @@ gatk_variantfiltration_filter:
   associated_program:
     - pgatk_variantfiltration
   data_type: HASH
-  default: 
+  default:
     FS: "FS > 30.0"
     QD: "QD < 2.0"
   type: program_argument
-gatk_variantfiltration_window:
+gatk_variantfiltration_cluster_window_size:
   associated_program:
     - pgatk_variantfiltration
   data_type: SCALAR

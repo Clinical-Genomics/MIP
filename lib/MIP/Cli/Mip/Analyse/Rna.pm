@@ -506,9 +506,9 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
-        q{gatk_variantfiltration_cluster} => (
+        q{gatk_variantfiltration_cluster_size} => (
             cmd_aliases => [qw{ gvfc }],
-            cmd_flag    => q{gatk_variantfiltration_cluster},
+            cmd_flag    => q{gatk_variantfiltration_cluster_size},
             cmd_tags    => [q{Default: 3}],
             documentation =>
 q{GATK VariantFiltration, the number of SNPs which make up a cluster},
@@ -529,9 +529,9 @@ q{GATK VariantFiltration, the number of SNPs which make up a cluster},
     );
 
     option(
-        q{gatk_variantfiltration_window} => (
+        q{gatk_variantfiltration_cluster_window_size} => (
             cmd_aliases => [qw{ gvfw }],
-            cmd_flag    => q{gatk_variantfiltration_window},
+            cmd_flag    => q{gatk_variantfiltration_cluster_window_size},
             cmd_tags    => [q{Default: 35}],
             documentation =>
 q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered SNPs},
