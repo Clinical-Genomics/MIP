@@ -28,7 +28,7 @@ program_name: Within a `PARALLEL` block a key with lowercase matching a program 
 - A program within a PARALLEL key will not add any other program from the PARALLEL list of program. Exceptions is when the program is within a lowercase program_name key. Then all downstream program within that list is added to the list of programs to execute. As usual downstream programs within the origin chain and `ALL` chain programs wil be added to the list to execute. 
 
 **Reference**
-- rare_disease_initation.yaml(https://github.com/Clinical-Genomics/MIP/blob/develop/definitions/rare_disease_initiation.yaml)
-- rna_initiation.yaml(https://github.com/Clinical-Genomics/MIP/blob/develop/definitions/rna_initiation.yaml)
+- [rare_disease_initation.yaml](https://github.com/Clinical-Genomics/MIP/blob/develop/definitions/rare_disease_initiation.yaml)
+- [rna_initiation.yaml](https://github.com/Clinical-Genomics/MIP/blob/develop/definitions/rna_initiation.yaml)
 
 
