@@ -2,11 +2,18 @@ Define parameters data format
 
 **Version: 1.0.0**
 
-The parameters that MIP support are recorded in a yaml file format with the following data structure and keys:
+The parameters that MIP support are recorded in a yaml file format. The order of parameters in this file does not matter for the execution of MIP.
+
+**Rules**
+- The definition file follows the yaml format.
+- There are three types of parameters that can be defined: "pprogram", "program_argument", "program_path".
+- These keys are mandatory for each parameter: "type", "associated_program", "data_type".
+
+The define parameters file has the following data structure and keys:
 ```
 pprogram: { # Program hash
   associated_program: [
-    - string, value="mip | p<program>" # Evaluate parmeter if associated program is active
+    - string, value="mip | p<program>" # Evaluate parameter if associated program is active. Ties program argument to one or several programs.
   ]
   chain: string, values="MAIN | <chain> ", # Set the dependency tree chain for program parameter
   data_type: string, value="SCALAR" # Parameter data type
@@ -21,7 +28,7 @@ pprogram: { # Program hash
 }
 program_argument: {
   associated_program: [
-    - string, value="mip | p<program>" # Evaluate parmeter if associated program is active
+    - string, value="mip | p<program>" # Evaluate parameter if associated program is active. Ties program argument to one or several programs.
   ]
   data_type: string, value="SCALAR | ARRAY | HASH" # Parameter data type
   default: "SCALAR | ARRAY | HASH",
@@ -31,7 +38,7 @@ program_argument: {
 }
 path_parameter: { # Path hash
   associated_program: [
-    - string, value="mip | p<program>" # Evaluate parmeter if associated program is active
+    - string, value="mip | p<program>" # Evaluate parameter if associated program is activei. Ties program argument to one or several programs.
   ]
   build_file: integer, value="0 | 1" # Build recipe switch, used to build reference meta data files
   data_type: string, value="SCALAR | ARRAY | HASH" # Parameter data type

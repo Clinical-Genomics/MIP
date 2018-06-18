@@ -11,6 +11,7 @@
       * [Define Parameters](documentation/API/define_parameters.md)
       * [Download References](documentation/API/download_references.md)
       * [Identifiers](documentation/API/Identifiers.md)
+      * [Initiation File](documentation/API/initiation_file.md)
       * [Modules](documentation/API/Modules.md)
       * [Pedigree](documentation/API/Pedigree.md)
       * [Tests](documentation/API/Tests.md)
