@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1779,7 +1779,7 @@ sub bcftools_view_and_index_vcf {
 
     my $outfile_path;
     my %output_type_ending = (
-        b => q{.bcf.gz},
+        b => q{.bcf},
         u => q{.bcf},
         v => q{.vcf},
         z => q{.vcf.gz},
