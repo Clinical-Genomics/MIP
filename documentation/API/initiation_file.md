@@ -1,8 +1,8 @@
-Initation file data format
+# Initation file data format
 
 **Version: 1.0.0**
 
-The program that MIP supports per pipeline should be defined in the initiation file. It serves as a map to define the dependecies and order of execution of programs. This dependency tree is parsed to find the initaion point and dependencies of the `--start_with_program` option.
+The program that MIP supports per pipeline should be defined in the initiation file. It serves as a map to define the dependecies and order of execution of programs. This dependency tree is parsed to find the initiation point and dependencies of the `--start_with_program` option.
 
 Programs (or analysis recipes switches) have dependencies for programs upstream within their chain. The `MAIN` chain is the general chain, which all other chains inherit from at different branching points. 
 
@@ -28,7 +28,7 @@ program_name: Within a `PARALLEL` block a key with lowercase matching a program 
 - A program within a PARALLEL key will not add any other program from the PARALLEL list of program. Exceptions is when the program is within a lowercase program_name key. Then all downstream program within that list is added to the list of programs to execute. As usual downstream programs within the origin chain and `ALL` chain programs wil be added to the list to execute. 
 
 **Reference**
-rare_disease_initation.yaml(https://github.com/Clinical-Genomics/MIP/blob/develop/definitions/rare_disease_initiation.yaml)
-rna_initiation.yaml(https://github.com/Clinical-Genomics/MIP/blob/develop/definitions/rna_initiation.yaml)
+- rare_disease_initation.yaml(https://github.com/Clinical-Genomics/MIP/blob/develop/definitions/rare_disease_initiation.yaml)
+- rna_initiation.yaml(https://github.com/Clinical-Genomics/MIP/blob/develop/definitions/rna_initiation.yaml)
 
 
