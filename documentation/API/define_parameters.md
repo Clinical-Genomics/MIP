@@ -15,7 +15,6 @@ pprogram: { # Program hash
   associated_program: [
     - string, value="mip | p<program>" # Evaluate parameter if associated program is active. Ties program argument to one or several programs.
   ]
-  chain: string, values="MAIN | <chain> ", # Set the dependency tree chain for program parameter
   data_type: string, value="SCALAR" # Parameter data type
   default: integer, value="0 (=off) | 1 (=on) | 2 (=simulate)"
   file_tag: string, value="nofile_tag | <file_tag>" # Tag to include in output filename or no tag use "nofile_tag"

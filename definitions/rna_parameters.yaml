@@ -133,7 +133,6 @@ picardtools_path:
 psalmon_quant:
   associated_program:
    - mip
-  chain: DE
   data_type: SCALAR
   default: 0
   file_tag: _salmon
@@ -152,7 +151,6 @@ salmon_rna_lib_configuration:
 pstar_aln:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _star_sorted
@@ -202,7 +200,6 @@ two_pass_mode:
 pstar_fusion:
   associated_program:
    - mip
-  chain: FUSION
   data_type: SCALAR
   default: 0
   file_tag: _fusion
@@ -215,7 +212,6 @@ pstar_fusion:
 ppicardtools_mergesamfiles:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _merged
@@ -224,7 +220,6 @@ ppicardtools_mergesamfiles:
 pmarkduplicates:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _md
@@ -265,7 +260,6 @@ markduplicates_sambamba_markdup_overflow_list_size:
 pgatk_splitncigarreads:
   associated_program:
     - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _splitcigar
@@ -274,7 +268,6 @@ pgatk_splitncigarreads:
 pgatk_baserecalibration:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _brecal
@@ -332,7 +325,6 @@ gatk_baserecalibration_static_quantized_quals:
 pgatk_haplotypecaller:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _haptc
@@ -389,7 +381,6 @@ gatk_haplotypecaller_snp_known_set:
 pgatk_asereadcounter:
   associated_program:
    - mip
-  chain: ase
   data_type: SCALAR
   default: 0
   file_tag: _ase
@@ -399,7 +390,6 @@ pgatk_asereadcounter:
 pgatk_variantfiltration:
   associated_program:
     - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _filtered

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -274,9 +274,10 @@ sub analysis_gatk_haplotypecaller {
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
     ## Assign suffix
+    # Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
         {
-            jobid_chain    => $job_id_chain,
+            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
         }

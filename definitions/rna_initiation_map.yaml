@@ -1,4 +1,4 @@
-ALL:
+CHAIN_ALL:
    - CHAIN_MAIN:
    - pgzip_fastq
 # Parallel chains (branch)
@@ -15,6 +15,6 @@ ALL:
       - pgatk_splitncigarreads
       - pgatk_baserecalibration
       - pgatk_haplotypecaller
-      - pgatk_variantfiltration
       - CHAIN_ASE:
          - pgatk_asereadcounter
+      - pgatk_variantfiltration

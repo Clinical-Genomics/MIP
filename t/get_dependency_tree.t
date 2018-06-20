@@ -100,7 +100,7 @@ diag(   q{Test get_dependency_tree from Analysis.pm v}
 
 ## Given an initiation map
 my %dependency_tree = (
-    ALL => [
+    CHAIN_ALL => [
         q{program_12},
         {
             CHAIN_MAIN => [ qw{ program_0 }, ],
@@ -121,7 +121,7 @@ my %dependency_tree = (
                             PARALLEL => [
                                 qw{ parallel_program_0 parallel_program_1 },
                                 {
-                                    parallel_program_2 => [
+                                    PARALLEL_PROGRAM_2 => [
                                         qw{ parallel_program_2 parallel_program_3 },
                                     ],
                                 },
@@ -138,7 +138,7 @@ my %dependency_tree = (
                     PARALLEL => [
                         qw{ parallel_program_4 parallel_program_5 },
                         {
-                            parallel_program_6 =>
+                            PARALLEL_PROGRAM_6 =>
                               [ qw{ parallel_program_6 parallel_program_7 }, ],
                         },
                     ],

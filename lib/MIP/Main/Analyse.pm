@@ -752,13 +752,13 @@ sub mip_analyse {
 
 ## Get initiation program, downstream dependencies and update program modes for start_with_program parameter depending on pipeline
     my $initiation_file =
-      catfile( $Bin, qw{ definitions rare_disease_initiation.yaml } );
+      catfile( $Bin, qw{ definitions rare_disease_initiation_map.yaml } );
 
     # For RNA pipeline
     if ( $consensus_analysis_type eq q{wts} ) {
 
         $initiation_file =
-          catfile( $Bin, qw{ definitions rna_initiation.yaml } );
+          catfile( $Bin, qw{ definitions rna_initiation_map.yaml } );
     }
     parse_start_with_program(
         {

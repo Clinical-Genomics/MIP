@@ -1,7 +1,9 @@
-ALL:
+CHAIN_ALL:
    - CHAIN_MAIN:
       - pgzip_fastq
 # Parallel chain (branch)
+   - CHAIN_SPLITFASTQ:
+      - psplit_fastq_file
    - CHAIN_FASTQ:
       - pfastqc
    - CHAIN_MAIN:
@@ -31,7 +33,7 @@ ALL:
             - pexpansionhunter
             - pmanta
             - ptiddit
-            - pdelly_call:
+            - PDELLY_CALL:
                - pdelly_call
                - pdelly_reformat
          - psv_combinevariantcallsets
@@ -45,7 +47,7 @@ ALL:
       - PARALLEL: 
          - pfreebayes
          - pbcftools_mpileup
-         - pgatk_haplotypecaller:
+         - PGATK_HAPLOTYPECALLER:
             - pgatk_haplotypecaller
             - pgatk_genotypegvcfs
             - pgatk_variantrecalibration

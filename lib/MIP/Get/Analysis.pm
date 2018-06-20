@@ -31,7 +31,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ get_dependency_tree get_dependency_tree_order get_overall_analysis_type print_program };
+      qw{ get_dependency_tree get_dependency_tree_chain get_dependency_tree_order get_overall_analysis_type print_program };
 
 }
 
@@ -43,7 +43,7 @@ sub get_dependency_tree {
 
 ## Function  : Collects all downstream programs from initation point.
 ## Returns   :
-## Arguments : $current_chain       => Current chain
+## Arguments : $current_chain           => Current chain
 ##           : $is_program_found_ref    => Found initiation program {REF}
 ##           : $is_chain_found_ref      => Found program chain
 ##           : $program                 => Initiation point
@@ -158,20 +158,11 @@ sub get_dependency_tree {
                     ${$is_program_found_ref} = 1;
 
                     ## Found chain that program belongs to
-                    if ( $key ne q{ALL} ) {
+                    # Set is part of chain signal
+                    ${$is_chain_found_ref} = $current_chain;
 
-                        ## Set is part of chain signal
-                        ${$is_chain_found_ref} = $current_chain;
-                    }
-
-                    ## Hash in PARALLEL section take all elements in list
-                    ## E.g. haplotypecaller->genotypegvcfs
-                    if ( $key eq $element ) {
-
-                        push @{$start_with_programs_ref}, @{$value};
-                        last ELEMENT;
-                    }
                 }
+
                 ## Special case for parallel section
                 if ( $key eq q{PARALLEL}
                     && ${$is_program_found_ref} )
@@ -193,6 +184,120 @@ sub get_dependency_tree {
                 {
 
                     push @{$start_with_programs_ref}, $element;
+                }
+            }
+        }
+
+        ## Remove identifier
+        delete $tree{$key};
+    }
+    return;
+}
+
+sub get_dependency_tree_chain {
+
+## Function  : Sets chain id to parameters hash from the dependency tree
+## Returns   :
+## Arguments : $current_chain        => Current chain
+##           : $dependency_tree_href => Dependency hash {REF}
+##           : $parameter_href       => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $current_chain;
+    my $dependency_tree_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        current_chain => {
+            store       => \$current_chain,
+            strict_type => 1,
+        },
+        dependency_tree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$dependency_tree_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Copy hash to enable recursive removal of keys
+    my %tree = %{$dependency_tree_href};
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %tree ) {
+
+        ## Add ID of chain
+        my ($chain_id) = $key =~ /CHAIN_(\S+)/sxm;
+
+        ## If chain_id is found
+        if ( defined $chain_id ) {
+
+            ## Set current chain
+            $current_chain = $chain_id;
+        }
+
+        ## Call recursive
+        if ( ref $value eq q{HASH} ) {
+
+            get_dependency_tree_chain(
+                {
+                    current_chain        => $current_chain,
+                    dependency_tree_href => $value,
+                    parameter_href       => $parameter_href,
+                }
+            );
+        }
+        elsif ( ref $value eq q{ARRAY} ) {
+            ## Inspect element
+
+          ELEMENT:
+            foreach my $element ( @{$value} ) {
+
+                ## Call recursive
+                if ( ref $element eq q{HASH} ) {
+
+                    get_dependency_tree_chain(
+                        {
+                            current_chain        => $current_chain,
+                            dependency_tree_href => $element,
+                            parameter_href       => $parameter_href,
+                        }
+                    );
+                }
+
+                ## Found programs
+                if ( ref $element ne q{HASH} ) {
+
+                    $parameter_href->{$element}{chain} = $current_chain;
+                }
+
+                if ( $key eq q{PARALLEL} ) {
+
+                    $parameter_href->{$element}{chain} = uc $element;
+                }
+
+                ## Hash in PARALLEL section create anonymous chain ID
+                ## E.g. haplotypecaller->genotypegvcfs
+                if ( $key eq uc $element ) {
+
+                  PROGRAM:
+                    foreach my $program ( @{$value} ) {
+
+                        $parameter_href->{$program}{chain} = uc $element;
+                    }
+                    last ELEMENT;
                 }
             }
         }

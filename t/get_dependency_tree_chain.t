@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.1';
+our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Parse::Parameter});
+    my @modules = (q{MIP::Get::Analysis});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::Parse::Parameter qw{ parse_start_with_program };
+use MIP::Get::Analysis qw{ get_dependency_tree_chain };
 
-diag(   q{Test parse_start_with_program from Parameter.pm v}
-      . $MIP::Parse::Parameter::VERSION
+diag(   q{Test get_dependency_tree_chain from Analysis.pm v}
+      . $MIP::Get::Analysis::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -97,37 +97,68 @@ diag(   q{Test parse_start_with_program from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given no defined start_with_program parameter
-my %active_parameter;
 my %parameter;
-my $initiation_file =
-  catfile( dirname($Bin), qw{ definitions rare_disease_initiation_map.yaml } );
-
-my $return = parse_start_with_program(
-    {
-        active_parameter_href => \%active_parameter,
-        initiation_file       => $initiation_file,
-        parameter_href        => \%parameter,
-    },
+my %dependency_tree = (
+    CHAIN_ALL => [
+        q{program_0},
+        q{program_1},
+        {
+            CHAIN_0 => {
+                PARALLEL => [
+                    q{parallel_program_0},
+                    q{parallel_program_1},
+                    {
+                        PARALLEL_PROGRAM_2 =>
+                          [ q{parallel_program_2}, q{parallel_program_3}, ],
+                    },
+                ],
+            },
+        },
+        q{program_2},
+        {
+            CHAIN_1 => {
+                PARALLEL => [
+                    q{parallel_program_4},
+                    q{parallel_program_5},
+                    {
+                        CHAIN_MAIN =>
+                          [ q{parallel_program_6}, q{parallel_program_7}, ],
+                    },
+                ],
+            },
+        },
+        q{program_3},
+    ],
 );
 
-## Then skip parsing
-is( $return, undef, q{Skip parsing} );
-
-## Given start_with_program parameter, when defined
-$active_parameter{start_with_program} = q{pbwa_mem};
-
-my $is_ok = parse_start_with_program(
+get_dependency_tree_chain(
     {
-        active_parameter_href => \%active_parameter,
-        initiation_file       => $initiation_file,
-        parameter_href        => \%parameter,
-    },
+        dependency_tree_href => \%dependency_tree,
+        parameter_href       => \%parameter,
+    }
 );
 
-## Then return true for successful parsing
-ok( $is_ok, q{Parsed programs from start_with_flag} );
+my %expected_chain = (
+    program_0          => { chain => q{ALL}, },
+    program_1          => { chain => q{ALL}, },
+    program_2          => { chain => q{ALL}, },
+    program_3          => { chain => q{ALL}, },
+    parallel_program_0 => { chain => q{PARALLEL_PROGRAM_0}, },
+    parallel_program_1 => { chain => q{PARALLEL_PROGRAM_1}, },
+    parallel_program_2 => { chain => q{PARALLEL_PROGRAM_2}, },
+    parallel_program_3 => { chain => q{PARALLEL_PROGRAM_2}, },
+    parallel_program_4 => { chain => q{PARALLEL_PROGRAM_4}, },
+    parallel_program_7 => { chain => q{MAIN}, },
+);
 
+foreach my $program ( keys %expected_chain ) {
+
+    is(
+        $parameter{$program}{chain},
+        $expected_chain{$program}{chain},
+        q{Chain - } . $program
+    );
+}
 done_testing();
 
 ######################

@@ -1,5 +1,5 @@
 ---
-## Version: 2.0.0
+## Version: 2.1.0
 decompose_normalize_references:
   associated_program:
    - mip
@@ -295,7 +295,6 @@ replace_iupac:
 pbwa_mem:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _sorted
@@ -343,7 +342,6 @@ bwa_sambamba_sort_memory_limit:
 pbamcalibrationblock:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -352,7 +350,6 @@ pbamcalibrationblock:
 ppicardtools_mergesamfiles:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: ""
@@ -360,7 +357,6 @@ ppicardtools_mergesamfiles:
 pmarkduplicates:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _md
@@ -401,7 +397,6 @@ markduplicates_sambamba_markdup_overflow_list_size:
 pgatk_realigner:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _rreal
@@ -420,7 +415,6 @@ gatk_realigner_indel_known_sites:
 pgatk_baserecalibration:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _brecal
@@ -478,7 +472,6 @@ gatk_baserecalibration_static_quantized_quals:
 pchanjo_sexcheck:
   associated_program:
    - mip
-  chain: coverage_report_gender
   data_type: SCALAR
   default: 0
   file_tag: _sex
@@ -495,7 +488,6 @@ chanjo_sexcheck_log_level:
 psamtools_subsample_mt:
   associated_program:
    - mip
-  chain: subsample_mt
   data_type: SCALAR
   default: 0
   file_tag: _subsample_MT
@@ -510,7 +502,6 @@ samtools_subsample_mt_depth:
 psambamba_depth:
   associated_program:
    - mip
-  chain: coverage_report
   data_type: SCALAR
   default: 0
   file_tag: _coverage
@@ -570,7 +561,6 @@ sambamba_depth_quality_control:
 pbedtools_genomecov:
   associated_program:
    - mip
-  chain: CoverageQCGCovBed
   data_type: SCALAR
   default: 0
   file_tag: _genomecov
@@ -586,7 +576,6 @@ bedtools_genomecov_max_coverage:
 ppicardtools_collectmultiplemetrics:
   associated_program:
    - mip
-  chain: CoverageQCPTCMM
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -594,7 +583,6 @@ ppicardtools_collectmultiplemetrics:
 ppicardtools_collecthsmetrics:
   associated_program:
    - mip
-  chain: CoverageQCPTCHSM
   data_type: SCALAR
   default: 0
   file_tag: _collecthsmetrics
@@ -602,7 +590,6 @@ ppicardtools_collecthsmetrics:
 prcovplots:
   associated_program:
    - mip
-  chain: CoverageQCRCOVP
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -611,7 +598,6 @@ prcovplots:
 pcnvnator:
   associated_program:
    - mip
-  chain: SVCNV
   data_type: SCALAR
   default: 0
   file_tag: _cnvnator
@@ -632,7 +618,6 @@ cnv_bin_size:
 pdelly_call:
   associated_program:
    - mip
-  chain: SVDEL
   data_type: SCALAR
   default: 0
   file_tag: _dellycall
@@ -644,7 +629,6 @@ pdelly_call:
 pdelly_reformat:
   associated_program:
    - mip
-  chain: SVDEL
   data_type: SCALAR
   default: 0
   file_tag: _dellyreformat
@@ -679,7 +663,6 @@ delly_types:
 pexpansionhunter:
   associated_program:  
    - mip
-  chain: SVEXP
   data_type: SCALAR
   default: 0
   file_tag: _exphun
@@ -699,7 +682,6 @@ expansionhunter_repeat_specs_dir:
 pmanta:
   associated_program:
    - mip
-  chain: SVMAN
   data_type: SCALAR
   default: 0
   file_tag: _manta
@@ -712,7 +694,6 @@ pmanta:
 ptiddit:
   associated_program:
    - mip
-  chain: SVTIDDIT
   data_type: SCALAR
   default: 0
   file_tag: _tiddit
@@ -739,7 +720,6 @@ tiddit_minimum_number_supporting_pairs:
 psv_combinevariantcallsets:
   associated_program:
    - mip
-  chain: SV
   data_type: SCALAR
   default: 0
   file_tag: _comb_
@@ -845,7 +825,6 @@ sv_vt_decompose:
 pvcf2cytosure:
   associated_program:
     - mip
-  chain: SV
   data_type: SCALAR
   default: 0
   file_tag: cyto_
@@ -889,7 +868,6 @@ vcf2cytosure_var_size:
 psv_varianteffectpredictor:
   associated_program:
    - mip
-  chain: SV
   data_type: SCALAR
   default: 0
   file_tag: vep_
@@ -932,7 +910,6 @@ sv_vep_plugins:
 psv_vcfparser:
   associated_program:
    - mip
-  chain: SV
   data_type: SCALAR
   default: 0
   file_tag: parsed_
@@ -993,7 +970,6 @@ sv_vcfparser_vep_transcripts:
 psv_rankvariant:
   associated_program:
    - mip
-  chain: SV
   data_type: SCALAR
   default: 0
   file_tag: ranked_
@@ -1034,7 +1010,6 @@ sv_rank_model_file:
 psv_reformat:
   associated_program:
    - mip
-  chain: SV
   data_type: SCALAR
   default: 0
   file_tag: ""
@@ -1059,7 +1034,6 @@ sv_reformat_remove_genes_file:
 pbcftools_mpileup:
   associated_program:
    - mip
-  chain: SAMMP
   data_type: SCALAR
   default: 0
   file_tag: _mpileup_
@@ -1079,7 +1053,6 @@ bcftools_mpileup_filter_variant:
 pfreebayes:
   associated_program:
    - mip
-  chain: FREEB
   data_type: SCALAR
   default: 0
   file_tag: _freebayes_
@@ -1094,7 +1067,6 @@ pfreebayes:
 pgatk_haplotypecaller:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _haptc
@@ -1151,7 +1123,6 @@ gatk_haplotypecaller_snp_known_set:
 pgatk_genotypegvcfs:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _
@@ -1179,7 +1150,6 @@ gatk_genotypegvcfs_ref_gvcf:
 pgatk_variantrecalibration:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: vrecal_
@@ -1265,7 +1235,6 @@ gatk_variantrecalibration_snv_tsfilter_level:
 pgatk_combinevariantcallsets:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: comb_
@@ -1294,7 +1263,6 @@ gatk_combinevariants_prioritize_caller:
 pvariantannotationblock:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1303,7 +1271,6 @@ pvariantannotationblock:
 pprepareforvariantannotationblock:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1313,7 +1280,6 @@ pprepareforvariantannotationblock:
 prhocall:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: rhocall_
@@ -1334,7 +1300,6 @@ rhocall_frequency_file:
 pvt:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: vt_
@@ -1372,7 +1337,6 @@ vt_uniq:
 pfrequency_filter:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: frqf_
@@ -1409,7 +1373,6 @@ frequency_genmod_filter_1000g:
 pgatk_variantevalall:
   associated_program:
    - mip
-  chain: AllVariantQC
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1418,7 +1381,6 @@ pgatk_variantevalall:
 pgatk_variantevalexome:
   associated_program:
    - mip
-  chain: ExomeVariantQC
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1448,7 +1410,6 @@ gatk_varianteval_gold:
 pvarianteffectpredictor:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: vep_
@@ -1516,7 +1477,6 @@ vep_plugins_dir_path:
 pvcfparser:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: parsed_
@@ -1573,7 +1533,6 @@ vcfparser_vep_transcripts:
 psnpeff:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: snpeff_
@@ -1647,7 +1606,6 @@ snpeff_path:
 ppeddy:
   associated_program:
    - mip
-  chain: PEDDYQC
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1657,7 +1615,6 @@ ppeddy:
 pplink:
   associated_program:
    - mip
-  chain: PLINKQC
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1667,7 +1624,6 @@ pplink:
 pvariant_integrity:
   associated_program:
    - mip
-  chain: VIQC
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1677,7 +1633,6 @@ pvariant_integrity:
 prtg_vcfeval:
   associated_program:
    - mip
-  chain: RTG_EVAL_NIST
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1695,7 +1650,6 @@ rtg_vcfeval_reference_genome:
 pevaluation:
   associated_program:
    - mip
-  chain: EvalNIST
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1732,7 +1686,6 @@ nist_id:
 prankvariant:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: ranked_
@@ -1793,7 +1746,6 @@ rank_model_file:
 pendvariantannotationblock:
   associated_program:
    - mip
-  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1819,7 +1771,6 @@ endvariantannotationblock_remove_genes_file:
 pqccollect:
   associated_program:
    - mip
-  chain: ALL
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1848,7 +1799,6 @@ qccollect_skip_evaluation:
 pmultiqc:
   associated_program:
    - mip
-  chain: ALL
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1866,7 +1816,6 @@ multiqc_per_sample:
 panalysisrunstatus:
   associated_program:
    - mip
-  chain: ALL
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
@@ -1875,7 +1824,6 @@ panalysisrunstatus:
 psacct:
   associated_program:
    - mip
-  chain: ALL
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag

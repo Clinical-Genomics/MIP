@@ -45,7 +45,8 @@ sub run {
 
     use MIP::File::Format::Parameter qw{ parse_definition_file  };
     use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
-    use MIP::Get::Analysis qw{ get_dependency_tree_order print_program };
+    use MIP::Get::Analysis
+      qw{ get_dependency_tree_chain get_dependency_tree_order print_program };
 
     ## Mip analyse rare_disease parameters
     ## CLI commands inheritance
@@ -95,14 +96,23 @@ sub run {
         exit;
     }
 
-    ## Order programs - Parsed from initiation file
     my %dependency_tree = load_yaml(
         {
-            yaml_file =>
-              catfile( $Bin, qw{ definitions rare_disease_initiation.yaml } ),
+            yaml_file => catfile(
+                $Bin, qw{ definitions rare_disease_initiation_map.yaml }
+            ),
         }
     );
 
+    ## Sets chain id to parameters hash from the dependency tree
+    get_dependency_tree_chain(
+        {
+            dependency_tree_href => \%dependency_tree,
+            parameter_href       => \%parameter,
+        }
+    );
+
+    ## Order programs - Parsed from initiation file
     my @order_programs;
     get_dependency_tree_order(
         {
