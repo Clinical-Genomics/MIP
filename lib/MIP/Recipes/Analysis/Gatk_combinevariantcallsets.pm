@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -178,12 +178,13 @@ sub analysis_gatk_combinevariantcallsets {
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $gatk_jar =
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -383,8 +384,7 @@ sub analysis_gatk_combinevariantcallsets {
             my $most_complete_bcf_key =
               q{most_complete} . $UNDERSCORE . substr $bcf_suffix, 1;
             my $program_bcf_file_path =
-              catfile( $outfamily_directory,
-                $outfile_prefix . $bcf_suffix . q{.gz} );
+              catfile( $outfamily_directory, $outfile_prefix . $bcf_suffix );
             add_processing_metafile_to_sample_info(
                 {
                     metafile_tag     => $most_complete_bcf_key,

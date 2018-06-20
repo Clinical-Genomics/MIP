@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
@@ -182,12 +182,13 @@ sub analysis_sv_combinevariantcallsets {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             mip_program_name      => $mip_program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -481,7 +482,7 @@ sub analysis_sv_combinevariantcallsets {
                   . $outfile_suffix,
                 outfile_path => catfile( dirname( devnull() ), q{stdout} ),
                 program_source_commands_ref => \@program_source_commands,
-                temp_directory_path    => $temp_directory,
+                temp_directory_path         => $temp_directory,
                 thousand_g_file_path =>
                   $active_parameter_href->{sv_genmod_filter_1000g},
                 verbosity => q{v},
@@ -654,7 +655,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
 
             $sample_info_href->{sv_bcf_file}{path} =
               catfile( $outfamily_directory,
-                $family_id . $outfile_tag . $call_type . $DOT . q{bcf.gz} );
+                $family_id . $outfile_tag . $call_type . $DOT . q{bcf} );
         }
 
         slurm_submit_job_sample_id_dependency_add_to_family(

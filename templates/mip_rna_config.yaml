@@ -31,6 +31,7 @@ pgatk_asereadcounter: 1
 pgatk_baserecalibration: 1
 pgatk_haplotypecaller: 1
 pgatk_splitncigarreads: 1
+pgatk_variantfiltration: 1
 ppicardtools_mergesamfiles: 1
 psalmon_quant: 1
 pstar_aln: 1
