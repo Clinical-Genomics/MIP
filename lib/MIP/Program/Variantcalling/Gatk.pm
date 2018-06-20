@@ -28,19 +28,31 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ gatk_applyrecalibration gatk_asereadcounter gatk_calculategenotypeposteriors gatk_catvariants gatk_combinevariants gatk_concatenate_variants gatk_genotypegvcfs gatk_leftalignandtrimvariants gatk_selectvariants gatk_varianteval gatk_variantrecalibrator };
+    our @EXPORT_OK = qw{
+      gatk_applyrecalibration
+      gatk_asereadcounter
+      gatk_calculategenotypeposteriors
+      gatk_catvariants gatk_combinevariants
+      gatk_concatenate_variants
+      gatk_genotypegvcfs
+      gatk_leftalignandtrimvariants
+      gatk_selectvariants
+      gatk_varianteval
+      gatk_variantfiltration
+      gatk_variantrecalibrator
+    };
 
 }
 
 ## Constants
-Readonly my $AMPERSAND => q{&};
-Readonly my $EMPTY_STR => q{};
-Readonly my $NEWLINE   => qq{\n};
-Readonly my $SPACE     => q{ };
+Readonly my $AMPERSAND    => q{&};
+Readonly my $DOUBLE_QOUTE => q{"};
+Readonly my $EMPTY_STR    => q{};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $SPACE        => q{ };
 
 sub gatk_genotypegvcfs {
 
@@ -2221,6 +2233,226 @@ sub gatk_asereadcounter {
     );
 
     return @commands;
-
 }
+
+sub gatk_variantfiltration {
+
+## Function : Perl wrapper for writing GATK VariantFiltration recipe to $FILEHANDLE. Based on GATK 3.8.0.
+## Returns  : @commands
+## Arguments: $cluster_size                          => Number of SNPs which make up a cluster
+##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
+##          : $FILEHANDLE                            => Sbatch filehandle to write to
+##          : $filter_href                           => Hash with the name of the filter as key and the filter expression as value {REF}
+##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
+##          : $infile_path                           => Infile paths
+##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
+##          : $java_jar                              => Java jar
+##          : $java_use_large_pages                  => Use java large pages
+##          : $logging_level                         => Set the minimum level of logging
+##          : $memory_allocation                     => Memory allocation to run Gatk
+##          : $outfile_path                          => Outfile path
+##          : $pedigree                              => Pedigree files for samples
+##          : $pedigree_validation_type              => Validation strictness for pedigree
+##          : $referencefile_path                    => Reference sequence file
+##          : $stderrfile_path                       => Stderrfile path
+##          : $temp_directory                        => Redirect tmp files to java temp
+##          : $cluster_window_size                   => Window size (in bases) in which to evaluate clustered SNPs
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $cluster_size;
+    my $downsample_to_coverage;
+    my $FILEHANDLE;
+    my $filter_href;
+    my $infile_path;
+    my $intervals_ref;
+    my $java_jar;
+    my $java_use_large_pages;
+    my $memory_allocation;
+    my $outfile_path;
+    my $pedigree;
+    my $referencefile_path;
+    my $stderrfile_path;
+    my $temp_directory;
+    my $cluster_window_size;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $logging_level;
+    my $pedigree_validation_type;
+
+    my $tmpl = {
+        cluster_size => {
+            allow       => qr/ ^\d+$ /sxm,
+            store       => \$cluster_size,
+            strict_type => 1,
+        },
+        downsample_to_coverage => {
+            allow       => qr/ ^\d+$ /sxm,
+            store       => \$downsample_to_coverage,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        filter_href => {
+            default     => {},
+            store       => \$filter_href,
+            strict_type => 1,
+        },
+        gatk_disable_auto_index_and_file_lock => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$gatk_disable_auto_index_and_file_lock,
+            strict_type => 1,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        intervals_ref => {
+            default     => [],
+            store       => \$intervals_ref,
+            strict_type => 1,
+        },
+        logging_level => {
+            allow       => [qw{INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$logging_level,
+            strict_type => 1,
+        },
+        java_jar => {
+            store       => \$java_jar,
+            strict_type => 1,
+        },
+        java_use_large_pages => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => {
+            store       => \$memory_allocation,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        pedigree => {
+            store       => \$pedigree,
+            strict_type => 1,
+        },
+        pedigree_validation_type => {
+            allow       => [qw{ STRICT SILENT }],
+            default     => q{SILENT},
+            store       => \$pedigree_validation_type,
+            strict_type => 1,
+        },
+        referencefile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        cluster_window_size => {
+            allow       => qr/ ^\d+$ /xms,
+            store       => \$cluster_window_size,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands;
+
+    # Write java core commands to filehandle.
+    if ($java_jar) {
+        @commands = java_core(
+            {
+                java_jar             => $java_jar,
+                java_use_large_pages => $java_use_large_pages,
+                memory_allocation    => $memory_allocation,
+                temp_directory       => $temp_directory,
+            }
+        );
+    }
+
+    ### Gatk base args
+    @commands = gatk_base(
+        {
+            analysis_type          => q{VariantFiltration},
+            commands_ref           => \@commands,
+            downsample_to_coverage => $downsample_to_coverage,
+            gatk_disable_auto_index_and_file_lock =>
+              $gatk_disable_auto_index_and_file_lock,
+            intervals_ref            => $intervals_ref,
+            logging_level            => $logging_level,
+            pedigree                 => $pedigree,
+            pedigree_validation_type => $pedigree_validation_type,
+            referencefile_path       => $referencefile_path,
+        }
+    );
+
+    ## Tool specific options
+
+    ## Infile
+    push @commands, q{--variant} . $SPACE . $infile_path;
+
+    ## Output
+    push @commands, q{--out} . $SPACE . $outfile_path;
+
+    if ($cluster_size) {
+        push @commands, q{--clusterSize} . $SPACE . $cluster_size;
+    }
+    if ($filter_href) {
+      FILTERNAME:
+        foreach my $filtername ( keys %{$filter_href} ) {
+            push @commands,
+                q{--filterName}
+              . $SPACE
+              . $filtername
+              . $SPACE
+              . q{--filterExpression}
+              . $SPACE
+              . $DOUBLE_QOUTE
+              . $filter_href->{$filtername}
+              . $DOUBLE_QOUTE;
+        }
+    }
+    if ($cluster_window_size) {
+        push @commands, q{--clusterWindowSize} . $SPACE . $cluster_window_size;
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
+    return @commands;
+}
+
 1;

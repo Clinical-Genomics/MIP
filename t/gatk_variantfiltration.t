@@ -15,6 +15,7 @@ use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
+use List::Util qw{ any };
 use Test::More;
 use Readonly;
 
@@ -28,9 +29,10 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
+Readonly my $COMMA        => q{,};
+Readonly my $DOUBLE_QOUTE => q{"};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $SPACE        => q{ };
 
 ### User Options
 GetOptions(
@@ -87,11 +89,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Gatk qw{ gatk_haplotypecaller };
+use MIP::Program::Variantcalling::Gatk qw{ gatk_variantfiltration };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test gatk_haplotypecaller from Alignment::Gatk.pm v}
-      . $MIP::Program::Alignment::Gatk::VERSION
+diag(   q{Test gatk_variantfiltration from Varinatcalling::Gatk.pm v}
+      . $MIP::Program::Variantcalling::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,12 +102,11 @@ diag(   q{Test gatk_haplotypecaller from Alignment::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $MITOCHONDRIA_PLOIDY                           => 3;
-Readonly my $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING => 10;
-Readonly my $VARIANT_INDEX_PARAMETER                       => 128_000;
+Readonly my $CLUSTER_SIZE        => 3;
+Readonly my $CLUSTER_WINDOW_SIZE => 35;
 
 ## Base arguments
-my $function_base_command = q{--analysis_type HaplotypeCaller};
+my $function_base_command = q{--analysis_type VariantFiltration};
 
 my %base_argument = (
     stderrfile_path => {
@@ -121,92 +122,49 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    intervals_ref => {
-        inputs_ref      => [qw{ chr1 chr2}],
-        expected_output => q{--intervals chr1 --intervals chr2},
+    infile_path => {
+        input           => catfile(qw{ dir infile.vcf }),
+        expected_output => q{--variant } . catfile(qw{ dir infile.vcf }),
+    },
+    outfile_path => {
+        input           => catfile(qw{ dir outfile.vcf }),
+        expected_output => q{--out } . catfile(qw{ dir outfile.vcf }),
     },
     referencefile_path => {
         input           => catfile(qw{reference_dir human_genome_build.fasta }),
         expected_output => q{--reference_sequence}
           . catfile(qw{reference_dir human_genome_build.fasta }),
     },
-    annotations_ref => {
-        inputs_ref => [qw{ BaseQualityRankSumTest ChromosomeCounts }],
-        expected_output =>
-          q{--annotation BaseQualityRankSumTest --annotation ChromosomeCounts},
-    },
-    infile_path => {
-        input           => catfile(qw{ dir infile.bam }),
-        expected_output => q{--input_file } . catfile(qw{ dir infile.bam }),
-    },
-    outfile_path => {
-        input           => catfile(qw{ dir outfile.bam }),
-        expected_output => q{--out } . catfile(qw{ dir outfile.bam }),
-    },
 );
 
 my %specific_argument = (
-    intervals_ref => {
-        inputs_ref      => [qw{ chr1 chr2}],
-        expected_output => q{--intervals chr1 --intervals chr2},
+    cluster_size => {
+        input           => $CLUSTER_SIZE,
+        expected_output => q{--clusterSize} . $SPACE . $CLUSTER_SIZE,
+    },
+    infile_path => {
+        input           => catfile(qw{ dir infile.vcf }),
+        expected_output => q{--variant } . catfile(qw{ dir infile.vcf }),
+    },
+    outfile_path => {
+        input           => catfile(qw{ dir outfile.vcf }),
+        expected_output => q{--out } . catfile(qw{ dir outfile.vcf }),
     },
     referencefile_path => {
         input           => catfile(qw{reference_dir human_genome_build.fasta }),
         expected_output => q{--reference_sequence }
           . catfile(qw{ reference_dir human_genome_build.fasta }),
     },
-    annotations_ref => {
-        inputs_ref => [qw{ BaseQualityRankSumTest ChromosomeCounts }],
-        expected_output =>
-          q{--annotation BaseQualityRankSumTest --annotation ChromosomeCounts},
-    },
-    infile_path => {
-        input           => catfile(qw{ dir infile.bam }),
-        expected_output => q{--input_file } . catfile(qw{ dir infile.bam }),
-    },
-    outfile_path => {
-        input           => catfile(qw{ dir outfile.bam }),
-        expected_output => q{--out } . catfile(qw{ dir outfile.bam }),
-    },
-    dbsnp => {
-        input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
-        expected_output => q{--dbsnp }
-          . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
-    },
-    sample_ploidy => {
-        input           => $MITOCHONDRIA_PLOIDY,
-        expected_output => q{--sample_ploidy} . $SPACE . $MITOCHONDRIA_PLOIDY,
-    },
-    standard_min_confidence_threshold_for_calling => {
-        input           => $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
-        expected_output => q{--standard_min_confidence_threshold_for_calling }
-          . $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
-    },
-    dont_use_soft_clipped_bases => {
-        input           => 1,
-        expected_output => q{--dontUseSoftClippedBases},
-    },
-    pcr_indel_model => {
-        input           => q{NONE},
-        expected_output => q{--pcr_indel_model NONE},
-    },
-    variant_index_parameter => {
-        input           => $VARIANT_INDEX_PARAMETER,
-        expected_output => q{--variant_index_parameter }
-          . $VARIANT_INDEX_PARAMETER,
-    },
-    emit_ref_confidence => {
-        input           => q{GVCF},
-        expected_output => q{--emitRefConfidence GVCF},
-    },
-    variant_index_type => {
-        input           => q{LINEAR},
-        expected_output => q{--variant_index_type LINEAR},
+    cluster_window_size => {
+        input           => $CLUSTER_WINDOW_SIZE,
+        expected_output => q{--clusterWindowSize}
+          . $SPACE
+          . $CLUSTER_WINDOW_SIZE,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gatk_haplotypecaller;
+my $module_function_cref = \&gatk_variantfiltration;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -223,6 +181,32 @@ foreach my $argument_href (@arguments) {
         }
     );
 }
+
+## Special case for hash input.
+## Given a hash with filter names and filter expressions
+my %filter = ( filter_1 => q{test_1 > 1}, );
+
+## When the subroutine is executed
+my @commands = gatk_variantfiltration(
+    {
+        infile_path        => catfile(qw{ a infile_path }),
+        outfile_path       => catfile(qw{ a outfile_path }),
+        referencefile_path => catfile(qw{ a genome }),
+        filter_href        => \%filter,
+    }
+);
+
+## Then the string below should exactly match one of the strings in the command array.
+my $expected_output =
+    q{--filterName filter_1}
+  . $SPACE
+  . q{--filterExpression}
+  . $SPACE
+  . $DOUBLE_QOUTE
+  . $filter{filter_1}
+  . $DOUBLE_QOUTE;
+my $filter_match = grep { $_ eq $expected_output } @commands;
+ok( $filter_match, q{Argument: filter_href} );
 
 done_testing();
 
