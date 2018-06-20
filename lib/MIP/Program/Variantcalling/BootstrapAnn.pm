@@ -42,7 +42,6 @@ sub bootstrapann {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $vcf_infile_path        => VCF infile path
-##          : $vcf_outfile_path       => VCF outfile path
 
     my ($arg_href) = @_;
 
@@ -53,7 +52,6 @@ sub bootstrapann {
     my $stderrfile_path_append;
     my $stdoutfile_path;
     my $vcf_infile_path;
-    my $vcf_outfile_path;
 
     ## Default(s)
 
@@ -85,12 +83,6 @@ sub bootstrapann {
             store       => \$vcf_infile_path,
             strict_type => 1,
         },
-        vcf_outfile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$vcf_outfile_path,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -101,8 +93,6 @@ sub bootstrapann {
     push @commands, q{--vcf} . $SPACE . $vcf_infile_path;
 
     push @commands, q{--ase} . $SPACE . $ase_file_path;
-
-    push @commands, q{--out} . $SPACE . $vcf_outfile_path;
 
     push @commands,
       unix_standard_streams(

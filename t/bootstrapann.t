@@ -127,12 +127,6 @@ my %required_argument = (
         input           => catfile(qw{ path to input_vcf }),
         expected_output => q{--vcf} . $SPACE . catfile(qw{ path to input_vcf }),
     },
-    vcf_outfile_path => {
-        input           => catfile(qw{ path to output_vcf }),
-        expected_output => q{--out}
-          . $SPACE
-          . catfile(qw{ path to output_vcf }),
-    },
 );
 
 my %specific_argument = (
@@ -143,12 +137,6 @@ my %specific_argument = (
     vcf_infile_path => {
         input           => catfile(qw{ path to input_vcf }),
         expected_output => q{--vcf} . $SPACE . catfile(qw{ path to input_vcf }),
-    },
-    vcf_outfile_path => {
-        input           => catfile(qw{ path to output_vcf }),
-        expected_output => q{--out}
-          . $SPACE
-          . catfile(qw{ path to output_vcf }),
     },
 );
 
