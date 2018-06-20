@@ -842,6 +842,7 @@ sub gatk_haplotypecaller {
 ##          : $variant_index_type                            => Type of IndexCreator to use for VCF/BCF indices
 ##          : $stderrfile_path                               => Stderrfile path
 ##          : $FILEHANDLE                                    => Sbatch filehandle to write to
+##          : $sample_ploidy                                 => Ploidy per sample
 
     my ($arg_href) = @_;
 
@@ -876,6 +877,7 @@ sub gatk_haplotypecaller {
     my $variant_index_parameter;
     my $stderrfile_path;
     my $FILEHANDLE;
+    my $sample_ploidy;
 
     my $tmpl = {
         intervals_ref => {
@@ -956,6 +958,11 @@ sub gatk_haplotypecaller {
             allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$variant_index_parameter
+        },
+        sample_ploidy => {
+            allow       => [ undef, qr/ ^\d+$ /sxm ],
+            strict_type => 1,
+            store       => \$sample_ploidy,
         },
         gatk_disable_auto_index_and_file_lock => {
             default     => 0,
@@ -1073,6 +1080,10 @@ sub gatk_haplotypecaller {
 
         push @commands,
           q{--variant_index_parameter} . $SPACE . $variant_index_parameter;
+    }
+    if ($sample_ploidy) {
+
+        push @commands, q{--sample_ploidy} . $SPACE . $sample_ploidy;
     }
 
     push @commands, q{--emitRefConfidence} . $SPACE . $emit_ref_confidence;
