@@ -25,22 +25,29 @@ emip:
     salmon: 0.9.1
     samtools: 1.8
     star: 2.5.4a
+    bioconductor-deseq2:
+    bioconductor-tximport:
+    r-readr:
+    r-optparse:
   conda:
     python: 2.7
     pip:
   shell:
-    mip_scripts: 
+    mip_scripts:
       version: Your current MIP version
-    picard: 
+    picard:
       version: 2.17.11
-    star_fusion: 
-      version: 1.3.2 
+    star_fusion:
+      version: 1.3.2
+    blobfish:
+      version: git
+      url: https://github.com/J35P312/BlobFish.git
 
 # Trinity environment spec
 etrinity:
   bioconda:
     trinity: 2.5.1
-  conda: 
+  conda:
     python: 2.7
     pip:
 
