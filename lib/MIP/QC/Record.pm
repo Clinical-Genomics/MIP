@@ -364,7 +364,7 @@ sub add_infile_info {
           $mip_file_format;
 
         ## Detect Undetermined in flowcell id
-        if ( $flowcell =~ /Undetermined/xsm ) {
+        if ( $flowcell =~ /Undetermined/ixsm ) {
 
             ## Set Undetermined to true for file
             $file_info_href->{undetermined_in_file_name}{$mip_file_format} = 1;
