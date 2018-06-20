@@ -5187,7 +5187,7 @@ sub check_string {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $string =~ /$regexp/ ) {
+    if ( $string =~ /$regexp/i ) {
 
         return 1;
     }
