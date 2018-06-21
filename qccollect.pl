@@ -75,7 +75,7 @@ my %qc_header;
 ## Save data in each outfile
 my %qc_program_data;
 
-my $qccollect_version = q{2.0.6};
+my $qccollect_version = q{2.0.7};
 
 ###User Options
 GetOptions(
@@ -1451,7 +1451,7 @@ sub _chanjo_gender_check {
 ## Function : Checks that the gender predicted by chanjo_sexcheck is confirmed in the pedigee for the sample
 ## Returns  :
 ## Arguments: $chanjo_sexcheck_gender => Chanjo calculated gender
-##          : $infile             => Infile {REF}
+##          : $infile                 => Infile {REF}
 ##          : $qc_data_href           => QCData hash {REF}
 ##          : $sample_id              => Sample ID
 ##          : $sample_info_href       => Info on samples and family hash {REF}
@@ -1502,26 +1502,26 @@ sub _chanjo_gender_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Alias
-    my $sample_id_sex_ref = \$sample_info_href->{sample}{$sample_id}{sex};
+    ## Get sample id sex
+    my $sample_id_sex = $sample_info_href->{sample}{$sample_id}{sex};
 
     ## Female
     if (   $chanjo_sexcheck_gender eq q{female}
-        && $sample_id_sex_ref =~ /2|female/ )
+        && $sample_id_sex =~ /2|female/ )
     {
 
         $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
           q{PASS};
     }
     elsif ($chanjo_sexcheck_gender eq q{male}
-        && $sample_id_sex_ref =~ /1|^male/ )
+        && $sample_id_sex =~ /1|^male/ )
     {
         ## Male
 
         $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
           q{PASS};
     }
-    elsif ( $sample_id_sex_ref =~ /other|unknown/ ) {
+    elsif ( $sample_id_sex =~ /other|unknown/ ) {
         ## Other|Unknown
 
         $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =

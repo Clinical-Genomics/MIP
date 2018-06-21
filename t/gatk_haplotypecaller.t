@@ -203,6 +203,10 @@ my %specific_argument = (
         input           => q{LINEAR},
         expected_output => q{--variant_index_type LINEAR},
     },
+    sample_ploidy => {
+        input           => $SAMPLE_PLOIDY,
+        expected_output => q{--sample_ploidy} . $SPACE . $SAMPLE_PLOIDY,
+    },
 );
 
 ## Coderef - enables generalized use of generate call
