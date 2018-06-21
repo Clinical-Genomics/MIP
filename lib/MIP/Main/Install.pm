@@ -33,6 +33,7 @@ use MIP::Set::Parameter qw{ set_conda_env_names_and_paths  };
 
 ## Recipes
 use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
+use MIP::Recipes::Install::Blobfish qw{ install_blobfish };
 use MIP::Recipes::Install::Cnvnator qw{ install_cnvnator };
 use MIP::Recipes::Install::Conda
   qw{ check_conda_installation setup_conda_env install_bioconda_packages };
@@ -56,7 +57,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.2.4};
+    our $VERSION = q{1.2.5};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -238,6 +239,7 @@ sub mip_install {
         ## Create dispatch table for shell installation subs
         my %shell_subs = (
             bedtools        => \&install_bedtools,
+            blobfish        => \&install_blobfish,
             cnvnator        => \&install_cnvnator,
             expansionhunter => \&install_expansionhunter,
             mip_scripts     => \&install_mip_scripts,

@@ -1,4 +1,4 @@
-package MIP::Recipes::Install::PROGRAM;
+package MIP::Recipes::Install::Blobfish;
 
 use Carp;
 use charnames qw{ :full :short };
@@ -16,6 +16,7 @@ use warnings;
 use Readonly;
 
 BEGIN {
+
     require Exporter;
     use base qw{ Exporter };
 
@@ -23,39 +24,16 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ install_PROGRAM };
+    our @EXPORT_OK = qw{ install_blobfish };
 }
 
 ## Constants
-Readonly my $DASH    => q{-};
-Readonly my $DOT     => q{.};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
-#############################################################################
-############### SHORT INSTRUCTIONS ON HOW TO USE THE TEMPLATE ###############
-#############################################################################
-# This is a genereric template for writing commands for installation of
-# programs via SHELL. The installation proccess required by the program in
-# question might call for more or less extensive modifications to the
-# template. This template is based on a straight forward download of a zip
-# file to the specified conda environment using wget. This is followed by
-# unpacking, building and linking the binary. Other programs might for
-# example require cloning into a git repository and or setting up
-# LD_LIPRARY_PATH.
-#
-# SOME NOTES:
-# All program specific parameters should be held in the program specific
-# hash, which should be unpacked where indicated. This is done in order to
-# limit the use of complex data structures in the code.
-#
-# Start by replacing all occurences of *PROGRAM* with the name of the program
-# that is to be installed.
-#############################################################################
+sub install_blobfish {
 
-sub install_PROGRAM {
-
-## Function : Install PROGRAM
+## Function : Install BlobFish
 ## Returns  :
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
@@ -72,8 +50,8 @@ sub install_PROGRAM {
     my $conda_prefix_path;
     my $FILEHANDLE;
     my $noupdate;
-    my $PROGRAM_parameters_href;
     my $quiet;
+    my $blobfish_parameters_href;
     my $verbose;
 
     my $tmpl = {
@@ -99,7 +77,7 @@ sub install_PROGRAM {
         program_parameters_href => {
             default     => {},
             required    => 1,
-            store       => \$PROGRAM_parameters_href,
+            store       => \$blobfish_parameters_href,
             strict_type => 1,
         },
         quiet => {
@@ -119,32 +97,26 @@ sub install_PROGRAM {
     ## Modules
     use MIP::Check::Installation qw{ check_existing_installation };
     use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_rm };
-    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
+    use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Versionmanager::Git qw{ git_clone };
 
     ## Unpack parameters
-    my $program_version = $PROGRAM_parameters_href->{version};
+    my $program_url     = $blobfish_parameters_href->{url};
+    my $program_version = $blobfish_parameters_href->{version};
 
-    ## Set program specific parameters
-    my $program_name = q{PROGRAM};
+    ## Set parameters
+    my $program_name = q{BlobFish};
     my $program_directory_path =
-      catdir( $conda_prefix_path, q{share},
-        $program_name . $DASH . $program_version );
-    my $executable  = q{PROGRAM_EXECUTABLE};
-    my $program_url = q{https://};
-
-    ## Store original working directory
-    my $pwd = cwd();
+      catdir( $conda_prefix_path, qw{ share BlobFish } );
+    my $executable = q{BlobFish.py};
 
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_PROGRAM},
+            log_name => q{mip_install::install_blobfish},
             quiet    => $quiet,
             verbose  => $verbose,
         }
@@ -173,6 +145,7 @@ sub install_PROGRAM {
 
     ## Only activate conda environment if supplied by user
     if ($conda_environment) {
+
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
         conda_source_activate(
@@ -186,98 +159,36 @@ sub install_PROGRAM {
 
     ## Download
     say {$FILEHANDLE} q{## Download} . $SPACE . $program_name;
-    my $program_zip_path =
-      catfile( $conda_prefix_path,
-        $program_name . $DASH . $program_version . $DOT . q{zip} );
-    wget(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            outfile_path => $program_zip_path,
-            quiet        => $quiet,
-            url          => $program_url,
-            verbose      => $verbose,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Extract
-    say {$FILEHANDLE} q{## Extract};
-    unzip(
+    git_clone(
         {
             FILEHANDLE  => $FILEHANDLE,
-            force       => 1,
-            infile_path => $program_zip_path,
+            outdir_path => $program_directory_path,
             quiet       => $quiet,
+            url         => $program_url,
             verbose     => $verbose,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Move to PROGRAM directory
-    say {$FILEHANDLE} q{## Move to}
-      . $SPACE
-      . $program_name
-      . $SPACE
-      . q{directory};
-    gnu_cd(
-        {
-            directory_path => $program_directory_path,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Compile
-    say {$FILEHANDLE} q{## Compile};
-    gnu_make(
-        {
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Change mode to executable
-    my $file_path = catfile( $program_directory_path, $program_executable );
+    ## Change mode
+    say {$FILEHANDLE} q{## Make file executable};
     gnu_chmod(
         {
             FILEHANDLE => $FILEHANDLE,
-            file_path  => $file_path,
+            file_path  => catfile( $program_directory_path, $executable ),
             permission => q{a+x},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Make available from conda environment
-    say {$FILEHANDLE} q{## Make available from conda environment};
-    my $link_path = catfile( $conda_prefix_path, q{bin}, $program_executable );
+    ## Place symlink in bin
+    say {$FILEHANDLE} q{## Linking executable};
     gnu_ln(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            force       => 1,
-            link_path   => $link_path,
+            FILEHANDLE => $FILEHANDLE,
+            link_path  => catfile( $conda_prefix_path, q{bin}, $executable ),
+            target_path => catfile( $program_directory_path, $executable ),
             symbolic    => 1,
-            target_path => $file_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Clean-up
-    say {$FILEHANDLE} q{## Clean up};
-    gnu_rm(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            force       => 1,
-            infile_path => $program_zip_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Go back to starting directoriy
-    say {$FILEHANDLE} q{## Go back to starting directory};
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -292,8 +203,6 @@ sub install_PROGRAM {
         );
         say {$FILEHANDLE} $NEWLINE;
     }
-
-    print {$FILEHANDLE} $NEWLINE;
     return;
 }
 
