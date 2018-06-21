@@ -101,6 +101,7 @@ diag(   q{Test gatk_haplotypecaller from Alignment::Gatk.pm v}
 
 ## Constants
 Readonly my $MITOCHONDRIA_PLOIDY                           => 3;
+Readonly my $SAMPLE_PLOIDY                                 => 3;
 Readonly my $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING => 10;
 Readonly my $VARIANT_INDEX_PARAMETER                       => 128_000;
 
