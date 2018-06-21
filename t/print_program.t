@@ -97,7 +97,7 @@ diag(   q{Test print_program from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %parameter = ( pbwa_mem => { type => q{program} } );
+my %parameter = ( bwa_mem => { type => q{program} } );
 
 my @printed_programs = print_program(
     {
@@ -115,7 +115,7 @@ my @program_mode = split $SPACE, $printed_programs[0];
 
 is( $program_mode[1], 1, q{Printed correct program mode} );
 
-is( $printed_programs[0], q{pbwa_mem 1}, q{Printed program} );
+is( $printed_programs[0], q{bwa_mem 1}, q{Printed program} );
 
 done_testing();
 

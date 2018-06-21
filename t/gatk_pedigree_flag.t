@@ -99,7 +99,7 @@ diag(   q{Test gatk_pedigree_flag from Pedigree.pm v}
 
 my $fam_file_path_test =
   catfile( $Bin, qw{ data 643594-miptest 643594-200M.fam } );
-my $program_test = q{pgatk_genotypegvcfs};
+my $program_test = q{gatk_genotypegvcfs};
 
 my %command = gatk_pedigree_flag(
     {

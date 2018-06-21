@@ -10,8 +10,8 @@ decompose_normalize_references:
   type: mip
 exome_target_bed:
   associated_program:
-   - ppicardtools_collecthsmetrics
-   - pgatk_baserecalibration
+   - picardtools_collecthsmetrics
+   - gatk_baserecalibration
   build_file: 1
   data_type: HASH
   exists_check: file
@@ -21,34 +21,34 @@ exome_target_bed:
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 gatk_bundle_download_version:
   associated_program:
-   - pbwa_mem
-   - pgatk_baserecalibration
-   - ppicardtools_collecthsmetrics
-   - ppicardtools_collectmultiplemetrics
+   - bwa_mem
+   - gatk_baserecalibration
+   - picardtools_collecthsmetrics
+   - picardtools_collectmultiplemetrics
   data_type: SCALAR
   default: 2.8
   type: program_argument
 gatk_disable_auto_index_and_file_lock:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   data_type: SCALAR
   default: 0
   type: program_argument
 gatk_downsample_to_coverage:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   data_type: SCALAR
   default: 1000
   type: program_argument
 gatk_logging_level:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   data_type: SCALAR
   default: INFO
   type: program_argument
 gatk_path:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -57,10 +57,10 @@ gatk_path:
 human_genome_reference:
   associated_program:
    - mip
-   - pbwa_mem
-   - pgatk_baserecalibration
-   - ppicardtools_collecthsmetrics
-   - ppicardtools_collectmultiplemetrics
+   - bwa_mem
+   - gatk_baserecalibration
+   - picardtools_collecthsmetrics
+   - picardtools_collectmultiplemetrics
    - pvardict
   build_file: 1
   data_type: SCALAR
@@ -71,7 +71,7 @@ human_genome_reference:
 ## java large pages - affects all modules using java
 java_use_large_pages:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   data_type: SCALAR
   default: 0
   type: program_argument
@@ -81,20 +81,20 @@ module_time:
    - mip
   data_type: HASH
   default:
-    panalysisrunstatus: 1
-    pbwa_mem: 30
-    pchanjo_sexcheck: 2
-    pfastqc: 10
-    pgatk_baserecalibration: 20
-    pgzip_fastq: 2
-    pmarkduplicates: 20
-    pmultiqc: 1
-    ppicardtools_collecthsmetrics: 10
-    ppicardtools_collectmultiplemetrics: 10
-    ppicardtools_mergesamfiles: 20
-    pqccollect: 1
-    psacct: 1
-    psambamba_depth: 10
+    analysisrunstatus: 1
+    bwa_mem: 30
+    chanjo_sexcheck: 2
+    fastqc: 10
+    gatk_baserecalibration: 20
+    gzip_fastq: 2
+    markduplicates: 20
+    multiqc: 1
+    picardtools_collecthsmetrics: 10
+    picardtools_collectmultiplemetrics: 10
+    picardtools_mergesamfiles: 20
+    qccollect: 1
+    sacct: 1
+    sambamba_depth: 10
     pvardict: 40
   type: mip
 module_core_number:
@@ -102,20 +102,20 @@ module_core_number:
    - mip
   data_type: HASH
   default:
-    panalysisrunstatus: 1
-    pbwa_mem: 16
-    pchanjo_sexcheck: 1
-    pfastqc: 0
-    pgatk_baserecalibration: 16
-    pgzip_fastq: 0
-    pmarkduplicates: 16
-    pmultiqc: 1
-    ppicardtools_collecthsmetrics: 2
-    ppicardtools_collectmultiplemetrics: 2
-    ppicardtools_mergesamfiles: 16
-    pqccollect: 1
-    psacct: 1
-    psambamba_depth: 2
+    analysisrunstatus: 1
+    bwa_mem: 16
+    chanjo_sexcheck: 1
+    fastqc: 0
+    gatk_baserecalibration: 16
+    gzip_fastq: 0
+    markduplicates: 16
+    multiqc: 1
+    picardtools_collecthsmetrics: 2
+    picardtools_collectmultiplemetrics: 2
+    picardtools_mergesamfiles: 16
+    qccollect: 1
+    sacct: 1
+    sambamba_depth: 2
     pvardict: 8
   type: mip
 ## Choosen MIP Aligner
@@ -127,11 +127,11 @@ outaligner_dir:
   type: mip
 picardtools_path:
   associated_program:
-   - pbwa_mem
-   - ppicardtools_mergesamfiles
-   - pmarkduplicates
-   - ppicardtools_collecthsmetrics
-   - ppicardtools_collectmultiplemetrics
+   - bwa_mem
+   - picardtools_mergesamfiles
+   - markduplicates
+   - picardtools_collecthsmetrics
+   - picardtools_collectmultiplemetrics
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -156,7 +156,7 @@ pcutadapt:
    - cutadapt
   type: program
 ## BWA
-pbwa_mem:
+bwa_mem:
   associated_program:
    - mip
   chain: MAIN
@@ -173,7 +173,7 @@ pbwa_mem:
   type: program
 bwa_build_reference:
   associated_program:
-   - pbwa_mem
+   - bwa_mem
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -181,29 +181,29 @@ bwa_build_reference:
   type: path
 bwa_mem_bamstats:
   associated_program:
-   - pbwa_mem
+   - bwa_mem
   data_type: SCALAR
   default: 1
   type: program_argument
 bwa_mem_cram:
   associated_program:
-   - pbwa_mem
+   - bwa_mem
   data_type: SCALAR
   default: 0
   type: program_argument
 bwa_mem_hla:
   associated_program:
-   - pbwa_mem
+   - bwa_mem
   data_type: SCALAR
   default: 0
   type: program_argument
 bwa_sambamba_sort_memory_limit:
   associated_program:
-   - pbwa_mem
+   - bwa_mem
   data_type: SCALAR
   default: 32G
   type: program_argument
-ppicardtools_mergesamfiles:
+picardtools_mergesamfiles:
   associated_program:
    - mip
   chain: MAIN
@@ -211,7 +211,7 @@ ppicardtools_mergesamfiles:
   default: 0
   file_tag: _merged
   type: program
-pmarkduplicates:
+markduplicates:
   associated_program:
    - mip
   chain: MAIN
@@ -223,36 +223,36 @@ pmarkduplicates:
   type: program
 markduplicates_picardtools_markduplicates:
   associated_program:
-   - pmarkduplicates
+   - markduplicates
   data_type: SCALAR
   default: 0
   type: program_argument
 markduplicates_sambamba_markdup:
   associated_program:
-   - pmarkduplicates
+   - markduplicates
   data_type: SCALAR
   default: 0
   type: program_argument
 markduplicates_sambamba_markdup_hash_table_size:
   associated_program:
-   - pmarkduplicates
+   - markduplicates
   data_type: SCALAR
   default: 262144
   type: program_argument
 markduplicates_sambamba_markdup_io_buffer_size:
   associated_program:
-   - pmarkduplicates
+   - markduplicates
   data_type: SCALAR
   default: 2048
   type: program_argument
 markduplicates_sambamba_markdup_overflow_list_size:
   associated_program:
-   - pmarkduplicates
+   - markduplicates
   data_type: SCALAR
   default: 200000
   type: program_argument
 ## GATK BAM Calibration
-pgatk_baserecalibration:
+gatk_baserecalibration:
   associated_program:
    - mip
   chain: MAIN
@@ -262,7 +262,7 @@ pgatk_baserecalibration:
   type: program
 gatk_baserecalibration_covariates:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   element_separator: ,
   data_type: ARRAY
   default:
@@ -273,13 +273,13 @@ gatk_baserecalibration_covariates:
   type: program_argument
 gatk_baserecalibration_disable_indel_qual:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   data_type: SCALAR
   default: 0
   type: program_argument
 gatk_baserecalibration_known_sites:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   element_separator: ,
   data_type: ARRAY
   default:
@@ -291,7 +291,7 @@ gatk_baserecalibration_known_sites:
   type: path
 gatk_baserecalibration_read_filters:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   element_separator: ,
   data_type: ARRAY
   default:
@@ -299,7 +299,7 @@ gatk_baserecalibration_read_filters:
   type: program_argument
 gatk_baserecalibration_static_quantized_quals:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   element_separator: ,
   data_type: ARRAY
   mandatory: no
@@ -310,7 +310,7 @@ gatk_baserecalibration_static_quantized_quals:
    - 40
   type: program_argument
 ## Coverage Analysis
-pchanjo_sexcheck:
+chanjo_sexcheck:
   associated_program:
    - mip
   chain: coverage_report_gender
@@ -321,11 +321,11 @@ pchanjo_sexcheck:
   type: program
 chanjo_sexcheck_log_level:
   associated_program:
-   - pchanjo_sexcheck
+   - chanjo_sexcheck
   data_type: SCALAR
   default: DEBUG
   type: program_argument
-psambamba_depth:
+sambamba_depth:
   associated_program:
    - mip
   chain: coverage_report
@@ -338,13 +338,13 @@ psambamba_depth:
   type: program
 sambamba_depth_base_quality:
   associated_program:
-   - psambamba_depth
+   - sambamba_depth
   data_type: SCALAR
   default: 10
   type: program_argument
 sambamba_depth_bed:
   associated_program:
-   - psambamba_depth
+   - sambamba_depth
   data_type: SCALAR
   default: CCDS.current.bed
   exists_check: file
@@ -352,7 +352,7 @@ sambamba_depth_bed:
   type: path
 sambamba_depth_cutoffs:
   associated_program:
-   - psambamba_depth
+   - sambamba_depth
   element_separator: ,
   data_type: ARRAY
   default:
@@ -364,29 +364,29 @@ sambamba_depth_cutoffs:
   type: program_argument
 sambamba_depth_noduplicates:
   associated_program:
-   - psambamba_depth
+   - sambamba_depth
   data_type: SCALAR
   default: 0
   type: program_argument
 sambamba_depth_mapping_quality:
   associated_program:
-   - psambamba_depth
+   - sambamba_depth
   data_type: SCALAR
   default: 10
   type: program_argument
 sambamba_depth_mode:
   associated_program:
-   - psambamba_depth
+   - sambamba_depth
   data_type: SCALAR
   default: region
   type: program_argument
 sambamba_depth_quality_control:
   associated_program:
-   - psambamba_depth
+   - sambamba_depth
   data_type: SCALAR
   default: 1
   type: program_argument
-ppicardtools_collectmultiplemetrics:
+picardtools_collectmultiplemetrics:
   associated_program:
    - mip
   chain: CoverageQCPTCMM
@@ -394,7 +394,7 @@ ppicardtools_collectmultiplemetrics:
   default: 0
   file_tag: nofile_tag
   type: program
-ppicardtools_collecthsmetrics:
+picardtools_collecthsmetrics:
   associated_program:
    - mip
   chain: CoverageQCPTCHSM
@@ -472,7 +472,7 @@ vrd_somatic_only:
   default: 0
   type: program_argument
 ## QCCollect
-pqccollect:
+qccollect:
   associated_program:
    - mip
   chain: ALL
@@ -482,7 +482,7 @@ pqccollect:
   type: program
 qccollect_regexp_file:
   associated_program:
-   - pqccollect
+   - qccollect
   data_type: SCALAR
   default: qc_regexp_v1.13.yaml
   exists_check: file
@@ -490,18 +490,18 @@ qccollect_regexp_file:
   type: path
 qccollect_sampleinfo_file:
   associated_program:
-   - pqccollect
+   - qccollect
   data_type: SCALAR
   type: program_argument
   update_path: absolute_path
 qccollect_skip_evaluation:
   associated_program:
-   - pqccollect
+   - qccollect
   data_type: SCALAR
   default: 0
   type: program_argument
 ## MultiQC
-pmultiqc:
+multiqc:
   associated_program:
    - mip
   chain: ALL
@@ -511,7 +511,7 @@ pmultiqc:
   outdir_name: multiqc
   type: program
 ## AnalysisRunStatus
-panalysisrunstatus:
+analysisrunstatus:
   associated_program:
    - mip
   chain: ALL
@@ -520,7 +520,7 @@ panalysisrunstatus:
   file_tag: nofile_tag
   type: program
 ## Sacct
-psacct:
+sacct:
   associated_program:
    - mip
   chain: ALL
@@ -530,7 +530,7 @@ psacct:
   type: program
 sacct_format_fields:
   associated_program:
-   - psacct
+   - sacct
   data_type: ARRAY
   default:
    - jobid

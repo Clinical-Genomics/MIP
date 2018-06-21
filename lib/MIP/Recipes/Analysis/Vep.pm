@@ -177,15 +177,14 @@ sub analysis_vep {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
     my $xargs_file_path_prefix;
@@ -201,7 +200,7 @@ sub analysis_vep {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
             module_core_number =>
-              $active_parameter_href->{module_core_number}{$mip_program_name},
+              $active_parameter_href->{module_core_number}{$program_name},
         }
     );
 
@@ -236,12 +235,12 @@ sub analysis_vep {
         $family_id, $outaligner_dir );
 
     ## Used downstream
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$family_id}{pfrequency_filter}{file_tag};
+    my $infile_tag = $file_info_href->{$family_id}{frequency_filter}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
     my $infile_prefix       = $family_id . $infile_tag . $call_type;
     my $outfile_prefix      = $family_id . $outfile_tag . $call_type;
     my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
@@ -258,7 +257,7 @@ sub analysis_vep {
     );
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -426,7 +425,7 @@ sub analysis_vep {
 
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         my $qc_vep_summary_outfile_path = catfile( $outfamily_directory,
@@ -631,15 +630,14 @@ sub analysis_vep_rio {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -656,7 +654,7 @@ sub analysis_vep_rio {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
             module_core_number =>
-              $active_parameter_href->{module_core_number}{$mip_program_name},
+              $active_parameter_href->{module_core_number}{$program_name},
         }
     );
 
@@ -684,12 +682,12 @@ sub analysis_vep_rio {
         $family_id, $outaligner_dir );
 
     ## Used downstream
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$family_id}{pfrequency_filter}{file_tag};
+    my $infile_tag = $file_info_href->{$family_id}{frequency_filter}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
     my $infile_prefix       = $family_id . $infile_tag . $call_type;
     my $outfile_prefix      = $family_id . $outfile_tag . $call_type;
     my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
@@ -706,7 +704,7 @@ sub analysis_vep_rio {
     );
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -865,7 +863,7 @@ sub analysis_vep_rio {
         }
     );
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         my $qc_vep_summary_outfile_path = catfile( $outfamily_directory,
@@ -1058,17 +1056,16 @@ sub analysis_vep_sv {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
     my $xargs_file_path_prefix;
@@ -1084,7 +1081,7 @@ sub analysis_vep_sv {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{$contigs_ref},
             module_core_number =>
-              $active_parameter_href->{module_core_number}{$mip_program_name},
+              $active_parameter_href->{module_core_number}{$program_name},
         }
     );
 
@@ -1119,13 +1116,13 @@ sub analysis_vep_sv {
         $family_id, $outaligner_dir );
 
     # Used downstream
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{psv_combinevariantcallsets}{file_tag};
+      $file_info_href->{$family_id}{sv_combinevariantcallsets}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
     my $infile_prefix       = $family_id . $infile_tag . $call_type;
     my $outfile_prefix      = $family_id . $outfile_tag . $call_type;
     my $infile_path_prefix  = catfile( $temp_directory, $infile_prefix );
@@ -1350,7 +1347,7 @@ sub analysis_vep_sv {
 
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         my $outfile_sample_info_prefix = $outfile_prefix;
 

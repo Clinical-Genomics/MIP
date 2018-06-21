@@ -268,7 +268,7 @@ sub _build_usage {
     );
 
     option(
-        q{pgatk_realigner} => (
+        q{gatk_realigner} => (
             cmd_aliases => [qw{ pgra }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -293,7 +293,7 @@ q{Default: GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold
     );
 
     option(
-        q{pgatk_baserecalibration} => (
+        q{gatk_baserecalibration} => (
             cmd_aliases => [qw{ pgbr }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -475,7 +475,7 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{psplit_fastq_file} => (
+        q{split_fastq_file} => (
             cmd_aliases => [qw{ psfq }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -497,7 +497,7 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{pgzip_fastq} => (
+        q{gzip_fastq} => (
             cmd_aliases   => [qw{ pgz }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Gzip fastq files},
@@ -507,7 +507,7 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{pfastqc} => (
+        q{fastqc} => (
             cmd_aliases   => [qw{ pfqc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Sequence quality analysis using FastQC},

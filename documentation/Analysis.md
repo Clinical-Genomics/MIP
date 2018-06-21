@@ -39,13 +39,13 @@ When not supplying the ``-rio`` flag MIP will copy in and out files from HDS and
 ### Excluding a program from the analysis
 
 ```Bash
-$ mip analyse rare_disease --fam 0 --config GRCh37_config_-v1.4-.yaml --rio --pmarkduplicates 0
+$ mip analyse rare_disease --fam 0 --config GRCh37_config_-v1.4-.yaml --rio --markduplicates 0
 ```
 
 ### Skipping a already processed module i.e expect that the ouput has already been generated
 
 ```Bash
-$ mip analyse rare_disease --fam 0 --config GRCh37_config_-v1.4-.yaml --rio --pmarkduplicates 2
+$ mip analyse rare_disease --fam 0 --config GRCh37_config_-v1.4-.yaml --rio --markduplicates 2
 ```
 
 ### Simulate standard analysis
@@ -75,12 +75,12 @@ $ mip analyse rare_disease --config 0/analysis/0_config.yaml --dra
 ### Turn on individual or consecutive programs 
 After performing a dry run all programs are set to simulation mode in the config. If you want run one or several programs set them to "1" in the config or supply them on the command line.
 ```Bash
-$ mip analyse rare_disease --config 0/analysis/0_config.yaml --pbwa_mem 1 --ppeddy 1
+$ mip analyse rare_disease --config 0/analysis/0_config.yaml --bwa_mem 1 --peddy 1
 ```
 
 ### Run all downstream dependencies starting from a program
 ```Bash
-$ mip analyse disease --config 0/analysis/0_config.yaml --start_with_program pgatk_variantrecalibration
+$ mip analyse disease --config 0/analysis/0_config.yaml --start_with_program gatk_variantrecalibration
 ```
 This will swith the mode for all downstream dependencies to run and all programs upstream of the program to simulation mode.
 
@@ -93,13 +93,13 @@ $ mip analyse rare_disease --fam 0 --config GRCh37_config_-v1.4-.yaml --rio --pp
 This will print a string with programs in mode 2 (expect ouput) in chronological order (as far as possible, some things are processed in parallel):
 
 ```Bash
-$ --psplit_fastq_file 2 --pgzip_fastq 2 --pfastqc 2 --pbwa_mem 2 --ppicardtools_mergesamfiles 2 --pmarkduplicates 2 --pgatk_realigner 2 --pgatk_baserecalibration 2 --pchanjo_sexcheck 2 --psambamba_depth 2 --pbedtools_genomecov 2 --ppicardtools_collectmultiplemetrics 2 --ppicardtools_collecthsmetrics 2 --prcovplots 2 --pcnvnator 2 --pdelly_call 2 --pdelly_reformat 2 --pmanta 2 --ptiddit 2 --psv_combinevariantcallsets 2 --psv_varianteffectpredictor 2 --psv_vcfparser 2 --psv_rankvariant 2 --psv_reformat 2 --psamtools_mpileup 2 --pfreebayes 2 --pgatk_haplotypecaller 2 --pgatk_genotypegvcfs 2 --pgatk_variantrecalibration 2 --pgatk_combinevariantcallsets 2 --pprepareforvariantannotationblock 2 --prhocall 2 --pvt 2 --pfrequency_filter 2 --pgatk_variantevalall 2 --pgatk_variantevalexome 2 --pvarianteffectpredictor 2 --pvcfparser 2 --psnpeff 2 --ppeddy 2 --pplink 2 --pvariant_integrity 2 --pevaluation 2 --prankvariant 2 --pendvariantannotationblock 2 --pqccollect 2 --pmultiqc 2 --panalysisrunstatus 2 --psacct 2
+$ --split_fastq_file 2 --gzip_fastq 2 --fastqc 2 --bwa_mem 2 --picardtools_mergesamfiles 2 --markduplicates 2 --gatk_realigner 2 --gatk_baserecalibration 2 --chanjo_sexcheck 2 --sambamba_depth 2 --bedtools_genomecov 2 --picardtools_collectmultiplemetrics 2 --picardtools_collecthsmetrics 2 --rcovplots 2 --cnvnator 2 --delly_call 2 --delly_reformat 2 --manta 2 --tiddit 2 --sv_combinevariantcallsets 2 --sv_varianteffectpredictor 2 --sv_vcfparser 2 --sv_rankvariant 2 --sv_reformat 2 --bcftools_mpileup 2 --freebayes 2 --gatk_haplotypecaller 2 --gatk_genotypegvcfs 2 --gatk_variantrecalibration 2 --gatk_combinevariantcallsets 2 --prepareforvariantannotationblock 2 --rhocall 2 --vt 2 --frequency_filter 2 --gatk_variantevalall 2 --gatk_variantevalexome 2 --varianteffectpredictor 2 --vcfparser 2 --snpeff 2 --peddy 2 --plink 2 --variant_integrity 2 --evaluation 2 --rankvariant 2 --endvariantannotationblock 2 --qccollect 2 --multiqc 2 --analysisrunstatus 2 --sacct 2
 ```
 
 Thus you will always have the actual program names that are supported facilitating starting from any step in the analysis for instance updating qc_sampleInfo.yaml and rerunning module in bamcalibrationblock skipping markduplicates:
 
 ```Bash
-$ mip analyse rare_disease --fam 0 --config GRCh37_config_-v1.4-.yaml --rio --psplit_fastq_file 2 --pgzip_fastq 2 --pfastqc 2 --pbwa_mem 2 --ppicardtools_mergesamfiles 2 --pmarkduplicates 0 --pgatk_realigner 2 --pgatk_baserecalibration 2 --pchanjo_sexcheck 2 --psambamba_depth 2 --pbedtools_genomecov 2 --ppicardtools_collectmultiplemetrics 2 --ppicardtools_collecthsmetrics 2 --prcovplots 2 --pcnvnator 2 --pdelly_call 2 --pdelly_reformat 2 --pmanta 2 --ptiddit 2 --psv_combinevariantcallsets 2 --psv_varianteffectpredictor 2 --psv_vcfparser 2 --psv_rankvariant 2 --psv_reformat 2 --psamtools_mpileup 2 --pfreebayes 2 --pgatk_haplotypecaller 2 --pgatk_genotypegvcfs 2 --pgatk_variantrecalibration 2 --pgatk_combinevariantcallsets 2 --pprepareforvariantannotationblock 2 --prhocall 2 --pvt 2 --pfrequency_filter 2 --pgatk_variantevalall 2 --pgatk_variantevalexome 2 --pvarianteffectpredictor 2 --pvcfparser 2 --psnpeff 2 --ppeddy 2 --pplink 2 --pvariant_integrity 2 --pevaluation 2 --prankvariant 2 --pendvariantannotationblock 2 --pqccollect 2 --pmultiqc 2 --panalysisrunstatus 2 --psacct 2
+$ mip analyse rare_disease --fam 0 --config GRCh37_config_-v1.4-.yaml --rio --split_fastq_file 2 --gzip_fastq 2 --fastqc 2 --bwa_mem 2 --picardtools_mergesamfiles 2 --markduplicates 0 --gatk_realigner 2 --gatk_baserecalibration 2 --chanjo_sexcheck 2 --sambamba_depth 2 --bedtools_genomecov 2 --picardtools_collectmultiplemetrics 2 --picardtools_collecthsmetrics 2 --rcovplots 2 --cnvnator 2 --delly_call 2 --delly_reformat 2 --manta 2 --tiddit 2 --sv_combinevariantcallsets 2 --sv_varianteffectpredictor 2 --sv_vcfparser 2 --sv_rankvariant 2 --sv_reformat 2 --bcftools_mpileup 2 --freebayes 2 --gatk_haplotypecaller 2 --gatk_genotypegvcfs 2 --gatk_variantrecalibration 2 --gatk_combinevariantcallsets 2 --prepareforvariantannotationblock 2 --rhocall 2 --vt 2 --frequency_filter 2 --gatk_variantevalall 2 --gatk_variantevalexome 2 --varianteffectpredictor 2 --vcfparser 2 --snpeff 2 --peddy 2 --plink 2 --variant_integrity 2 --evaluation 2 --rankvariant 2 --endvariantannotationblock 2 --qccollect 2 --multiqc 2 --analysisrunstatus 2 --sacct 2
 ```
 
 You can of course start or skip any number of modules as long as it is sane to do so (MIP will not check this but just execute)
@@ -107,5 +107,5 @@ You can of course start or skip any number of modules as long as it is sane to d
 ### You can also modulate the mode of '--pp' using --ppm:
 ```	  
 $ mip analyse rare_disease --fam 0 --config GRCh37_config_-v1.4-.yaml --rio --pp --ppm 1	
-$ --psplit_fastq_file 1 --pgzip_fastq 1 --pfastqc 1 --pbwa_mem 1 --ppicardtools_mergesamfiles 1 --pmarkduplicates 1 --pgatk_realigner 1 --pgatk_baserecalibration 1 --pchanjo_sexcheck 1 --psambamba_depth 1 --pbedtools_genomecov 1 --ppicardtools_collectmultiplemetrics 1 --ppicardtools_collecthsmetrics 1 --prcovplots 1 --pcnvnator 1 --pdelly_call 1 --pdelly_reformat 1 --pmanta 1 --ptiddit 1 --psv_combinevariantcallsets 1 --psv_varianteffectpredictor 1 --psv_vcfparser 1 --psv_rankvariant 1 --psv_reformat 1 --psamtools_mpileup 1 --pfreebayes 1 --pgatk_haplotypecaller 1 --pgatk_genotypegvcfs 1 --pgatk_variantrecalibration 1 --pgatk_combinevariantcallsets 1 --pprepareforvariantannotationblock 1 --prhocall 1 --pvt 1 --pfrequency_filter 1 --pgatk_variantevalall 1 --pgatk_variantevalexome 1 --pvarianteffectpredictor 1 --pvcfparser 1 --psnpeff 1 --ppeddy 1 --pplink 1 --pvariant_integrity 1 --pevaluation 1 --prankvariant 1 --pendvariantannotationblock 1 --pqccollect 1 --pmultiqc 1 --panalysisrunstatus 1 --psacct 1
+$ --split_fastq_file 1 --gzip_fastq 1 --fastqc 1 --bwa_mem 1 --picardtools_mergesamfiles 1 --markduplicates 1 --gatk_realigner 1 --gatk_baserecalibration 1 --chanjo_sexcheck 1 --sambamba_depth 1 --bedtools_genomecov 1 --picardtools_collectmultiplemetrics 1 --picardtools_collecthsmetrics 1 --rcovplots 1 --cnvnator 1 --delly_call 1 --delly_reformat 1 --manta 1 --tiddit 1 --sv_combinevariantcallsets 1 --sv_varianteffectpredictor 1 --sv_vcfparser 1 --sv_rankvariant 1 --sv_reformat 1 --bcftools_mpileup 1 --freebayes 1 --gatk_haplotypecaller 1 --gatk_genotypegvcfs 1 --gatk_variantrecalibration 1 --gatk_combinevariantcallsets 1 --prepareforvariantannotationblock 1 --rhocall 1 --vt 1 --frequency_filter 1 --gatk_variantevalall 1 --gatk_variantevalexome 1 --varianteffectpredictor 1 --vcfparser 1 --snpeff 1 --peddy 1 --plink 1 --variant_integrity 1 --evaluation 1 --rankvariant 1 --endvariantannotationblock 1 --qccollect 1 --multiqc 1 --analysisrunstatus 1 --sacct 1
 ```

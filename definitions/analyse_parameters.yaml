@@ -182,7 +182,7 @@ supported_capture_kit:
     latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
   type: mip
 ### Programs
-psplit_fastq_file:
+split_fastq_file:
   associated_program:
    - mip
   data_type: SCALAR
@@ -196,12 +196,12 @@ psplit_fastq_file:
   type: program
 split_fastq_file_read_batch:
   associated_program:
-   - psplit_fastq_file
+   - split_fastq_file
   data_type: SCALAR
   default: 25000000
   type: program_argument
 ## Gzip
-pgzip_fastq:
+gzip_fastq:
   associated_program:
    - mip
   data_type: SCALAR
@@ -212,7 +212,7 @@ pgzip_fastq:
    - gzip
   type: program
 ## FastQC
-pfastqc:
+fastqc:
   associated_program:
    - mip
   data_type: SCALAR

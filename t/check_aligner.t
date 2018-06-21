@@ -115,12 +115,12 @@ my $log = initiate_logger(
 ## Given one active aligner, when outdir_name is undefined
 my @broadcasts;
 my %active_parameter = (
-    pbwa_mem => 1,
+    bwa_mem => 1,
     verbose  => 1,
 );
 my %parameter = (
-    dynamic_parameter => { aligners    => [ qw{ pbwa_mem pstar }, ], },
-    pbwa_mem          => { outdir_name => q{.bam}, }
+    dynamic_parameter => { aligners    => [ qw{ bwa_mem pstar }, ], },
+    bwa_mem          => { outdir_name => q{.bam}, }
 );
 
 check_aligner(
@@ -134,7 +134,7 @@ check_aligner(
 );
 
 ## Then active aligner should be set
-is( $parameter{active_aligner}, q{pbwa_mem}, q{Set active aligner} );
+is( $parameter{active_aligner}, q{bwa_mem}, q{Set active aligner} );
 
 ## Then outdir_name should be set to active aligner
 is( $active_parameter{outaligner_dir},

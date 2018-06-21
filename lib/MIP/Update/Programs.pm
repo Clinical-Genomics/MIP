@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -143,7 +143,7 @@ sub update_program_mode_for_analysis_type {
         foreach my $program ( @{$programs_ref} ) {
 
             ## Update program mode
-            $active_parameter_href->{ q{p} . $program } = 0;
+            $active_parameter_href->{ $program } = 0;
 
             my $warning_msg =
                 q{Turned off: }

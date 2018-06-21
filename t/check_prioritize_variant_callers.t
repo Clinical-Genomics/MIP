@@ -118,19 +118,19 @@ my $log = initiate_logger(
 ## Given active callers, when priority string is ok
 my %active_parameter = (
     gatk_combinevariants_prioritize_caller => q{gatk,bcftools,freebayes},
-    pbcftools_mpileup                      => 1,
-    pfreebayes                             => 1,
-    pgatk_variantrecalibration             => 1,
+    bcftools_mpileup                      => 1,
+    freebayes                             => 1,
+    gatk_variantrecalibration             => 1,
 );
 
 my %parameter = (
     dynamic_parameter => {
         variant_callers =>
-          [qw{ pfreebayes pbcftools_mpileup pgatk_variantrecalibration}],
+          [qw{ freebayes bcftools_mpileup gatk_variantrecalibration}],
     },
-    pbcftools_mpileup          => { outdir_name => q{bcftools}, },
-    pfreebayes                 => { outdir_name => q{freebayes}, },
-    pgatk_variantrecalibration => { outdir_name => q{gatk}, },
+    bcftools_mpileup          => { outdir_name => q{bcftools}, },
+    freebayes                 => { outdir_name => q{freebayes}, },
+    gatk_variantrecalibration => { outdir_name => q{gatk}, },
 );
 
 my $is_ok = check_prioritize_variant_callers(
@@ -170,7 +170,7 @@ q{Throw fatal log message if parameter does not contain active variant caller}
 );
 
 ## Given an not activated variant caller
-$active_parameter{pbcftools_mpileup} = 0;
+$active_parameter{bcftools_mpileup} = 0;
 $active_parameter{gatk_combinevariants_prioritize_caller} =
   q{gatk,bcftools,freebayes};
 
@@ -195,7 +195,7 @@ q{Throw fatal log message if parameter does not contains deactive variant caller
 );
 
 ## Given an other variant caller, when not part of priority string
-$active_parameter{pbcftools_mpileup} = 1;
+$active_parameter{bcftools_mpileup} = 1;
 $active_parameter{gatk_combinevariants_prioritize_caller} =
   q{gatk,bcftools,freebayes, NOT_A_VARIANT_CALLER};
 

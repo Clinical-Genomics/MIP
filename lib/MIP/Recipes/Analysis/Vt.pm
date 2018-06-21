@@ -193,16 +193,15 @@ sub analysis_vt {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
 
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -242,12 +241,12 @@ sub analysis_vt {
     my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
 
     # Used downstream
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Tags
-    my $infile_tag = $file_info_href->{$family_id}{prhocall}{file_tag};
+    my $infile_tag = $file_info_href->{$family_id}{rhocall}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -269,7 +268,7 @@ sub analysis_vt {
     );
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -340,7 +339,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
         );
 
         if (   $contig_index == 0
-            && $mip_program_mode == 1 )
+            && $program_mode == 1 )
         {
 
             ## Split to enable submission to &SampleInfoQC later
@@ -415,7 +414,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
     say {$FILEHANDLE} q{wait}, $NEWLINE;
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -587,16 +586,15 @@ sub analysis_vt_rio {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
 
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -617,12 +615,12 @@ sub analysis_vt_rio {
     my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
 
     # Used downstream
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Tags
-    my $infile_tag = $file_info_href->{$family_id}{prhocall}{file_tag};
+    my $infile_tag = $file_info_href->{$family_id}{rhocall}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -644,7 +642,7 @@ sub analysis_vt_rio {
     );
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -698,7 +696,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
         );
 
         if (   $contig_index == 0
-            && $mip_program_mode == 1 )
+            && $program_mode == 1 )
         {
 
             #Split to enable submission to &SampleInfoQC later

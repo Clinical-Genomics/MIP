@@ -183,16 +183,15 @@ sub analysis_star_aln {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
       );
 
@@ -202,13 +201,13 @@ sub analysis_star_aln {
 
     ## Assign file_tags
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
 
     ### Assign suffix
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
@@ -368,7 +367,7 @@ sub analysis_star_aln {
         ## Close FILEHANDLES
         close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-        if ( $mip_program_mode == 1 ) {
+        if ( $program_mode == 1 ) {
 
             my $program_outfile_path =
               $outfile_path_prefix . $UNDERSCORE . q{bam};

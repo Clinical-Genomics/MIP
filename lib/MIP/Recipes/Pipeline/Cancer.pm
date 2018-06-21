@@ -182,7 +182,7 @@ sub pipeline_cancer {
 
     ### Analysis Recipes
     ## FastQC per sample_id
-    if ( $active_parameter_href->{pfastqc} ) {
+    if ( $active_parameter_href->{fastqc} ) {
 
         $log->info(q{[Fastqc]});
 
@@ -213,7 +213,7 @@ sub pipeline_cancer {
     }
 
 ## Aligning fastq files based on sample_id
-    if ( $active_parameter_href->{pbwa_mem} ) {
+    if ( $active_parameter_href->{bwa_mem} ) {
 
         $log->info(q{[BWA Mem]});
 
@@ -243,7 +243,7 @@ sub pipeline_cancer {
     }
 
 ## Merge bam files
-    if ( $active_parameter_href->{ppicardtools_mergesamfiles} ) {
+    if ( $active_parameter_href->{picardtools_mergesamfiles} ) {
 
         $log->info(q{[Picardtools mergesamfiles]});
 
@@ -276,7 +276,7 @@ sub pipeline_cancer {
     }
 
 ## MarkDuplicates
-    if ( $active_parameter_href->{pmarkduplicates} ) {
+    if ( $active_parameter_href->{markduplicates} ) {
 
         $log->info(q{[Markduplicates]});
 
@@ -309,7 +309,7 @@ sub pipeline_cancer {
     }
 
 ## Base recalibrator
-    if ( $active_parameter_href->{pgatk_baserecalibration} ) {
+    if ( $active_parameter_href->{gatk_baserecalibration} ) {
 
         $log->info(q{[GATK baserecalibrator/printreads]});
 
@@ -342,7 +342,7 @@ sub pipeline_cancer {
     }
 
 ## Chanjo sex check
-    if ( $active_parameter_href->{pchanjo_sexcheck} ) {
+    if ( $active_parameter_href->{chanjo_sexcheck} ) {
 
         $log->info(q{[Chanjo sexcheck]});
 
@@ -375,7 +375,7 @@ sub pipeline_cancer {
     }
 
 ## Sambamba depth
-    if ( $active_parameter_href->{psambamba_depth} ) {
+    if ( $active_parameter_href->{sambamba_depth} ) {
 
         $log->info(q{[Sambamba depth]});
 
@@ -408,7 +408,7 @@ sub pipeline_cancer {
     }
 
 ## Picard collect multiple metrics
-    if ( $active_parameter_href->{ppicardtools_collectmultiplemetrics} ) {
+    if ( $active_parameter_href->{picardtools_collectmultiplemetrics} ) {
 
         $log->info(q{[Picardtools collectmultiplemetrics]});
 
@@ -442,7 +442,7 @@ sub pipeline_cancer {
     }
 
 ## Picard Collect HS metrics
-    if ( $active_parameter_href->{ppicardtools_collecthsmetrics} ) {
+    if ( $active_parameter_href->{picardtools_collecthsmetrics} ) {
 
         $log->info(q{[Picardtools collecthsmetrics]});
 
@@ -476,7 +476,7 @@ sub pipeline_cancer {
     }
 
 ## QC collect
-    if ( $active_parameter_href->{pqccollect} ) {
+    if ( $active_parameter_href->{qccollect} ) {
 
         $log->info(q{[Qccollect]});
 
@@ -499,7 +499,7 @@ sub pipeline_cancer {
     }
 
 ## MultiQC
-    if ( $active_parameter_href->{pmultiqc} ) {
+    if ( $active_parameter_href->{multiqc} ) {
 
         $log->info(q{[Multiqc]});
 
@@ -515,7 +515,7 @@ sub pipeline_cancer {
         );
     }
 
-    if ( $active_parameter_href->{panalysisrunstatus} ) {
+    if ( $active_parameter_href->{analysisrunstatus} ) {
 
         $log->info(q{[Analysis run status]});
 
@@ -531,7 +531,7 @@ sub pipeline_cancer {
         );
     }
 
-    if ( $active_parameter_href->{psacct} ) {
+    if ( $active_parameter_href->{sacct} ) {
 
         $log->info(q{[Sacct]});
 

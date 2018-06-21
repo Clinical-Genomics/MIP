@@ -130,10 +130,10 @@ my %active_parameter = (
     human_genome_reference =>
       catfile( $Bin, qw{data references GRCh37_homo_sapiens_-d5-.fasta} ),
     mip                     => 1,
-    pgatk_baserecalibration => 1,
-    pgatk_genotypegvcfs     => 1,
-    psnpeff                 => 1,
-    psv_vcfparser           => 0,
+    gatk_baserecalibration => 1,
+    gatk_genotypegvcfs     => 1,
+    snpeff                 => 1,
+    sv_vcfparser           => 0,
 
     # To test hash parameter
     snpsift_annotation_files => {

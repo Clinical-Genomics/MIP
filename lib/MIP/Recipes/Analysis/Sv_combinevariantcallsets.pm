@@ -177,16 +177,15 @@ sub analysis_sv_combinevariantcallsets {
     my @parallel_chains;
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
       );
 
@@ -218,11 +217,11 @@ sub analysis_sv_combinevariantcallsets {
     my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
         $family_id, $outaligner_dir );
     ## Used downstream
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Paths
     my %file_path_prefix;
@@ -237,7 +236,7 @@ sub analysis_sv_combinevariantcallsets {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -469,7 +468,7 @@ sub analysis_sv_combinevariantcallsets {
         my @program_source_commands = get_program_parameters(
             {
                 active_parameter_href => $active_parameter_href,
-                mip_program_name      => q{genmod},
+                program_name      => q{genmod},
             }
         );
 
@@ -542,7 +541,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
           . $alt_file_tag
           . $outfile_suffix, $NEWLINE;
 
-        if ( $mip_program_mode == 1 ) {
+        if ( $program_mode == 1 ) {
 
             add_program_outfile_to_sample_info(
                 {
@@ -635,7 +634,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         my $qc_svdb_outfile =
           $family_id . $outfile_tag . $call_type . $outfile_suffix;
@@ -827,7 +826,7 @@ sub _migrate_joint_callers_file {
 
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
 
-    my $joint_caller = q{pmanta | pdelly_reformat | ptiddit};
+    my $joint_caller = q{manta | delly_reformat | tiddit};
 
   STRUCTURAL_CALLER:
     foreach my $structural_variant_caller ( @{$structural_variant_callers_ref} )
@@ -1007,7 +1006,7 @@ sub _migrate_and_preprocess_single_callers_file {
 
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
 
-    my $joint_caller = q{pmanta | pdelly_reformat | ptiddit};
+    my $joint_caller = q{manta | delly_reformat | tiddit};
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -1195,7 +1194,7 @@ sub _merge_or_reformat_single_callers_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $joint_caller = q{pmanta | pdelly_reformat | ptiddit};
+    my $joint_caller = q{manta | delly_reformat | tiddit};
 
   STRUCTURAL_CALLER:
     foreach my $structural_variant_caller ( @{$structural_variant_callers_ref} )

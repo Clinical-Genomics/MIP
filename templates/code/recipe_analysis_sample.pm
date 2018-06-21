@@ -161,15 +161,14 @@ sub analysis_recipe {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -189,7 +188,7 @@ sub analysis_recipe {
     my $infile_tag =
       $file_info_href->{$sample_id}{UPPSTREAM_DEPENDENCY_PROGRAM}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
 
     my $infile_prefix  = $merged_infile_prefix . $infile_tag;
     my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
@@ -206,7 +205,7 @@ sub analysis_recipe {
     my $outfile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
-            program_name   => $mip_program_name,
+            program_name   => $program_name,
             suffix_key     => q{outfile_suffix},
         }
     );
@@ -241,7 +240,7 @@ sub analysis_recipe {
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         my $program_outfile_path = catfile( $outsample_directory,
             $outfile_prefix . $UNDERSCORE . q{ENDING} );

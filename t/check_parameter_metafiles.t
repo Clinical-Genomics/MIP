@@ -178,7 +178,7 @@ is( $parameter{$parameter_name}{build_file},
             qw{ data references GRCh37_agilent_sureselect_targets_cre_-v1-.bed }
         ) => q{sample1},
     },
-    ppicardtools_collecthsmetrics => 1,
+    picardtools_collecthsmetrics => 1,
 );
 
 check_parameter_metafiles(
@@ -215,7 +215,7 @@ q{Set build file switch for hash parameter reference with mixed existence to 1}
 $active_parameter{bwa_build_reference} = 1;
 $active_parameter{human_genome_reference} =
   catfile( $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.fasta } );
-$active_parameter{pbwa_mem} = 1;
+$active_parameter{bwa_mem} = 1;
 
 check_parameter_metafiles(
     {

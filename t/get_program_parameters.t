@@ -97,18 +97,18 @@ diag(   q{Test get_program_parameters from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $mip_program_name = q{pgenmod};
+my $program_name = q{pgenmod};
 
 my %active_parameter = (
     program_source_environment_command => {
-        $mip_program_name => [ qw{ source activate mip_pyv3.6 }, ],
+        $program_name => [ qw{ source activate mip_pyv3.6 }, ],
     },
 );
 
 my @program_source_environment_cmds = get_program_parameters(
     {
         active_parameter_href => \%active_parameter,
-        mip_program_name      => $mip_program_name,
+        program_name      => $program_name,
     }
 );
 

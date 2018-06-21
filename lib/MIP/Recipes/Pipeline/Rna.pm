@@ -178,7 +178,7 @@ sub pipeline_rna {
 
     ### Analysis recipes
     ## Run FastQC
-    if ( $active_parameter_href->{pfastqc} ) {
+    if ( $active_parameter_href->{fastqc} ) {
 
         $log->info(q{[Fastqc]});
 
@@ -207,7 +207,7 @@ sub pipeline_rna {
     }
 
     ## Star aln
-    if ( $active_parameter_href->{pstar_aln} ) {
+    if ( $active_parameter_href->{star_aln} ) {
 
         $log->info(q{[Star Aln]});
 
@@ -237,7 +237,7 @@ sub pipeline_rna {
     }
 
     ## Salmon Quant
-    if ( $active_parameter_href->{psalmon_quant} ) {
+    if ( $active_parameter_href->{salmon_quant} ) {
 
         $log->info(q{[Salmon Quant]});
 
@@ -267,7 +267,7 @@ sub pipeline_rna {
     }
 
     ## Star fusion
-    if ( $active_parameter_href->{pstar_fusion} ) {
+    if ( $active_parameter_href->{star_fusion} ) {
 
         $log->info(q{[Star Fusion]});
 
@@ -296,7 +296,7 @@ sub pipeline_rna {
         }
     }
     ## Always run merge even for single samples to rename them correctly for standardised downstream processing.
-    if ( $active_parameter_href->{ppicardtools_mergesamfiles} ) {
+    if ( $active_parameter_href->{picardtools_mergesamfiles} ) {
 
         $log->info(q{[Picardtools mergesamfiles]});
 
@@ -329,7 +329,7 @@ sub pipeline_rna {
     }
 
     ## Picard MarkDuplicates
-    if ( $active_parameter_href->{pmarkduplicates} ) {
+    if ( $active_parameter_href->{markduplicates} ) {
 
         $log->info(q{[Markduplicates]});
 
@@ -362,7 +362,7 @@ sub pipeline_rna {
     }
 
     ## GATK SplitNCigarReads
-    if ( $active_parameter_href->{pgatk_splitncigarreads} ) {
+    if ( $active_parameter_href->{gatk_splitncigarreads} ) {
 
         $log->info(q{[GATK SplitNCigarReads]});
 
@@ -395,7 +395,7 @@ sub pipeline_rna {
     }
 
     ## Base recalibration
-    if ( $active_parameter_href->{pgatk_baserecalibration} ) {
+    if ( $active_parameter_href->{gatk_baserecalibration} ) {
 
         $log->info(q{[GATK baserecalibrator/printreads]});
 
@@ -428,7 +428,7 @@ sub pipeline_rna {
     }
 
     ## GATK HaplotypeCaller
-    if ( $active_parameter_href->{pgatk_haplotypecaller} ) {
+    if ( $active_parameter_href->{gatk_haplotypecaller} ) {
 
         $log->info(q{[GATK HaplotypeCaller]});
 
@@ -461,7 +461,7 @@ sub pipeline_rna {
     }
 
     ## GATK ASEReadCounter
-    if ( $active_parameter_href->{pgatk_asereadcounter} ) {
+    if ( $active_parameter_href->{gatk_asereadcounter} ) {
 
         $log->info(q{[GATK ASEReadCounter]});
 
@@ -494,7 +494,7 @@ sub pipeline_rna {
     }
 
     ## GATK VariantFiltration
-    if ( $active_parameter_href->{pgatk_variantfiltration} ) {
+    if ( $active_parameter_href->{gatk_variantfiltration} ) {
 
         $log->info(q{[GATK VariantFiltration]});
 

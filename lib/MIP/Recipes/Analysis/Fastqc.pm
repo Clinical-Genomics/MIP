@@ -156,13 +156,12 @@ sub analysis_fastqc {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -209,7 +208,7 @@ sub analysis_fastqc {
     );
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{$mip_program_name}{infile_suffix};
+    my $infile_suffix = $parameter_href->{$program_name}{infile_suffix};
 
     ## Copies files from source to destination
     migrate_files(
@@ -252,7 +251,7 @@ sub analysis_fastqc {
         say {$FILEHANDLE} q{&}, $NEWLINE;
 
         ## Collect QC metadata info for active program for later use
-        if ( $mip_program_mode == 1 ) {
+        if ( $program_mode == 1 ) {
 
             my $qc_fastqc_outdirectory =
               catdir( $outsample_directory,
@@ -306,7 +305,7 @@ sub analysis_fastqc {
 
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         slurm_submit_job_no_dependency_dead_end(
             {

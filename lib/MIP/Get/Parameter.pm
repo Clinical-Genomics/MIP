@@ -320,13 +320,13 @@ sub get_module_parameters {
 ## Function : Get core number, time and source environment command
 ## Returns  : $core_number, $time, @source_environment_cmds
 ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##          : $mip_program_name      => MIP program name
+##          : $program_name          => Program name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $mip_program_name;
+    my $program_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -336,10 +336,10 @@ sub get_module_parameters {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        mip_program_name => {
+        program_name => {
             defined     => 1,
             required    => 1,
-            store       => \$mip_program_name,
+            store       => \$program_name,
             strict_type => 1,
         },
     };
@@ -351,12 +351,12 @@ sub get_module_parameters {
 
     if (
         exists $active_parameter_href->{module_source_environment_command}
-        {$mip_program_name} )
+        {$program_name} )
     {
 
         @source_environment_cmds =
           @{ $active_parameter_href->{module_source_environment_command}
-              {$mip_program_name} };
+              {$program_name} };
     }
     elsif ( $active_parameter_href->{source_main_environment_commands}
         && @{ $active_parameter_href->{source_main_environment_commands} } )
@@ -366,8 +366,8 @@ sub get_module_parameters {
           @{ $active_parameter_href->{source_main_environment_commands} };
     }
     my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+      $active_parameter_href->{module_core_number}{$program_name};
+    my $time = $active_parameter_href->{module_time}{$program_name};
 
     return $core_number, $time, @source_environment_cmds;
 }
@@ -377,13 +377,13 @@ sub get_program_parameters {
 ##Function : Get specific source environment command for program
 ##Returns  : @source_environment_cmds
 ##Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##         : $mip_program_name      => MIP program name
+##         : $program_name          => Program name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $mip_program_name;
+    my $program_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -393,10 +393,10 @@ sub get_program_parameters {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        mip_program_name => {
+        program_name => {
             defined     => 1,
             required    => 1,
-            store       => \$mip_program_name,
+            store       => \$program_name,
             strict_type => 1,
         },
     };
@@ -408,12 +408,12 @@ sub get_program_parameters {
 
     if (
         exists $active_parameter_href->{program_source_environment_command}
-        {$mip_program_name} )
+        {$program_name} )
     {
 
         @source_environment_cmds =
           @{ $active_parameter_href->{program_source_environment_command}
-              {$mip_program_name} };
+              {$program_name} };
     }
     return @source_environment_cmds;
 }

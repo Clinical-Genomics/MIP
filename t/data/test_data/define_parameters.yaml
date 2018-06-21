@@ -37,7 +37,7 @@ pbamcalibrationblock:
   file_tag: nofile_tag
   reduce_io: 1
   type: program
-pbwa_mem:
+bwa_mem:
   associated_program:
    - mip
   chain: MAIN
@@ -58,7 +58,7 @@ pbwa_mem:
   type: program
 bwa_mem_rapid_db:
   associated_program:
-   - pbwa_mem
+   - bwa_mem
   build_file: 0
   data_type: SCALAR
   exists_check: file

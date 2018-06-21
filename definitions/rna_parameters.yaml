@@ -4,12 +4,12 @@
 human_genome_reference:
   associated_program:
    - mip
-   - pgatk_asereadcounter
-   - pgatk_baserecalibration
-   - pgatk_haplotypecaller
-   - pgatk_splitncigarreads
-   - pgatk_variantfiltration
-   - pstar_aln
+   - gatk_asereadcounter
+   - gatk_baserecalibration
+   - gatk_haplotypecaller
+   - gatk_splitncigarreads
+   - gatk_variantfiltration
+   - star_aln
   build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
@@ -19,47 +19,47 @@ human_genome_reference:
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 gatk_bundle_download_version:
   associated_program:
-   - pgatk_asereadcounter
-   - pgatk_baserecalibration
-   - pgatk_haplotypecaller
+   - gatk_asereadcounter
+   - gatk_baserecalibration
+   - gatk_haplotypecaller
   data_type: SCALAR
   default: 2.8
   type: program_argument
 gatk_disable_auto_index_and_file_lock:
   associated_program:
-   - pgatk_asereadcounter
-   - pgatk_baserecalibration
-   - pgatk_haplotypecaller
-   - pgatk_splitncigarreads
-   - pgatk_variantfiltration
+   - gatk_asereadcounter
+   - gatk_baserecalibration
+   - gatk_haplotypecaller
+   - gatk_splitncigarreads
+   - gatk_variantfiltration
   data_type: SCALAR
   default: 0
   type: program_argument
 gatk_downsample_to_coverage:
   associated_program:
-   - pgatk_asereadcounter
-   - pgatk_baserecalibration
-   - pgatk_haplotypecaller
+   - gatk_asereadcounter
+   - gatk_baserecalibration
+   - gatk_haplotypecaller
   data_type: SCALAR
   default: 1000
   type: program_argument
 gatk_logging_level:
   associated_program:
-   - pgatk_asereadcounter
-   - pgatk_baserecalibration
-   - pgatk_haplotypecaller
-   - pgatk_splitncigarreads
-   - pgatk_variantfiltration
+   - gatk_asereadcounter
+   - gatk_baserecalibration
+   - gatk_haplotypecaller
+   - gatk_splitncigarreads
+   - gatk_variantfiltration
   data_type: SCALAR
   default: INFO
   type: program_argument
 gatk_path:
   associated_program:
-   - pgatk_asereadcounter
-   - pgatk_baserecalibration
-   - pgatk_haplotypecaller
-   - pgatk_splitncigarreads
-   - pgatk_variantfiltration
+   - gatk_asereadcounter
+   - gatk_baserecalibration
+   - gatk_haplotypecaller
+   - gatk_splitncigarreads
+   - gatk_variantfiltration
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -67,11 +67,11 @@ gatk_path:
 ## java large pages - affects all modules using java
 java_use_large_pages:
   associated_program:
-   - pgatk_asereadcounter
-   - pgatk_baserecalibration
-   - pgatk_haplotypecaller
-   - pgatk_variantfiltration
-   - pstar_aln
+   - gatk_asereadcounter
+   - gatk_baserecalibration
+   - gatk_haplotypecaller
+   - gatk_variantfiltration
+   - star_aln
   data_type: SCALAR
   default: 0
   type: program_argument
@@ -81,36 +81,36 @@ module_time:
    - mip
   data_type: HASH
   default:
-    pfastqc: 1
-    pgatk_asereadcounter: 2
-    pgatk_baserecalibration: 5
-    pgatk_haplotypecaller: 2
-    pgatk_splitncigarreads: 1
-    pgatk_variantfiltration: 1
-    pgzip_fastq: 2
-    pmarkduplicates: 4
-    ppicardtools_mergesamfiles: 2
-    psalmon_quant: 5
-    pstar_aln: 5
-    pstar_fusion: 1
+    fastqc: 1
+    gatk_asereadcounter: 2
+    gatk_baserecalibration: 5
+    gatk_haplotypecaller: 2
+    gatk_splitncigarreads: 1
+    gatk_variantfiltration: 1
+    gzip_fastq: 2
+    markduplicates: 4
+    picardtools_mergesamfiles: 2
+    salmon_quant: 5
+    star_aln: 5
+    star_fusion: 1
   type: mip
 module_core_number:
   associated_program:
    - mip
   data_type: HASH
   default:
-    pfastqc: 0
-    pgatk_asereadcounter: 1
-    pgatk_baserecalibration: 16
-    pgatk_haplotypecaller: 16
-    pgatk_splitncigarreads: 16
-    pgatk_variantfiltration: 1
-    pgzip_fastq: 0
-    pmarkduplicates: 16
-    ppicardtools_mergesamfiles: 16
-    psalmon_quant: 1
-    pstar_aln: 16
-    pstar_fusion: 1
+    fastqc: 0
+    gatk_asereadcounter: 1
+    gatk_baserecalibration: 16
+    gatk_haplotypecaller: 16
+    gatk_splitncigarreads: 16
+    gatk_variantfiltration: 1
+    gzip_fastq: 0
+    markduplicates: 16
+    picardtools_mergesamfiles: 16
+    salmon_quant: 1
+    star_aln: 16
+    star_fusion: 1
   type: mip
 ## Choosen MIP Aligner
 outaligner_dir:
@@ -121,16 +121,16 @@ outaligner_dir:
   type: mip
 picardtools_path:
   associated_program:
-   - pmarkduplicates
-   - ppicardtools_mergesamfiles
-   - pstar_aln
+   - markduplicates
+   - picardtools_mergesamfiles
+   - star_aln
   data_type: SCALAR
   exists_check: directory
   type: path
   update_path: absolute_path
 ###Programs
 ## Salmon
-psalmon_quant:
+salmon_quant:
   associated_program:
    - mip
   data_type: SCALAR
@@ -143,12 +143,12 @@ psalmon_quant:
   type: program
 salmon_rna_lib_configuration:
   associated_program:
-   - psalmon_quant
+   - salmon_quant
   data_type: SCALAR
   default: ISF
   type: program_argument
 ## Star Aln
-pstar_aln:
+star_aln:
   associated_program:
    - mip
   data_type: SCALAR
@@ -162,42 +162,42 @@ pstar_aln:
   type: program
 align_intron_max:
   associated_program:
-   - pstar_aln
+   - star_aln
   data_type: SCALAR
   default: 100000
   type: program_argument
 align_mates_gap_max:
   associated_program:
-   - pstar_aln
+   - star_aln
   data_type: SCALAR
   default: 100000
   type: program_argument
 align_sjdb_overhang_min:
   associated_program:
-   - pstar_aln
+   - star_aln
   data_type: SCALAR
   default: 10
   type: program_argument
 chim_junction_overhang_min:
   associated_program:
-   - pstar_aln
+   - star_aln
   data_type: SCALAR
   default: 12
   type: program_argument
 chim_segment_min:
   associated_program:
-   - pstar_aln
+   - star_aln
   data_type: SCALAR
   default: 12
   type: program_argument
 two_pass_mode:
   associated_program:
-   - pstar_aln
+   - star_aln
   data_type: SCALAR
   default: Basic
   type: program_argument
 ## Star Fusion
-pstar_fusion:
+star_fusion:
   associated_program:
    - mip
   data_type: SCALAR
@@ -209,7 +209,7 @@ pstar_fusion:
     - STAR-Fusion
   type: program
 ## Merge bam files
-ppicardtools_mergesamfiles:
+picardtools_mergesamfiles:
   associated_program:
    - mip
   data_type: SCALAR
@@ -217,7 +217,7 @@ ppicardtools_mergesamfiles:
   file_tag: _merged
   type: program
 ## Mark duplicates
-pmarkduplicates:
+markduplicates:
   associated_program:
    - mip
   data_type: SCALAR
@@ -228,36 +228,36 @@ pmarkduplicates:
   type: program
 markduplicates_picardtools_markduplicates:
   associated_program:
-   - pmarkduplicates
+   - markduplicates
   data_type: SCALAR
   default: 0
   type: program_argument
 markduplicates_sambamba_markdup:
   associated_program:
-   - pmarkduplicates
+   - markduplicates
   data_type: SCALAR
   default: 0
   type: program_argument
 markduplicates_sambamba_markdup_hash_table_size:
   associated_program:
-   - pmarkduplicates
+   - markduplicates
   data_type: SCALAR
   default: 262144
   type: program_argument
 markduplicates_sambamba_markdup_io_buffer_size:
   associated_program:
-   - pmarkduplicates
+   - markduplicates
   data_type: SCALAR
   default: 2048
   type: program_argument
 markduplicates_sambamba_markdup_overflow_list_size:
   associated_program:
-   - pmarkduplicates
+   - markduplicates
   data_type: SCALAR
   default: 200000
   type: program_argument
 ## GATK SplitNCigarReads
-pgatk_splitncigarreads:
+gatk_splitncigarreads:
   associated_program:
     - mip
   data_type: SCALAR
@@ -265,7 +265,7 @@ pgatk_splitncigarreads:
   file_tag: _splitcigar
   type: program
 ## GATK BAM Calibration
-pgatk_baserecalibration:
+gatk_baserecalibration:
   associated_program:
    - mip
   data_type: SCALAR
@@ -274,7 +274,7 @@ pgatk_baserecalibration:
   type: program
 gatk_baserecalibration_covariates:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   element_separator: ,
   data_type: ARRAY
   default:
@@ -285,13 +285,13 @@ gatk_baserecalibration_covariates:
   type: program_argument
 gatk_baserecalibration_disable_indel_qual:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   data_type: SCALAR
   default: 0
   type: program_argument
 gatk_baserecalibration_known_sites:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   element_separator: ,
   data_type: ARRAY
   default:
@@ -303,7 +303,7 @@ gatk_baserecalibration_known_sites:
   type: path
 gatk_baserecalibration_read_filters:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   element_separator: ,
   data_type: ARRAY
   default:
@@ -311,7 +311,7 @@ gatk_baserecalibration_read_filters:
   type: program_argument
 gatk_baserecalibration_static_quantized_quals:
   associated_program:
-   - pgatk_baserecalibration
+   - gatk_baserecalibration
   element_separator: ,
   data_type: ARRAY
   mandatory: no
@@ -322,7 +322,7 @@ gatk_baserecalibration_static_quantized_quals:
    - 40
   type: program_argument
 ## GATK Genotype
-pgatk_haplotypecaller:
+gatk_haplotypecaller:
   associated_program:
    - mip
   data_type: SCALAR
@@ -332,7 +332,7 @@ pgatk_haplotypecaller:
   type: program
 gatk_haplotypecaller_annotation:
   associated_program:
-   - pgatk_haplotypecaller
+   - gatk_haplotypecaller
   element_separator: ,
   data_type: ARRAY
   default:
@@ -359,26 +359,26 @@ gatk_haplotypecaller_annotation:
 #StrandOddsRatio ;  #Strand bias estimated by the Symmetric Odds Ratio test
 gatk_haplotypecaller_no_soft_clipped_bases:
   associated_program:
-   - pgatk_haplotypecaller
+   - gatk_haplotypecaller
   data_type: SCALAR
   default: 0
   type: program_argument
 gatk_haplotypecaller_pcr_indel_model:
   associated_program:
-   - pgatk_haplotypecaller
+   - gatk_haplotypecaller
   data_type: SCALAR
   default: CONSERVATIVE
   type: program_argument
 gatk_haplotypecaller_snp_known_set:
   associated_program:
-   - pgatk_haplotypecaller
+   - gatk_haplotypecaller
   data_type: SCALAR
   default: GRCh37_dbsnp_-138-.vcf
   exists_check: file
   reference: reference_dir
   type: path
 ## GATK ASE
-pgatk_asereadcounter:
+gatk_asereadcounter:
   associated_program:
    - mip
   data_type: SCALAR
@@ -387,7 +387,7 @@ pgatk_asereadcounter:
   outfile_suffix: ".csv"
   type: program
 ## GATK VariantFiltration
-pgatk_variantfiltration:
+gatk_variantfiltration:
   associated_program:
     - mip
   data_type: SCALAR
@@ -397,13 +397,13 @@ pgatk_variantfiltration:
   type: program
 gatk_variantfiltration_cluster_size:
   associated_program:
-    - pgatk_variantfiltration
+    - gatk_variantfiltration
   data_type: SCALAR
   default: 3
   type: program_argument
 gatk_variantfiltration_filter:
   associated_program:
-    - pgatk_variantfiltration
+    - gatk_variantfiltration
   data_type: HASH
   default:
     FS: "FS > 30.0"
@@ -411,7 +411,7 @@ gatk_variantfiltration_filter:
   type: program_argument
 gatk_variantfiltration_cluster_window_size:
   associated_program:
-    - pgatk_variantfiltration
+    - gatk_variantfiltration
   data_type: SCALAR
   default: 35
   type: program_argument

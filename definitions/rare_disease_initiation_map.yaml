@@ -1,83 +1,83 @@
 CHAIN_ALL:
    - CHAIN_MAIN:
-      - pgzip_fastq
+      - gzip_fastq
 # Parallel chain (branch)
    - CHAIN_SPLITFASTQ:
-      - psplit_fastq_file
+      - split_fastq_file
    - CHAIN_FASTQ:
-      - pfastqc
+      - fastqc
    - CHAIN_MAIN:
-      - pbwa_mem
-      - ppicardtools_mergesamfiles
-      - pmarkduplicates
-      - pgatk_realigner
-      - pgatk_baserecalibration
+      - bwa_mem
+      - picardtools_mergesamfiles
+      - markduplicates
+      - gatk_realigner
+      - gatk_baserecalibration
 # Parallel chains (branches), which inherit from MAIN in initiation
       - CHAIN_CHSEX:
-         - pchanjo_sexcheck
+         - chanjo_sexcheck
       - CHAIN_STSUBSMT:
-         - psamtools_subsample_mt
+         - samtools_subsample_mt
       - CHAIN_SBCOV:
-         - psambamba_depth
+         - sambamba_depth
       - CHAIN_PTMME:
-         - ppicardtools_collectmultiplemetrics
+         - picardtools_collectmultiplemetrics
       - CHAIN_PTCHSM:
-         - ppicardtools_collecthsmetrics
+         - picardtools_collecthsmetrics
       - CHAIN_BEDCOV:
-         - pbedtools_genomecov
-         - prcovplots
+         - bedtools_genomecov
+         - rcovplots
       - CHAIN_SV:
 # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_SV after execution
          - PARALLEL:
-            - pcnvnator
-            - pexpansionhunter
-            - pmanta
-            - ptiddit
+            - cnvnator
+            - expansionhunter
+            - manta
+            - tiddit
             - PDELLY_CALL:
-               - pdelly_call
-               - pdelly_reformat
-         - psv_combinevariantcallsets
-         - psv_varianteffectpredictor
-         - psv_vcfparser
-         - psv_rankvariant
-         - psv_reformat
-         - pvcf2cytosure
+               - delly_call
+               - delly_reformat
+         - sv_combinevariantcallsets
+         - sv_varianteffectpredictor
+         - sv_vcfparser
+         - sv_rankvariant
+         - sv_reformat
+         - vcf2cytosure
    - CHAIN_MAIN:
 # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
       - PARALLEL: 
-         - pfreebayes
-         - pbcftools_mpileup
-         - PGATK_HAPLOTYPECALLER:
-            - pgatk_haplotypecaller
-            - pgatk_genotypegvcfs
-            - pgatk_variantrecalibration
-      - pgatk_combinevariantcallsets
+         - freebayes
+         - bcftools_mpileup
+         - GATK_HAPLOTYPECALLER:
+            - gatk_haplotypecaller
+            - gatk_genotypegvcfs
+            - gatk_variantrecalibration
+      - gatk_combinevariantcallsets
 # Parallel chains (branches), which inherit from MAIN in initiation
       - CHAIN_PEDDY:
-         - ppeddy
+         - peddy
       - CHAIN_PLINK:
-         - pplink
+         - plink
       - CHAIN_VINTEGRITY:
-         - pvariant_integrity
+         - variant_integrity
       - CHAIN_RTEVAL:
-         - prtg_vcfeval
+         - rtg_vcfeval
       - CHAIN_PTEVAL:
-         - pevaluation
+         - evaluation
       - CHAIN_GATKEVALALL:
-         - pgatk_variantevalall
+         - gatk_variantevalall
    - CHAIN_MAIN:
-      - pprepareforvariantannotationblock
-      - prhocall
-      - pvt
-      - pfrequency_filter
-      - pvarianteffectpredictor
-      - pvcfparser
-      - psnpeff
-      - prankvariant
-      - pendvariantannotationblock
+      - prepareforvariantannotationblock
+      - rhocall
+      - vt
+      - frequency_filter
+      - varianteffectpredictor
+      - vcfparser
+      - snpeff
+      - rankvariant
+      - endvariantannotationblock
       - CHAIN_GATKEVALEXO:
-         - pgatk_variantevalexome
-   - pqccollect
-   - pmultiqc
-   - panalysisrunstatus
-   - psacct 
+         - gatk_variantevalexome
+   - qccollect
+   - multiqc
+   - analysisrunstatus
+   - sacct 

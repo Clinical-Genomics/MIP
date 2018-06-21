@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $DOT        => q{.};
@@ -105,7 +105,7 @@ my $file_suffix       = $DOT . q{vcf};
 my $vcf_file_key =
   q{sv} . $UNDERSCORE . substr( $file_suffix, 1 ) . $UNDERSCORE . q{file};
 
-my %active_parameter = ( q{p} . $program_name_test => 1, );
+my %active_parameter = ( $program_name_test => 1, );
 
 my %sample_info;
 add_most_complete_vcf(

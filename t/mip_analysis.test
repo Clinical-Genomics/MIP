@@ -426,7 +426,7 @@ sub read_infile_vcf {
             if ($is_csq_found) {
 
                 ok(
-                    $active_parameter_href->{pvarianteffectpredictor},
+                    $active_parameter_href->{varianteffectpredictor},
                     q{VEP: CSQ in header and VEP should have been executed}
                 );
             }
@@ -443,7 +443,7 @@ sub read_infile_vcf {
             _test_vt_in_vcf_header(
                 {
                     vcf_header_href   => \%vcf_header,
-                    vt_mode           => $active_parameter_href->{pvt},
+                    vt_mode           => $active_parameter_href->{vt},
                     vt_decompose_mode => $active_parameter_href->{vt_decompose},
                     vt_normalize_mode => $active_parameter_href->{vt_normalize},
                 }
@@ -453,7 +453,7 @@ sub read_infile_vcf {
             _test_frequency_filter_in_vcf_header(
                 {
                     frequency_filter_mode =>
-                      $active_parameter_href->{pfrequency_filter},
+                      $active_parameter_href->{frequency_filter},
                     frequency_genmod_filter =>
                       $active_parameter_href->{frequency_genmod_filter},
                     frequency_genmod_filter_1000g =>
@@ -467,14 +467,14 @@ sub read_infile_vcf {
                 {
                     vcf_header_href     => \%vcf_header,
                     vcfparser_data_href => $vcfparser_data_href,
-                    vcfparser_mode      => $active_parameter_href->{pvcfparser},
+                    vcfparser_mode      => $active_parameter_href->{vcfparser},
                 }
             );
 
             ## Test snpeff
             _test_snpeff_in_vcf_header(
                 {
-                    snpeff_mode => $active_parameter_href->{psnpeff},
+                    snpeff_mode => $active_parameter_href->{snpeff},
                     snpsift_annotation_files_href =>
                       \%{ $active_parameter_href->{snpsift_annotation_files} },
                     snpsift_annotation_outinfo_key_href => \%{
@@ -493,7 +493,7 @@ sub read_infile_vcf {
                     genmod_annotate_cadd_files_ref =>
                       \@{ $active_parameter_href->{genmod_annotate_cadd_files}
                       },
-                    rankvariant_mode => $active_parameter_href->{prankvariant},
+                    rankvariant_mode => $active_parameter_href->{rankvariant},
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
                     spidex_file => $active_parameter_href->{spidex_file},
@@ -714,7 +714,7 @@ sub read_sv_infile_vcf {
             if ($is_csq_found) {
 
                 ok(
-                    $active_parameter_href->{psv_varianteffectpredictor},
+                    $active_parameter_href->{sv_varianteffectpredictor},
                     q{VEP: CSQ in header and VEP should have been executed}
                 );
             }
@@ -731,7 +731,7 @@ sub read_sv_infile_vcf {
             _test_sv_combinevariantcallsets_in_vcf_header(
                 {
                     sv_combinevariantcallsets_mode =>
-                      $active_parameter_href->{psv_combinevariantcallsets},
+                      $active_parameter_href->{sv_combinevariantcallsets},
                     sv_genmod_filter =>
                       $active_parameter_href->{sv_genmod_filter},
                     sv_genmod_filter_1000g =>
@@ -747,7 +747,7 @@ sub read_sv_infile_vcf {
                 {
                     vcf_header_href     => \%vcf_header,
                     vcfparser_data_href => $vcfparser_data_href,
-                    vcfparser_mode => $active_parameter_href->{psv_vcfparser},
+                    vcfparser_mode => $active_parameter_href->{sv_vcfparser},
                 }
             );
 
@@ -755,7 +755,7 @@ sub read_sv_infile_vcf {
             _test_rankvariants_in_vcf_header(
                 {
                     rankvariant_mode =>
-                      $active_parameter_href->{psv_rankvariant},
+                      $active_parameter_href->{sv_rankvariant},
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
                     unaffected_samples_ref =>

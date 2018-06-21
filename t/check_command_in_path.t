@@ -117,7 +117,7 @@ my $log = initiate_logger(
 
 my %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
-    pbwa_mem   => 0,
+    bwa_mem   => 0,
 );
 my %parameter;
 
@@ -136,7 +136,7 @@ is( $return, undef, q{Skip check when no parameter defined in parameter hash} );
 ## Given switched off active parameter and defined program parameter, when no defined
 ## program_name_path
 %parameter = (
-    pbwa_mem => { type => q{program}, },
+    bwa_mem => { type => q{program}, },
 
 );
 $return = check_command_in_path(
@@ -154,11 +154,11 @@ is( $return, undef,
 ## Given switched on active parameter, defined program and program_name_path parameter, when program is in path and executable
 %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
-    pbwa_mem   => 1,
+    bwa_mem   => 1,
 );
 
 %parameter = (
-    pbwa_mem => {
+    bwa_mem => {
         program_name_path => [qw{ bwa }],
         type              => q{program},
     },
@@ -181,11 +181,11 @@ like( $trap->stderr, qr/INFO/xms,
 ## Given switched on active parameter, defined program and program_name_path parameter, when program is in path and executable
 %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
-    pbwa_mem   => 1,
+    bwa_mem   => 1,
 );
 
 %parameter = (
-    pbwa_mem => {
+    bwa_mem => {
         program_name_path => [qw{ no_binary }],
         type              => q{program},
     },
@@ -211,13 +211,13 @@ like( $trap->stderr, qr/FATAL/xms,
 %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
     module_source_environment_command => {
-        prankvariant => [ qw{ source activate test_env_1 }, ],
+        rankvariant => [ qw{ source activate test_env_1 }, ],
     },
-    prankvariant => 1,
+    rankvariant => 1,
 );
 
 %parameter = (
-    prankvariant => {
+    rankvariant => {
         program_name_path => [qw{ genmod }],
         type              => q{program},
     },
@@ -243,13 +243,13 @@ like( $trap->stderr, qr/INFO/xms,
 %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
     module_source_environment_command => {
-        prankvariant => [ qw{ source activate test_env_1 }, ],
+        rankvariant => [ qw{ source activate test_env_1 }, ],
     },
-    prankvariant => 1,
+    rankvariant => 1,
 );
 
 %parameter = (
-    prankvariant => {
+    rankvariant => {
         program_name_path => [qw{ no_binary }],
         type              => q{program},
     },

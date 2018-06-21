@@ -279,7 +279,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{pbwa_mem} => (
+        q{bwa_mem} => (
             cmd_aliases   => [qw{ pmem }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Align reads using Bwa Mem},
@@ -328,7 +328,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{ppicardtools_mergesamfiles} => (
+        q{picardtools_mergesamfiles} => (
             cmd_aliases => [qw{ pptm }],
             cmd_flag    => q{ppicard_mergesamfiles},
             cmd_tags    => [q{Analysis recipe switch}],
@@ -340,9 +340,9 @@ q{Merge (BAM file(s) ) or rename single samples for downstream processing},
     );
 
     option(
-        q{pmarkduplicates} => (
+        q{markduplicates} => (
             cmd_aliases   => [qw{ pmd }],
-            cmd_flag      => q{pmarkduplicates},
+            cmd_flag      => q{markduplicates},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Markduplicate reads},
             is            => q{rw},
@@ -406,7 +406,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
     );
 
     option(
-        q{pgatk_baserecalibration} => (
+        q{gatk_baserecalibration} => (
             cmd_aliases => [qw{ pgbr }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -482,7 +482,7 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{pchanjo_sexcheck} => (
+        q{chanjo_sexcheck} => (
             cmd_aliases   => [qw{ pchs }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Predicts gender from sex chromosome coverage},
@@ -502,7 +502,7 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{ppicardtools_collectmultiplemetrics} => (
+        q{picardtools_collectmultiplemetrics} => (
             cmd_aliases   => [qw{ pptcmm }],
             cmd_flag      => q{ppt_col_mul_met},
             cmd_tags      => [q{Analysis recipe switch}],
@@ -513,7 +513,7 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{ppicardtools_collecthsmetrics} => (
+        q{picardtools_collecthsmetrics} => (
             cmd_aliases   => [qw{ pptchs }],
             cmd_flag      => q{ppt_col_hs_met},
             cmd_tags      => [q{Analysis recipe switch}],
@@ -524,7 +524,7 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{psambamba_depth} => (
+        q{sambamba_depth} => (
             cmd_aliases   => [qw{ psdt }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Sambamba depth coverage analysis},
@@ -705,7 +705,7 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{pqccollect} => (
+        q{qccollect} => (
             cmd_aliases   => [qw{ pqcc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Collect QC metrics from programs output},
@@ -748,7 +748,7 @@ q{Sample info file containing info on what to parse from this analysis run},
     );
 
     option(
-        q{pmultiqc} => (
+        q{multiqc} => (
             cmd_aliases => [qw{ pmqc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -759,7 +759,7 @@ q{Create aggregate bioinformatics analysis report across many samples},
     );
 
     option(
-        q{panalysisrunstatus} => (
+        q{analysisrunstatus} => (
             cmd_aliases => [qw{ pars }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -770,7 +770,7 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
     );
 
     option(
-        q{psacct} => (
+        q{sacct} => (
             cmd_aliases => [qw{ psac }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>

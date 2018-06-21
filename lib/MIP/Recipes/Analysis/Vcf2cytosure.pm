@@ -169,17 +169,16 @@ sub analysis_vcf2cytosure {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $program_outdirectory_name =
-      $parameter_href->{$mip_program_name}{outdir_name};
+      $parameter_href->{$program_name}{outdir_name};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -221,7 +220,7 @@ sub analysis_vcf2cytosure {
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
         $family_id, $outaligner_dir );
     $infile_tag =
-      $file_info_href->{$family_id}{psv_combinevariantcallsets}{file_tag};
+      $file_info_href->{$family_id}{sv_combinevariantcallsets}{file_tag};
 
     $merged_sv_vcf = $family_id . $infile_tag . q{SV} . $DOT . q{vcf};
     $merged_sv_vcf_path = catfile( $infamily_directory, $merged_sv_vcf );
@@ -276,17 +275,17 @@ sub analysis_vcf2cytosure {
 
         ## Assign file_tags
         $infile_tag =
-          $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
+          $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
         $infile_prefix = $merged_infile_prefix . $infile_tag;
         $outfile_tag =
-          $file_info_href->{$family_id}{psv_combinevariantcallsets}{file_tag};
+          $file_info_href->{$family_id}{sv_combinevariantcallsets}{file_tag};
         $sample_outfile_prefix = $merged_infile_prefix . $outfile_tag;
 
         ## Assign suffix
         my $infile_suffix = get_file_suffix(
             {
                 jobid_chain =>
-                  $parameter_href->{pgatk_baserecalibration}{chain},
+                  $parameter_href->{gatk_baserecalibration}{chain},
                 parameter_href => $parameter_href,
                 suffix_key     => q{alignment_file_suffix},
             }
@@ -296,7 +295,7 @@ sub analysis_vcf2cytosure {
         my $cov_outfile_suffix = get_file_suffix(
             {
                 parameter_href => $parameter_href,
-                program_name   => q{ptiddit},
+                program_name   => q{tiddit},
                 suffix_key     => q{coverage_file_suffix},
             }
         );
@@ -304,7 +303,7 @@ sub analysis_vcf2cytosure {
         my $outfile_suffix = get_file_suffix(
             {
                 parameter_href => $parameter_href,
-                program_name   => $mip_program_name,
+                program_name   => $program_name,
                 suffix_key     => q{outfile_suffix},
             }
         );
@@ -362,7 +361,7 @@ sub analysis_vcf2cytosure {
           . $NEWLINE;
 
         $infile_tag =
-          $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
+          $file_info_href->{$sample_id}{sv_combinevariantcallsets}{file_tag};
         my $sample_vcf_file = $sample_id . $infile_tag . q{SV} . $DOT . q{vcf};
 
         # Bcftools view
@@ -407,7 +406,7 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-        if ( $mip_program_mode == 1 ) {
+        if ( $program_mode == 1 ) {
 
             add_program_outfile_to_sample_info(
                 {
@@ -436,7 +435,7 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
         }
     }
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {

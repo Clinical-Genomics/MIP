@@ -40,7 +40,7 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_cmd_config_vs_definition_file
   check_email_address
   check_parameter_hash
-  check_pprogram_exists_in_hash
+  check_program_exists_in_hash
   check_program_mode
   check_sample_ids
   check_sample_id_in_hash_parameter
@@ -580,7 +580,7 @@ sub mip_analyse {
     foreach my $parameter_name (@parameter_keys_to_check) {
 
         ## Test if key from query hash exists truth hash
-        check_pprogram_exists_in_hash(
+        check_program_exists_in_hash(
             {
                 log            => $log,
                 parameter_name => $parameter_name,
@@ -601,7 +601,7 @@ sub mip_analyse {
             next KEY if ( not exists $parameter{$parameter}{$parameter_name} );
 
             ## Test if element from query array exists truth hash
-            check_pprogram_exists_in_hash(
+            check_program_exists_in_hash(
                 {
                     log            => $log,
                     parameter_name => $parameter_name,
@@ -618,7 +618,7 @@ sub mip_analyse {
     foreach my $parameter_name (@parameter_elements_to_check) {
 
         ## Test if element from query array exists truth hash
-        check_pprogram_exists_in_hash(
+        check_program_exists_in_hash(
             {
                 log            => $log,
                 parameter_name => $parameter_name,
@@ -684,7 +684,7 @@ sub mip_analyse {
     );
 
 ## Check that VEP directory and VEP cache match
-    if ( exists $active_parameter{pvarianteffectpredictor} ) {
+    if ( exists $active_parameter{varianteffectpredictor} ) {
         check_vep_directories(
             {
                 log                 => $log,
@@ -695,8 +695,8 @@ sub mip_analyse {
     }
 
 ## Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
-    if (    exists $active_parameter{psv_combinevariantcallsets}
-        and $active_parameter{psv_combinevariantcallsets} > 0
+    if (    exists $active_parameter{sv_combinevariantcallsets}
+        and $active_parameter{sv_combinevariantcallsets} > 0
         and $active_parameter{sv_vcfanno} > 0 )
     {
 
@@ -961,7 +961,7 @@ sub mip_analyse {
     }
 
 ## Split of fastq files in batches
-    if ( $active_parameter{psplit_fastq_file} ) {
+    if ( $active_parameter{split_fastq_file} ) {
 
         $log->info(q{[Split fastq files in batches]});
 
@@ -990,7 +990,7 @@ sub mip_analyse {
     }
 
 ## GZip of fastq files
-    if (   $active_parameter{pgzip_fastq}
+    if (   $active_parameter{gzip_fastq}
         && $is_file_uncompressed )
     {
 
@@ -1003,7 +1003,7 @@ sub mip_analyse {
           INFILES:
             foreach my $infile ( @{ $infile{$sample_id} } ) {
 
-                my $infile_suffix = $parameter{pgzip_fastq}{infile_suffix};
+                my $infile_suffix = $parameter{gzip_fastq}{infile_suffix};
 
                 if ( $infile =~ /$infile_suffix$/sxm ) {
 

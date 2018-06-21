@@ -162,22 +162,22 @@ sub analysis_bamcalibrationblock {
 
     # Set order of supplying user info
     my @rio_program_order =
-      qw{ ppicardtools_mergesamfiles pmarkduplicates pgatk_realigner pgatk_baserecalibration };
+      qw{ picardtools_mergesamfiles markduplicates gatk_realigner gatk_baserecalibration };
 
     # Store what to supply to user
     my %rio_program = (
-        ppicardtools_mergesamfiles => q{[Picardtools mergesamfiles]},
-        pmarkduplicates            => q{[Markduplicates]},
-        pgatk_realigner => q{[GATK realignertargetcreator/indelrealigner]},
-        pgatk_baserecalibration => q{[GATK baserecalibrator/printreads]},
+        picardtools_mergesamfiles => q{[Picardtools mergesamfiles]},
+        markduplicates            => q{[Markduplicates]},
+        gatk_realigner => q{[GATK realignertargetcreator/indelrealigner]},
+        gatk_baserecalibration => q{[GATK baserecalibrator/printreads]},
     );
 
   RIO_PROGRAM:
-    foreach my $mip_program_name (@rio_program_order) {
+    foreach my $program_name (@rio_program_order) {
 
-        if ( $active_parameter_href->{$mip_program_name} ) {
+        if ( $active_parameter_href->{$program_name} ) {
 
-            my $program_header = $rio_program{$mip_program_name};
+            my $program_header = $rio_program{$program_name};
 
             $log->info( $TAB . $program_header );
         }
@@ -211,7 +211,7 @@ sub analysis_bamcalibrationblock {
 
         ## Always run Picardtools mergesamfiles even for single samples to rename them correctly for standardised downstream processing.
         ## Will also split alignment per contig and copy to temporary directory for -rio 1 block to enable selective removal of block submodules.
-        if ( $active_parameter_href->{ppicardtools_mergesamfiles} ) {
+        if ( $active_parameter_href->{picardtools_mergesamfiles} ) {
 
             ($xargs_file_counter) = analysis_picardtools_mergesamfiles_rio(
                 {
@@ -233,7 +233,7 @@ sub analysis_bamcalibrationblock {
         }
 
         # Markduplicates
-        if ( $active_parameter_href->{pmarkduplicates} ) {
+        if ( $active_parameter_href->{markduplicates} ) {
 
             ($xargs_file_counter) = analysis_markduplicates_rio(
                 {
@@ -252,7 +252,7 @@ sub analysis_bamcalibrationblock {
         }
 
         ## Run GATK realignertargetcreator/indelrealigner
-        if ( $active_parameter_href->{pgatk_realigner} ) {
+        if ( $active_parameter_href->{gatk_realigner} ) {
 
             ($xargs_file_counter) = analysis_gatk_realigner_rio(
                 {
@@ -270,7 +270,7 @@ sub analysis_bamcalibrationblock {
         }
 
         ## Run GATK baserecalibrator/printreads
-        if ( $active_parameter_href->{pgatk_baserecalibration} ) {
+        if ( $active_parameter_href->{gatk_baserecalibration} ) {
 
             ($xargs_file_counter) = analysis_gatk_baserecalibration_rio(
                 {

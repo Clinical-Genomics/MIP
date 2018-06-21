@@ -117,20 +117,20 @@ my $log = initiate_logger(
 ## Given no structural active callers, when priority string is ok
 my %active_parameter = (
     gatk_combinevariants_prioritize_caller => q{gatk,bcftools,freebayes},
-    pbcftools_mpileup                      => 1,
-    pfreebayes                             => 1,
-    pgatk_variantrecalibration             => 1,
+    bcftools_mpileup                      => 1,
+    freebayes                             => 1,
+    gatk_variantrecalibration             => 1,
 );
 
 my %parameter = (
     dynamic_parameter => {
         variant_callers =>
-          [qw{ pfreebayes pbcftools_mpileup pgatk_variantrecalibration}],
+          [qw{ freebayes bcftools_mpileup gatk_variantrecalibration}],
         structural_variant_callers => [qw{ pdelly }],
     },
-    pbcftools_mpileup          => { outdir_name => q{bcftools}, },
-    pfreebayes                 => { outdir_name => q{freebayes}, },
-    pgatk_variantrecalibration => { outdir_name => q{gatk}, },
+    bcftools_mpileup          => { outdir_name => q{bcftools}, },
+    freebayes                 => { outdir_name => q{freebayes}, },
+    gatk_variantrecalibration => { outdir_name => q{gatk}, },
 );
 
 my $return = parse_prioritize_variant_callers(

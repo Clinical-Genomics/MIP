@@ -169,15 +169,14 @@ sub analysis_variant_integrity {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -218,7 +217,7 @@ sub analysis_variant_integrity {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{pgatk_combinevariantcallsets}{file_tag};
+      $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
     my $infile_prefix = $family_id . $infile_tag . $call_type;
     my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
 
@@ -227,7 +226,7 @@ sub analysis_variant_integrity {
     my $infile_suffix = get_file_suffix(
         {
             jobid_chain =>
-              $parameter_href->{pgatk_combinevariantcallsets}{chain},
+              $parameter_href->{gatk_combinevariantcallsets}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
         }
@@ -282,7 +281,7 @@ sub analysis_variant_integrity {
             );
             say {$FILEHANDLE} $NEWLINE;
 
-            if ( $mip_program_mode == 1 ) {
+            if ( $program_mode == 1 ) {
 
                 ## Collect QC metadata info for later use
                 add_program_outfile_to_sample_info(
@@ -325,7 +324,7 @@ sub analysis_variant_integrity {
             );
             say {$FILEHANDLE} $NEWLINE;
 
-            if ( $mip_program_mode == 1 ) {
+            if ( $program_mode == 1 ) {
 
                 ## Collect QC metadata info for later use
                 add_program_outfile_to_sample_info(
@@ -344,7 +343,7 @@ sub analysis_variant_integrity {
 
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {

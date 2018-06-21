@@ -177,17 +177,16 @@ sub analysis_sv_reformat {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -221,9 +220,9 @@ sub analysis_sv_reformat {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{psv_rankvariant}{file_tag};
+      $file_info_href->{$family_id}{sv_rankvariant}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -447,7 +446,7 @@ sub analysis_sv_reformat {
             }
         );
 
-        if ( $mip_program_mode == 1 ) {
+        if ( $program_mode == 1 ) {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
@@ -521,7 +520,7 @@ sub analysis_sv_reformat {
     }
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {

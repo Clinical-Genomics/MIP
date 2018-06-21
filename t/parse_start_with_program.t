@@ -115,7 +115,7 @@ my $return = parse_start_with_program(
 is( $return, undef, q{Skip parsing} );
 
 ## Given start_with_program parameter, when defined
-$active_parameter{start_with_program} = q{pbwa_mem};
+$active_parameter{start_with_program} = q{bwa_mem};
 
 my $is_ok = parse_start_with_program(
     {

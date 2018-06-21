@@ -497,7 +497,7 @@ sub add_most_complete_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $active_parameter_href->{ q{p} . $program_name } == 1 ) {
+    if ( $active_parameter_href->{ $program_name } == 1 ) {
 
         if ( $vcfparser_outfile_counter == 1 ) {
 
@@ -1138,12 +1138,12 @@ sub define_program_features {
             regexp       => q?picard-tools-([^,]+)?,
             program_name => q{picardtools},
         },
-        pbwa_mem => {
-            cmd    => $sambamba_cmd,     #pbwa_mem uses sambamba post alignment
+        bwa_mem => {
+            cmd    => $sambamba_cmd,     #bwa_mem uses sambamba post alignment
             regexp => q?Not relevant?,
             program_name => q{sambamba},
         },
-        psambamba_depth => {
+        sambamba_depth => {
             cmd          => $sambamba_cmd,
             regexp       => q?Not relevant?,
             program_name => q{sambamba},

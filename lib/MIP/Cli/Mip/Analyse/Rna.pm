@@ -206,7 +206,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{ppicardtools_mergesamfiles} => (
+        q{picardtools_mergesamfiles} => (
             cmd_aliases   => [qw{ ppms }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Merge bam files using Picardtools},
@@ -216,7 +216,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{psalmon_quant} => (
+        q{salmon_quant} => (
             cmd_aliases   => [qw{ psqt }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Quantify transcripts using salmon},
@@ -235,7 +235,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{pstar_aln} => (
+        q{star_aln} => (
             cmd_aliases   => [qw{ pstn }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Align reads using Star aln},
@@ -306,7 +306,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{pstar_fusion} => (
+        q{star_fusion} => (
             cmd_aliases   => [qw{ pstf }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Detect fusion transcripts with star fusion},
@@ -316,7 +316,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{pgatk_haplotypecaller} => (
+        q{gatk_haplotypecaller} => (
             cmd_aliases   => [qw{ pghc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},
@@ -362,9 +362,9 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
-        q{pmarkduplicates} => (
+        q{markduplicates} => (
             cmd_aliases   => [qw{ pmd }],
-            cmd_flag      => q{pmarkduplicates},
+            cmd_flag      => q{markduplicates},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Markduplicate reads},
             is            => q{rw},
@@ -430,7 +430,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
     option(
         q{pgatk_splitncigarrreads} => (
             cmd_aliases   => [qw{ pgs }],
-            cmd_flag      => q{pgatk_splitncigarreads},
+            cmd_flag      => q{gatk_splitncigarreads},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Split reads that contain Ns in their cigar},
             is            => q{rw},
@@ -439,7 +439,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
     );
 
     option(
-        q{pgatk_haplotypecaller} => (
+        q{gatk_haplotypecaller} => (
             cmd_aliases   => [qw{ pghc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},
@@ -496,7 +496,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
-        q{pgatk_asereadcounter} => (
+        q{gatk_asereadcounter} => (
             cmd_aliases   => [qw{ pgae }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Allel specific expression},
@@ -506,7 +506,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
-        q{pgatk_variantfiltration} => (
+        q{gatk_variantfiltration} => (
             cmd_aliases   => [qw{ pgvf }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Hard filterering of variants},

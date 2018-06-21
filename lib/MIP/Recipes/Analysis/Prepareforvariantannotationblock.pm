@@ -173,15 +173,14 @@ sub analysis_prepareforvariantannotationblock {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
     my $xargs_file_path_prefix;
@@ -228,11 +227,11 @@ sub analysis_prepareforvariantannotationblock {
         $family_id, $outaligner_dir );
 
     ## Used downstream in removal of files
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{pgatk_combinevariantcallsets}{file_tag};
+      $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
 
     ## Files
     my $infile_prefix = $family_id . $infile_tag . $call_type;
@@ -251,7 +250,7 @@ sub analysis_prepareforvariantannotationblock {
     my $outfile_suffix = set_file_suffix(
         {
             job_id_chain => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
         }
@@ -364,7 +363,7 @@ sub analysis_prepareforvariantannotationblock {
     close $XARGSFILEHANDLE
       or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -518,15 +517,14 @@ sub analysis_prepareforvariantannotationblock_rio {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
     my $xargs_file_path_prefix;
@@ -554,11 +552,11 @@ sub analysis_prepareforvariantannotationblock_rio {
         $family_id, $outaligner_dir );
 
     ## Used downstream in removal of files
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{pgatk_combinevariantcallsets}{file_tag};
+      $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
 
     ## Files
     my $infile_prefix = $family_id . $infile_tag . $call_type;
@@ -577,7 +575,7 @@ sub analysis_prepareforvariantannotationblock_rio {
     my $outfile_suffix = set_file_suffix(
         {
             job_id_chain => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
         }

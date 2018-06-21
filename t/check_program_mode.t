@@ -117,10 +117,10 @@ my $log = initiate_logger(
 
 ## Given programs when correct program modes
 my %parameter =
-  ( dynamic_parameter => { program => [ qw{ pbwa_mem pfastqc pgenmod}, ], }, );
+  ( dynamic_parameter => { program => [ qw{ bwa_mem fastqc pgenmod}, ], }, );
 my %active_parameter = (
-    pbwa_mem => 1,
-    pfastqc  => 0,
+    bwa_mem => 1,
+    fastqc  => 0,
     pgenmod  => 2,
 );
 
@@ -136,7 +136,7 @@ my $is_ok = check_program_mode(
 ok( $is_ok, q{All program modes passed} );
 
 ## Given programs when a program has a not allowed value
-$active_parameter{pbwa_mem} = q{not allowed value};
+$active_parameter{bwa_mem} = q{not allowed value};
 
 trap {
     check_program_mode(

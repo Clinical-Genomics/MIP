@@ -197,11 +197,10 @@ sub analysis_gatk_baserecalibration {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
     my $xargs_file_path_prefix;
@@ -209,7 +208,7 @@ sub analysis_gatk_baserecalibration {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
       );
 
@@ -234,7 +233,7 @@ sub analysis_gatk_baserecalibration {
         }
     );
 
-    $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
+    $parameter_href->{$program_name}{$sample_id}{indirectory} =
       $outsample_directory;    #Used downstream
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
@@ -247,16 +246,16 @@ sub analysis_gatk_baserecalibration {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{pgatk_realigner}{file_tag};
+      $file_info_href->{$sample_id}{gatk_realigner}{file_tag};
 
     ## If wts analysis
     if ( $analysis_type eq q{wts} ) {
         $infile_tag =
-          $file_info_href->{$sample_id}{pgatk_splitncigarreads}{file_tag};
+          $file_info_href->{$sample_id}{gatk_splitncigarreads}{file_tag};
     }
 
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $merged_infile_prefix . $infile_tag;
@@ -566,7 +565,7 @@ sub analysis_gatk_baserecalibration {
     close $XARGSFILEHANDLE;
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         my $program_outfile_path =
           catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
@@ -760,11 +759,10 @@ sub analysis_gatk_baserecalibration_rio {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
     my $xargs_file_path_prefix;
@@ -772,7 +770,7 @@ sub analysis_gatk_baserecalibration_rio {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
       );
 
@@ -780,7 +778,7 @@ sub analysis_gatk_baserecalibration_rio {
     # Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();
 
-    $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
+    $parameter_href->{$program_name}{$sample_id}{indirectory} =
       $outsample_directory;    #Used downstream
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
@@ -793,9 +791,9 @@ sub analysis_gatk_baserecalibration_rio {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{pgatk_realigner}{file_tag};
+      $file_info_href->{$sample_id}{gatk_realigner}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $merged_infile_prefix . $infile_tag;
@@ -1099,7 +1097,7 @@ sub analysis_gatk_baserecalibration_rio {
     close $XARGSFILEHANDLE;
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         my $program_outfile_path =
           catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );

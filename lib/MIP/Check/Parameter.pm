@@ -36,7 +36,7 @@ BEGIN {
       check_infile_contain_sample_id
       check_infiles
       check_parameter_hash
-      check_pprogram_exists_in_hash
+      check_program_exists_in_hash
       check_prioritize_variant_callers
       check_program_mode
       check_sample_ids
@@ -632,9 +632,9 @@ sub check_parameter_hash {
     return 1;
 }
 
-sub check_pprogram_exists_in_hash {
+sub check_program_exists_in_hash {
 
-## Function : Test if parameter "mip_program name" from query parameter exists truth hash
+## Function : Test if parameter "program name" from query parameter exists truth hash
 ## Returns  :
 ## Arguments: $log            => Log object
 ##          : $parameter_name => Parameter name

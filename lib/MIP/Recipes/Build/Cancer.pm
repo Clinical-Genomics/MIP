@@ -168,7 +168,7 @@ sub build_cancer_meta_files {
 
 ## Check BWA build prerequisites
 
-    if ( $active_parameter_href->{pbwa_mem} ) {
+    if ( $active_parameter_href->{bwa_mem} ) {
 
         check_bwa_prerequisites(
             {

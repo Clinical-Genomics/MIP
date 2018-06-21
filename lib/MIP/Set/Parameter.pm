@@ -257,11 +257,11 @@ q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit:
         },
         snpeff_path => {
             bin_file        => q{snpEff.jar},
-            environment_key => q{psnpeff},
+            environment_key => q{snpeff},
         },
         vep_directory_path => {
             bin_file        => q{vep},
-            environment_key => q{pvarianteffectpredictor},
+            environment_key => q{varianteffectpredictor},
         },
     );
 

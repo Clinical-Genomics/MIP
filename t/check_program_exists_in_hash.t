@@ -92,9 +92,9 @@ BEGIN {
     }
 }
 
-use MIP::Check::Parameter qw{ check_pprogram_exists_in_hash };
+use MIP::Check::Parameter qw{ check_program_exists_in_hash };
 
-diag(   q{Test check_pprogram_exists_in_hash from Parameter.pm v}
+diag(   q{Test check_program_exists_in_hash from Parameter.pm v}
       . $MIP::Check::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -116,18 +116,18 @@ my $log = initiate_logger(
 );
 
 ## Given program names
-my %parameter = ( q{pbcftools_mpileup} => 1, );
+my %parameter = ( q{bcftools_mpileup} => 1, );
 
 my %active_parameter = (
     module_time => {
-        pbwa_mem          => 1,
-        pbcftools_mpileup => 1,
+        bwa_mem          => 1,
+        bcftools_mpileup => 1,
     },
-    associated_program => [ qw{ pfastqc }, ],
+    associated_program => [ qw{ fastqc }, ],
 );
 ## When one does not exist in truth hash
 trap {
-    check_pprogram_exists_in_hash(
+    check_program_exists_in_hash(
         {
             log            => $log,
             parameter_name => q{module_time},
@@ -143,12 +143,12 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 
 ## Given program names
 %parameter = (
-    q{pbcftools_mpileup} => 1,
-    q{pbwa_mem}          => 1,
+    q{bcftools_mpileup} => 1,
+    q{bwa_mem}          => 1,
 );
 
 ## When all exists in truth hash
-my $return = check_pprogram_exists_in_hash(
+my $return = check_program_exists_in_hash(
     {
         log            => $log,
         parameter_name => q{module_time},
@@ -160,7 +160,7 @@ is( $return, undef, q{All program keys exists in truth hash} );
 
 ## Given program names, when none exists in truth hash
 trap {
-    check_pprogram_exists_in_hash(
+    check_program_exists_in_hash(
         {
             log            => $log,
             parameter_name => q{associated_program},
@@ -176,13 +176,13 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 
 ## Given program names
 %parameter = (
-    q{pbcftools_mpileup} => 1,
-    q{pbwa_mem}          => 1,
-    q{pfastqc}           => 1,
+    q{bcftools_mpileup} => 1,
+    q{bwa_mem}          => 1,
+    q{fastqc}           => 1,
 );
 
 ## When all exists in truth hash
-$return = check_pprogram_exists_in_hash(
+$return = check_program_exists_in_hash(
     {
         log            => $log,
         parameter_name => q{associated_program},

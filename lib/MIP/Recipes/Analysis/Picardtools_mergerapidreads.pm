@@ -163,7 +163,7 @@ sub picardtools_mergerapidreads {
         $$sample_id_ref, $$outaligner_dir_ref );
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$sample_id_ref}{pbwa_mem}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{bwa_mem}{file_tag};
     my $outfile_tag =
       $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
 
@@ -184,7 +184,7 @@ sub picardtools_mergerapidreads {
         my $nr_read_batch_process =
           $sample_info_href->{sample}{$$sample_id_ref}
           { $infile_lane_prefix_href->{$$sample_id_ref}[$infile_counter] }
-          {pbwa_mem}{read_batch_process};
+          {bwa_mem}{read_batch_process};
 
         if ( $nr_read_batch_process > 0 )
         {    #Check that we have read batch processes to merge

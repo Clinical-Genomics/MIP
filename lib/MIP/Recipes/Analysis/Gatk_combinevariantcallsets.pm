@@ -170,11 +170,10 @@ sub analysis_gatk_combinevariantcallsets {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $gatk_jar =
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
@@ -182,7 +181,7 @@ sub analysis_gatk_combinevariantcallsets {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
       );
 
@@ -209,11 +208,11 @@ sub analysis_gatk_combinevariantcallsets {
 
     ## Assign directories
     # Used downstream
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
     my $outfile_tag =
-      $file_info_href->{$family_id}{pgatk_combinevariantcallsets}{file_tag};
+      $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
 
     ## Will be set downstream
     my @infile_tags_and_paths;
@@ -231,7 +230,7 @@ sub analysis_gatk_combinevariantcallsets {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
@@ -355,7 +354,7 @@ sub analysis_gatk_combinevariantcallsets {
 
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         my $program_outfile_path =

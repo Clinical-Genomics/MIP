@@ -100,18 +100,18 @@ diag(   q{Test set_file_prefix_tag from File.pm v}
 my $sample_id     = q{sample-1};
 my $current_chain = q{MAIN};
 
-my @order_parameters = qw{ pbwa_mem pmerge pmark };
+my @order_parameters = qw{ bwa_mem pmerge pmark };
 my %active_parameter = (
-    pbwa_mem => 1,
-    pmanta   => 1,
+    bwa_mem => 1,
+    manta   => 1,
     pmark    => 1,
     pmerge   => 0,
 );
 my %expected_file_tag;
 my %file_info;
 my %parameter = (
-    pbwa_mem => q{mem},
-    pmanta   => q{manta},
+    bwa_mem => q{mem},
+    manta   => q{manta},
     pmark    => q{md},
     pmerge   => q{merge},
 );
@@ -137,21 +137,21 @@ foreach my $program (@order_parameters) {
 
 ## Define what to expect
 # First file tag
-$expected_file_tag{$sample_id}{pbwa_mem}{file_tag} = $parameter{pbwa_mem};
+$expected_file_tag{$sample_id}{bwa_mem}{file_tag} = $parameter{bwa_mem};
 
 # Propagated
-$expected_file_tag{$sample_id}{pmerge}{file_tag} = $parameter{pbwa_mem};
+$expected_file_tag{$sample_id}{pmerge}{file_tag} = $parameter{bwa_mem};
 
 # Sequential
 $expected_file_tag{$sample_id}{pmark}{file_tag} =
-  $parameter{pbwa_mem} . $parameter{pmark};
+  $parameter{bwa_mem} . $parameter{pmark};
 
 ## Then 3 file tags should be added where one is sequential and one is just propagated
 is_deeply( \%file_info, \%expected_file_tag,
     q{Added file prefix tags for MAIN } );
 
 ## Given other chain than MAIN
-push @order_parameters, q{pmanta};
+push @order_parameters, q{manta};
 my $other_chain = q{SV};
 
 # Clear previous file tag builds
@@ -174,8 +174,8 @@ foreach my $program (@order_parameters) {
         }
     );
 }
-$expected_file_tag{$sample_id}{pmanta}{file_tag} =
-  $expected_file_tag{$sample_id}{pmark}{file_tag} . $parameter{pmanta};
+$expected_file_tag{$sample_id}{manta}{file_tag} =
+  $expected_file_tag{$sample_id}{pmark}{file_tag} . $parameter{manta};
 
 is_deeply( \%file_info, \%expected_file_tag,
     q{Added file prefix tags for chain that inherits from MAIN } );

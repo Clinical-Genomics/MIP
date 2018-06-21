@@ -169,11 +169,10 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
@@ -183,7 +182,7 @@ sub analysis_gatk_concatenate_genotypegvcfs {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
       );
 
@@ -193,9 +192,9 @@ sub analysis_gatk_concatenate_genotypegvcfs {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -209,7 +208,7 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     my $infile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
-            program_name   => $mip_program_name,
+            program_name   => $program_name,
             suffix_key     => q{outfile_suffix},
         }
     );
@@ -217,7 +216,7 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -369,7 +368,7 @@ sub analysis_gatk_concatenate_genotypegvcfs {
 
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         if ( $active_parameter_href->{gatk_concatenate_genotypegvcfs_bcf_file}
             == 1 )

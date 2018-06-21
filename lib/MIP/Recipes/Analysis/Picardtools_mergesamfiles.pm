@@ -214,11 +214,10 @@ sub analysis_picardtools_mergesamfiles {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $xargs_file_path_prefix;
@@ -226,7 +225,7 @@ sub analysis_picardtools_mergesamfiles {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
       );
 
@@ -255,14 +254,14 @@ sub analysis_picardtools_mergesamfiles {
     );
 
     # Used downstream
-    $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
+    $parameter_href->{$program_name}{$sample_id}{indirectory} =
       $outsample_directory;
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$sample_id}
       { $parameter_href->{active_aligner} }{file_tag};
     my $outfile_tag =
-      $file_info_href->{$sample_id}{ppicardtools_mergesamfiles}{file_tag};
+      $file_info_href->{$sample_id}{picardtools_mergesamfiles}{file_tag};
 
     ## Assign suffix
     my $infile_suffix = my $outfile_suffix = get_file_suffix(
@@ -496,7 +495,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
     close $XARGSFILEHANDLE;
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         my $qc_outfile_path = catfile( $outsample_directory,
                 $sample_id
@@ -700,20 +699,19 @@ sub analysis_picardtools_mergesamfiles_rio {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain  = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain  = $parameter_href->{$program_name}{chain};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_path_prefix;
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
       );
 
@@ -728,7 +726,7 @@ sub analysis_picardtools_mergesamfiles_rio {
     my $infile_tag = $file_info_href->{$sample_id}
       { $parameter_href->{active_aligner} }{file_tag};
     my $outfile_tag =
-      $file_info_href->{$sample_id}{ppicardtools_mergesamfiles}{file_tag};
+      $file_info_href->{$sample_id}{picardtools_mergesamfiles}{file_tag};
 
     ## Assign suffix
     my $infile_suffix = my $outfile_suffix = get_file_suffix(

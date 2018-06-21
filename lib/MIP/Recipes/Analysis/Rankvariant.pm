@@ -185,19 +185,18 @@ sub analysis_rankvariant {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain            = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain            = $parameter_href->{$program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -253,9 +252,9 @@ sub analysis_rankvariant {
       catfile( $active_parameter_href->{outdata_dir}, $family_id );
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$family_id}{psnpeff}{file_tag};
+    my $infile_tag = $file_info_href->{$family_id}{snpeff}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -279,7 +278,7 @@ sub analysis_rankvariant {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
@@ -426,7 +425,7 @@ sub analysis_rankvariant {
 
             my $use_vep;
             ## Use VEP annotations in compound models
-            if ( $active_parameter_href->{pvarianteffectpredictor}
+            if ( $active_parameter_href->{varianteffectpredictor}
                 and not $active_parameter_href->{genmod_annotate_regions} )
             {
 
@@ -533,7 +532,7 @@ sub analysis_rankvariant {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         my $qc_genmod_outfile =
             $outfile_prefix
@@ -734,19 +733,18 @@ sub analysis_rankvariant_rio {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain            = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain            = $parameter_href->{$program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -796,9 +794,9 @@ sub analysis_rankvariant_rio {
       catfile( $active_parameter_href->{outdata_dir}, $family_id );
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$family_id}{psnpeff}{file_tag};
+    my $infile_tag = $file_info_href->{$family_id}{snpeff}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -822,7 +820,7 @@ sub analysis_rankvariant_rio {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
@@ -949,7 +947,7 @@ sub analysis_rankvariant_rio {
 
             my $use_vep;
             ## Use VEP annotations in compound models
-            if ( $active_parameter_href->{pvarianteffectpredictor}
+            if ( $active_parameter_href->{varianteffectpredictor}
                 and not $active_parameter_href->{genmod_annotate_regions} )
             {
 
@@ -1057,7 +1055,7 @@ sub analysis_rankvariant_rio {
         }
     );
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         my $qc_genmod_outfile =
             $outfile_prefix
@@ -1249,19 +1247,18 @@ sub analysis_rankvariant_rio_unaffected {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain            = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain            = $parameter_href->{$program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -1311,9 +1308,9 @@ sub analysis_rankvariant_rio_unaffected {
       catfile( $active_parameter_href->{outdata_dir}, $family_id );
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$family_id}{psnpeff}{file_tag};
+    my $infile_tag = $file_info_href->{$family_id}{snpeff}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -1337,7 +1334,7 @@ sub analysis_rankvariant_rio_unaffected {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
@@ -1483,7 +1480,7 @@ sub analysis_rankvariant_rio_unaffected {
         }
     );
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         my $qc_genmod_outfile =
             $outfile_prefix
@@ -1671,19 +1668,18 @@ sub analysis_rankvariant_unaffected {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain            = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain            = $parameter_href->{$program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -1739,9 +1735,9 @@ sub analysis_rankvariant_unaffected {
       catfile( $active_parameter_href->{outdata_dir}, $family_id );
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$family_id}{psnpeff}{file_tag};
+    my $infile_tag = $file_info_href->{$family_id}{snpeff}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -1765,7 +1761,7 @@ sub analysis_rankvariant_unaffected {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
@@ -1930,7 +1926,7 @@ sub analysis_rankvariant_unaffected {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         my $qc_genmod_outfile =
             $outfile_prefix
@@ -2116,17 +2112,16 @@ sub analysis_sv_rankvariant {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -2168,9 +2163,9 @@ sub analysis_sv_rankvariant {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{psv_vcfparser}{file_tag};
+      $file_info_href->{$family_id}{sv_vcfparser}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -2267,7 +2262,7 @@ sub analysis_sv_rankvariant {
 
         my $use_vep;
         ## Use VEP annotations in compound models
-        if ( $active_parameter_href->{psv_varianteffectpredictor}
+        if ( $active_parameter_href->{sv_varianteffectpredictor}
             and not $active_parameter_href->{sv_genmod_annotate_regions} )
         {
 
@@ -2364,7 +2359,7 @@ sub analysis_sv_rankvariant {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         ## Add to Sample_info
         if ( defined $active_parameter_href->{sv_rank_model_file} ) {
@@ -2548,17 +2543,16 @@ sub analysis_sv_rankvariant_unaffected {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -2600,9 +2594,9 @@ sub analysis_sv_rankvariant_unaffected {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{psv_vcfparser}{file_tag};
+      $file_info_href->{$family_id}{sv_vcfparser}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -2706,7 +2700,7 @@ sub analysis_sv_rankvariant_unaffected {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         ## Add to Sample_info
         if ( defined $active_parameter_href->{sv_rank_model_file} ) {

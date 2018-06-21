@@ -141,14 +141,13 @@ sub analysis_qccollect {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+      $active_parameter_href->{module_core_number}{$program_name};
+    my $time = $active_parameter_href->{module_time}{$program_name};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -188,7 +187,7 @@ sub analysis_qccollect {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         my $qc_metric_outfile = $family_id . $UNDERSCORE . q{qc_metrics.yaml};

@@ -181,15 +181,14 @@ sub analysis_bedtools_genomecov {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -207,9 +206,9 @@ sub analysis_bedtools_genomecov {
 
     ## Files
     my $infile_tag =
-      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
+      $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
 
     ## Path
     my $infile_prefix  = $merged_infile_prefix . $infile_tag;
@@ -221,7 +220,7 @@ sub analysis_bedtools_genomecov {
     ## Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
         {
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
+            jobid_chain    => $parameter_href->{gatk_baserecalibration}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
         }
@@ -287,7 +286,7 @@ sub analysis_bedtools_genomecov {
     say {$FILEHANDLE} q{wait}, $NEWLINE;
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         slurm_submit_job_sample_id_dependency_dead_end(
             {

@@ -99,8 +99,8 @@ diag(   q{Test update_vcfparser_outfile_counter from Parameters.pm v}
 
 # Test the number of oufiles when vcfparser is used with select file and sv_vcfparser without.
 my %active_parameter_test = (
-    psv_vcfparser         => { type => q{program} },
-    pvcfparser            => { type => q{program} },
+    sv_vcfparser         => { type => q{program} },
+    vcfparser            => { type => q{program} },
     vcfparser_select_file => 1,
 );
 
@@ -114,8 +114,8 @@ is( $active_parameter_test{sv_vcfparser_outfile_count},
 
 # Test the number of oufiles when both vcfparser and sv_vcfparser are used with select files.
 %active_parameter_test = (
-    psv_vcfparser            => { type => q{program} },
-    pvcfparser               => { type => q{program} },
+    sv_vcfparser            => { type => q{program} },
+    vcfparser               => { type => q{program} },
     sv_vcfparser_select_file => 1,
     vcfparser_select_file    => 1,
 );

@@ -241,7 +241,7 @@ sub pipeline_rare_disease {
     );
 
     ### Analysis recipes
-    if ( $active_parameter_href->{pfastqc} ) {
+    if ( $active_parameter_href->{fastqc} ) {
 
         $log->info(q{[Fastqc]});
 
@@ -271,7 +271,7 @@ sub pipeline_rare_disease {
         }
     }
 
-    if ( $active_parameter_href->{pbwa_mem} ) {
+    if ( $active_parameter_href->{bwa_mem} ) {
 
         $log->info(q{[BWA Mem]});
 
@@ -326,7 +326,7 @@ sub pipeline_rare_disease {
     else {
 
         ## Always run merge even for single samples to rename them correctly for standardised downstream processing.
-        if ( $active_parameter_href->{ppicardtools_mergesamfiles} ) {
+        if ( $active_parameter_href->{picardtools_mergesamfiles} ) {
 
             $log->info(q{[Picardtools mergesamfiles]});
 
@@ -359,7 +359,7 @@ sub pipeline_rare_disease {
             }
         }
 
-        if ( $active_parameter_href->{pmarkduplicates} ) {
+        if ( $active_parameter_href->{markduplicates} ) {
 
             $log->info(q{[Markduplicates]});
 
@@ -392,7 +392,7 @@ sub pipeline_rare_disease {
             }
         }
 
-        if ( $active_parameter_href->{pgatk_realigner} ) {
+        if ( $active_parameter_href->{gatk_realigner} ) {
 
             $log->info(q{[GATK realignertargetcreator/indelrealigner]});
 
@@ -425,7 +425,7 @@ sub pipeline_rare_disease {
             }
         }
 
-        if ( $active_parameter_href->{pgatk_baserecalibration} ) {
+        if ( $active_parameter_href->{gatk_baserecalibration} ) {
 
             $log->info(q{[GATK baserecalibrator/printreads]});
 
@@ -458,7 +458,7 @@ sub pipeline_rare_disease {
             }
         }
     }
-    if ( $active_parameter_href->{pchanjo_sexcheck} ) {
+    if ( $active_parameter_href->{chanjo_sexcheck} ) {
 
         $log->info(q{[Chanjo sexcheck]});
 
@@ -489,7 +489,7 @@ sub pipeline_rare_disease {
             );
         }
     }
-    if ( $active_parameter_href->{psamtools_subsample_mt} ) {
+    if ( $active_parameter_href->{samtools_subsample_mt} ) {
 
         $log->info(q{[Subsample MT]});
 
@@ -519,7 +519,7 @@ sub pipeline_rare_disease {
             );
         }
     }
-    if ( $active_parameter_href->{psambamba_depth} ) {
+    if ( $active_parameter_href->{sambamba_depth} ) {
 
         $log->info(q{[Sambamba depth]});
 
@@ -551,7 +551,7 @@ sub pipeline_rare_disease {
         }
     }
 
-    if ( $active_parameter_href->{pbedtools_genomecov} ) {
+    if ( $active_parameter_href->{bedtools_genomecov} ) {
 
         $log->info(q{[Bedtools genomecov]});
 
@@ -583,7 +583,7 @@ sub pipeline_rare_disease {
             );
         }
     }
-    if ( $active_parameter_href->{ppicardtools_collectmultiplemetrics} ) {
+    if ( $active_parameter_href->{picardtools_collectmultiplemetrics} ) {
 
         $log->info(q{[Picardtools collectmultiplemetrics]});
 
@@ -615,7 +615,7 @@ sub pipeline_rare_disease {
             );
         }
     }
-    if ( $active_parameter_href->{ppicardtools_collecthsmetrics} ) {
+    if ( $active_parameter_href->{picardtools_collecthsmetrics} ) {
 
         $log->info(q{[Picardtools collecthsmetrics]});
 
@@ -648,9 +648,9 @@ sub pipeline_rare_disease {
         }
     }
 ## Run Rcovplot scripts
-    if ( $active_parameter_href->{prcovplots} ) {
+    if ( $active_parameter_href->{rcovplots} ) {
 
-        if ( $active_parameter_href->{pbedtools_genomecov} > 0 ) {
+        if ( $active_parameter_href->{bedtools_genomecov} > 0 ) {
 
             $log->info(q{[Rcovplots]});
 
@@ -687,7 +687,7 @@ sub pipeline_rare_disease {
             }
         }
     }
-    if ( $active_parameter_href->{pcnvnator} ) {
+    if ( $active_parameter_href->{cnvnator} ) {
 
         $log->info(q{[CNVnator]});
 
@@ -722,7 +722,7 @@ sub pipeline_rare_disease {
             );
         }
     }
-    if ( $active_parameter_href->{pdelly_call} ) {
+    if ( $active_parameter_href->{delly_call} ) {
 
         $log->info(q{[Delly_call]});
 
@@ -758,7 +758,7 @@ sub pipeline_rare_disease {
             );
         }
     }
-    if ( $active_parameter_href->{pdelly_reformat} ) {
+    if ( $active_parameter_href->{delly_reformat} ) {
 
         $log->info(q{[Delly_reformat]});
 
@@ -787,7 +787,7 @@ sub pipeline_rare_disease {
             }
         );
     }
-    if ( $active_parameter_href->{pmanta} ) {
+    if ( $active_parameter_href->{manta} ) {
 
         $log->info(q{[Manta]});
 
@@ -813,7 +813,7 @@ sub pipeline_rare_disease {
             }
         );
     }
-    if ( $active_parameter_href->{ptiddit} ) {
+    if ( $active_parameter_href->{tiddit} ) {
 
         $log->info(q{[Tiddit]});
 
@@ -839,7 +839,7 @@ sub pipeline_rare_disease {
             }
         );
     }
-    if ( $active_parameter_href->{pexpansionhunter} ) {
+    if ( $active_parameter_href->{expansionhunter} ) {
 
         $log->info(q{[ExpansionHunter]});
 
@@ -875,7 +875,7 @@ sub pipeline_rare_disease {
             );
         }
     }
-    if ( $active_parameter_href->{psv_combinevariantcallsets} ) {
+    if ( $active_parameter_href->{sv_combinevariantcallsets} ) {
 
         $log->info(q{[SV combinevariantcallsets]});
 
@@ -891,7 +891,7 @@ sub pipeline_rare_disease {
             }
         );
     }
-    if ( $active_parameter_href->{psv_varianteffectpredictor} ) {
+    if ( $active_parameter_href->{sv_varianteffectpredictor} ) {
 
         $log->info(q{[SV varianteffectpredictor]});
 
@@ -908,7 +908,7 @@ sub pipeline_rare_disease {
             }
         );
     }
-    if ( $active_parameter_href->{psv_vcfparser} ) {
+    if ( $active_parameter_href->{sv_vcfparser} ) {
 
         $log->info(q{[SV vcfparser]});
 
@@ -924,7 +924,7 @@ sub pipeline_rare_disease {
             }
         );
     }
-    if ( $active_parameter_href->{psv_rankvariant} ) {
+    if ( $active_parameter_href->{sv_rankvariant} ) {
 
         $log->info(q{[SV rankvariant]});
 
@@ -963,7 +963,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             );
         }
     }
-    if ( $active_parameter_href->{psv_reformat} ) {
+    if ( $active_parameter_href->{sv_reformat} ) {
 
         $log->info(q{[SV reformat]});
 
@@ -979,7 +979,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         );
     }
-    if ( $active_parameter_href->{pvcf2cytosure} ) {
+    if ( $active_parameter_href->{vcf2cytosure} ) {
 
         $log->info(q{[Vcf2cytosure]});
 
@@ -1005,12 +1005,12 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         );
     }
-    if ( $active_parameter_href->{pbcftools_mpileup} ) {
+    if ( $active_parameter_href->{bcftools_mpileup} ) {
 
         $log->info(q{[Bcftools mpileup]});
 
         my $program_outdirectory_name =
-          $parameter_href->{pbcftools_mpileup}{outdir_name};
+          $parameter_href->{bcftools_mpileup}{outdir_name};
 
         my $outfamily_directory = catfile(
             $active_parameter_href->{outdata_dir},
@@ -1032,12 +1032,12 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         );
     }
-    if ( $active_parameter_href->{pfreebayes} ) {
+    if ( $active_parameter_href->{freebayes} ) {
 
         $log->info(q{[Freebayes]});
 
         my $program_outdirectory_name =
-          $parameter_href->{pfreebayes}{outdir_name};
+          $parameter_href->{freebayes}{outdir_name};
 
         my $outfamily_directory = catfile(
             $active_parameter_href->{outdata_dir},
@@ -1059,7 +1059,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         );
     }
-    if ( $active_parameter_href->{pgatk_haplotypecaller} ) {
+    if ( $active_parameter_href->{gatk_haplotypecaller} ) {
 
         $log->info(q{[GATK haplotypecaller]});
 
@@ -1090,7 +1090,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             );
         }
     }
-    if ( $active_parameter_href->{pgatk_genotypegvcfs} ) {
+    if ( $active_parameter_href->{gatk_genotypegvcfs} ) {
 
         $log->info(q{[GATK genotypegvcfs]});
 
@@ -1136,12 +1136,12 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         );
     }
-    if ( $active_parameter_href->{pgatk_variantrecalibration} ) {
+    if ( $active_parameter_href->{gatk_variantrecalibration} ) {
 
         $log->info(q{[GATK variantrecalibrator/applyrecalibration]});
 
         my $program_outdirectory_name =
-          $parameter_href->{pgatk_variantrecalibration}{outdir_name};
+          $parameter_href->{gatk_variantrecalibration}{outdir_name};
 
         my $infamily_directory = catfile(
             $active_parameter_href->{outdata_dir},
@@ -1187,7 +1187,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             );
         }
     }
-    if ( $active_parameter_href->{pgatk_combinevariantcallsets} ) {
+    if ( $active_parameter_href->{gatk_combinevariantcallsets} ) {
 
         $log->info(q{[GATK combinevariantcallsets]});
 
@@ -1209,7 +1209,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         );
     }
-    if ( $active_parameter_href->{ppeddy} ) {
+    if ( $active_parameter_href->{peddy} ) {
 
         $log->info(q{[Peddy]});
 
@@ -1243,7 +1243,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         );
     }
-    if ( $active_parameter_href->{pplink} ) {
+    if ( $active_parameter_href->{plink} ) {
 
         $log->info(q{[Plink]});
 
@@ -1277,7 +1277,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         );
     }
-    if ( $active_parameter_href->{pvariant_integrity} ) {
+    if ( $active_parameter_href->{variant_integrity} ) {
 
         $log->info(q{[Variant_integrity]});
 
@@ -1310,7 +1310,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         );
     }
-    if ( $active_parameter_href->{prtg_vcfeval} ) {
+    if ( $active_parameter_href->{rtg_vcfeval} ) {
 
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -1351,7 +1351,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         }
     }
-    if ( $active_parameter_href->{pevaluation} ) {
+    if ( $active_parameter_href->{evaluation} ) {
 
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -1392,7 +1392,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         }
     }
-    if ( $active_parameter_href->{pgatk_variantevalall} ) {
+    if ( $active_parameter_href->{gatk_variantevalall} ) {
 
         $log->info(q{[GATK variantevalall]});
 
@@ -1467,7 +1467,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
     }
     else {
 
-        if ( $active_parameter_href->{pprepareforvariantannotationblock} ) {
+        if ( $active_parameter_href->{prepareforvariantannotationblock} ) {
 
             $log->info(q{[Prepareforvariantannotationblock]});
 
@@ -1485,7 +1485,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             );
         }
 
-        if ( $active_parameter_href->{prhocall} ) {
+        if ( $active_parameter_href->{rhocall} ) {
 
             $log->info(q{[Rhocall]});
 
@@ -1512,7 +1512,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             );
         }
 
-        if ( $active_parameter_href->{pvt} ) {
+        if ( $active_parameter_href->{vt} ) {
 
             $log->info(q{[Vt]});
 
@@ -1538,7 +1538,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
                 }
             );
         }
-        if ( $active_parameter_href->{pfrequency_filter} ) {
+        if ( $active_parameter_href->{frequency_filter} ) {
 
             $log->info(q{[Frequency_filter]});
 
@@ -1565,7 +1565,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             );
         }
 
-        if ( $active_parameter_href->{pvarianteffectpredictor} ) {
+        if ( $active_parameter_href->{varianteffectpredictor} ) {
 
             $log->info(q{[Varianteffectpredictor]});
 
@@ -1582,7 +1582,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
                 }
             );
         }
-        if ( $active_parameter_href->{pvcfparser} ) {
+        if ( $active_parameter_href->{vcfparser} ) {
 
             $log->info(q{[Vcfparser]});
 
@@ -1609,7 +1609,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             );
         }
 
-        if ( $active_parameter_href->{psnpeff} ) {
+        if ( $active_parameter_href->{snpeff} ) {
 
             $log->info(q{[Snpeff]});
 
@@ -1635,7 +1635,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
                 }
             );
         }
-        if ( $active_parameter_href->{prankvariant} ) {
+        if ( $active_parameter_href->{rankvariant} ) {
 
             $log->info(q{[Rankvariant]});
 
@@ -1677,7 +1677,7 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
                 );
             }
         }
-        if ( $active_parameter_href->{pendvariantannotationblock} ) {
+        if ( $active_parameter_href->{endvariantannotationblock} ) {
 
             $log->info(q{[Endvariantannotationblock]});
 
@@ -1696,7 +1696,7 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
         }
     }
 
-    if ( $active_parameter_href->{pgatk_variantevalexome} ) {
+    if ( $active_parameter_href->{gatk_variantevalexome} ) {
 
         $log->info(q{[GATK variantevalexome]});
 
@@ -1736,7 +1736,7 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
             );
         }
     }
-    if ( $active_parameter_href->{pqccollect} ) {
+    if ( $active_parameter_href->{qccollect} ) {
 
         $log->info(q{[Qccollect]});
 
@@ -1758,7 +1758,7 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
         );
     }
 
-    if ( $active_parameter_href->{pmultiqc} ) {
+    if ( $active_parameter_href->{multiqc} ) {
 
         $log->info(q{[Multiqc]});
 
@@ -1774,7 +1774,7 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
         );
     }
 
-    if ( $active_parameter_href->{panalysisrunstatus} ) {
+    if ( $active_parameter_href->{analysisrunstatus} ) {
 
         $log->info(q{[Analysis run status]});
 
@@ -1789,7 +1789,7 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
             }
         );
     }
-    if ( $active_parameter_href->{psacct} ) {
+    if ( $active_parameter_href->{sacct} ) {
 
         $log->info(q{[Sacct]});
 

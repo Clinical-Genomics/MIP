@@ -183,18 +183,17 @@ sub analysis_delly_reformat {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $program_outdirectory_name =
-      $parameter_href->{$mip_program_name}{outdir_name};
+      $parameter_href->{$program_name}{outdir_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -223,16 +222,16 @@ sub analysis_delly_reformat {
     );
 
     # Used downstream
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Tags
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ### Assign suffix
     ## Files
     my $outfile_prefix = $family_id . $outfile_tag . $UNDERSCORE . $call_type;
-    my $file_suffix    = $parameter_href->{$mip_program_name}{outfile_suffix};
+    my $file_suffix    = $parameter_href->{$program_name}{outfile_suffix};
 
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
@@ -261,7 +260,7 @@ sub analysis_delly_reformat {
     my %infile_path_prefix;
     my %file_path_prefix;
     my %suffix;
-    my @program_tag_keys = (qw{ pgatk_baserecalibration pdelly_call });
+    my @program_tag_keys = (qw{ gatk_baserecalibration delly_call });
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -274,7 +273,7 @@ sub analysis_delly_reformat {
         my $insample_directory_bcf =
           catdir( $active_parameter_href->{outdata_dir},
             $sample_id, $outaligner_dir,
-            $parameter_href->{pdelly_call}{outdir_name} );
+            $parameter_href->{delly_call}{outdir_name} );
 
       INFILE_TAG:
         foreach my $infile_tag_key (@program_tag_keys) {
@@ -299,7 +298,7 @@ sub analysis_delly_reformat {
               catfile( $temp_directory, $merged_infile_prefix . $outfile_tag );
 
             # BCFs
-            if ( $infile_tag_key eq q{pdelly_call} ) {
+            if ( $infile_tag_key eq q{delly_call} ) {
 
                 ## Assign suffix
                 $suffix{$infile_tag_key} = get_file_suffix(
@@ -450,12 +449,12 @@ sub analysis_delly_reformat {
 
                     ## Assemble file paths by adding file ending
                     my @file_paths = map {
-                            $infile_path_prefix{$_}{pdelly_call}
+                            $infile_path_prefix{$_}{delly_call}
                           . $UNDERSCORE
                           . $contig
                           . $UNDERSCORE
                           . $sv_type
-                          . $suffix{pdelly_call}
+                          . $suffix{delly_call}
                     } @{ $active_parameter_href->{sample_ids} };
 
                     delly_merge(
@@ -494,10 +493,10 @@ sub analysis_delly_reformat {
 
                 ## Assemble file paths by adding file ending
                 my @file_paths = map {
-                        $infile_path_prefix{$_}{pdelly_call}
+                        $infile_path_prefix{$_}{delly_call}
                       . $UNDERSCORE
                       . $sv_type
-                      . $suffix{pdelly_call}
+                      . $suffix{delly_call}
                 } @{ $active_parameter_href->{sample_ids} };
 
                 delly_merge(
@@ -555,10 +554,10 @@ sub analysis_delly_reformat {
                         ## Assemble file path
                         my $alignment_sample_file_path =
                           $infile_path_prefix{$sample_id}
-                          {pgatk_baserecalibration}
+                          {gatk_baserecalibration}
                           . $UNDERSCORE
                           . $contig
-                          . $suffix{pgatk_baserecalibration};
+                          . $suffix{gatk_baserecalibration};
 
                         delly_call(
                             {
@@ -570,7 +569,7 @@ sub analysis_delly_reformat {
                                   . $contig
                                   . $UNDERSCORE
                                   . $sv_type
-                                  . $suffix{pdelly_call},
+                                  . $suffix{delly_call},
                                 infile_path  => $alignment_sample_file_path,
                                 outfile_path => $file_path_prefix{$sample_id}
                                   . $UNDERSCORE
@@ -578,7 +577,7 @@ sub analysis_delly_reformat {
                                   . $UNDERSCORE
                                   . $sv_type
                                   . $UNDERSCORE . q{geno}
-                                  . $suffix{pdelly_call},
+                                  . $suffix{delly_call},
                                 referencefile_path => $referencefile_path,
                                 stderrfile_path    => $xargs_file_path_prefix
                                   . $DOT
@@ -604,8 +603,8 @@ sub analysis_delly_reformat {
 
                     ## Assemble file path
                     my $alignment_sample_file_path =
-                        $infile_path_prefix{$sample_id}{pgatk_baserecalibration}
-                      . $suffix{pgatk_baserecalibration};
+                        $infile_path_prefix{$sample_id}{gatk_baserecalibration}
+                      . $suffix{gatk_baserecalibration};
 
                     delly_call(
                         {
@@ -615,13 +614,13 @@ sub analysis_delly_reformat {
                             genotypefile_path => $outfile_path_prefix
                               . $UNDERSCORE
                               . $sv_type
-                              . $suffix{pdelly_call},
+                              . $suffix{delly_call},
                             infile_path  => $alignment_sample_file_path,
                             outfile_path => $file_path_prefix{$sample_id}
                               . $UNDERSCORE
                               . $sv_type
                               . $UNDERSCORE . q{geno}
-                              . $suffix{pdelly_call},
+                              . $suffix{delly_call},
                             referencefile_path => $referencefile_path,
                             stderrfile_path    => $xargs_file_path_prefix
                               . $DOT
@@ -672,7 +671,7 @@ sub analysis_delly_reformat {
                           . $UNDERSCORE
                           . $sv_type
                           . $UNDERSCORE . q{geno}
-                          . $suffix{pdelly_call}
+                          . $suffix{delly_call}
                     } @{ $active_parameter_href->{sample_ids} };
 
                     bcftools_merge(
@@ -684,7 +683,7 @@ sub analysis_delly_reformat {
                               . $contig
                               . $UNDERSCORE
                               . $sv_type
-                              . $suffix{pdelly_call},
+                              . $suffix{delly_call},
                             output_type     => q{b},
                             stderrfile_path => $xargs_file_path_prefix
                               . $DOT
@@ -712,7 +711,7 @@ sub analysis_delly_reformat {
                               . $contig
                               . $UNDERSCORE
                               . $sv_type
-                              . $suffix{pdelly_call},
+                              . $suffix{delly_call},
                             output_type     => q{csi},
                             stderrfile_path => $xargs_file_path_prefix
                               . $DOT
@@ -734,7 +733,7 @@ sub analysis_delly_reformat {
                       . $UNDERSCORE
                       . $sv_type
                       . $UNDERSCORE . q{geno}
-                      . $suffix{pdelly_call}
+                      . $suffix{delly_call}
                 } @{ $active_parameter_href->{sample_ids} };
 
                 bcftools_merge(
@@ -744,7 +743,7 @@ sub analysis_delly_reformat {
                         outfile_path     => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
-                          . $suffix{pdelly_call},
+                          . $suffix{delly_call},
                         output_type     => q{b},
                         stderrfile_path => $xargs_file_path_prefix
                           . $DOT
@@ -766,7 +765,7 @@ sub analysis_delly_reformat {
                         infile_path => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
-                          . $suffix{pdelly_call},
+                          . $suffix{delly_call},
                         stderrfile_path => $xargs_file_path_prefix
                           . $DOT
                           . $sv_type
@@ -797,7 +796,7 @@ sub analysis_delly_reformat {
                       . $_
                       . $UNDERSCORE
                       . $sv_type
-                      . $suffix{pdelly_call}
+                      . $suffix{delly_call}
                 } @contigs;
             }
             else {
@@ -806,7 +805,7 @@ sub analysis_delly_reformat {
                     $outfile_path_prefix
                   . $UNDERSCORE
                   . $sv_type
-                  . $suffix{pdelly_call};
+                  . $suffix{delly_call};
             }
 
             bcftools_concat(
@@ -819,7 +818,7 @@ sub analysis_delly_reformat {
                       . $sv_type
                       . $UNDERSCORE
                       . q{concat}
-                      . $suffix{pdelly_call},
+                      . $suffix{delly_call},
                     output_type     => q{b},
                     rm_dups         => q{all},
                     stderrfile_path => $program_info_path
@@ -839,7 +838,7 @@ sub analysis_delly_reformat {
                       . $sv_type
                       . $UNDERSCORE
                       . q{concat}
-                      . $suffix{pdelly_call},
+                      . $suffix{delly_call},
                     output_type     => q{csi},
                     stderrfile_path => $xargs_file_path_prefix
                       . $DOT
@@ -878,13 +877,13 @@ sub analysis_delly_reformat {
                           . $sv_type
                           . $UNDERSCORE
                           . q{concat}
-                          . $suffix{pdelly_call},
+                          . $suffix{delly_call},
                         outfile_path => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
                           . $UNDERSCORE
                           . q{filtered}
-                          . $suffix{pdelly_call},
+                          . $suffix{delly_call},
                         stderrfile_path => $xargs_file_path_prefix
                           . $DOT
                           . $sv_type
@@ -910,13 +909,13 @@ sub analysis_delly_reformat {
                         infile_path => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
-                          . $suffix{pdelly_call},
+                          . $suffix{delly_call},
                         outfile_path => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
                           . $UNDERSCORE
                           . q{filtered}
-                          . $suffix{pdelly_call},
+                          . $suffix{delly_call},
                         stderrfile_path => $xargs_file_path_prefix
                           . $DOT
                           . $sv_type
@@ -949,7 +948,7 @@ sub analysis_delly_reformat {
               . $_
               . $UNDERSCORE
               . q{filtered}
-              . $suffix{pdelly_call}
+              . $suffix{delly_call}
         } @{ $active_parameter_href->{delly_types} };
     }
     else {    #Only one sample
@@ -968,22 +967,22 @@ sub analysis_delly_reformat {
 
                     ## Assemble file paths by adding file ending
                     push @file_paths, map {
-                            $infile_path_prefix{$_}{pdelly_call}
+                            $infile_path_prefix{$_}{delly_call}
                           . $UNDERSCORE
                           . $contig
                           . $UNDERSCORE
                           . $sv_type
-                          . $suffix{pdelly_call}
+                          . $suffix{delly_call}
                     } @{ $active_parameter_href->{sample_ids} };
                 }
             }
             else {
 
                 push @file_paths, map {
-                        $infile_path_prefix{$_}{pdelly_call}
+                        $infile_path_prefix{$_}{delly_call}
                       . $UNDERSCORE
                       . $sv_type
-                      . $suffix{pdelly_call}
+                      . $suffix{delly_call}
                 } @{ $active_parameter_href->{sample_ids} };
             }
         }
@@ -1047,7 +1046,7 @@ sub analysis_delly_reformat {
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         add_program_outfile_to_sample_info(
             {

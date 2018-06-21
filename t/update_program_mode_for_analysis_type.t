@@ -118,12 +118,12 @@ my $log = initiate_logger(
 my @programs =
   qw{ cnvnator delly_call delly_reformat samtools_subsample_mt tiddit };
 my %active_parameter = (
-    pcnvnator              => 1,
-    pdelly_call            => 1,
-    pdelly_reformat        => 1,
-    pmanta                 => 1,
-    psamtools_subsample_mt => 1,
-    ptiddit                => 1,
+    cnvnator              => 1,
+    delly_call            => 1,
+    delly_reformat        => 1,
+    manta                 => 1,
+    samtools_subsample_mt => 1,
+    tiddit                => 1,
 );
 
 my @warning_msgs = update_program_mode_for_analysis_type(
@@ -146,12 +146,12 @@ is( @warning_msgs, 0, q{No updates to programs mode} );
     }
 );
 ## Alias
-my $cnvnator_mode              = $active_parameter{pcnvnator};
-my $delly_call_mode            = $active_parameter{pdelly_call};
-my $delly_reformat_mode        = $active_parameter{pdelly_reformat};
-my $manta_mode                 = $active_parameter{pmanta};
-my $samtools_subsample_mt_mode = $active_parameter{psamtools_subsample_mt};
-my $tiddit_mode                = $active_parameter{ptiddit};
+my $cnvnator_mode              = $active_parameter{cnvnator};
+my $delly_call_mode            = $active_parameter{delly_call};
+my $delly_reformat_mode        = $active_parameter{delly_reformat};
+my $manta_mode                 = $active_parameter{manta};
+my $samtools_subsample_mt_mode = $active_parameter{samtools_subsample_mt};
+my $tiddit_mode                = $active_parameter{tiddit};
 
 ## Test program mode updates and warnings
 is( $cnvnator_mode,       0, q{Updated programs mode for cnvnator} );

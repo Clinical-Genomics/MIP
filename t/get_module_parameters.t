@@ -97,18 +97,18 @@ diag(   q{Test get_module_parameters from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $mip_program_name = q{pchanjo_sexcheck};
+my $program_name = q{chanjo_sexcheck};
 
 my %active_parameter = (
-    module_time                      => { pchanjo_sexcheck => 1, },
-    module_core_number               => { pchanjo_sexcheck => 1, },
+    module_time                      => { chanjo_sexcheck => 1, },
+    module_core_number               => { chanjo_sexcheck => 1, },
     source_main_environment_commands => [ qw{ source activate mip }, ],
 );
 
 my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
     {
         active_parameter_href => \%active_parameter,
-        mip_program_name      => $mip_program_name,
+        program_name      => $program_name,
     }
 );
 
@@ -121,16 +121,16 @@ is_deeply( \@source_environment_cmds, [qw{source activate mip}],
 
 ## Test module specific source command
 %active_parameter = (
-    module_time        => { pchanjo_sexcheck => 1, },
-    module_core_number => { pchanjo_sexcheck => 1, },
+    module_time        => { chanjo_sexcheck => 1, },
+    module_core_number => { chanjo_sexcheck => 1, },
     module_source_environment_command =>
-      { pchanjo_sexcheck => [ qw{ source activate python_v3.6_tools }, ], },
+      { chanjo_sexcheck => [ qw{ source activate python_v3.6_tools }, ], },
 );
 
 ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
     {
         active_parameter_href => \%active_parameter,
-        mip_program_name      => $mip_program_name,
+        program_name      => $program_name,
     }
 );
 

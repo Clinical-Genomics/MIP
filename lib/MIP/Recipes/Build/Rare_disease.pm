@@ -173,7 +173,7 @@ sub build_rare_disease_meta_files {
 
 ## Check Rtg build prerequisites
 
-    if ( $active_parameter_href->{prtg_vcfeval} ) {
+    if ( $active_parameter_href->{rtg_vcfeval} ) {
 
         check_rtg_prerequisites(
             {
@@ -191,7 +191,7 @@ sub build_rare_disease_meta_files {
 
 ## Check BWA build prerequisites
 
-    if ( $active_parameter_href->{pbwa_mem} ) {
+    if ( $active_parameter_href->{bwa_mem} ) {
 
         check_bwa_prerequisites(
             {

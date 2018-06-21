@@ -108,7 +108,7 @@ my %parameter = load_yaml(
 );
 
 my %active_parameter = (
-    pbwa_mem                => 1,
+    bwa_mem                => 1,
     vcfparser_outfile_count => 1,
     family_id               => q{family_1},    #Add mandatory key default
     family_1                => 1,

@@ -190,18 +190,17 @@ sub analysis_gatk_splitncigarreads {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
       );
 
@@ -227,7 +226,7 @@ sub analysis_gatk_splitncigarreads {
     );
 
     ## Used downstream
-    $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
+    $parameter_href->{$program_name}{$sample_id}{indirectory} =
       $outsample_directory;
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
@@ -240,9 +239,9 @@ sub analysis_gatk_splitncigarreads {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{pmarkduplicates}{file_tag};
+      $file_info_href->{$sample_id}{markduplicates}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $merged_infile_prefix . $infile_tag;
@@ -361,7 +360,7 @@ sub analysis_gatk_splitncigarreads {
     close $FILEHANDLE;
     close $XARGSFILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {

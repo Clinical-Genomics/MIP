@@ -98,13 +98,13 @@ diag(   q{Test update_program_mode_with_start_with from Programs.pm v}
       . $EXECUTABLE_NAME );
 
 my %active_parameter = (
-    pfastqc   => 1,
-    pbwa_mem  => 2,
-    pstar_aln => 0,
-    pmultiqc  => 2,
+    fastqc   => 1,
+    bwa_mem  => 2,
+    star_aln => 0,
+    multiqc  => 2,
 );
-my @programs            = qw{ pfastqc pbwa_mem pstar_aln pmultiqc };
-my @start_with_programs = qw{ pbwa_mem pmultiqc };
+my @programs            = qw{ fastqc bwa_mem star_aln multiqc };
+my @start_with_programs = qw{ bwa_mem multiqc };
 
 update_program_mode_with_start_with(
     {
@@ -114,15 +114,15 @@ update_program_mode_with_start_with(
     }
 );
 
-is( $active_parameter{pfastqc},
+is( $active_parameter{fastqc},
     2, q{Udated upstreams dependencies program mode} );
 
-is( $active_parameter{pbwa_mem}, 1, q{Udated start with program mode} );
+is( $active_parameter{bwa_mem}, 1, q{Udated start with program mode} );
 
-is( $active_parameter{pmultiqc},
+is( $active_parameter{multiqc},
     1, q{Udated downstream dependencies program mode} );
 
-is( $active_parameter{pstar_aln}, 0, q{Did not update switched off program } );
+is( $active_parameter{star_aln}, 0, q{Did not update switched off program } );
 
 done_testing();
 

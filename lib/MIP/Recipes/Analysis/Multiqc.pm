@@ -118,16 +118,15 @@ sub analysis_multiqc {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
       );
 
@@ -152,7 +151,7 @@ sub analysis_multiqc {
 
     ## Assign directories
     my $program_outdirectory_name =
-      $parameter_href->{$mip_program_name}{outdir_name};
+      $parameter_href->{$program_name}{outdir_name};
 
     ## Always analyse case
     my @report_ids = ($family_id);
@@ -189,7 +188,7 @@ sub analysis_multiqc {
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        if ( $mip_program_mode == 1 ) {
+        if ( $program_mode == 1 ) {
 
             ## Collect QC metadata info for later use
             add_program_metafile_to_sample_info(
@@ -206,7 +205,7 @@ sub analysis_multiqc {
 
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         slurm_submit_chain_job_ids_dependency_add_to_path(
             {

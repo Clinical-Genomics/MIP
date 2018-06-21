@@ -1,20 +1,20 @@
 CHAIN_ALL:
    - CHAIN_MAIN:
-   - pgzip_fastq
+   - gzip_fastq
 # Parallel chains (branch)
    - CHAIN_FASTQ:
-      - pfastqc
+      - fastqc
    - CHAIN_SALMON:
-      - psalmon_quant
+      - salmon_quant
    - CHAIN_FUSION:
-      - pstar_fusion
+      - star_fusion
    - CHAIN_MAIN:
-      - pstar_aln
-      - ppicardtools_mergesamfiles
-      - pmarkduplicates
-      - pgatk_splitncigarreads
-      - pgatk_baserecalibration
-      - pgatk_haplotypecaller
+      - star_aln
+      - picardtools_mergesamfiles
+      - markduplicates
+      - gatk_splitncigarreads
+      - gatk_baserecalibration
+      - gatk_haplotypecaller
       - CHAIN_ASE:
-         - pgatk_asereadcounter
-      - pgatk_variantfiltration
+         - gatk_asereadcounter
+      - gatk_variantfiltration

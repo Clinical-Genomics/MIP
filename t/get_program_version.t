@@ -116,7 +116,7 @@ my %program_feature = (
         regexp       => q?picard-tools-([^,]+)?,
         program_name => q{picard.jar},
     },
-    psambamba_depth => {
+    sambamba_depth => {
         cmd          => q{To be disclosed},
         regexp       => q?Not relevant?,
         program_name => q{sambamba},
@@ -176,14 +176,14 @@ my $sambamba_cmd =
 ## Set in program features hash
 $program_feature{gatk_path}{cmd}        = $gatk_cmd;
 $program_feature{picardtools_path}{cmd} = $picard_cmd;
-$program_feature{psambamba_depth}{cmd}  = $sambamba_cmd;
+$program_feature{sambamba_depth}{cmd}  = $sambamba_cmd;
 
 ## Scramble the regexps, that need scrambling
 $program_feature{gatk_path}{regexp}        = q{Not valid};
 $program_feature{picardtools_path}{regexp} = q{Not valid};
 
 ## Activate parameter
-$active_parameter{psambamba_depth} = 2;
+$active_parameter{sambamba_depth} = 2;
 
 PARAMETER:
 foreach my $parameter_name ( keys %program_feature ) {
@@ -203,7 +203,7 @@ foreach my $parameter_name ( keys %program_feature ) {
 ## Then version should be true
 ok( $return{gatk_path}{cmd_return},        q{Added gatk version by cmd} );
 ok( $return{picardtools_path}{cmd_return}, q{Added picard version by cmd} );
-is( $return{psambamba_depth}{cmd_return}, undef, q{Skipped sambamba version} );
+is( $return{sambamba_depth}{cmd_return}, undef, q{Skipped sambamba version} );
 
 done_testing();
 

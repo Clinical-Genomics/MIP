@@ -234,8 +234,7 @@ sub setup_script {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ### Sbatch script names and directory creation
     ## File
@@ -271,7 +270,7 @@ sub setup_script {
         q{dry_run} . $UNDERSCORE . $file_name_prefix );
 
     ## Dry run program - update file paths
-    if ( $mip_program_mode == 2 ) {
+    if ( $program_mode == 2 ) {
 
         $file_path_prefix = $dry_run_file_path_prefix;
         $file_info_path   = $dry_run_file_info_path;

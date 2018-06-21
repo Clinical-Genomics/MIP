@@ -181,13 +181,12 @@ sub bwa_mem_rapid {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
-    my $jobid_chain      = $parameter_href->{$mip_program_name}{chain};
+    my $program_mode = $active_parameter_href->{$program_name};
+    my $jobid_chain      = $parameter_href->{$program_name}{chain};
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my $time = $active_parameter_href->{module_time}{$program_name};
     my $infile_size;
     my $total_sbatch_counter = 0;
 
@@ -200,12 +199,12 @@ sub bwa_mem_rapid {
 
     ## Assign directories
     # Used downstream
-    $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
+    $parameter_href->{$program_name}{$sample_id}{indirectory} =
       $outsample_directory;
 
     ## Assign file tags
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
 
     ### Assign suffix
     ## Set file suffix for next module within jobid chain
@@ -214,7 +213,7 @@ sub bwa_mem_rapid {
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
             jobid_chain    => $jobid_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
@@ -410,7 +409,7 @@ sub bwa_mem_rapid {
                         FILEHANDLE  => $FILEHANDLE,
                         thread_number =>
                           $active_parameter_href->{module_core_number}
-                          {$mip_program_name},
+                          {$program_name},
                         auto_detect_input_format => 1,
                         with_header              => 1,
                         uncompressed_bam_output  => $uncompressed_bam_output,
@@ -454,7 +453,7 @@ sub bwa_mem_rapid {
 
                 close($FILEHANDLE);
 
-                if ( $mip_program_mode == 1 ) {
+                if ( $program_mode == 1 ) {
 
                     slurm_submit_job_sample_id_dependency_step_in_parallel(
                         {
@@ -473,9 +472,9 @@ sub bwa_mem_rapid {
 
                 ## Save sbatch Counter to track how many read batch processes we have engaged
                 $sample_info_href->{sample}{$sample_id}{$infile_prefix}
-                  {pbwa_mem}{read_batch_process} =
+                  {bwa_mem}{read_batch_process} =
                   $sbatch_counter + 1;    #Used to be  $sbatch_counter
-                $sample_info_href->{sample}{$sample_id}{pbwa_mem}
+                $sample_info_href->{sample}{$sample_id}{bwa_mem}
                   {sbatch_batch_processes} = $total_sbatch_counter;
             }
         }

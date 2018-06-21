@@ -158,15 +158,14 @@ sub analysis_split_fastq_file {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -197,11 +196,11 @@ sub analysis_split_fastq_file {
         my $file_path   = catfile( $temp_directory,     $fastq_file );
 
         ## Assign suffix
-        my $infile_suffix = $parameter_href->{$mip_program_name}{infile_suffix};
+        my $infile_suffix = $parameter_href->{$program_name}{infile_suffix};
         my $outfile_suffix = get_file_suffix(
             {
                 parameter_href => $parameter_href,
-                program_name   => $mip_program_name,
+                program_name   => $program_name,
                 suffix_key     => q{outfile_suffix},
             }
         );
@@ -341,7 +340,7 @@ sub analysis_split_fastq_file {
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        if ( $mip_program_mode == 1 ) {
+        if ( $program_mode == 1 ) {
 
             slurm_submit_job_no_dependency_add_to_sample(
                 {

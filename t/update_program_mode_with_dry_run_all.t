@@ -93,12 +93,12 @@ diag(
 
 my $simulation_mode = 0;
 
-my @programs = qw{pfastqc pbwa_mem ppeddy};
+my @programs = qw{fastqc bwa_mem peddy};
 
 my %active_parameter = (
-    pfastqc  => 0,
-    pbwa_mem => 1,
-    ppeddy   => 2,
+    fastqc  => 0,
+    bwa_mem => 1,
+    peddy   => 2,
 );
 
 update_program_mode_with_dry_run_all(
@@ -109,11 +109,11 @@ update_program_mode_with_dry_run_all(
     }
 );
 
-is( $active_parameter{pfastqc}, 0, q{No update pfastqc} );
+is( $active_parameter{fastqc}, 0, q{No update fastqc} );
 
-is( $active_parameter{pbwa_mem}, 1, q{No update pbwa_mem} );
+is( $active_parameter{bwa_mem}, 1, q{No update bwa_mem} );
 
-is( $active_parameter{ppeddy}, 2, q{No update ppeddy} );
+is( $active_parameter{peddy}, 2, q{No update peddy} );
 
 ### Update of program parameters
 
@@ -128,11 +128,11 @@ update_program_mode_with_dry_run_all(
     }
 );
 
-is( $active_parameter{pfastqc}, 0, q{No update pfastqc} );
+is( $active_parameter{fastqc}, 0, q{No update fastqc} );
 
-is( $active_parameter{pbwa_mem}, 2, q{Update pbwa_mem to simulation mode} );
+is( $active_parameter{bwa_mem}, 2, q{Update bwa_mem to simulation mode} );
 
-is( $active_parameter{ppeddy}, 2, q{No update ppeddy} );
+is( $active_parameter{peddy}, 2, q{No update peddy} );
 
 done_testing();
 

@@ -175,18 +175,17 @@ sub analysis_samtools_mpileup {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+      $active_parameter_href->{module_core_number}{$program_name};
+    my $time = $active_parameter_href->{module_time}{$program_name};
 
     ## Alias
     my $program_outdirectory_name =
-      $parameter_href->{$mip_program_name}{outdir_name};
+      $parameter_href->{$program_name}{outdir_name};
     my $program_directory =
       catfile( $outaligner_dir, $program_outdirectory_name );
     my $xargs_file_path_prefix;
@@ -218,11 +217,11 @@ sub analysis_samtools_mpileup {
         $family_id, $outaligner_dir, $program_outdirectory_name );
 
     #Used downstream
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Files
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
     my $outfile_prefix = $family_id . $outfile_tag . $call_type;
 
     ## Paths
@@ -234,7 +233,7 @@ sub analysis_samtools_mpileup {
         {
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
+            jobid_chain    => $parameter_href->{gatk_baserecalibration}{chain},
         }
     );
 
@@ -244,7 +243,7 @@ sub analysis_samtools_mpileup {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
@@ -280,7 +279,7 @@ sub analysis_samtools_mpileup {
 
         ## Files
         my $infile_tag =
-          $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
+          $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
         my $infile_prefix = $merged_infile_prefix . $infile_tag;
 
         ## Paths
@@ -461,7 +460,7 @@ sub analysis_samtools_mpileup {
     close $XARGSFILEHANDLE
       or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
-    if ( $active_parameter_href->{$mip_program_name} == 1 ) {
+    if ( $active_parameter_href->{$program_name} == 1 ) {
 
         my $path =>
           catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );

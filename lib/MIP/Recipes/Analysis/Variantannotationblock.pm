@@ -167,28 +167,28 @@ sub analysis_variantannotationblock {
 
     # Set order of supplying user info
     my @rio_program_order =
-      qw{ pprepareforvariantannotationblock prhocall pvt pfrequency_filter pvarianteffectpredictor pvcfparser psnpeff prankvariant pendvariantannotationblock };
+      qw{ prepareforvariantannotationblock rhocall vt frequency_filter varianteffectpredictor vcfparser snpeff rankvariant endvariantannotationblock };
 
     # Store what to supply to user
     my %rio_program = (
-        pprepareforvariantannotationblock =>
+        prepareforvariantannotationblock =>
           q{[Prepareforvariantannotationblock]},
-        prhocall                   => q{[rhocall]},
-        pvt                        => q{[Vt]},
-        pfrequency_filter          => q{[Frequency filter]},
-        pvarianteffectpredictor    => q{[Varianteffectpredictor]},
-        pvcfparser                 => q{[Vcfparser]},
-        psnpeff                    => q{[Snpeff]},
-        prankvariant               => q{[Rankvariant]},
-        pendvariantannotationblock => q{[Endvariantannotationblock]},
+        rhocall                   => q{[rhocall]},
+        vt                        => q{[Vt]},
+        frequency_filter          => q{[Frequency filter]},
+        varianteffectpredictor    => q{[Varianteffectpredictor]},
+        vcfparser                 => q{[Vcfparser]},
+        snpeff                    => q{[Snpeff]},
+        rankvariant               => q{[Rankvariant]},
+        endvariantannotationblock => q{[Endvariantannotationblock]},
     );
 
   RIO_PROGRAM:
-    foreach my $mip_program_name (@rio_program_order) {
+    foreach my $program_name (@rio_program_order) {
 
-        if ( $active_parameter_href->{$mip_program_name} ) {
+        if ( $active_parameter_href->{$program_name} ) {
 
-            my $program_header = $rio_program{$mip_program_name};
+            my $program_header = $rio_program{$program_name};
 
             $log->info( $TAB . $program_header );
         }
@@ -209,7 +209,7 @@ sub analysis_variantannotationblock {
     );
 
     ## Copy files for variantannotationblock to enable restart and skip of modules within block
-    if ( $active_parameter_href->{pprepareforvariantannotationblock} ) {
+    if ( $active_parameter_href->{prepareforvariantannotationblock} ) {
 
         ($xargs_file_counter) = analysis_prepareforvariantannotationblock_rio(
             {
@@ -229,7 +229,7 @@ sub analysis_variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{prhocall} ) {
+    if ( $active_parameter_href->{rhocall} ) {
 
         my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
             $family_id, $outaligner_dir );
@@ -255,7 +255,7 @@ sub analysis_variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{pvt} ) {
+    if ( $active_parameter_href->{vt} ) {
 
         my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
             $family_id, $outaligner_dir );
@@ -281,7 +281,7 @@ sub analysis_variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{pfrequency_filter} ) {
+    if ( $active_parameter_href->{frequency_filter} ) {
 
         my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
             $family_id, $outaligner_dir );
@@ -307,7 +307,7 @@ sub analysis_variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{pvarianteffectpredictor} ) {
+    if ( $active_parameter_href->{varianteffectpredictor} ) {
 
         ($xargs_file_counter) = analysis_vep_rio(
             {
@@ -327,7 +327,7 @@ sub analysis_variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{pvcfparser} ) {
+    if ( $active_parameter_href->{vcfparser} ) {
 
         my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
             $family_id, $outaligner_dir );
@@ -353,7 +353,7 @@ sub analysis_variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{psnpeff} ) {
+    if ( $active_parameter_href->{snpeff} ) {
 
         my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
             $family_id, $outaligner_dir );
@@ -378,7 +378,7 @@ sub analysis_variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{prankvariant} ) {
+    if ( $active_parameter_href->{rankvariant} ) {
 
         my $rank_program_name = q{rankvariant};
 
@@ -428,7 +428,7 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
             );
         }
     }
-    if ( $active_parameter_href->{pendvariantannotationblock} ) {
+    if ( $active_parameter_href->{endvariantannotationblock} ) {
 
         ($xargs_file_counter) = analysis_endvariantannotationblock_rio(
             {

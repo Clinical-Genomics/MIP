@@ -181,8 +181,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
     my $consensus_analysis_type =
@@ -193,7 +192,7 @@ sub analysis_gatk_variantrecalibration_wgs {
       $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
     my $gatk_jar =
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
-    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $resource_indel_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_indel};
@@ -202,7 +201,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -212,20 +211,20 @@ sub analysis_gatk_variantrecalibration_wgs {
 
     ## Assign directories
     my $program_outdirectory_name =
-      $parameter_href->{$mip_program_name}{outdir_name};
+      $parameter_href->{$program_name}{outdir_name};
 
     ## For ".fam" file
     my $outfamily_file_directory =
       catdir( $active_parameter_href->{outdata_dir}, $family_id );
 
     ## Used downstream
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{pgatk_genotypegvcfs}{file_tag};
+      $file_info_href->{$family_id}{gatk_genotypegvcfs}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -239,7 +238,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     my $infile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
-            program_name   => q{pgatk_genotypegvcfs},
+            program_name   => q{gatk_genotypegvcfs},
             suffix_key     => q{outfile_suffix},
         }
     );
@@ -247,7 +246,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -534,7 +533,7 @@ sub analysis_gatk_variantrecalibration_wgs {
 
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         my $program_outfile_path =
@@ -712,8 +711,7 @@ sub analysis_gatk_variantrecalibration_wes {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
     my $consensus_analysis_type =
@@ -724,7 +722,7 @@ sub analysis_gatk_variantrecalibration_wes {
       $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
     my $gatk_jar =
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
-    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $resource_indel_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_indel};
@@ -733,7 +731,7 @@ sub analysis_gatk_variantrecalibration_wes {
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            program_name      => $program_name,
         }
     );
 
@@ -743,20 +741,20 @@ sub analysis_gatk_variantrecalibration_wes {
 
     ## Assign directories
     my $program_outdirectory_name =
-      $parameter_href->{$mip_program_name}{outdir_name};
+      $parameter_href->{$program_name}{outdir_name};
 
     ## For ".fam" file
     my $outfamily_file_directory =
       catdir( $active_parameter_href->{outdata_dir}, $family_id );
 
     ## Used downstream
-    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
+    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{pgatk_genotypegvcfs}{file_tag};
+      $file_info_href->{$family_id}{gatk_genotypegvcfs}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$family_id}{$program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $family_id . $infile_tag . $call_type;
@@ -770,7 +768,7 @@ sub analysis_gatk_variantrecalibration_wes {
     my $infile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
-            program_name   => q{pgatk_genotypegvcfs},
+            program_name   => q{gatk_genotypegvcfs},
             suffix_key     => q{outfile_suffix},
         }
     );
@@ -778,7 +776,7 @@ sub analysis_gatk_variantrecalibration_wes {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -1089,7 +1087,7 @@ sub analysis_gatk_variantrecalibration_wes {
 
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         my $program_outfile_path =

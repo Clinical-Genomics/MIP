@@ -26,7 +26,7 @@ MIP has been in use in the clinical production at the Clinical Genomics facility
 ## Example Usage
 
 ```Bash
-$ mip analyse rare_disease --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [family_id_pedigree.yaml]
+$ mip analyse rare_disease --family_id [family_id] --bwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [family_id_pedigree.yaml]
 ```
 
 ## Features
@@ -167,11 +167,11 @@ $ perl t/mip_analyse_rare_disease.test
      - activate
      - MIP_py3
   module_source_environment_command:
-    pchanjo_sexcheck:
+    chanjo_sexcheck:
      - source
      - activate
      - MIP_py3
-    pcnvnator:
+    cnvnator:
      - LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH;
      - export
      - LD_LIBRARY_PATH;
@@ -180,41 +180,41 @@ $ perl t/mip_analyse_rare_disease.test
      - source
      - activate
      - MIP_cnvnator
-    pmultiqc:
+    multiqc:
      - source
      - activate
      - MIP_py3
-    ppeddy:
+    peddy:
      - source
      - activate
      - MIP_peddy
-    prankvariant:
+    rankvariant:
      - source
      - activate
      - MIP_py3
-    psv_rankvariant:
+    sv_rankvariant:
      - source
      - activate
      - MIP_py3
-    psv_combinevariantcallsets:
+    sv_combinevariantcallsets:
      - source
      - activate
      - MIP_svdb
-    psv_varianteffectpredictor:
+    sv_varianteffectpredictor:
      - LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH;
      - export
      - LD_LIBRARY_PATH;
      - source
      - activate
      - MIP_vep
-    pvarianteffectpredictor:
+    varianteffectpredictor:
      - LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH;
      - export
      - LD_LIBRARY_PATH;
      - source
      - activate
      - MIP_vep
-    pvariant_integrity:
+    variant_integrity:
      - source
      - activate
      - MIP_py3
@@ -241,7 +241,7 @@ You can always supply `perl mip.pl --help` to list all available parameters and 
 
 Example usage:
 ```Bash
-$ mip analyse rare_disease -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --pbwa_mem 2 -c 3_config.yaml
+$ mip analyse rare_disease -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
 ```
 
 This will analyse family 3 using 3 individuals from that family and begin the analysis with programs after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
