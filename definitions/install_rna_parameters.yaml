@@ -23,6 +23,7 @@ emip:
     java-jdk:
     picard: 2.18
     salmon: 0.9.1
+    sambamba:
     samtools: 1.8
     star: 2.5.4a
     bioconductor-deseq2:

@@ -689,7 +689,10 @@ sub finish_bioconda_package_install {
 
         ## Hard coding here since GATK 4.0 will be open source.
         ## Then this step will be unnecessary
-        say {$FILEHANDLE} q{gatk-register} . $SPACE . $gatk_tar_path . $NEWLINE;
+        say {$FILEHANDLE} q{gatk3-register}
+          . $SPACE
+          . $gatk_tar_path
+          . $NEWLINE;
 
         gnu_rm(
             {

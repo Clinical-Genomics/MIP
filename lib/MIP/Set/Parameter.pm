@@ -248,7 +248,7 @@ q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit:
     ## Set default dynamic path if needed
     my %dynamic_path = (
         gatk_path => {
-            bin_file        => q{gatk},
+            bin_file        => q{gatk3},
             environment_key => q{pgatk},
         },
         picardtools_path => {
