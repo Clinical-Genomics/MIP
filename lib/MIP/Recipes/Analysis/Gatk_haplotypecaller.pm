@@ -186,10 +186,9 @@ sub analysis_gatk_haplotypecaller {
 
     ## Constants
     Readonly my $MITOCHONDRIA_PLOIDY           => 3;
-    Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
     Readonly my $JAVA_MEMORY_ALLOCATION        => 4;
+    Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
     Readonly my $VARIANT_INDEX_PARAMETER       => 128_000;
-    Readonly my $MITOCHONDRIA_PLOIDY           => 3;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
