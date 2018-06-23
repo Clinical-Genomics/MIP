@@ -266,7 +266,7 @@ sub get_dynamic_conda_path {
           %{ $active_parameter_href->{program_source_environment_command} };
     }
     if ( $active_parameter_href->{module_source_environment_command} ) {
-        ## Add to environment hash with "pprogram_name" as keys and "source env command" as value
+        ## Add to environment hash with "program_name" as keys and "source env command" as value
         @environment{
             keys %{ $active_parameter_href->{module_source_environment_command}
             }

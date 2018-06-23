@@ -125,12 +125,12 @@ my %active_parameter = (
     family_id              => 1,
     human_genome_reference => q{human_genom_reference.fasta},
     module_source_environment_command => {
-        pgatk                   => [ qw{ source activate test_env }, ],
+        gatk                   => [ qw{ source activate test_env }, ],
         varianteffectpredictor => [ qw{ source activate test_env }, ],
     },
     outdata_dir                        => catfile(qw{ a outdata dir }),
     program_source_environment_command => {
-        ppicardtools => [ qw{ source activate test_env_1 }, ],
+        picardtools => [ qw{ source activate test_env_1 }, ],
     },
     sample_ids => [qw{ sample_1 }],
 );
