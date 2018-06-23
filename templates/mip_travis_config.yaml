@@ -99,6 +99,7 @@ rankvariant: 1
 rhocall: 1
 sacct: 1
 sambamba_depth: 1
+samtools_subsample_mt: 1
 bcftools_mpileup: 1
 snpeff: 1
 sv_combinevariantcallsets: 1
