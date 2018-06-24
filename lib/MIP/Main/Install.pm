@@ -32,6 +32,7 @@ use MIP::Package_manager::Conda
 use MIP::Set::Parameter qw{ set_conda_env_names_and_paths  };
 
 ## Recipes
+use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
 use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
 use MIP::Recipes::Install::Blobfish qw{ install_blobfish };
 use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
@@ -239,6 +240,7 @@ sub mip_install {
         ### Install shell programs
         ## Create dispatch table for shell installation subs
         my %shell_subs = (
+            bootstrapann    => \&install_bootstrapann,
             bedtools        => \&install_bedtools,
             blobfish        => \&install_blobfish,
             bootstrapann    => \&install_bootstrapann,
