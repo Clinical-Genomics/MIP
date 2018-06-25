@@ -21,10 +21,12 @@ emip:
     gatk: 3.8
     htslib: 1.8
     java-jdk:
+    numpy:
     picard: 2.18
     salmon: 0.9.1
     sambamba:
     samtools: 1.8
+    scipy:
     star: 2.5.4a
     bioconductor-deseq2:
     bioconductor-tximport:
@@ -34,6 +36,9 @@ emip:
     python: 2.7
     pip:
   shell:
+    bootstrapann:
+      version: git
+      url: https://github.com/J35P312/BootstrapAnn.git
     mip_scripts:
       version: Your current MIP version
     picard:

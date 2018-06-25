@@ -26,7 +26,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils
   qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = '0.2.2';
+our $VERSION = '0.2.3';
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -129,6 +129,7 @@ sub _build_usage {
             documentation => q{Set program versions},
             is            => q{rw},
             isa           => Dict [
+                bcftools    => Optional [Str],
                 cufflinks   => Optional [Str],
                 fastqc      => Optional [Str],
                 htslib      => Optional [Str],
@@ -140,6 +141,7 @@ sub _build_usage {
                 samtools    => Optional [Str],
                 star        => Optional [Str],
                 star_fusion => Optional [Str],
+                trinity     => Optional [Str],
             ],
             required => 0,
         ),
@@ -178,8 +180,9 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ cufflinks fastqc gatk htslib mip_scripts picard
-                          salmon samtools star star_fusion }
+                        qw{ bcftools blobfish bootstrapann cufflinks fastqc
+                          gatk htslib mip_scripts picard salmon samtools
+                          star star_fusion trinity }
                     ]
                 ),
             ],
@@ -207,8 +210,9 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ cufflinks fastqc gatk htslib mip_scripts picard
-                          salmon samtools star star_fusion }
+                        qw{ bcftools blobfish bootstrapann cufflinks fastqc
+                          gatk htslib mip_scripts picard salmon samtools
+                          star star_fusion trinity}
                     ]
                 ),
             ],

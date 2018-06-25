@@ -32,8 +32,10 @@ use MIP::Package_manager::Conda
 use MIP::Set::Parameter qw{ set_conda_env_names_and_paths  };
 
 ## Recipes
+use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
 use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
 use MIP::Recipes::Install::Blobfish qw{ install_blobfish };
+use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
 use MIP::Recipes::Install::Cnvnator qw{ install_cnvnator };
 use MIP::Recipes::Install::Conda
   qw{ check_conda_installation setup_conda_env install_bioconda_packages };
@@ -57,7 +59,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.2.5};
+    our $VERSION = q{1.2.6};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -238,8 +240,10 @@ sub mip_install {
         ### Install shell programs
         ## Create dispatch table for shell installation subs
         my %shell_subs = (
+            bootstrapann    => \&install_bootstrapann,
             bedtools        => \&install_bedtools,
             blobfish        => \&install_blobfish,
+            bootstrapann    => \&install_bootstrapann,
             cnvnator        => \&install_cnvnator,
             expansionhunter => \&install_expansionhunter,
             mip_scripts     => \&install_mip_scripts,
@@ -248,11 +252,11 @@ sub mip_install {
             rhocall         => \&install_rhocall,
             sambamba        => \&install_sambamba,
             snpeff          => \&install_snpeff,
-            svdb            => \&install_svdb,
             star_fusion     => \&install_star_fusion,
+            svdb            => \&install_svdb,
             tiddit          => \&install_tiddit,
-            vep             => \&install_vep,
             vcf2cytosure    => \&install_vcf2cytosure,
+            vep             => \&install_vep,
             vt              => \&install_vt,
         );
 
@@ -394,14 +398,17 @@ sub get_programs_for_installation {
     ## recipes have been written, a module can be dependent on more than one
     ## conda program to function.
     my %dependency = (
-        chanjo      => [qw{ sambamba }],
-        cnvnator    => [qw{ bcftools gcc samtools }],
-        peddy       => [qw{ bcftools }],
-        picard      => [qw{ java-jdk }],
-        star_fusion => [qw{ star }],
-        svdb        => [qw{ bcftools htslib numpy picard vcfanno vt }],
-        tiddit      => [qw{ cmake numpy scikit-learn }],
-        vep         => [qw{ bcftools htslib }],
+        blobfish =>
+          [qw{ bioconductor-deseq2 bioconductor-tximport r-optparse r-readr }],
+        bootstrapann => [qw{ numpy scipy }],
+        chanjo       => [qw{ sambamba }],
+        cnvnator     => [qw{ bcftools gcc samtools }],
+        peddy        => [qw{ bcftools }],
+        picard       => [qw{ java-jdk }],
+        star_fusion  => [qw{ star }],
+        svdb         => [qw{ bcftools htslib numpy picard vcfanno vt }],
+        tiddit       => [qw{ cmake numpy scikit-learn }],
+        vep          => [qw{ bcftools htslib }],
     );
 
     if ( @{ $parameter_href->{select_programs} } ) {
