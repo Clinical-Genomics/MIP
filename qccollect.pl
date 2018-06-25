@@ -1067,7 +1067,7 @@ sub evaluate_qc_parameters {
             next INFILE if ( $infile =~ /evaluation/ );
 
             ## Special case do not evaluate fastq files with Undetermined in file name
-            next INFILE if ( $infile =~ /Undetermined/ );
+            next INFILE if ( $infile =~ /Undetermined/i );
 
             ## Special case
             if ( $infile =~ /relation_check/ ) {
