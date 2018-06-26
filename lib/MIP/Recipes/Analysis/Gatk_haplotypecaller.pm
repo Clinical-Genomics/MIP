@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
@@ -186,7 +186,7 @@ sub analysis_gatk_haplotypecaller {
     Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
     Readonly my $JAVA_MEMORY_ALLOCATION        => 4;
     Readonly my $VARIANT_INDEX_PARAMETER       => 128_000;
-    Readonly my $MITOCHONDRIA_PLOIDY           => 3;
+    Readonly my $MITOCHONDRIA_PLOIDY           => 2;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
