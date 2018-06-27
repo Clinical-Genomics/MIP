@@ -6,12 +6,12 @@ The parameters that MIP support are recorded in a yaml file format. The order of
 
 **Rules**
 - The definition file follows the yaml format.
-- There are three types of parameters that can be defined: "pprogram", "program_argument", "program_path".
+- There are three types of parameters that can be defined: "program", "program_argument", "program_path".
 - These keys are mandatory for each parameter: "type", "associated_program", "data_type".
 
 The define parameters file has the following data structure and keys:
 ```
-pprogram: { # Program hash
+program: { # Program hash
   associated_program: [
     - string, value="mip | p<program>" # Evaluate parameter if associated program is active. Ties program argument to one or several programs.
   ]

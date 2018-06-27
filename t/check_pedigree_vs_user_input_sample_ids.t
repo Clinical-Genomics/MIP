@@ -19,6 +19,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -27,7 +28,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -114,9 +115,11 @@ my $log = initiate_logger(
     }
 );
 
-my @pedigree_sample_ids   = qw{sample_1 sample_2 sample_3 sample_4};
-my @user_input_sample_ids = qw{sample_1 sample_2 sample_3 sample_4};
-my $success               = check_pedigree_vs_user_input_sample_ids(
+## Given matching sample ids
+my @pedigree_sample_ids   = qw{ sample_1 sample_2 sample_3 sample_4 };
+my @user_input_sample_ids = qw{ sample_1 sample_2 sample_3 sample_4 };
+
+my $is_ok = check_pedigree_vs_user_input_sample_ids(
     {
         file_path                 => $Bin,
         log                       => $log,
@@ -125,7 +128,26 @@ my $success               = check_pedigree_vs_user_input_sample_ids(
     }
 );
 
-is( $success, 1, q{Sample ids matched} );
+## Then return true
+ok( $is_ok, q{Sample ids matched} );
+
+## Given a sample id that is not present in the pedigree
+push @user_input_sample_ids, q{Han Solo};
+
+trap {
+    check_pedigree_vs_user_input_sample_ids(
+        {
+            file_path                 => $Bin,
+            log                       => $log,
+            pedigree_sample_ids_ref   => \@pedigree_sample_ids,
+            user_input_sample_ids_ref => \@user_input_sample_ids,
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if the path cannot be found} );
+like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message} );
 
 done_testing();
 

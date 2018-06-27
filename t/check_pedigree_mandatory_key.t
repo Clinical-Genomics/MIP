@@ -19,6 +19,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -27,7 +28,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -153,7 +154,8 @@ my %pedigree = (
         },
     ],
 );
-my $success = check_pedigree_mandatory_key(
+##Given all mandatory keys
+my $is_ok = check_pedigree_mandatory_key(
     {
         file_path     => $Bin,
         log           => $log,
@@ -161,7 +163,47 @@ my $success = check_pedigree_mandatory_key(
     }
 );
 
-is( $success, 1, q{Found all mandatory keys in pedigree yaml file} );
+## Then return true
+ok( $is_ok, q{Found all mandatory keys in pedigree yaml file} );
+
+## Given a missing mandatory family key
+delete $pedigree{family};
+
+trap {
+    check_pedigree_mandatory_key(
+        {
+            file_path     => $Bin,
+            log           => $log,
+            pedigree_href => \%pedigree,
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if mandatory family key cannot be found} );
+like( $trap->stderr, qr/FATAL/xms,
+    q{Throw fatal log message if mandatory family key cannot be found} );
+
+# Reinitialize key
+$pedigree{family} = q{family_1};
+
+## Given a missing mandatory sample key
+delete $pedigree{samples}[0]{phenotype};
+
+trap {
+    check_pedigree_mandatory_key(
+        {
+            file_path     => $Bin,
+            log           => $log,
+            pedigree_href => \%pedigree,
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if mandatory sample key cannot be found} );
+like( $trap->stderr, qr/FATAL/xms,
+    q{Throw fatal log message if mandatory sample key cannot be found} );
 
 done_testing();
 

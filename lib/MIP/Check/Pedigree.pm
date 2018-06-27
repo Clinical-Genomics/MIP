@@ -147,7 +147,7 @@ sub check_pedigree_mandatory_key {
   SAMPLE_KEY:
     foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
 
-        ## Check that we find mandatory family keys
+        ## Check that we find mandatory sample keys
       MANDATORY_KEY:
         foreach my $key (@mandatory_sample_keys) {
 

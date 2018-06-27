@@ -50,7 +50,7 @@ sub get_bin_file_path {
 ##          : $bin_file              => Name of binary file
 ##          : $conda_path            => Path to conda directory
 ##          : $environment_href      => Hash with programs and their environments {REF}
-##          : $environment_key       => Key to the environment_href [pprogram]
+##          : $environment_key       => Key to the environment_href [program]
 
     my ($arg_href) = @_;
 
@@ -257,7 +257,7 @@ sub get_dynamic_conda_path {
     ## Get module and program environments in use
     my %environment;
     if ( $active_parameter_href->{program_source_environment_command} ) {
-        ## Build hash with "pprogram_name" as keys and "source env command" as value
+        ## Build hash with "program_name" as keys and "source env command" as value
         @environment{
             keys
               %{ $active_parameter_href->{program_source_environment_command} }
