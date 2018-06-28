@@ -26,7 +26,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils
   qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = '0.2.3';
+our $VERSION = '0.2.4';
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -68,7 +68,7 @@ sub run {
 
     ## Update installation array
     if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
-        @{ $parameter{installations} } = qw{ emip etrinity };
+        @{ $parameter{installations} } = qw{ emip };
     }
 
     ## Nest the command line parameters and overwrite the default
@@ -103,8 +103,7 @@ sub _build_usage {
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip     => Optional [Str],
-                etrinity => Optional [Str],
+                emip => Optional [Str],
             ],
             required => 0,
         ),
@@ -114,10 +113,10 @@ sub _build_usage {
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip, etrinity}],
+            cmd_tags      => [q{Default: emip}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip etrinity full }] ), ],
+            isa           => ArrayRef [ enum( [qw{ emip full }] ), ],
             required      => 0,
         ),
     );
@@ -141,7 +140,6 @@ sub _build_usage {
                 samtools    => Optional [Str],
                 star        => Optional [Str],
                 star_fusion => Optional [Str],
-                trinity     => Optional [Str],
             ],
             required => 0,
         ),
@@ -182,7 +180,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
                           gatk htslib mip_scripts picard salmon samtools
-                          star star_fusion trinity }
+                          star star_fusion }
                     ]
                 ),
             ],
@@ -212,7 +210,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
                           gatk htslib mip_scripts picard salmon samtools
-                          star star_fusion trinity}
+                          star star_fusion }
                     ]
                 ),
             ],

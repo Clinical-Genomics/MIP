@@ -49,23 +49,13 @@ emip:
       version: git
       url: https://github.com/J35P312/BlobFish.git
 
-# Trinity environment spec
-etrinity:
-  bioconda:
-    trinity: 2.5.1
-  conda:
-    python: 2.7
-    pip:
-
 # Specify environment names
 environment_name:
   emip: MIP_rna
-  etrinity:
 
 # Environments to install
 installations:
   - emip
-  - etrinity
 
 # Optional name of log file
 log_file: ~
