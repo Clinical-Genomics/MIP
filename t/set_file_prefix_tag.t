@@ -104,16 +104,16 @@ my @order_parameters = qw{ bwa_mem pmerge pmark };
 my %active_parameter = (
     bwa_mem => 1,
     manta   => 1,
-    pmark    => 1,
-    pmerge   => 0,
+    pmark   => 1,
+    pmerge  => 0,
 );
 my %expected_file_tag;
 my %file_info;
 my %parameter = (
     bwa_mem => q{mem},
     manta   => q{manta},
-    pmark    => q{md},
-    pmerge   => q{merge},
+    pmark   => q{md},
+    pmerge  => q{merge},
 );
 my %temp_file_ending;
 
@@ -128,7 +128,7 @@ foreach my $program (@order_parameters) {
             file_tag              => $parameter{$program},
             file_info_href        => \%file_info,
             id                    => $sample_id,
-            mip_program_name      => $program,
+            program_name          => $program,
             temp_file_ending_href => \%temp_file_ending,
         }
     );
@@ -169,7 +169,7 @@ foreach my $program (@order_parameters) {
             file_tag              => $parameter{$program},
             file_info_href        => \%file_info,
             id                    => $sample_id,
-            mip_program_name      => $program,
+            program_name          => $program,
             temp_file_ending_href => \%temp_file_ending,
         }
     );

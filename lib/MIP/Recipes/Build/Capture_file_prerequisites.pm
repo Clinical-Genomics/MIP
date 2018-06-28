@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_capture_file_prerequisites };
@@ -168,9 +168,8 @@ sub build_capture_file_prerequisites {
 
     my $file_path;
 
-    ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    ## Set program mode
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
@@ -389,7 +388,7 @@ sub build_capture_file_prerequisites {
 
         close $FILEHANDLE;
 
-        if ( $mip_program_mode == 1 ) {
+        if ( $program_mode == 1 ) {
 
             slurm_submit_job_no_dependency_add_to_samples(
                 {

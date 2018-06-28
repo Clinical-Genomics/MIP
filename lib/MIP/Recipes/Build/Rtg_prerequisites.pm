@@ -1,18 +1,18 @@
 package MIP::Recipes::Build::Rtg_prerequisites;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,14 +21,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rtg_prerequisites };
 
 }
 
-##Constants
+## Constants
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -164,12 +164,11 @@ sub build_rtg_prerequisites {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    ## Set program mode
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
 
     ## FILEHANDLES
     # Create anonymous filehandle
@@ -251,7 +250,7 @@ sub build_rtg_prerequisites {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $program_mode == 1 ) {
 
         slurm_submit_job_no_dependency_add_to_samples(
             {

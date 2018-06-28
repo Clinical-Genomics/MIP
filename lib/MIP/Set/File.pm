@@ -23,7 +23,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -123,7 +123,7 @@ sub set_file_prefix_tag {
 ##          : $file_tag              => File tag to set
 ##          : $file_info_href        => Info on files hash {REF}
 ##          : $id                    => To change id for
-##          : $mip_program_name      => The program to add file tag for
+##          : $program_name          => Program to add file tag for
 ##          : $temp_file_ending_href => Store sequential build of file tag
 
     my ($arg_href) = @_;
@@ -134,7 +134,7 @@ sub set_file_prefix_tag {
     my $file_tag;
     my $file_info_href;
     my $id;
-    my $mip_program_name;
+    my $program_name;
     my $temp_file_ending_href;
 
     my $tmpl = {
@@ -170,10 +170,10 @@ sub set_file_prefix_tag {
             store       => \$id,
             strict_type => 1,
         },
-        mip_program_name => {
+        program_name => {
             defined     => 1,
             required    => 1,
-            store       => \$mip_program_name,
+            store       => \$program_name,
             strict_type => 1,
         },
         temp_file_ending_href => {
@@ -188,7 +188,7 @@ sub set_file_prefix_tag {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## File_ending should be added for this program
-    if ( $active_parameter_href->{$mip_program_name} ) {
+    if ( $active_parameter_href->{$program_name} ) {
 
         _inherit_chain_main(
             {
@@ -201,23 +201,23 @@ sub set_file_prefix_tag {
         if ( defined $temp_file_ending_href->{$current_chain}{$id} ) {
 
             ## Add new file tag to build-up
-            $file_info_href->{$id}{$mip_program_name}{file_tag} =
+            $file_info_href->{$id}{$program_name}{file_tag} =
               $temp_file_ending_href->{$current_chain}{$id} . $file_tag;
         }
         else {
             ## First module that should add filending
 
-            $file_info_href->{$id}{$mip_program_name}{file_tag} = $file_tag;
+            $file_info_href->{$id}{$program_name}{file_tag} = $file_tag;
         }
     }
     else {
         ## Do not add module file_tag for this program but for previous programs
 
-        $file_info_href->{$id}{$mip_program_name}{file_tag} =
+        $file_info_href->{$id}{$program_name}{file_tag} =
           $temp_file_ending_href->{$current_chain}{$id};
     }
 
-    return $file_info_href->{$id}{$mip_program_name}{file_tag};
+    return $file_info_href->{$id}{$program_name}{file_tag};
 }
 
 sub _inherit_chain_main {

@@ -679,13 +679,13 @@ sub check_program_exists_in_hash {
     if ( ref $query_ref eq q{HASH} ) {
 
       PROGRAM_NAME:
-        foreach my $mip_program_name ( keys %{$query_ref} ) {
+        foreach my $program_name ( keys %{$query_ref} ) {
 
-            next PROGRAM_NAME if ( exists $truth_href->{$mip_program_name} );
+            next PROGRAM_NAME if ( exists $truth_href->{$program_name} );
 
             $log->fatal( $parameter_name
                   . qq{ key $SINGLE_QUOTE}
-                  . $mip_program_name
+                  . $program_name
                   . $error_msg );
             exit 1;
         }
@@ -693,13 +693,13 @@ sub check_program_exists_in_hash {
     if ( ref $query_ref eq q{ARRAY} ) {
 
       PROGRAM_NAME:
-        foreach my $mip_program_name ( @{$query_ref} ) {
+        foreach my $program_name ( @{$query_ref} ) {
 
-            next PROGRAM_NAME if ( exists $truth_href->{$mip_program_name} );
+            next PROGRAM_NAME if ( exists $truth_href->{$program_name} );
 
             $log->fatal( $parameter_name
                   . qq{ element $SINGLE_QUOTE}
-                  . $mip_program_name
+                  . $program_name
                   . $error_msg );
             exit 1;
         }

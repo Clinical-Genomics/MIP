@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_file_prefix_tag fastq_file_name_regexp };
@@ -33,11 +33,11 @@ sub build_file_prefix_tag {
 
 ## Function : Build the file tags depending on which modules are used by the user to relevant chain.
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id {REF}
-##          : $file_info_href          => Info on files hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $family_id             => Family id {REF}
+##          : $file_info_href        => Info on files hash {REF}
 ##          : $order_programs_ref    => Order of addition to parameter array {REF}
-##          : $parameter_href          => Parameter hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
@@ -119,7 +119,7 @@ sub build_file_prefix_tag {
                     file_tag              => $file_tag,
                     file_info_href        => $file_info_href,
                     id                    => $sample_id,
-                    mip_program_name      => $program_name,
+                    program_name          => $program_name,
                     temp_file_ending_href => \%temp_file_ending,
                 }
             );
@@ -134,7 +134,7 @@ sub build_file_prefix_tag {
                 file_tag              => $file_tag,
                 file_info_href        => $file_info_href,
                 id                    => $family_id,
-                mip_program_name      => $program_name,
+                program_name          => $program_name,
                 temp_file_ending_href => \%temp_file_ending,
             }
         );
