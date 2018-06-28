@@ -81,6 +81,7 @@ module_time:
    - mip
   data_type: HASH
   default:
+    bootstrapann: 3
     fastqc: 1
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
@@ -99,6 +100,7 @@ module_core_number:
    - mip
   data_type: HASH
   default:
+    bootstrapann: 1
     fastqc: 0
     gatk_asereadcounter: 1
     gatk_baserecalibration: 16
@@ -415,3 +417,12 @@ gatk_variantfiltration_cluster_window_size:
   data_type: SCALAR
   default: 35
   type: program_argument
+## BootstrapAnn
+bootstrapann:
+  associated_program:
+    - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: _bootstr
+  outfile_suffix: ".vcf"
+  type: program

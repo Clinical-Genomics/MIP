@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Gatk_asereadcounter;
+package MIP::Recipes::Analysis::BootstrapAnn;
 
 use Carp;
 use charnames qw{ :full :short };
@@ -25,10 +25,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_gatk_asereadcounter };
+    our @EXPORT_OK = qw{ analysis_bootstrapann };
 
 }
 
@@ -36,9 +36,9 @@ BEGIN {
 Readonly my $ASTERIX => q{*};
 Readonly my $NEWLINE => qq{\n};
 
-sub analysis_gatk_asereadcounter {
+sub analysis_bootstrapann {
 
-## Function : Gatk asereadcounter analysis for rna recipe
+## Function : BootstrapAnn analysis for rna recipe
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
@@ -165,13 +165,12 @@ sub analysis_gatk_asereadcounter {
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_asereadcounter };
+    use MIP::Program::Variantcalling::BootstrapAnn qw{ bootstrapann };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 
     ## Constants
-    Readonly my $JAVA_MEMORY_ALLOCATION => 8;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -210,10 +209,6 @@ sub analysis_gatk_asereadcounter {
         }
     );
 
-    # Division by X according to the java heap
-    $core_number = floor(
-        $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
-
     ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
@@ -224,8 +219,8 @@ sub analysis_gatk_asereadcounter {
 
     ## Assign directories
     # For ".fam" file
-    my $outfamily_file_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $family_id );
+    #    my $outfamily_file_directory =
+    #  catdir( $active_parameter_href->{outdata_dir}, $family_id );
 
     ## Used downstream
     $parameter_href->{$program_name}{$sample_id}{indirectory} =
@@ -240,29 +235,37 @@ sub analysis_gatk_asereadcounter {
     );
 
     ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
+    my $ase_infile_tag =
+      $file_info_href->{$sample_id}{gatk_asereadcounter}{file_tag};
+    my $vcf_infile_tag =
+      $file_info_href->{$sample_id}{gatk_variantfiltration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$program_name}{file_tag};
-    my $sitesfile_tag =
-      $file_info_href->{$sample_id}{gatk_variantfiltration}{file_tag};
 
     ## Files
-    my $infile_prefix    = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix   = $merged_infile_prefix . $outfile_tag;
-    my $sitesfile_prefix = $merged_infile_prefix . $sitesfile_tag;
+    my $ase_infile_prefix = $merged_infile_prefix . $ase_infile_tag;
+    my $vcf_infile_prefix = $merged_infile_prefix . $vcf_infile_tag;
+    my $outfile_prefix    = $merged_infile_prefix . $outfile_tag;
 
     ## Paths
-    my $file_path_prefix      = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix   = catfile( $temp_directory, $outfile_prefix );
-    my $sitesfile_path_prefix = catfile( $temp_directory, $sitesfile_prefix );
+    my $ase_infile_path_prefix = catfile( $temp_directory, $ase_infile_prefix );
+    my $vcf_infile_path_prefix = catfile( $temp_directory, $vcf_infile_prefix );
+    my $outfile_path_prefix    = catfile( $temp_directory, $outfile_prefix );
 
     ## Assign suffix
-    my $infile_suffix = get_file_suffix(
+    my $ase_infile_suffix = get_file_suffix(
         {
-            jobid_chain    => $parameter_href->{gatk_baserecalibration}{chain},
+            jobid_chain    => $parameter_href->{gatk_asereadcounter}{chain},
             parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
+            suffix_key     => q{ase_file_suffix},
+        }
+    );
+
+    my $vcf_infile_suffix = get_file_suffix(
+        {
+            jobid_chain    => $parameter_href->{gatk_variantfiltration}{chain},
+            parameter_href => $parameter_href,
+            suffix_key     => q{variant_file_suffix},
         }
     );
 
@@ -271,14 +274,6 @@ sub analysis_gatk_asereadcounter {
         {
             file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{ase_file_suffix},
-        }
-    );
-
-    my $sitesfile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{gatk_variantfiltration}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
         }
@@ -290,8 +285,7 @@ sub analysis_gatk_asereadcounter {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX
+                $insample_directory, $ase_infile_prefix . $ase_infile_suffix
             ),
             outfile_path => $temp_directory,
         }
@@ -301,8 +295,8 @@ sub analysis_gatk_asereadcounter {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $sitesfile_prefix
-                  . substr( $sitesfile_suffix, 0, 2 )
+                $vcf_infile_prefix
+                  . substr( $vcf_infile_suffix, 0, 2 )
                   . $ASTERIX
             ),
             outfile_path => $temp_directory,
@@ -310,30 +304,20 @@ sub analysis_gatk_asereadcounter {
     );
     say {$FILEHANDLE} q{wait} . $NEWLINE;
 
-    ## GATK ASEReadCounter
-    say {$FILEHANDLE} q{## GATK ASEReadCounter};
+    ## BootstrapAnn
+    say {$FILEHANDLE} q{## BootstrapAnn};
 
     ## Set file paths
-    my $infile_path  = $file_path_prefix . $infile_suffix;
-    my $outfile_path = $outfile_path_prefix . $outfile_suffix;
+    my $ase_infile_path = $ase_infile_path_prefix . $ase_infile_suffix;
+    my $vcf_infile_path = $vcf_infile_path_prefix . $vcf_infile_suffix;
+    my $outfile_path    = $outfile_path_prefix . $outfile_suffix;
 
-    gatk_asereadcounter(
+    bootstrapann(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $infile_path,
-            java_jar    => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar},
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            logging_level     => $active_parameter_href->{gatk_logging_level},
-            memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            outfile_path      => $outfile_path,
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            gatk_sites_vcffile => $sitesfile_path_prefix . $sitesfile_suffix,
-            temp_directory     => $temp_directory,
+            ase_file_path   => $ase_infile_path,
+            FILEHANDLE      => $FILEHANDLE,
+            stdoutfile_path => $outfile_path,
+            vcf_infile_path => $vcf_infile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -358,9 +342,9 @@ sub analysis_gatk_asereadcounter {
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                infile           => $infile_prefix,
+                infile           => $ase_infile_prefix,
                 path             => $program_outfile_path,
-                program_name     => q{gatk_asereadcounter},
+                program_name     => q{bootstrapann},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

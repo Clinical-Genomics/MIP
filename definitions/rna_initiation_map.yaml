@@ -15,6 +15,7 @@ CHAIN_ALL:
       - gatk_splitncigarreads
       - gatk_baserecalibration
       - gatk_haplotypecaller
+      - gatk_variantfiltration
       - CHAIN_ASE:
          - gatk_asereadcounter
-      - gatk_variantfiltration
+         - bootstrapann
