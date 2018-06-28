@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rna };
@@ -142,6 +142,7 @@ sub pipeline_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Gatk_asereadcounter
       qw{ analysis_gatk_asereadcounter };
@@ -460,39 +461,6 @@ sub pipeline_rna {
         }
     }
 
-    ## GATK ASEReadCounter
-    if ( $active_parameter_href->{gatk_asereadcounter} ) {
-
-        $log->info(q{[GATK ASEReadCounter]});
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            ## Assign directories
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-            my $outsample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-
-            analysis_gatk_asereadcounter(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    insample_directory      => $insample_directory,
-                    job_id_href             => $job_id_href,
-                    outsample_directory     => $outsample_directory,
-                    parameter_href          => $parameter_href,
-                    program_name            => q{gatk_asereadcounter},
-                    sample_id               => $sample_id,
-                    sample_info_href        => $sample_info_href,
-                }
-            );
-        }
-    }
-
     ## GATK VariantFiltration
     if ( $active_parameter_href->{gatk_variantfiltration} ) {
 
@@ -526,6 +494,71 @@ sub pipeline_rna {
         }
     }
 
+    ## GATK ASEReadCounter
+    if ( $active_parameter_href->{gatk_asereadcounter} ) {
+
+        $log->info(q{[GATK ASEReadCounter]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            ## Assign directories
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_gatk_asereadcounter(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    insample_directory      => $insample_directory,
+                    job_id_href             => $job_id_href,
+                    outsample_directory     => $outsample_directory,
+                    parameter_href          => $parameter_href,
+                    program_name            => q{gatk_asereadcounter},
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
+                }
+            );
+        }
+    }
+
+    ## BootstrapAnn
+    if ( $active_parameter_href->{bootstrapann} ) {
+
+        $log->info(q{[BootstrapAnn]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            ## Assign directories
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_bootstrapann(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    insample_directory      => $insample_directory,
+                    job_id_href             => $job_id_href,
+                    outsample_directory     => $outsample_directory,
+                    parameter_href          => $parameter_href,
+                    program_name            => q{bootstrapann},
+                    sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
+                }
+            );
+        }
+    }
     return;
 }
 

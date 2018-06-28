@@ -26,6 +26,7 @@ sample_info_file: cluster_constant_path!/family_id!/analysis_constant_path!/fami
 human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
 ### Analysis
 ## Programs
+bootstrapann: 1
 fastqc: 1
 gatk_asereadcounter: 1
 gatk_baserecalibration: 1
