@@ -241,6 +241,7 @@ sub analysis_vt_core {
             directory_id          => $family_id,
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
+            log                   => $log,
             process_time          => $PROCESS_TIME,
             program_name          => $program_name,
             program_directory     => $program_directory,

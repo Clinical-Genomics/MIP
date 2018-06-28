@@ -229,6 +229,7 @@ sub analysis_picardtools_collectmultiplemetrics {
             job_id_href           => $job_id_href,
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
+            log                   => $log,
             process_time          => $time,
             program_directory => catfile( $outaligner_dir, q{coveragereport} ),
             program_name      => $program_name,

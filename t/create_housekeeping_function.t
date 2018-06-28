@@ -1,53 +1,63 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use 5.018;
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
-
+use charnames qw{ :full :short };
 use Cwd;
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catfile catdir devnull);
+use English qw{ -no_match_vars };
+use File::Basename qw{ basename dirname  };
+use File::Spec::Functions qw{ catfile catdir devnull };
+use FindBin qw{ $Bin };
 use Getopt::Long;
-use Test::More;
 use IPC::Cmd qw(can_run run);
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
 
-## Third party module(s)
+## CPANM
+use autodie qw{ :all };
 use List::Util qw(any);
+use Modern::Perl qw{ 2014 };
+use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw(help);
+use lib catdir( dirname($Bin), q{lib} );
 use MIP::Gnu::Coreutils qw(gnu_mkdir gnu_rm);
+use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.0.1;
 
-###User Options
+## Constants
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
+
+### User Options
 GetOptions(
-    'h|help' => sub {
+
+    # Display help text
+    q{h|help} => sub {
         done_testing();
-        print {*STDOUT} $USAGE, "\n";
+        say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
-    'v|version' => sub {
+    },
+
+    # Display version number
+    q{v|version} => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
+    },
+    q{vb|verbose} => $VERBOSE,
   )
   or (
     done_testing(),
@@ -62,66 +72,69 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-    ## Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = (
+        q{MIP::Gnu::Coreutils} => [qw(gnu_mkdir gnu_rm)],
+        q{MIP::Script::Utils}  => [qw{ help }],
+    );
 
-    $perl_module{'MIP::Script::Utils'}       = [qw(help)];
-    $perl_module{'MIP::Gnu::Coreutils'} = [qw(gnu_mkdir gnu_rm)];
-
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
-
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-    ## Modules
+## Modules
     my @modules = ('MIP::Language::Shell');
 
+  MODULE:
     for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Language::Shell qw(build_shebang create_housekeeping_function);
-use MIP::Gnu::Bash qw(gnu_set);
+use MIP::Language::Shell qw{ build_shebang create_housekeeping_function };
+use MIP::Gnu::Bash qw{ gnu_set };
 
-my $NEWLINE = q{\n};
-
-diag(
-"Test create_housekeeping_function $MIP::Language::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag(   q{Test create_housekeeping_function from Shell.pm v}
+      . $MIP::Language::Shell::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
 
 # Create housekeeping function test sbatch file
-my $bash_file_path = catfile( cwd(), 'test_create_housekeeping_function.sh' );
+my $bash_file_path = catfile( cwd(), q{test_create_housekeeping_function.sh} );
 
 # Install directory
-my $temp_dir = catdir( cwd(), '.test_create_housekeeping_function' );
+my $temp_dir = catdir( cwd(), q{.test_create_housekeeping_function} );
 
 # Open filehandle
-open $FILEHANDLE, '>', $bash_file_path
-  or
-  croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . "\n" );
+open $FILEHANDLE, q{>}, $bash_file_path
+  or croak(
+    q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
 ## Write to bash file
 _build_test_file_recipe(
     {
+        bash_file_path => $bash_file_path,
         FILEHANDLE     => $FILEHANDLE,
         temp_dir       => $temp_dir,
-        bash_file_path => $bash_file_path,
     }
 );
 close $FILEHANDLE;
 
 ## Testing write to file
-ok( -e $bash_file_path, 'Create bash' );
+ok( -e $bash_file_path, q{Create bash} );
 
-ok( can_run('bash'), 'Checking can run bash binary' );
+ok( can_run(q{bash}), q{Checking can run bash binary} );
 
-my $cmds_ref = [ 'bash', $bash_file_path ];
+my $cmds_ref = [ q{bash}, $bash_file_path ];
 my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref )
   = run( command => $cmds_ref, verbose => $VERBOSE );
 
@@ -136,12 +149,9 @@ done_testing();
 
 sub build_usage {
 
-##build_usage
-
 ##Function : Build the USAGE instructions
 ##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
+##Arguments: $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -151,8 +161,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 
@@ -168,67 +178,67 @@ END_USAGE
 
 sub _build_test_file_recipe {
 
-##_build_test_file_recipe
-
 ##Function : Builds the test file for testing the housekeeping function
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $temp_dir, $bash_file_path
+##Arguments: $bash_file_path => Test file to write recipe to
 ##         : $FILEHANDLE     => FILEHANDLE to write to
 ##         : $temp_dir       => Temporary directory to use for test
-##         : $bash_file_path => Test file to write recipe to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $bash_file_path;
     my $FILEHANDLE;
     my $temp_dir;
-    my $bash_file_path;
 
     my $tmpl = {
+        bash_file_path => { required => 1, store => \$bash_file_path },
         FILEHANDLE     => { required => 1, store => \$FILEHANDLE },
         temp_dir       => { required => 1, store => \$temp_dir },
-        bash_file_path => { required => 1, store => \$bash_file_path },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Add bash shebang
     build_shebang(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
         }
     );
 
     ## Set shell attributes
-    gnu_set({FILEHANDLE         => $FILEHANDLE,
-	     set_errexit        => 1,
-	     set_nounset        => 1,
-	    });
+    gnu_set(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            set_errexit => 1,
+            set_nounset => 1,
+        }
+    );
 
     # Create dir to test removal later
     gnu_mkdir(
         {
+            FILEHANDLE       => $FILEHANDLE,
             indirectory_path => $temp_dir,
             parents          => 1,
-            FILEHANDLE       => $FILEHANDLE,
         }
     );
-    say {$FILEHANDLE} "\n";
+    say {$FILEHANDLE} $NEWLINE;
 
     # Create housekeeping fucntion to remove temp_dir
     create_housekeeping_function(
         {
-            remove_dir         => $temp_dir,
-            trap_function_name => 'finish',
             FILEHANDLE         => $FILEHANDLE,
+            remove_dir         => $temp_dir,
+            trap_function_name => q{finish},
         }
     );
 
     # Remove batch file to make clean exit
     gnu_rm(
         {
-            infile_path => $bash_file_path,
             FILEHANDLE  => $FILEHANDLE,
+            infile_path => $bash_file_path,
         }
     );
     return;

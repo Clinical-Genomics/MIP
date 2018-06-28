@@ -43,16 +43,17 @@ sub setup_script {
 ## Returns  : $file_path, $file_info_path . $file_name_version
 ## Arguments: $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##          : $call_type                       => SNV,INDEL or BOTH
-##          : $core_number                     => The number of cores to allocate {Optional}
+##          : $core_number                     => Number of cores to allocate {Optional}
 ##          : $directory_id                    => $samplID|$family_id
-##          : $email_types_ref                 => The email type
+##          : $email_types_ref                 => Email type
 ##          : $error_trap                      => Error trap switch {Optional}
 ##          : $FILEHANDLE                      => FILEHANDLE to write to
 ##          : $job_id_href                     => The job_id hash {REF}
+##          : $log                             => Log object
 ##          : $program_directory               => Builds from $directory_id/$outaligner_dir
 ##          : $program_name                    => Assigns filename to sbatch script
-##          : $outdata_dir                     => The MIP out data directory {Optional}
-##          : $outscript_dir                   => The MIP out script directory {Optional}
+##          : $outdata_dir                     => MIP outdata directory {Optional}
+##          : $outscript_dir                   => MIP outscript directory {Optional}
 ##          : $process_time                    => Allowed process time (Hours) {Optional}
 ##          : $set_errexit                     => Bash set -e {Optional}
 ##          : $set_nounset                     => Bash set -u {Optional}
@@ -76,6 +77,7 @@ sub setup_script {
     my $directory_id;
     my $FILEHANDLE;
     my $job_id_href;
+    my $log;
     my $program_directory;
     my $program_name;
     my $source_environment_commands_ref;
@@ -129,7 +131,7 @@ sub setup_script {
                     );
                 }
             ],
-            default     => $arg_href->{active_parameter_href}{email_types},
+            default     => \@{$arg_href->{active_parameter_href}{email_types}},
             store       => \$email_types_ref,
             strict_type => 1,
         },
@@ -147,6 +149,7 @@ sub setup_script {
             store       => \$job_id_href,
             strict_type => 1,
         },
+		log => { defined => 1, required => 1, store => \$log, },
         outdata_dir => {
             default     => $arg_href->{active_parameter_href}{outdata_dir},
             store       => \$outdata_dir,
@@ -229,9 +232,6 @@ sub setup_script {
 
     ## Constants
     Readonly my $MAX_SECONDS_TO_SLEEP => 240;
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP program name
     my $program_mode = $active_parameter_href->{$program_name};
@@ -447,7 +447,7 @@ sub setup_script {
         );
     }
 
-    # Return filen name, file path for stdout/stderr for QC check later
+    # Return filen path, file path for stdout/stderr for QC check later
     return ( $file_path, $file_info_path . $file_name_version );
 }
 

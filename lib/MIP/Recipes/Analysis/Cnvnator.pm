@@ -231,6 +231,7 @@ sub analysis_cnvnator {
             job_id_href           => $job_id_href,
             FILEHANDLE            => $FILEHANDLE,
             directory_id          => $sample_id,
+            log                   => $log,
             program_name          => $program_name,
             program_directory =>
               catfile( $outaligner_dir, $program_outdirectory_name ),

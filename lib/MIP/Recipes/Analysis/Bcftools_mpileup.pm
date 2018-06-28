@@ -207,6 +207,7 @@ sub analysis_bcftools_mpileup {
             directory_id                    => $family_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
+            log                             => $log,
             program_directory               => $program_directory,
             program_name                    => $program_name,
             process_time                    => $time,

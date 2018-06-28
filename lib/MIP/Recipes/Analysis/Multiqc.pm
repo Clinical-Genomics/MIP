@@ -142,6 +142,7 @@ sub analysis_multiqc {
             directory_id                    => $family_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
+            log                             => $log,
             process_time                    => $time,
             program_directory               => $program_name,
             program_name                    => $program_name,

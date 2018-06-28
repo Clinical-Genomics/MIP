@@ -228,6 +228,7 @@ sub analysis_chanjo_sex_check {
             core_number           => $core_number,
             directory_id          => $sample_id,
             FILEHANDLE            => $FILEHANDLE,
+            log                   => $log,
             job_id_href           => $job_id_href,
             process_time          => $time,
             program_directory =>

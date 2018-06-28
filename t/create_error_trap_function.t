@@ -1,59 +1,62 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
 use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
+use charnames qw{ :full :short };
 use Cwd;
+use English qw{ -no_match_vars };
+use File::Basename qw{ basename dirname  };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catfile catdir devnull };
 use Getopt::Long;
-use Test::More;
 use IPC::Cmd qw{ can_run run };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use List::Util qw{ any };
+use autodie qw{ :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
+use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
+my $VERBOSE = 1;
+our $VERSION = 1.0.2;
+
 ## Constants
-Readonly my $COMMA => q{,};
+Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
-my $VERBOSE = 0;
-our $VERSION = '1.0.1';
-
-###User Options
+### User Options
 GetOptions(
-	   # Display help text
-    'h|help' => sub {
+
+    # Display help text
+    q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
     },
-	   # Display version number
-    'v|version' => sub {
+
+    # Display version number
+    q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
     },
-    'vb|verbose' => $VERBOSE,
+    q{vb|verbose} => $VERBOSE,
   )
   or (
     done_testing(),
@@ -68,25 +71,23 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-    ## Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = (
+        q{MIP::Gnu::Coreutils} => [qw{ gnu_mkdir gnu_rm }],
+        q{MIP::Script::Utils}  => [qw{ help }],
+    );
 
-    $perl_module{q{MIP::Script::Utils}}       = [qw{ help }];
-    $perl_module{q{MIP::Gnu::Coreutils}} = [qw{ gnu_mkdir gnu_rm }];
-
-    PERL_MODULE:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
-
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-    ## Modules
+## Modules
     my @modules = (q{MIP::Language::Shell});
 
   MODULE:
     for my $module (@modules) {
-
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
@@ -95,9 +96,6 @@ use MIP::Language::Shell
   qw{ build_shebang enable_trap create_error_trap_function };
 use MIP::Gnu::Bash qw{ gnu_set };
 
-diag(
-"Test create_error_trap_function $MIP::Language::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
 diag(   q{Test create_error_trap_function from Shell.pm v}
       . $MIP::Language::Shell::VERSION
       . $COMMA
@@ -105,7 +103,7 @@ diag(   q{Test create_error_trap_function from Shell.pm v}
       . $SPACE
       . $PERL_VERSION
       . $SPACE
-. $EXECUTABLE_NAME );
+      . $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
@@ -124,9 +122,9 @@ open $FILEHANDLE, q{>}, $bash_file_path
 ## Write to bash file
 _build_test_file_recipe(
     {
+        bash_file_path => $bash_file_path,
         FILEHANDLE     => $FILEHANDLE,
         temp_dir       => $temp_dir,
-        bash_file_path => $bash_file_path,
     }
 );
 close $FILEHANDLE;
@@ -134,7 +132,7 @@ close $FILEHANDLE;
 ## Testing write to file
 ok( -e $bash_file_path, q{Create bash} );
 
-ok( can_run('bash'), q{Checking can run bash binary} );
+ok( can_run(q{bash}), q{Checking can run bash binary} );
 
 my $cmds_ref = [ q{bash}, $bash_file_path ];
 my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref )
@@ -184,29 +182,26 @@ END_USAGE
 
 sub _build_test_file_recipe {
 
-##_build_test_file_recipe
-
-##Function : Builds the test file for testing the housekeeping function
-##Returns  : ""
-##Arguments: $FILEHANDLE, $temp_dir, $bash_file_path
-##         : $FILEHANDLE     => FILEHANDLE to write to
-##         : $temp_dir       => Temporary directory to use for test
-##         : $bash_file_path => Test file to write recipe to
+## Function : Builds the test file for testing the housekeeping function
+## Returns  :
+## Arguments: $bash_file_path => Test file to write recipe to
+##          : $FILEHANDLE     => FILEHANDLE to write to
+##          : $temp_dir       => Temporary directory to use for test
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $bash_file_path;
     my $FILEHANDLE;
     my $temp_dir;
-    my $bash_file_path;
 
     my $tmpl = {
+        bash_file_path => { required => 1, store => \$bash_file_path },
         FILEHANDLE     => { required => 1, store => \$FILEHANDLE },
         temp_dir       => { required => 1, store => \$temp_dir },
-        bash_file_path => { required => 1, store => \$bash_file_path },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Add bash shebang
     build_shebang(
@@ -227,8 +222,8 @@ sub _build_test_file_recipe {
     enable_trap(
         {
             FILEHANDLE         => $FILEHANDLE,
-            trap_signals_ref   => ['DEBUG'],
             trap_function_call => q{previous_command="$BASH_COMMAND"},
+            trap_signals_ref   => [qw{ DEBUG }],
         }
     );
 
@@ -243,17 +238,17 @@ sub _build_test_file_recipe {
     # Remove batch file to make clean exit
     gnu_rm(
         {
-            infile_path => $bash_file_path,
             FILEHANDLE  => $FILEHANDLE,
+            infile_path => $bash_file_path,
         }
     );
 
     # Create dir to test removal later
     gnu_mkdir(
         {
+            FILEHANDLE       => $FILEHANDLE,
             indirectory_path => $temp_dir,
             parents          => 0,
-            FILEHANDLE       => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

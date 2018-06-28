@@ -202,6 +202,7 @@ sub analysis_variantannotationblock {
             directory_id          => $family_id,
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
+            log                   => $log,
             process_time          => $PROCESS_TIME,
             program_directory     => $outaligner_dir,
             program_name          => $program_name,

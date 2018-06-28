@@ -1,26 +1,24 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use 5.018;
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
-
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catfile catdir devnull);
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname basename };
+use File::Spec::Functions qw{ catfile catdir devnull };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
 
-## Third party module(s)
+## CPANM
+use autodie;
 use List::Util qw(any);
+use Modern::Perl;
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
@@ -30,22 +28,34 @@ use MIP::Test::Writefile qw(test_write_to_file);
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '0.0.0';
+our $VERSION = '1.0.0';
 
-###User Options
+## Constants
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
+
+### User Options
 GetOptions(
-    'h|help' => sub {
+
+    # Display help text
+    q{h|help} => sub {
         done_testing();
-        print {*STDOUT} $USAGE, "\n";
+        say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
-    'v|version' => sub {
+    },
+
+    # Display version number
+    q{v|version} => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
+    },
+    q{vb|verbose} => $VERBOSE,
   )
   or (
     done_testing(),
@@ -60,33 +70,36 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-##Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
-    $perl_module{'MIP::Script::Utils'} = [qw(help)];
-
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
-
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-##Modules
-    my @modules = ('MIP::Language::Shell');
+## Modules
+    my @modules = (q{MIP::Language::Shell});
 
+  MODULE:
     for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
 use MIP::Language::Shell qw(build_shebang);
 
-my $NEWLINE = q{\n};
+diag(   q{Test build_shebang from Shell.pm v}
+      . $MIP::Language::Shell::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
-diag(
-"Test build_shebang $MIP::Language::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+my $separator = q{\n};
 
 ## Base arguments
 my $batch_shebang = q{#!};
@@ -115,7 +128,7 @@ my %argument = (
 
 my @commands = build_shebang(
     {
-        bash_bin_path   => $argument{bash_bin_path}{input},
+        bash_bin_path      => $argument{bash_bin_path}{input},
         invoke_login_shell => $argument{invoke_login_shell}{input},
     }
 );
@@ -123,10 +136,10 @@ my @commands = build_shebang(
 ## Testing return of commands
 foreach my $key ( keys %argument ) {
 
-    # Alias expeceted output
+    # Alias expected output
     my $expected_output = $argument{$key}{expected_output};
 
-    ok( ( any { $_ eq $expected_output } @commands ), 'Argument: ' . $key );
+    ok( ( any { $_ eq $expected_output } @commands ), q{Argument: } . $key );
 }
 
 ## Testing write to file
@@ -147,7 +160,7 @@ test_write_to_file(
         args_ref             => \@args,
         module_function_cref => $module_function_cref,
         base_command         => $function_base_command,
-        separator            => $NEWLINE,
+        separator            => $separator,
     }
 );
 

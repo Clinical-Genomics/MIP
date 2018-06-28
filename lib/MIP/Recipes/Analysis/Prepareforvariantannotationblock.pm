@@ -208,6 +208,7 @@ sub analysis_prepareforvariantannotationblock {
             FILEHANDLE                      => $FILEHANDLE,
             directory_id                    => $family_id,
             job_id_href                     => $job_id_href,
+            log                             => $log,
             process_time                    => $time,
             program_directory               => catfile($outaligner_dir),
             program_name                    => $program_name,

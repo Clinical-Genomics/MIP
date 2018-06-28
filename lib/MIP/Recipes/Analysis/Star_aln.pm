@@ -245,6 +245,7 @@ sub analysis_star_aln {
                 directory_id                    => $sample_id,
                 FILEHANDLE                      => $FILEHANDLE,
                 job_id_href                     => $job_id_href,
+                log                             => $log,
                 program_directory               => lc $outaligner_dir,
                 program_name                    => $program_name,
                 process_time                    => $time,

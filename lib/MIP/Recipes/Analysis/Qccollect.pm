@@ -160,6 +160,7 @@ sub analysis_qccollect {
             job_id_href           => $job_id_href,
             FILEHANDLE            => $FILEHANDLE,
             directory_id          => $family_id,
+            log                   => $log,
             program_name          => $program_name,
             program_directory     => $program_name,
             core_number           => $core_number,

@@ -204,6 +204,7 @@ sub analysis_freebayes_calling {
             directory_id          => $family_id,
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
+            log                   => $log,
             process_time          => $time,
             program_directory =>
               catfile( $outaligner_dir, $program_outdirectory_name ),

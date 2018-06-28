@@ -184,6 +184,7 @@ sub build_rtg_prerequisites {
             FILEHANDLE            => $FILEHANDLE,
             directory_id          => $family_id,
             job_id_href           => $job_id_href,
+            log                   => $log,
             program_directory     => $outaligner_dir,
             program_name          => $program_name,
             process_time          => $PROCESSING_TIME,

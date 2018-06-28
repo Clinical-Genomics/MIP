@@ -201,6 +201,7 @@ sub analysis_bamcalibrationblock {
                 job_id_href           => $job_id_href,
                 FILEHANDLE            => $FILEHANDLE,
                 directory_id          => $sample_id,
+            log                       => $log,
                 program_name          => $program_name,
                 program_directory     => $outaligner_dir,
                 core_number           => $core_number,

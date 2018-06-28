@@ -187,6 +187,7 @@ sub build_capture_file_prerequisites {
                 FILEHANDLE            => $FILEHANDLE,
                 directory_id          => $family_id,
                 job_id_href           => $job_id_href,
+                log                   => $log,
                 program_name          => $program_name,
                 program_directory     => $outaligner_dir,
             }

@@ -212,6 +212,7 @@ sub analysis_picardtools_genotypeconcordance {
             error_trap => 0,    # Special case to allow "vcf.idx" to be created
             FILEHANDLE        => $FILEHANDLE,
             job_id_href       => $job_id_href,
+            log                   => $log,
             process_time      => $time,
             program_directory => catfile( $outaligner_dir, $program_name ),
             program_name      => $program_name,
