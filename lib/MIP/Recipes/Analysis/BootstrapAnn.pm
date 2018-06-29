@@ -217,11 +217,6 @@ sub analysis_bootstrapann {
         }
     );
 
-    ## Assign directories
-    # For ".fam" file
-    #    my $outfamily_file_directory =
-    #  catdir( $active_parameter_href->{outdata_dir}, $family_id );
-
     ## Used downstream
     $parameter_href->{$program_name}{$sample_id}{indirectory} =
       $outsample_directory;
