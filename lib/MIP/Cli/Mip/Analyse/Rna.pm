@@ -18,7 +18,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -156,6 +156,16 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
+
+    option(
+        q{pbootstrapann} => (
+            cmd_aliases   => [qw{ pba }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Run BootstrapAnn on ASE file},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
 
     option(
         q{java_use_large_pages} => (
