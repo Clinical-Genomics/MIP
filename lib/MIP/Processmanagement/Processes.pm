@@ -26,7 +26,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1218,7 +1218,8 @@ sub create_job_id_string_for_sample_id {
                 }
             );
         }
-        elsif ( $job_id_href->{$family_id_chain_key_main}
+        elsif ( $sample_id_parallel_chain_key_main
+            and $job_id_href->{$family_id_chain_key_main}
             {$sample_id_parallel_chain_key_main} )
         {
             ## No previous job_ids within MAIN path.
