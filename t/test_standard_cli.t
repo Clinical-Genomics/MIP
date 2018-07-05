@@ -25,13 +25,6 @@ use MIP::Test::Fixtures qw{ test_standard_cli };
 my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
-
 ## Constants
 Readonly my $COMMA => q{,};
 Readonly my $SPACE => q{ };
@@ -42,15 +35,19 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
+    my %perl_module = (
+        q{MIP::Script::Utils}  => [qw{ help }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
+
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test test_standard_cli from Fixtures.pm v}
+      . $MIP::Test::Fixtures::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,8 +55,14 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-########################
-#### YOUR TEST HERE ####
-########################
+### User Options
+my $is_ok = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
+
+ok( $is_ok, q{Generated standard cli} );
 
 done_testing();

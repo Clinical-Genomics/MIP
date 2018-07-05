@@ -42,15 +42,19 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
+    my %perl_module = (
+        q{MIP::Script::Utils}  => [qw{ help }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
+
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Test::Fixtures qw{ test_log };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test test_log from Fixtures.pm v}
+      . $MIP::Test::Fixtures::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,8 +62,43 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-########################
-#### YOUR TEST HERE ####
-########################
+## Given no args
+my $log = test_log();
+
+## Then return a TEST log object
+ok( $log, q{Returned log object} );
 
 done_testing();
+
+######################
+####SubRoutines#######
+######################
+
+sub build_usage {
+
+## Function  : Build the USAGE instructions
+## Returns   :
+## Arguments : $program_name => Name of the script
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $program_name;
+
+    my $tmpl = {
+        program_name => {
+            default     => basename($PROGRAM_NAME),
+            store       => \$program_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return <<"END_USAGE";
+ $program_name [options]
+    -vb/--verbose Verbose
+    -h/--help     Display this help message
+    -v/--version  Display version
+END_USAGE
+}
