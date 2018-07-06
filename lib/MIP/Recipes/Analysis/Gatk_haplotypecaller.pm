@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -204,7 +204,7 @@ sub analysis_gatk_haplotypecaller {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
       );
 
@@ -286,7 +286,7 @@ sub analysis_gatk_haplotypecaller {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -506,11 +506,9 @@ sub analysis_gatk_haplotypecaller_rna {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
+##          : $indir_path_href         => Indirectories path(s) hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -523,10 +521,9 @@ sub analysis_gatk_haplotypecaller_rna {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
+    my $indir_path_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
@@ -534,7 +531,6 @@ sub analysis_gatk_haplotypecaller_rna {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -558,6 +554,11 @@ sub analysis_gatk_haplotypecaller_rna {
             store       => \$file_info_href,
             strict_type => 1,
         },
+        indir_path_href => {
+            default     => {},
+            store       => \$indir_path_href,
+            strict_type => 1,
+        },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -565,28 +566,11 @@ sub analysis_gatk_haplotypecaller_rna {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-        insample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$insample_directory,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outsample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outsample_directory,
             strict_type => 1,
         },
         parameter_href => {
@@ -659,7 +643,7 @@ sub analysis_gatk_haplotypecaller_rna {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
       );
 
@@ -667,6 +651,12 @@ sub analysis_gatk_haplotypecaller_rna {
     # Create anonymous filehandle
     my $FILEHANDLE      = IO::Handle->new();
     my $XARGSFILEHANDLE = IO::Handle->new();
+
+    ## Assign directories
+    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -678,8 +668,9 @@ sub analysis_gatk_haplotypecaller_rna {
             job_id_href           => $job_id_href,
             log                   => $log,
             process_time          => $time,
-            program_directory     => catfile( $outaligner_dir, q{gatk} ),
-            program_name          => $program_name,
+            program_directory =>
+              catfile( $active_parameter_href->{outaligner_dir}, q{gatk} ),
+            program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -741,7 +732,7 @@ sub analysis_gatk_haplotypecaller_rna {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},

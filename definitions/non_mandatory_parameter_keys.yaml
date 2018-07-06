@@ -18,6 +18,11 @@ file_tag:
   key_data_type: SCALAR
 infile_suffix:
   key_data_type: SCALAR
+analysis_mode:
+  key_data_type: SCALAR
+  values:
+    - sample
+    - family
 outfile_suffix:
   key_data_type: SCALAR
 program_name_path:

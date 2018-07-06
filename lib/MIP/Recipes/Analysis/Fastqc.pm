@@ -22,7 +22,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(analysis_fastqc);
@@ -38,7 +38,8 @@ sub analysis_fastqc {
 ## Function : Raw sequence quality analysis using FASTQC.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $infiles_ref             => Infiles {REF}
+##          : $file_info_href          => File info hash {REF}
+##          : indir_path_href          => Indirectories path(s) hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
@@ -53,11 +54,14 @@ sub analysis_fastqc {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $infiles_ref;
+    my $file_info_href;
+    my $indir_path_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
+
+    #my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
+
+    #my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
@@ -74,10 +78,17 @@ sub analysis_fastqc {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        infiles_ref => {
-            default     => [],
+        file_info_href => {
+            default     => {},
             defined     => 1,
-            store       => \$infiles_ref,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        indir_path_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$indir_path_href,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -87,12 +98,13 @@ sub analysis_fastqc {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-        insample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$insample_directory,
-            strict_type => 1,
-        },
+
+        #insample_directory => {
+        #    defined     => 1,
+        #    required    => 1,
+        #    store       => \$insample_directory,
+        #    strict_type => 1,
+        #},
         job_id_href => {
             default     => {},
             defined     => 1,
@@ -100,12 +112,13 @@ sub analysis_fastqc {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        outsample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outsample_directory,
-            strict_type => 1,
-        },
+
+        #outsample_directory => {
+        #    defined     => 1,
+        #    required    => 1,
+        #    store       => \$outsample_directory,
+        #    strict_type => 1,
+        #},
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -156,18 +169,26 @@ sub analysis_fastqc {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
+    ## Unpack parameters
+    my @infiles      = @{ $file_info_href->{$sample_id}{mip_infiles} };
     my $program_mode = $active_parameter_href->{$program_name};
-
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
+
+    ## Directories
+    my $insample_directory = $indir_path_href->{$sample_id};
+    my $outsample_directory =
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
+        $program_name );
 
   INFILE_LANE:
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
@@ -199,7 +220,7 @@ sub analysis_fastqc {
             directory_id                    => $sample_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
-	    log                             => $log,
+            log                             => $log,
             process_time                    => $time,
             program_directory               => $program_name,
             program_name                    => $program_name,
@@ -217,7 +238,7 @@ sub analysis_fastqc {
             core_number  => $core_number,
             FILEHANDLE   => $FILEHANDLE,
             indirectory  => $insample_directory,
-            infiles_ref  => \@{$infiles_ref},
+            infiles_ref  => \@infiles,
             outfile_path => $temp_directory,
         }
     );
@@ -226,7 +247,7 @@ sub analysis_fastqc {
 
     my $process_batches_count = 1;
 
-    while ( my ( $index, $infile ) = each @{$infiles_ref} ) {
+    while ( my ( $index, $infile ) = each @infiles ) {
 
         $process_batches_count = print_wait(
             {
@@ -275,7 +296,9 @@ sub analysis_fastqc {
 
     ## Copies files from temporary folder to source.
     $process_batches_count = 1;
-    while ( my ( $index, $infile ) = each @{$infiles_ref} ) {
+    while ( my ( $index, $infile ) =
+        each @{ $sample_info_href->{infile}{$sample_id} } )
+    {
 
         $process_batches_count = print_wait(
             {

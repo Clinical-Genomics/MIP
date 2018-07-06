@@ -12,6 +12,7 @@ use Params::Check qw{ check allow last_error };
 use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
+use List::MoreUtils qw { any };
 use Readonly;
 
 ##MIPs lib/
@@ -22,69 +23,59 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rare_disease };
 }
 
 ## Constants
-Readonly my $SPACE => q{ };
+Readonly my $CLOSE_BRACKET => q{]};
+Readonly my $OPEN_BRACKET  => q{[};
+Readonly my $SPACE         => q{ };
 
 sub pipeline_rare_disease {
 
 ## Function : Pipeline recipe for wes and or wgs data analysis.
 ## Returns  :
 
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
 ##          : $indir_path_href         => Indirectory hash {REF}
 ##          : $infile_href             => Infile hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $lane_href               => The lane info hash {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner dir used in the analysis
+##          : $lane_href               => The lane info hash {REF}
 ##          : $log                     => Log object to write to
+##          : $order_programs_ref      => Order of programs
+##          : $outaligner_dir          => Outaligner dir used in the analysis
+##          : $parameter_href          => Parameter hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
     my $indir_path_href;
     my $infile_href;
     my $infile_lane_prefix_href;
-    my $lane_href;
     my $job_id_href;
+    my $lane_href;
     my $log;
+    my $order_programs_ref;
+    my $parameter_href;
+    my $sample_info_href;
 
     ## Default(s)
     my $outaligner_dir;
 
     my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
         active_parameter_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
             strict_type => 1,
         },
         file_info_href => {
@@ -115,13 +106,6 @@ sub pipeline_rare_disease {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-        lane_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$lane_href,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
@@ -129,15 +113,43 @@ sub pipeline_rare_disease {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
+        lane_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$lane_href,
             strict_type => 1,
         },
         log => {
             defined  => 1,
             required => 1,
             store    => \$log,
+        },
+        order_programs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_programs_ref,
+            strict_type => 1,
+        },
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
         },
     };
 
@@ -168,7 +180,7 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Frequency_filter
       qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
-      qw{ analysis_gatk_baserecalibration };
+      qw{ analysis_gatk_baserecalibration analysis_gatk_baserecalibration_rio };
     use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
       qw{ analysis_gatk_combinevariantcallsets };
     use MIP::Recipes::Analysis::Gatk_concatenate_genotypegvcfs
@@ -177,7 +189,8 @@ sub pipeline_rare_disease {
       qw{ analysis_gatk_genotypegvcfs };
     use MIP::Recipes::Analysis::Gatk_haplotypecaller
       qw{ analysis_gatk_haplotypecaller };
-    use MIP::Recipes::Analysis::Gatk_realigner qw{ analysis_gatk_realigner };
+    use MIP::Recipes::Analysis::Gatk_realigner
+      qw{ analysis_gatk_realigner analysis_gatk_realigner_rio };
     use MIP::Recipes::Analysis::Gatk_variantevalall
       qw{ analysis_gatk_variantevalall };
     use MIP::Recipes::Analysis::Gatk_variantevalexome
@@ -185,7 +198,8 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Gatk_variantrecalibration
       qw{ analysis_gatk_variantrecalibration_wgs analysis_gatk_variantrecalibration_wes };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
-    use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+    use MIP::Recipes::Analysis::Markduplicates
+      qw{ analysis_markduplicates analysis_markduplicates_rio };
     use MIP::Recipes::Analysis::Mip_vcfparser
       qw{ analysis_mip_vcfparser analysis_sv_vcfparser };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
@@ -197,7 +211,7 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Picardtools_genotypeconcordance
       qw{ analysis_picardtools_genotypeconcordance };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
-      qw{ analysis_picardtools_mergesamfiles };
+      qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
     use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
     use MIP::Recipes::Analysis::Prepareforvariantannotationblock
       qw{ analysis_prepareforvariantannotationblock };
@@ -209,8 +223,8 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
-    use MIP::Recipes::Analysis::Samtools_subsample_MT
-      qw{ analysis_samtools_subsample_MT };
+    use MIP::Recipes::Analysis::Samtools_subsample_mt
+      qw{ analysis_samtools_subsample_mt };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
     use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets
@@ -225,300 +239,174 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Rare_disease qw{build_rare_disease_meta_files};
 
+    ## Copy information about the infiles to file_info hash
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+        $file_info_href->{$sample_id}{mip_infiles} = $infile_href->{$sample_id};
+        $file_info_href->{$sample_id}{lanes}       = $lane_href->{$sample_id};
+    }
+
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
     build_rare_disease_meta_files(
         {
-            parameter_href          => $parameter_href,
             active_parameter_href   => $active_parameter_href,
-            sample_info_href        => $sample_info_href,
             file_info_href          => $file_info_href,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
             log                     => $log,
+            parameter_href          => $parameter_href,
+            sample_info_href        => $sample_info_href,
         }
     );
 
-    ### Analysis recipes
-    if ( $active_parameter_href->{fastqc} ) {
+    ## Create code reference table for pipeline analysis recipes
+    my %analysis_recipe = (
+        bwa_mem                   => \&analysis_bwa_mem,
+        chanjo_sexcheck           => \&analysis_chanjo_sex_check,
+        fastqc                    => \&analysis_fastqc,
+        gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
+        gatk_realigner            => \&analysis_gatk_realigner,
+        markduplicates            => \&analysis_markduplicates,
+        picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
+        samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
+    );
 
-        $log->info(q{[Fastqc]});
+    ## Program names for the log
+    my %program_name = (
+        bwa_mem                => q{BWA Mem},
+        chanjo_sexcheck        => q{Chanjo sexcheck},
+        fastqc                 => q{FastQC},
+        gatk_baserecalibration => q{GATK BaseRecalibrator/PrintReads},
+        gatk_realigner         => q{GATK RealignerTargetCreator/IndelRealigner},
+        gatk_haplotypecaller   => q{GATK Haplotypecaller},
+        markduplicates         => q{Markduplicates},
+        picardtools_mergesamfiles => q{Picardtools MergeSamFiles},
+        samtools_subsample_mt     => q{Samtools subsample MT},
+    );
 
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+    ### Special case for '--rio' capable analysis recipes
+    ## Define rio blocks programs and order
+    my @order_bamcalibration_programs = qw{ picardtools_mergesamfiles
+      markduplicates
+      gatk_realigner
+      gatk_baserecalibration
+    };
 
-            my $fastqc_program_name = q{fastqc};
+    my %bamcal_ar = (
+        gatk_baserecalibration    => \&analysis_gatk_baserecalibration_rio,
+        gatk_realigner            => \&analysis_gatk_realigner_rio,
+        markduplicates            => \&analysis_markduplicates_rio,
+        picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles_rio,
+    );
+    my $is_bamcalibrationblock_done;
+    ## Enable bamcalibration as analysis recipe
+    $active_parameter_href->{bamcalibrationblock} = 1;
 
-            my $outsample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $fastqc_program_name );
-            analysis_fastqc(
-                {
-                    parameter_href        => $parameter_href,
-                    active_parameter_href => $active_parameter_href,
-                    sample_info_href      => $sample_info_href,
-                    infiles_ref           => \@{ $infile_href->{$sample_id} },
+    if ( $active_parameter_href->{dry_run_all} ) {
 
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    insample_directory      => $indir_path_href->{$sample_id},
-                    outsample_directory     => $outsample_directory,
-                    sample_id               => $sample_id,
-                    program_name            => $fastqc_program_name,
-                }
-            );
-        }
+        ## Dry run
+        $active_parameter_href->{bamcalibrationblock} = 2;
     }
 
-    if ( $active_parameter_href->{bwa_mem} ) {
+  PROGRAM:
+    foreach my $program ( @{$order_programs_ref} ) {
 
-        $log->info(q{[BWA Mem]});
+        ## Skip not active programs
+        next PROGRAM if ( not $active_parameter_href->{$program} );
 
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+        ## Skip program if not part of dispatch table (such as gzip_fastq)
+        next PROGRAM if ( not $analysis_recipe{$program} );
 
-            my $outsample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
+        ## Skip program if bamcalibration block is done
+        ## and program is part of bamcalibration block
+        next PROGRAM
+          if ( $is_bamcalibrationblock_done
+            and any { $_ eq $program } @order_bamcalibration_programs );
 
-            analysis_bwa_mem(
+        ### Analysis recipes
+        ## rio enabled and bamcalibration block analysis recipe
+        if ( $active_parameter_href->{reduce_io}
+            and any { $_ eq $program } @order_bamcalibration_programs )
+        {
+
+            $log->info(q{[Bamcalibrationblock]});
+
+            analysis_bamcalibrationblock(
                 {
-                    parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infiles_ref             => \@{ $infile_href->{$sample_id} },
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    insample_directory      => $indir_path_href->{$sample_id},
-                    outsample_directory     => $outsample_directory,
-                    sample_id               => $sample_id,
-                    program_name            => q{bwa_mem},
-                }
-            );
-        }
-    }
-## Run consecutive models
-    if ( $active_parameter_href->{reduce_io} ) {
-
-        ## Enable as program
-        $active_parameter_href->{pbamcalibrationblock} = 1;
-
-        $log->info(q{[Bamcalibrationblock]});
-
-        analysis_bamcalibrationblock(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                lane_href               => $lane_href,
-                job_id_href             => $job_id_href,
-                outaligner_dir => $active_parameter_href->{outaligner_dir},
-                program_name   => q{bamcalibrationblock},
-                log            => $log,
-            }
-        );
-
-    }
-    else {
-
-        ## Always run merge even for single samples to rename them correctly for standardised downstream processing.
-        if ( $active_parameter_href->{picardtools_mergesamfiles} ) {
-
-            $log->info(q{[Picardtools mergesamfiles]});
-
-          SAMPLE_ID:
-            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-            {
-
-                my $insample_directory =
-                  catdir( $active_parameter_href->{outdata_dir},
-                    $sample_id, $active_parameter_href->{outaligner_dir} );
-                my $outsample_directory =
-                  catdir( $active_parameter_href->{outdata_dir},
-                    $sample_id, $active_parameter_href->{outaligner_dir} );
-
-                analysis_picardtools_mergesamfiles(
-                    {
-                        parameter_href          => $parameter_href,
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        lane_href               => $lane_href,
-                        job_id_href             => $job_id_href,
-                        insample_directory      => $insample_directory,
-                        outsample_directory     => $outsample_directory,
-                        sample_id               => $sample_id,
-                        program_name            => q{picardtools_mergesamfiles},
-                    }
-                );
-            }
-        }
-
-        if ( $active_parameter_href->{markduplicates} ) {
-
-            $log->info(q{[Markduplicates]});
-
-          SAMPLE_ID:
-            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-            {
-
-                ## Assign directories
-                my $insample_directory =
-                  catdir( $active_parameter_href->{outdata_dir},
-                    $sample_id, $active_parameter_href->{outaligner_dir} );
-                my $outsample_directory =
-                  catdir( $active_parameter_href->{outdata_dir},
-                    $sample_id, $active_parameter_href->{outaligner_dir} );
-
-                analysis_markduplicates(
-                    {
-                        parameter_href          => $parameter_href,
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        insample_directory      => $insample_directory,
-                        outsample_directory     => $outsample_directory,
-                        sample_id               => $sample_id,
-                        program_name            => q{markduplicates},
-                    }
-                );
-            }
-        }
-
-        if ( $active_parameter_href->{gatk_realigner} ) {
-
-            $log->info(q{[GATK realignertargetcreator/indelrealigner]});
-
-          SAMPLE_ID:
-            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-            {
-
-                ## Assign directories
-                my $insample_directory =
-                  catdir( $active_parameter_href->{outdata_dir},
-                    $sample_id, $active_parameter_href->{outaligner_dir} );
-                my $outsample_directory =
-                  catdir( $active_parameter_href->{outdata_dir},
-                    $sample_id, $active_parameter_href->{outaligner_dir} );
-
-                analysis_gatk_realigner(
-                    {
-                        parameter_href          => $parameter_href,
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        sample_id               => $sample_id,
-                        insample_directory      => $insample_directory,
-                        outsample_directory     => $outsample_directory,
-                        program_name            => q{gatk_realigner},
-                    }
-                );
-            }
-        }
-
-        if ( $active_parameter_href->{gatk_baserecalibration} ) {
-
-            $log->info(q{[GATK baserecalibrator/printreads]});
-
-          SAMPLE_ID:
-            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-            {
-
-                ## Assign directories
-                my $insample_directory =
-                  catdir( $active_parameter_href->{outdata_dir},
-                    $sample_id, $active_parameter_href->{outaligner_dir} );
-                my $outsample_directory =
-                  catdir( $active_parameter_href->{outdata_dir},
-                    $sample_id, $active_parameter_href->{outaligner_dir} );
-
-                analysis_gatk_baserecalibration(
-                    {
-                        parameter_href          => $parameter_href,
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        sample_id               => $sample_id,
-                        insample_directory      => $insample_directory,
-                        outsample_directory     => $outsample_directory,
-                        program_name            => q{gatk_baserecalibration},
-                    }
-                );
-            }
-        }
-    }
-    if ( $active_parameter_href->{chanjo_sexcheck} ) {
-
-        $log->info(q{[Chanjo sexcheck]});
-
-      SAMPLE_IDS:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-            my $outsample_directory = catdir(
-                $active_parameter_href->{outdata_dir},    $sample_id,
-                $active_parameter_href->{outaligner_dir}, q{coveragereport}
-            );
-
-            analysis_chanjo_sex_check(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
+                    bamcal_ar_href          => \%bamcal_ar,
                     file_info_href          => $file_info_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => q{chanjo_sexcheck},
-                }
-            );
-        }
-    }
-    if ( $active_parameter_href->{samtools_subsample_mt} ) {
-
-        $log->info(q{[Subsample MT]});
-
-      SAMPLE_IDS:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-            my $outsample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-
-            analysis_samtools_subsample_MT(
-                {
+                    log                     => $log,
+                    order_programs_ref      => \@order_bamcalibration_programs,
                     parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
+                    program_name            => q{bamcalibrationblock},
+                    program_name_href       => \%program_name,
                     sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => q{samtools_subsample_mt},
                 }
             );
+
+            ## Done with bamcalibration block
+            $is_bamcalibrationblock_done = 1;
+        }
+        else {
+
+            $log->info(
+                $OPEN_BRACKET . $program_name{$program} . $CLOSE_BRACKET );
+
+            ## Sample mode
+            if ( $parameter_href->{$program}{analysis_mode} eq q{sample} ) {
+
+              SAMPLE_ID:
+                foreach
+                  my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
+                {
+
+                    $analysis_recipe{$program}->(
+                        {
+                            active_parameter_href   => $active_parameter_href,
+                            file_info_href          => $file_info_href,
+                            indir_path_href         => $indir_path_href,
+                            infile_lane_prefix_href => $infile_lane_prefix_href,
+                            job_id_href             => $job_id_href,
+                            parameter_href          => $parameter_href,
+                            program_name            => $program,
+                            sample_id               => $sample_id,
+                            sample_info_href        => $sample_info_href,
+                        }
+                    );
+                }
+            }
+
+            ## Family mode
+            elsif ( $parameter_href->{$program}{analysis_mode} eq q{family} ) {
+
+                my $outfamily_directory = catfile(
+                    $active_parameter_href->{outdata_dir},
+                    $active_parameter_href->{family_id},
+                    $active_parameter_href->{outaligner_dir},
+                    $program,
+                );
+
+                $analysis_recipe{$program}->(
+                    {
+                        parameter_href          => $parameter_href,
+                        active_parameter_href   => $active_parameter_href,
+                        sample_info_href        => $sample_info_href,
+                        file_info_href          => $file_info_href,
+                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        job_id_href             => $job_id_href,
+                        program_name            => $program,
+                        outfamily_directory     => $outfamily_directory,
+                    }
+                );
+            }
+
         }
     }
+
     if ( $active_parameter_href->{sambamba_depth} ) {
 
         $log->info(q{[Sambamba depth]});

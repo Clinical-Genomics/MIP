@@ -293,6 +293,7 @@ replace_iupac:
 ###Programs
 ## BWA
 bwa_mem:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -348,6 +349,7 @@ bamcalibrationblock:
   reduce_io: 1
   type: program
 picardtools_mergesamfiles:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -355,6 +357,7 @@ picardtools_mergesamfiles:
   file_tag: ""
   type: program
 markduplicates:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -395,6 +398,7 @@ markduplicates_sambamba_markdup_overflow_list_size:
   type: program_argument
 ## GATK BAM Calibration
 gatk_realigner:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -413,6 +417,7 @@ gatk_realigner_indel_known_sites:
   reference: reference_dir
   type: path
 gatk_baserecalibration:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -470,6 +475,7 @@ gatk_baserecalibration_static_quantized_quals:
   type: program_argument
 ## Coverage Analysis
 chanjo_sexcheck:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -486,6 +492,7 @@ chanjo_sexcheck_log_level:
   default: DEBUG
   type: program_argument
 samtools_subsample_mt:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -494,6 +501,7 @@ samtools_subsample_mt:
   outfile_suffix: ".bam"
   type: program
 samtools_subsample_mt_depth:
+  analysis_mode: sample
   associated_program:
    - samtools_subsample_mt
   data_type: SCALAR

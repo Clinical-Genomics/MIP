@@ -89,7 +89,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -1062,17 +1062,17 @@ sub mip_analyse {
         ## Pipeline recipe for rna data
         pipeline_rna(
             {
-                parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
                 file_info_href          => \%file_info,
                 indir_path_href         => \%indir_path,
                 infile_href             => \%infile,
                 infile_lane_prefix_href => \%infile_lane_prefix,
-                lane_href               => \%lane,
                 job_id_href             => \%job_id,
-                outaligner_dir          => $active_parameter{outaligner_dir},
+                lane_href               => \%lane,
                 log                     => $log,
+                order_programs_ref      => \@order_programs,
+                parameter_href          => \%parameter,
+                sample_info_href        => \%sample_info,
             }
         );
     }
@@ -1088,17 +1088,18 @@ sub mip_analyse {
         ## Pipeline recipe for rna data
         pipeline_rare_disease(
             {
-                parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
                 file_info_href          => \%file_info,
                 indir_path_href         => \%indir_path,
                 infile_href             => \%infile,
                 infile_lane_prefix_href => \%infile_lane_prefix,
-                lane_href               => \%lane,
                 job_id_href             => \%job_id,
-                outaligner_dir          => $active_parameter{outaligner_dir},
+                lane_href               => \%lane,
                 log                     => $log,
+                order_programs_ref      => \@order_programs,
+                outaligner_dir          => $active_parameter{outaligner_dir},
+                parameter_href          => \%parameter,
+                sample_info_href        => \%sample_info,
             }
         );
     }

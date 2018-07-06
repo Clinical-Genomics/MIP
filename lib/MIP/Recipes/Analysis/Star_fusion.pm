@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -44,12 +44,10 @@ sub analysis_star_fusion {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $genome_lib_dir_path     => Path to the directory containing the genome library
-##          : infiles_ref              => Infiles per sample id
+##          : indir_path_href          => Indirectories path(s) hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -62,11 +60,9 @@ sub analysis_star_fusion {
     my $active_parameter_href;
     my $file_info_href;
     my $genome_lib_dir_path;
-    my $infiles_ref;
+    my $indir_path_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
@@ -74,7 +70,6 @@ sub analysis_star_fusion {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
 
     my $tmpl = {
@@ -102,11 +97,11 @@ sub analysis_star_fusion {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        infiles_ref => {
-            default     => [],
+        indir_path_href => {
+            default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$infiles_ref,
+            store       => \$indir_path_href,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -116,28 +111,11 @@ sub analysis_star_fusion {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-        insample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$insample_directory,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outsample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outsample_directory,
             strict_type => 1,
         },
         parameter_href => {
@@ -193,19 +171,28 @@ sub analysis_star_fusion {
     ## Set MIP program name
     my $program_mode = $active_parameter_href->{$program_name};
 
-    ## Unpack parameters
+    ## Get jobi_id_chain
     my $job_id_chain = $parameter_href->{$program_name}{chain};
+
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
       );
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
+
+    ## Get infiles
+    my @infiles = @{ $file_info_href->{$sample_id}{mip_infiles} };
+
+    ## Directories
+    my $insample_directory  = $indir_path_href->{$sample_id};
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
 
     ## Assign file_tags
     my $outfile_tag =
@@ -215,7 +202,7 @@ sub analysis_star_fusion {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{fusion_file_suffix},
@@ -248,13 +235,14 @@ sub analysis_star_fusion {
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ( $file_path, $program_info_path ) = setup_script(
             {
-                active_parameter_href           => $active_parameter_href,
-                core_number                     => $core_number,
-                directory_id                    => $sample_id,
-                FILEHANDLE                      => $FILEHANDLE,
-                job_id_href                     => $job_id_href,
-                log                             => $log,
-                program_directory               => lc $outaligner_dir,
+                active_parameter_href => $active_parameter_href,
+                core_number           => $core_number,
+                directory_id          => $sample_id,
+                FILEHANDLE            => $FILEHANDLE,
+                job_id_href           => $job_id_href,
+                log                   => $log,
+                program_directory =>
+                  lc $active_parameter_href->{outaligner_dir},
                 program_name                    => $program_name,
                 process_time                    => $time,
                 source_environment_commands_ref => \@source_environment_cmds,
@@ -267,7 +255,7 @@ sub analysis_star_fusion {
 
         # Read 1
         my $insample_dir_fastqc_path_read_one =
-          catfile( $insample_directory, $infiles_ref->[$paired_end_tracker] );
+          catfile( $insample_directory, $infiles[$paired_end_tracker] );
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
@@ -281,7 +269,7 @@ sub analysis_star_fusion {
 
             my $insample_dir_fastqc_path_read_two =
               catfile( $insample_directory,
-                $infiles_ref->[ $paired_end_tracker + 1 ] );
+                $infiles[ $paired_end_tracker + 1 ] );
 
             # Read 2
             migrate_file(
@@ -302,7 +290,7 @@ sub analysis_star_fusion {
         ### Get parameters
         ## Infile(s)
         my $fastq_r1_path =
-          catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
+          catfile( $temp_directory, $infiles[$paired_end_tracker] );
         my $fastq_r2_path;
 
         # If second read direction is present
@@ -311,7 +299,7 @@ sub analysis_star_fusion {
             # Increment to collect correct read 2 from %infile
             $paired_end_tracker++;
             $fastq_r2_path =
-              catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
+              catfile( $temp_directory, $infiles[$paired_end_tracker] );
         }
         $genome_lib_dir_path = $active_parameter_href->{reference_dir};
 

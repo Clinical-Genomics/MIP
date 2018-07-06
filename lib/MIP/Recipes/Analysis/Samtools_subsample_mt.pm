@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Samtools_subsample_MT;
+package MIP::Recipes::Analysis::Samtools_subsample_mt;
 
 use Carp;
 use charnames qw{ :full :short };
@@ -21,10 +21,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_samtools_subsample_MT };
+    our @EXPORT_OK = qw{ analysis_samtools_subsample_mt };
 
 }
 
@@ -39,18 +39,16 @@ Readonly my $SAMTOOLS_UNMAPPED_READ_FLAG => 4;
 Readonly my $SPACE                       => q{ };
 Readonly my $UNDERSCORE                  => q{_};
 
-sub analysis_samtools_subsample_MT {
+sub analysis_samtools_subsample_mt {
 
 ## Function : Creates a BAM file containing a subset of the MT alignments
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
+##          : $indir_path_href         => Indirectories path(s) hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -61,10 +59,9 @@ sub analysis_samtools_subsample_MT {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
+    my $indir_path_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
@@ -72,7 +69,6 @@ sub analysis_samtools_subsample_MT {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
 
     my $tmpl = {
         active_parameter_href => {
@@ -94,6 +90,13 @@ sub analysis_samtools_subsample_MT {
             store       => \$file_info_href,
             strict_type => 1,
         },
+        indir_path_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$indir_path_href,
+            strict_type => 1,
+        },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -101,28 +104,11 @@ sub analysis_samtools_subsample_MT {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-        insample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$insample_directory,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outsample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outsample_directory,
             strict_type => 1,
         },
         parameter_href => {
@@ -172,16 +158,21 @@ sub analysis_samtools_subsample_MT {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
+
+    my $insample_directory  = $indir_path_href->{$sample_id};
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
@@ -227,14 +218,15 @@ sub analysis_samtools_subsample_MT {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_name, $program_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            process_time                    => $time,
-            program_directory               => catfile($outaligner_dir),
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $sample_id,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            process_time          => $time,
+            program_directory =>
+              catfile( $active_parameter_href->{outaligner_dir} ),
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
         }
@@ -323,8 +315,8 @@ sub analysis_samtools_subsample_MT {
 
     if ( $program_mode == 1 ) {
 
-        my $program_outfile_path = catfile( $outsample_directory,
-            $outfile_prefix . $DOT . q{bam} );
+        my $program_outfile_path =
+          catfile( $outsample_directory, $outfile_prefix . $DOT . q{bam} );
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
