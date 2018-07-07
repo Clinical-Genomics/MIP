@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_collectmultiplemetrics };
@@ -41,10 +41,7 @@ sub analysis_picardtools_collectmultiplemetrics {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -57,9 +54,7 @@ sub analysis_picardtools_collectmultiplemetrics {
     my $active_parameter_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
@@ -67,90 +62,72 @@ sub analysis_picardtools_collectmultiplemetrics {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$file_info_href
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$insample_directory,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir
-        },
-        outsample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$outsample_directory,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$sample_id
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
     };
 
@@ -173,17 +150,18 @@ sub analysis_picardtools_collectmultiplemetrics {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -195,6 +173,14 @@ sub analysis_picardtools_collectmultiplemetrics {
             file_info_href => $file_info_href,
             sample_id      => $sample_id,
         }
+    );
+
+    ## Assign directories
+    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+    my $outsample_directory = catdir(
+        $active_parameter_href->{outdata_dir},    $sample_id,
+        $active_parameter_href->{outaligner_dir}, q{coveragereport}
     );
 
     ## Assign file_tags
@@ -231,8 +217,11 @@ sub analysis_picardtools_collectmultiplemetrics {
             job_id_href           => $job_id_href,
             log                   => $log,
             process_time          => $time,
-            program_directory => catfile( $outaligner_dir, q{coveragereport} ),
-            program_name      => $program_name,
+            program_directory     => catfile(
+                $active_parameter_href->{outaligner_dir},
+                q{coveragereport}
+            ),
+            program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }

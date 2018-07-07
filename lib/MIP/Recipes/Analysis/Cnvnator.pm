@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cnvnator };
@@ -46,10 +46,7 @@ sub analysis_cnvnator {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $reference_dir           => MIP reference directory
@@ -60,119 +57,99 @@ sub analysis_cnvnator {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $outaligner_dir;
-    my $reference_dir;
-    my $temp_directory;
-    my $xargs_file_counter;
-
     ## Flatten argument(s)
     my $active_parameter_href;
     my $FILEHANDLE;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
     my $sample_info_href;
 
+    ## Default(s)
+    my $family_id;
+    my $reference_dir;
+    my $temp_directory;
+    my $xargs_file_counter;
+
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$insample_directory,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
-        outsample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$outsample_directory,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         reference_dir => {
             default     => $arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
             store       => \$reference_dir,
+            strict_type => 1,
         },
         sample_id => {
-            required    => 1,
-            defined     => 1,
             default     => 1,
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_id,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -198,24 +175,25 @@ sub analysis_cnvnator {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program name
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
     my $program_outdirectory_name =
       $parameter_href->{$program_name}{outdir_name};
     my $xargs_file_path_prefix;
     my $phenotype_info =
       $sample_info_href->{sample}{$sample_id}{phenotype};
-    my $human_genome_reference_ref =
-      $arg_href->{active_parameter_href}{human_genome_reference};
+    my $human_genome_reference =
+      $active_parameter_href->{human_genome_reference};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -233,8 +211,10 @@ sub analysis_cnvnator {
             directory_id          => $sample_id,
             log                   => $log,
             program_name          => $program_name,
-            program_directory =>
-              catfile( $outaligner_dir, $program_outdirectory_name ),
+            program_directory     => catfile(
+                $active_parameter_href->{outaligner_dir},
+                $program_outdirectory_name
+            ),
             core_number                     => $core_number,
             process_time                    => $time,
             source_environment_commands_ref => \@source_environment_cmds,
@@ -242,7 +222,16 @@ sub analysis_cnvnator {
         }
     );
 
-    #Used downstream
+    ## Assign directories
+    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+
+    my $outsample_directory = catdir(
+        $active_parameter_href->{outdata_dir},    $sample_id,
+        $active_parameter_href->{outaligner_dir}, $program_name
+    );
+
+    # Used downstream
     $parameter_href->{$program_name}{$sample_id}{indirectory} =
       $outsample_directory;
 
@@ -274,14 +263,14 @@ sub analysis_cnvnator {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
     ## Add contigs to vcfheader
     _add_contigs_to_vcfheader(
         {
-            human_genome_reference => $human_genome_reference_ref,
+            human_genome_reference => $human_genome_reference,
             temp_directory         => $temp_directory,
             FILEHANDLE             => $FILEHANDLE,
         }
@@ -292,7 +281,7 @@ sub analysis_cnvnator {
     samtools_create_chromosome_files(
         {
             regions_ref        => $file_info_href->{contigs},
-            infile_path        => $human_genome_reference_ref,
+            infile_path        => $human_genome_reference,
             temp_directory     => $temp_directory,
             suffix             => $DOT . q{fa},
             max_process_number => $core_number,
@@ -506,7 +495,7 @@ sub analysis_cnvnator {
             gatk_path          => $gatk_path,
             infile_paths_ref   => \@infile_paths,
             outfile_path       => $outfile,
-            referencefile_path => $human_genome_reference_ref,
+            referencefile_path => $human_genome_reference,
             logging_level      => $active_parameter_href->{gatk_logging_level},
             FILEHANDLE         => $FILEHANDLE,
         }

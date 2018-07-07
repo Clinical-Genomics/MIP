@@ -42,10 +42,7 @@ sub analysis_sambamba_depth {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -58,9 +55,7 @@ sub analysis_sambamba_depth {
     my $active_parameter_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
@@ -68,7 +63,6 @@ sub analysis_sambamba_depth {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
 
     my $tmpl = {
@@ -98,28 +92,11 @@ sub analysis_sambamba_depth {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-        insample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$insample_directory,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outsample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outsample_directory,
             strict_type => 1,
         },
         parameter_href => {
@@ -171,17 +148,19 @@ sub analysis_sambamba_depth {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $job_id_chain   = $parameter_href->{$program_name}{chain};
+    my $outaligner_dir = $active_parameter_href->{outaligner_dir};
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -209,6 +188,14 @@ sub analysis_sambamba_depth {
             program_name   => $program_name,
             suffix_key     => q{outfile_suffix},
         }
+    );
+
+    ## Assign directories
+    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+    my $outsample_directory = catdir(
+        $active_parameter_href->{outdata_dir},    $sample_id,
+        $active_parameter_href->{outaligner_dir}, q{coveragereport}
     );
 
     ## Assign file_tags
@@ -240,8 +227,11 @@ sub analysis_sambamba_depth {
             job_id_href           => $job_id_href,
             log                   => $log,
             process_time          => $time,
-            program_directory => catfile( $outaligner_dir, q{coveragereport} ),
-            program_name      => $program_name,
+            program_directory     => catfile(
+                $active_parameter_href->{outaligner_dir},
+                q{coveragereport}
+            ),
+            program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }

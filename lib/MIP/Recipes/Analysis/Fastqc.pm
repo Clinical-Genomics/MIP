@@ -39,7 +39,6 @@ sub analysis_fastqc {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
-##          : indir_path_href          => Indirectories path(s) hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
@@ -55,7 +54,6 @@ sub analysis_fastqc {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $indir_path_href;
     my $infile_lane_prefix_href;
 
     #my $insample_directory;
@@ -84,13 +82,6 @@ sub analysis_fastqc {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        indir_path_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$indir_path_href,
-            strict_type => 1,
-        },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -98,13 +89,6 @@ sub analysis_fastqc {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-
-        #insample_directory => {
-        #    defined     => 1,
-        #    required    => 1,
-        #    store       => \$insample_directory,
-        #    strict_type => 1,
-        #},
         job_id_href => {
             default     => {},
             defined     => 1,
@@ -112,13 +96,6 @@ sub analysis_fastqc {
             store       => \$job_id_href,
             strict_type => 1,
         },
-
-        #outsample_directory => {
-        #    defined     => 1,
-        #    required    => 1,
-        #    store       => \$outsample_directory,
-        #    strict_type => 1,
-        #},
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -185,7 +162,7 @@ sub analysis_fastqc {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Directories
-    my $insample_directory = $indir_path_href->{$sample_id};
+    my $insample_directory = $file_info_href->{$sample_id}{mip_infiles_dir};
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );

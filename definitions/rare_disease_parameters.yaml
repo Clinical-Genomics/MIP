@@ -508,6 +508,7 @@ samtools_subsample_mt_depth:
   default: 60
   type: program_argument
 sambamba_depth:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -567,6 +568,7 @@ sambamba_depth_quality_control:
   default: 1
   type: program_argument
 bedtools_genomecov:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -582,6 +584,7 @@ bedtools_genomecov_max_coverage:
   default: 30
   type: program_argument
 picardtools_collectmultiplemetrics:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -589,6 +592,7 @@ picardtools_collectmultiplemetrics:
   file_tag: nofile_tag
   type: program
 picardtools_collecthsmetrics:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -596,14 +600,16 @@ picardtools_collecthsmetrics:
   file_tag: _collecthsmetrics
   type: program
 rcovplots:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
   type: program
-##Structural Variant Calling
+## Structural Variant Calling
 cnvnator:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -624,6 +630,7 @@ cnv_bin_size:
   default: 1000
   type: program_argument
 delly_call:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -635,6 +642,7 @@ delly_call:
   outfile_suffix: ".bcf"
   type: program
 delly_reformat:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR

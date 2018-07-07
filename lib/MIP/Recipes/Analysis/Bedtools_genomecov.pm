@@ -15,19 +15,6 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
-BEGIN {
-
-    require Exporter;
-    use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.00;
-
-    # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_recipe };
-
-}
-
 ## Constants
 Readonly my $NEWLINE  => qq{\n};
 Readonly my $ASTERISK => q{*};
@@ -53,10 +40,7 @@ sub analysis_bedtools_genomecov {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -69,9 +53,7 @@ sub analysis_bedtools_genomecov {
     my $active_parameter_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_info_href;
@@ -79,7 +61,6 @@ sub analysis_bedtools_genomecov {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
 
     my $tmpl = {
@@ -102,12 +83,6 @@ sub analysis_bedtools_genomecov {
             strict_type => 1,
             store       => \$file_info_href
         },
-        insample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$insample_directory
-        },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
@@ -121,17 +96,6 @@ sub analysis_bedtools_genomecov {
             default     => {},
             strict_type => 1,
             store       => \$job_id_href
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir
-        },
-        outsample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outsample_directory
         },
         parameter_href => {
             required    => 1,
@@ -185,12 +149,13 @@ sub analysis_bedtools_genomecov {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -202,6 +167,14 @@ sub analysis_bedtools_genomecov {
             file_info_href => $file_info_href,
             sample_id      => $sample_id,
         }
+    );
+
+## Assign directories
+    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+    my $outsample_directory = catdir(
+        $active_parameter_href->{outdata_dir},    $sample_id,
+        $active_parameter_href->{outaligner_dir}, q{coveragereport}
     );
 
     ## Files
@@ -237,8 +210,10 @@ sub analysis_bedtools_genomecov {
             log                   => $log,
             process_time          => $time,
             program_name          => $program_name,
-            program_directory =>
-              catfile( lc($outaligner_dir), q{coveragereport} ),
+            program_directory     => catfile(
+                lc( $active_parameter_href->{outdata_dir} ),
+                q{coveragereport}
+            ),
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }

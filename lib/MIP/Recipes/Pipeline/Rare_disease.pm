@@ -240,9 +240,13 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Build::Rare_disease qw{build_rare_disease_meta_files};
 
     ## Copy information about the infiles to file_info hash
+  SAMPLE:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
         $file_info_href->{$sample_id}{mip_infiles} = $infile_href->{$sample_id};
         $file_info_href->{$sample_id}{lanes}       = $lane_href->{$sample_id};
+        $file_info_href->{$sample_id}{mip_infiles_dir} =
+          $indir_path_href->{$sample_id}
+
     }
 
     ### Build recipes
@@ -262,26 +266,44 @@ sub pipeline_rare_disease {
 
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        bwa_mem                   => \&analysis_bwa_mem,
-        chanjo_sexcheck           => \&analysis_chanjo_sex_check,
-        fastqc                    => \&analysis_fastqc,
-        gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
-        gatk_realigner            => \&analysis_gatk_realigner,
-        markduplicates            => \&analysis_markduplicates,
+        bwa_mem                      => \&analysis_bwa_mem,
+        bedtools_genomecov           => \&analysis_bedtools_genomecov,
+        chanjo_sexcheck              => \&analysis_chanjo_sex_check,
+        cnvnator                     => \&analysis_cnvnator,
+        delly_call                   => \&analysis_delly_call,
+        delly_reformat               => \&analysis_delly_reformat,
+        fastqc                       => \&analysis_fastqc,
+        gatk_baserecalibration       => \&analysis_gatk_baserecalibration,
+        gatk_realigner               => \&analysis_gatk_realigner,
+        markduplicates               => \&analysis_markduplicates,
+        picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
+        picardtools_collectmultiplemetrics =>
+          \&analysis_picardtools_collectmultiplemetrics,
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
+        rcovplots                 => \&analysis_rcoverageplots,
+        sambamba_depth            => \&analysis_sambamba_depth,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
     );
 
     ## Program names for the log
     my %program_name = (
-        bwa_mem                => q{BWA Mem},
+        bwa_mem                => q{BWA mem},
+        bedtools_genomecov     => q{Bedtools genomecov},
         chanjo_sexcheck        => q{Chanjo sexcheck},
+        cnvnator               => q{CNVnator},
+        delly_call             => q{Delly call},
+        delly_reformat         => q{Delly reformat},
         fastqc                 => q{FastQC},
         gatk_baserecalibration => q{GATK BaseRecalibrator/PrintReads},
         gatk_realigner         => q{GATK RealignerTargetCreator/IndelRealigner},
         gatk_haplotypecaller   => q{GATK Haplotypecaller},
         markduplicates         => q{Markduplicates},
+        picardtools_collecthsmetrics => q{Picardtools collecthsmetrics},
+        picardtools_collectmultiplemetrics =>
+          q{Picardtools collectmultiplemetrics},
         picardtools_mergesamfiles => q{Picardtools MergeSamFiles},
+        sambamba_depth            => q{Sambamba depth},
+        rcovplots                 => q{Rcovplots},
         samtools_subsample_mt     => q{Samtools subsample MT},
     );
 
@@ -300,6 +322,7 @@ sub pipeline_rare_disease {
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles_rio,
     );
     my $is_bamcalibrationblock_done;
+
     ## Enable bamcalibration as analysis recipe
     $active_parameter_href->{bamcalibrationblock} = 1;
 
@@ -368,7 +391,6 @@ sub pipeline_rare_disease {
                         {
                             active_parameter_href   => $active_parameter_href,
                             file_info_href          => $file_info_href,
-                            indir_path_href         => $indir_path_href,
                             infile_lane_prefix_href => $infile_lane_prefix_href,
                             job_id_href             => $job_id_href,
                             parameter_href          => $parameter_href,
@@ -407,274 +429,6 @@ sub pipeline_rare_disease {
         }
     }
 
-    if ( $active_parameter_href->{sambamba_depth} ) {
-
-        $log->info(q{[Sambamba depth]});
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-            my $outsample_directory = catdir(
-                $active_parameter_href->{outdata_dir},    $sample_id,
-                $active_parameter_href->{outaligner_dir}, q{coveragereport}
-            );
-
-            analysis_sambamba_depth(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => q{sambamba_depth},
-                }
-            );
-        }
-    }
-
-    if ( $active_parameter_href->{bedtools_genomecov} ) {
-
-        $log->info(q{[Bedtools genomecov]});
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            ## Assign directories
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-            my $outsample_directory = catdir(
-                $active_parameter_href->{outdata_dir},    $sample_id,
-                $active_parameter_href->{outaligner_dir}, q{coveragereport}
-            );
-
-            analysis_bedtools_genomecov(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => q{bedtools_genomecov},
-                }
-            );
-        }
-    }
-    if ( $active_parameter_href->{picardtools_collectmultiplemetrics} ) {
-
-        $log->info(q{[Picardtools collectmultiplemetrics]});
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            ## Assign directories
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-            my $outsample_directory = catdir(
-                $active_parameter_href->{outdata_dir},    $sample_id,
-                $active_parameter_href->{outaligner_dir}, q{coveragereport}
-            );
-
-            analysis_picardtools_collectmultiplemetrics(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name => q{picardtools_collectmultiplemetrics},
-                }
-            );
-        }
-    }
-    if ( $active_parameter_href->{picardtools_collecthsmetrics} ) {
-
-        $log->info(q{[Picardtools collecthsmetrics]});
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            ## Assign directories
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-            my $outsample_directory = catdir(
-                $active_parameter_href->{outdata_dir},    $sample_id,
-                $active_parameter_href->{outaligner_dir}, q{coveragereport}
-            );
-
-            analysis_picardtools_collecthsmetrics(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => q{picardtools_collecthsmetrics},
-                }
-            );
-        }
-    }
-## Run Rcovplot scripts
-    if ( $active_parameter_href->{rcovplots} ) {
-
-        if ( $active_parameter_href->{bedtools_genomecov} > 0 ) {
-
-            $log->info(q{[Rcovplots]});
-
-            my $program_name = lc q{rcovplots};
-
-          SAMPLE_ID:
-            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-            {
-
-                ## Assign directories
-                my $insample_directory =
-                  catdir( $active_parameter_href->{outdata_dir},
-                    $sample_id, $active_parameter_href->{outaligner_dir} );
-                my $outsample_directory = catdir(
-                    $active_parameter_href->{outdata_dir},
-                    $sample_id, $active_parameter_href->{outaligner_dir},
-                    q{coveragereport}
-                );
-                analysis_rcoverageplots(
-                    {
-                        parameter_href          => $parameter_href,
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        lane_href               => $lane_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        sample_id               => $sample_id,
-                        insample_directory      => $insample_directory,
-                        outsample_directory     => $outsample_directory,
-                        program_name            => q{rcovplots},
-                    }
-                );
-            }
-        }
-    }
-    if ( $active_parameter_href->{cnvnator} ) {
-
-        $log->info(q{[CNVnator]});
-
-        my $cnvnator_program_name = q{cnvnator};
-
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            ## Assign directories
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-
-            my $outsample_directory = catdir(
-                $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir},
-                $cnvnator_program_name
-            );
-
-            analysis_cnvnator(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => $cnvnator_program_name,
-                }
-            );
-        }
-    }
-    if ( $active_parameter_href->{delly_call} ) {
-
-        $log->info(q{[Delly_call]});
-
-        my $delly_program_name = q{delly_call};
-
-        my $program_outdirectory_name =
-          $parameter_href->{ q{p} . $delly_program_name }{outdir_name};
-
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-            my $outsample_directory = catdir(
-                $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir},
-                $program_outdirectory_name
-            );
-
-            analysis_delly_call(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    insample_directory      => $insample_directory,
-                    job_id_href             => $job_id_href,
-                    outsample_directory     => $outsample_directory,
-                    parameter_href          => $parameter_href,
-                    program_name            => $delly_program_name,
-                    sample_id               => $sample_id,
-                    sample_info_href        => $sample_info_href,
-                }
-            );
-        }
-    }
-    if ( $active_parameter_href->{delly_reformat} ) {
-
-        $log->info(q{[Delly_reformat]});
-
-        my $delly_refrm_program_name = q{delly_reformat};
-
-        my $program_outdirectory_name =
-          $parameter_href->{ q{p} . $delly_refrm_program_name }{outdir_name};
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            $program_outdirectory_name
-        );
-
-        analysis_delly_reformat(
-            {
-                active_parameter_href   => $active_parameter_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                outfamily_directory     => $outfamily_directory,
-                parameter_href          => $parameter_href,
-                program_name            => $delly_refrm_program_name,
-                sample_info_href        => $sample_info_href,
-            }
-        );
-    }
     if ( $active_parameter_href->{manta} ) {
 
         $log->info(q{[Manta]});
