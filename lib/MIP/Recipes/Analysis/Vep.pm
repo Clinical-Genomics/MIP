@@ -181,12 +181,13 @@ sub analysis_vep {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
     my $xargs_file_path_prefix;
 
     ## Filehandles
@@ -258,7 +259,7 @@ sub analysis_vep {
     );
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -635,12 +636,13 @@ sub analysis_vep_rio {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     my $reduce_io = $active_parameter_href->{reduce_io};
     my $xargs_file_path_prefix;
@@ -705,7 +707,7 @@ sub analysis_vep_rio {
     );
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -915,7 +917,6 @@ sub analysis_vep_sv {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $call_type               => The variant call type
-##          : $contigs_ref             => Contigs to analyse
 ##          : $family_id               => Family id
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $file_info_href          => The file_info hash {REF}
@@ -933,7 +934,6 @@ sub analysis_vep_sv {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $contigs_ref;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
@@ -960,13 +960,6 @@ sub analysis_vep_sv {
             allow       => [qw{ SV }],
             default     => q{SV},
             store       => \$call_type,
-            strict_type => 1,
-        },
-        contigs_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$contigs_ref,
             strict_type => 1,
         },
         family_id => {
@@ -1060,15 +1053,17 @@ sub analysis_vep_sv {
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
+    my $contigs_ref = \@{ $file_info_href->{contigs} };
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
     my $xargs_file_path_prefix;
 
     ## Filehandles

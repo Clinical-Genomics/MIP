@@ -185,7 +185,7 @@ sub analysis_sv_combinevariantcallsets {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
       );
 
@@ -217,6 +217,7 @@ sub analysis_sv_combinevariantcallsets {
     ## Assign directories
     my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
         $family_id, $outaligner_dir );
+
     ## Used downstream
     $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
@@ -237,7 +238,7 @@ sub analysis_sv_combinevariantcallsets {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -469,7 +470,7 @@ sub analysis_sv_combinevariantcallsets {
         my @program_source_commands = get_program_parameters(
             {
                 active_parameter_href => $active_parameter_href,
-                program_name      => q{genmod},
+                program_name          => q{genmod},
             }
         );
 

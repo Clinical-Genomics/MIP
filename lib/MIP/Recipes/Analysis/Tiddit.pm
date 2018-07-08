@@ -46,7 +46,6 @@ sub analysis_tiddit {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner directory used in the analysis
-##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -59,7 +58,6 @@ sub analysis_tiddit {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outfamily_directory;
     my $parameter_href;
     my $program_name;
     my $sample_info_href;
@@ -115,12 +113,6 @@ sub analysis_tiddit {
             store       => \$outaligner_dir,
             strict_type => 1,
         },
-        outfamily_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfamily_directory,
-            strict_type => 1,
-        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -171,7 +163,7 @@ sub analysis_tiddit {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program name
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
@@ -181,12 +173,13 @@ sub analysis_tiddit {
       scalar( @{ $active_parameter_href->{sample_ids} } );
     my $program_outdirectory_name =
       $parameter_href->{$program_name}{outdir_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -218,6 +211,14 @@ sub analysis_tiddit {
         }
     );
 
+## Assign directories
+    my $outfamily_directory = catfile(
+        $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{family_id},
+        $active_parameter_href->{outaligner_dir},
+        $program_outdirectory_name,
+    );
+
     # Used downstream
     $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
@@ -240,7 +241,7 @@ sub analysis_tiddit {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -530,12 +531,13 @@ sub analysis_tiddit_coverage {
       scalar( @{ $active_parameter_href->{sample_ids} } );
     my $program_outdirectory_name =
       $parameter_href->{$program_name}{outdir_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle

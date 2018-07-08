@@ -689,6 +689,7 @@ expansionhunter:
   program_type: structural_variant_callers
   type: program
 expansionhunter_repeat_specs_dir:
+  analysis_mode: sample
   associated_program:
    - expansionhunter
   data_type: SCALAR
@@ -696,6 +697,7 @@ expansionhunter_repeat_specs_dir:
   type: path
   update_path: absolute_path
 manta:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -708,6 +710,7 @@ manta:
   program_type: structural_variant_callers
   type: program
 tiddit:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -734,6 +737,7 @@ tiddit_minimum_number_supporting_pairs:
   default: 6
   type: program_argument
 sv_combinevariantcallsets:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -839,6 +843,7 @@ sv_vt_decompose:
   default: 0
   type: program_argument
 vcf2cytosure:
+  analysis_mode: family
   associated_program:
     - mip
   data_type: SCALAR
@@ -882,6 +887,7 @@ vcf2cytosure_var_size:
   default: 0
   type: program_argument
 sv_varianteffectpredictor:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -924,6 +930,7 @@ sv_vep_plugins:
    - LoFtool
   type: program_argument
 sv_vcfparser:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -984,6 +991,7 @@ sv_vcfparser_vep_transcripts:
   default: 0
   type: program_argument
 sv_rankvariant:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1024,6 +1032,7 @@ sv_rank_model_file:
   type: path
 ##Sv_reformat
 sv_reformat:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR

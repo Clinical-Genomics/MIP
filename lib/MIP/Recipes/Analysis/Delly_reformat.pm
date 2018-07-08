@@ -47,7 +47,6 @@ sub analysis_delly_reformat {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $reference_dir           => MIP reference directory
@@ -62,7 +61,6 @@ sub analysis_delly_reformat {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outfamily_directory;
     my $parameter_href;
     my $program_name;
     my $sample_info_href;
@@ -114,12 +112,6 @@ sub analysis_delly_reformat {
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outfamily_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfamily_directory,
             strict_type => 1,
         },
         parameter_href => {
@@ -221,6 +213,14 @@ sub analysis_delly_reformat {
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
+    );
+
+    ## Assign directories
+    my $outfamily_directory = catfile(
+        $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{family_id},
+        $active_parameter_href->{outaligner_dir},
+        $program_outdirectory_name,
     );
 
     # Used downstream

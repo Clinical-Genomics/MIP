@@ -272,9 +272,11 @@ sub pipeline_rare_disease {
         cnvnator                     => \&analysis_cnvnator,
         delly_call                   => \&analysis_delly_call,
         delly_reformat               => \&analysis_delly_reformat,
+        expansionhunter              => \&analysis_expansionhunter,
         fastqc                       => \&analysis_fastqc,
         gatk_baserecalibration       => \&analysis_gatk_baserecalibration,
         gatk_realigner               => \&analysis_gatk_realigner,
+        manta                        => \&analysis_manta,
         markduplicates               => \&analysis_markduplicates,
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
@@ -283,6 +285,13 @@ sub pipeline_rare_disease {
         rcovplots                 => \&analysis_rcoverageplots,
         sambamba_depth            => \&analysis_sambamba_depth,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
+        sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
+        sv_varianteffectpredictor => \&analysis_vep_sv,
+        sv_vcfparser              => \&analysis_sv_vcfparser,
+        sv_rankvariant => undef,                    # Depends on sample features
+        sv_reformat    => \&analysis_sv_reformat,
+        tiddit         => \&analysis_tiddit,
+        vcf2cytosure   => \&analysis_vcf2cytosure,
     );
 
     ## Program names for the log
@@ -293,10 +302,12 @@ sub pipeline_rare_disease {
         cnvnator               => q{CNVnator},
         delly_call             => q{Delly call},
         delly_reformat         => q{Delly reformat},
+        expansionhunter        => q{ExpansionHunter},
         fastqc                 => q{FastQC},
         gatk_baserecalibration => q{GATK BaseRecalibrator/PrintReads},
         gatk_realigner         => q{GATK RealignerTargetCreator/IndelRealigner},
         gatk_haplotypecaller   => q{GATK Haplotypecaller},
+        manta                  => q{Manta},
         markduplicates         => q{Markduplicates},
         picardtools_collecthsmetrics => q{Picardtools collecthsmetrics},
         picardtools_collectmultiplemetrics =>
@@ -305,6 +316,13 @@ sub pipeline_rare_disease {
         sambamba_depth            => q{Sambamba depth},
         rcovplots                 => q{Rcovplots},
         samtools_subsample_mt     => q{Samtools subsample MT},
+        sv_combinevariantcallsets => q{SV combinevariantcallsets},
+        sv_varianteffectpredictor => q{SV varianteffectpredictor},
+        sv_vcfparser              => q{SV vcfparser},
+        sv_rankvariant            => q{SV rankvariant},
+        sv_reformat               => q{SV reformat},
+        tiddit                    => q{Tiddit},
+        vcf2cytosure              => q{Vcf2cytosure},
     );
 
     ### Special case for '--rio' capable analysis recipes
@@ -331,6 +349,16 @@ sub pipeline_rare_disease {
         ## Dry run
         $active_parameter_href->{bamcalibrationblock} = 2;
     }
+
+    ## Special case for rankvariants recipe
+    _update_rankvariants_ar(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            parameter_href        => $parameter_href,
+            analysis_recipe_href  => \%analysis_recipe,
+        }
+    );
 
   PROGRAM:
     foreach my $program ( @{$order_programs_ref} ) {
@@ -405,23 +433,15 @@ sub pipeline_rare_disease {
             ## Family mode
             elsif ( $parameter_href->{$program}{analysis_mode} eq q{family} ) {
 
-                my $outfamily_directory = catfile(
-                    $active_parameter_href->{outdata_dir},
-                    $active_parameter_href->{family_id},
-                    $active_parameter_href->{outaligner_dir},
-                    $program,
-                );
-
                 $analysis_recipe{$program}->(
                     {
-                        parameter_href          => $parameter_href,
                         active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
                         file_info_href          => $file_info_href,
                         infile_lane_prefix_href => $infile_lane_prefix_href,
                         job_id_href             => $job_id_href,
+                        parameter_href          => $parameter_href,
                         program_name            => $program,
-                        outfamily_directory     => $outfamily_directory,
+                        sample_info_href        => $sample_info_href,
                     }
                 );
             }
@@ -429,224 +449,6 @@ sub pipeline_rare_disease {
         }
     }
 
-    if ( $active_parameter_href->{manta} ) {
-
-        $log->info(q{[Manta]});
-
-        my $manta_program_name = q{manta};
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            $manta_program_name,
-        );
-
-        analysis_manta(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => $manta_program_name,
-                outfamily_directory     => $outfamily_directory,
-            }
-        );
-    }
-    if ( $active_parameter_href->{tiddit} ) {
-
-        $log->info(q{[Tiddit]});
-
-        my $tiddit_program_name = q{tiddit};
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            $tiddit_program_name,
-        );
-
-        analysis_tiddit(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => $tiddit_program_name,
-                outfamily_directory     => $outfamily_directory,
-            }
-        );
-    }
-    if ( $active_parameter_href->{expansionhunter} ) {
-
-        $log->info(q{[ExpansionHunter]});
-
-        my $expansionhunter_program_name = q{expansionhunter};
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            ## Assign directories
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-
-            my $outsample_directory = catdir(
-                $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir},
-                $expansionhunter_program_name
-            );
-
-            analysis_expansionhunter(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    insample_directory      => $insample_directory,
-                    job_id_href             => $job_id_href,
-                    outsample_directory     => $outsample_directory,
-                    parameter_href          => $parameter_href,
-                    program_name            => $expansionhunter_program_name,
-                    sample_id               => $sample_id,
-                    sample_info_href        => $sample_info_href,
-                }
-            );
-        }
-    }
-    if ( $active_parameter_href->{sv_combinevariantcallsets} ) {
-
-        $log->info(q{[SV combinevariantcallsets]});
-
-        analysis_sv_combinevariantcallsets(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{sv_combinevariantcallsets},
-            }
-        );
-    }
-    if ( $active_parameter_href->{sv_varianteffectpredictor} ) {
-
-        $log->info(q{[SV varianteffectpredictor]});
-
-        analysis_vep_sv(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                contigs_ref             => \@{ $file_info_href->{contigs} },
-                program_name            => q{sv_varianteffectpredictor},
-            }
-        );
-    }
-    if ( $active_parameter_href->{sv_vcfparser} ) {
-
-        $log->info(q{[SV vcfparser]});
-
-        analysis_sv_vcfparser(
-            {
-                active_parameter_href   => $active_parameter_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                parameter_href          => $parameter_href,
-                program_name            => q{sv_vcfparser},
-                sample_info_href        => $sample_info_href,
-            }
-        );
-    }
-    if ( $active_parameter_href->{sv_rankvariant} ) {
-
-        $log->info(q{[SV rankvariant]});
-
-        if ( defined $parameter_href->{dynamic_parameter}{unaffected}
-            && @{ $parameter_href->{dynamic_parameter}{unaffected} } eq
-            @{ $active_parameter_href->{sample_ids} } )
-        {
-
-            $log->warn(
-q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
-            );
-
-            analysis_sv_rankvariant_unaffected(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    parameter_href          => $parameter_href,
-                    program_name            => q{sv_rankvariant},
-                    sample_info_href        => $sample_info_href,
-                }
-            );
-        }
-        else {
-            analysis_sv_rankvariant(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    parameter_href          => $parameter_href,
-                    program_name            => q{sv_rankvariant},
-                    sample_info_href        => $sample_info_href,
-                }
-            );
-        }
-    }
-    if ( $active_parameter_href->{sv_reformat} ) {
-
-        $log->info(q{[SV reformat]});
-
-        analysis_sv_reformat(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{sv_reformat},
-            }
-        );
-    }
-    if ( $active_parameter_href->{vcf2cytosure} ) {
-
-        $log->info(q{[Vcf2cytosure]});
-
-        my $v2cs_program_name = q{vcf2cytosure};
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            $v2cs_program_name,
-        );
-
-        analysis_vcf2cytosure(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                outfamily_directory     => $outfamily_directory,
-                program_name            => $v2cs_program_name,
-            }
-        );
-    }
     if ( $active_parameter_href->{bcftools_mpileup} ) {
 
         $log->info(q{[Bcftools mpileup]});
@@ -1445,6 +1247,73 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
                 sample_info_href        => $sample_info_href,
             }
         );
+    }
+    return;
+}
+
+sub _update_rankvariants_ar {
+
+    ## Function : Update which rankvariants recipe to use
+## Returns  :
+
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $log                     => Log object to write to
+##          : $parameter_href          => Parameter hash {REF}
+##          : $analysis_recipe_href    => Analysis recipe hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $parameter_href;
+    my $analysis_recipe_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( defined $parameter_href->{dynamic_parameter}{unaffected}
+        && @{ $parameter_href->{dynamic_parameter}{unaffected} } eq
+        @{ $active_parameter_href->{sample_ids} } )
+    {
+
+        $log->warn(
+q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
+        );
+
+        $analysis_recipe_href->{sv_rankvariant} =
+          \&analysis_sv_rankvariant_unaffected;
+    }
+    else {
+        $analysis_recipe_href->{sv_rankvariant} = \&analysis_sv_rankvariant;
     }
     return;
 }
