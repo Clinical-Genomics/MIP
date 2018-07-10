@@ -1,15 +1,15 @@
 package MIP::Recipes::Pipeline::Rare_disease;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
 use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
 use List::MoreUtils qw { any };
@@ -245,7 +245,7 @@ sub pipeline_rare_disease {
         $file_info_href->{$sample_id}{mip_infiles} = $infile_href->{$sample_id};
         $file_info_href->{$sample_id}{lanes}       = $lane_href->{$sample_id};
         $file_info_href->{$sample_id}{mip_infiles_dir} =
-          $indir_path_href->{$sample_id}
+          $indir_path_href->{$sample_id};
 
     }
 
@@ -266,17 +266,24 @@ sub pipeline_rare_disease {
 
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        bwa_mem                      => \&analysis_bwa_mem,
-        bedtools_genomecov           => \&analysis_bedtools_genomecov,
-        chanjo_sexcheck              => \&analysis_chanjo_sex_check,
-        cnvnator                     => \&analysis_cnvnator,
-        delly_call                   => \&analysis_delly_call,
-        delly_reformat               => \&analysis_delly_reformat,
-        expansionhunter              => \&analysis_expansionhunter,
-        fastqc                       => \&analysis_fastqc,
-        gatk_baserecalibration       => \&analysis_gatk_baserecalibration,
-        gatk_realigner               => \&analysis_gatk_realigner,
-        manta                        => \&analysis_manta,
+        bwa_mem                => \&analysis_bwa_mem,
+        bcftools_mpileup       => \&analysis_bcftools_mpileup,
+        bedtools_genomecov     => \&analysis_bedtools_genomecov,
+        chanjo_sexcheck        => \&analysis_chanjo_sex_check,
+        cnvnator               => \&analysis_cnvnator,
+        delly_call             => \&analysis_delly_call,
+        delly_reformat         => \&analysis_delly_reformat,
+        expansionhunter        => \&analysis_expansionhunter,
+        fastqc                 => \&analysis_fastqc,
+        freebayes              => \&analysis_freebayes_calling,
+        gatk_baserecalibration => \&analysis_gatk_baserecalibration,
+        gatk_genotypegvcfs     => \&analysis_gatk_genotypegvcfs,
+        gatk_concatenate_genotypegvcfs =>
+          \&analysis_gatk_concatenate_genotypegvcfs,
+        gatk_haplotypecaller => \&analysis_gatk_haplotypecaller,
+        gatk_realigner       => \&analysis_gatk_realigner,
+        gatk_variantrecalibration => undef,           # Depends on analysis type
+        manta                     => \&analysis_manta,
         markduplicates               => \&analysis_markduplicates,
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
@@ -297,6 +304,7 @@ sub pipeline_rare_disease {
     ## Program names for the log
     my %program_name = (
         bwa_mem                => q{BWA mem},
+        bcftools_mpileup       => q{Bcftools mpileup},
         bedtools_genomecov     => q{Bedtools genomecov},
         chanjo_sexcheck        => q{Chanjo sexcheck},
         cnvnator               => q{CNVnator},
@@ -304,11 +312,17 @@ sub pipeline_rare_disease {
         delly_reformat         => q{Delly reformat},
         expansionhunter        => q{ExpansionHunter},
         fastqc                 => q{FastQC},
+        freebayes              => q{Freebayes},
         gatk_baserecalibration => q{GATK BaseRecalibrator/PrintReads},
-        gatk_realigner         => q{GATK RealignerTargetCreator/IndelRealigner},
-        gatk_haplotypecaller   => q{GATK Haplotypecaller},
-        manta                  => q{Manta},
-        markduplicates         => q{Markduplicates},
+        gatk_genotypegvcfs     => q{GATK genotypegvcfs},
+        gatk_concatenate_genotypegvcfs =>
+          q{GATK concatenate genotypegvcfs files},
+        gatk_haplotypecaller => q{GATK Haplotypecaller},
+        gatk_realigner       => q{GATK RealignerTargetCreator/IndelRealigner},
+        gatk_variantrecalibration =>
+          q{GATK variantrecalibrator/applyrecalibration},
+        manta                        => q{Manta},
+        markduplicates               => q{Markduplicates},
         picardtools_collecthsmetrics => q{Picardtools collecthsmetrics},
         picardtools_collectmultiplemetrics =>
           q{Picardtools collectmultiplemetrics},
@@ -352,6 +366,16 @@ sub pipeline_rare_disease {
 
     ## Special case for rankvariants recipe
     _update_rankvariants_ar(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            parameter_href        => $parameter_href,
+            analysis_recipe_href  => \%analysis_recipe,
+        }
+    );
+
+    ## Special case for gatk_variantrecalibration recipe
+    _update_gatk_variantrecalibration_ar(
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
@@ -449,188 +473,6 @@ sub pipeline_rare_disease {
         }
     }
 
-    if ( $active_parameter_href->{bcftools_mpileup} ) {
-
-        $log->info(q{[Bcftools mpileup]});
-
-        my $program_outdirectory_name =
-          $parameter_href->{bcftools_mpileup}{outdir_name};
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            $program_outdirectory_name
-        );
-
-        analysis_bcftools_mpileup(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{bcftools_mpileup},
-                outfamily_directory     => $outfamily_directory,
-            }
-        );
-    }
-    if ( $active_parameter_href->{freebayes} ) {
-
-        $log->info(q{[Freebayes]});
-
-        my $program_outdirectory_name =
-          $parameter_href->{freebayes}{outdir_name};
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            $program_outdirectory_name
-        );
-
-        analysis_freebayes_calling(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{freebayes},
-                outfamily_directory     => $outfamily_directory,
-            }
-        );
-    }
-    if ( $active_parameter_href->{gatk_haplotypecaller} ) {
-
-        $log->info(q{[GATK haplotypecaller]});
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-            my $outsample_directory = catdir(
-                $active_parameter_href->{outdata_dir},    $sample_id,
-                $active_parameter_href->{outaligner_dir}, q{gatk}
-            );
-
-            analysis_gatk_haplotypecaller(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => q{gatk_haplotypecaller},
-                }
-            );
-        }
-    }
-    if ( $active_parameter_href->{gatk_genotypegvcfs} ) {
-
-        $log->info(q{[GATK genotypegvcfs]});
-
-        my $family_analysis_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir}, q{gatk},
-        );
-
-        my $outfamily_file_directory = catdir(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-        );
-
-        analysis_gatk_genotypegvcfs(
-            {
-                parameter_href           => $parameter_href,
-                active_parameter_href    => $active_parameter_href,
-                sample_info_href         => $sample_info_href,
-                file_info_href           => $file_info_href,
-                infile_lane_prefix_href  => $infile_lane_prefix_href,
-                job_id_href              => $job_id_href,
-                program_name             => q{gatk_genotypegvcfs},
-                family_id                => $active_parameter_href->{family_id},
-                outfamily_directory      => $family_analysis_directory,
-                outfamily_file_directory => $outfamily_file_directory,
-            }
-        );
-
-        $log->info(q{[GATK concatenate genotypegvcfs files]});
-
-        analysis_gatk_concatenate_genotypegvcfs(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                infamily_directory      => $family_analysis_directory,
-                outfamily_directory     => $family_analysis_directory,
-                program_name            => q{gatk_genotypegvcfs},
-            }
-        );
-    }
-    if ( $active_parameter_href->{gatk_variantrecalibration} ) {
-
-        $log->info(q{[GATK variantrecalibrator/applyrecalibration]});
-
-        my $program_outdirectory_name =
-          $parameter_href->{gatk_variantrecalibration}{outdir_name};
-
-        my $infamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            $program_outdirectory_name
-        );
-        my $outfamily_directory = $infamily_directory;
-        my $consensus_analysis_type =
-          $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-
-        if ( $consensus_analysis_type eq q{wes} ) {
-
-            analysis_gatk_variantrecalibration_wes(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    infamily_directory      => $infamily_directory,
-                    outfamily_directory     => $outfamily_directory,
-                    program_name            => q{gatk_variantrecalibration},
-                }
-            );
-        }
-        else {
-
-            ## WGS and WES/WGS
-            analysis_gatk_variantrecalibration_wgs(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    infamily_directory      => $infamily_directory,
-                    outfamily_directory     => $outfamily_directory,
-                    program_name            => q{gatk_variantrecalibration},
-                }
-            );
-        }
-    }
     if ( $active_parameter_href->{gatk_combinevariantcallsets} ) {
 
         $log->info(q{[GATK combinevariantcallsets]});
@@ -1253,9 +1095,8 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
 
 sub _update_rankvariants_ar {
 
-    ## Function : Update which rankvariants recipe to use
+## Function : Update which rankvariants recipe to use
 ## Returns  :
-
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $log                     => Log object to write to
 ##          : $parameter_href          => Parameter hash {REF}
@@ -1314,6 +1155,71 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
     }
     else {
         $analysis_recipe_href->{sv_rankvariant} = \&analysis_sv_rankvariant;
+    }
+    return;
+}
+
+sub _update_gatk_variantrecalibration_ar {
+
+## Function : Update which gatk_variantrecalibration recipe to use
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $log                     => Log object to write to
+##          : $parameter_href          => Parameter hash {REF}
+##          : $analysis_recipe_href    => Analysis recipe hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $parameter_href;
+    my $analysis_recipe_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $consensus_analysis_type =
+      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+
+    if ( $consensus_analysis_type eq q{wes} ) {
+
+        $analysis_recipe_href->{gatk_variantrecalibration} =
+          \&analysis_gatk_variantrecalibration_wes;
+    }
+    else {
+
+        ## WGS and WES/WGS
+        $analysis_recipe_href->{gatk_variantrecalibration} =
+          \&analysis_gatk_variantrecalibration_wgs;
     }
     return;
 }

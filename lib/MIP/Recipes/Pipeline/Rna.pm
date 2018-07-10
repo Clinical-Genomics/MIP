@@ -169,6 +169,8 @@ sub pipeline_rna {
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
         $file_info_href->{$sample_id}{mip_infiles} = $infile_href->{$sample_id};
         $file_info_href->{$sample_id}{lanes}       = $lane_href->{$sample_id};
+        $file_info_href->{$sample_id}{mip_infiles_dir} =
+          $indir_path_href->{$sample_id};
     }
 
     ### Build recipes
@@ -240,7 +242,6 @@ sub pipeline_rna {
                     {
                         active_parameter_href   => $active_parameter_href,
                         file_info_href          => $file_info_href,
-                        indir_path_href         => $indir_path_href,
                         infile_lane_prefix_href => $infile_lane_prefix_href,
                         job_id_href             => $job_id_href,
                         parameter_href          => $parameter_href,

@@ -1220,8 +1220,19 @@ q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
     );
 
     option(
+        q{gatk_concatenate_genotypegvcfs} => (
+            cmd_aliases => [qw{ pgcgt }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Concatenate gVCF records using GATK Concatenate variants},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{gatk_concatenate_genotypegvcfs_bcf_file} => (
-            cmd_aliases => [qw{ ggbcf }],
+            cmd_aliases => [qw{ gcgbcf }],
             cmd_flag    => q{gatk_genotype_bcf_f},
             documentation =>
               q{Produce a bcf from the GATK ConcatenateGenoTypeGVCFs vcf},

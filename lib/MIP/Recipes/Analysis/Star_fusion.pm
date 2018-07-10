@@ -44,7 +44,6 @@ sub analysis_star_fusion {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $genome_lib_dir_path     => Path to the directory containing the genome library
-##          : indir_path_href          => Indirectories path(s) hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
@@ -60,7 +59,6 @@ sub analysis_star_fusion {
     my $active_parameter_href;
     my $file_info_href;
     my $genome_lib_dir_path;
-    my $indir_path_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
@@ -95,13 +93,6 @@ sub analysis_star_fusion {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        indir_path_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$indir_path_href,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -190,7 +181,7 @@ sub analysis_star_fusion {
     my @infiles = @{ $file_info_href->{$sample_id}{mip_infiles} };
 
     ## Directories
-    my $insample_directory  = $indir_path_href->{$sample_id};
+    my $insample_directory  = $file_info_href->{$sample_id}{mip_infiles_dir};
     my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
         $sample_id, $active_parameter_href->{outaligner_dir} );
 
