@@ -1278,11 +1278,12 @@ gatk_variantrecalibration_snv_tsfilter_level:
   default: 99.9
   type: program_argument
 gatk_combinevariantcallsets:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
   default: 0
-  file_tag: comb_
+  file_tag: _comb_
   outfile_suffix: ".vcf"
   type: program
 gatk_combinevariantcallsets_bcf_file:
@@ -1314,6 +1315,7 @@ variantannotationblock:
   reduce_io: 1
   type: program
 prepareforvariantannotationblock:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1323,6 +1325,7 @@ prepareforvariantannotationblock:
   type: program
 ##rhocall
 rhocall:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1343,6 +1346,7 @@ rhocall_frequency_file:
   type: path
 ##VT
 vt:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1416,6 +1420,7 @@ frequency_genmod_filter_1000g:
   reference: reference_dir
   type: path
 gatk_variantevalall:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -1649,6 +1654,7 @@ snpeff_path:
   update_path: absolute_path
 ## Case_check
 peddy:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1658,6 +1664,7 @@ peddy:
    - peddy
   type: program
 plink:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1667,6 +1674,7 @@ plink:
    - plink2
   type: program
 variant_integrity:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1676,6 +1684,7 @@ variant_integrity:
    - variant_integrity
   type: program
 rtg_vcfeval:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -1693,6 +1702,7 @@ rtg_vcfeval_reference_genome:
   reference: reference_dir
   type: path
 evaluation:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR

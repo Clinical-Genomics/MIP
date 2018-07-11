@@ -274,22 +274,31 @@ sub pipeline_rare_disease {
         delly_call             => \&analysis_delly_call,
         delly_reformat         => \&analysis_delly_reformat,
         expansionhunter        => \&analysis_expansionhunter,
+        evaluation             => \&analysis_picardtools_genotypeconcordance,
         fastqc                 => \&analysis_fastqc,
         freebayes              => \&analysis_freebayes_calling,
         gatk_baserecalibration => \&analysis_gatk_baserecalibration,
         gatk_genotypegvcfs     => \&analysis_gatk_genotypegvcfs,
         gatk_concatenate_genotypegvcfs =>
           \&analysis_gatk_concatenate_genotypegvcfs,
-        gatk_haplotypecaller => \&analysis_gatk_haplotypecaller,
-        gatk_realigner       => \&analysis_gatk_realigner,
-        gatk_variantrecalibration => undef,           # Depends on analysis type
-        manta                     => \&analysis_manta,
+        gatk_combinevariantcallsets => \&analysis_gatk_combinevariantcallsets,
+        gatk_haplotypecaller        => \&analysis_gatk_haplotypecaller,
+        gatk_realigner              => \&analysis_gatk_realigner,
+        gatk_variantrecalibration => undef,    # Depends on analysis type
+        gatk_variantevalall          => \&analysis_gatk_variantevalall,
+        manta                        => \&analysis_manta,
         markduplicates               => \&analysis_markduplicates,
+        peddy                        => \&analysis_peddy,
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
           \&analysis_picardtools_collectmultiplemetrics,
+        plink                     => \&analysis_plink,
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
+        prepareforvariantannotationblock =>
+          \&analysis_prepareforvariantannotationblock,
         rcovplots                 => \&analysis_rcoverageplots,
+        rhocall                   => \&analysis_rhocall_annotate,
+        rtg_vcfeval               => \&analysis_rtg_vcfeval,
         sambamba_depth            => \&analysis_sambamba_depth,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
@@ -298,7 +307,9 @@ sub pipeline_rare_disease {
         sv_rankvariant => undef,                    # Depends on sample features
         sv_reformat    => \&analysis_sv_reformat,
         tiddit         => \&analysis_tiddit,
-        vcf2cytosure   => \&analysis_vcf2cytosure,
+        variant_integrity => \&analysis_variant_integrity,
+        vcf2cytosure      => \&analysis_vcf2cytosure,
+        vt                => \&analysis_vt,
     );
 
     ## Program names for the log
@@ -311,58 +322,57 @@ sub pipeline_rare_disease {
         delly_call             => q{Delly call},
         delly_reformat         => q{Delly reformat},
         expansionhunter        => q{ExpansionHunter},
+        evaluation             => q{Evaluation},
         fastqc                 => q{FastQC},
         freebayes              => q{Freebayes},
         gatk_baserecalibration => q{GATK BaseRecalibrator/PrintReads},
         gatk_genotypegvcfs     => q{GATK genotypegvcfs},
         gatk_concatenate_genotypegvcfs =>
           q{GATK concatenate genotypegvcfs files},
-        gatk_haplotypecaller => q{GATK Haplotypecaller},
-        gatk_realigner       => q{GATK RealignerTargetCreator/IndelRealigner},
+        gatk_combinevariantcallsets => q{GATK combinevariantcallsets},
+        gatk_haplotypecaller        => q{GATK Haplotypecaller},
+        gatk_realigner => q{GATK RealignerTargetCreator/IndelRealigner},
         gatk_variantrecalibration =>
           q{GATK variantrecalibrator/applyrecalibration},
+        gatk_variantevalall          => q{GATK variantevalall},
         manta                        => q{Manta},
         markduplicates               => q{Markduplicates},
+        peddy                        => q{Peddy},
         picardtools_collecthsmetrics => q{Picardtools collecthsmetrics},
         picardtools_collectmultiplemetrics =>
           q{Picardtools collectmultiplemetrics},
-        picardtools_mergesamfiles => q{Picardtools MergeSamFiles},
-        sambamba_depth            => q{Sambamba depth},
-        rcovplots                 => q{Rcovplots},
-        samtools_subsample_mt     => q{Samtools subsample MT},
-        sv_combinevariantcallsets => q{SV combinevariantcallsets},
-        sv_varianteffectpredictor => q{SV varianteffectpredictor},
-        sv_vcfparser              => q{SV vcfparser},
-        sv_rankvariant            => q{SV rankvariant},
-        sv_reformat               => q{SV reformat},
-        tiddit                    => q{Tiddit},
-        vcf2cytosure              => q{Vcf2cytosure},
+        picardtools_mergesamfiles        => q{Picardtools MergeSamFiles},
+        plink                            => q{Plink},
+        prepareforvariantannotationblock => q{Prepareforvariantannotationblock},
+        sambamba_depth                   => q{Sambamba depth},
+        rcovplots                        => q{Rcovplots},
+        rhocall                          => q{Rhocall},
+        rtg_vcfeval                      => q{Rtg evaluation},
+        samtools_subsample_mt            => q{Samtools subsample MT},
+        sv_combinevariantcallsets        => q{SV combinevariantcallsets},
+        sv_varianteffectpredictor        => q{SV varianteffectpredictor},
+        sv_vcfparser                     => q{SV vcfparser},
+        sv_rankvariant                   => q{SV rankvariant},
+        sv_reformat                      => q{SV reformat},
+        tiddit                           => q{Tiddit},
+        variant_integrity                => q{Variant_integrity},
+        vcf2cytosure                     => q{Vcf2cytosure},
+        vt                               => q{Vt},
     );
 
     ### Special case for '--rio' capable analysis recipes
     ## Define rio blocks programs and order
-    my @order_bamcalibration_programs = qw{ picardtools_mergesamfiles
-      markduplicates
-      gatk_realigner
-      gatk_baserecalibration
-    };
-
-    my %bamcal_ar = (
-        gatk_baserecalibration    => \&analysis_gatk_baserecalibration_rio,
-        gatk_realigner            => \&analysis_gatk_realigner_rio,
-        markduplicates            => \&analysis_markduplicates_rio,
-        picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles_rio,
-    );
     my $is_bamcalibrationblock_done;
-
-    ## Enable bamcalibration as analysis recipe
-    $active_parameter_href->{bamcalibrationblock} = 1;
-
-    if ( $active_parameter_href->{dry_run_all} ) {
-
-        ## Dry run
-        $active_parameter_href->{bamcalibrationblock} = 2;
-    }
+    my @order_bamcalibration_programs;
+    my %bamcal_ar;
+    _define_bamcalibration_ar(
+        {
+            active_parameter_href => $active_parameter_href,
+            bamcal_ar_href        => \%bamcal_ar,
+            order_bamcalibration_programs_ref =>
+              \@order_bamcalibration_programs,
+        }
+    );
 
     ## Special case for rankvariants recipe
     _update_rankvariants_ar(
@@ -473,263 +483,6 @@ sub pipeline_rare_disease {
         }
     }
 
-    if ( $active_parameter_href->{gatk_combinevariantcallsets} ) {
-
-        $log->info(q{[GATK combinevariantcallsets]});
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir}
-        );
-        analysis_gatk_combinevariantcallsets(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                outfamily_directory     => $outfamily_directory,
-                program_name            => q{gatk_combinevariantcallsets},
-            }
-        );
-    }
-    if ( $active_parameter_href->{peddy} ) {
-
-        $log->info(q{[Peddy]});
-
-        my $peddy_program_name = q{peddy};
-
-        my $infamily_directory = catdir(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir}
-        );
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            q{casecheck},
-            $peddy_program_name
-        );
-
-        analysis_peddy(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => $peddy_program_name,
-                infamily_directory      => $infamily_directory,
-                outfamily_directory     => $outfamily_directory,
-            }
-        );
-    }
-    if ( $active_parameter_href->{plink} ) {
-
-        $log->info(q{[Plink]});
-
-        my $plink_program_name = q{plink};
-
-        my $infamily_directory = catdir(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir}
-        );
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            q{casecheck},
-            $plink_program_name
-        );
-
-        analysis_plink(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => $plink_program_name,
-                infamily_directory      => $infamily_directory,
-                outfamily_directory     => $outfamily_directory,
-            }
-        );
-    }
-    if ( $active_parameter_href->{variant_integrity} ) {
-
-        $log->info(q{[Variant_integrity]});
-
-        my $variant_inty_program_name = q{variant_integrity};
-
-        my $infamily_directory = catdir(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir}
-        );
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            q{casecheck},
-            $variant_inty_program_name
-        );
-
-        analysis_variant_integrity(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => $variant_inty_program_name,
-                infamily_directory      => $infamily_directory,
-                outfamily_directory     => $outfamily_directory,
-            }
-        );
-    }
-    if ( $active_parameter_href->{rtg_vcfeval} ) {
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            if ( $sample_id =~ /$active_parameter_href->{nist_id}/sxm ) {
-
-                $log->info(q{[Rtg evaluation]});
-
-                my $rtg_program_name = q{rtg_vcfeval};
-
-                ## Assign directories
-                my $infamily_directory = catdir(
-                    $active_parameter_href->{outdata_dir},
-                    $active_parameter_href->{family_id},
-                    $active_parameter_href->{outaligner_dir}
-                );
-                my $outfamily_directory = catfile(
-                    $active_parameter_href->{outdata_dir},
-                    $active_parameter_href->{family_id},
-                    $active_parameter_href->{outaligner_dir},
-                    $rtg_program_name
-                );
-                analysis_rtg_vcfeval(
-                    {
-                        parameter_href          => $parameter_href,
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        sample_id               => $sample_id,
-                        call_type               => q{BOTH},
-                        infamily_directory      => $infamily_directory,
-                        outfamily_directory     => $outfamily_directory,
-                        program_name            => $rtg_program_name,
-                    }
-                );
-            }
-        }
-    }
-    if ( $active_parameter_href->{evaluation} ) {
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            if ( $sample_id =~ /$active_parameter_href->{nist_id}/sxm ) {
-
-                $log->info(q{[Evaluation]});
-
-                my $evolution_program_name = q{evaluation};
-
-                ## Assign directories
-                my $infamily_directory = catdir(
-                    $active_parameter_href->{outdata_dir},
-                    $active_parameter_href->{family_id},
-                    $active_parameter_href->{outaligner_dir}
-                );
-                my $outfamily_directory = catfile(
-                    $active_parameter_href->{outdata_dir},
-                    $active_parameter_href->{family_id},
-                    $active_parameter_href->{outaligner_dir},
-                    $evolution_program_name
-                );
-                analysis_picardtools_genotypeconcordance(
-                    {
-                        parameter_href          => $parameter_href,
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        sample_id               => $sample_id,
-                        call_type               => q{BOTH},
-                        infamily_directory      => $infamily_directory,
-                        outfamily_directory     => $outfamily_directory,
-                        program_name            => $evolution_program_name,
-                    }
-                );
-            }
-        }
-    }
-    if ( $active_parameter_href->{gatk_variantevalall} ) {
-
-        $log->info(q{[GATK variantevalall]});
-
-        my $variant_eval_all_program_name = q{gatk_variantevalall};
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            ## Assign directories
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-
-            my $outsample_directory = catdir(
-                $active_parameter_href->{outdata_dir},
-                $sample_id,
-                $active_parameter_href->{outaligner_dir},
-                $variant_eval_all_program_name
-            );
-
-            analysis_gatk_variantevalall(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => $variant_eval_all_program_name,
-                }
-            );
-        }
-    }
-
-### If no males or other remove contig Y from all downstream analysis
-    my @file_info_contig_keys = (qw{ contigs_size_ordered contigs });
-
-  KEY:
-    foreach my $key (@file_info_contig_keys) {
-
-        ## Removes contig_names from contigs array if no male or 'other' found
-        @{ $file_info_href->{$key} } = delete_male_contig(
-            {
-                contigs_ref => \@{ $file_info_href->{$key} },
-                found_male  => $active_parameter_href->{found_male},
-            }
-        );
-    }
-
     if ( $active_parameter_href->{reduce_io} ) {
 
         $active_parameter_href->{pvariantannotationblock} =
@@ -753,77 +506,6 @@ sub pipeline_rare_disease {
     }
     else {
 
-        if ( $active_parameter_href->{prepareforvariantannotationblock} ) {
-
-            $log->info(q{[Prepareforvariantannotationblock]});
-
-            analysis_prepareforvariantannotationblock(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    call_type               => q{BOTH},
-                    program_name => q{prepareforvariantannotationblock},
-                }
-            );
-        }
-
-        if ( $active_parameter_href->{rhocall} ) {
-
-            $log->info(q{[Rhocall]});
-
-            my $infamily_directory = catdir(
-                $active_parameter_href->{outdata_dir},
-                $active_parameter_href->{family_id},
-                $active_parameter_href->{outaligner_dir}
-            );
-            my $outfamily_directory = $infamily_directory;
-
-            analysis_rhocall_annotate(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    call_type               => q{BOTH},
-                    file_info_href          => $file_info_href,
-                    infamily_directory      => $infamily_directory,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    outfamily_directory     => $outfamily_directory,
-                    parameter_href          => $parameter_href,
-                    program_name            => q{rhocall},
-                    sample_info_href        => $sample_info_href,
-                }
-            );
-        }
-
-        if ( $active_parameter_href->{vt} ) {
-
-            $log->info(q{[Vt]});
-
-            my $infamily_directory = catdir(
-                $active_parameter_href->{outdata_dir},
-                $active_parameter_href->{family_id},
-                $active_parameter_href->{outaligner_dir}
-            );
-            my $outfamily_directory = $infamily_directory;
-
-            analysis_vt(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    infamily_directory      => $infamily_directory,
-                    job_id_href             => $job_id_href,
-                    call_type               => q{BOTH},
-                    outfamily_directory     => $outfamily_directory,
-                    program_name            => q{vt},
-                }
-            );
-        }
         if ( $active_parameter_href->{frequency_filter} ) {
 
             $log->info(q{[Frequency_filter]});
@@ -1089,6 +771,72 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
                 sample_info_href        => $sample_info_href,
             }
         );
+    }
+    return;
+}
+
+sub _define_bamcalibration_ar {
+
+## Function : Define bamcalibration recipes, order, coderefs and activate
+## Returns  :
+## Arguments: $active_parameter_href             => Active parameters for this analysis hash {REF}
+##          : $order_bamcalibration_programs_ref => Order of programs in bamcalibration block {REF}
+##          : $bamcal_ar_href                    => Bamcalibration analysis recipe hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $order_bamcalibration_programs_ref;
+    my $bamcal_ar_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        order_bamcalibration_programs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_bamcalibration_programs_ref,
+            strict_type => 1,
+        },
+        bamcal_ar_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$bamcal_ar_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Define rio blocks programs and order
+    @{$order_bamcalibration_programs_ref} = qw{ picardtools_mergesamfiles
+      markduplicates
+      gatk_realigner
+      gatk_baserecalibration
+    };
+
+    %{$bamcal_ar_href} = (
+        gatk_baserecalibration    => \&analysis_gatk_baserecalibration_rio,
+        gatk_realigner            => \&analysis_gatk_realigner_rio,
+        markduplicates            => \&analysis_markduplicates_rio,
+        picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles_rio,
+    );
+
+    ## Enable bamcalibration as analysis recipe
+    $active_parameter_href->{bamcalibrationblock} = 1;
+
+    if ( $active_parameter_href->{dry_run_all} ) {
+
+        ## Dry run
+        $active_parameter_href->{bamcalibrationblock} = 2;
     }
     return;
 }

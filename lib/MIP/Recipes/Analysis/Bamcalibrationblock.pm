@@ -165,6 +165,19 @@ sub analysis_bamcalibrationblock {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
+    ## Broadcasting
+  PROGRAM:
+    foreach my $program ( @{$order_programs_ref} ) {
+
+        ## Only for active programs
+        next PROGRAM if ( not $active_parameter_href->{$program} );
+
+        $log->info( $TAB
+              . $OPEN_BRACKET
+              . $program_name_href->{$program}
+              . $CLOSE_BRACKET );
+    }
+
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
@@ -191,10 +204,6 @@ sub analysis_bamcalibrationblock {
 
             ## Only for active programs
             next PROGRAM if ( not $active_parameter_href->{$program} );
-
-            $log->info( $OPEN_BRACKET
-                  . $program_name_href->{$program}
-                  . $CLOSE_BRACKET );
 
             ($xargs_file_counter) = $bamcal_ar_href->{$program}->(
                 {
