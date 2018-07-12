@@ -433,11 +433,9 @@ sub analysis_vt_rio {
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $file_path               => File path
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $program_info_path       => The program info path
@@ -453,10 +451,8 @@ sub analysis_vt_rio {
     my $FILEHANDLE;
     my $file_path;
     my $file_info_href;
-    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outfamily_directory;
     my $parameter_href;
     my $program_name;
     my $program_info_path;
@@ -472,91 +468,80 @@ sub analysis_vt_rio {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         FILEHANDLE     => { store => \$FILEHANDLE, },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
-        },
-        file_path          => { strict_type => 1, store => \$file_path, },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
             strict_type => 1,
-            store       => \$infamily_directory,
         },
+        file_path               => { store => \$file_path, strict_type => 1, },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
-        },
-        outfamily_directory => {
-            required    => 1,
-            defined     => 1,
             strict_type => 1,
-            store       => \$outfamily_directory,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
+        },
+        program_info_path =>
+          { store => \$program_info_path, strict_type => 1, },
+        program_name => {
+            defined     => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
-        stderr_path    => { strict_type => 1, store => \$stderr_path },
+        stderr_path    => { store => \$stderr_path, strict_type => 1, },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -577,7 +562,7 @@ sub analysis_vt_rio {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
@@ -606,6 +591,11 @@ sub analysis_vt_rio {
 
     # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
+
+    ## Assign directories
+    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir );
+    my $outfamily_directory = $infamily_directory;
 
     # Used downstream
     $parameter_href->{$program_name}{indirectory} = $outfamily_directory;

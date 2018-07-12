@@ -176,7 +176,7 @@ sub analysis_vep {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
@@ -631,7 +631,7 @@ sub analysis_vep_rio {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias

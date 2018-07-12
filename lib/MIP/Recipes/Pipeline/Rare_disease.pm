@@ -173,12 +173,12 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
     use MIP::Recipes::Analysis::Endvariantannotationblock
-      qw{ analysis_endvariantannotationblock };
+      qw{ analysis_endvariantannotationblock analysis_endvariantannotationblock_rio };
     use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
     use MIP::Recipes::Analysis::Frequency_filter
-      qw{ analysis_frequency_filter };
+      qw{ analysis_frequency_filter analysis_frequency_filter_rio };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration analysis_gatk_baserecalibration_rio };
     use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
@@ -201,7 +201,7 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Markduplicates
       qw{ analysis_markduplicates analysis_markduplicates_rio };
     use MIP::Recipes::Analysis::Mip_vcfparser
-      qw{ analysis_mip_vcfparser analysis_sv_vcfparser };
+      qw{ analysis_mip_vcfparser analysis_sv_vcfparser analysis_mip_vcfparser_rio };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Peddy qw{ analysis_peddy };
     use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
@@ -214,19 +214,21 @@ sub pipeline_rare_disease {
       qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
     use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
     use MIP::Recipes::Analysis::Prepareforvariantannotationblock
-      qw{ analysis_prepareforvariantannotationblock };
+      qw{ analysis_prepareforvariantannotationblock analysis_prepareforvariantannotationblock_rio };
     use MIP::Recipes::Analysis::Qccollect qw{ analysis_qccollect };
     use MIP::Recipes::Analysis::Rankvariant
-      qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
+      qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
     use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
-    use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
+    use MIP::Recipes::Analysis::Rhocall
+      qw{ analysis_rhocall_annotate analysis_rhocall_annotate_rio };
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_subsample_mt
       qw{ analysis_samtools_subsample_mt };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
-    use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
+    use MIP::Recipes::Analysis::Snpeff
+      qw{ analysis_snpeff analysis_snpeff_rio };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets
       qw{ analysis_sv_combinevariantcallsets };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
@@ -235,8 +237,9 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Variant_integrity
       qw{ analysis_variant_integrity };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
-    use MIP::Recipes::Analysis::Vep qw{ analysis_vep analysis_vep_sv };
-    use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
+    use MIP::Recipes::Analysis::Vep
+      qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
+    use MIP::Recipes::Analysis::Vt qw{ analysis_vt analysis_vt_rio };
     use MIP::Recipes::Build::Rare_disease qw{build_rare_disease_meta_files};
 
     ## Copy information about the infiles to file_info hash
@@ -277,6 +280,7 @@ sub pipeline_rare_disease {
         evaluation             => \&analysis_picardtools_genotypeconcordance,
         fastqc                 => \&analysis_fastqc,
         freebayes              => \&analysis_freebayes_calling,
+        frequency_filter       => \&analysis_frequency_filter,
         gatk_baserecalibration => \&analysis_gatk_baserecalibration,
         gatk_genotypegvcfs     => \&analysis_gatk_genotypegvcfs,
         gatk_concatenate_genotypegvcfs =>
@@ -301,15 +305,18 @@ sub pipeline_rare_disease {
         rtg_vcfeval               => \&analysis_rtg_vcfeval,
         sambamba_depth            => \&analysis_sambamba_depth,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
+        snpeff                    => \&analysis_snpeff,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
         sv_varianteffectpredictor => \&analysis_vep_sv,
         sv_vcfparser              => \&analysis_sv_vcfparser,
         sv_rankvariant => undef,                    # Depends on sample features
         sv_reformat    => \&analysis_sv_reformat,
         tiddit         => \&analysis_tiddit,
-        variant_integrity => \&analysis_variant_integrity,
-        vcf2cytosure      => \&analysis_vcf2cytosure,
-        vt                => \&analysis_vt,
+        varianteffectpredictor => \&analysis_vep,
+        variant_integrity      => \&analysis_variant_integrity,
+        vcfparser              => \&analysis_mip_vcfparser,
+        vcf2cytosure           => \&analysis_vcf2cytosure,
+        vt                     => \&analysis_vt,
     );
 
     ## Program names for the log
@@ -325,6 +332,7 @@ sub pipeline_rare_disease {
         evaluation             => q{Evaluation},
         fastqc                 => q{FastQC},
         freebayes              => q{Freebayes},
+        frequency_filter       => q{Frequency filter},
         gatk_baserecalibration => q{GATK BaseRecalibrator/PrintReads},
         gatk_genotypegvcfs     => q{GATK genotypegvcfs},
         gatk_concatenate_genotypegvcfs =>
@@ -344,18 +352,21 @@ sub pipeline_rare_disease {
         picardtools_mergesamfiles        => q{Picardtools MergeSamFiles},
         plink                            => q{Plink},
         prepareforvariantannotationblock => q{Prepareforvariantannotationblock},
-        sambamba_depth                   => q{Sambamba depth},
         rcovplots                        => q{Rcovplots},
         rhocall                          => q{Rhocall},
         rtg_vcfeval                      => q{Rtg evaluation},
+        sambamba_depth                   => q{Sambamba depth},
         samtools_subsample_mt            => q{Samtools subsample MT},
+        snpeff                           => q{Snpeff},
         sv_combinevariantcallsets        => q{SV combinevariantcallsets},
         sv_varianteffectpredictor        => q{SV varianteffectpredictor},
         sv_vcfparser                     => q{SV vcfparser},
         sv_rankvariant                   => q{SV rankvariant},
         sv_reformat                      => q{SV reformat},
         tiddit                           => q{Tiddit},
+        varianteffectpredictor           => q{Varianteffectpredictor},
         variant_integrity                => q{Variant_integrity},
+        vcfparser                        => q{Vcfparser},
         vcf2cytosure                     => q{Vcf2cytosure},
         vt                               => q{Vt},
     );
@@ -371,6 +382,17 @@ sub pipeline_rare_disease {
             bamcal_ar_href        => \%bamcal_ar,
             order_bamcalibration_programs_ref =>
               \@order_bamcalibration_programs,
+        }
+    );
+
+    my $is_variantannotationblock_done;
+    my @order_varann_programs;
+    my %varann_ar;
+    _define_variantannotationblock_ar(
+        {
+            active_parameter_href     => $active_parameter_href,
+            order_varann_programs_ref => \@order_varann_programs,
+            varann_ar_href            => \%varann_ar,
         }
     );
 
@@ -409,6 +431,12 @@ sub pipeline_rare_disease {
           if ( $is_bamcalibrationblock_done
             and any { $_ eq $program } @order_bamcalibration_programs );
 
+        ## Skip program if variant annotation block is done
+        ## and program is part of variantannotation  block
+        next PROGRAM
+          if ( $is_variantannotationblock_done
+            and any { $_ eq $program } @order_varann_programs );
+
         ### Analysis recipes
         ## rio enabled and bamcalibration block analysis recipe
         if ( $active_parameter_href->{reduce_io}
@@ -435,6 +463,33 @@ sub pipeline_rare_disease {
 
             ## Done with bamcalibration block
             $is_bamcalibrationblock_done = 1;
+        }
+        elsif ( $active_parameter_href->{reduce_io}
+            and any { $_ eq $program } @order_varann_programs )
+        {
+            ## rio enabled and variantannotation block analysis recipe
+
+            $log->info(q{[Variantannotationblock]});
+
+            analysis_variantannotationblock(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    call_type               => q{BOTH},
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    outaligner_dir => $active_parameter_href->{outaligner_dir},
+                    order_programs_ref => \@order_varann_programs,
+                    parameter_href     => $parameter_href,
+                    program_name       => q{variantannotationblock},
+                    program_name_href  => \%program_name,
+                    sample_info_href   => $sample_info_href,
+                    varann_ar_href     => \%varann_ar,
+                }
+            );
+
+            ## Done with variantannotationblock block
+            $is_variantannotationblock_done = 1;
         }
         else {
 
@@ -506,103 +561,6 @@ sub pipeline_rare_disease {
     }
     else {
 
-        if ( $active_parameter_href->{frequency_filter} ) {
-
-            $log->info(q{[Frequency_filter]});
-
-            my $infamily_directory = catdir(
-                $active_parameter_href->{outdata_dir},
-                $active_parameter_href->{family_id},
-                $active_parameter_href->{outaligner_dir}
-            );
-            my $outfamily_directory = $infamily_directory;
-
-            analysis_frequency_filter(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    infamily_directory      => $infamily_directory,
-                    job_id_href             => $job_id_href,
-                    call_type               => q{BOTH},
-                    outfamily_directory     => $outfamily_directory,
-                    program_name            => q{frequency_filter},
-                }
-            );
-        }
-
-        if ( $active_parameter_href->{varianteffectpredictor} ) {
-
-            $log->info(q{[Varianteffectpredictor]});
-
-            analysis_vep(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    call_type               => q{BOTH},
-                    program_name            => q{varianteffectpredictor},
-                }
-            );
-        }
-        if ( $active_parameter_href->{vcfparser} ) {
-
-            $log->info(q{[Vcfparser]});
-
-            my $infamily_directory = catdir(
-                $active_parameter_href->{outdata_dir},
-                $active_parameter_href->{family_id},
-                $active_parameter_href->{outaligner_dir}
-            );
-            my $outfamily_directory = $infamily_directory;
-
-            analysis_mip_vcfparser(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    call_type               => q{BOTH},
-                    file_info_href          => $file_info_href,
-                    infamily_directory      => $infamily_directory,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    outfamily_directory     => $outfamily_directory,
-                    parameter_href          => $parameter_href,
-                    program_name            => q{vcfparser},
-                    sample_info_href        => $sample_info_href,
-                }
-            );
-        }
-
-        if ( $active_parameter_href->{snpeff} ) {
-
-            $log->info(q{[Snpeff]});
-
-            my $infamily_directory = catdir(
-                $active_parameter_href->{outdata_dir},
-                $active_parameter_href->{family_id},
-                $active_parameter_href->{outaligner_dir}
-            );
-            my $outfamily_directory = $infamily_directory;
-
-            analysis_snpeff(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    call_type               => q{BOTH},
-                    file_info_href          => $file_info_href,
-                    infamily_directory      => $infamily_directory,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    outfamily_directory     => $outfamily_directory,
-                    parameter_href          => $parameter_href,
-                    program_name            => q{snpeff},
-                    sample_info_href        => $sample_info_href,
-                }
-            );
-        }
         if ( $active_parameter_href->{rankvariant} ) {
 
             $log->info(q{[Rankvariant]});
@@ -837,6 +795,73 @@ sub _define_bamcalibration_ar {
 
         ## Dry run
         $active_parameter_href->{bamcalibrationblock} = 2;
+    }
+    return;
+}
+
+sub _define_variantannotationblock_ar {
+
+## Function : Define variantannotationblock recipes, order, coderefs and activate
+## Returns  :
+## Arguments: $active_parameter_href     => Active parameters for this analysis hash {REF}
+##          : $order_varann_programs_ref => Order of programs in variant annotation block {REF}
+##          : $varann_ar_href            => Variant annotation analysis recipe hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $order_varann_programs_ref;
+    my $varann_ar_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        order_varann_programs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_varann_programs_ref,
+            strict_type => 1,
+        },
+        varann_ar_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$varann_ar_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Define rio blocks programs and order
+    @{$order_varann_programs_ref} =
+      qw{ prepareforvariantannotationblock rhocall vt frequency_filter varianteffectpredictor vcfparser snpeff };
+
+    %{$varann_ar_href} = (
+        frequency_filter => \&analysis_frequency_filter_rio,
+        prepareforvariantannotationblock =>
+          \&analysis_prepareforvariantannotationblock_rio,
+        rhocall                => \&analysis_rhocall_annotate_rio,
+        snpeff                 => \&analysis_snpeff_rio,
+        varianteffectpredictor => \&analysis_vep_rio,
+        vcfparser              => \&analysis_mip_vcfparser_rio,
+        vt                     => \&analysis_vt_rio,
+    );
+
+    ## Enable varann as analysis recipe
+    $active_parameter_href->{variantannotationblock} = 1;
+
+    if ( $active_parameter_href->{dry_run_all} ) {
+
+        ## Dry run
+        $active_parameter_href->{variantannotationblock} = 2;
     }
     return;
 }

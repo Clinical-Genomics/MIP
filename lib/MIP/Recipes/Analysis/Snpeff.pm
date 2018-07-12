@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_snpeff analysis_snpeff_rio };
@@ -45,11 +45,9 @@ sub analysis_snpeff {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF
 ##          : $file_path               => File path
-##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
@@ -62,10 +60,8 @@ sub analysis_snpeff {
     my $active_parameter_href;
     my $file_info_href;
     my $file_path;
-    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outfamily_directory;
     my $parameter_href;
     my $program_info_path;
     my $program_name;
@@ -80,90 +76,78 @@ sub analysis_snpeff {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
-        },
-        file_path          => { strict_type => 1, store => \$file_path, },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
             strict_type => 1,
-            store       => \$infamily_directory,
         },
+        file_path               => { store => \$file_path, strict_type => 1, },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
-        },
-        outfamily_directory => {
-            required    => 1,
-            defined     => 1,
             strict_type => 1,
-            store       => \$outfamily_directory,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         program_info_path =>
-          { strict_type => 1, store => \$program_info_path, },
+          { store => \$program_info_path, strict_type => 1, },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -190,18 +174,19 @@ sub analysis_snpeff {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
 
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     my $config_file_path =
       catfile( $active_parameter_href->{snpeff_path}, q{snpEff.config} );
@@ -238,6 +223,11 @@ sub analysis_snpeff {
         }
     );
 
+    ## Assign directories
+    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir );
+    my $outfamily_directory = $infamily_directory;
+
     # Used downstream
     $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
@@ -266,7 +256,7 @@ sub analysis_snpeff {
 
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -659,15 +649,14 @@ sub analysis_snpeff_rio {
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $file_info_href          => File_info hash {REF
 ##          : $file_path               => File path
-##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $stderr_path             => Stderr path of the block script
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
@@ -677,14 +666,13 @@ sub analysis_snpeff_rio {
     my $FILEHANDLE;
     my $file_info_href;
     my $file_path;
-    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outfamily_directory;
     my $parameter_href;
     my $program_info_path;
     my $program_name;
     my $sample_info_href;
+    my $stderr_path;
 
     ## Default(s)
     my $call_type;
@@ -695,91 +683,85 @@ sub analysis_snpeff_rio {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         FILEHANDLE     => { required => 1, store => \$FILEHANDLE },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
-        },
-        file_path          => { strict_type => 1, store => \$file_path, },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
             strict_type => 1,
-            store       => \$infamily_directory,
         },
+        file_path               => { store => \$file_path, strict_type => 1, },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
-        },
-        outfamily_directory => {
-            required    => 1,
-            defined     => 1,
             strict_type => 1,
-            store       => \$outfamily_directory,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         program_info_path =>
-          { strict_type => 1, store => \$program_info_path, },
+          { store => \$program_info_path, strict_type => 1, },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        stderr_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$stderr_path,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -806,18 +788,19 @@ sub analysis_snpeff_rio {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
 
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     my $config_file_path =
       catfile( $active_parameter_href->{snpeff_path}, q{snpEff.config} );
@@ -834,6 +817,11 @@ sub analysis_snpeff_rio {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
         }
     );
+
+    ## Assign directories
+    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir );
+    my $outfamily_directory = $infamily_directory;
 
     # Used downstream
     $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
@@ -863,7 +851,7 @@ sub analysis_snpeff_rio {
 
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},

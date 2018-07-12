@@ -1384,6 +1384,7 @@ vt_uniq:
   default: 0
   type: program_argument
 frequency_filter:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1458,6 +1459,7 @@ gatk_varianteval_gold:
   type: path
 ## VEP
 varianteffectpredictor:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1525,6 +1527,7 @@ vep_plugins_dir_path:
   update_path: absolute_path
 ## VCFParser
 vcfparser:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1581,6 +1584,7 @@ vcfparser_vep_transcripts:
   type: program_argument
 ## SnpEFF
 snpeff:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR

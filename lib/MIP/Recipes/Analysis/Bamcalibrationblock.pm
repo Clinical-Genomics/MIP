@@ -48,7 +48,7 @@ sub analysis_bamcalibrationblock {
 ##          : $order_programs_ref      => Order of programs
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
-##          : $program_name-href       => Program name hash for log messages {REF}
+##          : $program_name_href       => Program name hash for log messages {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 
