@@ -46,6 +46,7 @@ sub analysis_variantannotationblock {
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
+##          : $log                     => Log object to write to
 ##          : $outaligner_dir          => Outaligner dir used in the analysis
 ##          : $order_programs_ref      => Order of programs
 ##          : $parameter_href          => Parameter hash {REF}
@@ -62,6 +63,7 @@ sub analysis_variantannotationblock {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
+    my $log;
     my $order_programs_ref;
     my $parameter_href;
     my $program_name;
@@ -110,6 +112,11 @@ sub analysis_variantannotationblock {
             required    => 1,
             store       => \$job_id_href,
             strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
@@ -167,17 +174,10 @@ sub analysis_variantannotationblock {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Analysis::Endvariantannotationblock
-      qw{ analysis_endvariantannotationblock_rio };
-    use MIP::Recipes::Analysis::Rankvariant
-      qw{ analysis_rankvariant_rio analysis_rankvariant_rio_unaffected };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
     Readonly my $PROCESS_TIME => 80;
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $core_number = $active_parameter_href->{max_cores_per_node};
 
@@ -197,22 +197,6 @@ sub analysis_variantannotationblock {
               . $program_name_href->{$program}
               . $CLOSE_BRACKET );
     }
-
-    # Set order of supplying user info
-    my @rio_program_order =
-      qw{ frequency_filter varianteffectpredictor vcfparser snpeff rankvariant endvariantannotationblock };
-
-    # Store what to supply to user
-    my %rio_program = (
-
-        #        vt                        => q{[Vt]},
-        frequency_filter          => q{[Frequency filter]},
-        varianteffectpredictor    => q{[Varianteffectpredictor]},
-        vcfparser                 => q{[Vcfparser]},
-        snpeff                    => q{[Snpeff]},
-        rankvariant               => q{[Rankvariant]},
-        endvariantannotationblock => q{[Endvariantannotationblock]},
-    );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -250,101 +234,6 @@ sub analysis_variantannotationblock {
                 sample_info_href        => $sample_info_href,
                 stderr_path        => $program_info_path . $DOT . q{stderr.txt},
                 xargs_file_counter => $xargs_file_counter,
-            }
-        );
-    }
-  RIO_PROGRAM:
-    foreach my $program_name (@rio_program_order) {
-
-        if ( $active_parameter_href->{$program_name} ) {
-
-            my $program_header = $rio_program{$program_name};
-
-            $log->info( $TAB . $program_header );
-        }
-    }
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $family_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $PROCESS_TIME,
-            program_directory     => $outaligner_dir,
-            program_name          => $program_name,
-        }
-    );
-
-    if ( $active_parameter_href->{rankvariant} ) {
-
-        my $rank_program_name = q{rankvariant};
-
-        if ( defined $parameter_href->{dynamic_parameter}{unaffected}
-            && @{ $parameter_href->{dynamic_parameter}{unaffected} } eq
-            @{ $active_parameter_href->{sample_ids} } )
-        {
-
-            $log->warn(
-q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'compound'}
-            );
-
-            ($xargs_file_counter) = analysis_rankvariant_rio_unaffected(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    call_type               => $call_type,
-                    FILEHANDLE              => $FILEHANDLE,
-                    file_info_href          => $file_info_href,
-                    file_path               => $file_path,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    parameter_href          => $parameter_href,
-                    program_info_path       => $program_info_path,
-                    program_name            => $rank_program_name,
-                    sample_info_href        => $sample_info_href,
-                    xargs_file_counter      => $xargs_file_counter,
-                }
-            );
-        }
-        else {
-
-            ($xargs_file_counter) = analysis_rankvariant_rio(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    call_type               => $call_type,
-                    FILEHANDLE              => $FILEHANDLE,
-                    file_info_href          => $file_info_href,
-                    file_path               => $file_path,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    parameter_href          => $parameter_href,
-                    program_info_path       => $program_info_path,
-                    program_name            => $rank_program_name,
-                    sample_info_href        => $sample_info_href,
-                    xargs_file_counter      => $xargs_file_counter,
-                }
-            );
-        }
-    }
-    if ( $active_parameter_href->{endvariantannotationblock} ) {
-
-        ($xargs_file_counter) = analysis_endvariantannotationblock_rio(
-            {
-                active_parameter_href   => $active_parameter_href,
-                FILEHANDLE              => $FILEHANDLE,
-                call_type               => $call_type,
-                file_info_href          => $file_info_href,
-                file_path               => $file_path,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                parameter_href          => $parameter_href,
-                program_info_path       => $program_info_path,
-                program_name            => q{endvariantannotationblock},
-                sample_info_href        => $sample_info_href,
-                xargs_file_counter      => $xargs_file_counter,
             }
         );
     }

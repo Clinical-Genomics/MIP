@@ -1430,6 +1430,7 @@ gatk_variantevalall:
   outfile_suffix: ".varianteval"
   type: program
 gatk_variantevalexome:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -1743,6 +1744,7 @@ nist_id:
   type: program_argument
 ## RankVariant
 rankvariant:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1803,6 +1805,7 @@ rank_model_file:
   type: path
 ##Endvariantannotationblock
 endvariantannotationblock:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1828,6 +1831,7 @@ endvariantannotationblock_remove_genes_file:
   type: path
 ## QCCollect
 qccollect:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1856,6 +1860,7 @@ qccollect_skip_evaluation:
   type: program_argument
 ## MultiQC
 multiqc:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1873,6 +1878,7 @@ multiqc_per_sample:
   type: program_argument
 ## AnalysisRunStatus
 analysisrunstatus:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1881,6 +1887,7 @@ analysisrunstatus:
   type: program
 ## Sacct
 sacct:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR

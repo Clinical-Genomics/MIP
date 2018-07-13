@@ -193,12 +193,13 @@ sub analysis_rankvariant {
     my $job_id_chain            = $parameter_href->{$program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Set default contigs
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
@@ -279,7 +280,7 @@ sub analysis_rankvariant {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
@@ -603,6 +604,7 @@ sub analysis_rankvariant_rio {
 ##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $stderr_path             => Stderr path of the block script
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -619,6 +621,7 @@ sub analysis_rankvariant_rio {
     my $program_info_path;
     my $program_name;
     my $sample_info_href;
+    my $stderr_path;
 
     ## Default(s)
     my $call_type;
@@ -692,6 +695,12 @@ sub analysis_rankvariant_rio {
             store       => \$sample_info_href,
             strict_type => 1,
         },
+        stderr_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$stderr_path,
+            strict_type => 1,
+        },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             store       => \$temp_directory,
@@ -742,12 +751,13 @@ sub analysis_rankvariant_rio {
     my $job_id_chain            = $parameter_href->{$program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Set default contigs
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
@@ -821,7 +831,7 @@ sub analysis_rankvariant_rio {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
@@ -1117,6 +1127,7 @@ sub analysis_rankvariant_rio_unaffected {
 ##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $stderr_path             => Stderr path of the block script
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -1133,6 +1144,7 @@ sub analysis_rankvariant_rio_unaffected {
     my $program_info_path;
     my $program_name;
     my $sample_info_href;
+    my $stderr_path;
 
     ## Default(s)
     my $call_type;
@@ -1206,6 +1218,12 @@ sub analysis_rankvariant_rio_unaffected {
             store       => \$sample_info_href,
             strict_type => 1,
         },
+        stderr_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$stderr_path,
+            strict_type => 1,
+        },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             store       => \$temp_directory,
@@ -1256,12 +1274,13 @@ sub analysis_rankvariant_rio_unaffected {
     my $job_id_chain            = $parameter_href->{$program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Set default contigs
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
@@ -1335,7 +1354,7 @@ sub analysis_rankvariant_rio_unaffected {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
@@ -1677,12 +1696,13 @@ sub analysis_rankvariant_unaffected {
     my $job_id_chain            = $parameter_href->{$program_name}{chain};
     my $vcfparser_analysis_type = $EMPTY_STR;
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Set default contigs
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
@@ -1763,7 +1783,7 @@ sub analysis_rankvariant_unaffected {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
 
@@ -2120,12 +2140,13 @@ sub analysis_sv_rankvariant {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -2552,12 +2573,13 @@ sub analysis_sv_rankvariant_unaffected {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle

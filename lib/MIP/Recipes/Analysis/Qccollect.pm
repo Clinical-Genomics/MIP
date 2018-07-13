@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_qccollect };
@@ -35,96 +35,97 @@ sub analysis_qccollect {
 
 ## Function : Collect qc metrics for this analysis run.
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $infile_path             => Infile path
-##          : $outfamily_directory     => Out family directory
-##          : $program_name            => Program name
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
+##          : $file_info_href          => File info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $infile_path             => Infile path
+##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_info_href        => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
+    my $file_info_href;
     my $infile_lane_prefix_href;
-    my $job_id_href;
     my $infile_path;
-    my $outfamily_directory;
+    my $job_id_href;
+    my $parameter_href;
     my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
     my $family_id;
     my $outaligner_dir;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$sample_info_href,
+        },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$job_id_href,
         },
         infile_path => {
             default =>
               $arg_href->{active_parameter_href}{qccollect_sampleinfo_file},
-            strict_type => 1,
             store       => \$infile_path,
+            strict_type => 1,
         },
-        outfamily_directory => {
-            required    => 1,
+        job_id_href => {
+            default     => {},
             defined     => 1,
-            strict_type => 1,
-            store       => \$outfamily_directory,
-        },
-        program_name => {
             required    => 1,
-            defined     => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$program_name,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$family_id,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
         },
     };
 
@@ -140,7 +141,7 @@ sub analysis_qccollect {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
@@ -168,6 +169,11 @@ sub analysis_qccollect {
         }
     );
 
+    ## Assign directories
+    my $outfamily_directory =
+      catdir( $active_parameter_href->{outdata_dir}, $family_id );
+
+    ## Paths
     my $outfile_path = catfile( $outfamily_directory,
         $family_id . $UNDERSCORE . q{qc_metrics.yaml} );
     my $log_file_path = catfile( $outfamily_directory,

@@ -521,7 +521,7 @@ sub print_program {
 
             if (
                 not $parameter =~
-                / bamcalibrationblock | pvariantannotationblock /xsm )
+                / bamcalibrationblock | variantannotationblock /xsm )
             {
 
                 print {*STDOUT} q{--}

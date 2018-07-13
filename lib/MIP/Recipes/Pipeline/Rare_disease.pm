@@ -4,12 +4,12 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use List::MoreUtils qw { any };
@@ -19,6 +19,7 @@ use Readonly;
 use MIP::Delete::List qw{ delete_male_contig };
 
 BEGIN {
+
     require Exporter;
     use base qw{ Exporter };
 
@@ -38,7 +39,6 @@ sub pipeline_rare_disease {
 
 ## Function : Pipeline recipe for wes and or wgs data analysis.
 ## Returns  :
-
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
 ##          : $indir_path_href         => Indirectory hash {REF}
@@ -267,84 +267,96 @@ sub pipeline_rare_disease {
         }
     );
 
+    ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        bwa_mem                => \&analysis_bwa_mem,
-        bcftools_mpileup       => \&analysis_bcftools_mpileup,
-        bedtools_genomecov     => \&analysis_bedtools_genomecov,
-        chanjo_sexcheck        => \&analysis_chanjo_sex_check,
-        cnvnator               => \&analysis_cnvnator,
-        delly_call             => \&analysis_delly_call,
-        delly_reformat         => \&analysis_delly_reformat,
-        expansionhunter        => \&analysis_expansionhunter,
-        evaluation             => \&analysis_picardtools_genotypeconcordance,
-        fastqc                 => \&analysis_fastqc,
-        freebayes              => \&analysis_freebayes_calling,
-        frequency_filter       => \&analysis_frequency_filter,
-        gatk_baserecalibration => \&analysis_gatk_baserecalibration,
-        gatk_genotypegvcfs     => \&analysis_gatk_genotypegvcfs,
+        analysisrunstatus         => \&analysis_analysisrunstatus,
+        bcftools_mpileup          => \&analysis_bcftools_mpileup,
+        bedtools_genomecov        => \&analysis_bedtools_genomecov,
+        bwa_mem                   => \&analysis_bwa_mem,
+        chanjo_sexcheck           => \&analysis_chanjo_sex_check,
+        cnvnator                  => \&analysis_cnvnator,
+        delly_call                => \&analysis_delly_call,
+        delly_reformat            => \&analysis_delly_reformat,
+        endvariantannotationblock => \&analysis_endvariantannotationblock,
+        expansionhunter           => \&analysis_expansionhunter,
+        evaluation                => \&analysis_picardtools_genotypeconcordance,
+        fastqc                    => \&analysis_fastqc,
+        freebayes                 => \&analysis_freebayes_calling,
+        frequency_filter          => \&analysis_frequency_filter,
+        gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
         gatk_concatenate_genotypegvcfs =>
           \&analysis_gatk_concatenate_genotypegvcfs,
         gatk_combinevariantcallsets => \&analysis_gatk_combinevariantcallsets,
+        gatk_genotypegvcfs          => \&analysis_gatk_genotypegvcfs,
         gatk_haplotypecaller        => \&analysis_gatk_haplotypecaller,
         gatk_realigner              => \&analysis_gatk_realigner,
-        gatk_variantrecalibration => undef,    # Depends on analysis type
-        gatk_variantevalall          => \&analysis_gatk_variantevalall,
-        manta                        => \&analysis_manta,
+        gatk_variantevalall         => \&analysis_gatk_variantevalall,
+        gatk_variantevalexome       => \&analysis_gatk_variantevalexome,
+        gatk_variantrecalibration => undef,           # Depends on analysis type
+        manta                     => \&analysis_manta,
         markduplicates               => \&analysis_markduplicates,
+        multiqc                      => \&analysis_multiqc,
         peddy                        => \&analysis_peddy,
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
           \&analysis_picardtools_collectmultiplemetrics,
-        plink                     => \&analysis_plink,
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
+        plink                     => \&analysis_plink,
         prepareforvariantannotationblock =>
           \&analysis_prepareforvariantannotationblock,
-        rcovplots                 => \&analysis_rcoverageplots,
-        rhocall                   => \&analysis_rhocall_annotate,
-        rtg_vcfeval               => \&analysis_rtg_vcfeval,
+        qccollect   => \&analysis_qccollect,
+        rankvariant => undef,                       # Depends on sample features
+        rcovplots   => \&analysis_rcoverageplots,
+        rhocall     => \&analysis_rhocall_annotate,
+        rtg_vcfeval => \&analysis_rtg_vcfeval,
+        sacct       => \&analysis_sacct,
         sambamba_depth            => \&analysis_sambamba_depth,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
         snpeff                    => \&analysis_snpeff,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
-        sv_varianteffectpredictor => \&analysis_vep_sv,
-        sv_vcfparser              => \&analysis_sv_vcfparser,
         sv_rankvariant => undef,                    # Depends on sample features
         sv_reformat    => \&analysis_sv_reformat,
-        tiddit         => \&analysis_tiddit,
-        varianteffectpredictor => \&analysis_vep,
-        variant_integrity      => \&analysis_variant_integrity,
-        vcfparser              => \&analysis_mip_vcfparser,
-        vcf2cytosure           => \&analysis_vcf2cytosure,
-        vt                     => \&analysis_vt,
+        sv_varianteffectpredictor => \&analysis_vep_sv,
+        sv_vcfparser              => \&analysis_sv_vcfparser,
+        tiddit                    => \&analysis_tiddit,
+        varianteffectpredictor    => \&analysis_vep,
+        variant_integrity         => \&analysis_variant_integrity,
+        vcfparser                 => \&analysis_mip_vcfparser,
+        vcf2cytosure              => \&analysis_vcf2cytosure,
+        vt                        => \&analysis_vt,
     );
 
     ## Program names for the log
     my %program_name = (
-        bwa_mem                => q{BWA mem},
-        bcftools_mpileup       => q{Bcftools mpileup},
-        bedtools_genomecov     => q{Bedtools genomecov},
-        chanjo_sexcheck        => q{Chanjo sexcheck},
-        cnvnator               => q{CNVnator},
-        delly_call             => q{Delly call},
-        delly_reformat         => q{Delly reformat},
-        expansionhunter        => q{ExpansionHunter},
-        evaluation             => q{Evaluation},
-        fastqc                 => q{FastQC},
-        freebayes              => q{Freebayes},
-        frequency_filter       => q{Frequency filter},
-        gatk_baserecalibration => q{GATK BaseRecalibrator/PrintReads},
-        gatk_genotypegvcfs     => q{GATK genotypegvcfs},
+        analysisrunstatus         => q{Analysis run status},
+        bcftools_mpileup          => q{Bcftools mpileup},
+        bedtools_genomecov        => q{Bedtools genomecov},
+        bwa_mem                   => q{BWA mem},
+        chanjo_sexcheck           => q{Chanjo sexcheck},
+        cnvnator                  => q{CNVnator},
+        delly_call                => q{Delly call},
+        delly_reformat            => q{Delly reformat},
+        endvariantannotationblock => q{Endvariantannotationblock},
+        expansionhunter           => q{ExpansionHunter},
+        evaluation                => q{Evaluation},
+        fastqc                    => q{FastQC},
+        freebayes                 => q{Freebayes},
+        frequency_filter          => q{Frequency filter},
+        gatk_baserecalibration    => q{GATK BaseRecalibrator/PrintReads},
         gatk_concatenate_genotypegvcfs =>
           q{GATK concatenate genotypegvcfs files},
         gatk_combinevariantcallsets => q{GATK combinevariantcallsets},
+        gatk_genotypegvcfs          => q{GATK genotypegvcfs},
         gatk_haplotypecaller        => q{GATK Haplotypecaller},
-        gatk_realigner => q{GATK RealignerTargetCreator/IndelRealigner},
+        gatk_realigner        => q{GATK RealignerTargetCreator/IndelRealigner},
+        gatk_variantevalall   => q{GATK variantevalall},
+        gatk_variantevalexome => q{GATK variantevalexome},
         gatk_variantrecalibration =>
           q{GATK variantrecalibrator/applyrecalibration},
-        gatk_variantevalall          => q{GATK variantevalall},
         manta                        => q{Manta},
         markduplicates               => q{Markduplicates},
+        multiqc                      => q{Multiqc},
         peddy                        => q{Peddy},
         picardtools_collecthsmetrics => q{Picardtools collecthsmetrics},
         picardtools_collectmultiplemetrics =>
@@ -352,9 +364,12 @@ sub pipeline_rare_disease {
         picardtools_mergesamfiles        => q{Picardtools MergeSamFiles},
         plink                            => q{Plink},
         prepareforvariantannotationblock => q{Prepareforvariantannotationblock},
+        qccollect                        => q{Qccollect},
+        rankvariant                      => q{Rankvariant},
         rcovplots                        => q{Rcovplots},
         rhocall                          => q{Rhocall},
         rtg_vcfeval                      => q{Rtg evaluation},
+        sacct                            => q{Sacct},
         sambamba_depth                   => q{Sambamba depth},
         samtools_subsample_mt            => q{Samtools subsample MT},
         snpeff                           => q{Snpeff},
@@ -374,14 +389,13 @@ sub pipeline_rare_disease {
     ### Special case for '--rio' capable analysis recipes
     ## Define rio blocks programs and order
     my $is_bamcalibrationblock_done;
-    my @order_bamcalibration_programs;
+    my @order_bamcal_programs;
     my %bamcal_ar;
     _define_bamcalibration_ar(
         {
-            active_parameter_href => $active_parameter_href,
-            bamcal_ar_href        => \%bamcal_ar,
-            order_bamcalibration_programs_ref =>
-              \@order_bamcalibration_programs,
+            active_parameter_href     => $active_parameter_href,
+            bamcal_ar_href            => \%bamcal_ar,
+            order_bamcal_programs_ref => \@order_bamcal_programs,
         }
     );
 
@@ -400,9 +414,10 @@ sub pipeline_rare_disease {
     _update_rankvariants_ar(
         {
             active_parameter_href => $active_parameter_href,
+            analysis_recipe_href  => \%analysis_recipe,
             log                   => $log,
             parameter_href        => $parameter_href,
-            analysis_recipe_href  => \%analysis_recipe,
+            varann_ar_href        => \%varann_ar,
         }
     );
 
@@ -410,9 +425,9 @@ sub pipeline_rare_disease {
     _update_gatk_variantrecalibration_ar(
         {
             active_parameter_href => $active_parameter_href,
+            analysis_recipe_href  => \%analysis_recipe,
             log                   => $log,
             parameter_href        => $parameter_href,
-            analysis_recipe_href  => \%analysis_recipe,
         }
     );
 
@@ -429,7 +444,7 @@ sub pipeline_rare_disease {
         ## and program is part of bamcalibration block
         next PROGRAM
           if ( $is_bamcalibrationblock_done
-            and any { $_ eq $program } @order_bamcalibration_programs );
+            and any { $_ eq $program } @order_bamcal_programs );
 
         ## Skip program if variant annotation block is done
         ## and program is part of variantannotation  block
@@ -440,7 +455,7 @@ sub pipeline_rare_disease {
         ### Analysis recipes
         ## rio enabled and bamcalibration block analysis recipe
         if ( $active_parameter_href->{reduce_io}
-            and any { $_ eq $program } @order_bamcalibration_programs )
+            and any { $_ eq $program } @order_bamcal_programs )
         {
 
             $log->info(q{[Bamcalibrationblock]});
@@ -453,7 +468,7 @@ sub pipeline_rare_disease {
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
                     log                     => $log,
-                    order_programs_ref      => \@order_bamcalibration_programs,
+                    order_programs_ref      => \@order_bamcal_programs,
                     parameter_href          => $parameter_href,
                     program_name            => q{bamcalibrationblock},
                     program_name_href       => \%program_name,
@@ -479,6 +494,7 @@ sub pipeline_rare_disease {
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
                     outaligner_dir => $active_parameter_href->{outaligner_dir},
+                    log            => $log,
                     order_programs_ref => \@order_varann_programs,
                     parameter_href     => $parameter_href,
                     program_name       => q{variantannotationblock},
@@ -537,199 +553,6 @@ sub pipeline_rare_disease {
 
         }
     }
-
-    if ( $active_parameter_href->{reduce_io} ) {
-
-        $active_parameter_href->{pvariantannotationblock} =
-          1;    # Enable as program
-
-        $log->info(q{[Variantannotationblock]});
-
-        analysis_variantannotationblock(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                outaligner_dir => $active_parameter_href->{outaligner_dir},
-                call_type      => q{BOTH},
-                program_name   => q{variantannotationblock},
-            }
-        );
-    }
-    else {
-
-        if ( $active_parameter_href->{rankvariant} ) {
-
-            $log->info(q{[Rankvariant]});
-
-            if ( defined $parameter_href->{dynamic_parameter}{unaffected}
-                && @{ $parameter_href->{dynamic_parameter}{unaffected} } eq
-                @{ $active_parameter_href->{sample_ids} } )
-            {
-
-                $log->warn(
-q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'compound'}
-                );
-
-                analysis_rankvariant_unaffected(
-                    {
-                        parameter_href          => $parameter_href,
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        call_type               => q{BOTH},
-                        program_name            => q{rankvariant},
-                    }
-                );
-            }
-            else {
-
-                analysis_rankvariant(
-                    {
-                        parameter_href          => $parameter_href,
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        call_type               => q{BOTH},
-                        program_name            => q{rankvariant},
-                    }
-                );
-            }
-        }
-        if ( $active_parameter_href->{endvariantannotationblock} ) {
-
-            $log->info(q{[Endvariantannotationblock]});
-
-            analysis_endvariantannotationblock(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    call_type               => q{BOTH},
-                    program_name            => q{endvariantannotationblock},
-                }
-            );
-        }
-    }
-
-    if ( $active_parameter_href->{gatk_variantevalexome} ) {
-
-        $log->info(q{[GATK variantevalexome]});
-
-        my $variant_eval_exome_program_name = q{gatk_variantevalexome};
-
-        ## Assign directories
-        my $infamily_directory = catdir(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir}
-        );
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            ## Assign directories
-            my $outsample_directory = catdir(
-                $active_parameter_href->{outdata_dir},
-                $sample_id,
-                $active_parameter_href->{outaligner_dir},
-                $variant_eval_exome_program_name
-            );
-
-            analysis_gatk_variantevalexome(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
-                    infamily_directory      => $infamily_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => $variant_eval_exome_program_name,
-                }
-            );
-        }
-    }
-    if ( $active_parameter_href->{qccollect} ) {
-
-        $log->info(q{[Qccollect]});
-
-        my $outfamily_directory = catdir(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id}
-        );
-
-        analysis_qccollect(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{qccollect},
-                outfamily_directory     => $outfamily_directory,
-            }
-        );
-    }
-
-    if ( $active_parameter_href->{multiqc} ) {
-
-        $log->info(q{[Multiqc]});
-
-        analysis_multiqc(
-            {
-                active_parameter_href   => $active_parameter_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{multiqc},
-                parameter_href          => $parameter_href,
-                sample_info_href        => $sample_info_href,
-            }
-        );
-    }
-
-    if ( $active_parameter_href->{analysisrunstatus} ) {
-
-        $log->info(q{[Analysis run status]});
-
-        analysis_analysisrunstatus(
-            {
-                active_parameter_href   => $active_parameter_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                parameter_href          => $parameter_href,
-                program_name            => q{analysisrunstatus},
-                sample_info_href        => $sample_info_href,
-            }
-        );
-    }
-    if ( $active_parameter_href->{sacct} ) {
-
-        $log->info(q{[Sacct]});
-
-        analysis_sacct(
-            {
-                active_parameter_href   => $active_parameter_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                parameter_href          => $parameter_href,
-                program_name            => q{sacct},
-                sample_info_href        => $sample_info_href,
-            }
-        );
-    }
     return;
 }
 
@@ -737,15 +560,15 @@ sub _define_bamcalibration_ar {
 
 ## Function : Define bamcalibration recipes, order, coderefs and activate
 ## Returns  :
-## Arguments: $active_parameter_href             => Active parameters for this analysis hash {REF}
-##          : $order_bamcalibration_programs_ref => Order of programs in bamcalibration block {REF}
-##          : $bamcal_ar_href                    => Bamcalibration analysis recipe hash {REF}
+## Arguments: $active_parameter_href     => Active parameters for this analysis hash {REF}
+##          : $order_bamcal_programs_ref => Order of programs in bamcalibration block {REF}
+##          : $bamcal_ar_href            => Bamcalibration analysis recipe hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $order_bamcalibration_programs_ref;
+    my $order_bamcal_programs_ref;
     my $bamcal_ar_href;
 
     my $tmpl = {
@@ -756,11 +579,11 @@ sub _define_bamcalibration_ar {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        order_bamcalibration_programs_ref => {
+        order_bamcal_programs_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$order_bamcalibration_programs_ref,
+            store       => \$order_bamcal_programs_ref,
             strict_type => 1,
         },
         bamcal_ar_href => {
@@ -775,7 +598,7 @@ sub _define_bamcalibration_ar {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Define rio blocks programs and order
-    @{$order_bamcalibration_programs_ref} = qw{ picardtools_mergesamfiles
+    @{$order_bamcal_programs_ref} = qw{ picardtools_mergesamfiles
       markduplicates
       gatk_realigner
       gatk_baserecalibration
@@ -842,12 +665,14 @@ sub _define_variantannotationblock_ar {
 
     ## Define rio blocks programs and order
     @{$order_varann_programs_ref} =
-      qw{ prepareforvariantannotationblock rhocall vt frequency_filter varianteffectpredictor vcfparser snpeff };
+      qw{ prepareforvariantannotationblock rhocall vt frequency_filter varianteffectpredictor vcfparser snpeff rankvariant endvariantannotationblock };
 
     %{$varann_ar_href} = (
-        frequency_filter => \&analysis_frequency_filter_rio,
+        endvariantannotationblock => \&analysis_endvariantannotationblock_rio,
+        frequency_filter          => \&analysis_frequency_filter_rio,
         prepareforvariantannotationblock =>
           \&analysis_prepareforvariantannotationblock_rio,
+        rankvariant => undef,    # Depends on sample features
         rhocall                => \&analysis_rhocall_annotate_rio,
         snpeff                 => \&analysis_snpeff_rio,
         varianteffectpredictor => \&analysis_vep_rio,
@@ -871,17 +696,19 @@ sub _update_rankvariants_ar {
 ## Function : Update which rankvariants recipe to use
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $analysis_recipe_href    => Analysis recipe hash {REF}
 ##          : $log                     => Log object to write to
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $analysis_recipe_href    => Analysis recipe hash {REF}
+##          : $varann_ar_href            => Variant annotation analysis recipe hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $analysis_recipe_href;
     my $log;
     my $parameter_href;
-    my $analysis_recipe_href;
+    my $varann_ar_href;
 
     my $tmpl = {
         active_parameter_href => {
@@ -889,6 +716,13 @@ sub _update_rankvariants_ar {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
             strict_type => 1,
         },
         log => {
@@ -903,11 +737,11 @@ sub _update_rankvariants_ar {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        analysis_recipe_href => {
+        varann_ar_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$analysis_recipe_href,
+            store       => \$varann_ar_href,
             strict_type => 1,
         },
     };
@@ -923,10 +757,27 @@ sub _update_rankvariants_ar {
 q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
         );
 
+        ## Rio recipe
+        if ( $active_parameter_href->{reduce_io} ) {
+
+            $varann_ar_href->{rankvariant} =
+              \&analysis_rankvariant_rio_unaffected;
+            return;
+        }
+        $analysis_recipe_href->{rankvariant} =
+          \&analysis_rankvariant_unaffected;
         $analysis_recipe_href->{sv_rankvariant} =
           \&analysis_sv_rankvariant_unaffected;
     }
     else {
+
+        ## Rio recipe
+        if ( $active_parameter_href->{reduce_io} ) {
+
+            $varann_ar_href->{rankvariant} = \&analysis_rankvariant_rio;
+            return;
+        }
+        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant;
         $analysis_recipe_href->{sv_rankvariant} = \&analysis_sv_rankvariant;
     }
     return;

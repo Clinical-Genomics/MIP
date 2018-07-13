@@ -79,82 +79,83 @@ sub analysis_endvariantannotationblock {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
-        },
-        file_path      => { strict_type => 1, store => \$file_path },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
+        },
+        file_path      => { store => \$file_path, strict_type => 1, },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
+        },
+        program_info_path =>
+          { store => \$program_info_path, strict_type => 1, },
+        program_name => {
+            defined     => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         reference_dir => {
             default     => $arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
             store       => \$reference_dir,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -181,7 +182,7 @@ sub analysis_endvariantannotationblock {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
@@ -189,12 +190,13 @@ sub analysis_endvariantannotationblock {
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain  = $parameter_href->{$program_name}{chain};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     my $vcfparser_analysis_type = $EMPTY_STR;
 
@@ -259,7 +261,7 @@ sub analysis_endvariantannotationblock {
 
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
@@ -544,6 +546,7 @@ sub analysis_endvariantannotationblock_rio {
 ##          : $program_name            => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $stderr_path             => Stderr path of the block script
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -560,6 +563,7 @@ sub analysis_endvariantannotationblock_rio {
     my $program_info_path;
     my $program_name;
     my $sample_info_href;
+    my $stderr_path;
 
     ## Default(s)
     my $call_type;
@@ -571,83 +575,90 @@ sub analysis_endvariantannotationblock_rio {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
-        },
-        FILEHANDLE => { store       => \$FILEHANDLE, },
-        file_path  => { strict_type => 1, store => \$file_path },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
+        },
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        file_path  => { store => \$file_path, strict_type => 1, },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
+        },
+        program_info_path =>
+          { store => \$program_info_path, strict_type => 1, },
+        program_name => {
+            defined     => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         reference_dir => {
             default     => $arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
             store       => \$reference_dir,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        stderr_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$stderr_path,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -674,7 +685,7 @@ sub analysis_endvariantannotationblock_rio {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
@@ -682,12 +693,13 @@ sub analysis_endvariantannotationblock_rio {
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain  = $parameter_href->{$program_name}{chain};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     my $vcfparser_analysis_type = $EMPTY_STR;
 
@@ -734,7 +746,7 @@ sub analysis_endvariantannotationblock_rio {
 
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},

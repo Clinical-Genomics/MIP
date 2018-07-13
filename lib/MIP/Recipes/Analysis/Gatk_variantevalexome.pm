@@ -44,11 +44,9 @@ sub analysis_gatk_variantevalexome {
 ##          : $call_type               => Variant call type
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name {REF}
 ##          : $sample_id               => Sample id
@@ -61,11 +59,9 @@ sub analysis_gatk_variantevalexome {
     my $active_parameter_href;
     my $parameter_href;
     my $file_info_href;
-    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
-    my $outsample_directory;
     my $sample_id;
     my $sample_info_href;
 
@@ -97,12 +93,6 @@ sub analysis_gatk_variantevalexome {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        infamily_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infamily_directory,
-            strict_type => 1,
-        },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -120,12 +110,6 @@ sub analysis_gatk_variantevalexome {
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outsample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outsample_directory,
             strict_type => 1,
         },
         parameter_href => {
@@ -177,7 +161,7 @@ sub analysis_gatk_variantevalexome {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
@@ -185,12 +169,13 @@ sub analysis_gatk_variantevalexome {
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $gatk_jar =
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -234,12 +219,20 @@ sub analysis_gatk_variantevalexome {
     );
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_eval_file_suffix},
         }
     );
+
+    ## Assign directories
+    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir );
+
+    ## Assign directories
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $outaligner_dir, $program_name );
 
     ## Assign file_tags
     my $infile_tag  = $file_info_href->{$family_id}{rankvariant}{file_tag};
