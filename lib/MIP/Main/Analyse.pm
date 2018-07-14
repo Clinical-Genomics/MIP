@@ -77,7 +77,6 @@ use MIP::Update::Programs
 use MIP::QC::Record qw{ add_to_sample_info };
 
 ## Recipes
-use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Pipeline::Rare_disease qw{ pipeline_rare_disease };
 use MIP::Recipes::Pipeline::Rna qw{ pipeline_rna };
@@ -893,7 +892,7 @@ sub mip_analyse {
     );
 
 ## Reformat file names to MIP format, get file name info and add info to sample_info
-    my $is_file_uncompressed = parse_fastq_infiles(
+    parse_fastq_infiles(
         {
             active_parameter_href           => \%active_parameter,
             file_info_href                  => \%file_info,
@@ -987,46 +986,6 @@ sub mip_analyse {
 
         ## End here if this module is turned on
         exit;
-    }
-
-## GZip of fastq files
-    if (   $active_parameter{gzip_fastq}
-        && $is_file_uncompressed )
-    {
-
-        $log->info(q{[Gzip for fastq files]});
-
-      SAMPLES:
-        foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-            ## Determine which sample id had the uncompressed files
-          INFILES:
-            foreach my $infile ( @{ $infile{$sample_id} } ) {
-
-                my $infile_suffix = $parameter{gzip_fastq}{infile_suffix};
-
-                if ( $infile =~ /$infile_suffix$/sxm ) {
-
-                    ## Automatically gzips fastq files
-                    analysis_gzip_fastq(
-                        {
-                            parameter_href          => \%parameter,
-                            active_parameter_href   => \%active_parameter,
-                            sample_info_href        => \%sample_info,
-                            infile_href             => \%infile,
-                            infile_lane_prefix_href => \%infile_lane_prefix,
-                            job_id_href             => \%job_id,
-                            insample_directory      => $indir_path{$sample_id},
-                            sample_id               => $sample_id,
-                            program_name            => q{gzip_fastq},
-                        }
-                    );
-
-                    # Call once per sample_id
-                    last INFILES;
-                }
-            }
-        }
     }
 
 ### Cancer

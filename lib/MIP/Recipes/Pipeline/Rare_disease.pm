@@ -197,6 +197,7 @@ sub pipeline_rare_disease {
       qw{ analysis_gatk_variantevalexome };
     use MIP::Recipes::Analysis::Gatk_variantrecalibration
       qw{ analysis_gatk_variantrecalibration_wgs analysis_gatk_variantrecalibration_wes };
+    use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
     use MIP::Recipes::Analysis::Markduplicates
       qw{ analysis_markduplicates analysis_markduplicates_rio };
@@ -293,8 +294,9 @@ sub pipeline_rare_disease {
         gatk_realigner              => \&analysis_gatk_realigner,
         gatk_variantevalall         => \&analysis_gatk_variantevalall,
         gatk_variantevalexome       => \&analysis_gatk_variantevalexome,
-        gatk_variantrecalibration => undef,           # Depends on analysis type
-        manta                     => \&analysis_manta,
+        gatk_variantrecalibration => undef,    # Depends on analysis type
+        gzip_fastq                   => \&analysis_gzip_fastq,
+        manta                        => \&analysis_manta,
         markduplicates               => \&analysis_markduplicates,
         multiqc                      => \&analysis_multiqc,
         peddy                        => \&analysis_peddy,
@@ -354,6 +356,7 @@ sub pipeline_rare_disease {
         gatk_variantevalexome => q{GATK variantevalexome},
         gatk_variantrecalibration =>
           q{GATK variantrecalibrator/applyrecalibration},
+        gzip_fastq                   => q{Gzip for fastq files},
         manta                        => q{Manta},
         markduplicates               => q{Markduplicates},
         multiqc                      => q{Multiqc},

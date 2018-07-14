@@ -34,7 +34,7 @@ Readonly my $EMPTY_STR => q{};
 sub parse_fastq_infiles {
 
 ## Function : Parse fastq infiles for MIP processing.
-## Returns  : $any_uncompressed_file
+## Returns  :
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##          : $file_info_href                  => File info hash {REF}
 ##          : $indir_path_href                 => Indirectories path(s) hash {REF}
@@ -130,9 +130,6 @@ sub parse_fastq_infiles {
     use MIP::Set::File qw{ set_file_compression_features };
     use MIP::QC::Record qw{ add_infile_info };
 
-# Used to decide later if any inputfiles needs to be compressed before starting analysis
-    my $any_uncompressed_file;
-
   SAMPLE_ID:
     for my $sample_id ( keys %{$infile_href} ) {
 
@@ -158,7 +155,7 @@ sub parse_fastq_infiles {
             if ( not $is_file_compressed ) {
 
                 ## Note: All files are rechecked downstream and uncompressed ones are gzipped automatically
-                $any_uncompressed_file++;
+                $file_info_href->{is_file_uncompressed}{$sample_id}++;
             }
 
             ## Parse infile according to filename convention
@@ -311,7 +308,7 @@ q{Will add fake date '20010101' to follow file convention since this is not reco
             }
         }
     }
-    return $any_uncompressed_file;
+    return;
 }
 
 sub parse_fastq_infiles_format {
