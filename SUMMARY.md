@@ -5,6 +5,7 @@
     * [Setup](documentation/Setup.md)
     * [References](documentation/References.md)
     * [Analysis](documentation/Analysis.md)
+    * [Parameters](documentation/Parameters.md)
     * [Code](documentation/Code.md)
       * [Best Practise](documentation/Code/Best_practise.md)
     * [API](documentation/Api.md)

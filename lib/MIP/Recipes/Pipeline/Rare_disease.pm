@@ -227,6 +227,8 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_subsample_mt
       qw{ analysis_samtools_subsample_mt };
+    use MIP::Recipes::Analysis::Split_fastq_file
+      qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
     use MIP::Recipes::Analysis::Snpeff
       qw{ analysis_snpeff analysis_snpeff_rio };
@@ -316,6 +318,7 @@ sub pipeline_rare_disease {
         sambamba_depth            => \&analysis_sambamba_depth,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
         snpeff                    => \&analysis_snpeff,
+        split_fastq_file          => \&analysis_split_fastq_file,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
         sv_rankvariant => undef,                    # Depends on sample features
         sv_reformat    => \&analysis_sv_reformat,
@@ -376,6 +379,7 @@ sub pipeline_rare_disease {
         sambamba_depth                   => q{Sambamba depth},
         samtools_subsample_mt            => q{Samtools subsample MT},
         snpeff                           => q{Snpeff},
+        split_fastq_file                 => q{Split fastq files in batches},
         sv_combinevariantcallsets        => q{SV combinevariantcallsets},
         sv_varianteffectpredictor        => q{SV varianteffectpredictor},
         sv_vcfparser                     => q{SV vcfparser},
@@ -554,6 +558,8 @@ sub pipeline_rare_disease {
                 );
             }
 
+            ## Special case
+            exit if ( $program eq q{split_fastq_file} );
         }
     }
     return;
