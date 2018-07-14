@@ -174,12 +174,12 @@ sub analysis_variantannotationblock {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
     Readonly my $PROCESS_TIME => 80;
-
-    my $core_number = $active_parameter_href->{max_cores_per_node};
+    Readonly my $CORE_NUMBER  => $active_parameter_href->{max_cores_per_node};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -198,18 +198,26 @@ sub analysis_variantannotationblock {
               . $CLOSE_BRACKET );
     }
 
+    my ( $c_n, $t, @source_environment_cmds ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            program_name          => $program_name,
+        }
+    );
+
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $family_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $PROCESS_TIME,
-            program_directory     => $outaligner_dir,
-            program_name          => $program_name,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $CORE_NUMBER,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $PROCESS_TIME,
+            program_directory               => $outaligner_dir,
+            program_name                    => $program_name,
+            source_environment_commands_ref => \@source_environment_cmds,
         }
     );
 

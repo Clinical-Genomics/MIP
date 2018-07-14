@@ -40,9 +40,7 @@ sub analysis_fastqc {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -55,11 +53,7 @@ sub analysis_fastqc {
     my $active_parameter_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-
-    #my $insample_directory;
     my $job_id_href;
-
-    #my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
@@ -147,7 +141,8 @@ sub analysis_fastqc {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-    my @infiles      = @{ $file_info_href->{$sample_id}{mip_infiles} };
+    my @infiles = @{ $file_info_href->{$sample_id}{mip_infiles} };
+
     my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
@@ -273,9 +268,7 @@ sub analysis_fastqc {
 
     ## Copies files from temporary folder to source.
     $process_batches_count = 1;
-    while ( my ( $index, $infile ) =
-        each @{ $sample_info_href->{infile}{$sample_id} } )
-    {
+    while ( my ( $index, $infile ) = each @infiles ) {
 
         $process_batches_count = print_wait(
             {

@@ -132,6 +132,7 @@ sub analysis_qccollect {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
     use MIP::Program::Qc::Qccollect qw{ qccollect };
@@ -146,9 +147,13 @@ sub analysis_qccollect {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$program_name};
-    my $time = $active_parameter_href->{module_time}{$program_name};
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            program_name          => $program_name,
+        }
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -157,15 +162,16 @@ sub analysis_qccollect {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_path) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
-            log                   => $log,
-            program_name          => $program_name,
-            program_directory     => $program_name,
-            core_number           => $core_number,
-            process_time          => $time,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            program_directory               => $program_name,
+            program_name                    => $program_name,
+            process_time                    => $time,
+            source_environment_commands_ref => \@source_environment_cmds,
         }
     );
 
