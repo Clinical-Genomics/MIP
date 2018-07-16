@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -49,7 +49,6 @@ sub analysis_vcf2cytosure {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -62,7 +61,6 @@ sub analysis_vcf2cytosure {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outfamily_directory;
     my $parameter_href;
     my $program_name;
     my $sample_info_href;
@@ -117,12 +115,6 @@ sub analysis_vcf2cytosure {
             store       => \$outaligner_dir,
             strict_type => 1,
         },
-        outfamily_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfamily_directory,
-            strict_type => 1,
-        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -168,19 +160,20 @@ sub analysis_vcf2cytosure {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program name
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $program_outdirectory_name =
       $parameter_href->{$program_name}{outdir_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -204,7 +197,13 @@ sub analysis_vcf2cytosure {
         }
     );
 
-    ## Tags
+    ## Assign directories
+    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir );
+    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir, $program_name, );
+
+    ## File tags
     my $infile_tag;
     my $outfile_tag;
 
@@ -218,8 +217,6 @@ sub analysis_vcf2cytosure {
     my $merged_sv_vcf_path;
 
     # Copy family-merged SV VCF file in temporary directory:
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
     $infile_tag =
       $file_info_href->{$family_id}{sv_combinevariantcallsets}{file_tag};
 
@@ -285,8 +282,7 @@ sub analysis_vcf2cytosure {
         ## Assign suffix
         my $infile_suffix = get_file_suffix(
             {
-                jobid_chain =>
-                  $parameter_href->{gatk_baserecalibration}{chain},
+                jobid_chain => $parameter_href->{gatk_baserecalibration}{chain},
                 parameter_href => $parameter_href,
                 suffix_key     => q{alignment_file_suffix},
             }

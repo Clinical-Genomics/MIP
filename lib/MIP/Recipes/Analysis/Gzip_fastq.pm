@@ -38,9 +38,8 @@ sub analysis_gzip_fastq {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
-##          : $infile_href             => Infiles hash {REF}
+##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
@@ -51,9 +50,8 @@ sub analysis_gzip_fastq {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $infile_href;
+    my $file_info_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
     my $parameter_href;
     my $program_name;
@@ -65,69 +63,63 @@ sub analysis_gzip_fastq {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
             defined     => 1,
             default     => {},
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
-        infile_href => {
-            required    => 1,
-            defined     => 1,
+        file_info_href => {
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$infile_href
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$insample_directory
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$job_id_href
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$sample_id
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
     };
 
@@ -141,23 +133,28 @@ sub analysis_gzip_fastq {
     use MIP::Program::Compression::Gzip qw(gzip);
     use MIP::Script::Setup_script qw(setup_script);
 
+    ## No uncompressed fastq infiles
+    return if ( not $file_info_href->{is_file_uncompressed}{$sample_id} );
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
+    my @infiles      = @{ $file_info_href->{$sample_id}{mip_infiles} };
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Adjust according to number of infiles to process
     # One full lane on Hiseq takes approx. 2 h for gzip to process
-    $time = $time * scalar @{ $infile_href->{$sample_id} };
+    $time = $time * scalar @infiles;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -201,6 +198,9 @@ sub analysis_gzip_fastq {
         }
     );
 
+    ## Assign directories
+    my $insample_directory = $file_info_href->{$sample_id}{mip_infiles_dir};
+
     ## Assign suffix
     my $infile_suffix = $parameter_href->{$program_name}{infile_suffix};
 
@@ -213,7 +213,7 @@ sub analysis_gzip_fastq {
     say {$FILEHANDLE} q{## } . $program_name;
 
   INFILE:
-    foreach my $infile ( @{ $infile_href->{$sample_id} } ) {
+    foreach my $infile (@infiles) {
 
         ## For files ending with .fastq required since there can be a mixture (also .fastq.gz) within the sample dir
         if ( $infile =~ /$infile_suffix$/sxm ) {

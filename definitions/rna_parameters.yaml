@@ -133,6 +133,7 @@ picardtools_path:
 ###Programs
 ## Salmon
 salmon_quant:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -151,6 +152,7 @@ salmon_rna_lib_configuration:
   type: program_argument
 ## Star Aln
 star_aln:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -200,6 +202,7 @@ two_pass_mode:
   type: program_argument
 ## Star Fusion
 star_fusion:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -212,6 +215,7 @@ star_fusion:
   type: program
 ## Merge bam files
 picardtools_mergesamfiles:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -220,6 +224,7 @@ picardtools_mergesamfiles:
   type: program
 ## Mark duplicates
 markduplicates:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -260,6 +265,7 @@ markduplicates_sambamba_markdup_overflow_list_size:
   type: program_argument
 ## GATK SplitNCigarReads
 gatk_splitncigarreads:
+  analysis_mode: sample
   associated_program:
     - mip
   data_type: SCALAR
@@ -268,6 +274,7 @@ gatk_splitncigarreads:
   type: program
 ## GATK BAM Calibration
 gatk_baserecalibration:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -325,6 +332,7 @@ gatk_baserecalibration_static_quantized_quals:
   type: program_argument
 ## GATK Genotype
 gatk_haplotypecaller:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -381,6 +389,7 @@ gatk_haplotypecaller_snp_known_set:
   type: path
 ## GATK ASE
 gatk_asereadcounter:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -390,6 +399,7 @@ gatk_asereadcounter:
   type: program
 ## GATK VariantFiltration
 gatk_variantfiltration:
+  analysis_mode: sample
   associated_program:
     - mip
   data_type: SCALAR
@@ -419,6 +429,7 @@ gatk_variantfiltration_cluster_window_size:
   type: program_argument
 ## BootstrapAnn
 bootstrapann:
+  analysis_mode: sample
   associated_program:
     - mip
   data_type: SCALAR

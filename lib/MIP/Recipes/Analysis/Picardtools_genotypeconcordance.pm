@@ -43,11 +43,9 @@ sub analysis_picardtools_genotypeconcordance {
 ##          : $call_type               => Variant call type
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -57,24 +55,22 @@ sub analysis_picardtools_genotypeconcordance {
 
     my ($arg_href) = @_;
 
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $parameter_href;
+    my $program_name;
+    my $sample_id;
+    my $sample_info_href;
+
     ## Default(s)
     my $call_type;
     my $family_id;
     my $outaligner_dir;
     my $reference_dir;
     my $temp_directory;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $file_info_href;
-    my $infamily_directory;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $parameter_href;
-    my $program_name;
-    my $outfamily_directory;
-    my $sample_id;
-    my $sample_info_href;
 
     my $tmpl = {
         active_parameter_href => {
@@ -98,12 +94,6 @@ sub analysis_picardtools_genotypeconcordance {
             strict_type => 1,
             store       => \$file_info_href,
         },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infamily_directory,
-        },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
@@ -122,12 +112,6 @@ sub analysis_picardtools_genotypeconcordance {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
             store       => \$outaligner_dir,
-        },
-        outfamily_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfamily_directory,
         },
         parameter_href => {
             required    => 1,
@@ -183,21 +167,25 @@ sub analysis_picardtools_genotypeconcordance {
       qw{ picardtools_genotypeconcordance };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    ## Return if not nist_id
+    return if ( not $sample_id =~ /$active_parameter_href->{nist_id}/sxm );
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
     my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -212,7 +200,7 @@ sub analysis_picardtools_genotypeconcordance {
             error_trap => 0,    # Special case to allow "vcf.idx" to be created
             FILEHANDLE        => $FILEHANDLE,
             job_id_href       => $job_id_href,
-            log                   => $log,
+            log               => $log,
             process_time      => $time,
             program_directory => catfile( $outaligner_dir, $program_name ),
             program_name      => $program_name,
@@ -221,6 +209,12 @@ sub analysis_picardtools_genotypeconcordance {
             temp_directory                  => $temp_directory,
         }
     );
+
+    ## Assign directories
+    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir );
+    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir, $program_name );
 
     ## Used downstream
     $parameter_href->{$program_name}{indirectory} = $outfamily_directory;

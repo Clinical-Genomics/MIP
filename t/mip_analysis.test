@@ -61,7 +61,7 @@ Readonly my $TAB       => qq{\t};
 my ( $infile, $config_file );
 my ( %parameter, %active_parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = '2.0.0';
+our $VERSION = '2.0.1';
 
 if ( scalar @ARGV == 0 ) {
 
@@ -271,7 +271,7 @@ sub test_modules {
     use YAML;
 
     my $yaml_file =
-      catdir( dirname($Bin), qw{ definitions define_parameters.yaml } );
+      catdir( dirname($Bin), qw{ definitions mip_parameters.yaml } );
     ok( -f $yaml_file, q{YAML: File=} . $yaml_file . q{in MIP directory} );
 
     ## Create an object

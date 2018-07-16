@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -42,10 +42,8 @@ sub analysis_rtg_vcfeval {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $infamily_directory      => In family directory
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -57,12 +55,10 @@ sub analysis_rtg_vcfeval {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $program_name;
-    my $outfamily_directory;
     my $sample_id;
     my $sample_info_href;
 
@@ -94,12 +90,6 @@ sub analysis_rtg_vcfeval {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infamily_directory,
-        },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -118,12 +108,6 @@ sub analysis_rtg_vcfeval {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             store       => \$outaligner_dir,
             strict_type => 1,
-        },
-        outfamily_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfamily_directory,
         },
         parameter_href => {
             default     => {},
@@ -171,24 +155,34 @@ sub analysis_rtg_vcfeval {
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    ## Return if not a nist_id sample
+    return if ( not $sample_id =~ /$active_parameter_href->{nist_id}/sxm );
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
+
+    ## Assign directories
+    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir );
+    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir, $program_name );
 
     ## Assign file_tags
     my $infile_tag =

@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_plink };
@@ -45,11 +45,9 @@ sub analysis_plink {
 ##          : $call_type               => Variant call type
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -59,11 +57,9 @@ sub analysis_plink {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $infamily_directory;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outfamily_directory;
     my $parameter_href;
     my $program_name;
     my $sample_info_href;
@@ -99,12 +95,6 @@ sub analysis_plink {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        infamily_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infamily_directory,
-            strict_type => 1,
-        },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -122,12 +112,6 @@ sub analysis_plink {
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outfamily_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfamily_directory,
             strict_type => 1,
         },
         parameter_href => {
@@ -177,7 +161,7 @@ sub analysis_plink {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
@@ -188,12 +172,13 @@ sub analysis_plink {
     my $human_genome_reference_source =
       $file_info_href->{human_genome_reference_source};
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -223,12 +208,18 @@ sub analysis_plink {
     my ( $volume, $directory, $program_info_file ) =
       splitpath($program_info_path);
 
-    # To enable submission to &sample_info_qc later
+    # To enable submission to %sample_info_qc later
     my $stderr_file = $program_info_file . q{.stderr.txt};
 
-    # To enable submission to &sample_info_qc later
+    # To enable submission to %sample_info_qc later
     my $stdout_file = $program_info_file . q{.stdout.txt};
 
+    ## Assign directories
+    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir );
+
+    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir, q{casecheck}, $program_name );
     ## Paths
     my $outfamily_file_directory =
       catfile( $active_parameter_href->{outdata_dir}, $family_id );

@@ -23,11 +23,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio analysis_picardtools_mergesamfiles_rna };
+      qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
 
 }
 
@@ -35,7 +35,6 @@ BEGIN {
 Readonly my $ASTERIX      => q{*};
 Readonly my $DOT          => q{.};
 Readonly my $EMPTY_STRING => q{};
-Readonly my $MINUS_ONE    => -1;
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $SEMICOLON    => q{;};
 Readonly my $SPACE        => q{ };
@@ -49,15 +48,12 @@ sub analysis_picardtools_mergesamfiles {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $file_path               => File path
+##          : $indir_path_href         => Indirectoies path(s) hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $lane_href               => The lane info hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $program_info_path       => The program info path
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $referencefile_path      => Human genome reference file path
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -70,11 +66,9 @@ sub analysis_picardtools_mergesamfiles {
     my $active_parameter_href;
     my $file_info_href;
     my $file_path;
-    my $insample_directory;
+    my $indir_path_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $lane_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_info_path;
     my $program_name;
@@ -83,113 +77,94 @@ sub analysis_picardtools_mergesamfiles {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $referencefile_path;
     my $temp_directory;
     my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        file_path          => { strict_type => 1, store => \$file_path },
-        insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$insample_directory
+        },
+        file_path       => { store => \$file_path, strict_type => 1, },
+        indir_path_href => {
+            default     => {},
+            store       => \$indir_path_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        lane_href => {
-            required    => 1,
             defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$lane_href
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir
-        },
-        outsample_directory => {
             required    => 1,
-            defined     => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$outsample_directory
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$program_name
+        },
+        program_info_path =>
+          { store => \$program_info_path, strict_type => 1, },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
         },
         referencefile_path => {
             default =>
               $arg_href->{active_parameter_href}{human_genome_reference},
+            store       => \$referencefile_path,
             strict_type => 1,
-            store       => \$referencefile_path
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$sample_id
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
+            default     => 0,
+            store       => \$xargs_file_counter,
             strict_type => 1,
-            store       => \$xargs_file_counter
         },
     };
 
@@ -216,6 +191,12 @@ sub analysis_picardtools_mergesamfiles {
     ## Set MIP program name
     my $program_mode = $active_parameter_href->{$program_name};
 
+    ## Directories
+    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+
     ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $consensus_analysis_type =
@@ -225,12 +206,13 @@ sub analysis_picardtools_mergesamfiles {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
       );
 
     # Extract lanes
-    my $lanes_id = join $EMPTY_STRING, @{ $lane_href->{$sample_id} };
+    my $lanes_id = join $EMPTY_STRING,
+      @{ $file_info_href->{$sample_id}{lanes} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -240,15 +222,15 @@ sub analysis_picardtools_mergesamfiles {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            process_time                    => $time,
-            program_directory               => $outaligner_dir,
-            program_name                    => $program_name,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $sample_id,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            process_time          => $time,
+            program_directory     => $active_parameter_href->{outaligner_dir},
+            program_name          => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -535,7 +517,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
 
 sub analysis_picardtools_mergesamfiles_rio {
 
-## Function : Merges all bam files using Picardtools mergesamfiles within each sampleid and files generated previously (option if provided with '-picardtools_mergesamfiles_previous_bams'). The merged files have to be sorted before attempting to merge.
+## Function :  Merges all bam files using Picardtools mergesamfiles within each sampleid. The merged files have to be sorted before attempting to merge.
 ## Returns  : |$xargs_file_counter
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
@@ -543,9 +525,7 @@ sub analysis_picardtools_mergesamfiles_rio {
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $lane_href               => The lane info hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $referencefile_path      => Human genome reference file path
@@ -564,9 +544,7 @@ sub analysis_picardtools_mergesamfiles_rio {
     my $file_info_href;
     my $file_path;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $lane_href;
     my $parameter_href;
     my $program_info_path;
     my $program_name;
@@ -582,101 +560,89 @@ sub analysis_picardtools_mergesamfiles_rio {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
         FILEHANDLE     => { store => \$FILEHANDLE },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$file_info_href
         },
-        file_path               => { strict_type => 1, store => \$file_path },
+        file_path               => { store => \$file_path, strict_type => 1, },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$insample_directory
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        lane_href => {
-            required    => 1,
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$lane_href
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
             strict_type => 1,
-            store       => \$outaligner_dir
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$program_name
+        },
+        program_info_path =>
+          { store => \$program_info_path, strict_type => 1, },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
         },
         referencefile_path => {
             default =>
               $arg_href->{active_parameter_href}{human_genome_reference},
+            store       => \$referencefile_path,
             strict_type => 1,
-            store       => \$referencefile_path
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$sample_id
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
+            default     => 0,
+            store       => \$xargs_file_counter,
             strict_type => 1,
-            store       => \$xargs_file_counter
         },
     };
 
@@ -712,16 +678,21 @@ sub analysis_picardtools_mergesamfiles_rio {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
       );
 
     # Extract lanes
-    my $lanes_id = join $EMPTY_STRING, @{ $lane_href->{$sample_id} };
+    my $lanes_id = join $EMPTY_STRING,
+      @{ $file_info_href->{$sample_id}{lanes} };
 
     ## Filehandles
     # Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();
+
+    ## Assign directories
+    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $outaligner_dir );
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$sample_id}

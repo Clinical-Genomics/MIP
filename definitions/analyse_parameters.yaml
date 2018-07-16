@@ -183,6 +183,7 @@ supported_capture_kit:
   type: mip
 ### Programs
 split_fastq_file:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -202,6 +203,7 @@ split_fastq_file_read_batch:
   type: program_argument
 ## Gzip
 gzip_fastq:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -213,6 +215,7 @@ gzip_fastq:
   type: program
 ## FastQC
 fastqc:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR

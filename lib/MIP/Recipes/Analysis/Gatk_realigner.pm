@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_realigner analysis_gatk_realigner_rio };
@@ -42,16 +42,14 @@ sub analysis_gatk_realigner {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
-##          : $parameter_href          => Parameter hash {REF}
 ##          : $file_info_href          => File info hash {REF}
 ##          : $file_path               => File path
+##          : indir_path_href          => Indirectories path(s) hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
-##          : $program_name            => Program name
+##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_info_path       => The program info path
+##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -63,10 +61,9 @@ sub analysis_gatk_realigner {
     my $active_parameter_href;
     my $file_info_href;
     my $file_path;
+    my $indir_path_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $program_info_path;
@@ -75,94 +72,84 @@ sub analysis_gatk_realigner {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
     my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        file_path          => { strict_type => 1, store => \$file_path },
-        insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$insample_directory,
+        },
+        file_path       => { store => \$file_path, strict_type => 1, },
+        indir_path_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$indir_path_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
-        outsample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$outsample_directory,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => { strict_type => 1, store => \$program_name },
-        sample_id         => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$sample_id
+        },
+        program_info_path =>
+          { store => \$program_info_path, strict_type => 1, },
+        program_name => { store => \$program_name, strict_type => 1, },
+        sample_id    => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -192,29 +179,36 @@ sub analysis_gatk_realigner {
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandel
     my $FILEHANDLE      = IO::Handle->new();
     my $XARGSFILEHANDLE = IO::Handle->new();
 
+    ## Assign directories
+    my $insample_directory  = $indir_path_href->{$sample_id};
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            directory_id                    => $sample_id,
-            core_number                     => $core_number,
-            FILEHANDLE                      => $FILEHANDLE,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            process_time                    => $time,
-            program_directory               => catfile($outaligner_dir),
+            active_parameter_href => $active_parameter_href,
+            directory_id          => $sample_id,
+            core_number           => $core_number,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            process_time          => $time,
+            program_directory =>
+              catfile( $active_parameter_href->{outaligner_dir} ),
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
@@ -515,6 +509,8 @@ sub analysis_gatk_realigner_rio {
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $file_path               => File path
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_info_path       => The program info path
@@ -530,6 +526,8 @@ sub analysis_gatk_realigner_rio {
     my $FILEHANDLE;
     my $file_info_href;
     my $file_path;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
     my $parameter_href;
     my $program_info_path;
     my $program_name;
@@ -543,56 +541,71 @@ sub analysis_gatk_realigner_rio {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
-        },
-        FILEHANDLE => { store       => \$FILEHANDLE, },
-        file_path  => { strict_type => 1, store => \$file_path },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir,
         },
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        file_path  => { store => \$file_path, strict_type => 1, },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => { strict_type => 1, store => \$program_name },
-        sample_id         => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$sample_id
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
+            strict_type => 1,
+        },
+        program_info_path =>
+          { store => \$program_info_path, strict_type => 1, },
+        program_name => { store => \$program_name, strict_type => 1, },
+        sample_id    => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -613,8 +626,6 @@ sub analysis_gatk_realigner_rio {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-
     ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $core_number =
@@ -630,7 +641,7 @@ sub analysis_gatk_realigner_rio {
 
     ## Assign directories
     my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $outaligner_dir );
+        $sample_id, $active_parameter_href->{outaligner_dir} );
 
     ## Used downstream
     $parameter_href->{$program_name}{$sample_id}{indirectory} =

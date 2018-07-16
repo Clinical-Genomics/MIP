@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_manta };
@@ -44,7 +44,6 @@ sub analysis_manta {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $referencefile_path      => Path to reference file
@@ -58,7 +57,6 @@ sub analysis_manta {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outfamily_directory;
     my $parameter_href;
     my $program_name;
     my $sample_info_href;
@@ -112,12 +110,6 @@ sub analysis_manta {
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outfamily_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfamily_directory,
             strict_type => 1,
         },
         parameter_href => {
@@ -179,12 +171,13 @@ sub analysis_manta {
     my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $program_outdirectory_name =
       $parameter_href->{$program_name}{outdir_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -208,6 +201,14 @@ sub analysis_manta {
         }
     );
 
+    ## Assign directories
+    my $outfamily_directory = catfile(
+        $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{family_id},
+        $active_parameter_href->{outaligner_dir},
+        $program_outdirectory_name,
+    );
+
     # Used downstream
     $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
 
@@ -229,7 +230,7 @@ sub analysis_manta {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},

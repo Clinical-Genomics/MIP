@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem };
@@ -46,12 +46,8 @@ sub analysis_bwa_mem {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $infiles_ref             => Infiles hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -63,11 +59,8 @@ sub analysis_bwa_mem {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infiles_ref;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
@@ -75,7 +68,6 @@ sub analysis_bwa_mem {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
 
     my $tmpl = {
@@ -98,13 +90,6 @@ sub analysis_bwa_mem {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        infiles_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$infiles_ref,
-            strict_type => 1,
-        },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -112,28 +97,11 @@ sub analysis_bwa_mem {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-        insample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$insample_directory,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outsample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outsample_directory,
             strict_type => 1,
         },
         parameter_href => {
@@ -194,18 +162,26 @@ sub analysis_bwa_mem {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
+    ## Get infiles
+    my @infiles = @{ $file_info_href->{$sample_id}{mip_infiles} };
+
     ## Assign directories
+    my $insample_directory  = $file_info_href->{$sample_id}{mip_infiles_dir};
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+
     # Used downstream
     $parameter_href->{$program_name}{$sample_id}{indirectory} =
       $outsample_directory;
@@ -218,7 +194,7 @@ sub analysis_bwa_mem {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
@@ -258,16 +234,16 @@ sub analysis_bwa_mem {
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ( $file_name, $program_info_path ) = setup_script(
             {
-                active_parameter_href           => $active_parameter_href,
-                core_number                     => $core_number,
-                directory_id                    => $sample_id,
-                FILEHANDLE                      => $FILEHANDLE,
-                job_id_href                     => $job_id_href,
-                log                             => $log,
-                program_directory               => lc $outaligner_dir,
-                program_name                    => $program_name,
-                process_time                    => $time,
-                sleep                           => 1,
+                active_parameter_href => $active_parameter_href,
+                core_number           => $core_number,
+                directory_id          => $sample_id,
+                FILEHANDLE            => $FILEHANDLE,
+                job_id_href           => $job_id_href,
+                log                   => $log,
+                program_directory => $active_parameter_href->{outaligner_dir},
+                program_name      => $program_name,
+                process_time      => $time,
+                sleep             => 1,
                 source_environment_commands_ref => \@source_environment_cmds,
                 temp_directory                  => $temp_directory,
             }
@@ -282,7 +258,7 @@ sub analysis_bwa_mem {
 
         # Read 1
         my $insample_dir_fastqc_path_read_one =
-          catfile( $insample_directory, $infiles_ref->[$paired_end_tracker] );
+          catfile( $insample_directory, $infiles[$paired_end_tracker] );
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
@@ -296,7 +272,7 @@ sub analysis_bwa_mem {
 
             my $insample_dir_fastqc_path_read_two =
               catfile( $insample_directory,
-                $infiles_ref->[ $paired_end_tracker + 1 ] );
+                $infiles[ $paired_end_tracker + 1 ] );
 
             # Read 2
             migrate_file(
@@ -328,7 +304,7 @@ sub analysis_bwa_mem {
 
         ## Infile(s)
         my $fastq_file_path =
-          catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
+          catfile( $temp_directory, $infiles[$paired_end_tracker] );
         my $second_fastq_file_path;
 
         # If second read direction is present
@@ -337,7 +313,7 @@ sub analysis_bwa_mem {
             # Increment to collect correct read 2 from %infile
             $paired_end_tracker = $paired_end_tracker + 1;
             $second_fastq_file_path =
-              catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
+              catfile( $temp_directory, $infiles[$paired_end_tracker] );
         }
 
         ## Read group header line

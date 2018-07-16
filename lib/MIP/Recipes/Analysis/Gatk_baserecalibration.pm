@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -46,11 +46,9 @@ sub analysis_gatk_baserecalibration {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $file_path               => File path
+##          : $indir_path_href         => Indirectories path(s) hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
@@ -65,10 +63,9 @@ sub analysis_gatk_baserecalibration {
     my $active_parameter_href;
     my $file_info_href;
     my $file_path;
+    my $indir_path_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_info_path;
     my $program_name;
@@ -77,7 +74,6 @@ sub analysis_gatk_baserecalibration {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -101,12 +97,11 @@ sub analysis_gatk_baserecalibration {
             strict_type => 1,
             store       => \$file_info_href,
         },
-        file_path          => { strict_type => 1, store => \$file_path },
-        insample_directory => {
-            required    => 1,
-            defined     => 1,
+        file_path       => { strict_type => 1, store => \$file_path },
+        indir_path_href => {
+            default     => {},
+            store       => \$indir_path_href,
             strict_type => 1,
-            store       => \$insample_directory,
         },
         infile_lane_prefix_href => {
             required    => 1,
@@ -121,17 +116,6 @@ sub analysis_gatk_baserecalibration {
             default     => {},
             strict_type => 1,
             store       => \$job_id_href,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
-        outsample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outsample_directory,
         },
         parameter_href => {
             required    => 1,
@@ -176,7 +160,6 @@ sub analysis_gatk_baserecalibration {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Cluster qw{ check_max_core_number };
-    use MIP::Delete::File qw{ delete_contig_files };
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
       qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file};
@@ -208,7 +191,7 @@ sub analysis_gatk_baserecalibration {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
       );
 
@@ -217,18 +200,24 @@ sub analysis_gatk_baserecalibration {
     my $XARGSFILEHANDLE = IO::Handle->new();
     my $FILEHANDLE      = IO::Handle->new();
 
+    ## Assign directories
+    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            process_time                    => $time,
-            program_directory               => catfile($outaligner_dir),
-            program_name                    => $program_name,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $sample_id,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            process_time          => $time,
+            program_directory     => $active_parameter_href->{outaligner_dir},
+            program_name          => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -619,8 +608,6 @@ sub analysis_gatk_baserecalibration_rio {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $outsample_directory     => Out sample directory
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -637,7 +624,6 @@ sub analysis_gatk_baserecalibration_rio {
     my $file_path;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $program_info_path;
@@ -646,7 +632,6 @@ sub analysis_gatk_baserecalibration_rio {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -685,17 +670,6 @@ sub analysis_gatk_baserecalibration_rio {
             default     => {},
             strict_type => 1,
             store       => \$job_id_href,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
-        outsample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outsample_directory,
         },
         parameter_href => {
             required    => 1,
@@ -771,13 +745,17 @@ sub analysis_gatk_baserecalibration_rio {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
       );
 
     ## Filehandles
     # Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();
+
+    ## Assign directories
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
 
     $parameter_href->{$program_name}{$sample_id}{indirectory} =
       $outsample_directory;    #Used downstream

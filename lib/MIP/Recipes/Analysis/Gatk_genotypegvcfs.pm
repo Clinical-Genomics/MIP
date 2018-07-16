@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -45,8 +45,6 @@ sub analysis_gatk_genotypegvcfs {
 ##          : $infile_lane_prefix_href  => Infile(s) without the ".ending"
 ##          : $job_id_href              => Job id hash {REF}
 ##          : $outaligner_dir           => Outaligner_dir used in the analysis
-##          : $outfamily_directory      => Outfamily directory
-##          : $outfamily_file_directory => Outfamily file directory
 ##          : $parameter_href           => Parameter hash {REF}
 ##          : $program_name             => Program name
 ##          : $sample_info_href         => Info on samples and family hash {REF}
@@ -59,8 +57,6 @@ sub analysis_gatk_genotypegvcfs {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outfamily_directory;
-    my $outfamily_file_directory;
     my $parameter_href;
     my $program_name;
     my $sample_info_href;
@@ -112,18 +108,6 @@ sub analysis_gatk_genotypegvcfs {
             store       => \$outaligner_dir,
             strict_type => 1,
         },
-        outfamily_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfamily_directory,
-            strict_type => 1,
-        },
-        outfamily_file_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfamily_file_directory,
-            strict_type => 1,
-        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -168,7 +152,7 @@ sub analysis_gatk_genotypegvcfs {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
@@ -177,12 +161,13 @@ sub analysis_gatk_genotypegvcfs {
     my $job_id_chain = $parameter_href->{$program_name}{chain};
 
     ## Gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Constants
     Readonly my $INCLUDE_NONVARIANT_SITES_TIME => 50;
@@ -199,6 +184,13 @@ sub analysis_gatk_genotypegvcfs {
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
+
+    ## Assign directories
+    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir, q{gatk}, );
+
+    my $outfamily_file_directory =
+      catdir( $active_parameter_href->{outdata_dir}, $family_id, );
 
     # Used downstream
     $parameter_href->{$program_name}{$family_id}{indirectory} =
@@ -220,7 +212,7 @@ sub analysis_gatk_genotypegvcfs {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
-            file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},

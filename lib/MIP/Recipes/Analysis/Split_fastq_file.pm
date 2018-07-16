@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_split_fastq_file };
@@ -45,100 +45,95 @@ sub analysis_split_fastq_file {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
-##          : $infile_href             => Infiles hash {REF}
-##          : $insample_directory      => In sample directory
+##          : $file_info_href          => File info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
-##          : $sequence_read_batch     => Number of sequences in each fastq batch
+##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $sequence_read_batch;
-    my $temp_directory;
-
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $infile_href;
-    my $insample_directory;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
+    my $sample_info_href;
+
+    ## Default(s)
+    my $family_id;
+    my $temp_directory;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
-        infile_href => {
-            defined     => 1,
+        file_info_href => {
             default     => {},
-            strict_type => 1,
-            store       => \$infile_href
-        },
-        insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$insample_directory
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        outsample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$outsample_directory
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$sample_id
         },
-        sequence_read_batch => {
-            default     => 250_000_0,
-            allow       => qr/ ^\d+$ /sxm,
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sequence_read_batch
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
     };
 
@@ -161,19 +156,28 @@ sub analysis_split_fastq_file {
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
+    my @infiles      = @{ $file_info_href->{$sample_id}{mip_infiles} };
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $sequence_read_batch =
+      $active_parameter_href->{split_fastq_file_read_batch};
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    foreach my $fastq_file ( @{ $infile_href->{$sample_id} } ) {
+    ## Assign directories
+    my $insample_directory  = $file_info_href->{$sample_id}{mip_infiles_dir};
+    my $outsample_directory = $file_info_href->{$sample_id}{mip_infiles_dir};
+
+  INFILE:
+    foreach my $fastq_file (@infiles) {
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ($file_name) = setup_script(
@@ -183,7 +187,7 @@ sub analysis_split_fastq_file {
                 directory_id                    => $sample_id,
                 FILEHANDLE                      => $FILEHANDLE,
                 job_id_href                     => $job_id_href,
-            log                                 => $log,
+                log                             => $log,
                 process_time                    => $time,
                 program_directory               => lc($program_name),
                 program_name                    => $program_name,
@@ -197,7 +201,7 @@ sub analysis_split_fastq_file {
         my $file_path   = catfile( $temp_directory,     $fastq_file );
 
         ## Assign suffix
-        my $infile_suffix = $parameter_href->{$program_name}{infile_suffix};
+        my $infile_suffix  = $parameter_href->{$program_name}{infile_suffix};
         my $outfile_suffix = get_file_suffix(
             {
                 parameter_href => $parameter_href,

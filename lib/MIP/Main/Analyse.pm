@@ -77,8 +77,6 @@ use MIP::Update::Programs
 use MIP::QC::Record qw{ add_to_sample_info };
 
 ## Recipes
-use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
-use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Pipeline::Rare_disease qw{ pipeline_rare_disease };
 use MIP::Recipes::Pipeline::Rna qw{ pipeline_rna };
 use MIP::Recipes::Pipeline::Cancer qw{ pipeline_cancer };
@@ -89,7 +87,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -893,7 +891,7 @@ sub mip_analyse {
     );
 
 ## Reformat file names to MIP format, get file name info and add info to sample_info
-    my $is_file_uncompressed = parse_fastq_infiles(
+    parse_fastq_infiles(
         {
             active_parameter_href           => \%active_parameter,
             file_info_href                  => \%file_info,
@@ -960,75 +958,6 @@ sub mip_analyse {
         }
     }
 
-## Split of fastq files in batches
-    if ( $active_parameter{split_fastq_file} ) {
-
-        $log->info(q{[Split fastq files in batches]});
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-            ## Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory
-            analysis_split_fastq_file(
-                {
-                    parameter_href        => \%parameter,
-                    active_parameter_href => \%active_parameter,
-                    infile_href           => \%infile,
-                    job_id_href           => \%job_id,
-                    insample_directory    => $indir_path{$sample_id},
-                    outsample_directory   => $indir_path{$sample_id},
-                    sample_id             => $sample_id,
-                    program_name          => q{split_fastq_file},
-                    sequence_read_batch =>
-                      $active_parameter{split_fastq_file_read_batch},
-                }
-            );
-        }
-
-        ## End here if this module is turned on
-        exit;
-    }
-
-## GZip of fastq files
-    if (   $active_parameter{gzip_fastq}
-        && $is_file_uncompressed )
-    {
-
-        $log->info(q{[Gzip for fastq files]});
-
-      SAMPLES:
-        foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-            ## Determine which sample id had the uncompressed files
-          INFILES:
-            foreach my $infile ( @{ $infile{$sample_id} } ) {
-
-                my $infile_suffix = $parameter{gzip_fastq}{infile_suffix};
-
-                if ( $infile =~ /$infile_suffix$/sxm ) {
-
-                    ## Automatically gzips fastq files
-                    analysis_gzip_fastq(
-                        {
-                            parameter_href          => \%parameter,
-                            active_parameter_href   => \%active_parameter,
-                            sample_info_href        => \%sample_info,
-                            infile_href             => \%infile,
-                            infile_lane_prefix_href => \%infile_lane_prefix,
-                            job_id_href             => \%job_id,
-                            insample_directory      => $indir_path{$sample_id},
-                            sample_id               => $sample_id,
-                            program_name            => q{gzip_fastq},
-                        }
-                    );
-
-                    # Call once per sample_id
-                    last INFILES;
-                }
-            }
-        }
-    }
-
 ### Cancer
     if ( $consensus_analysis_type eq q{cancer} )
 
@@ -1062,17 +991,17 @@ sub mip_analyse {
         ## Pipeline recipe for rna data
         pipeline_rna(
             {
-                parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
                 file_info_href          => \%file_info,
                 indir_path_href         => \%indir_path,
                 infile_href             => \%infile,
                 infile_lane_prefix_href => \%infile_lane_prefix,
-                lane_href               => \%lane,
                 job_id_href             => \%job_id,
-                outaligner_dir          => $active_parameter{outaligner_dir},
+                lane_href               => \%lane,
                 log                     => $log,
+                order_programs_ref      => \@order_programs,
+                parameter_href          => \%parameter,
+                sample_info_href        => \%sample_info,
             }
         );
     }
@@ -1088,17 +1017,18 @@ sub mip_analyse {
         ## Pipeline recipe for rna data
         pipeline_rare_disease(
             {
-                parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
                 file_info_href          => \%file_info,
                 indir_path_href         => \%indir_path,
                 infile_href             => \%infile,
                 infile_lane_prefix_href => \%infile_lane_prefix,
-                lane_href               => \%lane,
                 job_id_href             => \%job_id,
-                outaligner_dir          => $active_parameter{outaligner_dir},
+                lane_href               => \%lane,
                 log                     => $log,
+                order_programs_ref      => \@order_programs,
+                outaligner_dir          => $active_parameter{outaligner_dir},
+                parameter_href          => \%parameter,
+                sample_info_href        => \%sample_info,
             }
         );
     }

@@ -19,6 +19,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+
 #use Test::Trap;
 
 ## MIPs lib/
@@ -29,7 +30,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -127,7 +128,7 @@ my %infile_lane_prefix;
 my %lane;
 my %sample_info;
 
-my $is_file_uncompressed = parse_fastq_infiles(
+parse_fastq_infiles(
     {
         active_parameter_href           => \%active_parameter,
         file_info_href                  => \%file_info,
@@ -142,7 +143,8 @@ my $is_file_uncompressed = parse_fastq_infiles(
 );
 
 ## Then return undef
-is( $is_file_uncompressed, undef, q{No files uncompressed} );
+is( $file_info{is_file_uncompressed}{ADM1059A1},
+    undef, q{No files uncompressed} );
 
 ## Given uncompressed file
 push @{ $active_parameter{sample_ids} }, q{ADM1059A2};
@@ -151,7 +153,7 @@ push @{ $infile{ADM1059A2} },
 $indir_path{ADM1059A2} =
   catdir( $Bin, qw{ data 643594-miptest test_data bad_input } );
 
-$is_file_uncompressed = parse_fastq_infiles(
+parse_fastq_infiles(
     {
         active_parameter_href           => \%active_parameter,
         file_info_href                  => \%file_info,
@@ -166,8 +168,10 @@ $is_file_uncompressed = parse_fastq_infiles(
 );
 
 ## Then return true
-ok( $is_file_uncompressed,
-    q{Files uncompressed and got run info from headers} );
+ok(
+    $file_info{is_file_uncompressed}{ADM1059A2},
+    q{Files uncompressed and got run info from headers}
+);
 
 #### Inactivated due to strange behaviour from trap
 ## Given file, when no sample_id in file name

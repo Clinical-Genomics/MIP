@@ -38,6 +38,7 @@ gatk_bundle_download_version:
    - cnvnator
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
+   - gatk_concatenate_genotypegvcfs 
    - bcftools_mpileup
    - gatk_variantrecalibration
    - gatk_variantevalall
@@ -68,6 +69,7 @@ gatk_logging_level:
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
+   - gatk_concatenate_genotypegvcfs
    - bcftools_mpileup
    - gatk_variantrecalibration
    - gatk_combinevariantcallsets
@@ -85,6 +87,7 @@ gatk_path:
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
+   - gatk_concatenate_genotypegvcfs
    - bcftools_mpileup
    - gatk_variantrecalibration
    - gatk_combinevariantcallsets
@@ -139,6 +142,7 @@ java_use_large_pages:
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
+   - gatk_concatenate_genotypegvcfs
    - gatk_variantrecalibration
    - gatk_combinevariantcallsets
    - gatk_variantevalall
@@ -171,6 +175,7 @@ module_time:
     gatk_baserecalibration: 20
     gatk_combinevariantcallsets: 2
     gatk_genotypegvcfs: 10
+    gatk_concatenate_genotypegvcfs: 2
     gatk_haplotypecaller: 30
     gatk_realigner: 20
     gatk_variantevalall: 2
@@ -230,6 +235,7 @@ module_core_number:
     gatk_baserecalibration: 16
     gatk_combinevariantcallsets: 1
     gatk_genotypegvcfs: 4
+    gatk_concatenate_genotypegvcfs: 2
     gatk_haplotypecaller: 16
     gatk_realigner: 16
     gatk_variantevalall: 1
@@ -293,6 +299,7 @@ replace_iupac:
 ###Programs
 ## BWA
 bwa_mem:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -348,6 +355,7 @@ bamcalibrationblock:
   reduce_io: 1
   type: program
 picardtools_mergesamfiles:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -355,6 +363,7 @@ picardtools_mergesamfiles:
   file_tag: ""
   type: program
 markduplicates:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -395,6 +404,7 @@ markduplicates_sambamba_markdup_overflow_list_size:
   type: program_argument
 ## GATK BAM Calibration
 gatk_realigner:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -413,6 +423,7 @@ gatk_realigner_indel_known_sites:
   reference: reference_dir
   type: path
 gatk_baserecalibration:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -470,6 +481,7 @@ gatk_baserecalibration_static_quantized_quals:
   type: program_argument
 ## Coverage Analysis
 chanjo_sexcheck:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -486,6 +498,7 @@ chanjo_sexcheck_log_level:
   default: DEBUG
   type: program_argument
 samtools_subsample_mt:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -494,12 +507,14 @@ samtools_subsample_mt:
   outfile_suffix: ".bam"
   type: program
 samtools_subsample_mt_depth:
+  analysis_mode: sample
   associated_program:
    - samtools_subsample_mt
   data_type: SCALAR
   default: 60
   type: program_argument
 sambamba_depth:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -559,6 +574,7 @@ sambamba_depth_quality_control:
   default: 1
   type: program_argument
 bedtools_genomecov:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -574,6 +590,7 @@ bedtools_genomecov_max_coverage:
   default: 30
   type: program_argument
 picardtools_collectmultiplemetrics:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -581,6 +598,7 @@ picardtools_collectmultiplemetrics:
   file_tag: nofile_tag
   type: program
 picardtools_collecthsmetrics:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -588,14 +606,16 @@ picardtools_collecthsmetrics:
   file_tag: _collecthsmetrics
   type: program
 rcovplots:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
   type: program
-##Structural Variant Calling
+## Structural Variant Calling
 cnvnator:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -616,6 +636,7 @@ cnv_bin_size:
   default: 1000
   type: program_argument
 delly_call:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -627,6 +648,7 @@ delly_call:
   outfile_suffix: ".bcf"
   type: program
 delly_reformat:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -673,6 +695,7 @@ expansionhunter:
   program_type: structural_variant_callers
   type: program
 expansionhunter_repeat_specs_dir:
+  analysis_mode: sample
   associated_program:
    - expansionhunter
   data_type: SCALAR
@@ -680,6 +703,7 @@ expansionhunter_repeat_specs_dir:
   type: path
   update_path: absolute_path
 manta:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -692,6 +716,7 @@ manta:
   program_type: structural_variant_callers
   type: program
 tiddit:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -718,6 +743,7 @@ tiddit_minimum_number_supporting_pairs:
   default: 6
   type: program_argument
 sv_combinevariantcallsets:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -823,6 +849,7 @@ sv_vt_decompose:
   default: 0
   type: program_argument
 vcf2cytosure:
+  analysis_mode: family
   associated_program:
     - mip
   data_type: SCALAR
@@ -866,6 +893,7 @@ vcf2cytosure_var_size:
   default: 0
   type: program_argument
 sv_varianteffectpredictor:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -908,6 +936,7 @@ sv_vep_plugins:
    - LoFtool
   type: program_argument
 sv_vcfparser:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -968,6 +997,7 @@ sv_vcfparser_vep_transcripts:
   default: 0
   type: program_argument
 sv_rankvariant:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1008,6 +1038,7 @@ sv_rank_model_file:
   type: path
 ##Sv_reformat
 sv_reformat:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1032,6 +1063,7 @@ sv_reformat_remove_genes_file:
   type: path
 ##Bcftools
 bcftools_mpileup:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1051,6 +1083,7 @@ bcftools_mpileup_filter_variant:
   type: program_argument
 ##Freebayes
 freebayes:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1065,6 +1098,7 @@ freebayes:
   type: program
 ## GATK Genotype
 gatk_haplotypecaller:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -1121,19 +1155,14 @@ gatk_haplotypecaller_snp_known_set:
   type: path
 ## GATK Genotype Calibration
 gatk_genotypegvcfs:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
   default: 0
-  file_tag: _
+  file_tag: _gent_
   outfile_suffix: ".vcf"
   type: program
-gatk_concatenate_genotypegvcfs_bcf_file:
-  associated_program:
-   - gatk_genotypegvcfs
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 gatk_genotypegvcfs_all_sites:
   associated_program:
    - gatk_genotypegvcfs
@@ -1147,7 +1176,23 @@ gatk_genotypegvcfs_ref_gvcf:
   exists_check: file
   reference: reference_dir
   type: path
+gatk_concatenate_genotypegvcfs:
+  analysis_mode: family
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: ""
+  outfile_suffix: ".vcf"
+  type: program
+gatk_concatenate_genotypegvcfs_bcf_file:
+  associated_program:
+   - gatk_concatenate_genotypegvcfs
+  data_type: SCALAR
+  default: 0
+  type: program_argument
 gatk_variantrecalibration:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1233,11 +1278,12 @@ gatk_variantrecalibration_snv_tsfilter_level:
   default: 99.9
   type: program_argument
 gatk_combinevariantcallsets:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
   default: 0
-  file_tag: comb_
+  file_tag: _comb_
   outfile_suffix: ".vcf"
   type: program
 gatk_combinevariantcallsets_bcf_file:
@@ -1265,10 +1311,11 @@ variantannotationblock:
    - mip
   data_type: SCALAR
   default: 0
-  file_tag: nofile_tag
+  file_tag: ""
   reduce_io: 1
   type: program
 prepareforvariantannotationblock:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1278,6 +1325,7 @@ prepareforvariantannotationblock:
   type: program
 ##rhocall
 rhocall:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1298,6 +1346,7 @@ rhocall_frequency_file:
   type: path
 ##VT
 vt:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1335,6 +1384,7 @@ vt_uniq:
   default: 0
   type: program_argument
 frequency_filter:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1371,6 +1421,7 @@ frequency_genmod_filter_1000g:
   reference: reference_dir
   type: path
 gatk_variantevalall:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -1379,6 +1430,7 @@ gatk_variantevalall:
   outfile_suffix: ".varianteval"
   type: program
 gatk_variantevalexome:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -1408,6 +1460,7 @@ gatk_varianteval_gold:
   type: path
 ## VEP
 varianteffectpredictor:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1475,6 +1528,7 @@ vep_plugins_dir_path:
   update_path: absolute_path
 ## VCFParser
 vcfparser:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1531,6 +1585,7 @@ vcfparser_vep_transcripts:
   type: program_argument
 ## SnpEFF
 snpeff:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1604,6 +1659,7 @@ snpeff_path:
   update_path: absolute_path
 ## Case_check
 peddy:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1613,6 +1669,7 @@ peddy:
    - peddy
   type: program
 plink:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1622,6 +1679,7 @@ plink:
    - plink2
   type: program
 variant_integrity:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1631,6 +1689,7 @@ variant_integrity:
    - variant_integrity
   type: program
 rtg_vcfeval:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -1648,6 +1707,7 @@ rtg_vcfeval_reference_genome:
   reference: reference_dir
   type: path
 evaluation:
+  analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
@@ -1684,6 +1744,7 @@ nist_id:
   type: program_argument
 ## RankVariant
 rankvariant:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1744,6 +1805,7 @@ rank_model_file:
   type: path
 ##Endvariantannotationblock
 endvariantannotationblock:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1769,6 +1831,7 @@ endvariantannotationblock_remove_genes_file:
   type: path
 ## QCCollect
 qccollect:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1797,6 +1860,7 @@ qccollect_skip_evaluation:
   type: program_argument
 ## MultiQC
 multiqc:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1814,6 +1878,7 @@ multiqc_per_sample:
   type: program_argument
 ## AnalysisRunStatus
 analysisrunstatus:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
@@ -1822,6 +1887,7 @@ analysisrunstatus:
   type: program
 ## Sacct
 sacct:
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -46,10 +46,8 @@ sub analysis_gatk_splitncigarreads {
 ##          : $file_info_href          => File info hash {REF}
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
+##          : $indir_path_href         => Indirectories path(s) hash {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
@@ -64,10 +62,9 @@ sub analysis_gatk_splitncigarreads {
     my $active_parameter_href;
     my $file_info_href;
     my $file_path;
+    my $indir_path_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_info_path;
     my $program_name;
@@ -76,7 +73,6 @@ sub analysis_gatk_splitncigarreads {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -100,11 +96,10 @@ sub analysis_gatk_splitncigarreads {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        file_path          => { store => \$file_path, strict_type => 1, },
-        insample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$insample_directory,
+        file_path       => { store => \$file_path, strict_type => 1, },
+        indir_path_href => {
+            default     => {},
+            store       => \$indir_path_href,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -119,17 +114,6 @@ sub analysis_gatk_splitncigarreads {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outsample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outsample_directory,
             strict_type => 1,
         },
         parameter_href => {
@@ -200,7 +184,7 @@ sub analysis_gatk_splitncigarreads {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
       );
 
@@ -209,18 +193,24 @@ sub analysis_gatk_splitncigarreads {
     my $XARGSFILEHANDLE = IO::Handle->new();
     my $FILEHANDLE      = IO::Handle->new();
 
+    ## Asign directories
+    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $sample_id,
-            FILEHANDLE                      => $FILEHANDLE,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            process_time                    => $time,
-            program_directory               => catfile($outaligner_dir),
-            program_name                    => $program_name,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $sample_id,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            process_time          => $time,
+            program_directory     => $active_parameter_href->{outaligner_dir},
+            program_name          => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }

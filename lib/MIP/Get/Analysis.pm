@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -521,7 +521,7 @@ sub print_program {
 
             if (
                 not $parameter =~
-                / pbamcalibrationblock | pvariantannotationblock /xsm )
+                / bamcalibrationblock | variantannotationblock /xsm )
             {
 
                 print {*STDOUT} q{--}

@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_multiqc };
@@ -37,6 +37,7 @@ sub analysis_multiqc {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
+##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
@@ -47,6 +48,7 @@ sub analysis_multiqc {
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
@@ -67,6 +69,13 @@ sub analysis_multiqc {
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -117,7 +126,7 @@ sub analysis_multiqc {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
@@ -126,7 +135,7 @@ sub analysis_multiqc {
       get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
       );
 
