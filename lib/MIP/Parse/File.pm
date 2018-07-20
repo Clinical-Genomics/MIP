@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_fastq_infiles parse_fastq_infiles_format };
@@ -41,7 +41,6 @@ sub parse_fastq_infiles {
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
 ##          : $infile_href                     => Infiles hash {REF}
 ##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
-##          : $lane_href                       => The lane info hash {REF}
 ##          : $log                             => Log object
 ##          : $sample_info_href                => Info on samples and family hash {REF}
 
@@ -54,7 +53,6 @@ sub parse_fastq_infiles {
     my $infile_both_strands_prefix_href;
     my $infile_href;
     my $infile_lane_prefix_href;
-    my $lane_href;
     my $log;
     my $sample_info_href;
 
@@ -99,13 +97,6 @@ sub parse_fastq_infiles {
             defined     => 1,
             required    => 1,
             store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        lane_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$lane_href,
             strict_type => 1,
         },
         log => {
@@ -223,7 +214,6 @@ sub parse_fastq_infiles {
                         infile_lane_prefix_href => $infile_lane_prefix_href,
                         is_interleaved          => $is_interleaved,
                         lane                    => $infile_info{lane},
-                        lane_href               => $lane_href,
                         lane_tracker            => $lane_tracker,
                         read_length             => $read_length,
                         sample_id        => $infile_info{infile_sample_id},
@@ -284,7 +274,6 @@ q{Please check that the file name contains the sample_id.}
                         infile_lane_prefix_href => $infile_lane_prefix_href,
                         is_interleaved          => $is_interleaved,
                         lane                    => $fastq_info_header{lane},
-                        lane_href               => $lane_href,
                         lane_tracker            => $lane_tracker,
                         read_length             => $read_length,
                         sample_id               => $sample_id,

@@ -23,76 +23,37 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Log::MIP_log4perl qw{ initiate_logger };
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.1';
+our $VERSION = '1.0.2';
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
 Readonly my $COMMA       => q{,};
 Readonly my $DOT         => q{.};
-Readonly my $NEWLINE     => qq{\n};
 Readonly my $READ_LENGTH => 151;
 Readonly my $SPACE       => q{ };
 Readonly my $UNDERSCORE  => q{_};
 
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
-
 BEGIN {
+
+    use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
-        q{MIP::Script::Utils}     => [qw{ help }],
+        q{MIP::QC::Record}     => [qw{ add_infile_info }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::QC::Record});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::QC::Record qw{ add_infile_info };
@@ -107,16 +68,7 @@ diag(   q{Test add_infile_info from Record.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
-my $test_log_path = catfile( $test_dir, q{test.log} );
-
-## Creates log object
-my $log = initiate_logger(
-    {
-        file_path => $test_log_path,
-        log_name  => q{TEST},
-    }
-);
+my $log = test_log();
 
 ## Set file info parameters
 
@@ -139,7 +91,6 @@ my %infile_info = (
     lane             => 1,
 );
 my %infile_lane_prefix;
-my %lane;
 my %sample_info;
 
 ## Define file formats
@@ -182,7 +133,6 @@ for my $sample_id ( keys %infile ) {
                 infile_lane_prefix_href         => \%infile_lane_prefix,
                 is_interleaved                  => $is_interleaved,
                 lane                            => $infile_info{lane},
-                lane_href                       => \%lane,
                 lane_tracker                    => $lane_tracker,
                 read_length                     => $read_length,
                 sample_id        => $infile_info{infile_sample_id},
@@ -194,7 +144,11 @@ for my $sample_id ( keys %infile ) {
 
 ## Collect what to expect in one hash
 my %expected_result = (
-    lane => { $sample_id => [1], },
+    lane => {
+        $sample_id => {
+            lanes => [1],
+        },
+    },
     infile_both_strands_prefix =>
       { $sample_id => [ $mip_file_format_with_direction, ], },
     infile_lane_prefix => {
@@ -234,8 +188,8 @@ ok( $file_info{undetermined_in_file_name}{$mip_file_format},
 
 ## Then add the lane info
 is_deeply(
-    \%lane,
-    \%{ $expected_result{lane} },
+    \%{ $file_info{$sample_id} },
+    \%{ $expected_result{lane}{$sample_id} },
     q{Added lane info for single-end read}
 );
 
@@ -320,7 +274,6 @@ for my $sample_id ( keys %infile ) {
                 infile_lane_prefix_href         => \%infile_lane_prefix,
                 is_interleaved                  => $is_interleaved,
                 lane                            => $infile_info{lane},
-                lane_href                       => \%lane,
                 lane_tracker                    => $lane_tracker,
                 read_length                     => $read_length,
                 sample_id        => $infile_info{infile_sample_id},
@@ -369,7 +322,7 @@ for my $sample_id ( keys %infile ) {
     }
 }
 
-$expected_result{lane}{$sample_id} = [ 1, 1 ];
+$expected_result{lane}{$sample_id}{lanes} = [ 1, 1 ];
 
 $expected_result{sample_info}{sample}{$sample_id}{file}{$mip_file_format}
   {sequence_run_type} = q{paired-end};
@@ -377,8 +330,8 @@ $expected_result{sample_info}{sample}{$sample_id}{file}{$mip_file_format}
 is( $lane_tracker, 1, q{Tracked lane} );
 
 is_deeply(
-    \%lane,
-    \%{ $expected_result{lane} },
+    \%{ $file_info{$sample_id} },
+    \%{ $expected_result{lane}{$sample_id} },
     q{Added lane info for paired-end read}
 );
 
@@ -400,39 +353,6 @@ is_deeply(
 );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}
 
 sub _file_name_formats {
 

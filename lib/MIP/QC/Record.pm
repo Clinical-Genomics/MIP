@@ -23,7 +23,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -203,7 +203,6 @@ sub add_infile_info {
 ##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $is_interleaved                  => Infile is interleaved
 ##          : $lane                            => Flow-cell lane
-##          : $lane_href                       => The lane info hash {REF}
 ##          : $lane_tracker                    => Counts the number of lanes sequenced {REF}
 ##          : $read_length                     => Sequence read length
 ##          : $sample_id                       => Sample id
@@ -224,7 +223,6 @@ sub add_infile_info {
     my $infile_lane_prefix_href;
     my $is_interleaved;
     my $lane;
-    my $lane_href;
     my $lane_tracker;
     my $read_length;
     my $sample_id;
@@ -302,13 +300,6 @@ sub add_infile_info {
             store       => \$lane,
             strict_type => 1,
         },
-        lane_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$lane_href,
-            strict_type => 1,
-        },
         lane_tracker => {
             defined     => 1,
             required    => 1,
@@ -357,7 +348,7 @@ sub add_infile_info {
     if ( $direction == 1 ) {
 
         ## Add lane
-        push @{ $lane_href->{$sample_id} }, $lane;
+        push @{ $file_info_href->{$sample_id}{lanes} }, $lane;
 
 # Save new format (sample_id_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
         $infile_lane_prefix_href->{$sample_id}[$lane_tracker] =
@@ -497,7 +488,7 @@ sub add_most_complete_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $active_parameter_href->{ $program_name } == 1 ) {
+    if ( $active_parameter_href->{$program_name} == 1 ) {
 
         if ( $vcfparser_outfile_counter == 1 ) {
 

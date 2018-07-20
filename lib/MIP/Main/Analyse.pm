@@ -191,7 +191,7 @@ sub mip_analyse {
     }
 
 ## Directories, files, job_ids and sample_info
-    my ( %infile, %indir_path, %infile_lane_prefix, %lane,
+    my ( %infile, %indir_path, %infile_lane_prefix,
         %infile_both_strands_prefix, %job_id, %sample_info );
 
 #### Staging Area
@@ -899,7 +899,6 @@ sub mip_analyse {
             infile_both_strands_prefix_href => \%infile_both_strands_prefix,
             infile_href                     => \%infile,
             infile_lane_prefix_href         => \%infile_lane_prefix,
-            lane_href                       => \%lane,
             log                             => $log,
             sample_info_href                => \%sample_info,
         }
@@ -975,7 +974,6 @@ sub mip_analyse {
                 indir_path_href         => \%indir_path,
                 infile_href             => \%infile,
                 infile_lane_prefix_href => \%infile_lane_prefix,
-                lane_href               => \%lane,
                 job_id_href             => \%job_id,
                 outaligner_dir          => $active_parameter{outaligner_dir},
                 log                     => $log,
@@ -997,7 +995,6 @@ sub mip_analyse {
                 infile_href             => \%infile,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                lane_href               => \%lane,
                 log                     => $log,
                 order_programs_ref      => \@order_programs,
                 parameter_href          => \%parameter,
@@ -1023,7 +1020,6 @@ sub mip_analyse {
                 infile_href             => \%infile,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                lane_href               => \%lane,
                 log                     => $log,
                 order_programs_ref      => \@order_programs,
                 outaligner_dir          => $active_parameter{outaligner_dir},

@@ -45,7 +45,6 @@ sub pipeline_rare_disease {
 ##          : $infile_href             => Infile hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $lane_href               => The lane info hash {REF}
 ##          : $log                     => Log object to write to
 ##          : $order_programs_ref      => Order of programs
 ##          : $outaligner_dir          => Outaligner dir used in the analysis
@@ -61,7 +60,6 @@ sub pipeline_rare_disease {
     my $infile_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $lane_href;
     my $log;
     my $order_programs_ref;
     my $parameter_href;
@@ -111,13 +109,6 @@ sub pipeline_rare_disease {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        lane_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$lane_href,
             strict_type => 1,
         },
         log => {
@@ -249,7 +240,6 @@ sub pipeline_rare_disease {
   SAMPLE:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
         $file_info_href->{$sample_id}{mip_infiles} = $infile_href->{$sample_id};
-        $file_info_href->{$sample_id}{lanes}       = $lane_href->{$sample_id};
         $file_info_href->{$sample_id}{mip_infiles_dir} =
           $indir_path_href->{$sample_id};
 
