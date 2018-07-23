@@ -44,7 +44,6 @@ sub analysis_gatk_realigner {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $file_path               => File path
-##          : indir_path_href          => Indirectories path(s) hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
@@ -61,7 +60,6 @@ sub analysis_gatk_realigner {
     my $active_parameter_href;
     my $file_info_href;
     my $file_path;
-    my $indir_path_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
@@ -95,14 +93,7 @@ sub analysis_gatk_realigner {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        file_path       => { store => \$file_path, strict_type => 1, },
-        indir_path_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$indir_path_href,
-            strict_type => 1,
-        },
+        file_path               => { store => \$file_path, strict_type => 1, },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -193,7 +184,7 @@ sub analysis_gatk_realigner {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Assign directories
-    my $insample_directory  = $indir_path_href->{$sample_id};
+    my $insample_directory  = $file_info_href->{$sample_id}{mip_infiles_dir};
     my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
         $sample_id, $active_parameter_href->{outaligner_dir} );
 

@@ -48,7 +48,6 @@ sub analysis_picardtools_mergesamfiles {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $file_path               => File path
-##          : $indir_path_href         => Indirectoies path(s) hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
@@ -66,7 +65,6 @@ sub analysis_picardtools_mergesamfiles {
     my $active_parameter_href;
     my $file_info_href;
     my $file_path;
-    my $indir_path_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
@@ -101,12 +99,7 @@ sub analysis_picardtools_mergesamfiles {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        file_path       => { store => \$file_path, strict_type => 1, },
-        indir_path_href => {
-            default     => {},
-            store       => \$indir_path_href,
-            strict_type => 1,
-        },
+        file_path               => { store => \$file_path, strict_type => 1, },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,

@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_fastq_infiles parse_fastq_infiles_format };
@@ -37,11 +37,8 @@ sub parse_fastq_infiles {
 ## Returns  :
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##          : $file_info_href                  => File info hash {REF}
-##          : $indir_path_href                 => Indirectories path(s) hash {REF}
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_href                     => Infiles hash {REF}
 ##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
-##          : $lane_href                       => The lane info hash {REF}
 ##          : $log                             => Log object
 ##          : $sample_info_href                => Info on samples and family hash {REF}
 
@@ -50,11 +47,8 @@ sub parse_fastq_infiles {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $indir_path_href;
     my $infile_both_strands_prefix_href;
-    my $infile_href;
     my $infile_lane_prefix_href;
-    my $lane_href;
     my $log;
     my $sample_info_href;
 
@@ -73,13 +67,6 @@ sub parse_fastq_infiles {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        indir_path_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$indir_path_href,
-            strict_type => 1,
-        },
         infile_both_strands_prefix_href => {
             default     => {},
             defined     => 1,
@@ -87,25 +74,11 @@ sub parse_fastq_infiles {
             store       => \$infile_both_strands_prefix_href,
             strict_type => 1,
         },
-        infile_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_href,
-            strict_type => 1,
-        },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        lane_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$lane_href,
             strict_type => 1,
         },
         log => {
@@ -131,14 +104,17 @@ sub parse_fastq_infiles {
     use MIP::QC::Record qw{ add_infile_info };
 
   SAMPLE_ID:
-    for my $sample_id ( keys %{$infile_href} ) {
+    for my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         # Needed to be able to track when lanes are finished
         my $lane_tracker = 0;
 
+        ## Unpack
+        my $infiles_dir = $file_info_href->{$sample_id}{mip_infiles_dir};
+
       INFILE:
         while ( my ( $file_index, $file_name ) =
-            each @{ $infile_href->{$sample_id} } )
+            each @{ $file_info_href->{$sample_id}{mip_infiles} } )
         {
 
             # Sequence read length
@@ -170,10 +146,7 @@ sub parse_fastq_infiles {
                 ## Get sequence read length from file
                 $read_length = get_read_length(
                     {
-                        file_path => catfile(
-                            $indir_path_href->{$sample_id},
-                            $infile_href->{$sample_id}[$file_index]
-                        ),
+                        file_path => catfile( $infiles_dir, $file_name ),
                         read_file_command => $read_file_command,
                     }
                 );
@@ -181,11 +154,8 @@ sub parse_fastq_infiles {
                 ## Is file interleaved and have proper read direction
                 $is_interleaved = check_interleaved(
                     {
-                        file_path => catfile(
-                            $indir_path_href->{$sample_id},
-                            $infile_href->{$sample_id}[$file_index]
-                        ),
-                        log               => $log,
+                        file_path => catfile( $infiles_dir, $file_name ),
+                        log       => $log,
                         read_file_command => $read_file_command,
                     }
                 );
@@ -197,8 +167,7 @@ sub parse_fastq_infiles {
                 ## Check that the sample_id provided and sample_id in infile name match.
                 check_infile_contain_sample_id(
                     {
-                        file_index       => $file_index,
-                        infile_href      => $infile_href,
+                        infile_name      => $file_name,
                         infile_sample_id => $infile_info{infile_sample_id},
                         log              => $log,
                         sample_id        => $sample_id,
@@ -219,11 +188,9 @@ sub parse_fastq_infiles {
                         index                 => $infile_info{index},
                         infile_both_strands_prefix_href =>
                           $infile_both_strands_prefix_href,
-                        infile_href             => $infile_href,
                         infile_lane_prefix_href => $infile_lane_prefix_href,
                         is_interleaved          => $is_interleaved,
                         lane                    => $infile_info{lane},
-                        lane_href               => $lane_href,
                         lane_tracker            => $lane_tracker,
                         read_length             => $read_length,
                         sample_id        => $infile_info{infile_sample_id},
@@ -254,9 +221,8 @@ q{Please check that the file name contains the sample_id.}
                 ## Get run info from fastq file header
                 my %fastq_info_header = get_fastq_file_header_info(
                     {
-                        file_path =>
-                          catfile( $indir_path_href->{$sample_id}, $file_name ),
-                        log               => $log,
+                        file_path => catfile( $infiles_dir, $file_name ),
+                        log       => $log,
                         read_file_command => $read_file_command,
                     }
                 );
@@ -280,11 +246,9 @@ q{Please check that the file name contains the sample_id.}
                         index          => $fastq_info_header{index},
                         infile_both_strands_prefix_href =>
                           $infile_both_strands_prefix_href,
-                        infile_href             => $infile_href,
                         infile_lane_prefix_href => $infile_lane_prefix_href,
                         is_interleaved          => $is_interleaved,
                         lane                    => $fastq_info_header{lane},
-                        lane_href               => $lane_href,
                         lane_tracker            => $lane_tracker,
                         read_length             => $read_length,
                         sample_id               => $sample_id,

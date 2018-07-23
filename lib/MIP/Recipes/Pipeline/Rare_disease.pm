@@ -41,11 +41,8 @@ sub pipeline_rare_disease {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
-##          : $indir_path_href         => Indirectory hash {REF}
-##          : $infile_href             => Infile hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $lane_href               => The lane info hash {REF}
 ##          : $log                     => Log object to write to
 ##          : $order_programs_ref      => Order of programs
 ##          : $outaligner_dir          => Outaligner dir used in the analysis
@@ -57,11 +54,8 @@ sub pipeline_rare_disease {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $indir_path_href;
-    my $infile_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $lane_href;
     my $log;
     my $order_programs_ref;
     my $parameter_href;
@@ -85,20 +79,6 @@ sub pipeline_rare_disease {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        indir_path_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$indir_path_href,
-            strict_type => 1,
-        },
-        infile_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_href,
-            strict_type => 1,
-        },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -111,13 +91,6 @@ sub pipeline_rare_disease {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        lane_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$lane_href,
             strict_type => 1,
         },
         log => {
@@ -244,16 +217,6 @@ sub pipeline_rare_disease {
       qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt analysis_vt_rio };
     use MIP::Recipes::Build::Rare_disease qw{build_rare_disease_meta_files};
-
-    ## Copy information about the infiles to file_info hash
-  SAMPLE:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-        $file_info_href->{$sample_id}{mip_infiles} = $infile_href->{$sample_id};
-        $file_info_href->{$sample_id}{lanes}       = $lane_href->{$sample_id};
-        $file_info_href->{$sample_id}{mip_infiles_dir} =
-          $indir_path_href->{$sample_id};
-
-    }
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
