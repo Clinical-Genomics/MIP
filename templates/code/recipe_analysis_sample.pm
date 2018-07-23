@@ -40,10 +40,8 @@ sub analysis_recipe {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -55,9 +53,7 @@ sub analysis_recipe {
     my $active_parameter_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
@@ -94,12 +90,6 @@ sub analysis_recipe {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-        insample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$insample_directory,
-            strict_type => 1,
-        },
         job_id_href => {
             default     => {},
             defined     => 1,
@@ -112,13 +102,7 @@ sub analysis_recipe {
             store       => \$outaligner_dir,
             strict_type => 1,
         },
-        outsample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outsample_directory,
-            strict_type => 1,
-        },
-        parameter_href => {
+       parameter_href => {
             default     => {},
             defined     => 1,
             required    => 1,
@@ -160,7 +144,7 @@ sub analysis_recipe {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set MIP program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
@@ -183,6 +167,12 @@ sub analysis_recipe {
             sample_id      => $sample_id,
         }
     );
+
+    ## Assign directories
+    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $sample_id, $active_parameter_href->{outaligner_dir} );
 
     ## Assign file_tags
     my $infile_tag =
