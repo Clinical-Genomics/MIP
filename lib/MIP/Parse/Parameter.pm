@@ -33,17 +33,15 @@ sub parse_infiles {
 ## Function : Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist.
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $indir_path_href       => Indirectories path(s) hash {REF}
-##          : $infile_href           => Infiles hash {REF}
+##          : $file_info_href        => File info hash {REF}
 ##          : $log                   => Log object
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $file_info_href;
     my $log;
-    my $indir_path_href;
-    my $infile_href;
 
     my $tmpl = {
         active_parameter_href => {
@@ -53,18 +51,11 @@ sub parse_infiles {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        indir_path_href => {
+        file_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$indir_path_href,
-            strict_type => 1,
-        },
-        infile_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_href,
+            store       => \$file_info_href,
             strict_type => 1,
         },
         log => {
@@ -115,10 +106,9 @@ sub parse_infiles {
         ## Set the infile features i.e. dir and files
         set_infiles(
             {
-                indir_path_href  => $indir_path_href,
+                file_info_href   => $file_info_href,
                 infiles_ref      => \@infiles,
                 infile_directory => $infile_directory,
-                infile_href      => $infile_href,
                 sample_id        => $sample_id,
             }
         );

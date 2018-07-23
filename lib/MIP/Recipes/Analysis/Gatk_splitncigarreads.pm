@@ -46,7 +46,6 @@ sub analysis_gatk_splitncigarreads {
 ##          : $file_info_href          => File info hash {REF}
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $indir_path_href         => Indirectories path(s) hash {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_info_path       => The program info path
@@ -62,7 +61,6 @@ sub analysis_gatk_splitncigarreads {
     my $active_parameter_href;
     my $file_info_href;
     my $file_path;
-    my $indir_path_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
@@ -96,12 +94,7 @@ sub analysis_gatk_splitncigarreads {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        file_path       => { store => \$file_path, strict_type => 1, },
-        indir_path_href => {
-            default     => {},
-            store       => \$indir_path_href,
-            strict_type => 1,
-        },
+        file_path               => { store => \$file_path, strict_type => 1, },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,

@@ -79,8 +79,7 @@ my $read_length = $READ_LENGTH;
 my $sample_id   = q{sample-1};
 
 my %active_parameter = ( family_id => q{Adams}, );
-my %file_info;
-my %infile = ( $sample_id => [qw{ file-1 }], );
+my %file_info = ( $sample_id => { mip_infiles => [qw{ file-1 }], }, );
 my %infile_both_strands_prefix;
 my %infile_info = (
     date             => q{150703},
@@ -112,12 +111,14 @@ $parsed_date = $parsed_date->ymd;
 
 ## Given single file, when Undetermined in flowcell name
 SAMPLE_ID:
-for my $sample_id ( keys %infile ) {
+for my $sample_id ( keys %file_info ) {
 
     my $lane_tracker = 0;
 
   INFILE:
-    while ( my ( $file_index, $file_name ) = each @{ $infile{$sample_id} } ) {
+    while ( my ( $file_index, $file_name ) =
+        each @{ $file_info{$sample_id}{mip_infiles} } )
+    {
 
         add_infile_info(
             {
@@ -129,7 +130,6 @@ for my $sample_id ( keys %infile ) {
                 flowcell                        => $infile_info{flowcell},
                 index                           => $infile_info{index},
                 infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-                infile_href                     => \%infile,
                 infile_lane_prefix_href         => \%infile_lane_prefix,
                 is_interleaved                  => $is_interleaved,
                 lane                            => $infile_info{lane},
@@ -188,8 +188,8 @@ ok( $file_info{undetermined_in_file_name}{$mip_file_format},
 
 ## Then add the lane info
 is_deeply(
-    \%{ $file_info{$sample_id} },
-    \%{ $expected_result{lane}{$sample_id} },
+    \@{ $file_info{$sample_id}{lanes} },
+    \@{ $expected_result{lane}{$sample_id}{lanes} },
     q{Added lane info for single-end read}
 );
 
@@ -218,17 +218,19 @@ is_deeply(
 %expected_result = ();
 
 ## Given another file to mimic read direction 2
-%infile = ( $sample_id => [qw{ file-1 file-2}], );
+%file_info = ( $sample_id => { mip_infiles => [qw{ file-1 file-2}], }, );
 
 my $lane_tracker = 0;
 
 SAMPLE_ID:
-for my $sample_id ( keys %infile ) {
+for my $sample_id ( keys %file_info ) {
 
     $lane_tracker = 0;
 
   INFILE:
-    while ( my ( $file_index, $file_name ) = each @{ $infile{$sample_id} } ) {
+    while ( my ( $file_index, $file_name ) =
+        each @{ $file_info{$sample_id}{mip_infiles} } )
+    {
 
         if ( $file_index == 1 ) {
 
@@ -251,7 +253,7 @@ for my $sample_id ( keys %infile ) {
                 }
               );
 
-            ## Add sencond read to infile lane prefix
+            ## Add second read to infile lane prefix
             push @{ $expected_result{infile_lane_prefix}{$sample_id} },
               $mip_file_format;
         }
@@ -270,7 +272,6 @@ for my $sample_id ( keys %infile ) {
                 flowcell                        => $infile_info{flowcell},
                 index                           => $infile_info{index},
                 infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-                infile_href                     => \%infile,
                 infile_lane_prefix_href         => \%infile_lane_prefix,
                 is_interleaved                  => $is_interleaved,
                 lane                            => $infile_info{lane},
@@ -298,10 +299,11 @@ for my $sample_id ( keys %infile ) {
         }
 
         my %both_directions_metric = (
-            date                      => $parsed_date,
-            flowcell                  => $infile_info{flowcell},
-            lane                      => $infile_info{lane},
-            original_file_name        => $infile{$sample_id}[$file_index],
+            date     => $parsed_date,
+            flowcell => $infile_info{flowcell},
+            lane     => $infile_info{lane},
+            original_file_name =>
+              $file_info{$sample_id}{mip_infiles}[$file_index],
             original_file_name_prefix => $original_file_name_prefix,
             read_direction            => $infile_info{direction},
             run_barcode               => $run_barcode,
@@ -322,7 +324,7 @@ for my $sample_id ( keys %infile ) {
     }
 }
 
-$expected_result{lane}{$sample_id}{lanes} = [ 1, 1 ];
+$expected_result{lane}{$sample_id}{lanes} = [ 1, ];
 
 $expected_result{sample_info}{sample}{$sample_id}{file}{$mip_file_format}
   {sequence_run_type} = q{paired-end};
@@ -330,8 +332,8 @@ $expected_result{sample_info}{sample}{$sample_id}{file}{$mip_file_format}
 is( $lane_tracker, 1, q{Tracked lane} );
 
 is_deeply(
-    \%{ $file_info{$sample_id} },
-    \%{ $expected_result{lane}{$sample_id} },
+    \@{ $file_info{$sample_id}{lanes} },
+    \@{ $expected_result{lane}{$sample_id}{lanes} },
     q{Added lane info for paired-end read}
 );
 

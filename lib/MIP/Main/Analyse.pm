@@ -191,7 +191,7 @@ sub mip_analyse {
     }
 
 ## Directories, files, job_ids and sample_info
-    my ( %infile, %indir_path, %infile_lane_prefix,
+    my ( %infile_lane_prefix,
         %infile_both_strands_prefix, %job_id, %sample_info );
 
 #### Staging Area
@@ -884,8 +884,7 @@ sub mip_analyse {
     parse_infiles(
         {
             active_parameter_href => \%active_parameter,
-            indir_path_href       => \%indir_path,
-            infile_href           => \%infile,
+            file_info_href        => \%file_info,
             log                   => $log,
         }
     );
@@ -895,9 +894,7 @@ sub mip_analyse {
         {
             active_parameter_href           => \%active_parameter,
             file_info_href                  => \%file_info,
-            indir_path_href                 => \%indir_path,
             infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-            infile_href                     => \%infile,
             infile_lane_prefix_href         => \%infile_lane_prefix,
             log                             => $log,
             sample_info_href                => \%sample_info,
@@ -971,8 +968,6 @@ sub mip_analyse {
                 active_parameter_href   => \%active_parameter,
                 sample_info_href        => \%sample_info,
                 file_info_href          => \%file_info,
-                indir_path_href         => \%indir_path,
-                infile_href             => \%infile,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
                 outaligner_dir          => $active_parameter{outaligner_dir},
@@ -991,8 +986,6 @@ sub mip_analyse {
             {
                 active_parameter_href   => \%active_parameter,
                 file_info_href          => \%file_info,
-                indir_path_href         => \%indir_path,
-                infile_href             => \%infile,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
                 log                     => $log,
@@ -1016,8 +1009,6 @@ sub mip_analyse {
             {
                 active_parameter_href   => \%active_parameter,
                 file_info_href          => \%file_info,
-                indir_path_href         => \%indir_path,
-                infile_href             => \%infile,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
                 log                     => $log,

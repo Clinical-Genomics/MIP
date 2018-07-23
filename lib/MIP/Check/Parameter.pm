@@ -407,35 +407,26 @@ sub check_infile_contain_sample_id {
 
 ## Function : Check that the sample_id provided and sample_id in infile name match.
 ## Returns  :
-## Arguments: $file_index            => Counts the number of infiles
-##          : $infile_href           => Infiles hash {REF}
-##          : $infile_sample_id      => Sample_id collect with regexp from infile
-##          : $log                   => Log object
-##          : $sample_id             => Sample id from user
-##          : $sample_ids_ref        => Sample ids from user
+## Arguments: $infile_name      => Infile name
+##          : $infile_sample_id => Sample_id collect with regexp from infile
+##          : $log              => Log object
+##          : $sample_id        => Sample id from user
+##          : $sample_ids_ref   => Sample ids from user
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $file_index;
-    my $infile_href;
+    my $infile_name;
     my $infile_sample_id;
     my $log;
     my $sample_id;
     my $sample_ids_ref;
 
     my $tmpl = {
-        file_index => {
+        infile_name => {
             defined     => 1,
             required    => 1,
-            store       => \$file_index,
-            strict_type => 1,
-        },
-        infile_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_href,
+            store       => \$infile_name,
             strict_type => 1,
         },
         infile_sample_id => {
@@ -478,7 +469,7 @@ sub check_infile_contain_sample_id {
               . q{ supplied and sample_id }
               . $infile_sample_id
               . q{ found in file : }
-              . $infile_href->{$sample_id}[$file_index]
+              . $infile_name
               . q{ does not match. Please rename file to match sample_id: }
               . $sample_id );
         exit 1;

@@ -199,7 +199,6 @@ sub add_infile_info {
 ##          : $flowcell                        => Flow-cell id
 ##          : $index                           => The DNA library preparation molecular barcode
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##          : $infile_href                     => Infiles hash {REF}
 ##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $is_interleaved                  => Infile is interleaved
 ##          : $lane                            => Flow-cell lane
@@ -219,7 +218,6 @@ sub add_infile_info {
     my $flowcell;
     my $index;
     my $infile_both_strands_prefix_href;
-    my $infile_href;
     my $infile_lane_prefix_href;
     my $is_interleaved;
     my $lane;
@@ -272,13 +270,6 @@ sub add_infile_info {
             defined     => 1,
             required    => 1,
             store       => \$infile_both_strands_prefix_href,
-            strict_type => 1,
-        },
-        infile_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_href,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -403,10 +394,11 @@ sub add_infile_info {
       $mip_file_format_with_direction;
 
     my %both_directions_metric = (
-        date                      => $parsed_date,
-        flowcell                  => $flowcell,
-        lane                      => $lane,
-        original_file_name        => $infile_href->{$sample_id}[$file_index],
+        date     => $parsed_date,
+        flowcell => $flowcell,
+        lane     => $lane,
+        original_file_name =>
+          $file_info_href->{$sample_id}{mip_infiles}[$file_index],
         original_file_name_prefix => $original_file_name_prefix,
         read_direction            => $direction,
         run_barcode               => $run_barcode,

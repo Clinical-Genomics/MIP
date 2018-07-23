@@ -39,8 +39,6 @@ sub pipeline_rna {
 
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
-##          : $indir_path_href         => Indirectory hash {REF}
-##          : $infile_href             => Infile hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $log                     => Log object to write to
@@ -53,8 +51,6 @@ sub pipeline_rna {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $indir_path_href;
-    my $infile_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
@@ -75,20 +71,6 @@ sub pipeline_rna {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        indir_path_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$indir_path_href,
-            strict_type => 1,
-        },
-        infile_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_href,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -155,13 +137,6 @@ sub pipeline_rna {
     use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
     use MIP::Recipes::Build::Rna qw{build_rna_meta_files};
-
-    ## Copy information about the infiles to file_info hash
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-        $file_info_href->{$sample_id}{mip_infiles} = $infile_href->{$sample_id};
-        $file_info_href->{$sample_id}{mip_infiles_dir} =
-          $indir_path_href->{$sample_id};
-    }
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});

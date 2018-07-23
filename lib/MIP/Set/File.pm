@@ -325,29 +325,27 @@ sub set_file_suffix {
 
 sub set_infiles {
 
-## Function : Set the infile features i.e. dir and files
+## Function : Set the infile features i.e. dir and infiles
 ## Returns  :
-## Arguments: $indir_path_href  => Indirectories path(s) hash {REF}
+## Arguments: $file_info_href   => File info hash {REF}
 ##          : $infile_directory => Infile directory
 ##          : $infiles_ref      => Infiles to check {REF}
-##          : $infile_href      => Infiles hash {REF}
 ##          : $sample_id        => Sample id
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $indir_path_href;
+    my $file_info_href;
     my $infiles_ref;
     my $infile_directory;
-    my $infile_href;
     my $sample_id;
 
     my $tmpl = {
-        indir_path_href => {
+        file_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$indir_path_href,
+            store       => \$file_info_href,
             strict_type => 1,
         },
         infiles_ref => {
@@ -363,13 +361,6 @@ sub set_infiles {
             store       => \$infile_directory,
             strict_type => 1,
         },
-        infile_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_href,
-            strict_type => 1,
-        },
         sample_id => {
             defined     => 1,
             required    => 1,
@@ -381,10 +372,10 @@ sub set_infiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Set inputdir path hash
-    $indir_path_href->{$sample_id} = $infile_directory;
+    $file_info_href->{$sample_id}{mip_infiles_dir} = $infile_directory;
 
-    ## Set infiles hash
-    $infile_href->{$sample_id} = [ @{$infiles_ref} ];
+    ## Set infiles in hash
+    $file_info_href->{$sample_id}{mip_infiles} = [ @{$infiles_ref} ];
     return;
 }
 
