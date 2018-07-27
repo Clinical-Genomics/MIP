@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rare_disease_meta_files };
@@ -34,46 +34,31 @@ sub build_rare_disease_meta_files {
 
 ## Function : Pipeline recipe for wgs data analysis.
 ## Returns  :
-
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $log                     => Log object to write to
+##          : $parameter_href          => Parameter hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
+    my $parameter_href;
+    my $sample_info_href;
 
     my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
         active_parameter_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
             strict_type => 1,
         },
         file_info_href => {
@@ -102,6 +87,20 @@ sub build_rare_disease_meta_files {
             required => 1,
             store    => \$log,
         },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -122,23 +121,20 @@ sub build_rare_disease_meta_files {
 
         next PROGRAM if ( not $active_parameter_href->{$program_name} );
 
-        ## Remove initial "p" from program_name
-        substr $program_name, 0, 1, $EMPTY_STR;
-
         check_capture_file_prerequisites(
             {
-                parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
                 infile_list_suffix => $file_info_href->{exome_target_bed}[0],
+                job_id_href        => $job_id_href,
+                log                => $log,
                 padded_infile_list_suffix =>
                   $file_info_href->{exome_target_bed}[1],
                 padded_interval_list_suffix =>
                   $file_info_href->{exome_target_bed}[2],
-                program_name => $program_name,
-                log          => $log,
+                parameter_href   => $parameter_href,
+                program_name     => $program_name,
+                sample_info_href => $sample_info_href,
             }
         );
     }
@@ -153,59 +149,50 @@ sub build_rare_disease_meta_files {
 
         next PROGRAM if ( not $active_parameter_href->{$program_name} );
 
-        ## Remove initial "p" from program_name
-        substr $program_name, 0, 1, $EMPTY_STR;
-
         my $is_finished = check_human_genome_prerequisites(
             {
-                parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
                 file_info_href          => $file_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
-                program_name            => $program_name,
                 log                     => $log,
+                parameter_href          => $parameter_href,
+                sample_info_href        => $sample_info_href,
+                program_name            => $program_name,
             }
         );
         last PROGRAM if ($is_finished);
     }
 
-## Check Rtg build prerequisites
+    my %build_recipe = (
+        bwa_mem     => \&check_bwa_prerequisites,
+        rtg_vcfeval => \&check_rtg_prerequisites,
+    );
 
-    if ( $active_parameter_href->{rtg_vcfeval} ) {
+    my %program_build_name = (
+        bwa_mem     => q{bwa_build_reference},
+        rtg_vcfeval => q{rtg_vcfeval_reference_genome},
+    );
 
-        check_rtg_prerequisites(
+  PROGRAM:
+    foreach my $program ( keys %build_recipe ) {
+
+        next if ( not $active_parameter_href->{$program} );
+
+        $build_recipe{$program}->(
             {
-                parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
                 file_info_href          => $file_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
-                program_name            => q{rtg_vcfeval},
-                parameter_build_name    => q{rtg_vcfeval_reference_genome},
+                parameter_build_name    => $program_build_name{$program},
+                parameter_href          => $parameter_href,
+                program_name            => $program,
+                sample_info_href        => $sample_info_href,
             }
         );
     }
 
-## Check BWA build prerequisites
-
-    if ( $active_parameter_href->{bwa_mem} ) {
-
-        check_bwa_prerequisites(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{bwa_mem},
-                parameter_build_name    => q{bwa_build_reference},
-            }
-        );
-    }
     $log->info( $TAB . q{Reference check: Reference prerequisites checked} );
 
 ## Check if vt has processed references, if not try to reprocesses them before launcing modules
@@ -216,12 +203,12 @@ sub build_rare_disease_meta_files {
 
         my @to_process_references = check_references_for_vt(
             {
-                parameter_href        => $parameter_href,
                 active_parameter_href => $active_parameter_href,
+                log                   => $log,
+                parameter_href        => $parameter_href,
                 vt_references_ref =>
                   \@{ $active_parameter_href->{decompose_normalize_references}
                   },
-                log => $log,
             }
         );
 
@@ -234,14 +221,14 @@ sub build_rare_disease_meta_files {
             ## Split multi allelic records into single records and normalize
             analysis_vt_core(
                 {
-                    parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
+                    decompose               => 1,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
                     infile_path             => $reference_file_path,
-                    program_directory       => q{vt},
-                    decompose               => 1,
                     normalize               => 1,
+                    parameter_href          => $parameter_href,
+                    program_directory       => q{vt},
                 }
             );
         }

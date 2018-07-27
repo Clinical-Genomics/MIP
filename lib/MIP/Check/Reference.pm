@@ -489,7 +489,7 @@ sub check_human_genome_prerequisites {
         || $file_info_href->{human_genome_compressed} eq q{compressed} )
     {
 
-        ## Creates the humanGenomePreRequisites using active_parameters{human_genome_reference} as reference.
+        ## Creates the humangenomeprerequisites using active_parameters{human_genome_reference} as reference
         build_human_genome_prerequisites(
             {
                 active_parameter_href   => $active_parameter_href,

@@ -1,18 +1,18 @@
 package MIP::Recipes::Build::Human_genome_prerequisites;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,14 +21,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_human_genome_prerequisites };
 
 }
 
-##Constants
+## Constants
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -37,113 +37,113 @@ sub build_human_genome_prerequisites {
 
 ## Function : Creates the human genome prerequisites using active_parameters{human_genome_reference} as reference.
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $family_id               => Family ID
+##          : $FILEHANDLE              => Filehandle to write to. A new sbatch script will be generated if $FILEHANDLE is lacking, else write to exising $FILEHANDLE {Optional}
 ##          : $file_info_href          => File info hash {REF}
+##          : $human_genome_reference  => Human genome reference
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $program_name            => Program under evaluation
-##          : $FILEHANDLE              => Filehandle to write to. A new sbatch script will be generated if $FILEHANDLE is lacking, else write to exising $FILEHANDLE {Optional}
 ##          : $log                     => Log object
-##          : $random_integer          => The random integer to create temporary file name
-##          : $family_id               => Family ID
-##          : $reference_dir           => MIP reference directory
 ##          : $outaligner_dir          => The outaligner_dir used in the analysis
-##          : $human_genome_reference  => Human genome reference
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program under evaluation
+##          : $random_integer          => The random integer to create temporary file name
+##          : $reference_dir           => MIP reference directory
+##          : $sample_info_href        => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
+    my $FILEHANDLE;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $program_name;
-    my $FILEHANDLE;
     my $log;
+    my $parameter_href;
+    my $program_name;
     my $random_integer;
+    my $sample_info_href;
 
     ## Default(s)
     my $family_id;
-    my $reference_dir;
-    my $outaligner_dir;
     my $human_genome_reference;
+    my $outaligner_dir;
+    my $reference_dir;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$sample_info_href,
         },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        FILEHANDLE     => { store       => \$FILEHANDLE, },
-        log            => { store       => \$log },
-        random_integer => { strict_type => 1, store => \$random_integer, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
-        },
-        reference_dir => {
-            default     => $arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$reference_dir,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+        FILEHANDLE     => { store => \$FILEHANDLE, },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$outaligner_dir,
         },
         human_genome_reference => {
             default =>
               $arg_href->{active_parameter_href}{human_genome_reference},
-            strict_type => 1,
             store       => \$human_genome_reference,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        log            => { store => \$log, },
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        random_integer => { store => \$random_integer, strict_type => 1, },
+        reference_dir  => {
+            default     => $arg_href->{active_parameter_href}{reference_dir},
+            store       => \$reference_dir,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
         },
     };
 
@@ -168,7 +168,7 @@ sub build_human_genome_prerequisites {
     my $submit_switch;
 
     ## Alias
-    my $mip_program_mode = $active_parameter_href->{ q{p} . $program_name };
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## No supplied FILEHANDLE i.e. create new sbatch script
     if ( not defined $FILEHANDLE ) {
@@ -226,19 +226,19 @@ sub build_human_genome_prerequisites {
 
         check_capture_file_prerequisites(
             {
-                parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
+                FILEHANDLE              => $FILEHANDLE,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
                 infile_list_suffix => $file_info_href->{exome_target_bed}[0],
+                job_id_href        => $job_id_href,
+                log                => $log,
                 padded_infile_list_suffix =>
                   $file_info_href->{exome_target_bed}[1],
                 padded_interval_list_suffix =>
                   $file_info_href->{exome_target_bed}[2],
-                program_name => $program_name,
-                FILEHANDLE   => $FILEHANDLE,
-                log          => $log,
+                parameter_href   => $parameter_href,
+                program_name     => $program_name,
+                sample_info_href => $sample_info_href,
             }
         );
     }
@@ -265,21 +265,21 @@ sub build_human_genome_prerequisites {
 
                 picardtools_createsequencedictionary(
                     {
-                        FILEHANDLE        => $FILEHANDLE,
-                        memory_allocation => q{Xmx2g},
-                        java_use_large_pages =>
-                          $active_parameter_href->{java_use_large_pages},
-                        temp_directory =>
-                          $active_parameter_href->{temp_directory},
-                        java_jar => catfile(
+                        FILEHANDLE => $FILEHANDLE,
+                        java_jar   => catfile(
                             $active_parameter_href->{picardtools_path},
                             q{picard.jar}
                         ),
-                        referencefile_path => $human_genome_reference,
-                        outfile_path       => $filename_prefix
+                        java_use_large_pages =>
+                          $active_parameter_href->{java_use_large_pages},
+                        memory_allocation => q{Xmx2g},
+                        outfile_path      => $filename_prefix
                           . $UNDERSCORE
                           . $random_integer
                           . $file_ending,
+                        referencefile_path => $human_genome_reference,
+                        temp_directory =>
+                          $active_parameter_href->{temp_directory},
                     }
                 );
                 say {$FILEHANDLE} $NEWLINE;
@@ -315,19 +315,19 @@ sub build_human_genome_prerequisites {
                 say {$FILEHANDLE} q{## Fai file from reference};
                 gnu_ln(
                     {
+                        FILEHANDLE  => $FILEHANDLE,
                         force       => 1,
+                        link_path   => $human_genome_reference_temp_file,
                         symbolic    => 1,
                         target_path => $human_genome_reference,
-                        link_path   => $human_genome_reference_temp_file,
-                        FILEHANDLE  => $FILEHANDLE,
                     }
                 );
                 say {$FILEHANDLE} $NEWLINE;
 
                 samtools_faidx(
                     {
-                        infile_path => $human_genome_reference_temp_file,
                         FILEHANDLE  => $FILEHANDLE,
+                        infile_path => $human_genome_reference_temp_file,
                     }
                 );
                 say {$FILEHANDLE} $NEWLINE;
@@ -348,9 +348,9 @@ sub build_human_genome_prerequisites {
                 ## Remove soft link
                 gnu_rm(
                     {
-                        infile_path => $human_genome_reference_temp_file,
-                        force       => 1,
                         FILEHANDLE  => $FILEHANDLE,
+                        force       => 1,
+                        infile_path => $human_genome_reference_temp_file,
                     }
                 );
                 say {$FILEHANDLE} $NEWLINE;
@@ -366,17 +366,17 @@ sub build_human_genome_prerequisites {
 
         close $FILEHANDLE;
 
-        if ( $mip_program_mode == 1 ) {
+        if ( $program_mode == 1 ) {
 
             slurm_submit_job_no_dependency_add_to_samples(
                 {
+                    family_id   => $family_id,
                     job_id_href => $job_id_href,
+                    log         => $log,
+                    path        => q{MAIN},
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $family_id,
-                    path             => q{MAIN},
                     sbatch_file_name => $file_path,
-                    log              => $log,
                 }
             );
         }
