@@ -34,6 +34,7 @@ $VERBOSE = test_standard_cli(
 
 ## Constants
 Readonly my $COMMA => q{,};
+Readonly my $COLON => q{:};
 Readonly my $SPACE => q{ };
 
 BEGIN {
@@ -42,16 +43,18 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
-			q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
+    my %perl_module = (
+        q{MIP::Language::Shell} => [qw{ clear_trap }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Language::Shell qw{ clear_trap };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test clear_trap from SHELL.pm v}
+      . $MIP::Language::Shell::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,11 +62,34 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given
+# Create anonymous filehandle
+my $FILEHANDLE = IO::Handle->new();
 
-## Then
-########################
-#### YOUR TEST HERE ####
-########################
+# For storing info to write
+my $file_content;
+
+## Store file content in memory by using referenced variable
+open $FILEHANDLE, q{>}, \$file_content
+  or croak q{Cannot write to}
+  . $SPACE
+  . $file_content
+  . $COLON
+  . $SPACE
+  . $OS_ERROR;
+
+## Given a filehandle
+clear_trap( { FILEHANDLE => $FILEHANDLE } );
+
+# Close the filehandle
+close $FILEHANDLE;
+
+## Then trap comment and trap should be written to file
+my ($clear_trap_command) = $file_content =~ /^(## Clear trap)/ms;
+
+ok( $clear_trap_command, q{Wrote clear trap title} );
+
+my ($trap_command) = $file_content =~ /^(trap\s+['-'])/mxs;
+
+ok( $trap_command, q{Wrote trap command} );
 
 done_testing();

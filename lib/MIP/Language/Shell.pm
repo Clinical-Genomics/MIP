@@ -1,20 +1,19 @@
 package MIP::Language::Shell;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
 use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
+use charnames qw{ :full :short };
 use Cwd;
+use English qw{ -no_match_vars };
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catfile catdir devnull };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use Readonly;
@@ -29,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ create_bash_file build_shebang
@@ -491,8 +490,8 @@ sub enable_trap {
 ## Function : Enable trap function with trap signal(s).
 ## Returns  :
 ## Arguments: $FILEHANDLE         => The FILEHANDLE to write to
-##          : $trap_signals_ref   => Array with signals to enable trap for {REF}
 ##          : $trap_function_call => The trap function argument
+##          : $trap_signals_ref   => Array with signals to enable trap for {REF}
 
     my ($arg_href) = @_;
 
@@ -500,20 +499,20 @@ sub enable_trap {
     my $FILEHANDLE;
 
     ## Default(s)
-    my $trap_signals_ref;
     my $trap_function_call;
+    my $trap_signals_ref;
 
     my $tmpl = {
-        FILEHANDLE       => { required => 1, store => \$FILEHANDLE, },
-        trap_signals_ref => {
-            default     => [qw{ ERR }],
-            strict_type => 1,
-            store       => \$trap_signals_ref,
-        },
+        FILEHANDLE         => { required => 1, store => \$FILEHANDLE, },
         trap_function_call => {
             default     => q{error},
-            strict_type => 1,
             store       => \$trap_function_call,
+            strict_type => 1,
+        },
+        trap_signals_ref => {
+            default     => [qw{ ERR }],
+            store       => \$trap_signals_ref,
+            strict_type => 1,
         },
     };
 
