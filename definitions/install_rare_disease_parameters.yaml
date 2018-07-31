@@ -14,7 +14,7 @@ disable_env_check: 0
 
 # MIP main environment spec 
 emip:
-  bioconda:
+  conda:
     bcftools: 1.6
     bedtools: 2.26.0
     bwa: 0.7.15
@@ -33,18 +33,17 @@ emip:
     numpy: 
     peddy: 0.3.1
     picard: 2.14.1
+    pip:
     plink2: 1.90b3.35
+    python: 2.7
     rtg-tools: 3.8.4
     sambamba: 0.6.6
     samtools: 1.6
     snpeff: 4.3.1
     snpsift: 4.3.1
-    #svdb: 1.0.7
+    #svdb: 1.1.2
     vcfanno: 0.1.0
     vt: 2015.11.10
-  conda:
-    pip:
-    python: 2.7
   pip:
   shell:
     bedtools:
@@ -66,9 +65,9 @@ emip:
       snpeff_genome_versions:
         - GRCh37.75
         - GRCh38.86
-      version: v4_3s
+      version: v4_3t
     svdb:
-      version: 1.1.0
+      version: 1.1.2
     tiddit:
       version: 2.2.1
     vcf2cytosure:
@@ -78,13 +77,12 @@ emip:
 
 # CNVnator environment spec
 ecnvnator:
-  bioconda:
+  conda:
     bcftools: 1.6
     gcc: 4.8.5
-    samtools: 1.6
-  conda:
     pip:
     python: 2.7
+    samtools: 1.6
   pip:
   shell:
     cnvnator:
@@ -93,10 +91,9 @@ ecnvnator:
 
 # Peddy environment spec
 epeddy:
-  bioconda:
+  conda:
     bcftools: 1.6
     peddy: 0.3.1
-  conda:
     pip: 
     python: 2.7
   pip:
@@ -104,11 +101,10 @@ epeddy:
 
 # Python 3 environment spec
 epy3:
-  bioconda:
-    sambamba: 0.6.6 
   conda:
-    pip:
-    python: 3.6
+    pip: 
+    python: 2.7
+    sambamba: 0.6.6 
   pip:
     chanjo: 4.2.0
     genmod: 3.7.2
@@ -117,35 +113,11 @@ epy3:
   shell:
     sambamba: 0.6.1
 
-# SVDB environment spec
-esvdb:
-  bioconda:
-    bcftools: 1.6
-    cython:
-    htslib: 1.6
-    numpy:
-    picard: 2.14.1
-    #svdb: 1.0.7
-    vcfanno: 0.1.0
-    vt: 2015.11.10
-  conda:
-    pip:
-    python: 2.7
-  pip:
-  shell:
-    picard:
-      version: 2.3.0
-    svdb:
-      version: 1.1.0
-    vt:
-      version: gitRepo
-
 # VEP environment spec
 evep:
-  bioconda:
+  conda:
     bcftools: 1.6
     htslib: 1.6
-  conda:
     pip: 
     python: 2.7
   pip:
@@ -159,7 +131,7 @@ evep:
       vep_plugins:
         - LoFtool
         - MaxEntScan
-      version: 92
+      version: 93
 
 # Specify environment names
 environment_name:
@@ -168,14 +140,14 @@ environment_name:
   epeddy:
   epy3:
   esvdb:
-  evep:
+  #evep:
 
 # Environments to install
 installations:
   - emip
   - epeddy
   - epy3
-  - esvdb
+  #- esvdb
   - evep
   - ecnvnator
 

@@ -130,7 +130,6 @@ This will generate a batch script called "mip.sh" in your working directory.
   * MIP_cnvnator
   * MIP_peddy
   * MIP_py3
-  * MIP_svdb
   * MIP_vep
 
 It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.
@@ -158,7 +157,7 @@ $ perl t/mip_analyse_rare_disease.test
 ```
 
 ###### When setting up your analysis config file
-  In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator, SVDB and VEP in each own, with some extra initialization:
+  In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator and VEP in each own, with some extra initialization:
 
   ```Yml
   program_source_environment_command:
@@ -196,10 +195,6 @@ $ perl t/mip_analyse_rare_disease.test
      - source
      - activate
      - MIP_py3
-    sv_combinevariantcallsets:
-     - source
-     - activate
-     - MIP_svdb
     sv_varianteffectpredictor:
      - LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH;
      - export

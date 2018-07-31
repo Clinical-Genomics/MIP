@@ -14,8 +14,10 @@ disable_env_check: 0
 
 # MIP main environment spec
 emip: 
-  bioconda:
+  conda:
     bcftools: 1.8
+    bioconductor-deseq2:
+    bioconductor-tximport:
     cufflinks: 2.2
     fastqc: 0.11.4
     gatk: 3.8
@@ -23,18 +25,15 @@ emip:
     java-jdk:
     numpy:
     picard: 2.18
+    pip:
+    python: 2.7
+    r-optparse:
+    r-readr:
     salmon: 0.9.1
     sambamba:
     samtools: 1.8
     scipy:
     star: 2.5.4a
-    bioconductor-deseq2:
-    bioconductor-tximport:
-    r-readr:
-    r-optparse:
-  conda:
-    python: 2.7
-    pip:
   shell:
     bootstrapann:
       version: git
