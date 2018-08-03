@@ -41,7 +41,7 @@ emip:
     samtools: 1.6
     snpeff: 4.3.1
     snpsift: 4.3.1
-    #svdb: 1.1.2
+    svdb: 1.1.2
     vcfanno: 0.1.0
     vt: 2015.11.10
   pip:
@@ -139,15 +139,13 @@ environment_name:
   ecnvnator:
   epeddy:
   epy3:
-  esvdb:
-  #evep:
+  evep:
 
 # Environments to install
 installations:
   - emip
   - epeddy
   - epy3
-  #- esvdb
   - evep
   - ecnvnator
 
