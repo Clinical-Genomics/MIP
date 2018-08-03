@@ -185,6 +185,7 @@ sub build_rare_disease_meta_files {
                 file_info_href          => $file_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
+                log                     => $log,
                 parameter_build_name    => $program_build_name{$program},
                 parameter_href          => $parameter_href,
                 program_name            => $program,

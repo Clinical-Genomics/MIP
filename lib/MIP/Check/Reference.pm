@@ -49,6 +49,7 @@ sub check_bwa_prerequisites {
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
+##          : $log                     => Log object
 ##          : $parameter_build_name    => File info build key parameter name
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
@@ -61,6 +62,7 @@ sub check_bwa_prerequisites {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
+    my $log;
     my $parameter_build_name;
     my $parameter_href;
     my $program_name;
@@ -95,6 +97,11 @@ sub check_bwa_prerequisites {
             store       => \$job_id_href,
             strict_type => 1,
         },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
         parameter_build_name => {
             defined     => 1,
             required    => 1,
@@ -127,7 +134,7 @@ sub check_bwa_prerequisites {
 
     use MIP::Recipes::Build::Bwa_prerequisites qw{ build_bwa_prerequisites };
 
-    if ( $parameter_href->{bwa_build_reference}{build_file} == 1 ) {
+    if ( $parameter_href->{$parameter_build_name}{build_file} == 1 ) {
 
         build_bwa_prerequisites(
             {
@@ -137,6 +144,7 @@ sub check_bwa_prerequisites {
                 file_info_href          => $file_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
+                log                     => $log,
                 parameter_href          => $parameter_href,
                 program_name            => $program_name,
                 sample_info_href        => $sample_info_href,
@@ -939,7 +947,8 @@ sub check_rtg_prerequisites {
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $parameter_build_name          => File info build key parameter name
+##          : $log                     => Log object to write to
+##          : $parameter_build_name    => File info build key parameter name
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -951,6 +960,7 @@ sub check_rtg_prerequisites {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
+    my $log;
     my $parameter_build_name;
     my $parameter_href;
     my $program_name;
@@ -984,6 +994,11 @@ sub check_rtg_prerequisites {
             required    => 1,
             store       => \$job_id_href,
             strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
         },
         parameter_build_name => {
             defined     => 1,

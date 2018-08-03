@@ -44,6 +44,7 @@ sub build_bwa_prerequisites {
 ##          : $human_genome_reference               => Human genome reference
 ##          : $infile_lane_prefix_href              => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                          => Job id hash {REF}
+##          : $log                                  => Log object
 ##          : $parameter_href                       => Parameter hash {REF}
 ##          : $program_name                         => Program name
 ##          : $outaligner_dir                       => Outaligner_dir used in the analysis
@@ -58,6 +59,7 @@ sub build_bwa_prerequisites {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
+    my $log;
     my $parameter_href;
     my $program_name;
     my $sample_info_href;
@@ -115,6 +117,11 @@ sub build_bwa_prerequisites {
             store       => \$job_id_href,
             strict_type => 1,
         },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -160,9 +167,6 @@ sub build_bwa_prerequisites {
     ## Constants
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
     Readonly my $PROCESSING_TIME   => 3;
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};

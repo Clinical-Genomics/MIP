@@ -17,7 +17,7 @@ open $FILEHANDLE, q{>}, \$file_content
     . $OS_ERROR;
 
 # Close the filehandle
-    close $FILEHANDLE;
+close $FILEHANDLE;
 ```
 
 Then you can use this as variable to access the content of the file, for instance:

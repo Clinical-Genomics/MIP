@@ -73,10 +73,10 @@ my $test_dir = File::Temp->newdir();
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
 
-my $directory_id      = q{family_1};
 my $call_type         = q{both};
-my $test_program_name = q{bwa_mem};
+my $directory_id      = q{family_1};
 my $temp_dir          = catfile($test_dir);
+my $test_program_name = q{bwa_mem};
 
 my %active_parameter = (
     bash_set_errexit                => 1,
