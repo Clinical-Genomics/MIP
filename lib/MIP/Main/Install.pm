@@ -38,7 +38,7 @@ use MIP::Recipes::Install::Blobfish qw{ install_blobfish };
 use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
 use MIP::Recipes::Install::Cnvnator qw{ install_cnvnator };
 use MIP::Recipes::Install::Conda
-  qw{ check_conda_installation setup_conda_env install_bioconda_packages };
+  qw{ check_conda_installation install_conda_packages };
 use MIP::Recipes::Install::Expansionhunter qw{ install_expansionhunter };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
@@ -59,7 +59,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.2.6};
+    our $VERSION = q{1.2.7};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -199,26 +199,14 @@ sub mip_install {
             }
         );
 
-        ## Seting up conda environment and installing default packages
-        setup_conda_env(
+        ## Installing Conda packages
+        install_conda_packages(
             {
+                conda_env      => $parameter{environment_name}{$installation},
+                conda_env_path => $parameter{$installation}{conda_prefix_path},
                 conda_packages_href => $parameter{$installation}{conda},
-                conda_env      => $parameter{environment_name}{$installation},
-                conda_env_path => $parameter{$installation}{conda_prefix_path},
-                FILEHANDLE     => $FILEHANDLE,
-                conda_update   => $parameter{conda_update},
-                quiet          => $parameter{quiet},
-                verbose        => $parameter{verbose},
-            }
-        );
-
-        ## Installing bioconda packages
-        install_bioconda_packages(
-            {
-                bioconda_packages_href => $parameter{$installation}{bioconda},
-                conda_env      => $parameter{environment_name}{$installation},
-                conda_env_path => $parameter{$installation}{conda_prefix_path},
-                FILEHANDLE     => $FILEHANDLE,
+                conda_update        => $parameter{conda_update},
+                FILEHANDLE          => $FILEHANDLE,
                 snpeff_genome_versions_ref =>
                   $parameter{$installation}{shell}{snpeff}
                   {snpeff_genome_versions},
@@ -304,7 +292,6 @@ sub mip_install {
         ## Add final message to FILEHANDLE
         display_final_message(
             {
-                bioconda_programs_href => $parameter{$installation}{bioconda},
                 conda_env_name => $parameter{environment_name}{$installation},
                 conda_programs_href => $parameter{$installation}{conda},
                 FILEHANDLE          => $FILEHANDLE,
@@ -369,7 +356,7 @@ sub get_programs_for_installation {
     use MIP::Check::Installation qw{ check_python_compability };
 
     ## Set install modes to loop over
-    my @install_modes = qw{ bioconda conda pip shell };
+    my @install_modes = qw{ conda pip shell };
 
     ## Remove selected programs from installation and gather the rest in an array
     my @programs;
@@ -406,7 +393,7 @@ sub get_programs_for_installation {
         peddy        => [qw{ bcftools }],
         picard       => [qw{ java-jdk }],
         star_fusion  => [qw{ star }],
-        svdb         => [qw{ bcftools htslib numpy picard vcfanno vt }],
+        svdb         => [qw{ bcftools cython htslib numpy picard vcfanno vt }],
         tiddit       => [qw{ cmake numpy scikit-learn }],
         vep          => [qw{ bcftools htslib }],
     );
@@ -453,7 +440,7 @@ q{Please select a single installation environment when using the option select_p
 
     my @shell_programs_to_install = get_programs_for_shell_installation(
         {
-            conda_programs_href => $parameter_href->{$installation}{bioconda},
+            conda_programs_href => $parameter_href->{$installation}{conda},
             log                 => $log,
             prefer_shell        => $parameter_href->{prefer_shell},
             shell_install_programs_ref => $parameter_href->{shell_install},
@@ -461,13 +448,13 @@ q{Please select a single installation environment when using the option select_p
         }
     );
 
-    ## Removing the bioconda packages that has been selected to be installed via SHELL
-    delete @{ $parameter_href->{$installation}{bioconda} }
+    ## Removing the conda packages that has been selected to be installed via SHELL
+    delete @{ $parameter_href->{$installation}{conda} }
       {@shell_programs_to_install};
     ## Special case for snpsift since it is installed together with SnpEff
     ## if shell installation of SnpEff has been requested.
     if ( any { $_ eq q{snpeff} } @shell_programs_to_install ) {
-        delete $parameter_href->{$installation}{bioconda}{snpsift};
+        delete $parameter_href->{$installation}{conda}{snpsift};
     }
     $parameter_href->{$installation}{shell_programs_to_install} =
       [@shell_programs_to_install];
@@ -479,7 +466,7 @@ sub display_final_message {
 
 ## Function : Displays a final message to the user at the end of the installation process
 ## Returns  :
-## Arguments: $bioconda_programs_href => Hash with bioconda programs {REF}
+## Arguments: $conda_programs_href => Hash with conda programs {REF}
 ##          : $conda_env_name         => Name of conda environment
 ##          : $conda_programs_href    => Hash with conda programs {REF}
 ##          : pip_programs_href       => Hash with pip programs {REF}
@@ -488,7 +475,6 @@ sub display_final_message {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $bioconda_programs_href;
     my $conda_env_name;
     my $conda_programs_href;
     my $FILEHANDLE;
@@ -496,10 +482,6 @@ sub display_final_message {
     my $shell_programs_ref;
 
     my $tmpl = {
-        bioconda_programs_href => {
-            default => {},
-            store   => \$bioconda_programs_href,
-        },
         conda_env_name => {
             store => \$conda_env_name,
         },
@@ -526,7 +508,6 @@ sub display_final_message {
 
     ## Get the programs that mip has tried to install
     my @programs_to_install = unique(
-        keys %{$bioconda_programs_href},
         keys %{$conda_programs_href},
         keys %{$pip_programs_href},
         @{$shell_programs_ref},

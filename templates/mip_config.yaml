@@ -108,7 +108,7 @@ delly_reformat: 1
 endvariantannotationblock: 1
 evaluation: 1
 fastqc: 1
-freebayes: 1
+freebayes: 0
 frequency_filter: 1
 gatk_baserecalibration: 1
 gatk_combinevariantcallsets: 1
@@ -148,7 +148,7 @@ vt: 1
 qccollect: 1
 ## Parameters
 frequency_genmod_filter: 1
-gatk_combinevariants_prioritize_caller: gatk,bcftools,freebayes
+gatk_combinevariants_prioritize_caller: gatk,bcftools
 gatk_concatenate_genotypegvcfs_bcf_file: 1
 gatk_path: cluster_constant_path!
 gatk_baserecalibration_disable_indel_qual: 1
