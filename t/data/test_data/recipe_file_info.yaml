@@ -1,0 +1,10 @@
+---
+bwa_build_reference:
+  - .bwt
+  - .ann
+  - .amb
+  - .pac
+  - .sa
+human_genome_compressed: not_compressed
+human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
+

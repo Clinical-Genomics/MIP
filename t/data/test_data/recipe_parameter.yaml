@@ -1,0 +1,8 @@
+---
+bwa_build_reference:
+  build_file: 1
+bwa_mem:
+  chain: TEST
+human_genome_reference:
+  build_file: 0
+
