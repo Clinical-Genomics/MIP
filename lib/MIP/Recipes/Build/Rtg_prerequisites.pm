@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rtg_prerequisites };
@@ -37,18 +37,19 @@ sub build_rtg_prerequisites {
 
 ## Function : Creates the Rtg prerequisites for the human genome
 ## Returns  :
-## Arguments: $active_parameter_href      => Active parameters for this analysis hash {REF}
-##          : $family_id                  => Family id
-##          : $file_info_href             => File info hash {REF}
-##          : $human_genome_reference     => Human genome reference
-##          : $infile_lane_prefix_href    => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                => Job id hash {REF}
-##          : $outaligner_dir             => Outaligner_dir used in the analysis
-##          : $parameter_href             => Parameter hash {REF}
-##          : $program_name               => Program name
-##          : $rtg_directory_suffixes_ref => The rtg reference associated directory suffixes {REF}
-##          : $sample_info_href           => Info on samples and family hash {REF}
-##          : $temp_directory             => Temporary directory
+## Arguments: $active_parameter_href        => Active parameters for this analysis hash {REF}
+##          : $family_id                    => Family id
+##          : $file_info_href               => File info hash {REF}
+##          : $human_genome_reference       => Human genome reference
+##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
+##          : $job_id_href                  => Job id hash {REF}
+##          : $log                          => Log object
+##          : $outaligner_dir               => Outaligner_dir used in the analysis
+##          : $parameter_href               => Parameter hash {REF}
+##          : $program_name                 => Program name
+##          : $parameter_build_suffixes_ref => The rtg reference associated directory suffixes {REF}
+##          : $sample_info_href             => Info on samples and family hash {REF}
+##          : $temp_directory               => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -57,9 +58,10 @@ sub build_rtg_prerequisites {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
+    my $log;
     my $parameter_href;
     my $program_name;
-    my $rtg_directory_suffixes_ref;
+    my $parameter_build_suffixes_ref;
     my $sample_info_href;
 
     ## Default(s)
@@ -108,6 +110,11 @@ sub build_rtg_prerequisites {
             store       => \$job_id_href,
             strict_type => 1,
         },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             store       => \$outaligner_dir,
@@ -126,11 +133,11 @@ sub build_rtg_prerequisites {
             store       => \$program_name,
             strict_type => 1,
         },
-        rtg_directory_suffixes_ref => {
+        parameter_build_suffixes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$rtg_directory_suffixes_ref,
+            store       => \$parameter_build_suffixes_ref,
             strict_type => 1,
         },
         sample_info_href => {
@@ -160,9 +167,6 @@ sub build_rtg_prerequisites {
     ## Constants
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
     Readonly my $PROCESSING_TIME   => 3;
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
@@ -230,7 +234,7 @@ sub build_rtg_prerequisites {
         say {$FILEHANDLE} $NEWLINE;
 
       PREREQ:
-        foreach my $suffix ( @{$rtg_directory_suffixes_ref} ) {
+        foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
 
             my $intended_file_path =
               $active_parameter_href->{rtg_vcfeval_reference_genome} . $suffix;

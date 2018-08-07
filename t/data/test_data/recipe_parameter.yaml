@@ -5,4 +5,5 @@ bwa_mem:
   chain: TEST
 human_genome_reference:
   build_file: 0
-
+rtg_vcfeval_reference_genome:
+  build_file: 1

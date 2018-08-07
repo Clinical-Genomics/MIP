@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_bwa_prerequisites };
@@ -37,29 +37,29 @@ sub build_bwa_prerequisites {
 
 ## Function : Creates the Bwa prerequisites
 ## Returns  :
-## Arguments: $active_parameter_href                => Active parameters for this analysis hash {REF}
-##          : $bwa_build_reference_file_endings_ref => The bwa reference associated file endings {REF}
-##          : $family_id                            => Family id
-##          : $file_info_href                       => File info hash {REF}
-##          : $human_genome_reference               => Human genome reference
-##          : $infile_lane_prefix_href              => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                          => Job id hash {REF}
-##          : $log                                  => Log object
-##          : $parameter_href                       => Parameter hash {REF}
-##          : $program_name                         => Program name
-##          : $outaligner_dir                       => Outaligner_dir used in the analysis
-##          : $sample_info_href                     => Info on samples and family hash {REF}
-##          : $temp_directory                       => Temporary directory
+## Arguments: $active_parameter_href        => Active parameters for this analysis hash {REF}
+##          : $family_id                    => Family id
+##          : $file_info_href               => File info hash {REF}
+##          : $human_genome_reference       => Human genome reference
+##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
+##          : $job_id_href                  => Job id hash {REF}
+##          : $log                          => Log object
+##          : $parameter_build_suffixes_ref => The bwa reference associated file endings {REF}
+##          : $parameter_href               => Parameter hash {REF}
+##          : $program_name                 => Program name
+##          : $outaligner_dir               => Outaligner_dir used in the analysis
+##          : $sample_info_href             => Info on samples and family hash {REF}
+##          : $temp_directory               => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $bwa_build_reference_file_endings_ref;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
+    my $parameter_build_suffixes_ref;
     my $parameter_href;
     my $program_name;
     my $sample_info_href;
@@ -76,13 +76,6 @@ sub build_bwa_prerequisites {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        bwa_build_reference_file_endings_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$bwa_build_reference_file_endings_ref,
             strict_type => 1,
         },
         family_id => {
@@ -121,6 +114,13 @@ sub build_bwa_prerequisites {
             defined  => 1,
             required => 1,
             store    => \$log,
+        },
+        parameter_build_suffixes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_build_suffixes_ref,
+            strict_type => 1,
         },
         parameter_href => {
             default     => {},
@@ -232,7 +232,7 @@ sub build_bwa_prerequisites {
         say {$FILEHANDLE} $NEWLINE;
 
       PREREQ_FILE:
-        foreach my $file ( @{$bwa_build_reference_file_endings_ref} ) {
+        foreach my $file ( @{$parameter_build_suffixes_ref} ) {
 
             my $intended_file_path = $human_genome_reference . $file;
             my $temporary_file_path =

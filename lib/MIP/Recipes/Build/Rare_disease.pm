@@ -165,8 +165,8 @@ sub build_rare_disease_meta_files {
     }
 
     my %build_recipe = (
-        bwa_mem     => \&check_bwa_prerequisites,
-        rtg_vcfeval => \&check_rtg_prerequisites,
+        bwa_mem     => \&build_bwa_prerequisites,
+        rtg_vcfeval => \&build_rtg_prerequisites,
     );
 
     my %program_build_name = (
@@ -177,7 +177,13 @@ sub build_rare_disease_meta_files {
   PROGRAM:
     foreach my $program ( keys %build_recipe ) {
 
-        next if ( not $active_parameter_href->{$program} );
+        ## Alias
+        my $parameter_build_name = $program_build_name{$program};
+
+        next PROGRAM if ( not $active_parameter_href->{$program} );
+
+        next PROGRAM
+          if ( not $parameter_href->{$parameter_build_name}{build_file} == 1 );
 
         $build_recipe{$program}->(
             {
@@ -186,10 +192,11 @@ sub build_rare_disease_meta_files {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                parameter_build_name    => $program_build_name{$program},
-                parameter_href          => $parameter_href,
-                program_name            => $program,
-                sample_info_href        => $sample_info_href,
+                parameter_build_suffixes_ref =>
+                  \@{ $file_info_href->{$parameter_build_name} },
+                parameter_href   => $parameter_href,
+                program_name     => $program,
+                sample_info_href => $sample_info_href,
             }
         );
     }
