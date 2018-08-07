@@ -109,8 +109,7 @@ sub build_rare_disease_meta_files {
       check_capture_file_prerequisites
       check_human_genome_prerequisites
       check_parameter_metafiles
-      check_references_for_vt
-      check_rtg_prerequisites };
+      check_references_for_vt };
     use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
     use MIP::Recipes::Build::Bwa_prerequisites qw{ build_bwa_prerequisites };
     use MIP::Recipes::Build::Rtg_prerequisites qw{ build_rtg_prerequisites };
