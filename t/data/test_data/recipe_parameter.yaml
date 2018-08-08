@@ -3,6 +3,8 @@ bwa_build_reference:
   build_file: 1
 bwa_mem:
   chain: TEST
+exome_target_bed:
+  build_file: 1
 human_genome_reference:
   build_file: 0
 rtg_vcfeval_reference_genome:

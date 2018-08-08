@@ -106,39 +106,14 @@ sub build_rare_disease_meta_files {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Reference qw{
-      check_capture_file_prerequisites
       check_human_genome_prerequisites
       check_parameter_metafiles
       check_references_for_vt };
     use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
     use MIP::Recipes::Build::Bwa_prerequisites qw{ build_bwa_prerequisites };
+    use MIP::Recipes::Build::Capture_file_prerequisites
+      qw{ build_capture_file_prerequisites };
     use MIP::Recipes::Build::Rtg_prerequisites qw{ build_rtg_prerequisites };
-
-## Check capture file prerequistes exists
-  PROGRAM:
-    foreach my $program_name (
-        @{ $parameter_href->{exome_target_bed}{associated_program} } )
-    {
-
-        next PROGRAM if ( not $active_parameter_href->{$program_name} );
-
-        check_capture_file_prerequisites(
-            {
-                active_parameter_href   => $active_parameter_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                infile_list_suffix => $file_info_href->{exome_target_bed}[0],
-                job_id_href        => $job_id_href,
-                log                => $log,
-                padded_infile_list_suffix =>
-                  $file_info_href->{exome_target_bed}[1],
-                padded_interval_list_suffix =>
-                  $file_info_href->{exome_target_bed}[2],
-                parameter_href   => $parameter_href,
-                program_name     => $program_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
-    }
 
 ## Check human genome prerequistes exists
   PROGRAM:
@@ -166,40 +141,43 @@ sub build_rare_disease_meta_files {
     }
 
     my %build_recipe = (
-        bwa_mem     => \&build_bwa_prerequisites,
-        rtg_vcfeval => \&build_rtg_prerequisites,
+        bwa_build_reference          => \&build_bwa_prerequisites,
+        exome_target_bed             => \&build_capture_file_prerequisites,
+        rtg_vcfeval_reference_genome => \&build_rtg_prerequisites,
     );
 
-    my %program_build_name = (
-        bwa_mem     => q{bwa_build_reference},
-        rtg_vcfeval => q{rtg_vcfeval_reference_genome},
-    );
+  BUILD_RECIPE:
+    foreach my $parameter_build_name ( keys %build_recipe ) {
 
-  PROGRAM:
-    foreach my $program ( keys %build_recipe ) {
+      PROGRAM:
+        foreach my $program (
+            @{ $parameter_href->{$parameter_build_name}{associated_program} } )
+        {
 
-        ## Alias
-        my $parameter_build_name = $program_build_name{$program};
+            next PROGRAM if ( not $active_parameter_href->{$program} );
 
-        next PROGRAM if ( not $active_parameter_href->{$program} );
+            next BUILD_RECIPE
+              if (
+                not $parameter_href->{$parameter_build_name}{build_file} == 1 );
 
-        next PROGRAM
-          if ( not $parameter_href->{$parameter_build_name}{build_file} == 1 );
+            $build_recipe{$parameter_build_name}->(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    log                     => $log,
+                    parameter_build_suffixes_ref =>
+                      \@{ $file_info_href->{$parameter_build_name} },
+                    parameter_href   => $parameter_href,
+                    program_name     => $program,
+                    sample_info_href => $sample_info_href,
+                }
+            );
 
-        $build_recipe{$program}->(
-            {
-                active_parameter_href   => $active_parameter_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
-                parameter_build_suffixes_ref =>
-                  \@{ $file_info_href->{$parameter_build_name} },
-                parameter_href   => $parameter_href,
-                program_name     => $program,
-                sample_info_href => $sample_info_href,
-            }
-        );
+            ## Build once for all associated programs
+            $parameter_href->{$parameter_build_name}{build_file} = 0;
+        }
     }
 
     $log->info( $TAB . q{Reference check: Reference prerequisites checked} );

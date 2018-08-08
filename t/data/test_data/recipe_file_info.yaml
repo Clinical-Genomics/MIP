@@ -5,6 +5,10 @@ bwa_build_reference:
   - .amb
   - .pac
   - .sa
+exome_target_bed:
+  - .infile_list
+  - .pad100.infile_list
+  - .pad100.interval_list
 human_genome_compressed: not_compressed
 human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
 rtg_vcfeval_reference_genome:

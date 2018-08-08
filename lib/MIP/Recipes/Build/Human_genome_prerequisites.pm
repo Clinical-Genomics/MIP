@@ -149,7 +149,6 @@ sub build_human_genome_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Reference qw{ check_capture_file_prerequisites };
     use MIP::Gnu::Coreutils qw{ gnu_rm gnu_ln };
     use MIP::Language::Java qw{ java_core };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
@@ -159,6 +158,8 @@ sub build_human_genome_prerequisites {
       qw{ picardtools_createsequencedictionary };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Recipes::Build::Capture_file_prerequisites
+      qw{ build_capture_file_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -222,27 +223,25 @@ sub build_human_genome_prerequisites {
         $file_info_href->{human_genome_compressed} = q{uncompressed};
     }
 
-    if ( exists $file_info_href->{exome_target_bed} ) {
+    if ( $parameter_href->{exome_target_bed}{build_file} == 1 ) {
 
-        check_capture_file_prerequisites(
+        build_capture_file_prerequisites(
             {
                 active_parameter_href   => $active_parameter_href,
                 FILEHANDLE              => $FILEHANDLE,
+                file_info_href          => $file_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                infile_list_suffix => $file_info_href->{exome_target_bed}[0],
-                job_id_href        => $job_id_href,
-                log                => $log,
-                padded_infile_list_suffix =>
-                  $file_info_href->{exome_target_bed}[1],
-                padded_interval_list_suffix =>
-                  $file_info_href->{exome_target_bed}[2],
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                parameter_build_suffixes_ref =>
+                  \@{ $file_info_href->{exome_target_bed} },
                 parameter_href   => $parameter_href,
                 program_name     => $program_name,
                 sample_info_href => $sample_info_href,
             }
         );
     }
-    if ( $parameter_href->{q{human_genome_reference}}{build_file} == 1 ) {
+    if ( $parameter_href->{human_genome_reference}{build_file} == 1 ) {
 
       FILE_ENDING:
         foreach my $file_ending (

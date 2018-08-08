@@ -24,15 +24,12 @@ BEGIN {
     our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_bwa_prerequisites
-      check_capture_file_prerequisites
-      check_human_genome_file_endings
+    our @EXPORT_OK = qw{ check_human_genome_file_endings
       check_human_genome_prerequisites
       check_if_processed_by_vt
       check_object_suffixes_to_build
       check_parameter_metafiles
-      check_references_for_vt
-      check_rtg_prerequisites };
+      check_references_for_vt };
 }
 
 ## Constants
@@ -40,134 +37,6 @@ Readonly my $DOT     => q{.};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 Readonly my $TAB     => qq{\t};
-
-sub check_capture_file_prerequisites {
-
-## Function : Check if capture file prerequisites needs to be built and initate process to build them if required
-## Returns  :
-## Arguments: $active_parameter_href       => Active parameters for this analysis hash {REF}
-##          : $FILEHANDLE                  => Filehandle to write to
-##          : $infile_lane_prefix_href     => Infile(s) without the ".ending" {REF}
-##          : $infile_list_suffix          => Infile list suffix
-##          : $job_id_href                 => Job id hash {REF}
-##          : $log                         => Log object
-##          : $padded_infile_list_suffix   => Padded infile list suffix
-##          : $padded_interval_list_suffix => Padded interval list suffix
-##          : $parameter_href              => Parameter hash {REF}
-##          : $program_name                => Program name
-##          : $sample_info_href            => Info on samples and family hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $FILEHANDLE;
-    my $infile_lane_prefix_href;
-    my $infile_list_suffix;
-    my $job_id_href;
-    my $log;
-    my $padded_infile_list_suffix;
-    my $padded_interval_list_suffix;
-    my $parameter_href;
-    my $program_name;
-    my $sample_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        FILEHANDLE              => { store => \$FILEHANDLE, },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        infile_list_suffix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_list_suffix,
-            strict_type => 1,
-        },
-        job_id_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$job_id_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        padded_infile_list_suffix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$padded_infile_list_suffix,
-            strict_type => 1,
-        },
-        padded_interval_list_suffix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$padded_interval_list_suffix,
-            strict_type => 1,
-        },
-        program_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$program_name,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Build::Capture_file_prerequisites
-      qw{ build_capture_file_prerequisites };
-
-    if ( $parameter_href->{exome_target_bed}{build_file} == 1 ) {
-
-        build_capture_file_prerequisites(
-            {
-                active_parameter_href       => $active_parameter_href,
-                FILEHANDLE                  => $FILEHANDLE,
-                infile_lane_prefix_href     => $infile_lane_prefix_href,
-                infile_list_suffix          => $infile_list_suffix,
-                job_id_href                 => $job_id_href,
-                log                         => $log,
-                padded_infile_list_suffix   => $padded_infile_list_suffix,
-                padded_interval_list_suffix => $padded_interval_list_suffix,
-                parameter_href              => $parameter_href,
-                program_name                => $program_name,
-                sample_info_href            => $sample_info_href,
-            }
-        );
-
-        ## Only build once for all modules and files
-        $parameter_href->{exome_target_bed}{build_file} = 0;
-    }
-    return;
-}
 
 sub check_human_genome_file_endings {
 
