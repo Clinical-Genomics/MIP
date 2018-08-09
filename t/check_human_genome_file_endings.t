@@ -136,7 +136,8 @@ set_human_genome_reference_features(
         file_info_href => \%file_info,
         human_genome_reference =>
           basename( $active_parameter{human_genome_reference} ),
-        log => $log,
+        log            => $log,
+        parameter_href => \%parameter,
     }
 );
 
