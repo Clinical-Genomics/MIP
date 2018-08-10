@@ -628,7 +628,7 @@ q{MIP cannot detect what version of human_genome_reference you have supplied.}
     if ( $file_info_href->{human_genome_compressed} ) {
 
         ## Set build file to one to allow for uncompression before analysis
-        $parameter_href->{human_genome_reference}{build_file} = 1;
+        $parameter_href->{human_genome_reference_file_endings}{build_file} = 1;
     }
     return;
 

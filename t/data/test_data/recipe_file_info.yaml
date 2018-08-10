@@ -11,5 +11,8 @@ exome_target_bed:
   - .pad100.interval_list
 human_genome_compressed: not_compressed
 human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
+human_genome_reference_file_endings:
+  - .dict
+  - .fai
 rtg_vcfeval_reference_genome:
   - _sdf_dir

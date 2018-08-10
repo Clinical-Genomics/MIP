@@ -134,7 +134,7 @@ is( $file_info{human_genome_reference_source}, q{GRCh}, q{GRCh source test} );
 is( $file_info{human_genome_reference_name_prefix},
     q{GRCh37_homo_sapiens_-d5-}, q{GRCh prefix test} );
 is( $file_info{human_genome_compressed}, 0, q{GRCh compressed test} );
-is( $parameter{human_genome_reference}{build_file},
+is( $parameter{human_genome_reference_file_endings}{build_file},
     undef, q{Did not set build file for compression } );
 
 ## Test Refseq genome
@@ -153,7 +153,7 @@ is( $file_info{human_genome_reference_source}, q{hg}, q{hg source test} );
 is( $file_info{human_genome_reference_name_prefix},
     q{hg19_homo_sapiens}, q{hg prefix test} );
 is( $file_info{human_genome_compressed}, 1, q{hg compressed test} );
-is( $parameter{human_genome_reference}{build_file},
+is( $parameter{human_genome_reference_file_endings}{build_file},
     1, q{Set build file for compression } );
 
 done_testing();

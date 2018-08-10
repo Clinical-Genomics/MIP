@@ -25,7 +25,6 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_human_genome_file_endings
-      check_human_genome_prerequisites
       check_if_processed_by_vt
       check_object_suffixes_to_build
       check_parameter_metafiles
@@ -160,116 +159,6 @@ sub check_human_genome_file_endings {
         );
     }
     return;
-}
-
-sub check_human_genome_prerequisites {
-
-## Function : Checks if the human genome prerequisites needs to be built and builds them if required
-## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $log                     => Log object
-##          : $program_name            => Program name
-##          : $parameter_href          => Parameter hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $log;
-    my $parameter_href;
-    my $program_name;
-    my $sample_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        job_id_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$job_id_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        program_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$program_name,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
-
-    ## Files assocaiated with human genome reference
-    if (   $parameter_href->{human_genome_reference}{build_file} == 1
-        || $file_info_href->{human_genome_compressed} eq q{compressed} )
-    {
-
-        ## Creates the humangenomeprerequisites using active_parameters{human_genome_reference} as reference
-        build_human_genome_prerequisites(
-            {
-                active_parameter_href   => $active_parameter_href,
-                family_id               => $active_parameter_href->{family_id},
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
-                outaligner_dir   => $active_parameter_href->{outaligner_dir},
-                parameter_href   => $parameter_href,
-                program_name     => $program_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
-    }
-    return 1;
 }
 
 sub check_if_processed_by_vt {

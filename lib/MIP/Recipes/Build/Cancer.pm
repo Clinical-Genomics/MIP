@@ -107,35 +107,7 @@ sub build_cancer_meta_files {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Reference
-      qw{  check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt };
-
-## Check human genome prerequistes exists
-  PROGRAM:
-    foreach my $program_name (
-        @{ $parameter_href->{human_genome_reference}{associated_program} } )
-    {
-
-        next PROGRAM if ( $program_name eq q{mip} );
-
-        next PROGRAM if ( not $active_parameter_href->{$program_name} );
-
-        ## Remove initial "p" from program_name
-        substr $program_name, 0, 1, $EMPTY_STR;
-
-        my $is_finished = check_human_genome_prerequisites(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => $program_name,
-                log                     => $log,
-            }
-        );
-        last PROGRAM if ($is_finished);
-    }
+      qw{  check_parameter_metafiles check_references_for_vt };
 
     $log->info( $TAB . q{Reference check: Reference prerequisites checked} );
 

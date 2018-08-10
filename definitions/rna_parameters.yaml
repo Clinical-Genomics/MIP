@@ -10,10 +10,23 @@ human_genome_reference:
    - gatk_splitncigarreads
    - gatk_variantfiltration
    - star_aln
-  build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
   exists_check: file
+  reference: reference_dir
+  type: path
+human_genome_reference_file_endings:
+  associated_program:
+   - gatk_asereadcounter
+   - gatk_baserecalibration
+   - gatk_haplotypecaller
+   - gatk_splitncigarreads
+   - gatk_variantfiltration
+   - star_aln
+  build_file: 1
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
   reference: reference_dir
   type: path
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference

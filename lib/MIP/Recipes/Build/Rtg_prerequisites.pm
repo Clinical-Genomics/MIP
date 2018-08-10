@@ -203,10 +203,12 @@ sub build_rtg_prerequisites {
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
             log                     => $log,
-            parameter_href          => $parameter_href,
-            program_name            => $program_name,
-            random_integer          => $random_integer,
-            sample_info_href        => $sample_info_href,
+            parameter_build_suffixes_ref =>
+              \@{ $file_info_href->{human_genome_reference_file_endings} },
+            parameter_href   => $parameter_href,
+            program_name     => $program_name,
+            random_integer   => $random_integer,
+            sample_info_href => $sample_info_href,
         }
     );
 

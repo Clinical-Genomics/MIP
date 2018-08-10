@@ -46,6 +46,7 @@ sub build_human_genome_prerequisites {
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $log                     => Log object
 ##          : $outaligner_dir          => The outaligner_dir used in the analysis
+##          : $parameter_build_suffixes_ref => The human genome reference associated file endings {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program under evaluation
 ##          : $random_integer          => The random integer to create temporary file name
@@ -61,6 +62,7 @@ sub build_human_genome_prerequisites {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
+    my $parameter_build_suffixes_ref;
     my $parameter_href;
     my $program_name;
     my $random_integer;
@@ -117,6 +119,13 @@ sub build_human_genome_prerequisites {
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             store       => \$outaligner_dir,
+            strict_type => 1,
+        },
+        parameter_build_suffixes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_build_suffixes_ref,
             strict_type => 1,
         },
         parameter_href => {
@@ -197,7 +206,7 @@ sub build_human_genome_prerequisites {
     }
 
     ## Check for compressed files
-    if ( $file_info_href->{human_genome_compressed} eq q{compressed} ) {
+    if ( $file_info_href->{human_genome_compressed} ) {
 
         $log->warn( q{Will try to decompress }
               . $human_genome_reference
@@ -220,10 +229,10 @@ sub build_human_genome_prerequisites {
 
         $log->info(
             q{Set human_genome_reference to: } . $human_genome_reference );
-        $file_info_href->{human_genome_compressed} = q{uncompressed};
+        $file_info_href->{human_genome_compressed} = 0;
     }
 
-    if ( $parameter_href->{exome_target_bed}{build_file} == 1 ) {
+    if ( exists $parameter_href->{exome_target_bed}{build_file} and $parameter_href->{exome_target_bed}{build_file} == 1 ) {
 
         build_capture_file_prerequisites(
             {
@@ -241,12 +250,10 @@ sub build_human_genome_prerequisites {
             }
         );
     }
-    if ( $parameter_href->{human_genome_reference}{build_file} == 1 ) {
+    if ( $parameter_href->{human_genome_reference_file_endings}{build_file} == 1 ) {
 
       FILE_ENDING:
-        foreach my $file_ending (
-            @{ $file_info_href->{human_genome_reference_file_endings} } )
-        {
+        foreach my $file_ending ( @{$parameter_build_suffixes_ref} ) {
 
             if ( $file_ending eq $DOT . q{dict} ) {
 
@@ -357,7 +364,7 @@ sub build_human_genome_prerequisites {
         }
 
         ## Only create once
-        $parameter_href->{human_genome_reference}{build_file} = 0;
+        $parameter_href->{human_genome_reference_file_endings}{build_file} = 0;
     }
 
     ## Unless FILEHANDLE was supplied close it and submit
