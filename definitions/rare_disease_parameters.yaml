@@ -129,10 +129,35 @@ human_genome_reference:
    - gatk_variantevalexome
    - picardtools_collecthsmetrics
    - picardtools_collectmultiplemetrics
-  build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
   exists_check: file
+  reference: reference_dir
+  type: path
+human_genome_reference_file_endings:
+  associated_program:
+   - bwa_mem
+   - expansionhunter
+   - gatk_realigner
+   - gatk_baserecalibration
+   - gatk_haplotypecaller
+   - gatk_genotypegvcfs
+   - bcftools_mpileup
+   - freebayes
+   - manta
+   - delly_call
+   - cnvnator
+   - tiddit
+   - gatk_variantrecalibration
+   - vt
+   - gatk_variantevalall
+   - gatk_variantevalexome
+   - picardtools_collecthsmetrics
+   - picardtools_collectmultiplemetrics
+  build_file: 1
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
   reference: reference_dir
   type: path
 ## java large pages - affects all modules using java

@@ -107,82 +107,8 @@ sub build_cancer_meta_files {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Reference
-      qw{ check_bwa_prerequisites check_capture_file_prerequisites check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt };
+      qw{  check_parameter_metafiles check_references_for_vt };
 
-## Check capture file prerequistes exists
-  PROGRAM:
-    foreach my $program_name (
-        @{ $parameter_href->{exome_target_bed}{associated_program} } )
-    {
-
-        next PROGRAM if ( not $active_parameter_href->{$program_name} );
-
-        ## Remove initial "p" from program_name
-        substr $program_name, 0, 1, $EMPTY_STR;
-
-        check_capture_file_prerequisites(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                infile_list_suffix => $file_info_href->{exome_target_bed}[0],
-                padded_infile_list_suffix =>
-                  $file_info_href->{exome_target_bed}[1],
-                padded_interval_list_suffix =>
-                  $file_info_href->{exome_target_bed}[2],
-                program_name => $program_name,
-                log          => $log,
-            }
-        );
-    }
-
-## Check human genome prerequistes exists
-  PROGRAM:
-    foreach my $program_name (
-        @{ $parameter_href->{human_genome_reference}{associated_program} } )
-    {
-
-        next PROGRAM if ( $program_name eq q{mip} );
-
-        next PROGRAM if ( not $active_parameter_href->{$program_name} );
-
-        ## Remove initial "p" from program_name
-        substr $program_name, 0, 1, $EMPTY_STR;
-
-        my $is_finished = check_human_genome_prerequisites(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => $program_name,
-                log                     => $log,
-            }
-        );
-        last PROGRAM if ($is_finished);
-    }
-
-## Check BWA build prerequisites
-
-    if ( $active_parameter_href->{bwa_mem} ) {
-
-        check_bwa_prerequisites(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{bwa_mem},
-                parameter_build_name    => q{bwa_build_reference},
-            }
-        );
-    }
     $log->info( $TAB . q{Reference check: Reference prerequisites checked} );
 
 ## Check if vt has processed references, if not try to reprocesses them before launcing modules

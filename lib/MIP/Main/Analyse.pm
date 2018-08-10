@@ -396,13 +396,14 @@ sub mip_analyse {
         }
     );
 
-## Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
+## Detect version and source of the human_genome_reference: Source (hg19 or GRCh) and check compression status
     set_human_genome_reference_features(
         {
             file_info_href => \%file_info,
             human_genome_reference =>
               basename( $active_parameter{human_genome_reference} ),
-            log => $log,
+            log            => $log,
+            parameter_href => \%parameter,
         }
     );
 
@@ -490,7 +491,7 @@ sub mip_analyse {
             file_info_href        => \%file_info,
             log                   => $log,
             parameter_href        => \%parameter,
-            parameter_name        => q{human_genome_reference},
+            parameter_name        => q{human_genome_reference_file_endings},
         }
     );
 

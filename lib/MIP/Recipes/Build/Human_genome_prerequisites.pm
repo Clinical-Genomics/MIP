@@ -46,6 +46,7 @@ sub build_human_genome_prerequisites {
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $log                     => Log object
 ##          : $outaligner_dir          => The outaligner_dir used in the analysis
+##          : $parameter_build_suffixes_ref => The human genome reference associated file endings {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program under evaluation
 ##          : $random_integer          => The random integer to create temporary file name
@@ -61,6 +62,7 @@ sub build_human_genome_prerequisites {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
+    my $parameter_build_suffixes_ref;
     my $parameter_href;
     my $program_name;
     my $random_integer;
@@ -119,6 +121,13 @@ sub build_human_genome_prerequisites {
             store       => \$outaligner_dir,
             strict_type => 1,
         },
+        parameter_build_suffixes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_build_suffixes_ref,
+            strict_type => 1,
+        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -149,7 +158,6 @@ sub build_human_genome_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Reference qw{ check_capture_file_prerequisites };
     use MIP::Gnu::Coreutils qw{ gnu_rm gnu_ln };
     use MIP::Language::Java qw{ java_core };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
@@ -159,6 +167,8 @@ sub build_human_genome_prerequisites {
       qw{ picardtools_createsequencedictionary };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Recipes::Build::Capture_file_prerequisites
+      qw{ build_capture_file_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -196,7 +206,7 @@ sub build_human_genome_prerequisites {
     }
 
     ## Check for compressed files
-    if ( $file_info_href->{human_genome_compressed} eq q{compressed} ) {
+    if ( $file_info_href->{human_genome_compressed} ) {
 
         $log->warn( q{Will try to decompress }
               . $human_genome_reference
@@ -219,35 +229,31 @@ sub build_human_genome_prerequisites {
 
         $log->info(
             q{Set human_genome_reference to: } . $human_genome_reference );
-        $file_info_href->{human_genome_compressed} = q{uncompressed};
+        $file_info_href->{human_genome_compressed} = 0;
     }
 
-    if ( exists $file_info_href->{exome_target_bed} ) {
+    if ( exists $parameter_href->{exome_target_bed}{build_file} and $parameter_href->{exome_target_bed}{build_file} == 1 ) {
 
-        check_capture_file_prerequisites(
+        build_capture_file_prerequisites(
             {
                 active_parameter_href   => $active_parameter_href,
                 FILEHANDLE              => $FILEHANDLE,
+                file_info_href          => $file_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                infile_list_suffix => $file_info_href->{exome_target_bed}[0],
-                job_id_href        => $job_id_href,
-                log                => $log,
-                padded_infile_list_suffix =>
-                  $file_info_href->{exome_target_bed}[1],
-                padded_interval_list_suffix =>
-                  $file_info_href->{exome_target_bed}[2],
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                parameter_build_suffixes_ref =>
+                  \@{ $file_info_href->{exome_target_bed} },
                 parameter_href   => $parameter_href,
                 program_name     => $program_name,
                 sample_info_href => $sample_info_href,
             }
         );
     }
-    if ( $parameter_href->{q{human_genome_reference}}{build_file} == 1 ) {
+    if ( $parameter_href->{human_genome_reference_file_endings}{build_file} == 1 ) {
 
       FILE_ENDING:
-        foreach my $file_ending (
-            @{ $file_info_href->{human_genome_reference_file_endings} } )
-        {
+        foreach my $file_ending ( @{$parameter_build_suffixes_ref} ) {
 
             if ( $file_ending eq $DOT . q{dict} ) {
 
@@ -358,7 +364,7 @@ sub build_human_genome_prerequisites {
         }
 
         ## Only create once
-        $parameter_href->{human_genome_reference}{build_file} = 0;
+        $parameter_href->{human_genome_reference_file_endings}{build_file} = 0;
     }
 
     ## Unless FILEHANDLE was supplied close it and submit

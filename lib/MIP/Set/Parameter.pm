@@ -539,12 +539,13 @@ sub set_dynamic_parameter {
 
 sub set_human_genome_reference_features {
 
-## Function : Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
+## Function : Detect version and source of the human_genome_reference: Source (hg19 or GRCh) as well as compression status.
 ##            Used to change capture kit genome reference version later
 ## Returns  :
 ##          : $file_info_href         => File info hash {REF}
 ##          : $human_genome_reference => The human genome
 ##          : $log                    => Log
+##          : $parameter_href         => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
@@ -552,6 +553,7 @@ sub set_human_genome_reference_features {
     my $file_info_href;
     my $human_genome_reference;
     my $log;
+    my $parameter_href;
 
     my $tmpl = {
         file_info_href => {
@@ -571,6 +573,13 @@ sub set_human_genome_reference_features {
             defined  => 1,
             required => 1,
             store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
         },
     };
 
@@ -616,6 +625,11 @@ q{MIP cannot detect what version of human_genome_reference you have supplied.}
     $file_info_href->{human_genome_compressed} =
       check_gzipped( { file_name => $human_genome_reference, } );
 
+    if ( $file_info_href->{human_genome_compressed} ) {
+
+        ## Set build file to one to allow for uncompression before analysis
+        $parameter_href->{human_genome_reference_file_endings}{build_file} = 1;
+    }
     return;
 
 }
