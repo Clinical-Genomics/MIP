@@ -763,6 +763,7 @@ sub mip_analyse {
         {
             active_parameter_href => \%active_parameter,
             initiation_file       => $initiation_file,
+            log                   => $log,
             parameter_href        => \%parameter,
         },
     );

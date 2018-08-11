@@ -629,7 +629,7 @@ sub check_program_exists_in_hash {
 ## Returns  :
 ## Arguments: $log            => Log object
 ##          : $parameter_name => Parameter name
-##          : $query_ref      => Query (ARRAY|HASH) {REF}
+##          : $query_ref      => Query (ARRAY|HASH|SCALAR) {REF}
 ##          : $truth_href     => Truth hash {REF}
 
     my ($arg_href) = @_;
@@ -694,6 +694,16 @@ sub check_program_exists_in_hash {
                   . $error_msg );
             exit 1;
         }
+    }
+    if ( ref $query_ref eq q{SCALAR} ) {
+
+        return if ( exists $truth_href->{$parameter_name} );
+
+        $log->fatal( $parameter_name
+              . qq{ element $SINGLE_QUOTE}
+              . $parameter_name
+              . $error_msg );
+        exit 1;
     }
     return;
 }

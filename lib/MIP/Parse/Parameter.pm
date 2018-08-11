@@ -221,6 +221,7 @@ sub parse_start_with_program {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $initiation_file       => Initiation file for pipeline
+##          : $log                   => Log object
 ##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
@@ -228,6 +229,7 @@ sub parse_start_with_program {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $initiation_file;
+    my $log;
     my $parameter_href;
 
     my $tmpl = {
@@ -244,6 +246,11 @@ sub parse_start_with_program {
             store       => \$initiation_file,
             strict_type => 1,
         },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -255,6 +262,7 @@ sub parse_start_with_program {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Parameter qw{ check_program_exists_in_hash };
     use MIP::File::Format::Yaml qw{ load_yaml };
     use MIP::Get::Analysis qw{ get_dependency_tree };
     use MIP::Update::Programs qw{  update_program_mode_with_start_with };
@@ -264,6 +272,15 @@ sub parse_start_with_program {
     my %dependency_tree = load_yaml(
         {
             yaml_file => $initiation_file,
+        }
+    );
+
+    check_program_exists_in_hash(
+        {
+            log            => $log,
+            parameter_name => $active_parameter_href->{start_with_program},
+            query_ref      => \$active_parameter_href->{start_with_program},
+            truth_href     => $parameter_href,
         }
     );
 
