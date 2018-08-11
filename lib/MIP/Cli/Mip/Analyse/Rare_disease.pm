@@ -284,7 +284,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{bwa_mem} => (
-            cmd_aliases   => [qw{ pmem }],
+            cmd_aliases   => [qw{ mem }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Align reads using Bwa Mem},
             is            => q{rw},
@@ -333,7 +333,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{picardtools_mergesamfiles} => (
-            cmd_aliases => [qw{ pptm }],
+            cmd_aliases => [qw{ ptm }],
             cmd_flag    => q{ppicard_mergesamfiles},
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -345,7 +345,7 @@ q{Merge (BAM file(s) ) or rename single samples for downstream processing},
 
     option(
         q{markduplicates} => (
-            cmd_aliases   => [qw{ pmd }],
+            cmd_aliases   => [qw{ md }],
             cmd_flag      => q{markduplicates},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Markduplicate reads},
@@ -411,7 +411,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{chanjo_sexcheck} => (
-            cmd_aliases   => [qw{ pchs }],
+            cmd_aliases   => [qw{ phs }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Predicts gender from sex chromosome coverage},
             is            => q{rw},
@@ -431,7 +431,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{sambamba_depth} => (
-            cmd_aliases   => [qw{ psdt }],
+            cmd_aliases   => [qw{ sdt }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Sambamba depth coverage analysis},
             is            => q{rw},
@@ -513,7 +513,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{bedtools_genomecov} => (
-            cmd_aliases => [qw{ pbgc }],
+            cmd_aliases => [qw{ bgc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
               q{Genome coverage calculation using bedtools genomecov},
@@ -535,7 +535,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{picardtools_collectmultiplemetrics} => (
-            cmd_aliases   => [qw{ pptcmm }],
+            cmd_aliases   => [qw{ ptcmm }],
             cmd_flag      => q{ppt_col_mul_met},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Qc metrics calculation},
@@ -546,7 +546,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{picardtools_collecthsmetrics} => (
-            cmd_aliases   => [qw{ pptchs }],
+            cmd_aliases   => [qw{ ptchs }],
             cmd_flag      => q{ppt_col_hs_met},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Qc metrics calculation for capture},
@@ -557,7 +557,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{rcovplots} => (
-            cmd_aliases   => [qw{ prcp }],
+            cmd_aliases   => [qw{ rcp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Plots of genome coverage using rcovplots},
             is            => q{rw},
@@ -567,7 +567,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{cnvnator} => (
-            cmd_aliases   => [qw{ pcnv }],
+            cmd_aliases   => [qw{ cnv }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Structural variant calling using CNVnator},
             is            => q{rw},
@@ -587,7 +587,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{delly_call} => (
-            cmd_aliases   => [qw{ pdelc }],
+            cmd_aliases   => [qw{ delc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Structural variant calling using Delly},
             is            => q{rw},
@@ -597,7 +597,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{delly_reformat} => (
-            cmd_aliases   => [qw{ pdel }],
+            cmd_aliases   => [qw{ del }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Merge, regenotype and filter using Delly},
             is            => q{rw},
@@ -628,7 +628,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{expansionhunter} => (
-            cmd_aliases   => [qw{ pexp }],
+            cmd_aliases   => [qw{ exp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Anaylse expansions of Short Tandem Repeats},
             is            => q{rw},
@@ -649,7 +649,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{manta} => (
-            cmd_aliases   => [qw{ pmna }],
+            cmd_aliases   => [qw{ mna }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Structural variant calling using Manta},
             is            => q{rw},
@@ -659,7 +659,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{tiddit} => (
-            cmd_aliases   => [qw{ ptid }],
+            cmd_aliases   => [qw{ tid }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Structural variant calling using Tiddit},
             is            => q{rw},
@@ -690,7 +690,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{sv_combinevariantcallsets} => (
-            cmd_aliases   => [qw{ psvc }],
+            cmd_aliases   => [qw{ svc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Combine structural variant call sets},
             is            => q{rw},
@@ -839,7 +839,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{vcf2cytosure} => (
-            cmd_aliases => [qw{ pv2cs }],
+            cmd_aliases => [qw{ v2cs }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
 q{Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software},
@@ -899,7 +899,7 @@ q{Convert a VCF with structural variants to the “.CGH” format used by the co
 
     option(
         q{sv_varianteffectpredictor} => (
-            cmd_aliases   => [qw{ psvv }],
+            cmd_aliases   => [qw{ svv }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Annotate SV variants using VEP},
             is            => q{rw},
@@ -931,7 +931,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{sv_vcfparser} => (
-            cmd_aliases   => [qw{ psvvcp }],
+            cmd_aliases   => [qw{ svvcp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Parse structural variants using vcfParser.pl},
             is            => q{rw},
@@ -1013,7 +1013,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{sv_rankvariant} => (
-            cmd_aliases   => [qw{ psvr }],
+            cmd_aliases   => [qw{ svr }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Ranking of annotated SV variants},
             is            => q{rw},
@@ -1074,7 +1074,7 @@ q{Use predefined gene annotation supplied with genmod for defining genes},
 
     option(
         q{sv_reformat} => (
-            cmd_aliases   => [qw{ psvre }],
+            cmd_aliases   => [qw{ svre }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Concatenating files},
             is            => q{rw},
@@ -1104,7 +1104,7 @@ q{Produce binary file from the rank variant chromosome sorted vcfs},
 
     option(
         q{bcftools_mpileup} => (
-            cmd_aliases   => [qw{ pbmp }],
+            cmd_aliases   => [qw{ bmp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant calling using bcftools mpileup},
             is            => q{rw},
@@ -1124,7 +1124,7 @@ q{Produce binary file from the rank variant chromosome sorted vcfs},
 
     option(
         q{freebayes} => (
-            cmd_aliases   => [qw{ pfrb }],
+            cmd_aliases   => [qw{ frb }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant calling using Freebayes},
             is            => q{rw},
@@ -1134,7 +1134,7 @@ q{Produce binary file from the rank variant chromosome sorted vcfs},
 
     option(
         q{gatk_haplotypecaller} => (
-            cmd_aliases   => [qw{ pghc }],
+            cmd_aliases   => [qw{ ghc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},
             is            => q{rw},
@@ -1191,7 +1191,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_genotypegvcfs} => (
-            cmd_aliases   => [qw{ pggt }],
+            cmd_aliases   => [qw{ ggt }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Merge gVCF records using GATK GenotypeGVCFs},
             is            => q{rw},
@@ -1221,7 +1221,7 @@ q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
 
     option(
         q{gatk_concatenate_genotypegvcfs} => (
-            cmd_aliases => [qw{ pgcgt }],
+            cmd_aliases => [qw{ gcgt }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
               q{Concatenate gVCF records using GATK Concatenate variants},
@@ -1243,7 +1243,7 @@ q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
 
     option(
         q{gatk_variantrecalibration} => (
-            cmd_aliases => [qw{ pgvr }],
+            cmd_aliases => [qw{ gvr }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
 q{Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration},
@@ -1361,7 +1361,7 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
 
     option(
         q{gatk_combinevariantcallsets} => (
-            cmd_aliases   => [qw{ pgcv }],
+            cmd_aliases   => [qw{ gcv }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Combine variant call sets},
             is            => q{rw},
@@ -1403,7 +1403,7 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
 
     option(
         q{gatk_variantevalall} => (
-            cmd_aliases => [qw{ pgvea }],
+            cmd_aliases => [qw{ uvea }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
               q{Variant evaluation using GATK varianteval for all variants},
@@ -1414,7 +1414,7 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
 
     option(
         q{gatk_variantevalexome} => (
-            cmd_aliases => [qw{ pgvee }],
+            cmd_aliases => [qw{ gvee }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
               q{Variant evaluation using GATK varianteval for exonic variants},
@@ -1446,7 +1446,7 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
 
     option(
         q{prepareforvariantannotationblock} => (
-            cmd_aliases => [qw{ ppvab }],
+            cmd_aliases => [qw{ pvab }],
             cmd_flag    => q{prep_for_var_ann_bl},
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -1458,7 +1458,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
 
     option(
         q{rhocall} => (
-            cmd_aliases => [qw{ prhc }],
+            cmd_aliases => [qw{ rhc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
 q{Rhocall performs annotation of variants in autozygosity regions},
@@ -1526,7 +1526,7 @@ q{Rhocall performs annotation of variants in autozygosity regions},
 
     option(
         q{frequency_filter} => (
-            cmd_aliases   => [qw{ pfqf }],
+            cmd_aliases   => [qw{ fqf }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Filter variants on frequency},
             is            => q{rw},
@@ -1578,7 +1578,7 @@ q{Rhocall performs annotation of variants in autozygosity regions},
 
     option(
         q{varianteffectpredictor} => (
-            cmd_aliases   => [qw{ pvep }],
+            cmd_aliases   => [qw{ vep }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Annotate variants using VEP},
             is            => q{rw},
@@ -1637,7 +1637,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{vcfparser} => (
-            cmd_aliases   => [qw{ pvcp }],
+            cmd_aliases   => [qw{ vcp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Parse structural variants using vcfParser.pl},
             is            => q{rw},
@@ -1710,7 +1710,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{snpeff} => (
-            cmd_aliases   => [qw{ psne }],
+            cmd_aliases   => [qw{ sne }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant annotation using snpEff},
             is            => q{rw},
@@ -1796,7 +1796,7 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
 
     option(
         q{rankvariant} => (
-            cmd_aliases   => [qw{ prav }],
+            cmd_aliases   => [qw{ rav }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Ranking of annotated variants},
             is            => q{rw},
@@ -1887,7 +1887,7 @@ q{Produce binary file from the rank variant chromosomal sorted vcfs},
 
     option(
         q{endvariantannotationblock} => (
-            cmd_aliases => [qw{ pevab }],
+            cmd_aliases => [qw{ evab }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
               q{End variant annotation block by concatenating files},
@@ -1908,7 +1908,7 @@ q{Produce binary file from the rank variant chromosomal sorted vcfs},
 
     option(
         q{peddy} => (
-            cmd_aliases   => [qw{ pped }],
+            cmd_aliases   => [qw{ pedd }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{QC for familial-relationships and sexes},
             is            => q{rw},
@@ -1928,7 +1928,7 @@ q{Produce binary file from the rank variant chromosomal sorted vcfs},
 
     option(
         q{variant_integrity} => (
-            cmd_aliases   => [qw{ pvai }],
+            cmd_aliases   => [qw{ vai }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{QC for samples relationship},
             is            => q{rw},
@@ -1938,7 +1938,7 @@ q{Produce binary file from the rank variant chromosomal sorted vcfs},
 
     option(
         q{rtg_vcfeval} => (
-            cmd_aliases   => [qw{ prte }],
+            cmd_aliases   => [qw{ rte }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Compare concordance with benchmark data set},
             is            => q{rw},
@@ -1948,7 +1948,7 @@ q{Produce binary file from the rank variant chromosomal sorted vcfs},
 
     option(
         q{evaluation} => (
-            cmd_aliases   => [qw{ pevl }],
+            cmd_aliases   => [qw{ evl }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Compare concordance with NIST data set},
             is            => q{rw},
@@ -1991,7 +1991,7 @@ q{Produce binary file from the rank variant chromosomal sorted vcfs},
 
     option(
         q{qccollect} => (
-            cmd_aliases   => [qw{ pqcc }],
+            cmd_aliases   => [qw{ qcc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Collect QC metrics from programs output},
             is            => q{rw},
@@ -2034,7 +2034,7 @@ q{Sample info file containing info on what to parse from this analysis run},
 
     option(
         q{multiqc} => (
-            cmd_aliases => [qw{ pmqc }],
+            cmd_aliases => [qw{ mqc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
 q{Create aggregate bioinformatics analysis report across many samples},
@@ -2054,7 +2054,7 @@ q{Create aggregate bioinformatics analysis report across many samples},
 
     option(
         q{analysisrunstatus} => (
-            cmd_aliases => [qw{ pars }],
+            cmd_aliases => [qw{ ars }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
 q{Check analysis output and sets the analysis run status flag to finished in sample_info_file},
@@ -2065,7 +2065,7 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{sacct} => (
-            cmd_aliases => [qw{ psac }],
+            cmd_aliases => [qw{ sac }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
               q{Generating sbatch script for SLURM info on each submitted job},
@@ -2088,7 +2088,7 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
 
     option(
         q{samtools_subsample_mt} => (
-            cmd_aliases   => [qw{ pssmt }],
+            cmd_aliases   => [qw{ ssmt }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Subsample the mitochondria reads},
             is            => q{rw},

@@ -159,7 +159,7 @@ sub _build_usage {
 
     option(
         q{pbootstrapann} => (
-            cmd_aliases   => [qw{ pba }],
+            cmd_aliases   => [qw{ ba }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Run BootstrapAnn on ASE file},
             is            => q{rw},
@@ -217,7 +217,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{picardtools_mergesamfiles} => (
-            cmd_aliases   => [qw{ ppms }],
+            cmd_aliases   => [qw{ pms }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Merge bam files using Picardtools},
             is            => q{rw},
@@ -227,7 +227,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{salmon_quant} => (
-            cmd_aliases   => [qw{ psqt }],
+            cmd_aliases   => [qw{ sqt }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Quantify transcripts using salmon},
             is            => q{rw},
@@ -236,7 +236,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
     option(
         q{salmon_rna_lib_configuration} => (
-            cmd_aliases   => [qw{ psqt_bob }],
+            cmd_aliases   => [qw{ sqt_bob }],
             cmd_tags      => [q{Default: ISF}],
             documentation => q{Library orientation and strandedness},
             is            => q{rw},
@@ -246,7 +246,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{star_aln} => (
-            cmd_aliases   => [qw{ pstn }],
+            cmd_aliases   => [qw{ stn }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Align reads using Star aln},
             is            => q{rw},
@@ -317,7 +317,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{star_fusion} => (
-            cmd_aliases   => [qw{ pstf }],
+            cmd_aliases   => [qw{ stf }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Detect fusion transcripts with star fusion},
             is            => q{rw},
@@ -327,7 +327,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{gatk_haplotypecaller} => (
-            cmd_aliases   => [qw{ pghc }],
+            cmd_aliases   => [qw{ ghc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},
             is            => q{rw},
@@ -439,7 +439,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{pgatk_splitncigarrreads} => (
-            cmd_aliases   => [qw{ pgs }],
+            cmd_aliases   => [qw{ gs }],
             cmd_flag      => q{gatk_splitncigarreads},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Split reads that contain Ns in their cigar},
@@ -450,7 +450,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{gatk_haplotypecaller} => (
-            cmd_aliases   => [qw{ pghc }],
+            cmd_aliases   => [qw{ ghc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},
             is            => q{rw},
@@ -507,7 +507,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_asereadcounter} => (
-            cmd_aliases   => [qw{ pgae }],
+            cmd_aliases   => [qw{ gae }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Allel specific expression},
             is            => q{rw},
@@ -517,7 +517,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_variantfiltration} => (
-            cmd_aliases   => [qw{ pgvf }],
+            cmd_aliases   => [qw{ gvf }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Hard filterering of variants},
             is            => q{rw},
