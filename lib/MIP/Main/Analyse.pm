@@ -79,7 +79,6 @@ use MIP::QC::Record qw{ add_to_sample_info };
 ## Recipes
 use MIP::Recipes::Pipeline::Rare_disease qw{ pipeline_rare_disease };
 use MIP::Recipes::Pipeline::Rna qw{ pipeline_rna };
-use MIP::Recipes::Pipeline::Cancer qw{ pipeline_cancer };
 
 BEGIN {
 
@@ -666,7 +665,7 @@ sub mip_analyse {
             active_parameter_href => \%active_parameter,
             log                   => $log,
             parameter_names_ref =>
-              [qw{ analysis_type expected_coverage sample_origin }],
+              [qw{ analysis_type expected_coverage }],
             parameter_href => \%parameter,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
@@ -954,28 +953,6 @@ sub mip_analyse {
 
             $sample_info{$key} = $value;
         }
-    }
-
-### Cancer
-    if ( $consensus_analysis_type eq q{cancer} )
-
-    {
-
-        $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
-
-        ## Pipeline recipe for cancer data
-        pipeline_cancer(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                outaligner_dir          => $active_parameter{outaligner_dir},
-                log                     => $log,
-            }
-        );
     }
 
 ### RNA

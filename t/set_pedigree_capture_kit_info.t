@@ -120,7 +120,6 @@ my %pedigree = (
             mother        => 0,
             phenotype     => q{affected},
             sample_id     => q{sample_1},
-            sample_origin => q{normal},
             sex           => q{female},
         },
         {
@@ -130,7 +129,6 @@ my %pedigree = (
             mother        => 0,
             phenotype     => q{unaffected},
             sample_id     => q{sample_2},
-            sample_origin => q{tumor},
             sex           => q{male},
         },
         {
@@ -143,7 +141,7 @@ my %pedigree = (
             sex           => q{other},
         },
         {
-            analysis_type => q{cancer},
+            analysis_type => q{wgs},
             father        => q{sample_1},
             mother        => q{sample_2},
             phenotype     => q{unknown},
@@ -158,19 +156,16 @@ my %sample_info = (
         sample_1 => {
             analysis_type     => q{wes},
             expected_coverage => 30,
-            sample_origin     => q{normal},
             capture_kit       => q{agilent_sureselect.v5},
         },
         sample_2 => {
             analysis_type     => q{wes},
             expected_coverage => 30,
-            sample_origin     => q{normal},
             capture_kit       => q{agilent_sureselect.v4},
         },
         sample_3 => {
             analysis_type     => q{wes},
             expected_coverage => 30,
-            sample_origin     => q{normal},
             capture_kit       => q{agilent_sureselect.v5},
         },
     },
@@ -203,7 +198,6 @@ is( $capture_kit_string, q{sample_2}, q{Set sample_ids for capture kit 2} );
         sample_1 => {
             analysis_type     => q{wes},
             expected_coverage => 30,
-            sample_origin     => q{normal},
             capture_kit       => q{unknown_capture_kit},
         },
     },

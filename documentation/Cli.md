@@ -14,7 +14,6 @@ There is currently two main commands:
 - Analyse
   - rare_disease
   - rna
-  - cancer
 
 There are three levels of parameters:
 - Global

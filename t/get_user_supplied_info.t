@@ -30,6 +30,7 @@ our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $COMMA   => q{,};
+Readonly my $EXPECTED_COVERAGE => 30;
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
@@ -100,7 +101,7 @@ diag(   q{Test get_user_supplied_info from Parameter.pm v}
 my %active_parameter = (
     analysis_type => { sample_id => q{wgs}, },
     sample_ids    => [qw{ sample_1 sample_2 }],
-    sample_origin => q{normal},
+    expected_coverage => $EXPECTED_COVERAGE,
 );
 
 my %user_supply_switch = get_user_supplied_info(
@@ -113,7 +114,7 @@ is( $user_supply_switch{analysis_type}, 1, q{Got set HASH parameter} );
 
 is( $user_supply_switch{sample_ids}, 1, q{Got set ARRAY parameter} );
 
-is( $user_supply_switch{sample_origin}, 1, q{Got set SCALAR parameter} );
+is( $user_supply_switch{expected_coverage}, 1, q{Got set SCALAR parameter} );
 
 is( $user_supply_switch{exome_target_bed},
     0, q{No user defined input for parameter} );

@@ -112,7 +112,6 @@ my %pedigree = (
             mother        => 0,
             phenotype     => q{affected},
             sample_id     => q{sample_1},
-            sample_origin => q{normal},
             sex           => q{female},
         },
         {
@@ -121,7 +120,6 @@ my %pedigree = (
             mother        => 0,
             phenotype     => q{unaffected},
             sample_id     => q{sample_2},
-            sample_origin => q{tumor},
             sex           => q{male},
         },
         {
@@ -133,7 +131,7 @@ my %pedigree = (
             sex           => q{other},
         },
         {
-            analysis_type => q{cancer},
+            analysis_type => q{wgs},
             father        => q{sample_1},
             mother        => q{sample_2},
             phenotype     => q{unknown},
@@ -148,7 +146,6 @@ my %sample_info = (
         sample_1 => {
             analysis_type     => q{wes},
             expected_coverage => 30,
-            sample_origin     => q{normal}
         },
     },
 );
@@ -168,11 +165,9 @@ set_active_parameter_pedigree_keys(
     }
 );
 my $set_analysis_type     = $active_parameter{analysis_type}{sample_1};
-my $set_sample_origin     = $active_parameter{sample_origin}{sample_1};
 my $set_expected_coverage = $sample_info{sample}{expected_coverage}{sample_1};
 
 is( $set_analysis_type,     q{wes},    q{Set analysis type} );
-is( $set_sample_origin,     q{normal}, q{Set sample_origin} );
 is( $set_expected_coverage, undef,     q(Did not set expected coverage) );
 done_testing();
 

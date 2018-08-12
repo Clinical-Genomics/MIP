@@ -110,7 +110,7 @@ my $cmds_ref = [
         $cluster_constant_path,
         qw{ 643594-miptest test_data ADM1059A3 fastq=ADM1059A3 }
     ),
-    qw{ --rio --dra --svv 0 },
+    qw{ --rio --dra --svv 0 --vb },
 ];
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =

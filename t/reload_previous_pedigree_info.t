@@ -120,7 +120,6 @@ my %sample_info = (
         sample_1 => {
             analysis_type => q{wes},
             phenotype     => q{affected},
-            sample_origin => q{normal},
             sex           => q{female},
         },
         sample_3 => {
@@ -129,7 +128,7 @@ my %sample_info = (
             sex           => q{other},
         },
         sample_4 => {
-            analysis_type => q{cancer},
+            analysis_type => q{wgs},
             phenotype     => q{unknown},
             sex           => q{unknown},
         },
@@ -171,7 +170,7 @@ is( $sample_info{sample}{sample_1}{capture_kit},
     q{Reloaded sample parameter not present in current analysis} );
 
 my %reloaded_sample_2 = (
-    analysis_type     => q{cancer},
+    analysis_type     => q{wgs},
     capture_kit       => q{agilent_sureselect.v5},
     expected_coverage => $EXPECTED_COVERAGE,
     father            => 0,
@@ -179,7 +178,6 @@ my %reloaded_sample_2 = (
     phenotype         => q{unaffected},
     sample_id         => q{sample_2},
     sample_name       => q{sample_2},
-    sample_origin     => q{tumor},
     sex               => q{male},
 );
 

@@ -319,7 +319,7 @@ sub mip_scripts {
         utility_scripts =>
           [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
         definitions => [
-            qw{ analyse_parameters.yaml cancer_parameters.yaml cpanfile download_rare_disease.yaml install_rare_disease_parameters.yaml install_rna_parameters.yaml mandatory_parameter_keys.yaml mip_parameters.yaml non_mandatory_parameter_keys.yaml rare_disease_initiation_map.yaml rare_disease_parameters.yaml rna_parameters.yaml rna_initiation_map.yaml }
+            qw{ analyse_parameters.yaml cpanfile download_rare_disease.yaml install_rare_disease_parameters.yaml install_rna_parameters.yaml mandatory_parameter_keys.yaml mip_parameters.yaml non_mandatory_parameter_keys.yaml rare_disease_initiation_map.yaml rare_disease_parameters.yaml rna_parameters.yaml rna_initiation_map.yaml }
         ],
         t => [
             qw{ mip_install.test mip_analyse_rare_disease.test mip_core.t mip_analysis.test }

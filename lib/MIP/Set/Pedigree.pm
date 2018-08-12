@@ -80,7 +80,7 @@ sub set_active_parameter_pedigree_keys {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @pedigree_keys = qw{ analysis_type expected_coverage sample_origin };
+    my @pedigree_keys = qw{ analysis_type expected_coverage };
     my @sample_ids    = @{ $pedigree_href->{samples} };
 
   SAMPLE_HREF:

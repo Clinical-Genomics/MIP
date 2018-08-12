@@ -900,7 +900,7 @@ sub add_to_sample_info {
     use MIP::Get::Parameter qw{ get_program_version };
 
     ## Add parameter key to sample info
-    my @add_keys = qw{ analysis_type expected_coverage sample_origin };
+    my @add_keys = qw{ analysis_type expected_coverage };
 
   PARAMETER:
     foreach my $key_to_add (@add_keys) {
