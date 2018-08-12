@@ -569,8 +569,8 @@ sambamba_depth_cutoffs:
   data_type: ARRAY
   default:
    - 10
+   - 15
    - 20
-   - 30
    - 50
    - 100
   type: program_argument
