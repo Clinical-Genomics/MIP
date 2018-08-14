@@ -542,15 +542,13 @@ sub mip_analyse {
     );
 
 ## Check email adress syntax and mail host
-    if ( defined $active_parameter{email} ) {
 
-        check_email_address(
-            {
-                email => $active_parameter{email},
-                log   => $log,
-            }
-        );
-    }
+    check_email_address(
+        {
+            email => $active_parameter{email},
+            log   => $log,
+        }
+    );
 
 ## Check that the temp directory value is allowed
     check_allowed_temp_directory(

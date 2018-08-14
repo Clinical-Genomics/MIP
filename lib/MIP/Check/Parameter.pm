@@ -342,7 +342,6 @@ sub check_email_address {
 
     my $tmpl = {
         email => {
-            defined     => 1,
             required    => 1,
             store       => \$email,
             strict_type => 1,
@@ -355,6 +354,8 @@ sub check_email_address {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $email );
 
     ## Check syntax and mail host
     my $address = Email::Valid->address(

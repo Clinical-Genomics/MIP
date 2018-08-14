@@ -144,6 +144,17 @@ ok( $trap->exit, q{Exit if not valid email} );
 like( $trap->stderr, qr/FATAL/xms,
     q{Throw fatal log message if not valid email} );
 
+## Given undefined email
+my $not_defined_email = undef;
+
+my $is_undef = check_email_address(
+    {
+        log   => $log,
+        email => $not_defined_email,
+    }
+);
+is( $is_undef, undef, q{Returned if email is undefined} );
+
 done_testing();
 
 ######################
