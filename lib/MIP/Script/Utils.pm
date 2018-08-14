@@ -4,6 +4,7 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
+use File::Basename qw{ basename };
 use File::Spec::Functions qw{ catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -30,7 +31,8 @@ BEGIN {
       nest_hash
       print_install_defaults
       print_parameter_defaults
-      update_program_versions };
+      update_program_versions
+      write_script_version };
 }
 
 ## Constants
@@ -303,6 +305,45 @@ sub update_program_versions {
     }
     delete $parameter_href->{program_versions};
     return;
+}
+
+sub write_script_version {
+
+## Function : Writes the vesrion of the script and exists
+## Returns  :
+## Arguments: $write_version => Write version
+##          : $version       => Version of script to print
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $version;
+
+    ## Default(s)
+    my $write_version;
+
+    my $tmpl = {
+        write_version => {
+            allow       => [ 0, 1, undef ],
+            default     => 0,
+            store       => \$write_version,
+            strict_type => 1,
+        },
+        version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return 1 if ( not $write_version );
+
+    say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $version,
+      $NEWLINE;
+    exit;
 }
 
 sub _recursive_nesting {

@@ -63,7 +63,7 @@ use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Parse::File qw{ parse_fastq_infiles };
 use MIP::Parse::Parameter
   qw{ parse_infiles parse_prioritize_variant_callers parse_start_with_program };
-use MIP::Script::Utils qw{ help };
+use MIP::Script::Utils qw{ help write_script_version };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
   qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_dynamic_parameter set_human_genome_reference_features set_parameter_reference_dir_path set_parameter_to_broadcast };
@@ -182,12 +182,12 @@ sub mip_analyse {
 ## Set MIP version
     our $VERSION = 'v7.0.1';
 
-    if ( $active_parameter{version} ) {
-
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
-        exit;
-    }
+    write_script_version(
+        {
+            write_version => $active_parameter{version},
+            version       => $VERSION,
+        }
+    );
 
 ## Directories, files, job_ids and sample_info
     my ( %infile_lane_prefix,
@@ -664,10 +664,9 @@ sub mip_analyse {
         {
             active_parameter_href => \%active_parameter,
             log                   => $log,
-            parameter_names_ref =>
-              [qw{ analysis_type expected_coverage }],
-            parameter_href => \%parameter,
-            sample_ids_ref => \@{ $active_parameter{sample_ids} },
+            parameter_names_ref   => [qw{ analysis_type expected_coverage }],
+            parameter_href        => \%parameter,
+            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
         }
     );
 
