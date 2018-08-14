@@ -66,7 +66,7 @@ use MIP::Parse::Parameter
 use MIP::Script::Utils qw{ help write_script_version };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_dynamic_parameter set_human_genome_reference_features set_parameter_reference_dir_path set_parameter_to_broadcast };
+  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_dynamic_parameter set_human_genome_reference_features set_no_dry_run_parameters set_parameter_reference_dir_path set_parameter_to_broadcast };
 use MIP::Update::Contigs
   qw{ size_sort_select_file_contigs update_contigs_for_run };
 use MIP::Update::Parameters
@@ -926,20 +926,14 @@ sub mip_analyse {
 ####MAIN####
 ############
 
-    if ( not $active_parameter{dry_run_all} ) {
-
-        my %no_dry_run_info = (
-            analysisrunstatus => q{not_finished},
-            analysis_date     => $date_time_stamp,
-            mip_version       => $VERSION,
-        );
-
-      KEY_VALUE_PAIR:
-        while ( my ( $key, $value ) = each %no_dry_run_info ) {
-
-            $sample_info{$key} = $value;
+    set_no_dry_run_parameters(
+        {
+            is_dry_run_all   => $active_parameter{dry_run_all},
+            analysis_date    => $date_time_stamp,
+            mip_version      => $VERSION,
+            sample_info_href => \%sample_info,
         }
-    }
+    );
 
 ### RNA
     if ( $consensus_analysis_type eq q{wts} ) {
