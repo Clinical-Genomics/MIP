@@ -196,17 +196,6 @@ sub mip_analyse {
 #### Staging Area
 ### Get and/or set input parameters
 
-## Special case for boolean flag that will be removed from
-## config upon loading
-    my @boolean_parameter = qw{dry_run_all};
-    foreach my $parameter (@boolean_parameter) {
-
-        if ( not defined $active_parameter{$parameter} ) {
-
-            delete $active_parameter{$parameter};
-        }
-    }
-
 ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
     update_to_absolute_path(
         {
