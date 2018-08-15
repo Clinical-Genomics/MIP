@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{help};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.3';
+our $VERSION = '1.0.4';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -123,6 +123,10 @@ my %specific_argument = (
     no_confirmation => {
         input           => 1,
         expected_output => q{--yes},
+    },
+    no_update_deps => {
+        input           => 1,
+        expected_output => q{--no-update-deps},
     },
     packages_ref => {
         inputs_ref      => [qw{ test_package_1 test_package_2}],

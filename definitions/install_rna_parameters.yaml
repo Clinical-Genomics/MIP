@@ -35,18 +35,30 @@ emip:
     scipy:
     star: 2.5.4a
   shell:
-    bootstrapann:
+    blobfish:
+      conda_dependency:
+        bioconductor-deseq2:
+        bioconductor-tximport:
+        python: 2.7
+        r-optparse: 
+        r-readr:
       version: git
+      url: https://github.com/J35P312/BlobFish.git
+    bootstrapann:
+      conda_dependency:
+        numpy:
+        pip:
+        scipy:
       url: https://github.com/J35P312/BootstrapAnn.git
+      version: git
     mip_scripts:
       version: Your current MIP version
     picard:
       version: 2.17.11
     star_fusion:
+      conda_dependency:
+        star:
       version: 1.3.2
-    blobfish:
-      version: git
-      url: https://github.com/J35P312/BlobFish.git
 
 # Specify environment names
 environment_name:

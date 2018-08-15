@@ -49,10 +49,13 @@ emip:
     bedtools:
       version: 2.25.0
     expansionhunter:
+      conda_dependency:
       version: 2.5.5
     mip_scripts:
       version: Your current MIP version
     picard:
+      conda_dependency:
+        java-jdk:
       version: 2.3.0
     plink2:
       version: 171013
@@ -67,8 +70,18 @@ emip:
         - GRCh38.86
       version: v4_3t
     svdb:
+      conda_dependency:
+        cython:
+        numpy:
+        pip:
+        python: 2.7
       version: 1.1.2
     tiddit:
+      conda_dependency:
+        cmake:
+        gcc:
+        numpy:
+        python: 2.7
       version: 2.2.1
     vcf2cytosure:
       version: gitRepo
@@ -87,6 +100,8 @@ ecnvnator:
   shell:
     cnvnator:
       cnvnator_root_binary: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz
+      conda_dependency:
+        gcc:
       version: 0.3.3
 
 # Peddy environment spec
@@ -123,6 +138,9 @@ evep:
   pip:
   shell:
     vep:
+      conda_dependency:
+        bcftools:
+        htslib:
       vep_assemblies:
         - GRCh37
         - GRCh38

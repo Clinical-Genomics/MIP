@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -34,6 +34,7 @@ BEGIN {
       set_no_dry_run_parameters
       set_parameter_reference_dir_path
       set_parameter_to_broadcast
+      set_programs_for_installation
     };
 }
 
@@ -1062,4 +1063,156 @@ sub _get_default_repeat_specs_dir_path {
     return $repeat_specs_dir_path;
 }
 
+sub set_programs_for_installation {
+
+## Function : Proccess the lists of programs that has been selected for or omitted from installation
+##          : and update the environment packages
+## Returns  :
+## Arguments: $installation   => Environment to be installed
+##          : $log            => Log
+##          : $parameter_href => The entire parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $installation;
+    my $log;
+    my $parameter_href;
+
+    my $tmpl = {
+        installation => {
+            defined     => 1,
+            required    => 1,
+            store       => \$installation,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Array::Utils qw{ array_minus };
+    use Data::Diver qw{ Dive };
+    use List::Util qw{ any };
+    use MIP::Get::Parameter qw{ get_programs_for_shell_installation };
+    use MIP::Check::Installation
+      qw{ check_and_add_dependencies check_python_compability };
+
+    ## Check that the options supplied are compatible with each other
+    if (    ( scalar @{ $parameter_href->{skip_programs} } > 0 )
+        and ( scalar @{ $parameter_href->{select_programs} } > 0 ) )
+    {
+        $log->fatal(
+q{"--skip_programs" and "--select_programs" are mutually exclusive command line options}
+        );
+        exit 1;
+    }
+
+    ## Check that only one environment has been specified for installation if the option select_program is used
+    if (    ( scalar @{ $parameter_href->{select_programs} } > 0 )
+        and ( scalar @{ $parameter_href->{installations} } > 1 ) )
+    {
+        $log->fatal(
+q{Please select a single installation environment when using the option --select_programs}
+        );
+        exit 1;
+    }
+
+    ## Get programs that are to be installed via shell
+    my @shell_programs_to_install = get_programs_for_shell_installation(
+        {
+            conda_programs_href => $parameter_href->{$installation}{conda},
+            log                 => $log,
+            prefer_shell        => $parameter_href->{prefer_shell},
+            shell_install_programs_ref => $parameter_href->{shell_install},
+            shell_programs_href => $parameter_href->{$installation}{shell},
+        }
+    );
+
+    ## Remove the conda packages that has been selected to be installed via SHELL
+    delete @{ $parameter_href->{$installation}{conda} }
+      {@shell_programs_to_install};
+
+    ## Special case for snpsift since it is installed together with SnpEff
+    ## if shell installation of SnpEff has been requested.
+    if ( any { $_ eq q{snpeff} } @shell_programs_to_install ) {
+        delete $parameter_href->{$installation}{conda}{snpsift};
+    }
+    ## Store variable outside of shell hash and use Data::Diver module to avoid autovivification of variable
+    $parameter_href->{$installation}{snpeff_genome_versions} = Dive(
+        $parameter_href->{$installation},
+        qw{ shell snpeff snpeff_genome_versions }
+    );
+
+    ## Delete shell programs that are to be installed via conda instead of shell
+    my @shell_programs_to_delete =
+      keys %{ $parameter_href->{$installation}{shell} };
+    @shell_programs_to_delete =
+      array_minus( @shell_programs_to_delete, @shell_programs_to_install );
+    delete @{ $parameter_href->{$installation}{shell} }
+      {@shell_programs_to_delete};
+
+    ## Solve the installation when the skip_program or select_program parameter has been used
+  INSTALL_MODE:
+    foreach my $install_mode (qw{ conda pip shell }) {
+
+        ## Remove programs that are to be skipped
+        delete @{ $parameter_href->{$installation}{$install_mode} }
+          { @{ $parameter_href->{skip_programs} } };
+
+        ## Remove all non-selected programs
+        if ( scalar @{ $parameter_href->{select_programs} } > 0 ) {
+            my @non_selects =
+              keys %{ $parameter_href->{$installation}{$install_mode} };
+            @non_selects = array_minus( @non_selects,
+                @{ $parameter_href->{select_programs} } );
+            delete @{ $parameter_href->{$installation}{$install_mode} }
+              {@non_selects};
+        }
+    }
+
+    use Data::Printer;
+    ## Check and add dependencies that are needed for shell programs if they are missing from the programs that are to be installed via conda.
+  SHELL_PROGRAM:
+    foreach
+      my $shell_program ( keys %{ $parameter_href->{$installation}{shell} } )
+    {
+#next SHELL_PROGRAM if (undef %{ $parameter_href->{$installation}{shell}{$shell_program}{conda_dependency} });
+        my $dependency_href = Dive( $parameter_href->{$installation},
+            q{shell}, $shell_program, q{conda_dependency} );
+        next SHELL_PROGRAM if not defined $dependency_href;
+        check_and_add_dependencies(
+            {
+                conda_program_href => $parameter_href->{$installation}{conda},
+                dependency_href    => $dependency_href,
+                log                => $log,
+                shell_program      => $shell_program,
+            }
+        );
+    }
+
+    ## Exit if a python 2 env has ben specified for a python 3 program
+    check_python_compability(
+        {
+            installation_set_href => $parameter_href->{$installation},
+            log                   => $log,
+            python3_programs_ref  => $parameter_href->{python3_programs},
+            python_version => $parameter_href->{$installation}{conda}{python},
+            select_programs_ref => $parameter_href->{select_programs},
+        }
+    );
+
+    return;
+}
 1;

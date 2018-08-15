@@ -20,10 +20,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_and_add_dependencies
       check_existing_installation
       check_python_compability
     };
@@ -242,7 +243,6 @@ q{Python is not part of the installation. Skipping python compability check.}
         @programs_to_check = unique(
             keys %{ $installation_set_href->{conda} },
             keys %{ $installation_set_href->{shell} },
-            keys %{ $installation_set_href->{bioconda} },
             keys %{ $installation_set_href->{pip} },
         );
     }
@@ -259,6 +259,86 @@ q{Python is not part of the installation. Skipping python compability check.}
             q{Please use a python 3 environment for:} . $NEWLINE . join $TAB,
             @conflicts );
         exit 1;
+    }
+    return;
+}
+
+sub check_and_add_dependencies {
+
+## Function : Check if shell program dependencies are already part of the installation
+## Returns  :
+## Arguments: $conda_program_href => Hash with conda programs to be installed {REF}
+##          : $dependency_href    => Hash with dependencies {REF}
+##          : $log                => Log
+##          : $shell_program      => Shell program
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $conda_program_href;
+    my $dependency_href;
+    my $log;
+    my $shell_program;
+
+    my $tmpl = {
+        conda_program_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$conda_program_href,
+            strict_type => 1,
+        },
+        dependency_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$dependency_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        shell_program => {
+            defined     => 1,
+            required    => 1,
+            store       => \$shell_program,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  DEPENDENCY:
+    foreach my $dependency ( keys %{$dependency_href} ) {
+
+        ## Add dependency to conda installation if missing
+        if ( not $conda_program_href->{$dependency} ) {
+            $conda_program_href->{$dependency} =
+              $dependency_href->{$dependency};
+            next DEPENDENCY;
+        }
+
+        ## Check if version is specified, do nothing if the same version is already part of the installation
+        if ( defined $dependency_href->{$dependency} ) {
+
+            ## Exit if the versiion of the dependency conflicts with what is already part of the conda installation
+            if (
+                ( defined $conda_program_href->{$dependency} )
+                and ( $dependency_href->{$dependency} ne
+                    $conda_program_href->{$dependency} )
+              )
+            {
+                $log->fatal(
+qq{$shell_program is dependent on $dependency version: $dependency_href->{$dependency}}
+                );
+                $log->fatal(
+qq{The conda installation specifies version: $conda_program_href->{$dependency} of $shell_program}
+                );
+                exit 1;
+            }
+        }
     }
     return;
 }

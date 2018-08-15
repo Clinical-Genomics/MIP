@@ -30,7 +30,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -341,6 +341,7 @@ sub conda_install {
 ##         : $env_name           => Name of environment to create
 ##         : $FILEHANDLE         => Filehandle to write to
 ##         : $no_confirmation    => Do not ask for confirmation
+##         : $no_update_deps     => Only update dependencies that are required for the package to function
 ##         : $packages_ref       => Packages to be installed
 ##         : $quiet              => Do not display progress bar
 
@@ -351,6 +352,7 @@ sub conda_install {
     my $env_name;
     my $FILEHANDLE;
     my $no_confirmation;
+    my $no_update_deps;
     my $packages_ref;
     my $quiet;
 
@@ -387,6 +389,12 @@ sub conda_install {
             store       => \$no_confirmation,
             strict_type => 1,
         },
+        no_update_deps => {
+            allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$no_update_deps,
+            strict_type => 1,
+        },
         packages_ref => {
             default     => [],
             defined     => 1,
@@ -418,6 +426,10 @@ sub conda_install {
 
     if ($no_confirmation) {
         push @commands, q{--yes};
+    }
+
+    if ($no_update_deps) {
+        push @commands, q{--no-update-deps};
     }
 
     if ( @{$conda_channels_ref} ) {
