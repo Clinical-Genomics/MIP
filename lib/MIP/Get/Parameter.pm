@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -640,19 +640,6 @@ sub get_programs_for_shell_installation {
         }
     }
     elsif ( @{$shell_install_programs_ref} ) {
-
-        # Assert that the selected program has shell install instructions.
-        my @faulty_selects =
-          array_minus( @{$shell_install_programs_ref}, @shell_programs );
-        if (@faulty_selects) {
-            $log->fatal(
-                q{No shell installation instructions available for}
-                  . $COLON
-                  . join $SPACE,
-                @faulty_selects
-            );
-            exit 1;
-        }
 
         # Get elements in @shell_programs that are not part of the conda hash
         my @shell_only_programs =

@@ -30,7 +30,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -157,27 +157,6 @@ my %parameter = (
 $expected_shell_programs_ref = [qw{ test_3 test_4 }];
 is_deeply( \@returned_shell_programs, $expected_shell_programs_ref,
     q{Testing shell_install} );
-
-## Given a request to install a program via shell,
-## for wich there are no shell installation recipe.
-@parameter{shell_install} = [qw{ test_1 }];
-
-## When the subroutine is executed
-trap {
-    @returned_shell_programs = get_programs_for_shell_installation(
-        {
-            conda_programs_href        => $parameter{env_1}{bioconda},
-            log                        => $log,
-            prefer_shell               => $parameter{prefer_shell},
-            shell_install_programs_ref => $parameter{shell_install},
-            shell_programs_href        => $parameter{env_1}{shell},
-        }
-      )
-};
-
-## Then, exit and print fatal message
-ok( $trap->exit, q{Return exit signal} );
-like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message} );
 
 ## Given a general preference for shell installation
 $parameter{prefer_shell}  = 1;
