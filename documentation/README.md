@@ -120,7 +120,7 @@ $ perl t/mip_install.test
 
 ##### 4.Create the install instructions for MIP
 ```Bash
-$ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --installations full --environment_name emip=MIP
+$ perl mip install rare_disease --installations full --environment_name emip=MIP
 ```
 This will generate a batch script called "mip.sh" in your working directory.
 

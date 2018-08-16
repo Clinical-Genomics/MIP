@@ -16,7 +16,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib/
 use MIP::Cli::Mip;
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 ## Enable strict mode
 app_strict 1;
@@ -66,17 +66,6 @@ sub _build_usage {
             documentation => q{Conda path},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{config_file} => (
-            cmd_aliases => [qw{ config c }],
-            documentation =>
-              q{File with configuration parameters in YAML format},
-            is       => q{rw},
-            isa      => Str,
-            required => 1,
         )
     );
 

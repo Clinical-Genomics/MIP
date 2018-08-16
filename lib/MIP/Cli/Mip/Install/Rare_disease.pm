@@ -3,7 +3,9 @@ package MIP::Cli::Mip::Install::Rare_disease;
 use 5.022;
 use Carp;
 use Cwd qw{ abs_path };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
 use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
@@ -26,7 +28,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils
   qw{ nest_hash print_parameter_defaults update_program_versions};
 
-our $VERSION = q{0.2.2};
+our $VERSION = 0.03;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -125,6 +127,20 @@ sub _build_usage {
             ],
             required => 0,
         ),
+    );
+
+    option(
+        q{config_file} => (
+            cmd_aliases => [qw{ config c }],
+            documentation =>
+              q{File with configuration parameters in YAML format},
+            is      => q{rw},
+            isa     => Str,
+            default => catfile(
+                dirname($Bin),
+                qw{ MIP definitions install_rare_disease_parameters.yaml }
+            ),
+        )
     );
 
     option(
