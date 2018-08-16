@@ -1182,13 +1182,11 @@ q{Please select a single installation environment when using the option --select
         }
     }
 
-    use Data::Printer;
     ## Check and add dependencies that are needed for shell programs if they are missing from the programs that are to be installed via conda.
   SHELL_PROGRAM:
     foreach
       my $shell_program ( keys %{ $parameter_href->{$installation}{shell} } )
     {
-#next SHELL_PROGRAM if (undef %{ $parameter_href->{$installation}{shell}{$shell_program}{conda_dependency} });
         my $dependency_href = Dive( $parameter_href->{$installation},
             q{shell}, $shell_program, q{conda_dependency} );
         next SHELL_PROGRAM if not defined $dependency_href;

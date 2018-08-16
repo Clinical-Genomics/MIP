@@ -21,7 +21,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use Array::Utils qw{ array_minus };
-use Data::Diver qw{ Dive };
 use Readonly;
 
 ## MIPs lib/
