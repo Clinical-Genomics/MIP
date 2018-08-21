@@ -33,6 +33,7 @@ BEGIN {
 ## Constants
 Readonly my $ASTERIX                => q{*};
 Readonly my $DOT                    => q{.};
+Readonly my $EMPTY_STR              => q{};
 Readonly my $NEWLINE                => qq{\n};
 Readonly my $SPACE                  => q{ };
 Readonly my $UNDERSCORE             => q{_};
@@ -1040,6 +1041,7 @@ sub analysis_vep_sv {
 
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
 
@@ -1118,6 +1120,22 @@ sub analysis_vep_sv {
     ## Assign file_tags
     my $infile_tag =
       $file_info_href->{$family_id}{sv_combinevariantcallsets}{file_tag};
+    ## Special case for vrn pipeline
+    my $file_suffix;
+    if ( $consensus_analysis_type eq q{vrn} ) {
+
+        $infile_tag = $EMPTY_STR;
+
+        ## Set file suffix for next module within jobid chain
+        $file_suffix = set_file_suffix(
+            {
+                file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+                job_id_chain   => $job_id_chain,
+                parameter_href => $parameter_href,
+                suffix_key     => q{variant_file_suffix},
+            }
+        );
+    }
     my $outfile_tag =
       $file_info_href->{$family_id}{$program_name}{file_tag};
     my $infile_prefix       = $family_id . $infile_tag . $call_type;
@@ -1126,7 +1144,7 @@ sub analysis_vep_sv {
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
     ## Assign suffix
-    my $file_suffix = get_file_suffix(
+    $file_suffix = get_file_suffix(
         {
             jobid_chain    => $job_id_chain,
             parameter_href => $parameter_href,
@@ -1560,7 +1578,6 @@ sub _subset_vcf {
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_index bcftools_view };
 
-    my $MT_infile_path = $outfile_path;
     ## Prepare for bcftools_view
     htslib_bgzip(
         {

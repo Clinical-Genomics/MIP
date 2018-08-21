@@ -32,6 +32,7 @@ BEGIN {
 ## Constants
 Readonly my $ASTERIX     => q{*};
 Readonly my $DOT         => q{.};
+Readonly my $EMPTY_STR   => q{};
 Readonly my $NEWLINE     => qq{\n};
 Readonly my $PIPE        => q{|};
 Readonly my $SPACE       => q{ };
@@ -177,6 +178,8 @@ sub analysis_prepareforvariantannotationblock {
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
+    my $consensus_analysis_type =
+      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
@@ -236,6 +239,23 @@ sub analysis_prepareforvariantannotationblock {
     my $infile_tag =
       $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
 
+    ## Special case for vrn pipeline
+    my $infile_suffix;
+    if ( $consensus_analysis_type eq q{vrn} ) {
+
+        $infile_tag = $EMPTY_STR;
+
+        ## Set file suffix for next module within jobid chain
+        $infile_suffix = set_file_suffix(
+            {
+                file_suffix => $parameter_href->{$program_name}{outfile_suffix},
+                job_id_chain   => $job_id_chain,
+                parameter_href => $parameter_href,
+                suffix_key     => q{variant_file_suffix},
+            }
+        );
+    }
+
     ## Files
     my $infile_prefix = $family_id . $infile_tag . $call_type;
 
@@ -243,7 +263,7 @@ sub analysis_prepareforvariantannotationblock {
     my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
 
     ## Assign suffix
-    my $infile_suffix = get_file_suffix(
+    $infile_suffix = get_file_suffix(
         {
             jobid_chain    => $job_id_chain,
             parameter_href => $parameter_href,

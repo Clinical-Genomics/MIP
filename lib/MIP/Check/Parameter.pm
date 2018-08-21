@@ -544,7 +544,7 @@ sub check_infiles {
               . q{ in supplied infile: }
               . catfile( $infile_directory, $infile ) );
         $log->fatal(
-q{Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
+q{Check that: '--sample_ids' and '--infile_dirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
         );
         exit 1;
     }

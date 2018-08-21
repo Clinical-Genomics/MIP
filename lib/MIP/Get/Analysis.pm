@@ -413,7 +413,7 @@ sub get_overall_analysis_type {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my @analysis_types = (qw{ wes wgs wts });
+    my @analysis_types = (qw{ wes wgs vrn wts });
 
   ANALYSIS:
     foreach my $analysis_type (@analysis_types) {

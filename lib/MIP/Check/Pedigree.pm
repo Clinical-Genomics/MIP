@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -199,7 +199,7 @@ sub check_pedigree_sample_allowed_values {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my %allowed_values = (
-        analysis_type => [qw{ wes wgs wts }],
+        analysis_type => [qw{ wes wgs vrn wts }],
         phenotype     => [qw{ affected unaffected unknown }],
         sex           => [qw{ female male other unknown }],
     );

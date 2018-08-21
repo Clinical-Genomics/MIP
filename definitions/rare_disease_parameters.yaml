@@ -178,6 +178,58 @@ java_use_large_pages:
   default: 0
   type: program_argument
 ####Bash
+module_core_number:
+  associated_program:
+   - mip
+  data_type: HASH
+  default:
+    analysisrunstatus: 1
+    bcftools_mpileup: 16
+    bedtools_genomecov: 1
+    bwa_mem: 16
+    chanjo_sexcheck: 1
+    cnvnator: 16
+    delly_call: 16
+    delly_reformat: 16
+    endvariantannotationblock: 1
+    evaluation: 1
+    expansionhunter: 1
+    fastqc: 0
+    freebayes: 16
+    frequency_filter: 16
+    gatk_baserecalibration: 16
+    gatk_combinevariantcallsets: 1
+    gatk_genotypegvcfs: 4
+    gatk_concatenate_genotypegvcfs: 2
+    gatk_haplotypecaller: 16
+    gatk_realigner: 16
+    gatk_variantevalall: 1
+    gatk_variantevalexome: 1
+    gatk_variantrecalibration: 16
+    gzip_fastq: 0
+    manta: 16
+    markduplicates: 16
+    multiqc: 1
+    peddy: 4
+    picardtools_collecthsmetrics: 2
+    picardtools_collectmultiplemetrics: 2
+    picardtools_mergesamfiles: 16
+    plink: 1
+    qccollect: 1
+    rcovplots: 1
+    rtg_vcfeval: 1
+    sacct: 1
+    sambamba_depth: 2
+    samtools_subsample_mt: 1
+    split_fastq_file: 4
+    sv_combinevariantcallsets: 1
+    sv_rankvariant: 16
+    sv_reformat: 1
+    sv_varianteffectpredictor: 16
+    sv_vcfparser: 16
+    variant_integrity: 1
+    vcf2cytosure: 1
+  type: mip
 module_time:
   associated_program:
    - mip
@@ -238,58 +290,13 @@ module_time:
     vt: 10
     vcf2cytosure: 2
   type: mip
-module_core_number:
+infile_dirs:
   associated_program:
    - mip
+  exists_check: directory
   data_type: HASH
-  default:
-    analysisrunstatus: 1
-    bcftools_mpileup: 16
-    bedtools_genomecov: 1
-    bwa_mem: 16
-    chanjo_sexcheck: 1
-    cnvnator: 16
-    delly_call: 16
-    delly_reformat: 16
-    endvariantannotationblock: 1
-    evaluation: 1
-    expansionhunter: 1
-    fastqc: 0
-    freebayes: 16
-    frequency_filter: 16
-    gatk_baserecalibration: 16
-    gatk_combinevariantcallsets: 1
-    gatk_genotypegvcfs: 4
-    gatk_concatenate_genotypegvcfs: 2
-    gatk_haplotypecaller: 16
-    gatk_realigner: 16
-    gatk_variantevalall: 1
-    gatk_variantevalexome: 1
-    gatk_variantrecalibration: 16
-    gzip_fastq: 0
-    manta: 16
-    markduplicates: 16
-    multiqc: 1
-    peddy: 4
-    picardtools_collecthsmetrics: 2
-    picardtools_collectmultiplemetrics: 2
-    picardtools_mergesamfiles: 16
-    plink: 1
-    qccollect: 1
-    rcovplots: 1
-    rtg_vcfeval: 1
-    sacct: 1
-    sambamba_depth: 2
-    samtools_subsample_mt: 1
-    split_fastq_file: 4
-    sv_combinevariantcallsets: 1
-    sv_rankvariant: 16
-    sv_reformat: 1
-    sv_varianteffectpredictor: 16
-    sv_vcfparser: 16
-    variant_integrity: 1
-    vcf2cytosure: 1
-  type: mip
+  type: path
+  update_path: absolute_path
 ## Choosen MIP Aligner
 outaligner_dir:
   associated_program:
@@ -304,6 +311,7 @@ picardtools_path:
    - markduplicates
    - picardtools_collecthsmetrics
    - picardtools_collectmultiplemetrics
+   - prepareforvariantannotationblock
    - delly_reformat
   data_type: SCALAR
   exists_check: directory
@@ -322,6 +330,49 @@ replace_iupac:
   default: 0
   type: mip
 ###Programs
+split_fastq_file:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  outfile_suffix: ".fastq.gz"
+  program_name_path:
+   - pigz
+   - split
+  type: program
+split_fastq_file_read_batch:
+  associated_program:
+   - split_fastq_file
+  data_type: SCALAR
+  default: 25000000
+  type: program_argument
+## Gzip
+gzip_fastq:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  program_name_path:
+   - gzip
+  type: program
+## FastQC
+fastqc:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  program_name_path:
+   - fastqc
+  type: program
 ## BWA
 bwa_mem:
   analysis_mode: sample

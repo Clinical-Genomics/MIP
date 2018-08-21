@@ -1,0 +1,20 @@
+CHAIN_ALL:
+   - CHAIN_MAIN:
+      - CHAIN_SV:
+         - sv_varianteffectpredictor
+         - sv_vcfparser
+         - sv_rankvariant
+         - sv_reformat
+         - vcf2cytosure
+   - CHAIN_MAIN:
+      - prepareforvariantannotationblock
+      - rhocall
+      - vt
+      - frequency_filter
+      - varianteffectpredictor
+      - vcfparser
+      - snpeff
+      - rankvariant
+      - endvariantannotationblock
+   - analysisrunstatus
+   - sacct 
