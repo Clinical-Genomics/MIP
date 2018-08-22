@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [7.0.0]
+- Add Expansion Hunter Fix https://github.com/Clinical-Genomics/MIP/issues/442
+- One case one Multiqc report Fix https://github.com/Clinical-Genomics/MIP/issues/515
 - Added exclude contig option. Fix https://github.com/Clinical-Genomics/MIP/issues/509.
 
 ## [6.0.7]
