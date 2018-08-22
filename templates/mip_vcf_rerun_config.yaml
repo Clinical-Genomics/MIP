@@ -93,7 +93,7 @@ genmod_models_whole_gene: 1
 picardtools_path: cluster_constant_path!
 rankvariant_binary_file: 1
 snpeff_ann: 1
-snpeff_path: /mnt/hds/proj/cust003/develop/modules/miniconda2/envs/mip6.0/bin/
+snpeff_path: cluster_constant_path!
 snpsift_annotation_outinfo_key:
   GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz: GNOMAD
   GRCh37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: SWEGEN
