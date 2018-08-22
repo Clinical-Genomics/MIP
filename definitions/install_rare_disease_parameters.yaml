@@ -25,13 +25,11 @@ emip:
     cython:
     delly: 0.7.7
     fastqc: 0.11.4
-    freebayes: 1.1.0
     gatk: 3.8
     gcc: 4.8.5
     htslib: 1.6
     manta: 1.1.0
     numpy: 
-    peddy: 0.3.1
     picard: 2.14.1
     pip:
     plink2: 1.90b3.35
@@ -104,6 +102,17 @@ ecnvnator:
         gcc:
       version: 0.3.3
 
+# Freebayes environment spec
+efreebayes:
+  conda:
+    bcftools: 1.6
+    freebayes: 1.1.0
+    gatk: 3.8
+    pip:
+    python: 2.7
+  pip:
+  shell: 
+
 # Peddy environment spec
 epeddy:
   conda:
@@ -155,17 +164,19 @@ evep:
 environment_name:
   emip: MIP_rare
   ecnvnator:
+  efreebayes:
   epeddy:
   epy3:
   evep:
 
 # Environments to install
 installations:
+  - ecnvnator
+  - efreebayes
   - emip
   - epeddy
   - epy3
   - evep
-  - ecnvnator
 
 # Optional name of log file
 log_file: ~

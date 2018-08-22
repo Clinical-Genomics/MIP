@@ -28,7 +28,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils
   qw{ nest_hash print_parameter_defaults update_program_versions};
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -77,7 +77,8 @@ sub run {
 
     ## Add all environments to installation if full installation was selected
     if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
-        @{ $parameter{installations} } = qw{ emip epeddy epy3 evep ecnvnator };
+        @{ $parameter{installations} } =
+          qw{ emip ecnvnator efreebayes epeddy epy3 evep };
     }
 
     ## Make sure that the cnvnator environment is installed last
@@ -119,11 +120,12 @@ sub _build_usage {
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip      => Optional [Str],
-                epeddy    => Optional [Str],
-                epy3      => Optional [Str],
-                evep      => Optional [Str],
-                ecnvnator => Optional [Str],
+                emip       => Optional [Str],
+                ecnvnator  => Optional [Str],
+                efreebayes => Optional [Str],
+                epeddy     => Optional [Str],
+                epy3       => Optional [Str],
+                evep       => Optional [Str],
             ],
             required => 0,
         ),
@@ -150,9 +152,9 @@ sub _build_usage {
             cmd_tags      => [q{Default: emip, epeddy, epy3, evep}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa =>
-              ArrayRef [ enum( [qw{ emip epeddy epy3 evep ecnvnator full }] ),
-              ],
+            isa           => ArrayRef [
+                enum( [qw{ emip ecnvnator efreebayes epeddy epy3 evep full }] ),
+            ],
             required => 0,
         ),
     );
