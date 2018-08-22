@@ -129,6 +129,7 @@ This will generate a batch script called "mip.sh" in your working directory.
   The batch script will attempt to install the MIP dependencies in a conda environment called MIP. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:  
   * MIP's base environment (named MIP in the example above)
   * MIP_cnvnator
+  * MIP_freebayes
   * MIP_peddy
   * MIP_py3
   * MIP_vep  
@@ -180,6 +181,10 @@ $ perl t/mip_analyse_rare_disease.test
      - source
      - activate
      - MIP_cnvnator
+	freebayes:
+	 - source
+	 - activate
+	 - MIP_freebayes
     multiqc:
      - source
      - activate
