@@ -163,7 +163,7 @@ sub analysis_gatk_haplotypecaller {
     use MIP::Set::File qw{ set_file_suffix };
 
     ## Constants
-    Readonly my $MITOCHONDRIA_PLOIDY           => 3;
+    Readonly my $MITOCHONDRIA_PLOIDY           => 2;
     Readonly my $JAVA_MEMORY_ALLOCATION        => 4;
     Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
     Readonly my $VARIANT_INDEX_PARAMETER       => 128_000;
