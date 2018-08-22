@@ -25,13 +25,11 @@ emip:
     cython:
     delly: 0.7.7
     fastqc: 0.11.4
-    freebayes: 1.1.0
     gatk: 3.8
     gcc: 4.8.5
     htslib: 1.6
     manta: 1.1.0
     numpy: 
-    peddy: 0.3.1
     picard: 2.14.1
     pip:
     plink2: 1.90b3.35
@@ -49,10 +47,13 @@ emip:
     bedtools:
       version: 2.25.0
     expansionhunter:
+      conda_dependency:
       version: 2.5.5
     mip_scripts:
       version: Your current MIP version
     picard:
+      conda_dependency:
+        java-jdk:
       version: 2.3.0
     plink2:
       version: 171013
@@ -67,8 +68,18 @@ emip:
         - GRCh38.86
       version: v4_3t
     svdb:
+      conda_dependency:
+        cython:
+        numpy:
+        pip:
+        python: 2.7
       version: 1.1.2
     tiddit:
+      conda_dependency:
+        cmake:
+        gcc:
+        numpy:
+        python: 2.7
       version: 2.2.1
     vcf2cytosure:
       version: gitRepo
@@ -87,7 +98,20 @@ ecnvnator:
   shell:
     cnvnator:
       cnvnator_root_binary: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz
+      conda_dependency:
+        gcc:
       version: 0.3.3
+
+# Freebayes environment spec
+efreebayes:
+  conda:
+    bcftools: 1.6
+    freebayes: 1.1.0
+    gatk: 3.8
+    pip:
+    python: 2.7
+  pip:
+  shell: 
 
 # Peddy environment spec
 epeddy:
@@ -123,6 +147,9 @@ evep:
   pip:
   shell:
     vep:
+      conda_dependency:
+        bcftools:
+        htslib:
       vep_assemblies:
         - GRCh37
         - GRCh38
@@ -137,17 +164,19 @@ evep:
 environment_name:
   emip: MIP_rare
   ecnvnator:
+  efreebayes:
   epeddy:
   epy3:
   evep:
 
 # Environments to install
 installations:
+  - ecnvnator
+  - efreebayes
   - emip
   - epeddy
   - epy3
   - evep
-  - ecnvnator
 
 # Optional name of log file
 log_file: ~

@@ -15,7 +15,7 @@ use MooseX::App::Command;
 use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -68,6 +68,17 @@ sub _build_usage {
             documentation => q{Set the cluster constant path},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{config_file} => (
+            cmd_aliases => [qw{ config c }],
+            documentation =>
+              q{File with configuration parameters in YAML format},
+            is       => q{rw},
+            isa      => Str,
+            required => 1,
         )
     );
 
