@@ -177,6 +177,8 @@ sub analysis_rhocall_annotate {
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
+    my $consensus_analysis_type =
+      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
@@ -231,6 +233,12 @@ sub analysis_rhocall_annotate {
     ## Tags
     my $infile_tag =
       $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
+    ## Special case for vrn pipeline
+    if ( $consensus_analysis_type eq q{vrn} ) {
+
+        $infile_tag =
+          $file_info_href->{$family_id}{vcf_rerun_reformat}{file_tag};
+    }
     my $outfile_tag =
       $file_info_href->{$family_id}{$program_name}{file_tag};
 

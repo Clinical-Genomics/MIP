@@ -167,6 +167,8 @@ sub pipeline_vcf_rerun {
       qw{ analysis_rhocall_annotate analysis_rhocall_annotate_rio };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
+    use MIP::Recipes::Analysis::Vcf_rerun_reformat
+      qw{ analysis_sv_vcf_rerun_reformat analysis_vcf_rerun_reformat };
     use MIP::Recipes::Analysis::Snpeff
       qw{ analysis_snpeff analysis_snpeff_rio };
     use MIP::Recipes::Analysis::Variantannotationblock
@@ -219,10 +221,12 @@ sub pipeline_vcf_rerun {
         snpeff      => \&analysis_snpeff,
         sv_rankvariant => undef,                    # Depends on sample features
         sv_reformat    => \&analysis_sv_reformat,
+        sv_vcf_rerun_reformat     => \&analysis_sv_vcf_rerun_reformat,
         sv_varianteffectpredictor => \&analysis_vep_sv,
         sv_vcfparser              => \&analysis_sv_vcfparser,
         varianteffectpredictor    => \&analysis_vep,
         vcfparser                 => \&analysis_mip_vcfparser,
+        vcf_rerun_reformat        => \&analysis_vcf_rerun_reformat,
         vt                        => \&analysis_vt,
     );
 
@@ -240,8 +244,10 @@ sub pipeline_vcf_rerun {
         sv_vcfparser                     => q{SV vcfparser},
         sv_rankvariant                   => q{SV rankvariant},
         sv_reformat                      => q{SV reformat},
+        sv_vcf_rerun_reformat            => q{SV vcf rerun reformat},
         varianteffectpredictor           => q{Varianteffectpredictor},
         vcfparser                        => q{Vcfparser},
+        vcf_rerun_reformat               => q{Vcf rerun reformat},
         vt                               => q{Vt},
     );
 

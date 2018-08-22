@@ -102,7 +102,7 @@ sub analysis_recipe {
             store       => \$outaligner_dir,
             strict_type => 1,
         },
-       parameter_href => {
+        parameter_href => {
             default     => {},
             defined     => 1,
             required    => 1,
@@ -149,12 +149,13 @@ sub analysis_recipe {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) =
+      get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name      => $program_name,
+            program_name          => $program_name,
         }
-    );
+      );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -220,7 +221,7 @@ sub analysis_recipe {
             process_time          => $time,
             program_directory => catfile( $outaligner_dir, q{PROGRAM_NAME} ),
             program_name      => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            source_environment_commands_ref => \@source_environment_cmds,
         }
     );
 
@@ -240,7 +241,7 @@ sub analysis_recipe {
             {
                 infile           => $merged_infile_prefix,
                 path             => $program_outfile_path,
-                program_name     => q{PROGRAM_NAME},
+                program_name     => $program_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

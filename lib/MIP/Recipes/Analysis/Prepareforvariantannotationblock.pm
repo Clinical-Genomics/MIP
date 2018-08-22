@@ -240,20 +240,10 @@ sub analysis_prepareforvariantannotationblock {
       $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
 
     ## Special case for vrn pipeline
-    my $infile_suffix;
     if ( $consensus_analysis_type eq q{vrn} ) {
 
-        $infile_tag = $EMPTY_STR;
-
-        ## Set file suffix for next module within jobid chain
-        $infile_suffix = set_file_suffix(
-            {
-                file_suffix => $parameter_href->{$program_name}{outfile_suffix},
-                job_id_chain   => $job_id_chain,
-                parameter_href => $parameter_href,
-                suffix_key     => q{variant_file_suffix},
-            }
-        );
+        $infile_tag =
+          $file_info_href->{$family_id}{vcf_rerun_reformat}{file_tag};
     }
 
     ## Files
@@ -263,7 +253,7 @@ sub analysis_prepareforvariantannotationblock {
     my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
 
     ## Assign suffix
-    $infile_suffix = get_file_suffix(
+    my $infile_suffix = get_file_suffix(
         {
             jobid_chain    => $job_id_chain,
             parameter_href => $parameter_href,

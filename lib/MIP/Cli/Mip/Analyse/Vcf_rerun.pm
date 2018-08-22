@@ -241,6 +241,26 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{sv_vcf_rerun_reformat} => (
+            cmd_aliases   => [qw{ svrr }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Reformat rerun SV variants},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{sv_vcf_rerun_file} => (
+            cmd_aliases   => [qw{ svrrf }],
+            cmd_flag      => q{sv_vcf_rerun_file},
+            cmd_tags      => [q{Format: vcf}],
+            documentation => q{Sv variant calling file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+    option(
         q{sv_varianteffectpredictor} => (
             cmd_aliases   => [qw{ svv }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -442,6 +462,27 @@ q{Use predefined gene annotation supplied with genmod for defining genes},
 q{Produce binary file from the rank variant chromosome sorted vcfs},
             is  => q{rw},
             isa => Bool,
+        )
+    );
+
+    option(
+        q{vcf_rerun_reformat} => (
+            cmd_aliases   => [qw{ vrr }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Reformat rerun SV variants},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{vcf_rerun_file} => (
+            cmd_aliases   => [qw{ vrrf }],
+            cmd_flag      => q{vcf_rerun_file},
+            cmd_tags      => [q{Format: vcf}],
+            documentation => q{Sv variant calling file},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 

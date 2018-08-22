@@ -1041,7 +1041,6 @@ sub analysis_vep_sv {
 
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
 
@@ -1051,7 +1050,7 @@ sub analysis_vep_sv {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set MIP program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
@@ -1120,21 +1119,12 @@ sub analysis_vep_sv {
     ## Assign file_tags
     my $infile_tag =
       $file_info_href->{$family_id}{sv_combinevariantcallsets}{file_tag};
+
     ## Special case for vrn pipeline
-    my $file_suffix;
     if ( $consensus_analysis_type eq q{vrn} ) {
 
-        $infile_tag = $EMPTY_STR;
-
-        ## Set file suffix for next module within jobid chain
-        $file_suffix = set_file_suffix(
-            {
-                file_suffix => $parameter_href->{$program_name}{outfile_suffix},
-                job_id_chain   => $job_id_chain,
-                parameter_href => $parameter_href,
-                suffix_key     => q{variant_file_suffix},
-            }
-        );
+        $infile_tag =
+          $file_info_href->{$family_id}{sv_vcf_rerun_reformat}{file_tag};
     }
     my $outfile_tag =
       $file_info_href->{$family_id}{$program_name}{file_tag};
@@ -1144,7 +1134,7 @@ sub analysis_vep_sv {
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
     ## Assign suffix
-    $file_suffix = get_file_suffix(
+    my $file_suffix = get_file_suffix(
         {
             jobid_chain    => $job_id_chain,
             parameter_href => $parameter_href,
@@ -1175,7 +1165,7 @@ sub analysis_vep_sv {
     );
 
     ## varianteffectpredictor
-    say {$FILEHANDLE} q{## varianteffectpredictor};
+    say {$FILEHANDLE} q{## Varianteffectpredictor};
 
     my $assembly_version = $file_info_href->{human_genome_reference_source}
       . $file_info_href->{human_genome_reference_version};
@@ -1215,8 +1205,9 @@ sub analysis_vep_sv {
 
         ## Contig specific
         # Update endings with contig info
-        if (   ( $consensus_analysis_type eq q{wgs} )
-            || ( $consensus_analysis_type eq q{mixed} ) )
+        if (   $consensus_analysis_type eq q{wgs}
+            || $consensus_analysis_type eq q{mixed}
+            || $consensus_analysis_type eq q{vrn} )
         {
 
             $vep_outfile_prefix = $outfile_prefix . $UNDERSCORE . $contig;
