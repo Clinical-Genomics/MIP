@@ -77,6 +77,13 @@ gatk_path:
   exists_check: directory
   type: path
   update_path: absolute_path
+infile_dirs:
+  associated_program:
+   - mip
+  exists_check: directory
+  data_type: HASH
+  type: path
+  update_path: absolute_path
 ## java large pages - affects all modules using java
 java_use_large_pages:
   associated_program:
@@ -144,6 +151,30 @@ picardtools_path:
   type: path
   update_path: absolute_path
 ###Programs
+## Gzip
+gzip_fastq:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  program_name_path:
+   - gzip
+  type: program
+## FastQC
+fastqc:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  program_name_path:
+   - fastqc
+  type: program
 ## Salmon
 salmon_quant:
   analysis_mode: sample

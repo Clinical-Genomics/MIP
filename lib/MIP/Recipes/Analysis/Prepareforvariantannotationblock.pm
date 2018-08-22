@@ -32,6 +32,7 @@ BEGIN {
 ## Constants
 Readonly my $ASTERIX     => q{*};
 Readonly my $DOT         => q{.};
+Readonly my $EMPTY_STR   => q{};
 Readonly my $NEWLINE     => qq{\n};
 Readonly my $PIPE        => q{|};
 Readonly my $SPACE       => q{ };
@@ -177,6 +178,8 @@ sub analysis_prepareforvariantannotationblock {
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
+    my $consensus_analysis_type =
+      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
@@ -235,6 +238,13 @@ sub analysis_prepareforvariantannotationblock {
     ## Assign file_tags
     my $infile_tag =
       $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
+
+    ## Special case for vrn pipeline
+    if ( $consensus_analysis_type eq q{vrn} ) {
+
+        $infile_tag =
+          $file_info_href->{$family_id}{vcf_rerun_reformat}{file_tag};
+    }
 
     ## Files
     my $infile_prefix = $family_id . $infile_tag . $call_type;

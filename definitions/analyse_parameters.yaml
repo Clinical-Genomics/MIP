@@ -62,13 +62,6 @@ family_id:
    - mip
   data_type: SCALAR
   type: mip
-infile_dirs:
-  associated_program:
-   - mip
-  exists_check: directory
-  data_type: HASH
-  type: path
-  update_path: absolute_path
 node_ram_memory:
   associated_program:
    - mip
@@ -182,46 +175,3 @@ supported_capture_kit:
     latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
   type: mip
 ### Programs
-split_fastq_file:
-  analysis_mode: sample
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  infile_suffix: ".fastq"
-  outfile_suffix: ".fastq.gz"
-  program_name_path:
-   - pigz
-   - split
-  type: program
-split_fastq_file_read_batch:
-  associated_program:
-   - split_fastq_file
-  data_type: SCALAR
-  default: 25000000
-  type: program_argument
-## Gzip
-gzip_fastq:
-  analysis_mode: sample
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: nofile_tag
-  infile_suffix: ".fastq"
-  program_name_path:
-   - gzip
-  type: program
-## FastQC
-fastqc:
-  analysis_mode: sample
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  infile_suffix: ".fastq"
-  program_name_path:
-   - fastqc
-  type: program

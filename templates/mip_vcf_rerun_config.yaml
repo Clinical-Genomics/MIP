@@ -1,0 +1,121 @@
+---
+## Environment
+analysis_constant_path: analysis
+cluster_constant_path: /mnt/hds/proj/cust003/develop
+bash_set_errexit: 1
+bash_set_nounset: 0
+bash_set_pipefail: 1
+java_use_large_pages: 1
+max_cores_per_node: 16
+project_id: travis_test
+program_source_environment_command:
+  genmod:
+   - source
+   - activate
+   - mip_travis_py3
+module_source_environment_command:
+  frequency_filter:
+   - source
+   - activate
+   - mip_travis_py3
+  rankvariant:
+   - source
+   - activate
+   - mip_travis_py3
+  sv_rankvariant:
+   - source
+   - activate
+   - mip_travis_py3
+  sv_varianteffectpredictor:
+   - source
+   - activate
+   - mip_travis_vep
+  varianteffectpredictor:
+   - source
+   - activate
+   - mip_travis_vep
+source_main_environment_commands:
+  - source
+  - activate
+  - mip_travis
+slurm_quality_of_service: low
+## Input
+pedigree_file: cluster_constant_path!/family_id!/family_id!_pedigree.yaml
+reference_dir: cluster_constant_path!/references
+vcfparser_select_file: cluster_constant_path!/family_id!/aggregated_gene_panel_test.txt
+sv_vcfparser_select_file: cluster_constant_path!/family_id!/aggregated_gene_panel_test.txt
+## Output
+config_file_analysis: cluster_constant_path!/family_id!/analysis_constant_path!/family_id!_config.yaml
+outdata_dir: cluster_constant_path!/family_id!/analysis_constant_path!
+outscript_dir: cluster_constant_path!/family_id!/analysis_constant_path!/scripts
+sample_info_file: cluster_constant_path!/family_id!/analysis_constant_path!/family_id!_qc_sample_info.yaml
+## References
+genmod_annotate_cadd_files:
+  - GRCh37_cadd_whole_genome_snvs_ge10_-v1.3-.tsv.gz
+  - GRCh37_cadd_exac_r0.3_-v1.3-.tsv.gz
+  - GRCh37_cadd_1000g_phase3_-v1.3-.tsv.gz
+genmod_annotate_spidex_file: GRCh37_spidex_public_noncommercial_-v1_0-.tab.gz
+genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv
+human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
+rank_model_file: rank_model_cmms_-v1.21-.ini
+snpsift_annotation_files:
+  GRCh37_clinvar_reformat_-2018-04-29-.vcf.gz: CLNSIG,CLNVID,CLNREVSTAT
+  GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz: AF,AF_POPMAX
+  GRCh37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: AF,AC_Hom,AC_Het,AC_Hemi
+  GRCh37_loqusdb_-2017-05-22-.vcf.gz: Obs,Hom
+  GRCh37_genbank_haplogroup_-2015-08-01-.vcf.gz: MTAF
+sv_genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv
+sv_rank_model_file: svrank_model_cmms_-v1.2-.ini
+### Analysis
+## Programs
+analysisrunstatus: 1
+endvariantannotationblock: 1
+frequency_filter: 1
+prepareforvariantannotationblock: 1
+rankvariant: 1
+rhocall: 1
+sacct: 1
+snpeff: 1
+sv_rankvariant: 1
+sv_reformat: 1
+sv_vcf_rerun_reformat: 1
+sv_varianteffectpredictor: 1
+sv_vcfparser: 1
+varianteffectpredictor: 1
+vcfparser: 1
+vcf_rerun_reformat: 1
+vt: 1
+frequency_genmod_filter: 1
+## Parameters
+gatk_path: cluster_constant_path!
+genmod_annotate_regions: 1
+genmod_models_whole_gene: 1
+picardtools_path: cluster_constant_path!
+rankvariant_binary_file: 1
+snpeff_ann: 1
+snpeff_path: cluster_constant_path!
+snpsift_annotation_outinfo_key:
+  GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz: GNOMAD
+  GRCh37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: SWEGEN
+snpsift_dbnsfp_annotations:
+  - GERP++_RS
+  - GERP++_NR
+  - phyloP46way_primate
+  - phyloP100way_vertebrate
+  - phastCons46way_primate
+  - phastCons100way_vertebrate
+sv_vcfparser_per_gene: 1
+sv_vcfparser_vep_transcripts: 1
+sv_vcfparser_select_file_matching_column: 3
+sv_genmod_annotate_regions: 1
+sv_genmod_models_family_type: cmms
+sv_rankvariant_binary_file: 1
+vcfparser_vep_transcripts: 1
+vcfparser_select_file_matching_column: 3
+vep_directory_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-vep/
+vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-91/cache/
+vep_plugins_dir_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-91/cache/
+vt_decompose: 1
+vt_normalize: 1
+vt_uniq: 1
+vt_missing_alt_allele: 1

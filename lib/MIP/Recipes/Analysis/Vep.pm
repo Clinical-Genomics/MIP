@@ -33,6 +33,7 @@ BEGIN {
 ## Constants
 Readonly my $ASTERIX                => q{*};
 Readonly my $DOT                    => q{.};
+Readonly my $EMPTY_STR              => q{};
 Readonly my $NEWLINE                => qq{\n};
 Readonly my $SPACE                  => q{ };
 Readonly my $UNDERSCORE             => q{_};
@@ -1049,7 +1050,7 @@ sub analysis_vep_sv {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set MIP program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
@@ -1118,6 +1119,13 @@ sub analysis_vep_sv {
     ## Assign file_tags
     my $infile_tag =
       $file_info_href->{$family_id}{sv_combinevariantcallsets}{file_tag};
+
+    ## Special case for vrn pipeline
+    if ( $consensus_analysis_type eq q{vrn} ) {
+
+        $infile_tag =
+          $file_info_href->{$family_id}{sv_vcf_rerun_reformat}{file_tag};
+    }
     my $outfile_tag =
       $file_info_href->{$family_id}{$program_name}{file_tag};
     my $infile_prefix       = $family_id . $infile_tag . $call_type;
@@ -1157,7 +1165,7 @@ sub analysis_vep_sv {
     );
 
     ## varianteffectpredictor
-    say {$FILEHANDLE} q{## varianteffectpredictor};
+    say {$FILEHANDLE} q{## Varianteffectpredictor};
 
     my $assembly_version = $file_info_href->{human_genome_reference_source}
       . $file_info_href->{human_genome_reference_version};
@@ -1197,8 +1205,9 @@ sub analysis_vep_sv {
 
         ## Contig specific
         # Update endings with contig info
-        if (   ( $consensus_analysis_type eq q{wgs} )
-            || ( $consensus_analysis_type eq q{mixed} ) )
+        if (   $consensus_analysis_type eq q{wgs}
+            || $consensus_analysis_type eq q{mixed}
+            || $consensus_analysis_type eq q{vrn} )
         {
 
             $vep_outfile_prefix = $outfile_prefix . $UNDERSCORE . $contig;
@@ -1560,7 +1569,6 @@ sub _subset_vcf {
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_index bcftools_view };
 
-    my $MT_infile_path = $outfile_path;
     ## Prepare for bcftools_view
     htslib_bgzip(
         {

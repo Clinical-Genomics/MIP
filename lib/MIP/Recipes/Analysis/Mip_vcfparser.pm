@@ -1111,7 +1111,8 @@ sub analysis_sv_vcfparser {
 
     ## Transfer contig files
     if (   $consensus_analysis_type eq q{wgs}
-        || $consensus_analysis_type eq q{mixed} )
+        || $consensus_analysis_type eq q{mixed}
+        || $consensus_analysis_type eq q{vrn} )
     {
 
         ## Copy file(s) to temporary directory
@@ -1173,7 +1174,8 @@ sub analysis_sv_vcfparser {
 
         ## Update endings with contig info
         if (   $consensus_analysis_type eq q{wgs}
-            || $consensus_analysis_type eq q{mixed} )
+            || $consensus_analysis_type eq q{mixed}
+            || $consensus_analysis_type eq q{vrn} )
         {
 
             $vcfparser_infile_prefix  = $infile_prefix . $UNDERSCORE . $contig;
@@ -1275,7 +1277,8 @@ sub analysis_sv_vcfparser {
     }
 
     if (   $consensus_analysis_type eq q{wgs}
-        || $consensus_analysis_type eq q{mixed} )
+        || $consensus_analysis_type eq q{mixed}
+        || $consensus_analysis_type eq q{vrn} )
     {
 
         ## QC Data File(s)
@@ -1348,7 +1351,8 @@ sub analysis_sv_vcfparser {
 
     ## Concatenate vcf:s for downstream analysis
     if (   $consensus_analysis_type eq q{wgs}
-        || $consensus_analysis_type eq q{mixed} )
+        || $consensus_analysis_type eq q{mixed}
+        || $consensus_analysis_type eq q{vrn} )
     {
 
         my @vcfparser_analysis_types = ( $EMPTY_STR, $DOT . q{selected} );

@@ -168,6 +168,47 @@ sub _build_usage {
     );
 
     option(
+        q{gatk_bundle_download_version} => (
+            cmd_aliases   => [qw{ gbdv }],
+            cmd_tags      => [q{Default: 2.8}],
+            documentation => q{GATK FTP bundle download version},
+            is            => q{rw},
+            isa           => Num,
+        )
+    );
+
+    option(
+        q{gatk_disable_auto_index_and_file_lock} => (
+            cmd_aliases => [qw{ gdai }],
+            cmd_flag    => q{gatk_dis_auto_ind_fl},
+            documentation =>
+              q{Disable auto index creation and locking when reading rods},
+            is  => q{rw},
+            isa => Bool,
+        )
+    );
+
+    option(
+        q{gatk_downsample_to_coverage} => (
+            cmd_aliases   => [qw{ gdco }],
+            cmd_tags      => [q{Default: 1000}],
+            documentation => q{Coverage to downsample to at any given locus},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{infile_dirs} => (
+            cmd_aliases   => [qw{ ifd }],
+            cmd_tags      => [q{infile_dirs=sample_id}],
+            documentation => q{Infile directory(s)},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
         q{java_use_large_pages} => (
             cmd_aliases   => [qw{ jul }],
             documentation => q{Use large page memory},
@@ -216,12 +257,155 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{split_fastq_file} => (
+            cmd_aliases => [qw{ sfq }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Split fastq files in batches of X reads and exits},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{split_fastq_file_read_batch} => (
+            cmd_aliases   => [qw{ sfqrdb }],
+            cmd_flag      => q{spt_fsq_rd_bt},
+            cmd_tags      => [q{Default: 25,000,000}],
+            documentation => q{Number of sequence reads to place in each batch},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{gzip_fastq} => (
+            cmd_aliases   => [qw{ gz }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Gzip fastq files},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{fastqc} => (
+            cmd_aliases   => [qw{ fqc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Sequence quality analysis using FastQC},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{picardtools_mergesamfiles} => (
             cmd_aliases   => [qw{ pms }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Merge bam files using Picardtools},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_realigner} => (
+            cmd_aliases => [qw{ gra }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+q{Realignments of reads using GATK ReAlignerTargetCreator/IndelRealigner},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_realigner_indel_known_sites} => (
+            cmd_aliases => [qw{ graks }],
+            cmd_flag    => q{gatk_realigner_ind_ks},
+            cmd_tags    => [
+q{Default: GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
+            ],
+            documentation =>
+              q{GATK ReAlignerTargetCreator/IndelRealigner known indel site},
+            is  => q{rw},
+            isa => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration} => (
+            cmd_aliases => [qw{ gbr }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Recalibration of bases using GATK BaseReCalibrator/PrintReads},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_covariates} => (
+            cmd_aliases => [qw{ gbrcov }],
+            cmd_flag    => q{gatk_baserecal_covariates},
+            cmd_tags    => [
+q{Default: ReadGroupCovariate, ContextCovariate, CycleCovariate, QualityScoreCovariate}
+            ],
+            documentation => q{GATK BaseReCalibration covariates},
+            is            => q{rw},
+            isa           => ArrayRef [
+                enum(
+                    [
+                        qw{ ContextCovariate CycleCovariate QualityScoreCovariate ReadGroupCovariate RepeatLengthCovariate RepeatUnitCovariate RepeatUnitAndLengthCovariate }
+                    ]
+                )
+            ],
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_disable_indel_qual} => (
+            cmd_aliases   => [qw{ gbrdiq }],
+            cmd_flag      => q{gatk_baserecal_dis_indel_q},
+            documentation => q{Disable indel quality scores},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_known_sites} => (
+            cmd_aliases => [qw{ gbrkst }],
+            cmd_flag    => q{gatk_baserecal_ks},
+            cmd_tags    => [
+q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
+            ],
+            documentation =>
+              q{GATK BaseReCalibration known SNV and INDEL sites},
+            is  => q{rw},
+            isa => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_read_filters} => (
+            cmd_aliases   => [qw{ gbrrf }],
+            cmd_flag      => q{gatk_baserecal_read_filts},
+            cmd_tags      => [q{Default: OverclippedRead}],
+            documentation => q{Filter out reads according to set filter},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_static_quantized_quals} => (
+            cmd_aliases   => [qw{ gbrsqq }],
+            cmd_flag      => q{gatk_baserecal_sta_qua_qua},
+            cmd_tags      => [q{Default: 10,20,30,40}],
+            documentation => q{Static binning of base quality scores},
+            is            => q{rw},
+            isa           => ArrayRef [Int],
         )
     );
 
