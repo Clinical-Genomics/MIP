@@ -35,6 +35,7 @@ BEGIN {
       check_gzipped
       check_infile_contain_sample_id
       check_infiles
+      check_mutually_exclusive_parameters
       check_parameter_hash
       check_program_exists_in_hash
       check_prioritize_variant_callers
@@ -547,6 +548,64 @@ sub check_infiles {
 q{Check that: '--sample_ids' and '--infile_dirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
         );
         exit 1;
+    }
+    return 1;
+}
+
+sub check_mutually_exclusive_parameters {
+
+## Function : Check mutually exclusive parameters and croak if mutually enabled
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $log                   => Log object
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Mutually exclusive parameters
+    my %mutally_exclusive_params =
+      ( markduplicates_picardtools_markduplicates =>
+          [qw{ markduplicates_sambamba_markdup }] );
+
+    while ( my ( $parameter, $exclusive_parameters_ref ) =
+        each %mutally_exclusive_params )
+    {
+
+        # Not active parameter no need to check
+        next PARAMETER if ( not $active_parameter_href->{$parameter} );
+
+      EXCLUSIVE_PARAM:
+        foreach my $exclusive_parameter ( @{$exclusive_parameters_ref} ) {
+
+            # Not active exclusive aprameter no need to check
+            next EXCLUSIVE_PARAM
+              if ( not $active_parameter_href->{$exclusive_parameter} );
+
+            $log->fatal(
+qq{Enable either $parameter or $exclusive_parameter as they are mutually exclusive}
+            );
+            exit 1;
+        }
     }
     return 1;
 }

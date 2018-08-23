@@ -122,7 +122,7 @@ sub check_rare_disease {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter
-      qw{ check_sample_id_in_hash_parameter_path check_snpsift_keys check_vep_directories };
+      qw{ check_mutually_exclusive_parameters check_sample_id_in_hash_parameter_path check_snpsift_keys check_vep_directories };
     use MIP::Check::Path qw{ check_target_bed_file_suffix check_vcfanno_toml };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
@@ -138,6 +138,14 @@ sub check_rare_disease {
       qw{ update_prioritize_flag update_program_mode_for_analysis_type };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::QC::Record qw{ add_to_sample_info };
+
+    ## Check mutually exclusive parameters and croak if mutually enabled
+    check_mutually_exclusive_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+        }
+    );
 
     ## Update exome_target_bed files with human_genome_reference_source and human_genome_reference_version
     update_exome_target_bed(
