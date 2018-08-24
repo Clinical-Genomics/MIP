@@ -32,7 +32,7 @@ Readonly my $TAB       => qq{\t};
 
 sub build_rna_meta_files {
 
-## Function : Pipeline recipe for rna data analysis.
+## Function : Pipeline build recipes for rna data analysis.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
@@ -107,9 +107,13 @@ sub build_rna_meta_files {
 
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
+    use MIP::Recipes::Build::Star_prerequisites qw{ build_star_prerequisites };
 
-    my %build_recipe = ( human_genome_reference_file_endings =>
-          \&build_human_genome_prerequisites, );
+    my %build_recipe = (
+        human_genome_reference_file_endings =>
+          \&build_human_genome_prerequisites,
+        star_aln_reference_genome => \&build_star_prerequisites,
+    );
 
   BUILD_RECIPE:
     foreach my $parameter_build_name ( keys %build_recipe ) {

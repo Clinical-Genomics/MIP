@@ -136,6 +136,7 @@ sub run {
 
         # Human genome meta files
         human_genome_reference_file_endings => [qw{ .dict .fai }],
+        star_aln_reference_genome           => [qw{ _star_genome_dir }],
     );
 
     mip_analyse(
@@ -435,6 +436,16 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
             documentation => q{Align reads using Star aln},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{star_aln_transcripts_file} => (
+            cmd_aliases   => [qw{ statf }],
+            cmd_tags      => [q{Star transcripts file: Format: GTF}],
+            documentation => q{Input for star to build genome indexes},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 

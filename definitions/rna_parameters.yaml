@@ -238,6 +238,23 @@ chim_segment_min:
   data_type: SCALAR
   default: 12
   type: program_argument
+star_aln_reference_genome:
+  associated_program:
+   - star_aln
+  build_file: 1
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  reference: reference_dir
+  type: path
+star_aln_transcripts_file:
+  associated_program:
+   - star_aln
+  data_type: SCALAR
+  default: GRCh37_transcripts_-v1_0-.GTF 
+  exists_check: file
+  reference: reference_dir
+  type: path
 two_pass_mode:
   associated_program:
    - star_aln
