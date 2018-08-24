@@ -251,6 +251,7 @@ star_aln_transcripts_file:
   associated_program:
    - star_aln
   data_type: SCALAR
+  default: GRCh37_transcripts_-v1_0-.GTF 
   exists_check: file
   reference: reference_dir
   type: path
