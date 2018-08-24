@@ -340,6 +340,7 @@ sub mip_analyse {
           picardtools_path
           sample_info_file
           snpeff_path
+          star_aln_reference_genome
           rtg_vcfeval_reference_genome
           vep_directory_path
         };

@@ -13,6 +13,7 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use List::Util qw{ any };
 use Readonly;
 
 BEGIN {
@@ -156,16 +157,6 @@ sub set_custom_default_to_active_parameter {
         return;
     }
 
-    ## Set bwa build reference
-    if ( $parameter_name eq q{bwa_build_reference} ) {
-
-        ## Now we now what human genome reference to build from
-        $active_parameter_href->{$parameter_name} =
-          $active_parameter_href->{human_genome_reference};
-
-        return;
-    }
-
     ## If capture kit is not set after cmd, config and reading pedigree
     if ( $parameter_name eq q{exome_target_bed} ) {
 
@@ -207,15 +198,21 @@ q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit:
         }
         return;
     }
-    ## Set rtg vcfeval reference genome
-    if ( $parameter_name eq q{rtg_vcfeval_reference_genome} ) {
 
-        ## Now we now what human genome reference to build from
-        $active_parameter_href->{$parameter_name} =
-          $active_parameter_href->{human_genome_reference};
+    ## Parameters that use human genome reference as input
+    my @build_reference_genome_params =
+      qw{ bwa_build_reference rtg_vcfeval_reference_genome star_aln_reference_genome };
+    if ( any { $_ eq $parameter_name } @build_reference_genome_params ) {
 
+        _set_human_genome_to_parameter(
+            {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            }
+        );
         return;
     }
+
     ## Set sample info file
     if ( $parameter_name eq q{sample_info_file} ) {
 
@@ -1104,7 +1101,6 @@ sub set_programs_for_installation {
 
     use Array::Utils qw{ array_minus };
     use Data::Diver qw{ Dive };
-    use List::Util qw{ any };
     use MIP::Get::Parameter qw{ get_programs_for_shell_installation };
     use MIP::Check::Installation
       qw{ check_and_add_dependencies check_python_compability };
@@ -1213,4 +1209,39 @@ q{Please select a single installation environment when using the option --select
 
     return;
 }
+
+sub _set_human_genome_to_parameter {
+
+## Function : Sets human genome reference value to parameter in active_parameters.
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Now we now what human genome reference to build from
+    $active_parameter_href->{$parameter_name} =
+      $active_parameter_href->{human_genome_reference};
+
+    return;
+}
+
 1;
