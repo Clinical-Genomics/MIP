@@ -37,6 +37,7 @@ CHAIN_ALL:
                - delly_call
                - delly_reformat
          - sv_combinevariantcallsets
+         - sv_annotate
          - sv_varianteffectpredictor
          - sv_vcfparser
          - sv_rankvariant

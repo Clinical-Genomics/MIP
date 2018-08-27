@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_vcf_rerun };
@@ -151,8 +151,6 @@ sub pipeline_vcf_rerun {
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus
       qw{ analysis_analysisrunstatus };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock analysis_endvariantannotationblock_rio };
     use MIP::Recipes::Analysis::Frequency_filter
@@ -166,16 +164,19 @@ sub pipeline_vcf_rerun {
     use MIP::Recipes::Analysis::Rhocall
       qw{ analysis_rhocall_annotate analysis_rhocall_annotate_rio };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
-    use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
-    use MIP::Recipes::Analysis::Vcf_rerun_reformat
-      qw{ analysis_sv_vcf_rerun_reformat analysis_vcf_rerun_reformat };
     use MIP::Recipes::Analysis::Snpeff
       qw{ analysis_snpeff analysis_snpeff_rio };
+    use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
+    use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
     use MIP::Recipes::Analysis::Variantannotationblock
       qw{ analysis_variantannotationblock };
+    use MIP::Recipes::Analysis::Vcf_rerun_reformat
+      qw{ analysis_sv_vcf_rerun_reformat analysis_vcf_rerun_reformat };
     use MIP::Recipes::Analysis::Vep
       qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt analysis_vt_rio };
+    use MIP::Recipes::Build::Human_genome_prerequisites
+      qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Vcf_rerun qw{build_vcf_rerun_meta_files};
 
     ### Pipeline specific checks
@@ -219,6 +220,7 @@ sub pipeline_vcf_rerun {
         rhocall     => \&analysis_rhocall_annotate,
         sacct       => \&analysis_sacct,
         snpeff      => \&analysis_snpeff,
+        sv_annotate => \&analysis_sv_annotate,
         sv_rankvariant => undef,                    # Depends on sample features
         sv_reformat    => \&analysis_sv_reformat,
         sv_vcf_rerun_reformat     => \&analysis_sv_vcf_rerun_reformat,
@@ -240,6 +242,7 @@ sub pipeline_vcf_rerun {
         rhocall                          => q{Rhocall},
         sacct                            => q{Sacct},
         snpeff                           => q{Snpeff},
+        sv_annotate                      => q{SV annotate},
         sv_varianteffectpredictor        => q{SV varianteffectpredictor},
         sv_vcfparser                     => q{SV vcfparser},
         sv_rankvariant                   => q{SV rankvariant},

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
@@ -153,30 +153,25 @@ sub analysis_sv_combinevariantcallsets {
 
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_parameters };
-    use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_merge bcftools_view bcftools_annotate bcftools_view_and_index_vcf };
-    use MIP::Program::Variantcalling::Genmod
-      qw{ genmod_annotate genmod_filter };
-    use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
-    use MIP::Program::Variantcalling::Svdb qw{ svdb_merge svdb_query };
-    use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
+      qw{ bcftools_merge bcftools_view bcftools_view_and_index_vcf };
+    use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record
+      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Set::File qw{ set_file_suffix };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Stores the parallel chains that jobIds should be inherited from
+    ## Stores the parallel chains that job ids should be inherited from
     my @parallel_chains;
 
-    ## Set MIP program name
+    ## Set MIP program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
@@ -342,261 +337,10 @@ sub analysis_sv_combinevariantcallsets {
             {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $merged_file_path_prefix . $outfile_suffix,
-                outfile_path => $merged_file_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
+                outfile_path => $outfile_path_prefix . $outfile_suffix,
                 smart_decomposition => 1,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-    if ( $active_parameter_href->{sv_svdb_query} ) {
-
-        my $infile_path =
-          $merged_file_path_prefix . $alt_file_tag . $outfile_suffix;
-
-        ## Update alternative ending
-        $alt_file_tag .= $UNDERSCORE . q{svdbq};
-
-        ## Ensure correct infile
-        my $annotation_file_counter = 0;
-
-        ## Ensure correct outfiles
-        my $outfile_tracker = 0;
-
-        while ( my ( $query_db_file, $query_db_tag ) =
-            each %{ $active_parameter_href->{sv_svdb_query_db_files} } )
-        {
-
-            if ($annotation_file_counter) {
-
-                $infile_path =
-                    $merged_file_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix
-                  . $DOT
-                  . $outfile_tracker;
-
-                ## Increment now that infile has been set
-                $outfile_tracker++;
-            }
-            svdb_query(
-                {
-                    bnd_distance    => 25_000,
-                    dbfile_path     => $query_db_file,
-                    FILEHANDLE      => $FILEHANDLE,
-                    frequency_tag   => $query_db_tag . q{AF},
-                    hit_tag         => $query_db_tag,
-                    infile_path     => $infile_path,
-                    stdoutfile_path => $merged_file_path_prefix
-                      . $alt_file_tag
-                      . $outfile_suffix
-                      . $DOT
-                      . $outfile_tracker,
-                    overlap => 0.8,
-                }
-            );
-            say {$FILEHANDLE} $NEWLINE;
-            $annotation_file_counter++;
-        }
-
-        ## Rename to remove outfile_tracker
-        gnu_mv(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $merged_file_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix
-                  . $DOT
-                  . $outfile_tracker,
-                outfile_path => $merged_file_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    ## Alternative file tag
-    my $outfile_alt_file_tag = $alt_file_tag . $UNDERSCORE . q{sorted};
-
-    ## Writes sbatch code to supplied filehandle to sort variants in vcf format
-    sort_vcf(
-        {
-            active_parameter_href => $active_parameter_href,
-            FILEHANDLE            => $FILEHANDLE,
-            infile_paths_ref =>
-              [ $merged_file_path_prefix . $alt_file_tag . $outfile_suffix ],
-            outfile => $outfile_path_prefix
-              . $outfile_alt_file_tag
-              . $outfile_suffix,
-            sequence_dict_file => catfile(
-                $reference_dir,
-                $file_info_href->{human_genome_reference_name_prefix}
-                  . $DOT . q{dict}
-            ),
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    $alt_file_tag = $outfile_alt_file_tag;
-
-    ## Remove FILTER ne PASS
-    if ( $active_parameter_href->{sv_bcftools_view_filter} ) {
-
-        say {$FILEHANDLE} q{## Remove FILTER ne PASS};
-        bcftools_view(
-            {
-                apply_filters_ref => [qw{ PASS }],
-                FILEHANDLE        => $FILEHANDLE,
-                infile_path       => $outfile_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
-                outfile_path => $outfile_path_prefix
-                  . $alt_file_tag
-                  . $UNDERSCORE . q{filt}
-                  . $outfile_suffix,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Update file tag
-        $alt_file_tag .= $UNDERSCORE . q{filt};
-    }
-
-    ## Remove common variants
-    if ( $active_parameter_href->{sv_genmod_filter} ) {
-
-        my @program_source_commands = get_program_parameters(
-            {
-                active_parameter_href => $active_parameter_href,
-                program_name          => q{genmod},
-            }
-        );
-
-        say {$FILEHANDLE} q{## Remove common variants};
-        genmod_annotate(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $outfile_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
-                outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-                program_source_commands_ref => \@program_source_commands,
-                temp_directory_path         => $temp_directory,
-                thousand_g_file_path =>
-                  $active_parameter_href->{sv_genmod_filter_1000g},
-                verbosity => q{v},
-            }
-        );
-        print {$FILEHANDLE} $PIPE . $SPACE;
-
-        ## Update file tag
-        $alt_file_tag .= $UNDERSCORE . q{genmod_filter};
-
-        genmod_filter(
-            {
-                deactive_program_source => 1,
-                FILEHANDLE              => $FILEHANDLE,
-                infile_path             => $DASH,
-                outfile_path            => $outfile_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
-                source_main_environment_commands_ref =>
-                  \@source_environment_cmds,
-                threshold =>
-                  $active_parameter_href->{sv_genmod_filter_threshold},
-                verbosity => q{v},
-            }
-        );
-        print {$FILEHANDLE} $NEWLINE;
-    }
-
-    ## Annotate 1000G structural variants
-    if ( $active_parameter_href->{sv_vcfanno} ) {
-
-        say {$FILEHANDLE} q{## Annotate 1000G structural variants};
-        vcfanno(
-            {
-                ends        => 1,
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $outfile_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
-                luafile_path => $active_parameter_href->{sv_vcfanno_lua},
-                toml_configfile_path =>
-                  $active_parameter_href->{sv_vcfanno_config},
-            }
-        );
-        print {$FILEHANDLE} $PIPE . $SPACE;
-
-        ## Remove "[" and "]" from INFO as it breaks vcf format
-        print {$FILEHANDLE}
-q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", @F), "\n"}' ?;
-
-        ## Update file tag
-        $alt_file_tag .= $UNDERSCORE . q{vcfanno};
-
-        say {$FILEHANDLE} q{>}
-          . $SPACE
-          . $outfile_path_prefix
-          . $alt_file_tag
-          . $outfile_suffix, $NEWLINE;
-
-        if ( $program_mode == 1 ) {
-
-            add_program_outfile_to_sample_info(
-                {
-                    path             => catfile( $directory, $stderr_file ),
-                    program_name     => q{sv_combinevariantcallsets},
-                    sample_info_href => $sample_info_href,
-                }
-            );
-        }
-
-        say {$FILEHANDLE}
-          q{## Add header for 1000G annotation of structural variants};
-        bcftools_annotate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                headerfile_path =>
-                  $active_parameter_href->{sv_vcfannotation_header_lines_file},
-                infile_path => $outfile_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
-                outfile_path => $outfile_path_prefix
-                  . $alt_file_tag
-                  . $UNDERSCORE
-                  . q{bcftools_annotate}
-                  . $outfile_suffix,
-                output_type => q{v},
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ##Update file tag
-        $alt_file_tag .= $UNDERSCORE . q{bcftools_annotate};
-    }
-
-    ## Then we have something to rename
-    if ( $alt_file_tag ne $EMPTY_STR ) {
-
-        ## Writes sbatch code to supplied filehandle to sort variants in vcf format
-        sort_vcf(
-            {
-                active_parameter_href => $active_parameter_href,
-                FILEHANDLE            => $FILEHANDLE,
-                infile_paths_ref =>
-                  [ $outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
-                outfile            => $outfile_path_prefix . $outfile_suffix,
-                sequence_dict_file => catfile(
-                    $reference_dir,
-                    $file_info_href->{human_genome_reference_name_prefix}
-                      . $DOT . q{dict}
-                ),
-            }
-        );
-
         say {$FILEHANDLE} $NEWLINE;
     }
 
@@ -654,9 +398,16 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
 
         if ( $active_parameter_href->{sv_combinevariantcallsets_bcf_file} ) {
 
-            $sample_info_href->{sv_bcf_file}{path} =
-              catfile( $outfamily_directory,
+            my $sv_bcf_file_path = catfile( $outfamily_directory,
                 $family_id . $outfile_tag . $call_type . $DOT . q{bcf} );
+            add_program_metafile_to_sample_info(
+                {
+                    metafile_tag     => q{sv_bcf_file},
+                    path             => $sv_bcf_file_path,
+                    program_name     => $program_name,
+                    sample_info_href => $sample_info_href,
+                }
+            );
         }
 
         slurm_submit_job_sample_id_dependency_add_to_family(

@@ -62,6 +62,7 @@ module_core_number:
     frequency_filter: 16
     vcf_rerun_reformat: 1
     sacct: 1
+    sv_annotate: 2
     sv_rankvariant: 16
     sv_reformat: 1
     sv_vcf_rerun_reformat: 1
@@ -82,6 +83,7 @@ module_time:
     rankvariant: 10
     sacct: 1
     snpeff: 10
+    sv_annotate: 1
     sv_rankvariant: 2
     sv_reformat: 1
     sv_vcf_rerun_reformat: 1
@@ -130,6 +132,93 @@ sv_vcf_rerun_file:
   exists_check: file
   type: path
   update_path: absolute_path
+sv_annotate:
+  analysis_mode: family
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: ann_
+  outfile_suffix: ".vcf"
+  program_name_path:
+   - bcftools
+   - svdb
+  type: program
+sv_bcftools_view_filter:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+sv_genmod_filter:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+sv_genmod_filter_threshold:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: 0.10
+  type: program_argument
+sv_genmod_filter_1000g:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
+  exists_check: file
+  reference: reference_dir
+  type: path
+sv_svdb_query:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+sv_svdb_query_db_files:
+  associated_program:
+   - sv_annotate
+  data_type: HASH
+  exists_check: file
+  reference: reference_dir
+  type: path
+sv_vcfanno:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+sv_vcfannotation_header_lines_file:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  exists_check: file
+  reference: reference_dir
+  type: path
+sv_vcfanno_config:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  exists_check: file
+  reference: reference_dir
+  type: path
+sv_vcfanno_config_file:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz
+  exists_check: file
+  reference: reference_dir
+  type: path
+  type: program_argument
+sv_vcfanno_lua:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  exists_check: file
+  reference: reference_dir
+  type: path
 sv_varianteffectpredictor:
   analysis_mode: family
   associated_program:

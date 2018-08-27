@@ -22,6 +22,10 @@ module_source_environment_command:
    - source
    - activate
    - mip_travis_py3
+  sv_annotate:
+   - source
+   - activate
+   - mip_travis_svdb
   sv_rankvariant:
    - source
    - activate
@@ -66,6 +70,14 @@ snpsift_annotation_files:
   GRCh37_genbank_haplogroup_-2015-08-01-.vcf.gz: MTAF
 sv_genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv
 sv_rank_model_file: svrank_model_cmms_-v1.2-.ini
+sv_svdb_query_db_files:
+  GRCh37_svdb_query_decipher_-v1.0.0-.vcf: decipher
+  GRCh37_svdb_query_clingen_cgh_benign_-v1.0.0-.vcf: clingen_cgh_benign
+  GRCh37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf: clingen_cgh_pathogenic
+  GRCh37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi
+sv_vcfannotation_header_lines_file: vcfanno_headerLines_-v1.0-.txt
+sv_vcfanno_config: GRCh37_vcfanno_config_-v1.0-.toml
+sv_vcfanno_lua: vcfanno_custom_-v1.0-.lua
 ### Analysis
 ## Programs
 analysisrunstatus: 1
@@ -76,6 +88,7 @@ rankvariant: 1
 rhocall: 1
 sacct: 1
 snpeff: 1
+sv_annotate: 1
 sv_rankvariant: 1
 sv_reformat: 1
 sv_vcf_rerun_reformat: 1
@@ -104,12 +117,16 @@ snpsift_dbnsfp_annotations:
   - phyloP100way_vertebrate
   - phastCons46way_primate
   - phastCons100way_vertebrate
-sv_vcfparser_per_gene: 1
-sv_vcfparser_vep_transcripts: 1
-sv_vcfparser_select_file_matching_column: 3
+sv_bcftools_view_filter: 1
 sv_genmod_annotate_regions: 1
+sv_genmod_filter: 1
 sv_genmod_models_family_type: cmms
 sv_rankvariant_binary_file: 1
+sv_svdb_query: 1
+sv_vcfanno: 1
+sv_vcfparser_per_gene: 1
+sv_vcfparser_select_file_matching_column: 3
+sv_vcfparser_vep_transcripts: 1
 vcfparser_vep_transcripts: 1
 vcfparser_select_file_matching_column: 3
 vep_directory_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-vep/

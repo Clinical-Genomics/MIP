@@ -2,6 +2,7 @@ CHAIN_ALL:
    - CHAIN_MAIN:
       - CHAIN_SV:
          - sv_vcf_rerun_reformat
+         - sv_annotate
          - sv_varianteffectpredictor
          - sv_vcfparser
          - sv_rankvariant
