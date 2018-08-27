@@ -402,9 +402,10 @@ sub analysis_sv_combinevariantcallsets {
                 $family_id . $outfile_tag . $call_type . $DOT . q{bcf} );
             add_program_metafile_to_sample_info(
                 {
-                    metafile_tag => q{sv_bcf_file},
-                    path         => $sv_bcf_file_path,
-                    program_name => $program_name,
+                    metafile_tag     => q{sv_bcf_file},
+                    path             => $sv_bcf_file_path,
+                    program_name     => $program_name,
+                    sample_info_href => $sample_info_href,
                 }
             );
         }

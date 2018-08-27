@@ -202,7 +202,7 @@ sub analysis_sv_vcf_rerun_reformat {
     my $infile_name = basename( $active_parameter_href->{sv_vcf_rerun_file} );
 
     ## Remove file ending
-    my $infile_prefix = fileparse( $infile_name, qr/[.]bcf | [.]vcf[.]gz/xsm );
+    my $infile_prefix = fileparse( $infile_name, qr/[.]bcf/xsm );
     my $outfile_prefix = $family_id . $outfile_tag . $call_type;
 
     ## Paths
