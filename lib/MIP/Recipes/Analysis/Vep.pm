@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
@@ -1118,14 +1118,7 @@ sub analysis_vep_sv {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{sv_combinevariantcallsets}{file_tag};
-
-    ## Special case for vrn pipeline
-    if ( $consensus_analysis_type eq q{vrn} ) {
-
-        $infile_tag =
-          $file_info_href->{$family_id}{sv_vcf_rerun_reformat}{file_tag};
-    }
+      $file_info_href->{$family_id}{sv_annotate}{file_tag};
     my $outfile_tag =
       $file_info_href->{$family_id}{$program_name}{file_tag};
     my $infile_prefix       = $family_id . $infile_tag . $call_type;

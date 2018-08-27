@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 0.01;
+our $VERSION = 1.00;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -260,6 +260,126 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             isa           => Str,
         )
     );
+
+    option(
+        q{sv_annotate} => (
+            cmd_aliases   => [qw{ svan }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Annotate and filter structural variant calls},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{sv_bcftools_view_filter} => (
+            cmd_aliases => [qw{ svcbtv }],
+            documentation =>
+              q{Include structural variants with PASS in FILTER column},
+            is  => q{rw},
+            isa => Bool,
+        )
+    );
+
+    option(
+        q{sv_genmod_filter} => (
+            cmd_aliases   => [qw{ svcgmf }],
+            documentation => q{Remove common structural variants from vcf},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{sv_genmod_filter_threshold} => (
+            cmd_aliases   => [qw{ svcgft }],
+            cmd_tags      => [q{Default: 0.10}],
+            documentation => q{Threshold for filtering structural variants},
+            is            => q{rw},
+            isa           => Num,
+        )
+    );
+
+    option(
+        q{sv_genmod_filter_1000g} => (
+            cmd_aliases => [qw{ svcgfr }],
+            cmd_tags =>
+              [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
+            documentation =>
+              q{Genmod annotate structural variants from 1000G reference},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{sv_svdb_query} => (
+            cmd_aliases   => [qw{ svcdbq }],
+            documentation => q{Annotate structural variants using svdb query},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{sv_svdb_query_db_files} => (
+            cmd_aliases   => [qw{ svcdbqd }],
+            cmd_tags      => [q{file.vcf=vcf_info_key}],
+            documentation => q{Database file(s) for annotation},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{sv_vcfanno} => (
+            cmd_aliases   => [qw{ svcvan }],
+            documentation => q{Annotate structural variants},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{sv_vcfanno_config} => (
+            cmd_aliases   => [qw{ svcvac }],
+            documentation => q{VcfAnno toml config},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{sv_vcfanno_config_file} => (
+            cmd_aliases => [qw{ svcvacf }],
+            cmd_tags =>
+              [q{Default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz}],
+            documentation => q{Annotation file within vcfAnno config toml file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{sv_vcfannotation_header_lines_file} => (
+            cmd_aliases => [qw{ svcvah }],
+            cmd_flag    => q{sv_vcfanno_hlf},
+            documentation =>
+              q{Adjust for postscript by adding required header lines to vcf},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{sv_vcfanno_lua} => (
+            cmd_aliases   => [qw{ svcval }],
+            documentation => q{VcfAnno lua postscripting file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
     option(
         q{sv_varianteffectpredictor} => (
             cmd_aliases   => [qw{ svv }],

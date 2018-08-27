@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 0.03;
+our $VERSION = 1.00;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -883,21 +883,50 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{sv_bcftools_view_filter} => (
-            cmd_aliases => [qw{ svcbtv }],
+        q{sv_combinevariantcallsets_bcf_file} => (
+            cmd_aliases => [qw{ svcbcf }],
+            cmd_flag    => q{sv_comb_vcs_bf},
             documentation =>
-              q{Include structural variants with PASS in FILTER column},
+              q{Produce a bcf from the CombineStructuralVariantCallSet vcf},
             is  => q{rw},
             isa => Bool,
         )
     );
 
     option(
-        q{sv_combinevariantcallsets_bcf_file} => (
-            cmd_aliases => [qw{ svcbcf }],
-            cmd_flag    => q{sv_comb_vcs_bf},
+        q{sv_svdb_merge_prioritize} => (
+            cmd_aliases => [qw{ svsvdbmp }],
             documentation =>
-              q{Produce a bcf from the CombineStructuralVariantCallSet vcf},
+              q{Prioritization order of structural variant callers},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{sv_vt_decompose} => (
+            cmd_aliases   => [qw{ svcvtd }],
+            documentation => q{Split multi allelic records into single records},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{sv_annotate} => (
+            cmd_aliases   => [qw{ svan }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Annotate and filter structural variant calls},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{sv_bcftools_view_filter} => (
+            cmd_aliases => [qw{ svcbtv }],
+            documentation =>
+              q{Include structural variants with PASS in FILTER column},
             is  => q{rw},
             isa => Bool,
         )
@@ -954,16 +983,6 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{sv_svdb_merge_prioritize} => (
-            cmd_aliases => [qw{ svsvdbmp }],
-            documentation =>
-              q{Prioritization order of structural variant callers},
-            is  => q{rw},
-            isa => Str,
-        )
-    );
-
-    option(
         q{sv_vcfanno} => (
             cmd_aliases   => [qw{ svcvan }],
             documentation => q{Annotate structural variants},
@@ -1009,15 +1028,6 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
             documentation => q{VcfAnno lua postscripting file},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{sv_vt_decompose} => (
-            cmd_aliases   => [qw{ svcvtd }],
-            documentation => q{Split multi allelic records into single records},
-            is            => q{rw},
-            isa           => Bool,
         )
     );
 
