@@ -27,6 +27,10 @@ module_source_environment_command:
     - source
     - activate
     - mip_travis_py3
+  sv_annotate:
+   - source
+   - activate
+   - mip_travis_svdb
   sv_combinevariantcallsets:
    - source
    - activate
@@ -134,6 +138,7 @@ samtools_subsample_mt: 1
 sacct: 1
 sambamba_depth: 1
 snpeff: 1
+sv_annotate: 1
 sv_combinevariantcallsets: 1
 sv_rankvariant: 1
 sv_reformat: 1
