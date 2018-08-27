@@ -774,6 +774,9 @@ sub _update_rankvariants_ar {
 q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
         );
 
+        $analysis_recipe_href->{sv_rankvariant} =
+          \&analysis_sv_rankvariant_unaffected;
+
         ## Rio recipe
         if ( $active_parameter_href->{reduce_io} ) {
 
@@ -783,10 +786,10 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
         }
         $analysis_recipe_href->{rankvariant} =
           \&analysis_rankvariant_unaffected;
-        $analysis_recipe_href->{sv_rankvariant} =
-          \&analysis_sv_rankvariant_unaffected;
     }
     else {
+
+        $analysis_recipe_href->{sv_rankvariant} = \&analysis_sv_rankvariant;
 
         ## Rio recipe
         if ( $active_parameter_href->{reduce_io} ) {
@@ -794,8 +797,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             $varann_ar_href->{rankvariant} = \&analysis_rankvariant_rio;
             return;
         }
-        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant;
-        $analysis_recipe_href->{sv_rankvariant} = \&analysis_sv_rankvariant;
+        $analysis_recipe_href->{rankvariant} = \&analysis_rankvariant;
     }
     return;
 }
