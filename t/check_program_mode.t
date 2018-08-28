@@ -121,7 +121,7 @@ my %parameter =
 my %active_parameter = (
     bwa_mem => 1,
     fastqc  => 0,
-    pgenmod  => 2,
+    pgenmod => 2,
 );
 
 my $is_ok = check_program_mode(

@@ -102,12 +102,12 @@ diag(   q{Test variant_effect_predictor from Vep.pm v}
 Readonly my $VARIANT_BUFFERT_SIZE => 20_000;
 
 ## Base arguments
-my $function_base_command = q{vep};
+my @function_base_commands = qw{ vep };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -128,7 +128,7 @@ my %base_argument = (
 my %required_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -153,7 +153,7 @@ my %specific_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     fork => {
         input           => 1,
@@ -215,11 +215,11 @@ HASHES_OF_ARGUMENTS:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

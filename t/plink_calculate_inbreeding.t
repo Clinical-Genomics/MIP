@@ -89,8 +89,7 @@ BEGIN {
 use MIP::Program::Variantcalling::Plink qw{ plink_calculate_inbreeding };
 use MIP::Test::Commands qw{ test_function };
 
-diag(
-q{Test plink_calculate_inbreeding from Plink.pm v}
+diag(   q{Test plink_calculate_inbreeding from Plink.pm v}
       . $MIP::Program::Variantcalling::Plink::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -100,7 +99,7 @@ q{Test plink_calculate_inbreeding from Plink.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{plink2};
+my @function_base_commands = qw{ plink2 };
 
 my %base_argument = (
     stderrfile_path => {
@@ -109,7 +108,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -161,11 +160,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

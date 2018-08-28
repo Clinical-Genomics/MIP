@@ -117,7 +117,9 @@ my $log = initiate_logger(
 
 ## Given a frequency file and toml file, when matching records
 my $sv_vcfanno_config_file =
-  catfile(qw{ / home travis build Clinical-Genomics MIP t data references GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz });
+  catfile(
+    qw{ / home travis build Clinical-Genomics MIP t data references GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz }
+  );
 
 my $sv_vcfanno_config =
   catfile( $Bin, qw{ data references GRCh37_vcfanno_config_-v1.0-.toml  } );

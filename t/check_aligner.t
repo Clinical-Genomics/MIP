@@ -116,11 +116,11 @@ my $log = initiate_logger(
 my @broadcasts;
 my %active_parameter = (
     bwa_mem => 1,
-    verbose  => 1,
+    verbose => 1,
 );
 my %parameter = (
     dynamic_parameter => { aligners    => [ qw{ bwa_mem pstar }, ], },
-    bwa_mem          => { outdir_name => q{.bam}, }
+    bwa_mem           => { outdir_name => q{.bam}, }
 );
 
 check_aligner(

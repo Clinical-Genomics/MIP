@@ -135,7 +135,7 @@ $active_parameter_test_hash{log_file} = $test_log_path;
 my $test_log = initiate_logger(
     {
         file_path => $active_parameter_test_hash{log_file},
-        log_name      => q{MIP},
+        log_name  => q{MIP},
     }
 );
 
@@ -199,12 +199,12 @@ for my $execution_mode (@execution_modes) {
 
     # Creating array of expected pedigree lines
     my @expected_pedigree_lines;
-    
-    SAMPLE_ID:
+
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_test_hash{sample_ids} } ) {
         my $sample_line = $active_parameter_test_hash{family_id};
-        
-        HEADER:
+
+      HEADER:
         foreach my $header ( split $TAB, $expected_header ) {
 
             if ( defined $sample_info_test_hash{sample}{$sample_id}{$header} ) {

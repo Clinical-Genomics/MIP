@@ -101,12 +101,12 @@ diag(   q{Test gatk_genotypegvcfs from Gatk v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{--analysis_type GenotypeGVCFs};
+my @function_base_commands = qw{ --analysis_type GenotypeGVCFs };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -120,12 +120,14 @@ my %required_argument = (
     },
     outfile_path => {
         input           => catfile(qw{ path_to_analysis_dir outfile.vcf }),
-        expected_output => q{--out} . $SPACE
+        expected_output => q{--out}
+          . $SPACE
           . catfile(qw{ path_to_analysis_dir outfile.vcf }),
     },
     referencefile_path => {
         input           => catfile(qw{reference_dir human_genome_build.fasta }),
-        expected_output => q{--reference_sequence} . $SPACE
+        expected_output => q{--reference_sequence}
+          . $SPACE
           . catfile(qw{reference_dir human_genome_build.fasta }),
     },
 );
@@ -151,7 +153,9 @@ my %specific_argument = (
     },
     pedigree => {
         input           => catfile(qw{ dir pedigree.fam }),
-        expected_output => q{--pedigree} . $SPACE . catfile(qw{ dir pedigree.fam }),
+        expected_output => q{--pedigree}
+          . $SPACE
+          . catfile(qw{ dir pedigree.fam }),
     },
     pedigree_validation_type => {
         input           => q{SILENT},
@@ -159,7 +163,8 @@ my %specific_argument = (
     },
     dbsnp_file_path => {
         input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf}),
-        expected_output => q{--dbsnp} . $SPACE
+        expected_output => q{--dbsnp}
+          . $SPACE
           . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf}),
     },
     include_nonvariant_sites => {
@@ -179,11 +184,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

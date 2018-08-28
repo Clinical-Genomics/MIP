@@ -35,7 +35,7 @@ sub test_write_to_file {
 ##Function : Test of writing to file using anonymous FILEHANDLE
 ##Returns  :
 ##Arguments: $args_ref             => Arguments to function call
-##         : $base_command         => First word in command line usually name of executable
+##         : $base_commands_ref    => Base commands {REF}
 ##         : $module_function_cref => Module method to test
 ##         : $separator            => Separator to use when writing
 
@@ -43,7 +43,7 @@ sub test_write_to_file {
 
     ## Flatten argument(s)
     my $args_ref;
-    my $base_command;
+    my $base_commands_ref;
     my $module_function_cref;
     my $separator;
 
@@ -55,10 +55,11 @@ sub test_write_to_file {
             store       => \$args_ref,
             strict_type => 1,
         },
-        base_command => {
+        base_commands_ref => {
             defined     => 1,
+			default => [],
             required    => 1,
-            store       => \$base_command,
+            store       => \$base_commands_ref,
             strict_type => 1,
         },
         module_function_cref =>
@@ -94,7 +95,9 @@ sub test_write_to_file {
 
     close $FILEHANDLE;
 
-    ## Perform test
+	my $base_command = join $separator, @{ $base_commands_ref };
+    
+	## Perform test
     my ($returned_base_command) = $file_content =~ /^($base_command)/ms;
 
     is( $returned_base_command, $base_command,

@@ -117,13 +117,12 @@ my %job_id = (
 
 ### Parallel jobs
 
-my $no_job_id_string =
-  add_parallel_job_ids_to_job_id_dependency_string(
+my $no_job_id_string = add_parallel_job_ids_to_job_id_dependency_string(
     {
         job_id_href         => \%job_id,
         family_id_chain_key => $family_id_chain_key . q{no_parallel},
     }
-  );
+);
 
 is( $no_job_id_string, undef, q{No parallel job_ids} );
 

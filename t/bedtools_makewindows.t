@@ -102,12 +102,12 @@ Readonly my $WINDOW_SIZE => 200_000;
 Readonly my $STEP_SIZE   => 199_750;
 
 ## Base arguments
-my $function_base_command = q{bedtools};
+my @function_base_commands = qw{ bedtools };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -127,7 +127,7 @@ my %base_argument = (
 my %required_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     infile_bed_path => {
         input           => catfile(qw{ path to infile_bed }),
@@ -165,10 +165,10 @@ foreach my $argument_href (@arguments) {
 
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
         }
     );
 }

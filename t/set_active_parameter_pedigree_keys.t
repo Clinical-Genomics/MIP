@@ -167,8 +167,8 @@ set_active_parameter_pedigree_keys(
 my $set_analysis_type     = $active_parameter{analysis_type}{sample_1};
 my $set_expected_coverage = $sample_info{sample}{expected_coverage}{sample_1};
 
-is( $set_analysis_type,     q{wes},    q{Set analysis type} );
-is( $set_expected_coverage, undef,     q(Did not set expected coverage) );
+is( $set_analysis_type,     q{wes}, q{Set analysis type} );
+is( $set_expected_coverage, undef,  q(Did not set expected coverage) );
 done_testing();
 
 ######################

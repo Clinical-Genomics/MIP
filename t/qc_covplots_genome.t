@@ -103,7 +103,7 @@ diag(   q{Test covplots_genome from Rcoverageplots.pm v}
 Readonly my $MAX_COVERAGE_DEPTH => 30;
 
 ## Base arguments
-my $function_base_command = q{covplots_genome};
+my @function_base_commands = qw{ covplots_genome };
 
 my %base_argument = (
     stdoutfile_path => {
@@ -120,7 +120,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -170,11 +170,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

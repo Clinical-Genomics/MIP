@@ -90,7 +90,7 @@ diag(   q{Test gnu_ln }
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{ln};
+my @function_base_commands = qw{ ln };
 
 my %base_argument = (
     stderrfile_path => {
@@ -107,7 +107,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -143,11 +143,11 @@ my @arguments = ( \%required_argument, \%specific_argument );
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

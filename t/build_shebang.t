@@ -153,13 +153,13 @@ my @args = (
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&build_shebang;
 
-my $function_base_command = $batch_shebang . $bash_bin_path,;
+my @function_base_commands = ( $batch_shebang . $bash_bin_path );
 
 test_write_to_file(
     {
         args_ref             => \@args,
         module_function_cref => $module_function_cref,
-        base_command         => $function_base_command,
+        base_commands_ref    => \@function_base_commands,
         separator            => $separator,
     }
 );

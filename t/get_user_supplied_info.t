@@ -29,10 +29,10 @@ my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $COMMA   => q{,};
+Readonly my $COMMA             => q{,};
 Readonly my $EXPECTED_COVERAGE => 30;
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
+Readonly my $NEWLINE           => qq{\n};
+Readonly my $SPACE             => q{ };
 
 ### User Options
 GetOptions(
@@ -99,8 +99,8 @@ diag(   q{Test get_user_supplied_info from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 my %active_parameter = (
-    analysis_type => { sample_id => q{wgs}, },
-    sample_ids    => [qw{ sample_1 sample_2 }],
+    analysis_type     => { sample_id => q{wgs}, },
+    sample_ids        => [qw{ sample_1 sample_2 }],
     expected_coverage => $EXPECTED_COVERAGE,
 );
 

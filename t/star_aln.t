@@ -108,7 +108,7 @@ Readonly my $CHIM_SEGMENT_READ_GAP_MAX  => 3;
 Readonly my $LIMIT_BAM_SORT_RAM         => 315_321_372_30;
 Readonly my $THREAD_NUMBER              => 16;
 
-my $function_base_command = q{STAR};
+my @function_base_commands = qw{ STAR };
 
 my %base_argument = (
     stdoutfile_path => {
@@ -125,7 +125,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -230,7 +230,8 @@ my %specific_argument = (
     read_files_command => {
         input           => q{gunzip} . $SPACE . q{-c},
         expected_output => q{--readFilesCommand}
-          . $SPACE . q{gunzip}
+          . $SPACE
+          . q{gunzip}
           . $SPACE . q{-c},
     },
     thread_number => {
@@ -252,11 +253,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }
