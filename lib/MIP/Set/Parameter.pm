@@ -40,6 +40,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $COMMA      => q{,};
 Readonly my $MINUS_ONE  => -1;
 Readonly my $MINUS_TWO  => -2;
 Readonly my $NEWLINE    => qq{\n};
@@ -141,146 +142,51 @@ sub set_custom_default_to_active_parameter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_capture_kit };
-
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Build default for analysis_type
-    if ( $parameter_name eq q{analysis_type} ) {
+    ## Set default value only to active_parameter
+    my %set_to_active_parameter = (
+        analysis_type       => \&_set_analysis_type,
+        bwa_build_reference => \&_set_human_genome,
+        expansionhunter_repeat_specs_dir =>
+          \&_set_expansionhunter_repeat_specs_dir,
+        gatk_path                    => \&_set_dynamic_path,
+        infile_dirs                  => \&_set_infile_dirs,
+        picardtools_path             => \&_set_dynamic_path,
+        rtg_vcfeval_reference_genome => \&_set_human_genome,
+        star_aln_reference_genome    => \&_set_human_genome,
+        snpeff_path                  => \&_set_dynamic_path,
+        vep_directory_path           => \&_set_dynamic_path,
+    );
 
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+    ## Set default value to parameter and/or active parameter
+    my %set_to_parameter = (
+        exome_target_bed => \&_set_capture_kit,
+        sample_info_file => \&_set_sample_info_file,
+    );
 
-            $active_parameter_href->{$parameter_name}{$sample_id} = q{wgs};
-        }
-        return;
-    }
+    if ( exists $set_to_active_parameter{$parameter_name} ) {
 
-    ## If capture kit is not set after cmd, config and reading pedigree
-    if ( $parameter_name eq q{exome_target_bed} ) {
-
-        ## Return a default capture kit as user supplied no info
-        my $capture_kit = get_capture_kit(
-            {
-                capture_kit => q{latest},
-                supported_capture_kit_href =>
-                  $parameter_href->{supported_capture_kit}{default},
-            }
-        );
-
-        ## Set default
-        $active_parameter_href->{exome_target_bed}
-          {$capture_kit} = join q{,},
-          @{ $active_parameter_href->{sample_ids} };
-
-        $log->warn(
-q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit: }
-              . $capture_kit );
-        return;
-    }
-
-    ## Build default for infile_dirs
-    if ( $parameter_name eq q{infile_dirs} ) {
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            my $path = catfile(
-                $active_parameter_href->{cluster_constant_path},
-                $active_parameter_href->{family_id},
-                $active_parameter_href->{analysis_type}{$sample_id},
-                $sample_id,
-                q{fastq}
-            );
-
-            $active_parameter_href->{$parameter_name}{$path} = $sample_id;
-        }
-        return;
-    }
-
-    ## Parameters that use human genome reference as input
-    my @build_reference_genome_params =
-      qw{ bwa_build_reference rtg_vcfeval_reference_genome star_aln_reference_genome };
-    if ( any { $_ eq $parameter_name } @build_reference_genome_params ) {
-
-        _set_human_genome_to_parameter(
+        $set_to_active_parameter{$parameter_name}->(
             {
                 active_parameter_href => $active_parameter_href,
                 parameter_name        => $parameter_name,
             }
         );
-        return;
     }
 
-    ## Set sample info file
-    if ( $parameter_name eq q{sample_info_file} ) {
+    if ( exists $set_to_parameter{$parameter_name} ) {
 
-        $parameter_href->{sample_info_file}{default} = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{family_id}
-              . $UNDERSCORE
-              . q{qc_sample_info.yaml}
-        );
-
-        $parameter_href->{qccollect_sampleinfo_file}{default} =
-          $parameter_href->{sample_info_file}{default};
-        return;
-    }
-
-    ## Set default path to expansionhunter repeat specs if needed
-    if (    ( $parameter_name eq q{expansionhunter_repeat_specs_dir} )
-        and ( not $active_parameter_href->{expansionhunter_repeat_specs_dir} ) )
-    {
-
-        $active_parameter_href->{expansionhunter_repeat_specs_dir} =
-          _get_default_repeat_specs_dir_path(
-            {
-                reference_genome_path =>
-                  $active_parameter_href->{human_genome_reference},
-            }
-          );
-        return;
-    }
-
-    ## Set default dynamic path if needed
-    my %dynamic_path = (
-        gatk_path => {
-            bin_file        => q{gatk3},
-            environment_key => q{gatk},
-        },
-        picardtools_path => {
-            bin_file        => q{picard.jar},
-            environment_key => q{picardtools},
-        },
-        snpeff_path => {
-            bin_file        => q{snpEff.jar},
-            environment_key => q{snpeff},
-        },
-        vep_directory_path => {
-            bin_file        => q{vep},
-            environment_key => q{varianteffectpredictor},
-        },
-    );
-
-    use MIP::Get::Parameter qw{ get_dynamic_conda_path };
-
-    if (    ( defined $dynamic_path{$parameter_name} )
-        and ( not $active_parameter_href->{$parameter_name} ) )
-    {
-
-        $active_parameter_href->{$parameter_name} = get_dynamic_conda_path(
+        $set_to_parameter{$parameter_name}->(
             {
                 active_parameter_href => $active_parameter_href,
-                bin_file => $dynamic_path{$parameter_name}{bin_file},
-                environment_key =>
-                  $dynamic_path{$parameter_name}{environment_key},
+                log                   => $log,
+                parameter_href        => $parameter_href,
+                parameter_name        => $parameter_name,
             }
         );
-        return;
     }
-
     return;
 }
 
@@ -864,7 +770,7 @@ sub set_parameter_to_broadcast {
 
                 if ( ref $value eq q{ARRAY} ) {
 
-                    $info .= join q{,}, map {
+                    $info .= join $COMMA, map {
                         qq{$_=} . join $SPACE,
                           @{ $active_parameter_href->{$parameter_name}{$_} }
                     } ( keys %{ $active_parameter_href->{$parameter_name} } );
@@ -873,7 +779,7 @@ sub set_parameter_to_broadcast {
                 }
                 else {
 
-                    $info .= join q{,}, map {
+                    $info .= join $COMMA, map {
                         qq{$_=$active_parameter_href->{$parameter_name}{$_}}
                     } ( keys %{ $active_parameter_href->{$parameter_name} } );
 
@@ -1039,6 +945,7 @@ sub _get_default_repeat_specs_dir_path {
 
     ## Find correct repeat spec folder
     my $genome_reference = fileparse($reference_genome_path);
+
   REPEAT_SPECS_VERSION:
     foreach my $repeat_specs_version (@repeat_specs_dir_paths) {
 
@@ -1054,7 +961,9 @@ sub _get_default_repeat_specs_dir_path {
     }
 
     ## MIP requires a defined variable in order to flag that it can't find the dir
-    if ( not -d $repeat_specs_dir_path ) {
+    if (   not $repeat_specs_dir_path
+        or not -d $repeat_specs_dir_path )
+    {
         return q{Failed to find default path};
     }
     return $repeat_specs_dir_path;
@@ -1210,9 +1119,214 @@ q{Please select a single installation environment when using the option --select
     return;
 }
 
-sub _set_human_genome_to_parameter {
+sub _set_analysis_type {
 
-## Function : Sets human genome reference value to parameter in active_parameters.
+## Function : Set default analysis type to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    map { $active_parameter_href->{$parameter_name}{$_} = q{wgs} }
+      @{ $active_parameter_href->{sample_ids} };
+    return;
+}
+
+sub _set_capture_kit {
+
+## Function : Set default capture kit to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $log                   => Log object
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_capture_kit };
+
+    ### If capture kit is not set after cmd, config and reading pedigree
+    ## Return a default capture kit as user supplied no info
+    my $capture_kit = get_capture_kit(
+        {
+            capture_kit => q{latest},
+            supported_capture_kit_href =>
+              $parameter_href->{supported_capture_kit}{default},
+        }
+    );
+
+    ## Set default
+    $active_parameter_href->{exome_target_bed}
+      {$capture_kit} = join $COMMA,
+      @{ $active_parameter_href->{sample_ids} };
+
+    $log->warn(
+q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit: }
+          . $capture_kit );
+    return;
+}
+
+sub _set_dynamic_path {
+
+## Function : Set default dynamic paths to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_dynamic_conda_path };
+
+    ## Already has a path set
+    return if ( $active_parameter_href->{$parameter_name} );
+
+    ## Set default dynamic path if needed
+    my %dynamic_path = (
+        gatk_path => {
+            bin_file        => q{gatk3},
+            environment_key => q{gatk},
+        },
+        picardtools_path => {
+            bin_file        => q{picard.jar},
+            environment_key => q{picardtools},
+        },
+        snpeff_path => {
+            bin_file        => q{snpEff.jar},
+            environment_key => q{snpeff},
+        },
+        vep_directory_path => {
+            bin_file        => q{vep},
+            environment_key => q{varianteffectpredictor},
+        },
+    );
+
+    ## No defined bin_file or environment key
+    return if ( not exists $dynamic_path{$parameter_name} );
+
+    $active_parameter_href->{$parameter_name} = get_dynamic_conda_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            bin_file              => $dynamic_path{$parameter_name}{bin_file},
+            environment_key => $dynamic_path{$parameter_name}{environment_key},
+        }
+    );
+    return;
+}
+
+sub _set_expansionhunter_repeat_specs_dir {
+
+## Function : Set default expansionhunter repeat specs dir to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Already set
+    return if ( $active_parameter_href->{expansionhunter_repeat_specs_dir} );
+
+    ## Set default path to expansionhunter repeat specs if needed
+    $active_parameter_href->{expansionhunter_repeat_specs_dir} =
+      _get_default_repeat_specs_dir_path(
+        {
+            reference_genome_path =>
+              $active_parameter_href->{human_genome_reference},
+        }
+      );
+
+    return;
+}
+
+sub _set_human_genome {
+
+## Function : Set default human genome reference to active parameters
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
 ##          : $parameter_name        => Parameter name
@@ -1241,6 +1355,115 @@ sub _set_human_genome_to_parameter {
     $active_parameter_href->{$parameter_name} =
       $active_parameter_href->{human_genome_reference};
 
+    return;
+}
+
+sub _set_infile_dirs {
+
+## Function : Set default infile dirs to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Build default for infile_dirs
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        if ( not exists $active_parameter_href->{analysis_type}{$sample_id} ) {
+
+            _set_analysis_type(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    parameter_name        => q{analysis_type},
+                }
+            );
+        }
+        my $path = catfile(
+            $active_parameter_href->{cluster_constant_path},
+            $active_parameter_href->{family_id},
+            $active_parameter_href->{analysis_type}{$sample_id},
+            $sample_id,
+            q{fastq}
+        );
+
+        $active_parameter_href->{$parameter_name}{$path} = $sample_id;
+    }
+    return;
+}
+
+sub _set_sample_info_file {
+
+## Function : Set default sample_info_file and qccollect_sampleinfo_file to parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $log                   => Log object
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            store => \$log
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set sample info file
+    $parameter_href->{sample_info_file}{default} = catfile(
+        $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{family_id},
+        $active_parameter_href->{family_id}
+          . $UNDERSCORE
+          . q{qc_sample_info.yaml}
+    );
+
+    ## Set qccollect sampleinfo file input
+    $parameter_href->{qccollect_sampleinfo_file}{default} =
+      $parameter_href->{sample_info_file}{default};
     return;
 }
 
