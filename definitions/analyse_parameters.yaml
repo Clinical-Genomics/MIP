@@ -51,12 +51,6 @@ exclude_contigs:
   data_type: ARRAY
   mandatory: no
   type: mip
-expected_coverage:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 family_id:
   associated_program:
    - mip

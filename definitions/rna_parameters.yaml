@@ -150,6 +150,18 @@ picardtools_path:
   exists_check: directory
   type: path
   update_path: absolute_path
+sample_origin:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+time_point:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 ###Programs
 ## Gzip
 gzip_fastq:

@@ -532,7 +532,9 @@ sub get_user_supplied_info {
         exome_target_bed      => 0,
         expected_coverage     => 0,
         sample_ids            => 0,
+        sample_origin         => 0,
         supported_capture_kit => 0,
+        time_point            => 0,
     );
 
     ## Detect user supplied info

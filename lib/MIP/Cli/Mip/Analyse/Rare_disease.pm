@@ -196,6 +196,16 @@ q{gatk_realigner_indel_known_sites, gatk_baserecalibration_known_sites, gatk_hap
     );
 
     option(
+        q{expected_coverage} => (
+            cmd_aliases   => [qw{ ec }],
+            cmd_tags      => [q{sample_id=expected_coverage}],
+            documentation => q{Expected mean target coverage for analysis},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
         q{gatk_bundle_download_version} => (
             cmd_aliases   => [qw{ gbdv }],
             cmd_tags      => [q{Default: 2.8}],

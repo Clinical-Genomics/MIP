@@ -148,10 +148,10 @@ sub test_mip_hashes {
 
     my $tmpl = {
         mip_hash_name => {
-            allow       => [qw{ active_parameter file_info parameter }],
-            defined     => 1,
-            required    => 1,
-            store       => \$mip_hash_name,
+            allow    => [qw{ active_parameter file_info parameter pedigree }],
+            defined  => 1,
+            required => 1,
+            store    => \$mip_hash_name,
             strict_type => 1,
         },
         program_name => {
@@ -177,6 +177,7 @@ sub test_mip_hashes {
           catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
         parameter =>
           catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
+        pedigree => catfile( $Bin, qw{ data test_data pedigree.yaml } ),
     );
 
     my %hash_to_return = load_yaml(
@@ -184,6 +185,7 @@ sub test_mip_hashes {
             yaml_file => $test_hash{$mip_hash_name},
         }
     );
+
     ## Add dynamic parameters
     if ( $mip_hash_name eq q{active_parameter} ) {
 

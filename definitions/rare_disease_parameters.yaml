@@ -28,6 +28,12 @@ exome_target_bed:
   exists_check: file
   reference: reference_dir
   type: path
+expected_coverage:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 ## genomeAnalysisToolKitPath
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 gatk_bundle_download_version:

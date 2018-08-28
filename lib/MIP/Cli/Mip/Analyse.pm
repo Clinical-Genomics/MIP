@@ -131,16 +131,6 @@ sub _build_usage {
         )
     );
 
-    option(
-        q{expected_coverage} => (
-            cmd_aliases   => [qw{ ec }],
-            cmd_tags      => [q{sample_id=expected_coverage}],
-            documentation => q{Expected mean target coverage for analysis},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
     parameter(
         q{family_id} => (
             documentation => q{Group id of samples to be compared},

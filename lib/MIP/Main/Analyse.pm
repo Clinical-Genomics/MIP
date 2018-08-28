@@ -43,7 +43,6 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_program_exists_in_hash
   check_program_mode
   check_sample_ids
-  check_sample_id_in_hash_parameter
 };
 use MIP::Check::Path qw{ check_command_in_path check_parameter_files };
 use MIP::Check::Reference qw{ check_human_genome_file_endings };
@@ -570,17 +569,6 @@ sub mip_analyse {
             family_id      => $active_parameter{family_id},
             log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
-        }
-    );
-
-## Check sample_id provided in hash parameter is included in the analysis and only represented once
-    check_sample_id_in_hash_parameter(
-        {
-            active_parameter_href => \%active_parameter,
-            log                   => $log,
-            parameter_names_ref   => [qw{ analysis_type expected_coverage }],
-            parameter_href        => \%parameter,
-            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
         }
     );
 

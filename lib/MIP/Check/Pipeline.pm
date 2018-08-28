@@ -122,7 +122,7 @@ sub check_rare_disease {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter
-      qw{ check_mutually_exclusive_parameters check_sample_id_in_hash_parameter_path check_snpsift_keys check_vep_directories };
+      qw{ check_mutually_exclusive_parameters check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_snpsift_keys check_vep_directories };
     use MIP::Check::Path qw{ check_target_bed_file_suffix check_vcfanno_toml };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
@@ -207,6 +207,17 @@ sub check_rare_disease {
             vep_directory_cache =>
               $active_parameter_href->{vep_directory_cache},
             vep_directory_path => $active_parameter_href->{vep_directory_path},
+        }
+    );
+
+    ## Check sample_id provided in hash parameter is included in the analysis
+    check_sample_id_in_hash_parameter(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            parameter_names_ref   => [qw{ analysis_type expected_coverage }],
+            parameter_href        => $parameter_href,
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
         }
     );
 
@@ -456,7 +467,8 @@ sub check_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter qw{ check_sample_id_in_hash_parameter_path };
+    use MIP::Check::Parameter
+      qw{ check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_sample_id_in_parameter_value };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Parse::Parameter
@@ -475,12 +487,34 @@ sub check_rna {
         }
     );
 
+    ## Check sample_id provided in hash parameter is included in the analysis
+    check_sample_id_in_hash_parameter(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            parameter_names_ref   => [qw{ analysis_type }],
+            parameter_href        => $parameter_href,
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
     ## Check sample_id provided in hash path parameter is included in the analysis and only represented once
     check_sample_id_in_hash_parameter_path(
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
             parameter_names_ref   => [qw{ infile_dirs }],
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Check sample_id provided in hash parameter is included in the analysis
+    check_sample_id_in_parameter_value(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            parameter_names_ref   => [qw{ sample_origin }],
+            parameter_href        => $parameter_href,
             sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
         }
     );
@@ -649,7 +683,8 @@ sub check_vcf_rerun {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter qw{ check_snpsift_keys check_vep_directories };
+    use MIP::Check::Parameter
+      qw{ check_sample_id_in_hash_parameter check_snpsift_keys check_vep_directories };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Get::File qw{ get_select_file_contigs };
@@ -658,6 +693,17 @@ sub check_vcf_rerun {
     use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::QC::Record qw{ add_to_sample_info };
+
+    ## Check sample_id provided in hash parameter is included in the analysis
+    check_sample_id_in_hash_parameter(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            parameter_names_ref   => [qw{ analysis_type }],
+            parameter_href        => $parameter_href,
+            sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
 
     ## Checks parameter metafile exists and set build_file parameter
     check_parameter_metafiles(

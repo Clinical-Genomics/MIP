@@ -1,7 +1,7 @@
 # Tests
 MIP uses the core perl module TEST::More, which is a framework for writing test.  All test scripts are located in the standard perl [t dir]. The entire test suite should be run prior to making a pull request. This is done by:
 ```Perl
-perl run_tests.t
+prove t -r -j 4
 ```
 
 ## Test structure

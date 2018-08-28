@@ -35,8 +35,8 @@ sub check_founder_id {
 ## Function : Check that founder_ids are included in the pedigree info
 ## Returns  :
 ## Arguments: $active_sample_ids_ref => Array of pedigree samples {REF}
-##          : $log                     => Log object
-##          : $pedigree_href           => Pedigree info {REF}
+##          : $log                   => Log object
+##          : $pedigree_href         => Pedigree info {REF}
 
     my ($arg_href) = @_;
 

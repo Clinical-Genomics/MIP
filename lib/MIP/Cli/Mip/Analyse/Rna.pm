@@ -258,6 +258,26 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{sample_origin} => (
+            cmd_aliases   => [qw{ samo }],
+            cmd_tags      => [q{sample_id=sample_origin}],
+            documentation => q{Sample origin of replicate},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{time_point} => (
+            cmd_aliases   => [qw{ timp }],
+            cmd_tags      => [q{sample_id=time_point}],
+            documentation => q{Time point of replicate},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
         q{split_fastq_file} => (
             cmd_aliases => [qw{ sfq }],
             cmd_tags    => [q{Analysis recipe switch}],

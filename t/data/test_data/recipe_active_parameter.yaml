@@ -17,6 +17,7 @@ project_id: wamdu
 sample_ids:
   - sample-1
   - sample-2
+  - sample-3
 slurm_quality_of_service: low
 source_environment_commands_ref:
   - source
