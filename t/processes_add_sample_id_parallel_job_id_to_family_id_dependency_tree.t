@@ -91,11 +91,11 @@ diag(
 );
 
 ## Base arguments
-my $family_id             = q{family1};
-my $sample_id             = q{sample2};
-my $path                  = q{MAIN};
-my $family_id_chain_key   = $family_id . $UNDERSCORE . $path;
-my $sample_id_chain_key   = $sample_id . $UNDERSCORE . $path;
+my $family_id           = q{family1};
+my $sample_id           = q{sample2};
+my $path                = q{MAIN};
+my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
+my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 my $infile_index        = 0;
 my $sample_id_parallel_chain_key =
   $sample_id . $UNDERSCORE . q{parallel} . $UNDERSCORE . $path . $infile_index;
@@ -120,11 +120,11 @@ my %job_id = (
 
 add_sample_id_parallel_job_id_to_family_id_dependency_tree(
     {
-        job_id_href           => \%job_id,
-     infile_lane_prefix_href => \%infile_lane_prefix,
-        family_id_chain_key   => $family_id_chain_key,
-        sample_id             => $sample_id . q{no_parallel},
-        path                  => $path,
+        job_id_href             => \%job_id,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        family_id_chain_key     => $family_id_chain_key,
+        sample_id               => $sample_id . q{no_parallel},
+        path                    => $path,
     }
 );
 
@@ -134,11 +134,11 @@ is( $no_push_result, q{job_id_6}, q{No sample_id parallel job_ids} );
 
 add_sample_id_parallel_job_id_to_family_id_dependency_tree(
     {
-        job_id_href           => \%job_id,
-     infile_lane_prefix_href => \%infile_lane_prefix,
-        family_id_chain_key   => $family_id_chain_key,
-        sample_id             => $sample_id,
-        path                  => $path,
+        job_id_href             => \%job_id,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        family_id_chain_key     => $family_id_chain_key,
+        sample_id               => $sample_id,
+        path                    => $path,
     }
 );
 

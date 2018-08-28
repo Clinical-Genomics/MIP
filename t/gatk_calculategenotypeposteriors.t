@@ -101,12 +101,12 @@ diag(   q{Test gatk_calculategenotypeposteriors from Gatk v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{--analysis_type CalculateGenotypePosteriors};
+my @function_base_commands = qw{ --analysis_type CalculateGenotypePosteriors };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -115,17 +115,20 @@ my %base_argument = (
 my %required_argument = (
     infile_path => {
         input           => catfile(qw{ path_to_analysis_dir infile.bam }),
-        expected_output => q{--input} . $SPACE
+        expected_output => q{--input}
+          . $SPACE
           . catfile(qw{ path_to_analysis_dir infile.bam }),
     },
     outfile_path => {
         input           => catfile(qw{ path_to_analysis_dir outfile.bam }),
-        expected_output => q{--out} . $SPACE
+        expected_output => q{--out}
+          . $SPACE
           . catfile(qw{ path_to_analysis_dir outfile.bam }),
     },
     referencefile_path => {
         input           => catfile(qw{reference_dir human_genome_build.fasta }),
-        expected_output => q{--reference_sequence} . $SPACE
+        expected_output => q{--reference_sequence}
+          . $SPACE
           . catfile(qw{reference_dir human_genome_build.fasta }),
     },
 );
@@ -151,7 +154,9 @@ my %specific_argument = (
     },
     pedigree => {
         input           => catfile(qw{ dir pedigree.fam }),
-        expected_output => q{--pedigree} . $SPACE . catfile(qw{ dir pedigree.fam }),
+        expected_output => q{--pedigree}
+          . $SPACE
+          . catfile(qw{ dir pedigree.fam }),
     },
     pedigree_validation_type => {
         input           => q{SILENT},
@@ -159,7 +164,8 @@ my %specific_argument = (
     },
     supporting_callset_file_path => {
         input           => catfile(qw{ dir supporting_callset.vcf }),
-        expected_output => q{--supporting} . $SPACE
+        expected_output => q{--supporting}
+          . $SPACE
           . catfile(qw{ dir supporting_callset.vcf }),
     },
 );
@@ -174,11 +180,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

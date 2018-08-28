@@ -84,8 +84,7 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes
-  qw{clear_pan_job_id_dependency_tree};
+use MIP::Processmanagement::Processes qw{clear_pan_job_id_dependency_tree};
 
 diag(
 "Test clear_pan_job_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"

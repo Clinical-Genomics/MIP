@@ -83,7 +83,8 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes qw{add_pan_job_id_to_sample_id_dependency_tree};
+use MIP::Processmanagement::Processes
+  qw{add_pan_job_id_to_sample_id_dependency_tree};
 
 diag(
 "Test add_pan_job_id_to_sample_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
@@ -106,8 +107,7 @@ my %job_id = (
 
 ### Pan jobs
 
-my $pan_chain_key =
-  $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+my $pan_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
 add_pan_job_id_to_sample_id_dependency_tree(
     {
@@ -134,11 +134,7 @@ add_pan_job_id_to_sample_id_dependency_tree(
 
 my $pan_push_result = join $SPACE,
   @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
-is(
-    $pan_push_result,
-    q{job_id_3 job_id_0 job_id_1},
-    q{Pushed pan job_id}
-);
+is( $pan_push_result, q{job_id_3 job_id_0 job_id_1}, q{Pushed pan job_id} );
 
 done_testing();
 

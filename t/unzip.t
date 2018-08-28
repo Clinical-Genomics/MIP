@@ -100,7 +100,7 @@ diag(   q{Test unzip from Zip.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{unzip};
+my @function_base_commands = qw{ unzip };
 
 my %base_argument = (
     stderrfile_path => {
@@ -113,7 +113,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -121,27 +121,27 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => catfile( qw{ path to file } ),
-        expected_output => catfile( qw{ path to file } ),
+        input           => catfile(qw{ path to file }),
+        expected_output => catfile(qw{ path to file }),
     },
 );
 
 my %specific_argument = (
     outdir_path => {
         input           => catdir(qw{ a test path }),
-        expected_output => q{-d} . $SPACE . catdir( qw{ a test path } ),
+        expected_output => q{-d} . $SPACE . catdir(qw{ a test path }),
     },
     stdout => {
         input           => 1,
         expected_output => q{-p},
     },
     infile_path => {
-        input           => catfile( qw{ path to file } ),
-        expected_output => catfile( qw{ path to file } ),
+        input           => catfile(qw{ path to file }),
+        expected_output => catfile(qw{ path to file }),
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     quiet => {
         input           => 1,
@@ -167,11 +167,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

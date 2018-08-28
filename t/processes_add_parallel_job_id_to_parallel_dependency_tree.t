@@ -121,31 +121,39 @@ add_parallel_job_id_to_parallel_dependency_tree(
     {
         job_id_href           => \%job_id,
         family_id_chain_key   => $family_id_chain_key . q{no_parallel},
-     id => $family_id,
-     path => $path,
-     sbatch_script_tracker => $sbatch_script_tracker,
-     job_id_returned => q{job_id_12},
+        id                    => $family_id,
+        path                  => $path,
+        sbatch_script_tracker => $sbatch_script_tracker,
+        job_id_returned       => q{job_id_12},
     }
 );
 
 my $no_push_result = join $SPACE,
   @{ $job_id{$family_id_chain_key}{$family_id_parallel_chain_key} };
-is( $no_push_result, q{job_id_10 job_id_11}, q{No pushed parallel job_ids to parallel id} );
+is(
+    $no_push_result,
+    q{job_id_10 job_id_11},
+    q{No pushed parallel job_ids to parallel id}
+);
 
 add_parallel_job_id_to_parallel_dependency_tree(
     {
         job_id_href           => \%job_id,
         family_id_chain_key   => $family_id_chain_key,
-     id => $family_id,
-     path => $path,
-     sbatch_script_tracker => $sbatch_script_tracker,
-     job_id_returned => q{job_id_12},
+        id                    => $family_id,
+        path                  => $path,
+        sbatch_script_tracker => $sbatch_script_tracker,
+        job_id_returned       => q{job_id_12},
     }
 );
 
 my $push_result = join $SPACE,
   @{ $job_id{$family_id_chain_key}{$family_id_parallel_chain_key} };
-is( $push_result, q{job_id_10 job_id_11 job_id_12}, q{Pushed parallel job_ids to parallel id} );
+is(
+    $push_result,
+    q{job_id_10 job_id_11 job_id_12},
+    q{Pushed parallel job_ids to parallel id}
+);
 
 done_testing();
 

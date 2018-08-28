@@ -143,13 +143,13 @@ my @args = (
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&gnu_set;
 
-my $function_base_command = q{set};
+my @function_base_commands = qw{ set };
 
 test_write_to_file(
     {
         args_ref             => \@args,
         module_function_cref => $module_function_cref,
-        base_command         => $function_base_command,
+        base_commands_ref    => \@function_base_commands,
         separator            => $NEWLINE,
     }
 );

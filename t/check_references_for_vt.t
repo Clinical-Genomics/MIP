@@ -116,7 +116,7 @@ my $log = initiate_logger(
 );
 
 my %active_parameter_test = (
-    gatk_baserecalibration            => 1,
+    gatk_baserecalibration             => 1,
     gatk_baserecalibration_known_sites => [
         catfile( $Bin, qw{ data references GRCh37_dbsnp_-138-.vcf } ),
         catfile( $Bin, qw{ data references GRCh37_1000g_indels_-phase1-.vcf } ),
@@ -125,7 +125,7 @@ my %active_parameter_test = (
             qw{ data references GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
         )
     ],
-    gatk_realigner                  => 1,
+    gatk_realigner                   => 1,
     gatk_realigner_indel_known_sites => [
         catfile( $Bin, qw{ data references GRCh37_1000g_indels_-phase1-.vcf } ),
         catfile(
@@ -136,8 +136,8 @@ my %active_parameter_test = (
     gatk_variantevalall => 1,
     gatk_varianteval_dbsnp =>
       catfile( $Bin, qw{ data references GRCh37_dbsnp_-138_esa_129-.vcf } ),
-    gatk_variantevalexome   => 1,
-    snpeff                  => 1,
+    gatk_variantevalexome    => 1,
+    snpeff                   => 1,
     snpsift_annotation_files => {
         catfile( $Bin,
             qw{ data references GRCh37_anon-swegen_snp_-1000samples-.vcf.gz } )
@@ -159,9 +159,8 @@ my %parameter_test = (
     gatk_realigner_indel_known_sites =>
       { associated_program => [qw{ gatk_realigner }], data_type => q{ARRAY}, },
     gatk_varianteval_dbsnp => {
-        associated_program =>
-          [qw{ gatk_variantevalall gatk_variantevalexome }],
-        data_type => q{SCALAR},
+        associated_program => [qw{ gatk_variantevalall gatk_variantevalexome }],
+        data_type          => q{SCALAR},
     },
     snpsift_annotation_files =>
       { associated_program => [qw{ snpeff }], data_type => q{HASH}, },

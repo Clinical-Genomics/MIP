@@ -59,9 +59,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
     ## Modules with import
-    my %perl_module = (
-        'MIP::Script::Utils'       => [qw{help}],
-    );
+    my %perl_module = ( 'MIP::Script::Utils' => [qw{help}], );
 
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
@@ -81,10 +79,11 @@ BEGIN {
 use MIP::Cluster qw(update_core_number_to_seq_mode);
 
 diag(
-    "Test update_core_number_to_seq_mode $MIP::Cluster::VERSION, Perl $^V, $EXECUTABLE_NAME" );
+"Test update_core_number_to_seq_mode $MIP::Cluster::VERSION, Perl $^V, $EXECUTABLE_NAME"
+);
 
 # Core number to test
-Readonly my $CORE_NUMBER   => 1;
+Readonly my $CORE_NUMBER => 1;
 
 my @sequence_run_types = qw(paired-end single-end);
 
@@ -92,12 +91,13 @@ my @returned_core_numbers;
 
 foreach my $sequence_run_type (@sequence_run_types) {
 
-  push @returned_core_numbers, update_core_number_to_seq_mode(
-							      {
-							       core_number => $CORE_NUMBER,
-							       sequence_run_type => $sequence_run_type,
-							      }
-							     );
+    push @returned_core_numbers,
+      update_core_number_to_seq_mode(
+        {
+            core_number       => $CORE_NUMBER,
+            sequence_run_type => $sequence_run_type,
+        }
+      );
 }
 
 ## Test

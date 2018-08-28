@@ -1,30 +1,25 @@
 package MIP::Test::Commands;
 
-#### Copyright 2017 Henrik Stranneheim
-
-use strict;
-use warnings;
-use warnings qw(FATAL utf8);
-use utf8;    #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
 use Carp;
-use English qw(-no_match_vars);
-use autodie;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw(dirname);
+use File::Spec::Functions qw(catdir);
+use FindBin qw($Bin);
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
 use Test::More;
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
 
 ## CPAN
 use List::MoreUtils qw(zip);
 use Readonly;
 
-use FindBin qw($Bin);                 #Find directory of script
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(catdir);
-
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
+use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Writefile qw(test_write_to_file);
 
 ## Constants
@@ -36,7 +31,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(test_function);
@@ -44,52 +39,61 @@ BEGIN {
 
 sub test_function {
 
-##test_function
-
-##Function : Test module function by generating arguments and testing output
-##Returns  : "@commands"
-##Arguments: $argument_href, $required_argument_href, $module_function_cref, $function_base_command, do_test_base_command
-##         : $argument_href          => Parameters to submit to module method
-##         : $required_argument_href => Required arguments
-##         : $module_function_cref   => Module method to test
-##         : $function_base_command  => Function base command
-##         : $do_test_base_command   => Perform test of base command
+## Function : Test module function by generating arguments and testing output
+## Returns  : "@commands"
+## Arguments: $argument_href              => Parameters to submit to module method
+##          : $base_command_index         => index for slicing the $function_base_command_ref
+##          : $do_test_base_command       => Perform test of base command
+##          : $function_base_commands_ref => Function base commands {REF}
+##          : $module_function_cref       => Module method to test
+##          : $required_argument_href     => Required arguments
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $argument_href;
-    my $required_argument_href;
-    my $function_base_command;
-    my $module_function_cref;
+	my $base_commands_index;
     my $do_test_base_command;
+    my $function_base_commands_ref;
+    my $module_function_cref;
+    my $required_argument_href;
 
     my $tmpl = {
         argument_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$argument_href
-        },
-        required_argument_href => {
-            default     => {},
-            strict_type => 1,
-            store       => \$required_argument_href
-        },
-        module_function_cref =>
-          { required => 1, defined => 1, store => \$module_function_cref },
-        function_base_command => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$argument_href,
             strict_type => 1,
-            store       => \$function_base_command
         },
+		base_commands_index => {
+			allow => qr/\d+/,
+			default => 0,
+			store => \$base_commands_index,
+			strict_type => 1,
+		},
         do_test_base_command => {
-            default     => 1,
             allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$do_test_base_command,
             strict_type => 1,
-            store       => \$do_test_base_command
+        },
+        function_base_commands_ref => {
+			defined     => 1,
+            default => [],
+            required    => 1,
+            store       => \$function_base_commands_ref,
+            strict_type => 1,
+        },
+        module_function_cref => { 
+            defined => 1, 
+            required => 1, 
+            store => \$module_function_cref,
+        },
+		required_argument_href => {
+            default     => {},
+            store       => \$required_argument_href,
+            strict_type => 1,
         },
     };
 
@@ -124,9 +128,9 @@ sub test_function {
 
                 @args = _build_call(
                     {
-                        required_argument_href => $required_argument_href,
                         argument               => $argument,
                         input_values_ref       => $input_values_ref,
+                        required_argument_href => $required_argument_href,
                     }
                 );
             }
@@ -134,9 +138,9 @@ sub test_function {
 
                 @args = _build_call(
                     {
-                        required_argument_href => $required_argument_href,
                         argument               => $argument,
                         input_value            => $input_value,
+                        required_argument_href => $required_argument_href,
                     }
                 );
             }
@@ -147,8 +151,8 @@ sub test_function {
                 test_write_to_file(
                     {
                         args_ref             => \@args,
+                        base_commands_ref    => $function_base_commands_ref,
                         module_function_cref => $module_function_cref,
-                        base_command         => $function_base_command,
                     }
                 );
             }
@@ -167,7 +171,7 @@ sub test_function {
                     {
                         args_ref => [ $argument, $input_value ],
                         module_function_cref => $module_function_cref,
-                        base_command         => $function_base_command,
+                        base_commands_ref    => $function_base_commands_ref,
                     }
                 );
             }
@@ -201,8 +205,8 @@ sub test_function {
                 ## Test function_base_command
                 _test_base_command(
                     {
-                        base_command          => $commands[0],
-                        expected_base_command => $function_base_command,
+                        base_commands_ref     => [@commands[0 .. $base_commands_index]],
+                        expected_base_commands_ref => $function_base_commands_ref,
                     }
                 );
             }
@@ -234,43 +238,40 @@ sub test_function {
 
 sub _build_call {
 
-##_build_call
-
-##Function : Build arguments to function
-##Returns  : "@arguments"
-##Arguments: $required_argument_href, argument, input_value
-##         : $required_argument_href => Required arguments
-##         : $argument               => Argument key to test
-##         : $input_value            => Argument value to test
+## Function : Build arguments to function
+## Returns  : "@arguments"
+## Arguments: $required_argument_href => Required arguments
+##          : $argument               => Argument key to test
+##          : $input_value            => Argument value to test
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $required_argument_href;
-    my $input_values_ref;
     my $argument;
     my $input_value;
+    my $input_values_ref;
+    my $required_argument_href;
 
     my $tmpl = {
-        required_argument_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        argument => {
+            store       => \$argument,
             strict_type => 1,
-            store       => \$required_argument_href
+        },
+        input_value => {
+            store       => \$input_value,
+            strict_type => 1,
         },
         input_values_ref => {
             default     => [],
+            store       => \$input_values_ref,
             strict_type => 1,
-            store       => \$input_values_ref
         },
-        argument => {
+        required_argument_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$required_argument_href,
             strict_type => 1,
-            store       => \$argument
-        },
-        input_value => {
-            strict_type => 1,
-            store       => \$input_value
         },
     };
 
@@ -323,41 +324,42 @@ sub _build_call {
 
 sub _test_base_command {
 
-##_test_base_command
-
-##Function : Test the function base command. Executable, ".jar" etc.
-##Returns  : ""
-##Arguments: $base_command, $expected_base_command
-##         : $base_command          => First word in command line usually name of executable
-##         : $expected_base_command => Expected base command
+## Function  : Test the function base command. Executable, ".jar" etc.
+## Returns   : ""
+## Arguments : $base_commands_ref     => Base command(s) {REF}
+##           : $expected_base_commands_ref => Expected base command(s) {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $base_command;
-    my $expected_base_command;
+    my $base_commands_ref;
+    my $expected_base_commands_ref;
 
     my $tmpl = {
-        base_command => {
+        base_commands_ref => {
+			defined     => 1,
+            default => [],
             required    => 1,
-            defined     => 1,
+            store       => \$base_commands_ref,
             strict_type => 1,
-            store       => \$base_command
         },
-        expected_base_command => {
-            required    => 1,
+        expected_base_commands_ref => {
+			default => [],
             defined     => 1,
+            required    => 1,
+            store       => \$expected_base_commands_ref,
             strict_type => 1,
-            store       => \$expected_base_command
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
-    if ( $base_command ne $expected_base_command ) {
-
-        is( $base_command, $expected_base_command,
-            'Argument: ' . $expected_base_command );
+    ## Compare base argument string to the expected one 
+    if ( (join $SPACE, @{$base_commands_ref}) ne (join $SPACE, @{ $expected_base_commands_ref }) ) {
+           
+        ## Display base argument difference and exit
+        is_deeply( $base_commands_ref, $expected_base_commands_ref,
+            'Argument: ' . join $SPACE, @{ $expected_base_commands_ref } );
         exit 1;
     }
     return;

@@ -60,7 +60,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
     ## Modules with import
     my %perl_module = (
-        'MIP::Script::Utils'       => [qw{help}],
+        'MIP::Script::Utils'  => [qw{help}],
         'MIP::Check::Cluster' => [qw{check_max_core_number}],
     );
 
@@ -81,8 +81,7 @@ BEGIN {
 
 use MIP::Cluster qw(get_core_number);
 
-diag(
-    "Test get_core_number $MIP::Cluster::VERSION, Perl $^V, $EXECUTABLE_NAME" );
+diag("Test get_core_number $MIP::Cluster::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
 # Core number to test
 Readonly my $MODULE_CORE_NUMBER   => 1;
