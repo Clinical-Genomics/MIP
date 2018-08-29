@@ -28,7 +28,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils
   qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = 0.03;
+our $VERSION = 1.00;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -70,7 +70,7 @@ sub run {
 
     ## Update installation array
     if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
-        @{ $parameter{installations} } = qw{ emip };
+        @{ $parameter{installations} } = qw{ emip estar };
     }
 
     ## Nest the command line parameters and overwrite the default
@@ -105,7 +105,8 @@ sub _build_usage {
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip => Optional [Str],
+                emip  => Optional [Str],
+                estar => Optional [Str],
             ],
             required => 0,
         ),
@@ -132,7 +133,7 @@ sub _build_usage {
             cmd_tags      => [q{Default: emip}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip full }] ), ],
+            isa           => ArrayRef [ enum( [qw{ emip full estar }] ), ],
             required      => 0,
         ),
     );
@@ -195,7 +196,7 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          gatk htslib mip_scripts picard salmon samtools
+                          fusion-filter gatk htslib mip_scripts picard salmon samtools
                           star star_fusion }
                     ]
                 ),
@@ -225,7 +226,7 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          gatk htslib mip_scripts picard salmon samtools
+                          fusion-filter gatk htslib mip_scripts picard salmon samtools
                           star star_fusion }
                     ]
                 ),
