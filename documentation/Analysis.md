@@ -36,6 +36,11 @@ $ mip analyse rare_disease --fam 0 --config GRCh37_config_-v1.4-.yaml --rio
 
 When not supplying the ``-rio`` flag MIP will copy in and out files from HDS and SLURM nodes between each module. Thus increasing the network traffic.
 
+## Start reannotation and reranking from vcf files
+```Bash
+$ mip analyse vcf_rerun --config GRCh37_config_vcf_rerun-v1.0-.yaml --vcf_rerun_file vcf_BOTH.bcf --sv_vcf_rerun_file vcf_SV.bcf
+```
+
 ### Excluding a program from the analysis
 
 ```Bash

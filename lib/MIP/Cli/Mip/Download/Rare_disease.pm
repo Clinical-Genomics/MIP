@@ -30,7 +30,7 @@ extends(qw{ MIP::Cli::Mip::Download });
 
 command_short_description(q{Generate mip.sh for download of references});
 command_long_description(
-q{Generates a download script (download_reference.sh), which is used for downloadin reference for the rare disease flavor of the Mutation Identification Pipeline (MIP).}
+q{Generates a download script (download_reference.sh), which is used for downloading reference(s) for the rare disease flavor of the Mutation Identification Pipeline (MIP).}
 );
 command_usage(q{mip <download> <rare_disease> [options]});
 

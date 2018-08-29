@@ -16,10 +16,10 @@ Recipes are a list of ordered commands and subroutines that has a defined input 
 Used in `Install.pm` to handle installation of programs and references.
 
 ### Build Recipes
-Used in `Analyse.pm` to build metadatafiles for references.
+Used in `Analyse/[Pipeline].pm` to build metadatafiles for references.
 
 ### Analysis Recipes
-Used in `Analyse.pm` to perform operation with a defined input and ouput for a process with specific upstream and/or downstream dependencies, e.g. qc of fastqc files or aligning and sorting reads.
+Used in `Analyse/[Pipeline].pm` to perform operation with a defined input and ouput for a process with specific upstream and/or downstream dependencies, e.g. qc of fastqc files or aligning and sorting reads.
 
 ### Pipeline
-Used in `Analyse.pm` to string together several analysis recipes into entire pipelines.
+Used in `Analyse/[Pipeline].pm` to string together several analysis recipes into entire pipelines.
