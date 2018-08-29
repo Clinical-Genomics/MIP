@@ -99,12 +99,12 @@ diag(   q{Test rhocall_annotate from Rhocall.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{rhocall annotate};
+my @function_base_commands = qw{ rhocall annotate };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -124,29 +124,29 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => catfile( qw{ file_path_prefix_contig infile_suffix } ),
-        expected_output => catfile( qw{ file_path_prefix_contig infile_suffix } ),
+        input           => catfile(qw{ file_path_prefix_contig infile_suffix }),
+        expected_output => catfile(qw{ file_path_prefix_contig infile_suffix }),
     },
 );
 
 my %specific_argument = (
     bedfile_path => {
-        input           => catfile( qw{ path_to_bedfile file.bed } ),
+        input           => catfile(qw{ path_to_bedfile file.bed }),
         expected_output => q{-b}
           . $SPACE
-          . catfile( qw{ path_to_bedfile file.bed } ),
+          . catfile(qw{ path_to_bedfile file.bed }),
     },
     outfile_path => {
-        input => catfile( qw{ outfile_path_prefix_contig infile_suffix } ),
+        input => catfile(qw{ outfile_path_prefix_contig infile_suffix }),
         expected_output => q{--output}
           . $SPACE
-          . catfile( qw{ outfile_path_prefix_contig infile_suffix } ),
+          . catfile(qw{ outfile_path_prefix_contig infile_suffix }),
     },
     rohfile_path => {
-        input           => catfile( qw{ file_path_prefix _contig.roh } ),
+        input           => catfile(qw{ file_path_prefix _contig.roh }),
         expected_output => q{-r}
           . $SPACE
-          . catfile( qw{ file_path_prefix _contig.roh } ),
+          . catfile(qw{ file_path_prefix _contig.roh }),
     },
     v14 => {
         input           => 1,
@@ -164,11 +164,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

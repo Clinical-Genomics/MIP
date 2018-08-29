@@ -117,9 +117,9 @@ my $log = initiate_logger(
 ## Given no structural active callers, when priority string is ok
 my %active_parameter = (
     gatk_combinevariants_prioritize_caller => q{gatk,bcftools,freebayes},
-    bcftools_mpileup                      => 1,
-    freebayes                             => 1,
-    gatk_variantrecalibration             => 1,
+    bcftools_mpileup                       => 1,
+    freebayes                              => 1,
+    gatk_variantrecalibration              => 1,
 );
 
 my %parameter = (

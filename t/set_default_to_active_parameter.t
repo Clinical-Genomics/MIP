@@ -123,11 +123,11 @@ my %active_parameter = (
     gatk_genotypegvcfs_ref_gvcf               => q{test_file},
     markduplicates_picardtools_markduplicates => 1,
     mip                                       => 1,
-    bwa_mem                                  => 0,
-    gatk_baserecalibration                   => 1,
-    gatk_genotypegvcfs                       => 1,
-    gatk_variantrecalibration                => 1,
-    sv_vcfparser                             => 1,
+    bwa_mem                                   => 0,
+    gatk_baserecalibration                    => 1,
+    gatk_genotypegvcfs                        => 1,
+    gatk_variantrecalibration                 => 1,
+    sv_vcfparser                              => 1,
 );
 
 my %parameter = load_yaml(

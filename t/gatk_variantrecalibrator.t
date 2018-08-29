@@ -105,12 +105,12 @@ diag(   q{Test gatk_variantrecalibrator from Gatk v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{--analysis_type VariantRecalibrator};
+my @function_base_commands = qw{ --analysis_type VariantRecalibrator };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -132,7 +132,8 @@ my %required_argument = (
     },
     referencefile_path => {
         input           => catfile(qw{reference_dir human_genome_build.fasta }),
-        expected_output => q{--reference_sequence} . $SPACE
+        expected_output => q{--reference_sequence}
+          . $SPACE
           . catfile(qw{reference_dir human_genome_build.fasta }),
     },
     mode => {
@@ -162,7 +163,9 @@ my %specific_argument = (
     },
     pedigree => {
         input           => catfile(qw{ dir pedigree.fam }),
-        expected_output => q{--pedigree} . $SPACE . catfile(qw{ dir pedigree.fam }),
+        expected_output => q{--pedigree}
+          . $SPACE
+          . catfile(qw{ dir pedigree.fam }),
     },
     pedigree_validation_type => {
         input           => q{SILENT},
@@ -174,27 +177,37 @@ my %specific_argument = (
           q{--read_filter MalformedRead --read_filter BadCigar},
     },
     static_quantized_quals_ref => {
-        inputs_ref => [ $QUALSCORE_1, $QUALSCORE_2 ],
-        expected_output =>
-          q{--static_quantized_quals} . $SPACE . $QUALSCORE_1 . $SPACE . q{--static_quantized_quals} . $SPACE . $QUALSCORE_2,
+        inputs_ref      => [ $QUALSCORE_1, $QUALSCORE_2 ],
+        expected_output => q{--static_quantized_quals}
+          . $SPACE
+          . $QUALSCORE_1
+          . $SPACE
+          . q{--static_quantized_quals}
+          . $SPACE
+          . $QUALSCORE_2,
     },
     base_quality_score_recalibration_file => {
         input           => catfile(qw{ dir recalibration_report.grp }),
-        expected_output => q{--BQSR} . $SPACE
+        expected_output => q{--BQSR}
+          . $SPACE
           . catfile(qw{ dir recalibration_report.grp }),
     },
     rscript_file_path => {
         input           => catfile(qw{ dir rscript.r }),
-        expected_output => q{--rscript_file} . $SPACE . catfile(qw{ dir rscript.r }),
+        expected_output => q{--rscript_file}
+          . $SPACE
+          . catfile(qw{ dir rscript.r }),
     },
     recal_file_path => {
         input           => catfile(qw{ dir recal_file.intervals }),
-        expected_output => q{--recal_file} . $SPACE
+        expected_output => q{--recal_file}
+          . $SPACE
           . catfile(qw{ dir recal_file.intervals }),
     },
     tranches_file_path => {
         input           => catfile(qw{ dir tranchesfile.tranches }),
-        expected_output => q{--tranches_file} . $SPACE
+        expected_output => q{--tranches_file}
+          . $SPACE
           . catfile(qw{ dir tranchesfile.tranches }),
     },
     num_cpu_threads_per_data_thread => {
@@ -221,11 +234,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

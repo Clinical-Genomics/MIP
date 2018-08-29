@@ -101,7 +101,7 @@ diag(   q{Test bwa_mem from Bwa.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{bwa mem};
+my @function_base_commands = qw{ bwa mem };
 
 ## Read group header line
 my @read_group_headers = (
@@ -126,7 +126,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -134,7 +134,7 @@ my %base_argument = (
 my %required_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     infile_path => {
         input           => q{test_infile.fastq},
@@ -195,11 +195,11 @@ my @arguments = ( \%required_argument, \%specific_argument );
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

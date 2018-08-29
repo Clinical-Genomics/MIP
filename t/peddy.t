@@ -23,16 +23,15 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
 
-
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
+Readonly my $SPACE        => q{ };
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $COMMA        => q{,};
 Readonly my $N_PROCESSORS => 4;
 
 ### User Options
@@ -101,7 +100,7 @@ diag(   q{Test peddy from Peddy.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{python -m peddy};
+my @function_base_commands = qw{ python -m peddy };
 
 my %base_argument = (
     stderrfile_path => {
@@ -110,7 +109,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path_append => {
         input           => q{stderrfile.test},
@@ -146,7 +145,7 @@ my %required_argument = (
 my %specific_argument = (
     processor_number => {
         input           => $N_PROCESSORS,
-        expected_output => q{--procs} .$SPACE . $N_PROCESSORS,
+        expected_output => q{--procs} . $SPACE . $N_PROCESSORS,
     },
     plot => {
         input           => 1,
@@ -164,11 +163,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

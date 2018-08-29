@@ -102,10 +102,11 @@ my $capture_kit = q{latest};
 
 my %parameter = (
     supported_capture_kit => {
-            q{agilent_sureselect.v5} =>
+        q{agilent_sureselect.v5} =>
 q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed},
-		    latest => q{genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed},
-        },
+        latest =>
+q{genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed},
+    },
 );
 
 my %user_supply_switch = ( exome_target_bed => 0, );
