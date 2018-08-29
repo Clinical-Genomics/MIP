@@ -1351,8 +1351,9 @@ sub analysis_vep_sv {
         my $outfile_sample_info_prefix = $outfile_prefix;
 
         # Update endings with contig info
-        if (   ( $consensus_analysis_type eq q{wgs} )
-            || ( $consensus_analysis_type eq q{mixed} ) )
+        if (   $consensus_analysis_type eq q{wgs}
+            || $consensus_analysis_type eq q{mixed}
+            || $consensus_analysis_type eq q{vrn} )
         {
 
             $outfile_sample_info_prefix .= $UNDERSCORE . $contigs_ref->[0];
