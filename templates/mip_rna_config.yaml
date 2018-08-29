@@ -9,6 +9,14 @@ max_cores_per_node: 16
 project_id: test
 program_source_environment_command: {}
 module_source_environment_command:
+  star_aln:
+    - source
+    - activate
+    - MIP_star
+  star_fusion:
+    - source
+    - activate
+    - MIP_star
 source_main_environment_commands:
   - source
   - activate
