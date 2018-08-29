@@ -176,7 +176,7 @@ my $sambamba_cmd =
 ## Set in program features hash
 $program_feature{gatk_path}{cmd}        = $gatk_cmd;
 $program_feature{picardtools_path}{cmd} = $picard_cmd;
-$program_feature{sambamba_depth}{cmd}  = $sambamba_cmd;
+$program_feature{sambamba_depth}{cmd}   = $sambamba_cmd;
 
 ## Scramble the regexps, that need scrambling
 $program_feature{gatk_path}{regexp}        = q{Not valid};

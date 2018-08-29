@@ -108,7 +108,7 @@ my %active_parameter = (
 my @program_source_environment_cmds = get_program_parameters(
     {
         active_parameter_href => \%active_parameter,
-        program_name      => $program_name,
+        program_name          => $program_name,
     }
 );
 

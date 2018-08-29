@@ -108,7 +108,7 @@ my %active_parameter = (
 my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
     {
         active_parameter_href => \%active_parameter,
-        program_name      => $program_name,
+        program_name          => $program_name,
     }
 );
 
@@ -130,7 +130,7 @@ is_deeply( \@source_environment_cmds, [qw{source activate mip}],
 ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
     {
         active_parameter_href => \%active_parameter,
-        program_name      => $program_name,
+        program_name          => $program_name,
     }
 );
 

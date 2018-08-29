@@ -106,7 +106,7 @@ Readonly my $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING => 10;
 Readonly my $VARIANT_INDEX_PARAMETER                       => 128_000;
 
 ## Base arguments
-my $function_base_command = q{--analysis_type HaplotypeCaller};
+my @function_base_commands = qw{ --analysis_type HaplotypeCaller };
 
 my %base_argument = (
     stderrfile_path => {
@@ -115,7 +115,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -220,11 +220,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

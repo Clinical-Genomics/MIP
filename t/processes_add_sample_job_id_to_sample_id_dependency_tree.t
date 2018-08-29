@@ -83,7 +83,8 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes qw{add_sample_job_id_to_sample_id_dependency_tree};
+use MIP::Processmanagement::Processes
+  qw{add_sample_job_id_to_sample_id_dependency_tree};
 
 diag(
 "Test add_sample_job_id_to_sample_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"

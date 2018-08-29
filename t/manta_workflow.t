@@ -140,12 +140,16 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => catfile( $required_argument{outdirectory_path}{expected_output},
-              $function_base_command ),
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => [
+                catfile(
+                    $required_argument{outdirectory_path}{expected_output},
+                    $function_base_command
+                )
+            ],
+            do_test_base_command => 1,
         }
     );
 }

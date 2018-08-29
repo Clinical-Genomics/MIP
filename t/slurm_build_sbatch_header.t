@@ -66,7 +66,7 @@ GetOptions(
             exit_code => 1,
         }
     )
-);
+  );
 
 BEGIN {
 
@@ -87,7 +87,7 @@ BEGIN {
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
-  }
+}
 
 use MIP::Workloadmanager::Slurm qw{ slurm_build_sbatch_header };
 
@@ -100,7 +100,7 @@ diag(   q{Test slurm_build_sbatch_header from SLURM.pm v}
       . $SPACE
       . $PERL_VERSION
       . $SPACE
-. $EXECUTABLE_NAME );
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
 my $sbatch_shebang = q{#SBATCH };
@@ -186,12 +186,12 @@ my @args = (
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&slurm_build_sbatch_header;
 
-my $function_base_command = q{#SBATCH };
+my @function_base_commands = qw{ #SBATCH  };
 
 test_write_to_file(
     {
         args_ref             => \@args,
-        base_command         => $function_base_command,
+        base_commands_ref    => \@function_base_commands,
         module_function_cref => $module_function_cref,
         separator            => $separator,
     }

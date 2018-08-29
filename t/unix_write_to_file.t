@@ -110,7 +110,7 @@ my @commands = ( q{commands_ref}, [qw{ test in-line }] );
 test_write_to_file(
     {
         args_ref             => \@commands,
-        base_command         => q{test in-line},
+        base_commands_ref    => [qw{ test in-line }],
         module_function_cref => $module_function_cref,
     }
 );
@@ -120,7 +120,7 @@ test_write_to_file(
 test_write_to_file(
     {
         args_ref             => \@commands,
-        base_command         => q{test},
+        base_commands_ref    => [qw{ test }],
         module_function_cref => $module_function_cref,
         separator            => q{\n},
     }
