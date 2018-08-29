@@ -147,7 +147,7 @@ sub analysis_sv_vcf_rerun_reformat {
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
@@ -246,7 +246,7 @@ sub analysis_sv_vcf_rerun_reformat {
     bcftools_view(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $file_path_prefix . $DOT . q{vcf.gz},
+            infile_path  => $file_path_prefix . $DOT . q{bcf},
             outfile_path => $file_path_decompressed,
             output_type  => q{v},
         }
