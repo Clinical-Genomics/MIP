@@ -34,12 +34,6 @@ Readonly my $SINGLE_QUOTE => q{'};
 Readonly my $SPACE        => q{ };
 Readonly my $NEWLINE      => qq{\n};
 
-# Localize the current value
-local $YAML::QuoteNumericStrings = $YAML::QuoteNumericStrings;
-
-# Force numeric values to strings in YAML representation
-$YAML::QuoteNumericStrings = 1;
-
 sub load_yaml {
 
 ## Function : Loads a YAML file into an arbitrary hash and returns it.
@@ -106,6 +100,12 @@ sub write_yaml {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Localize the current value
+    local $YAML::QuoteNumericStrings = $YAML::QuoteNumericStrings;
+
+    # Force numeric values to strings in YAML representation
+    $YAML::QuoteNumericStrings = 1;
 
     open my $YAML, q{>}, $yaml_file_path
       or croak q{Cannot open}
