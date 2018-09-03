@@ -59,6 +59,7 @@ estar:
     fusion-filter: 0.5.0
     star: 2.6
     star-fusion: 1.4.0
+    blast: 2.7.1
   pip:
   shell:
 
