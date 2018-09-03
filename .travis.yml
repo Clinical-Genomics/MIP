@@ -31,7 +31,7 @@ install:
 script:
 ## Run MIP install script
   - cd t; prove mip_install.t; cd -
-  - perl mip_install.pl --quiet --bash_set_errexit -env test_environment -vep 91 --vep_auto_flag al --vep_plugin 0 -snpg GRCh37.75 -skip gatk --bioconda fastqc=0.11.4
+  - perl mip_install.pl --quiet --bash_set_errexit -env test_environment -vep 91 --vep_auto_flag al --vep_plugin 0 -snpg GRCh37.75 -skip gatk --skip vcf2cytosure--bioconda fastqc=0.11.4
   # Set user specific path to data
   - echo 'cluster_constant_path:' /home/travis/build/${TRAVIS_REPO_SLUG}/t/data >> /home/travis/build/${TRAVIS_REPO_SLUG}/templates/mip_travis_config.yaml
   - bash mip.sh
