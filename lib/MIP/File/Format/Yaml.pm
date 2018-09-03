@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ load_yaml write_yaml order_parameter_names };
@@ -33,12 +33,6 @@ Readonly my $DOUBLE_QUOTE => q{"};
 Readonly my $SINGLE_QUOTE => q{'};
 Readonly my $SPACE        => q{ };
 Readonly my $NEWLINE      => qq{\n};
-
-# Localize the current value
-local $YAML::QuoteNumericStrings = $YAML::QuoteNumericStrings;
-
-# Force numeric values to strings in YAML representation
-$YAML::QuoteNumericStrings = 1;
 
 sub load_yaml {
 
@@ -106,6 +100,12 @@ sub write_yaml {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+	# Localize the current value
+	local $YAML::QuoteNumericStrings = $YAML::QuoteNumericStrings;
+
+	# Force numeric values to strings in YAML representation
+	$YAML::QuoteNumericStrings = 1;
 
     open my $YAML, q{>}, $yaml_file_path
       or croak q{Cannot open}

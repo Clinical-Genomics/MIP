@@ -82,6 +82,9 @@ my $cmds_ref = [
     qw(--rio),
     qw(--dra),
     qw(--psvv 0),
+    qw(--pfreebayes 0),
+    qw(--pvcf2cytosure 0),
+	qw(--gatk_combinevariants_prioritize_caller gatk,bcftools),
 ];
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
