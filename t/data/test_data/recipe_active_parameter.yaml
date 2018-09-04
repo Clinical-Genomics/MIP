@@ -11,6 +11,7 @@ exome_target_bed:
 family_id: family_1
 human_genome_reference: human_genome.fasta
 java_use_large_pages: 1
+max_cores_per_node: 16
 outaligner_dir: bwa
 picardtools_path: a_test_path
 project_id: wamdu

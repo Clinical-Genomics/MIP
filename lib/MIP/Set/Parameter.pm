@@ -151,13 +151,14 @@ sub set_custom_default_to_active_parameter {
         bwa_build_reference => \&_set_human_genome,
         expansionhunter_repeat_specs_dir =>
           \&_set_expansionhunter_repeat_specs_dir,
-        gatk_path                    => \&_set_dynamic_path,
-        infile_dirs                  => \&_set_infile_dirs,
-        picardtools_path             => \&_set_dynamic_path,
-        rtg_vcfeval_reference_genome => \&_set_human_genome,
-        star_aln_reference_genome    => \&_set_human_genome,
-        snpeff_path                  => \&_set_dynamic_path,
-        vep_directory_path           => \&_set_dynamic_path,
+        fusion_filter_reference_genome => \&_set_human_genome,
+        gatk_path                      => \&_set_dynamic_path,
+        infile_dirs                    => \&_set_infile_dirs,
+        picardtools_path               => \&_set_dynamic_path,
+        rtg_vcfeval_reference_genome   => \&_set_human_genome,
+        star_aln_reference_genome      => \&_set_human_genome,
+        snpeff_path                    => \&_set_dynamic_path,
+        vep_directory_path             => \&_set_dynamic_path,
     );
 
     ## Set default value to parameter and/or active parameter

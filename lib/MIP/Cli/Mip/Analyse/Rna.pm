@@ -134,6 +134,8 @@ sub run {
     ## File info hash
     my %file_info = (
 
+        fusion_filter_reference_genome => [qw{ _fusion_filter_genome_dir }],
+
         # Human genome meta files
         human_genome_reference_file_endings => [qw{ .dict .fai }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
@@ -537,6 +539,17 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
             documentation => q{Detect fusion transcripts with star fusion},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{fusion_filter_transcripts_file} => (
+            cmd_aliases => [qw{ stftf }],
+            cmd_tags    => [q{Fusion filter transcripts file: Format: GTF}],
+            documentation =>
+              q{Input for fusion-filter to build genome/transcriptome indexes},
+            is  => q{rw},
+            isa => Str,
         )
     );
 

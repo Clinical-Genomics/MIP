@@ -285,7 +285,26 @@ star_fusion:
   outdir_name: star
   program_name_path:
     - STAR-Fusion
+    - gtf_file_to_feature_seqs.pl
+    - prep_genome_lib.pl
   type: program
+fusion_filter_reference_genome:
+  associated_program:
+   - star_fusion
+  build_file: 1
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  reference: reference_dir
+  type: path
+fusion_filter_transcripts_file:
+  associated_program:
+   - star_fusion
+  data_type: SCALAR
+  default: GRCh37_transcripts_-v1_0-.GTF
+  exists_check: file
+  reference: reference_dir
+  type: path
 ## Merge bam files
 picardtools_mergesamfiles:
   analysis_mode: sample

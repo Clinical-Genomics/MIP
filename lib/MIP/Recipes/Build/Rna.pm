@@ -105,11 +105,14 @@ sub build_rna_meta_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Recipes::Build::Fusion_filter_prerequisites
+      qw{ build_fusion_filter_prerequisites };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Star_prerequisites qw{ build_star_prerequisites };
 
     my %build_recipe = (
+        fusion_filter_reference_genome => \&build_fusion_filter_prerequisites,
         human_genome_reference_file_endings =>
           \&build_human_genome_prerequisites,
         star_aln_reference_genome => \&build_star_prerequisites,

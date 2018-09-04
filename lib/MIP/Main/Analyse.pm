@@ -334,6 +334,7 @@ sub mip_analyse {
           bwa_build_reference
           exome_target_bed
           expansionhunter_repeat_specs_dir
+          fusion_filter_reference_genome
           gatk_path
           infile_dirs
           picardtools_path

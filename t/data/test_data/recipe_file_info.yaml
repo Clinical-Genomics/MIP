@@ -9,10 +9,15 @@ exome_target_bed:
   - .infile_list
   - .pad100.infile_list
   - .pad100.interval_list
+fusion_filter_reference_genome:
+  - _fusion_filter_genome_dir
 human_genome_compressed: not_compressed
 human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
 human_genome_reference_file_endings:
   - .dict
   - .fai
+human_genome_reference_name_prefix: GRCh37_homo_sapiens_-d5-
 rtg_vcfeval_reference_genome:
   - _sdf_dir
+star_aln_reference_genome:
+  - _star_aln_genome_dir
