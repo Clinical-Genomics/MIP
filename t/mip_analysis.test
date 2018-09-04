@@ -2,7 +2,7 @@
 
 ### Will test perl modules and some selected funtions as well as vcf keys both in header and body. Adjusts dynamically according to supplied config file.
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd qw{ abs_path };
@@ -61,7 +61,7 @@ Readonly my $TAB       => qq{\t};
 my ( $infile, $config_file );
 my ( %parameter, %active_parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = '2.0.1';
+our $VERSION = 2.02;
 
 if ( scalar @ARGV == 0 ) {
 
@@ -1170,14 +1170,12 @@ sub _test_sv_combinevariantcallsets_in_vcf_header {
         },
         sv_combinevariantcallsets_mode => {
             allow       => qr/ ^\d+$ /sxm,
-            defined     => 1,
             required    => 1,
             store       => \$sv_combinevariantcallsets_mode,
             strict_type => 1,
         },
         sv_vt_decompose_mode => {
             allow       => qr/ ^\d+$ /sxm,
-            defined     => 1,
             required    => 1,
             store       => \$sv_vt_decompose_mode,
             strict_type => 1,
