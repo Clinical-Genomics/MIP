@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -73,6 +73,10 @@ my %specific_argument = (
     intervals_ref => {
         inputs_ref      => [qw{ chr1 chr2}],
         expected_output => q{--intervals chr1 --intervals chr2},
+    },
+    pedigree => {
+        input           => catfile(qw{ a pedigree }),
+        expected_output => q{--pedigree } . catfile(qw{ a pedigree }),
     },
     read_filters_ref => {
         inputs_ref => [qw{ MalformedRead BadCigar}],

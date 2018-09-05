@@ -41,7 +41,6 @@ gatk_bundle_download_version:
 gatk_disable_auto_index_and_file_lock:
   associated_program:
    - gatk_asereadcounter
-   - gatk_haplotypecaller
    - gatk_splitncigarreads
    - gatk_variantfiltration
   data_type: SCALAR
@@ -67,7 +66,6 @@ gatk_logging_level:
 gatk_path:
   associated_program:
    - gatk_asereadcounter
-   - gatk_haplotypecaller
    - gatk_splitncigarreads
    - gatk_variantfiltration
   data_type: SCALAR
