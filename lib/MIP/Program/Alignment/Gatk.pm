@@ -217,6 +217,7 @@ sub gatk_applybqsr {
 ##          : $java_jar                              => Java jar
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $memory_allocation                     => Memory allocation to run Gatk
+##          : $num_cpu_threads_per_data_thread       => Number of CPU threads to allocate per data thread
 ##          : $outfile_path                          => Outfile path
 ##          : $read_filters_ref                      => Filters to apply on reads {REF}
 ##          : $referencefile_path                    => Reference sequence file
@@ -235,6 +236,7 @@ sub gatk_applybqsr {
     my $intervals_ref;
     my $known_sites_ref;
     my $memory_allocation;
+    my $num_cpu_threads_per_data_thread;
     my $outfile_path;
     my $read_filters_ref;
     my $referencefile_path;
