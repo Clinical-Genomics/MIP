@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gatk_base gatk_common_options gatk_java_options };
@@ -261,7 +261,7 @@ sub gatk_java_options {
             strict_type => 1,
         },
         memory_allocation => {
-            allow       => [ undef, qr/^Xm[sx]\d+[MG]$/xmsi ],
+            allow       => [ undef, qr/ ^Xm[sx]\d+[MG]$ /xmsi ],
             store       => \$memory_allocation,
             strict_type => 1,
         },
@@ -325,6 +325,7 @@ sub gatk_common_options {
 ## Returns  : $commands_ref
 ## Arguments: $commands_ref       => List of commands added earlier {REF}
 ##          : $intervals_ref      => One or more genomic intervals over which to operate {REF}
+##          : $pedigree           => Pedigree file
 ##          : $read_filters_ref   => Filters to apply to reads before analysis {REF}
 ##          : $referencefile_path => Path to reference sequence file
 ##          : $temp_dir_path      => Path to temporary directory to use
@@ -335,6 +336,7 @@ sub gatk_common_options {
     ## Flatten argument(s)
     my $commands_ref;
     my $intervals_ref;
+    my $pedigree;
     my $read_filters_ref;
     my $referencefile_path;
     my $temp_directory;
@@ -353,6 +355,10 @@ sub gatk_common_options {
             defined     => 1,
             store       => \$intervals_ref,
             strict_type => 1,
+        },
+        pedigree => {
+            strict_type => 1,
+            store       => \$pedigree
         },
         read_filters_ref => {
             default     => [],
@@ -383,6 +389,11 @@ sub gatk_common_options {
           @{$intervals_ref};
     }
 
+    ## Add Pedigree
+    if ($pedigree) {
+        push @{$commands_ref}, q{--pedigree} . $SPACE . $pedigree;
+    }
+
     ## Add read filters
     if ( @{$read_filters_ref} ) {
         push @{$commands_ref},
@@ -407,5 +418,4 @@ sub gatk_common_options {
 
     return @{$commands_ref};
 }
-
 1;
