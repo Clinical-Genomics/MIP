@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -40,7 +40,7 @@ Readonly my $MINUS_ONE  => -1;
 
 sub analysis_gatk_baserecalibration {
 
-## Function : GATK baserecalibrator/printreads to recalibrate bases before variant calling. Both BaseRecalibrator/PrintReads will be executed within the same sbatch script.
+## Function : GATK baserecalibrator/ApplyBQSR to recalibrate bases before variant calling. Both BaseRecalibrator/ApplyBQSR will be executed within the same sbatch script.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
@@ -162,7 +162,7 @@ sub analysis_gatk_baserecalibration {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Gatk
-      qw{ gatk_baserecalibrator gatk_printreads };
+      qw{ gatk_baserecalibrator gatk_applybqsr };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info };
@@ -229,7 +229,7 @@ sub analysis_gatk_baserecalibration {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{gatk_realigner}{file_tag};
+      $file_info_href->{$sample_id}{markduplicates}{file_tag};
 
     ## If wts analysis
     if ( $analysis_type eq q{wts} ) {
@@ -325,19 +325,10 @@ sub analysis_gatk_baserecalibration {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number   => $core_number,
-            FILEHANDLE    => $FILEHANDLE,
-            file_path     => $file_path,
-            first_command => q{java},
-            java_jar      => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar},
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation  => q{Xmx6g},
+            core_number        => $core_number,
+            FILEHANDLE         => $FILEHANDLE,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
-            temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -374,49 +365,36 @@ sub analysis_gatk_baserecalibration {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
             {
-                covariates_ref => \@{
-                    $active_parameter_href->{gatk_baserecalibration_covariates}
-                },
-                downsample_to_coverage =>
-                  $active_parameter_href->{gatk_downsample_to_coverage},
-                FILEHANDLE                            => $XARGSFILEHANDLE,
-                gatk_disable_auto_index_and_file_lock => $active_parameter_href
-                  ->{gatk_disable_auto_index_and_file_lock},
-                infile_path       => $infile_path,
-                intervals_ref     => \@intervals,
-                known_alleles_ref => \@{
+                FILEHANDLE    => $XARGSFILEHANDLE,
+                infile_path   => $infile_path,
+                intervals_ref => \@intervals,
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation => q{Xmx6g},
+                known_sites_ref   => \@{
                     $active_parameter_href->{gatk_baserecalibration_known_sites}
                 },
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                num_cpu_threads_per_data_thread =>
-                  $active_parameter_href->{max_cores_per_node},
-                outfile_path       => $outfile_path,
+                verbosity    => $active_parameter_href->{gatk_logging_level},
+                outfile_path => $outfile_path,
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
+                temp_directory     => $temp_directory,
+                xargs_mode         => 1,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
-    ## GATK PrintReads
-    say {$FILEHANDLE} q{## GATK PrintReads};
+    ## GATK ApplyBQSR
+    say {$FILEHANDLE} q{## GATK ApplyBQSR};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number   => $core_number,
-            FILEHANDLE    => $FILEHANDLE,
-            file_path     => $file_path,
-            first_command => q{java},
-            java_jar      => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar},
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation  => q{Xmx6g},
+            core_number        => $core_number,
+            FILEHANDLE         => $FILEHANDLE,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
-            temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -453,22 +431,17 @@ sub analysis_gatk_baserecalibration {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $base_quality_score_recalibration_file =
           $file_path_prefix . $UNDERSCORE . $contig . $DOT . q{grp};
-        gatk_printreads(
+        gatk_applybqsr(
             {
                 base_quality_score_recalibration_file =>
                   $base_quality_score_recalibration_file,
-                disable_indel_qual => $active_parameter_href
-                  ->{gatk_baserecalibration_disable_indel_qual},
-                downsample_to_coverage =>
-                  $active_parameter_href->{gatk_downsample_to_coverage},
-                FILEHANDLE                            => $XARGSFILEHANDLE,
-                gatk_disable_auto_index_and_file_lock => $active_parameter_href
-                  ->{gatk_disable_auto_index_and_file_lock},
+                FILEHANDLE    => $XARGSFILEHANDLE,
                 infile_path   => $infile_path,
                 intervals_ref => \@intervals,
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                num_cpu_threads_per_data_thread =>
-                  $active_parameter_href->{max_cores_per_node},
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation => q{Xmx6g},
+                verbosity => $active_parameter_href->{gatk_logging_level},
                 read_filters_ref => \@{
                     $active_parameter_href
                       ->{gatk_baserecalibration_read_filters}
@@ -480,6 +453,8 @@ sub analysis_gatk_baserecalibration {
                 outfile_path       => $outfile_path,
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
+                temp_directory     => $temp_directory,
+                xargs_mode         => 1,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -591,7 +566,7 @@ sub analysis_gatk_baserecalibration {
 
 sub analysis_gatk_baserecalibration_rio {
 
-## Function : GATK baserecalibrator/printreads to recalibrate bases before variant calling. Both BaseRecalibrator/PrintReads will be executed within the same sbatch script.
+## Function : GATK baserecalibrator/ApplyBQSR to recalibrate bases before variant calling. Both BaseRecalibrator/ApplyBQSR will be executed within the same sbatch script.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
@@ -717,7 +692,7 @@ sub analysis_gatk_baserecalibration_rio {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Gatk
-      qw{ gatk_baserecalibrator gatk_printreads };
+      qw{ gatk_baserecalibrator gatk_applybqsr };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
@@ -763,7 +738,7 @@ sub analysis_gatk_baserecalibration_rio {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{gatk_realigner}{file_tag};
+      $file_info_href->{$sample_id}{markduplicates}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$program_name}{file_tag};
 
@@ -834,19 +809,10 @@ sub analysis_gatk_baserecalibration_rio {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number   => $core_number,
-            FILEHANDLE    => $FILEHANDLE,
-            file_path     => $file_path,
-            first_command => q{java},
-            java_jar      => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar},
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation  => q{Xmx6g},
+            core_number        => $core_number,
+            FILEHANDLE         => $FILEHANDLE,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
-            temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -883,49 +849,36 @@ sub analysis_gatk_baserecalibration_rio {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
             {
-                covariates_ref => \@{
-                    $active_parameter_href->{gatk_baserecalibration_covariates}
-                },
-                downsample_to_coverage =>
-                  $active_parameter_href->{gatk_downsample_to_coverage},
-                FILEHANDLE                            => $XARGSFILEHANDLE,
-                gatk_disable_auto_index_and_file_lock => $active_parameter_href
-                  ->{gatk_disable_auto_index_and_file_lock},
-                infile_path       => $infile_path,
-                intervals_ref     => \@intervals,
-                known_alleles_ref => \@{
+                FILEHANDLE    => $XARGSFILEHANDLE,
+                infile_path   => $infile_path,
+                intervals_ref => \@intervals,
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation => q{Xmx6g},
+                known_sites_ref   => \@{
                     $active_parameter_href->{gatk_baserecalibration_known_sites}
                 },
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                num_cpu_threads_per_data_thread =>
-                  $active_parameter_href->{max_cores_per_node},
-                outfile_path       => $outfile_path,
+                verbosity    => $active_parameter_href->{gatk_logging_level},
+                outfile_path => $outfile_path,
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
+                temp_directory     => $temp_directory,
+                xargs_mode         => 1,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
     ## GATK PrintReads
-    say {$FILEHANDLE} q{## GATK PrintReads};
+    say {$FILEHANDLE} q{## GATK ApplyBQSR};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number   => $core_number,
-            FILEHANDLE    => $FILEHANDLE,
-            file_path     => $file_path,
-            first_command => q{java},
-            java_jar      => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar},
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation  => q{Xmx6g},
+            core_number        => $core_number,
+            FILEHANDLE         => $FILEHANDLE,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
-            temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -962,33 +915,30 @@ sub analysis_gatk_baserecalibration_rio {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $base_quality_score_recalibration_file =
           $file_path_prefix . $UNDERSCORE . $contig . $DOT . q{grp};
-        gatk_printreads(
+        gatk_applybqsr(
             {
                 base_quality_score_recalibration_file =>
                   $base_quality_score_recalibration_file,
-                disable_indel_qual => $active_parameter_href
-                  ->{gatk_baserecalibration_disable_indel_qual},
-                downsample_to_coverage =>
-                  $active_parameter_href->{gatk_downsample_to_coverage},
-                FILEHANDLE                            => $XARGSFILEHANDLE,
-                gatk_disable_auto_index_and_file_lock => $active_parameter_href
-                  ->{gatk_disable_auto_index_and_file_lock},
+                FILEHANDLE    => $XARGSFILEHANDLE,
                 infile_path   => $infile_path,
                 intervals_ref => \@intervals,
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                num_cpu_threads_per_data_thread =>
-                  $active_parameter_href->{max_cores_per_node},
-                outfile_path     => $outfile_path,
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation => q{Xmx6g},
+                verbosity => $active_parameter_href->{gatk_logging_level},
                 read_filters_ref => \@{
                     $active_parameter_href
                       ->{gatk_baserecalibration_read_filters}
                 },
-                referencefile_path         => $referencefile_path,
                 static_quantized_quals_ref => \@{
                     $active_parameter_href
                       ->{gatk_baserecalibration_static_quantized_quals}
                 },
-                stderrfile_path => $stderrfile_path,
+                outfile_path       => $outfile_path,
+                referencefile_path => $referencefile_path,
+                stderrfile_path    => $stderrfile_path,
+                temp_directory     => $temp_directory,
+                xargs_mode         => 1,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;

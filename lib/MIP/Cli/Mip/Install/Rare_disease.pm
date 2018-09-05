@@ -28,7 +28,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils
   qw{ nest_hash print_parameter_defaults update_program_versions};
 
-our $VERSION = 0.04;
+our $VERSION = 0.05;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -180,6 +180,7 @@ sub _build_usage {
                 fastqc            => Optional [Str],
                 freebayes         => Optional [Str],
                 gatk              => Optional [Str],
+                gatk4             => Optional [Str],
                 gcc               => Optional [Str],
                 genmod            => Optional [Str],
                 htslib            => Optional [Str],
@@ -261,7 +262,7 @@ sub _build_usage {
                     [
                         qw{ bcftools bedtools bwa bwakit chanjo cmake cnvnator
                           cramtools cutadapt delly expansionhunter fastqc
-                          freebayes gatk genmod gcc htslib libxml2 libxslt
+                          freebayes gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
                           scikit-learn snpeff snpsift svdb tiddit
@@ -297,7 +298,7 @@ sub _build_usage {
                     [
                         qw{ bcftools bedtools bwa bwakit chanjo cmake cnvnator
                           cramtools cutadapt delly expansionhunter fastqc
-                          freebayes gatk genmod gcc htslib libxml2 libxslt
+                          freebayes gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
                           scikit-learn snpeff snpsift svdb tiddit

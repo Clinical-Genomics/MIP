@@ -196,7 +196,7 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          fusion-filter gatk htslib mip_scripts picard salmon samtools
+                          fusion-filter gatk gatk4 htslib mip_scripts picard salmon samtools
                           star star_fusion }
                     ]
                 ),
@@ -226,7 +226,7 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          fusion-filter gatk htslib mip_scripts picard salmon samtools
+                          fusion-filter gatk gatk4 htslib mip_scripts picard salmon samtools
                           star star_fusion }
                     ]
                 ),

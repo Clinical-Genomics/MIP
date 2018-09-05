@@ -51,6 +51,5 @@ salmon_quant: 1
 star_aln: 1
 star_fusion: 1
 ## Parameters
-gatk_baserecalibration_disable_indel_qual: 1
 gatk_path: cluster_constant_path!
 picardtools_path: cluster_constant_path!
