@@ -156,6 +156,7 @@ sub set_custom_default_to_active_parameter {
         infile_dirs                    => \&_set_infile_dirs,
         picardtools_path               => \&_set_dynamic_path,
         rtg_vcfeval_reference_genome   => \&_set_human_genome,
+        salmon_quant_reference_genome  => \&_set_human_genome,
         star_aln_reference_genome      => \&_set_human_genome,
         snpeff_path                    => \&_set_dynamic_path,
         vep_directory_path             => \&_set_dynamic_path,

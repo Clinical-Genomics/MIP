@@ -338,6 +338,7 @@ sub mip_analyse {
           gatk_path
           infile_dirs
           picardtools_path
+          salmon_quant_reference_genome
           sample_info_file
           snpeff_path
           star_aln_reference_genome

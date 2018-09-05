@@ -11,6 +11,8 @@ human_genome_reference_file_endings:
   build_file: 1
 rtg_vcfeval_reference_genome:
   build_file: 1
+salmon_quant_reference_genome:
+  build_file: 1
 star_aln_reference_genome:
   build_file: 1
 
