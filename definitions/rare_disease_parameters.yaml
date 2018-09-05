@@ -76,6 +76,10 @@ gatk_logging_level:
   type: program_argument
 gatk_path:
   associated_program:
+<<<<<<< HEAD
+=======
+   - gatk_haplotypecaller
+>>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
    - gatk_genotypegvcfs
    - gatk_concatenate_genotypegvcfs
    - bcftools_mpileup

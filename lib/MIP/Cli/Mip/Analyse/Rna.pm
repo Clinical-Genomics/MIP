@@ -18,7 +18,11 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
+<<<<<<< HEAD
 our $VERSION = 1.00;
+=======
+our $VERSION = 0.05;
+>>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 

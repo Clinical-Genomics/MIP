@@ -41,6 +41,11 @@ gatk_bundle_download_version:
 gatk_disable_auto_index_and_file_lock:
   associated_program:
    - gatk_asereadcounter
+<<<<<<< HEAD
+=======
+   - gatk_haplotypecaller
+   - gatk_splitncigarreads
+>>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
    - gatk_variantfiltration
   data_type: SCALAR
   default: 0
@@ -65,6 +70,11 @@ gatk_logging_level:
 gatk_path:
   associated_program:
    - gatk_asereadcounter
+<<<<<<< HEAD
+=======
+   - gatk_haplotypecaller
+   - gatk_splitncigarreads
+>>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
    - gatk_variantfiltration
   data_type: SCALAR
   exists_check: directory
