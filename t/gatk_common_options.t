@@ -23,11 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-<<<<<<< HEAD
 our $VERSION = 1.01;
-=======
-our $VERSION = 1.00;
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
 
 $VERBOSE = test_standard_cli(
     {
@@ -78,13 +74,10 @@ my %specific_argument = (
         inputs_ref      => [qw{ chr1 chr2 }],
         expected_output => q{--intervals chr1 --intervals chr2},
     },
-<<<<<<< HEAD
     pedigree => {
         input           => catfile(qw{ a pedigree }),
         expected_output => q{--pedigree } . catfile(qw{ a pedigree }),
     },
-=======
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
     read_filters_ref => {
         inputs_ref => [qw{ MalformedRead BadCigar}],
         expected_output =>

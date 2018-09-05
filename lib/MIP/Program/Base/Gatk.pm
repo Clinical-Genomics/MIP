@@ -325,10 +325,7 @@ sub gatk_common_options {
 ## Returns  : $commands_ref
 ## Arguments: $commands_ref       => List of commands added earlier {REF}
 ##          : $intervals_ref      => One or more genomic intervals over which to operate {REF}
-<<<<<<< HEAD
 ##          : $pedigree           => Pedigree file
-=======
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
 ##          : $read_filters_ref   => Filters to apply to reads before analysis {REF}
 ##          : $referencefile_path => Path to reference sequence file
 ##          : $temp_dir_path      => Path to temporary directory to use
@@ -339,10 +336,7 @@ sub gatk_common_options {
     ## Flatten argument(s)
     my $commands_ref;
     my $intervals_ref;
-<<<<<<< HEAD
     my $pedigree;
-=======
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
     my $read_filters_ref;
     my $referencefile_path;
     my $temp_directory;
@@ -362,13 +356,10 @@ sub gatk_common_options {
             store       => \$intervals_ref,
             strict_type => 1,
         },
-<<<<<<< HEAD
         pedigree => {
             strict_type => 1,
             store       => \$pedigree
         },
-=======
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
         read_filters_ref => {
             default     => [],
             store       => \$read_filters_ref,
@@ -398,14 +389,11 @@ sub gatk_common_options {
           @{$intervals_ref};
     }
 
-<<<<<<< HEAD
     ## Add Pedigree
     if ($pedigree) {
         push @{$commands_ref}, q{--pedigree} . $SPACE . $pedigree;
     }
 
-=======
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
     ## Add read filters
     if ( @{$read_filters_ref} ) {
         push @{$commands_ref},
@@ -430,8 +418,4 @@ sub gatk_common_options {
 
     return @{$commands_ref};
 }
-<<<<<<< HEAD
-=======
-
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
 1;
