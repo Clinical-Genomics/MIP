@@ -421,7 +421,6 @@ sub gatk_haplotypecaller {
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
-    my $num_cpu_threads_per_data_thread;
     my $outfile_path;
     my $pcr_indel_model;
     my $pedigree;
