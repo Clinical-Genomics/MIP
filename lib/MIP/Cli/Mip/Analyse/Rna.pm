@@ -138,6 +138,7 @@ sub run {
 
         # Human genome meta files
         human_genome_reference_file_endings => [qw{ .dict .fai }],
+        salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
     );
 
@@ -448,6 +449,17 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
             documentation => q{Library orientation and strandedness},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{salmon_quant_transcripts_file} => (
+            cmd_aliases => [qw{ sqttf }],
+            cmd_tags    => [q{Salmon quant transcripts file: Format: GTF}],
+            documentation =>
+              q{Input for salmon quant to build genome/transcriptome indexes},
+            is  => q{rw},
+            isa => Str,
         )
     );
 
