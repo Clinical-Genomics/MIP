@@ -41,7 +41,6 @@ gatk_bundle_download_version:
 gatk_disable_auto_index_and_file_lock:
   associated_program:
    - gatk_asereadcounter
-   - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_splitncigarreads
    - gatk_variantfiltration
@@ -51,7 +50,6 @@ gatk_disable_auto_index_and_file_lock:
 gatk_downsample_to_coverage:
   associated_program:
    - gatk_asereadcounter
-   - gatk_baserecalibration
    - gatk_haplotypecaller
   data_type: SCALAR
   default: 1000
@@ -69,7 +67,6 @@ gatk_logging_level:
 gatk_path:
   associated_program:
    - gatk_asereadcounter
-   - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_splitncigarreads
    - gatk_variantfiltration
@@ -375,23 +372,6 @@ gatk_baserecalibration:
   default: 0
   file_tag: _brecal
   type: program
-gatk_baserecalibration_covariates:
-  associated_program:
-   - gatk_baserecalibration
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - ContextCovariate
-   - CycleCovariate
-   - QualityScoreCovariate
-   - ReadGroupCovariate
-  type: program_argument
-gatk_baserecalibration_disable_indel_qual:
-  associated_program:
-   - gatk_baserecalibration
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 gatk_baserecalibration_known_sites:
   associated_program:
    - gatk_baserecalibration
