@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.010;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rna };
@@ -225,7 +225,7 @@ sub pipeline_rna {
         bootstrapann              => q{BootstrapAnn},
         fastqc                    => q{FastQC},
         gatk_asereadcounter       => q{GATK ASEReadCounter},
-        gatk_baserecalibration    => q{GATK BaseRecalibrator/PrintReads},
+        gatk_baserecalibration    => q{GATK BaseRecalibrator/ApplyBQSR},
         gatk_haplotypecaller      => q{GATK Haplotypecaller},
         gatk_splitncigarreads     => q{GATK SplitNCigarReads},
         gatk_variantfiltration    => q{GATK VariantFiltration},

@@ -10,7 +10,6 @@ CHAIN_ALL:
       - bwa_mem
       - picardtools_mergesamfiles
       - markduplicates
-      - gatk_realigner
       - gatk_baserecalibration
 # Parallel chains (branches), which inherit from MAIN in initiation
       - CHAIN_CHSEX:

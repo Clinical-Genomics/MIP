@@ -26,6 +26,7 @@ emip:
     delly: 0.7.7
     fastqc: 0.11.4
     gatk: 3.8
+    gatk4: 4.0
     gcc: 4.8.5
     htslib: 1.6
     manta: 1.1.0
@@ -108,6 +109,7 @@ efreebayes:
     bcftools: 1.6
     freebayes: 1.1.0
     gatk: 3.8
+    gatk4: 4.0
     pip:
     python: 2.7
   pip:
