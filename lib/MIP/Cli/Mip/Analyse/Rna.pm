@@ -330,31 +330,6 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{gatk_realigner} => (
-            cmd_aliases => [qw{ gra }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-q{Realignments of reads using GATK ReAlignerTargetCreator/IndelRealigner},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{gatk_realigner_indel_known_sites} => (
-            cmd_aliases => [qw{ graks }],
-            cmd_flag    => q{gatk_realigner_ind_ks},
-            cmd_tags    => [
-q{Default: GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
-            ],
-            documentation =>
-              q{GATK ReAlignerTargetCreator/IndelRealigner known indel site},
-            is  => q{rw},
-            isa => ArrayRef [Str],
-        )
-    );
-
-    option(
         q{gatk_baserecalibration} => (
             cmd_aliases => [qw{ gbr }],
             cmd_tags    => [q{Analysis recipe switch}],

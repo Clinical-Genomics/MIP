@@ -5,7 +5,6 @@ decompose_normalize_references:
    - mip
   data_type: ARRAY
   default:
-   - gatk_realigner_indel_known_sites
    - gatk_baserecalibration_known_sites
    - gatk_haplotypecaller_snp_known_set
    - gatk_variantrecalibration_resource_snv
@@ -20,7 +19,6 @@ decompose_normalize_references:
 exome_target_bed:
   associated_program:
    - picardtools_collecthsmetrics
-   - gatk_realigner
    - gatk_baserecalibration
    - gatk_haplotypecaller
   build_file: 1
@@ -39,7 +37,6 @@ expected_coverage:
 gatk_bundle_download_version:
   associated_program:
    - bwa_mem
-   - gatk_realigner
    - gatk_baserecalibration
    - cnvnator
    - gatk_haplotypecaller
@@ -54,24 +51,14 @@ gatk_bundle_download_version:
   data_type: SCALAR
   default: 2.8
   type: program_argument
-gatk_disable_auto_index_and_file_lock:
-  associated_program:
-   - gatk_realigner
-   - gatk_baserecalibration
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 gatk_downsample_to_coverage:
   associated_program:
-   - gatk_realigner
-   - gatk_baserecalibration
    - gatk_haplotypecaller
   data_type: SCALAR
   default: 1000
   type: program_argument
 gatk_logging_level:
   associated_program:
-   - gatk_realigner
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
@@ -89,8 +76,6 @@ gatk_logging_level:
   type: program_argument
 gatk_path:
   associated_program:
-   - gatk_realigner
-   - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
    - gatk_concatenate_genotypegvcfs
@@ -119,7 +104,6 @@ human_genome_reference:
    - mip
    - bwa_mem
    - expansionhunter
-   - gatk_realigner
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
@@ -144,7 +128,6 @@ human_genome_reference_file_endings:
   associated_program:
    - bwa_mem
    - expansionhunter
-   - gatk_realigner
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
@@ -169,7 +152,6 @@ human_genome_reference_file_endings:
 ## java large pages - affects all modules using java
 java_use_large_pages:
   associated_program:
-   - gatk_realigner
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
@@ -208,7 +190,6 @@ module_core_number:
     gatk_genotypegvcfs: 4
     gatk_concatenate_genotypegvcfs: 2
     gatk_haplotypecaller: 16
-    gatk_realigner: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 16
@@ -261,7 +242,6 @@ module_time:
     gatk_genotypegvcfs: 10
     gatk_concatenate_genotypegvcfs: 2
     gatk_haplotypecaller: 30
-    gatk_realigner: 20
     gatk_variantevalall: 2
     gatk_variantevalexome: 2
     gatk_variantrecalibration: 10
@@ -487,25 +467,6 @@ markduplicates_sambamba_markdup_overflow_list_size:
   default: 200000
   type: program_argument
 ## GATK BAM Calibration
-gatk_realigner:
-  analysis_mode: sample
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: _rreal
-  type: program
-gatk_realigner_indel_known_sites:
-  associated_program:
-   - gatk_realigner
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - GRCh37_1000g_indels_-phase1-.vcf
-   - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
-  exists_check: file
-  reference: reference_dir
-  type: path
 gatk_baserecalibration:
   analysis_mode: sample
   associated_program:
@@ -514,23 +475,6 @@ gatk_baserecalibration:
   default: 1
   file_tag: _brecal
   type: program
-gatk_baserecalibration_covariates:
-  associated_program:
-   - gatk_baserecalibration
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - ReadGroupCovariate
-   - ContextCovariate
-   - CycleCovariate
-   - QualityScoreCovariate
-  type: program_argument
-gatk_baserecalibration_disable_indel_qual:
-  associated_program:
-   - gatk_baserecalibration
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 gatk_baserecalibration_known_sites:
   associated_program:
    - gatk_baserecalibration

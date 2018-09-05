@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -174,7 +174,7 @@ sub _build_usage {
             cmd_aliases => [qw{ dnr }],
             cmd_flag    => q{dec_norm_ref},
             cmd_tags    => [
-q{gatk_realigner_indel_known_sites, gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config_file, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
+q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config_file, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
             ],
             documentation =>
               q{Set the references to be decomposed and normalized},
@@ -498,31 +498,6 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
             documentation => q{Sambamba size of the overflow list},
             is            => q{rw},
             isa           => Int,
-        )
-    );
-
-    option(
-        q{gatk_realigner} => (
-            cmd_aliases => [qw{ gra }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-q{Realignments of reads using GATK ReAlignerTargetCreator/IndelRealigner},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{gatk_realigner_indel_known_sites} => (
-            cmd_aliases => [qw{ graks }],
-            cmd_flag    => q{gatk_realigner_ind_ks},
-            cmd_tags    => [
-q{Default: GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
-            ],
-            documentation =>
-              q{GATK ReAlignerTargetCreator/IndelRealigner known indel site},
-            is  => q{rw},
-            isa => ArrayRef [Str],
         )
     );
 

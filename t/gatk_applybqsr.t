@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -45,10 +45,10 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Gatk qw{ gatk_baserecalibrator };
+use MIP::Program::Alignment::Gatk qw{ gatk_applybqsr };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test gatk_baserecalibrator from Alignment::Gatk.pm v}
+diag(   q{Test gatk_applybqsr from Alignment::Gatk.pm v}
       . $MIP::Program::Alignment::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -58,7 +58,7 @@ diag(   q{Test gatk_baserecalibrator from Alignment::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ gatk BaseRecalibrator };
+my @function_base_commands = qw{ gatk ApplyBQSR };
 
 my %base_argument = (
     stderrfile_path => {
@@ -74,52 +74,44 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
+    base_quality_score_recalibration_file => {
+        input           => catfile(qw{ dir infile.bsqr }),
+        expected_output => q{--bqsr-recal-file }
+          . catfile(qw{ dir infile.bsqr }),
+    },
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),
         expected_output => q{--input } . catfile(qw{ dir infile.bam }),
     },
-    known_sites_ref => {
-        inputs_ref => [
-            qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
-        ],
-        expected_output =>
-q{--known-sites GRCh37_1000g_indels_-phase1-.vcf --known-sites GRCh37_mills_and_1000g_indels_-gold_standard-.vcf},
-    },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
         expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
-    },
-    referencefile_path => {
-        input           => catfile(qw{reference_dir human_genome_build.fasta }),
-        expected_output => q{--reference }
-          . catfile(qw{reference_dir human_genome_build.fasta }),
     },
 );
 
 my %specific_argument = (
+    base_quality_score_recalibration_file => {
+        input           => catfile(qw{ dir infile.bsqr }),
+        expected_output => q{--bqsr-recal-file }
+          . catfile(qw{ dir infile.bsqr }),
+    },
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),
         expected_output => q{--input } . catfile(qw{ dir infile.bam }),
-    },
-    known_sites_ref => {
-        inputs_ref => [
-            qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
-        ],
-        expected_output =>
-q{--known-sites GRCh37_1000g_indels_-phase1-.vcf --known-sites GRCh37_mills_and_1000g_indels_-gold_standard-.vcf},
     },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
         expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
     },
-    intervals_ref => {
-        inputs_ref      => [qw{ chr1 chr2}],
-        expected_output => q{--intervals chr1 --intervals chr2},
+    static_quantized_quals_ref => {
+        inputs_ref => [qw{ 10 20 }],
+        expected_output =>
+          q{--static-quantized-quals 10 --static-quantized-quals 20},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gatk_baserecalibrator;
+my $module_function_cref = \&gatk_applybqsr;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -128,8 +120,8 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            base_commands_index        => 1,
             argument_href              => $argument_href,
+            base_commands_index        => 1,
             do_test_base_command       => 1,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
