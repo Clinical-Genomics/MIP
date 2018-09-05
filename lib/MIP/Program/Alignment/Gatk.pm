@@ -25,11 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-<<<<<<< HEAD
     our $VERSION = 1.06;
-=======
-    our $VERSION = 1.04;
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -64,177 +60,10 @@ sub gatk_baserecalibrator {
 ##          : $temp_directory       => Redirect tmp files to java temp
 ##          : $verbosity            => Set the minimum level of logging
 ##          : $xargs_mode           => Set if the program will be executed via xargs
-<<<<<<< HEAD
-=======
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $infile_path;
-    my $intervals_ref;
-    my $java_use_large_pages;
-    my $known_sites_ref;
-    my $memory_allocation;
-    my $outfile_path;
-    my $read_filters_ref;
-    my $referencefile_path;
-    my $stderrfile_path;
-    my $temp_directory;
-    my $verbosity;
-    my $xargs_mode;
-
-    my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE },
-        infile_path => {
-            allow       => qr/(?: bam | sam | cram )$/xms,
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_path,
-            strict_type => 1,
-        },
-        intervals_ref => {
-            default     => [],
-            defined     => 1,
-            store       => \$intervals_ref,
-            strict_type => 1,
-        },
-        java_use_large_pages => {
-            allow       => [ undef, 0, 1 ],
-            store       => \$java_use_large_pages,
-            strict_type => 1,
-        },
-        known_sites_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$known_sites_ref,
-            strict_type => 1,
-        },
-        memory_allocation => {
-            store       => \$memory_allocation,
-            strict_type => 1,
-        },
-        outfile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfile_path,
-            strict_type => 1,
-        },
-        read_filters_ref => {
-            default     => [],
-            store       => \$read_filters_ref,
-            strict_type => 1,
-        },
-        referencefile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$referencefile_path,
-            strict_type => 1,
-        },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        temp_directory  => { store => \$temp_directory,  strict_type => 1, },
-        verbosity       => {
-            allow       => [qw{ INFO ERROR FATAL }],
-            store       => \$verbosity,
-            strict_type => 1,
-        },
-        xargs_mode => {
-            allow       => [ undef, 0, 1 ],
-            default     => 0,
-            store       => \$xargs_mode,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## GATK BaseRecalibrator
-
-    # Stores commands depending on input parameters
-    my @commands = qw{ gatk };
-
-    ## Add java options
-    gatk_java_options(
-        {
-            commands_ref         => \@commands,
-            java_use_large_pages => $java_use_large_pages,
-            memory_allocation    => $memory_allocation,
-            xargs_mode           => $xargs_mode,
-        }
-    );
-
-    ## Add tool command
-    push @commands, q{BaseRecalibrator};
-
-    ## Add infile
-    push @commands, q{--input} . $SPACE . $infile_path;
-
-    ## Add common options
-    gatk_common_options(
-        {
-            commands_ref       => \@commands,
-            intervals_ref      => $intervals_ref,
-            read_filters_ref   => $read_filters_ref,
-            referencefile_path => $referencefile_path,
-            temp_directory     => $temp_directory,
-            verbosity          => $verbosity,
-        }
-    );
-
-    ## Add known sites reference
-    push @commands,
-      q{--known-sites} . $SPACE . join $SPACE . q{--known-sites} . $SPACE,
-      @{$known_sites_ref};
-
-    ## Output
-    push @commands, q{--output} . $SPACE . $outfile_path;
-
-    push @commands,
-      unix_standard_streams(
-        {
-            stderrfile_path => $stderrfile_path,
-        }
-      );
-
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
-            separator    => $SPACE,
-        }
-    );
-    return @commands;
-}
-
-sub gatk_applybqsr {
-
-## Function : Perl wrapper for writing GATK ApplyBQSR recipe to $FILEHANDLE. Based on GATK 4.0.8
-## Returns  : @commands
-## Arguments: $base_quality_score_recalibration_file => Input recalibration table for BQSR
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $infile_path                           => Infile paths
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $java_jar                              => Java jar
-##          : $java_use_large_pages                  => Use java large pages
-##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $outfile_path                          => Outfile path
-##          : $read_filters_ref                      => Filters to apply on reads {REF}
-##          : $referencefile_path                    => Reference sequence file
-##          : $static_quantized_quals_ref            => Use static quantized quality scores to a given number of levels (with -BQSR) {REF}
-##          : $stderrfile_path                       => Stderrfile path
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $verbosity                             => Set the minimum level of logging
-##          : $xargs_mode                            => Set if the program will be executed via xargs
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-<<<<<<< HEAD
-=======
-    my $base_quality_score_recalibration_file;
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
     my $FILEHANDLE;
     my $infile_path;
     my $intervals_ref;
@@ -247,30 +76,15 @@ sub gatk_applybqsr {
     my $static_quantized_quals_ref;
     my $stderrfile_path;
     my $temp_directory;
-<<<<<<< HEAD
 
     ## Default(s)
-=======
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
     my $verbosity;
     my $xargs_mode;
 
     my $tmpl = {
-<<<<<<< HEAD
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
             allow       => qr/ (?: bam | sam | cram )$ /xms,
-=======
-        base_quality_score_recalibration_file => {
-            defined     => 1,
-            required    => 1,
-            store       => \$base_quality_score_recalibration_file,
-            strict_type => 1,
-        },
-        FILEHANDLE  => { store => \$FILEHANDLE },
-        infile_path => {
-            allow       => qr/(?: bam | sam | cram )$/xms,
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
             defined     => 1,
             required    => 1,
             store       => \$infile_path,
@@ -287,7 +101,6 @@ sub gatk_applybqsr {
             store       => \$java_use_large_pages,
             strict_type => 1,
         },
-<<<<<<< HEAD
         known_sites_ref => {
             default     => [],
             defined     => 1,
@@ -295,8 +108,6 @@ sub gatk_applybqsr {
             store       => \$known_sites_ref,
             strict_type => 1,
         },
-=======
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
         memory_allocation => {
             store       => \$memory_allocation,
             strict_type => 1,
@@ -326,10 +137,7 @@ sub gatk_applybqsr {
         temp_directory  => { store => \$temp_directory,  strict_type => 1, },
         verbosity       => {
             allow       => [qw{ INFO ERROR FATAL }],
-<<<<<<< HEAD
             default     => q{INFO},
-=======
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
             store       => \$verbosity,
             strict_type => 1,
         },
@@ -359,11 +167,7 @@ sub gatk_applybqsr {
     );
 
     ## Add tool command
-<<<<<<< HEAD
     push @commands, q{BaseRecalibrator};
-=======
-    push @commands, q{ApplyBQSR};
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
 
     ## Add infile
     push @commands, q{--input} . $SPACE . $infile_path;
@@ -373,37 +177,17 @@ sub gatk_applybqsr {
         {
             commands_ref       => \@commands,
             intervals_ref      => $intervals_ref,
-<<<<<<< HEAD
             read_filters_ref   => $read_filters_ref,
-=======
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
             referencefile_path => $referencefile_path,
             temp_directory     => $temp_directory,
             verbosity          => $verbosity,
         }
     );
 
-<<<<<<< HEAD
     ## Add known sites reference
     push @commands,
       q{--known-sites} . $SPACE . join $SPACE . q{--known-sites} . $SPACE,
       @{$known_sites_ref};
-=======
-    ## Add static_quantized_quals
-    if ( @{$static_quantized_quals_ref} ) {
-        push
-          @commands,
-          q{--static-quantized-quals}
-          . $SPACE
-          . join $SPACE
-          . q{--static-quantized-quals}
-          . $SPACE, @{$static_quantized_quals_ref};
-    }
-
-    ## Add BQSR table
-    push @commands,
-      q{--bqsr-recal-file} . $SPACE . $base_quality_score_recalibration_file;
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
 
     ## Output
     push @commands, q{--output} . $SPACE . $outfile_path;
@@ -603,7 +387,6 @@ sub gatk_applybqsr {
     return @commands;
 }
 
-<<<<<<< HEAD
 sub gatk_haplotypecaller {
 
 ## Function : Perl wrapper for writing GATK haplotypecaller recipe to $FILEHANDLE. Based on GATK 4.0.8.
@@ -628,44 +411,13 @@ sub gatk_haplotypecaller {
 ##          : $temp_directory                                => Redirect tmp files to java temp
 ##          : $verbosity                                     => Set the minimum level of logging
 ##          : $xargs_mode                                    => Set if the program will be executed via xargs
-=======
-sub gatk_printreads {
-
-## Function : Perl wrapper for writing GATK printreads recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : @commands
-## Arguments: $base_quality_score_recalibration_file => Input covariates table file for on-the-fly base quality score recalibration
-##          : $disable_indel_qual                    => Disable printing of base insertion and deletion tags (with -BQSR)
-##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
-##          : $infile_path                           => Infile paths
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $java_jar                              => Java jar
-##          : $java_use_large_pages                  => Use java large pages
-##          : $logging_level                         => Set the minimum level of logging
-##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $num_cpu_threads_per_data_thread       => Number of CPU threads to allocate per data thread
-##          : $outfile_path                          => Outfile path
-##          : $pedigree                              => Pedigree files
-##          : $pedigree_validation_type              => Validation strictness for pedigree
-##          : $read_filters_ref                      => Filters to apply to reads before analysis {REF}
-##          : $referencefile_path                    => Reference sequence file
-##          : $static_quantized_quals_ref            => Use static quantized quality scores to a given number of levels (with -BQSR) {REF}
-##          : $stderrfile_path                       => Stderrfile path
-##          : $temp_directory                        => Redirect tmp files to java temp
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-<<<<<<< HEAD
     my $annotations_ref;
     my $dbsnp;
     my $dont_use_soft_clipped_bases;
-=======
-    my $base_quality_score_recalibration_file;
-    my $downsample_to_coverage;
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
     my $FILEHANDLE;
     my $infile_path;
     my $intervals_ref;
@@ -675,7 +427,6 @@ sub gatk_printreads {
     my $outfile_path;
     my $pcr_indel_model;
     my $pedigree;
-<<<<<<< HEAD
     my $read_filters_ref;
     my $referencefile_path;
     my $sample_ploidy;
@@ -940,21 +691,6 @@ sub gatk_printreads {
     my $logging_level;
 
     my $tmpl = {
-=======
-    my $pedigree_validation_type;
-    my $read_filters_ref;
-    my $referencefile_path;
-    my $static_quantized_quals_ref;
-    my $stderrfile_path;
-    my $temp_directory;
-
-    ## Default(s)
-    my $disable_indel_qual;
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-
-    my $tmpl = {
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
         base_quality_score_recalibration_file => {
             store       => \$base_quality_score_recalibration_file,
             strict_type => 1,

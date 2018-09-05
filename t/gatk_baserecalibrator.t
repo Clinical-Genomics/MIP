@@ -128,7 +128,6 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            base_commands_index        => 1,
             argument_href              => $argument_href,
             base_commands_index        => 1,
             do_test_base_command       => 1,

@@ -213,7 +213,6 @@ sub analysis_gatk_baserecalibration {
         }
     );
 
-<<<<<<< HEAD
     ## Outpaths
     ## Assign suffix
     my $outfile_suffix = get_file_suffix(
@@ -226,18 +225,6 @@ sub analysis_gatk_baserecalibration {
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );
-=======
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{markduplicates}{file_tag};
-
-    ## If wts analysis
-    if ( $analysis_type eq q{wts} ) {
-        $infile_tag =
-          $file_info_href->{$sample_id}{gatk_splitncigarreads}{file_tag};
-    }
-
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
     my $outfile_tag =
       $file_info_href->{$sample_id}{$program_name}{file_tag};
     my @outfile_paths =
@@ -400,11 +387,7 @@ sub analysis_gatk_baserecalibration {
         gatk_baserecalibrator(
             {
                 FILEHANDLE    => $XARGSFILEHANDLE,
-<<<<<<< HEAD
                 infile_path       => $temp_infile_paths[$infile_index],
-=======
-                infile_path   => $infile_path,
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
                 intervals_ref => \@intervals,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -413,11 +396,7 @@ sub analysis_gatk_baserecalibration {
                     $active_parameter_href->{gatk_baserecalibration_known_sites}
                 },
                 verbosity    => $active_parameter_href->{gatk_logging_level},
-<<<<<<< HEAD
                 outfile_path       => $base_quality_score_recalibration_file,
-=======
-                outfile_path => $outfile_path,
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
@@ -476,11 +455,7 @@ sub analysis_gatk_baserecalibration {
                 base_quality_score_recalibration_file =>
                   $base_quality_score_recalibration_file,
                 FILEHANDLE    => $XARGSFILEHANDLE,
-<<<<<<< HEAD
                 infile_path   => $temp_infile_paths[$infile_index],
-=======
-                infile_path   => $infile_path,
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
                 intervals_ref => \@intervals,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -782,24 +757,7 @@ sub analysis_gatk_baserecalibration_rio {
         }
     );
 
-<<<<<<< HEAD
     ## Outpaths
-=======
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{markduplicates}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
-
-    ## Files
-    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Paths
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
     ## Assign suffix
     my $outfile_suffix = get_file_suffix(
         {
@@ -938,11 +896,7 @@ sub analysis_gatk_baserecalibration_rio {
         gatk_baserecalibrator(
             {
                 FILEHANDLE    => $XARGSFILEHANDLE,
-<<<<<<< HEAD
                 infile_path       => $temp_infile_paths[$infile_index],
-=======
-                infile_path   => $infile_path,
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
                 intervals_ref => \@intervals,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -951,11 +905,7 @@ sub analysis_gatk_baserecalibration_rio {
                     $active_parameter_href->{gatk_baserecalibration_known_sites}
                 },
                 verbosity    => $active_parameter_href->{gatk_logging_level},
-<<<<<<< HEAD
                 outfile_path       => $base_quality_score_recalibration_file,
-=======
-                outfile_path => $outfile_path,
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
@@ -1014,10 +964,7 @@ sub analysis_gatk_baserecalibration_rio {
                 base_quality_score_recalibration_file =>
                   $base_quality_score_recalibration_file,
                 FILEHANDLE    => $XARGSFILEHANDLE,
-<<<<<<< HEAD
                 infile_path   => $temp_infile_paths[$infile_index],
-=======
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
                 infile_path   => $infile_path,
                 intervals_ref => \@intervals,
                 java_use_large_pages =>
@@ -1032,11 +979,7 @@ sub analysis_gatk_baserecalibration_rio {
                     $active_parameter_href
                       ->{gatk_baserecalibration_static_quantized_quals}
                 },
-<<<<<<< HEAD
                 outfile_path     => $temp_outfile_paths[$infile_index],
-=======
-                outfile_path       => $outfile_path,
->>>>>>> update BaseRecalibrator/ApplyBQSR to gatk4, #306
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
