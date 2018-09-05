@@ -75,13 +75,15 @@ sub gatk_baserecalibrator {
     my $referencefile_path;
     my $stderrfile_path;
     my $temp_directory;
+
+    ## Default(s)
     my $verbosity;
     my $xargs_mode;
 
     my $tmpl = {
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
-            allow       => qr/(?: bam | sam | cram )$/xms,
+            allow       => qr/ (?: bam | sam | cram )$ /xms,
             defined     => 1,
             required    => 1,
             store       => \$infile_path,
@@ -130,6 +132,7 @@ sub gatk_baserecalibrator {
         temp_directory  => { store => \$temp_directory,  strict_type => 1, },
         verbosity       => {
             allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
             store       => \$verbosity,
             strict_type => 1,
         },
@@ -249,7 +252,7 @@ sub gatk_applybqsr {
         },
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
-            allow       => qr/(?: bam | sam | cram )$/xms,
+            allow       => qr/ (?: bam | sam | cram )$ /xms,
             defined     => 1,
             required    => 1,
             store       => \$infile_path,
@@ -413,7 +416,6 @@ sub gatk_haplotypecaller {
     my $intervals_ref;
     my $java_use_large_pages;
     my $memory_allocation;
-    my $num_cpu_threads_per_data_thread;
     my $outfile_path;
     my $pcr_indel_model;
     my $pedigree;
