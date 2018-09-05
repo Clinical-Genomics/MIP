@@ -76,7 +76,6 @@ gatk_logging_level:
   type: program_argument
 gatk_path:
   associated_program:
-   - gatk_haplotypecaller
    - gatk_genotypegvcfs
    - gatk_concatenate_genotypegvcfs
    - bcftools_mpileup
