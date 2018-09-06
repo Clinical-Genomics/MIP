@@ -162,6 +162,7 @@ sub pipeline_rna {
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles };
+    use MIP::Recipes::Analysis::Rseqc qw{ analysis_rseqc };
     use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
     use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
@@ -208,6 +209,7 @@ sub pipeline_rna {
         gatk_variantfiltration    => \&analysis_gatk_variantfiltration,
         markduplicates            => \&analysis_markduplicates,
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
+        rseqc                     => \&analysis_rseqc,
         salmon_quant              => \&analysis_salmon_quant,
         star_aln                  => \&analysis_star_aln,
         star_fusion               => \&analysis_star_fusion,
@@ -224,6 +226,7 @@ sub pipeline_rna {
         gatk_variantfiltration    => q{GATK VariantFiltration},
         markduplicates            => q{Markduplicates},
         picardtools_mergesamfiles => q{Picardtools MergeSamFiles},
+        rseqc                     => q{Rseqc},
         salmon_quant              => q{Salmon Quant},
         star_aln                  => q{STAR},
         star_fusion               => q{STAR-Fusion},

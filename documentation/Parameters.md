@@ -23,10 +23,10 @@ To decide when and where the analysis recipe will be executed you the name of th
 So far we have defined the features of the analysis recipe, added it to the CLI, and decided where and when to execute the program module. We also have to point to the actual code of the recipe. This is done by adding your analysis recipe name and the code reference pointing to the analysis recipe perl module to the analysis_recipe and program_name hashes in the `lib/MIP/Recipe/Pipeline/[Pipeline]` perl module. 
 
 To add an analysis recipe switch follow these steps:
- - Add the parameter at the corresponding CLI command level YAML file in the `definition` folder in the MIP directory. Set the analysis_mode.
+ - Add the parameter at the corresponding CLI command level YAML file in the `definition` folder in the MIP directory. Set the key `analysis_mode`to sample or family.
  - Add the parameter to the corresponing CLI perl module in `lib/MIP/Cli` in MIPs lib directory.
  - Add the analysis recipe switch to the initiation map file in the `definition` folder in the MIP directory.
- - Add the parameter name to the analysis_recipe and program_name hashes in the `lib/MIP/Recipe/Pipeline/[Pipeline]` perl module.
+ - Add the parameter name to the analysis_recipe and program_name hashes in the `lib/MIP/Recipes/Pipeline/[Pipeline]` perl module.
  - Fill your analysis_recipe with content.
 
 To add a build recipe switch follow these steps:

@@ -566,6 +566,16 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
+        q{rseq} => (
+            cmd_aliases   => [qw{ rseq }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Qc using rseqc},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{gatk_haplotypecaller} => (
             cmd_aliases   => [qw{ ghc }],
             cmd_tags      => [q{Analysis recipe switch}],
