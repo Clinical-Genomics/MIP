@@ -71,7 +71,7 @@ my %required_argument = (
 
 my %specific_argument = (
     intervals_ref => {
-        inputs_ref      => [qw{ chr1 chr2}],
+        inputs_ref      => [qw{ chr1 chr2 }],
         expected_output => q{--intervals chr1 --intervals chr2},
     },
     pedigree => {

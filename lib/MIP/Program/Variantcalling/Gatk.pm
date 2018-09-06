@@ -19,7 +19,8 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Language::Java qw{ java_core };
-use MIP::Program::Base::Gatk qw{ gatk_base };
+use MIP::Program::Base::Gatk
+  qw{ gatk_base gatk_common_options gatk_java_options };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -28,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -37,6 +38,7 @@ BEGIN {
       gatk_calculategenotypeposteriors
       gatk_catvariants gatk_combinevariants
       gatk_concatenate_variants
+      gatk_genomicsdbimport
       gatk_genotypegvcfs
       gatk_leftalignandtrimvariants
       gatk_selectvariants
@@ -2455,4 +2457,154 @@ sub gatk_variantfiltration {
     return @commands;
 }
 
+sub gatk_genomicsdbimport {
+
+## Function : Perl wrapper for writing GATK GenomicsDBImport recipe to $FILEHANDLE. Based on GATK 4.0.8
+## Returns  : @commands
+## Arguments: $FILEHANDLE                => Sbatch filehandle to write to
+##          : $genomicsdb_workspace_path => Workspace for GenomicsDB
+##          : $intervals_ref             => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages      => Use java large pages
+##          : $memory_allocation         => Memory allocation to run Gatk
+##          : $pedigree                  => Pedigree files
+##          : $read_filters_ref          => Filters to apply on reads {REF}
+##          : $referencefile_path        => Reference sequence file
+##          : $stderrfile_path           => Stderrfile path
+##          : $temp_directory            => Redirect tmp files to java temp
+##          : $variantfile_paths_ref     => GVCF files to be imported to GenomicsDB {REF}
+##          : $verbosity                 => Set the minimum level of logging
+##          : $xargs_mode                => Set if the program will be executed via xargs
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $genomicsdb_workspace_path;
+    my $intervals_ref;
+    my $java_use_large_pages;
+    my $memory_allocation;
+    my $read_filters_ref;
+    my $referencefile_path;
+    my $stderrfile_path;
+    my $temp_directory;
+    my $variantfile_paths_ref;
+
+    ## Default(s)
+    my $verbosity;
+    my $xargs_mode;
+
+    my $tmpl = {
+        FILEHANDLE                => { store => \$FILEHANDLE },
+        genomicsdb_workspace_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$genomicsdb_workspace_path,
+            strict_type => 1,
+        },
+        intervals_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$intervals_ref,
+            strict_type => 1,
+        },
+        java_use_large_pages => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => {
+            store       => \$memory_allocation,
+            strict_type => 1,
+        },
+        read_filters_ref => {
+            default     => [],
+            store       => \$read_filters_ref,
+            strict_type => 1,
+        },
+        referencefile_path => {
+            defined     => 1,
+            store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        temp_directory  => { store => \$temp_directory,  strict_type => 1, },
+        variantfile_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$variantfile_paths_ref,
+            strict_type => 1,
+        },
+        verbosity => {
+            allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$verbosity,
+            strict_type => 1,
+        },
+        xargs_mode => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$xargs_mode,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## GATK GenomicsDBImport
+
+    # Stores commands depending on input parameters
+    my @commands = qw{ gatk };
+
+    ## Add java options
+    gatk_java_options(
+        {
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+            xargs_mode           => $xargs_mode,
+        }
+    );
+
+    ## Add tool command
+    push @commands, q{GenomicsDBImport};
+
+    ## Add GVCF files
+    push @commands,
+      q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
+      @{$variantfile_paths_ref};
+
+    ## Add common options
+    gatk_common_options(
+        {
+            commands_ref       => \@commands,
+            intervals_ref      => $intervals_ref,
+            read_filters_ref   => $read_filters_ref,
+            referencefile_path => $referencefile_path,
+            temp_directory     => $temp_directory,
+            verbosity          => $verbosity,
+        }
+    );
+
+    ## Output
+    push @commands,
+      q{--genomicsdb-workspace-path} . $SPACE . $genomicsdb_workspace_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
 1;
