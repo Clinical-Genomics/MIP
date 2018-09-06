@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -282,19 +282,10 @@ sub analysis_gatk_splitncigarreads {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number   => $core_number,
-            FILEHANDLE    => $FILEHANDLE,
-            file_path     => $file_path,
-            first_command => q{java},
-            java_jar      => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar},
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            core_number        => $core_number,
+            FILEHANDLE         => $FILEHANDLE,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
-            temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -312,13 +303,17 @@ sub analysis_gatk_splitncigarreads {
 
         gatk_splitncigarreads(
             {
-                FILEHANDLE    => $XARGSFILEHANDLE,
-                infile_path   => $infile_path,
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                outfile_path  => $outfile_path,
+                FILEHANDLE  => $XARGSFILEHANDLE,
+                infile_path => $infile_path,
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                outfile_path       => $outfile_path,
                 referencefile_path => $referencefile_path,
-                temp_directory     => $temp_directory,
                 stderrfile_path    => $stderrfile_path,
+                temp_directory     => $temp_directory,
+                verbosity  => $active_parameter_href->{gatk_logging_level},
+                xargs_mode => 1,
             }
         );
         print {$XARGSFILEHANDLE} $NEWLINE;
