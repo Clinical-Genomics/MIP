@@ -405,7 +405,7 @@ gatk_baserecalibration_read_filters:
   element_separator: ,
   data_type: ARRAY
   default:
-   - OverclippedRead
+   - OverclippedReadFilter
   type: program_argument
 gatk_baserecalibration_static_quantized_quals:
   associated_program:
