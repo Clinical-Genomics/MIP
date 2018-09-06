@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -838,98 +838,68 @@ sub gatk_printreads {
 
 sub gatk_splitncigarreads {
 
-## Function : Perl wrapper for writing GATK splitNCigarReads recipe to $FILEHANDLE. Based on GATK 3.7.0.
+## Function : Perl wrapper for writing GATK splitNCigarReads recipe to $FILEHANDLE. Based on GATK 4.0.8.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE           => Sbatch filehandle to write to
 ##          : $infile_path          => Infile paths
-##          : $java_jar             => Java jar
 ##          : $java_use_large_pages => Use java large pages
-##          : $logging_level        => Set the minimum level of logging
 ##          : $maping_quality_from  => Input mapping quality values
 ##          : $maping_quality_to    => Output mapping quality values
 ##          : $memory_allocation    => Memory allocation to run Gatk
 ##          : $outfile_path         => Outfile path
 ##          : $operation            => The read operation that is to be applied on the bam file
-##          : $readfilter           => Read-filter settings
+##          : $read_filters_ref     => Filters to apply to reads before analysis {REF}
 ##          : $referencefile_path   => Reference sequence file
 ##          : $stderrfile_path      => Stderrfile path
 ##          : $temp_directory       => Redirect tmp files to java temp
+##          : $verbosity            => Set the minimum level of logging
+##          : $xargs_mode           => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_path;
-    my $java_jar;
     my $java_use_large_pages;
     my $memory_allocation;
     my $outfile_path;
-    my $stderrfile_path;
+    my $read_filters_ref;
     my $referencefile_path;
+    my $stderrfile_path;
     my $temp_directory;
 
     ## Default(s)
-    my $logging_level;
-    my $maping_quality_from;
-    my $maping_quality_to;
-    my $operation;
-    my $readfilter;
-
-    ## Constants
-    Readonly my $MAPPING_QUALITY_FROM => 255;
-    Readonly my $MAPPING_QUALITY_TO   => 60;
+    my $verbosity;
+    my $xargs_mode;
 
     my $tmpl = {
         FILEHANDLE  => { store => \$FILEHANDLE, },
         infile_path => {
+            allow       => qr/ (?: bam | sam | cram )$ /xms,
             defined     => 1,
             required    => 1,
             store       => \$infile_path,
             strict_type => 1,
         },
-        java_jar             => { store => \$java_jar, strict_type => 1, },
         java_use_large_pages => {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$java_use_large_pages,
             strict_type => 1,
         },
-        logging_level => {
-            allow       => [qw{ INFO ERROR FATAL }],
-            default     => q{INFO},
-            store       => \$logging_level,
+        memory_allocation => {
+            store       => \$memory_allocation,
             strict_type => 1,
         },
-        maping_quality_from => {
-            default     => $MAPPING_QUALITY_FROM,
-            defined     => 1,
-            store       => \$maping_quality_from,
-            strict_type => 1,
-        },
-        maping_quality_to => {
-            default     => $MAPPING_QUALITY_TO,
-            defined     => 1,
-            store       => \$maping_quality_to,
-            strict_type => 1,
-        },
-        memory_allocation =>
-          { store => \$memory_allocation, strict_type => 1, },
         outfile_path => {
             defined     => 1,
             required    => 1,
             store       => \$outfile_path,
             strict_type => 1,
         },
-        operation => {
-            default     => q{ALLOW_N_CIGAR_READS},
-            defined     => 1,
-            store       => \$operation,
-            strict_type => 1,
-        },
-        readfilter => {
-            default     => q{ReassignOneMappingQuality},
-            defined     => 1,
-            store       => \$readfilter,
+        read_filters_ref => {
+            default     => [],
+            store       => \$read_filters_ref,
             strict_type => 1,
         },
         referencefile_path => {
@@ -938,50 +908,64 @@ sub gatk_splitncigarreads {
             store       => \$referencefile_path,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        temp_directory  => { store => \$temp_directory,  strict_type => 1, },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        verbosity => {
+            allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$verbosity,
+            strict_type => 1,
+        },
+        xargs_mode => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$xargs_mode,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## GATK SplitNCigarReads
+
     # Stores commands depending on input parameters
-    my @commands;
+    my @commands = qw{ gatk };
 
-    ## Write java core commands to filehandle.
-    if ($java_jar) {
-
-        @commands = java_core(
-            {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
-
-            }
-        );
-    }
-
-    ### Gatk base args
-    @commands = gatk_base(
+    ## Add java options
+    gatk_java_options(
         {
-            analysis_type      => q{SplitNCigarReads},
-            commands_ref       => \@commands,
-            logging_level      => $logging_level,
-            referencefile_path => $referencefile_path,
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+            xargs_mode           => $xargs_mode,
         }
     );
 
-    push @commands, q{-I} . $SPACE . $infile_path;
+    ## Add tool command
+    push @commands, q{SplitNCigarReads};
 
-    push @commands, q{-o} . $SPACE . $outfile_path;
+    ## Add input file
+    push @commands, q{--input} . $SPACE . $infile_path;
 
-    push @commands, q{-rf} . $SPACE . $readfilter;
+    ## Add common options
+    gatk_common_options(
+        {
+            commands_ref       => \@commands,
+            read_filters_ref   => $read_filters_ref,
+            referencefile_path => $referencefile_path,
+            temp_directory     => $temp_directory,
+            verbosity          => $verbosity,
+        }
+    );
 
-    push @commands, q{-RMQF} . $SPACE . $maping_quality_from;
-
-    push @commands, q{-RMQT} . $SPACE . $maping_quality_to;
-
-    push @commands, q{-U} . $SPACE . $operation;
+    ## Add output file
+    push @commands, q{--output} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
