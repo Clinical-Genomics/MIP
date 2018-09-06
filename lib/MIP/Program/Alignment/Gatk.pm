@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -66,7 +66,6 @@ sub gatk_baserecalibrator {
     my $FILEHANDLE;
     my $infile_path;
     my $intervals_ref;
-    my $java_use_large_pages;
     my $known_sites_ref;
     my $memory_allocation;
     my $outfile_path;
@@ -76,6 +75,7 @@ sub gatk_baserecalibrator {
     my $temp_directory;
 
     ## Default(s)
+    my $java_use_large_pages;
     my $verbosity;
     my $xargs_mode;
 
@@ -216,7 +216,7 @@ sub gatk_applybqsr {
 ##          : $outfile_path                          => Outfile path
 ##          : $read_filters_ref                      => Filters to apply on reads {REF}
 ##          : $referencefile_path                    => Reference sequence file
-##          : $static_quantized_quals_ref            => Use static quantized quality scores to a given number of levels (with -BQSR) {REF}
+##          : $static_quantized_quals_ref            => Use static quantized quality scores to a given number of levels {REF}
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $verbosity                             => Set the minimum level of logging
@@ -229,7 +229,6 @@ sub gatk_applybqsr {
     my $FILEHANDLE;
     my $infile_path;
     my $intervals_ref;
-    my $java_use_large_pages;
     my $memory_allocation;
     my $outfile_path;
     my $read_filters_ref;
@@ -239,6 +238,7 @@ sub gatk_applybqsr {
     my $temp_directory;
 
     ## Default(s)
+    my $java_use_large_pages;
     my $verbosity;
     my $xargs_mode;
 
@@ -413,7 +413,6 @@ sub gatk_haplotypecaller {
     my $FILEHANDLE;
     my $infile_path;
     my $intervals_ref;
-    my $java_use_large_pages;
     my $memory_allocation;
     my $outfile_path;
     my $pcr_indel_model;
@@ -427,6 +426,7 @@ sub gatk_haplotypecaller {
 
     ## default(s)
     my $emit_ref_confidence;
+    my $java_use_large_pages;
     my $verbosity;
     my $xargs_mode;
 
@@ -632,121 +632,67 @@ sub gatk_haplotypecaller {
 
 sub gatk_printreads {
 
-## Function : Perl wrapper for writing GATK printreads recipe to $FILEHANDLE. Based on GATK 3.7.0.
+## Function : Perl wrapper for writing GATK PrintReads recipe to $FILEHANDLE. Based on GATK 4.0.8.
 ## Returns  : @commands
-## Arguments: $base_quality_score_recalibration_file => Input covariates table file for on-the-fly base quality score recalibration
-##          : $disable_indel_qual                    => Disable printing of base insertion and deletion tags (with -BQSR)
-##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
 ##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
 ##          : $infile_path                           => Infile paths
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $java_jar                              => Java jar
 ##          : $java_use_large_pages                  => Use java large pages
-##          : $logging_level                         => Set the minimum level of logging
 ##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $num_cpu_threads_per_data_thread       => Number of CPU threads to allocate per data thread
 ##          : $outfile_path                          => Outfile path
-##          : $pedigree                              => Pedigree files
-##          : $pedigree_validation_type              => Validation strictness for pedigree
 ##          : $read_filters_ref                      => Filters to apply to reads before analysis {REF}
 ##          : $referencefile_path                    => Reference sequence file
-##          : $static_quantized_quals_ref            => Use static quantized quality scores to a given number of levels (with -BQSR) {REF}
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $temp_directory                        => Redirect tmp files to java temp
+##          : $verbosity                             => Set the minimum level of logging
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $base_quality_score_recalibration_file;
-    my $downsample_to_coverage;
     my $FILEHANDLE;
     my $infile_path;
     my $intervals_ref;
-    my $java_jar;
-    my $java_use_large_pages;
     my $memory_allocation;
-    my $num_cpu_threads_per_data_thread;
     my $outfile_path;
-    my $pedigree;
-    my $pedigree_validation_type;
     my $read_filters_ref;
     my $referencefile_path;
-    my $static_quantized_quals_ref;
     my $stderrfile_path;
     my $temp_directory;
+    my $xargs_mode;
 
     ## Default(s)
-    my $disable_indel_qual;
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
+    my $java_use_large_pages;
+    my $verbosity;
 
     my $tmpl = {
-        base_quality_score_recalibration_file => {
-            store       => \$base_quality_score_recalibration_file,
-            strict_type => 1,
-        },
-        disable_indel_qual => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$disable_indel_qual,
-            strict_type => 1,
-        },
-        downsample_to_coverage => {
-            allow       => qr/ ^\d+$ /sxm,
-            store       => \$downsample_to_coverage,
-            strict_type => 1,
-        },
-        FILEHANDLE                            => { store => \$FILEHANDLE },
-        gatk_disable_auto_index_and_file_lock => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$gatk_disable_auto_index_and_file_lock,
-            strict_type => 1,
-        },
         infile_path => {
+            allow       => qr/ (?: bam | sam | cram )$ /xms,
             defined     => 1,
             required    => 1,
             store       => \$infile_path,
             strict_type => 1,
         },
+        FILEHANDLE    => { store => \$FILEHANDLE },
         intervals_ref => {
             default     => [],
             defined     => 1,
             store       => \$intervals_ref,
             strict_type => 1,
         },
-        java_jar             => { store => \$java_jar, strict_type => 1, },
         java_use_large_pages => {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$java_use_large_pages,
             strict_type => 1,
         },
-        logging_level => {
-            allow       => [qw{ INFO ERROR FATAL }],
-            default     => q{INFO},
-            store       => \$logging_level,
-            strict_type => 1,
-        },
-        memory_allocation =>
-          { store => \$memory_allocation, strict_type => 1, },
-        num_cpu_threads_per_data_thread => {
-            allow       => qr/ ^\d+$ /sxm,
-            store       => \$num_cpu_threads_per_data_thread,
+        memory_allocation => {
+            store       => \$memory_allocation,
             strict_type => 1,
         },
         outfile_path => {
             defined     => 1,
             required    => 1,
             store       => \$outfile_path,
-            strict_type => 1,
-        },
-        pedigree                 => { store => \$pedigree, strict_type => 1, },
-        pedigree_validation_type => {
-            allow       => [qw{ STRICT SILENT}],
-            default     => q{SILENT},
-            store       => \$pedigree_validation_type,
             strict_type => 1,
         },
         read_filters_ref => {
@@ -756,65 +702,61 @@ sub gatk_printreads {
         },
         referencefile_path => {
             defined     => 1,
-            required    => 1,
             store       => \$referencefile_path,
-            strict_type => 1,
-        },
-        static_quantized_quals_ref => {
-            default     => [],
-            store       => \$static_quantized_quals_ref,
             strict_type => 1,
         },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         temp_directory  => { store => \$temp_directory,  strict_type => 1, },
+        verbosity       => {
+            allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$verbosity,
+            strict_type => 1,
+        },
+        xargs_mode => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$xargs_mode,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Gatk printreads
+    ## GATK PrintReads
     # Stores commands depending on input parameters
-    my @commands;
+    my @commands = qw{ gatk };
 
-    ## Write java core commands to filehandle.
-    if ($java_jar) {
-
-        @commands = java_core(
-            {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
-            }
-        );
-    }
-
-    ### Gatk base args
-    @commands = gatk_base(
+    ## Add java options
+    gatk_java_options(
         {
-            analysis_type => q{PrintReads},
-            base_quality_score_recalibration_file =>
-              $base_quality_score_recalibration_file,
-            commands_ref           => \@commands,
-            disable_indel_qual     => $disable_indel_qual,
-            downsample_to_coverage => $downsample_to_coverage,
-            gatk_disable_auto_index_and_file_lock =>
-              $gatk_disable_auto_index_and_file_lock,
-            intervals_ref                   => $intervals_ref,
-            logging_level                   => $logging_level,
-            num_cpu_threads_per_data_thread => $num_cpu_threads_per_data_thread,
-            pedigree                        => $pedigree,
-            pedigree_validation_type        => $pedigree_validation_type,
-            read_filters_ref                => $read_filters_ref,
-            referencefile_path              => $referencefile_path,
-            static_quantized_quals_ref      => $static_quantized_quals_ref,
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+            xargs_mode           => $xargs_mode,
         }
     );
 
-    ## Infile
-    push @commands, q{--input_file} . $SPACE . $infile_path;
+    ## Add tool command
+    push @commands, q{PrintReads};
 
-    ## Output
-    push @commands, q{--out} . $SPACE . $outfile_path;
+    ## Add infile
+    push @commands, q{--input} . $SPACE . $infile_path;
+
+    ## Add common options
+    gatk_common_options(
+        {
+            commands_ref       => \@commands,
+            intervals_ref      => $intervals_ref,
+            read_filters_ref   => $read_filters_ref,
+            referencefile_path => $referencefile_path,
+            temp_directory     => $temp_directory,
+            verbosity          => $verbosity,
+        }
+    );
+
+    ## Add Output
+    push @commands, q{--output} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
@@ -857,7 +799,6 @@ sub gatk_splitncigarreads {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_path;
-    my $java_use_large_pages;
     my $memory_allocation;
     my $outfile_path;
     my $read_filters_ref;
@@ -866,6 +807,7 @@ sub gatk_splitncigarreads {
     my $temp_directory;
 
     ## Default(s)
+    my $java_use_large_pages;
     my $verbosity;
     my $xargs_mode;
 
