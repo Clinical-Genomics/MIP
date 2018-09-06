@@ -48,7 +48,6 @@ sub gatk_baserecalibrator {
 ## Arguments: $FILEHANDLE           => Sbatch filehandle to write to
 ##          : $infile_path          => Infile paths
 ##          : $intervals_ref        => One or more genomic intervals over which to operate {REF}
-##          : $java_jar             => Java jar
 ##          : $java_use_large_pages => Use java large pages
 ##          : $known_alleles_ref    => Input VCF file(s) with known indels {REF}
 ##          : $memory_allocation    => Memory allocation to run Gatk
