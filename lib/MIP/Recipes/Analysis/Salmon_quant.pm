@@ -151,8 +151,11 @@ sub analysis_salmon_quant {
     ## Set MIP program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
-    ## Get job_id_chain
+    ## Unpack parameter
     my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $referencefile_dir_path =
+        $active_parameter_href->{salmon_quant_reference_genome}
+      . $file_info_href->{salmon_quant_reference_genome}[0];
 
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
@@ -170,11 +173,10 @@ sub analysis_salmon_quant {
     my @infiles = @{ $file_info_href->{$sample_id}{mip_infiles} };
 
     ## Directories
-    my $insample_directory  = $file_info_href->{$sample_id}{mip_infiles_dir};
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir},    $sample_id,
-        $active_parameter_href->{outaligner_dir}, $program_name
-    );
+    my $insample_directory = $file_info_href->{$sample_id}{mip_infiles_dir};
+    my $outsample_directory =
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
+        $program_name );
 
     ## Assign file_tags
     my $outfile_tag =
@@ -219,14 +221,13 @@ sub analysis_salmon_quant {
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ( $file_name, $program_info_path ) = setup_script(
             {
-                active_parameter_href => $active_parameter_href,
-                core_number           => $core_number,
-                directory_id          => $sample_id,
-                FILEHANDLE            => $FILEHANDLE,
-                job_id_href           => $job_id_href,
-                log                   => $log,
-                program_directory =>
-                  lc $active_parameter_href->{outaligner_dir},
+                active_parameter_href           => $active_parameter_href,
+                core_number                     => $core_number,
+                directory_id                    => $sample_id,
+                FILEHANDLE                      => $FILEHANDLE,
+                job_id_href                     => $job_id_href,
+                log                             => $log,
+                program_directory               => $program_name,
                 program_name                    => $program_name,
                 process_time                    => $time,
                 source_environment_commands_ref => \@source_environment_cmds,
@@ -285,9 +286,6 @@ sub analysis_salmon_quant {
 
             #catfile( $temp_directory, $infiles[$paired_end_tracker] );
         }
-        my $referencefile_dir_path =
-            $active_parameter_href->{salmon_quant_reference_genome}
-          . $file_info_href->{salmon_quant_reference_genome}[0];
 
         # If second read direction is present
         if ( $sequence_run_mode ne q{paired-end} ) {
@@ -324,7 +322,7 @@ sub analysis_salmon_quant {
             {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $file_path_prefix_out . $ASTERIX,
-                outfile_path => catdir( $outsample_directory, $program_name ),
+                outfile_path => $outsample_directory,
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
