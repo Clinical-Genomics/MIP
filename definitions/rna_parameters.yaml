@@ -111,6 +111,7 @@ module_time:
     gzip_fastq: 2
     markduplicates: 4
     picardtools_mergesamfiles: 2
+    rseqc: 3
     salmon_quant: 5
     star_aln: 5
     star_fusion: 1
@@ -130,6 +131,7 @@ module_core_number:
     gzip_fastq: 0
     markduplicates: 16
     picardtools_mergesamfiles: 16
+    rseqc: 1
     salmon_quant: 1
     star_aln: 16
     star_fusion: 1
@@ -441,6 +443,15 @@ gatk_baserecalibration_static_quantized_quals:
    - 30
    - 40
   type: program_argument
+rseqc:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: _rseq
+  outfile_suffix: ".txt"
+  type: program
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample

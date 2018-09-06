@@ -1,12 +1,14 @@
-package MIP::Recipes::Analysis::RECIPE_NAME;
+package MIP::Recipes::Analysis::Rseqc;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Basename qw{ basename };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
+use POSIX qw{ floor };
 use strict;
 use utf8;
 use warnings;
@@ -25,28 +27,32 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_recipe };
+    our @EXPORT_OK = qw{ analysis_rseqc };
 
 }
 
 ## Constants
+Readonly my $ASTERIX    => q{*};
+Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
+Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
 
-sub analysis_recipe {
+sub analysis_rseqc {
 
-## Function : DESCRIPTION OF RECIPE
+## Function : Rseqc analysis for RNA
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
-##          : $file_info_href          => File_info hash {REF}
+##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
+##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
@@ -62,7 +68,8 @@ sub analysis_recipe {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
+    my $temp_directory;
+    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
@@ -72,7 +79,7 @@ sub analysis_recipe {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
+        family_id_ref => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
             strict_type => 1,
@@ -96,11 +103,6 @@ sub analysis_recipe {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {
@@ -129,18 +131,28 @@ sub analysis_recipe {
             store       => \$sample_info_href,
             strict_type => 1,
         },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        xargs_file_counter => {
+            default     => 0,
+            allow       => qr{ ^\d+$ }xsm,
+            strict_type => 1,
+            store       => \$xargs_file_counter,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::QC::Record
-      qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+    use MIP::Program::Qc::Rseqc qw{ rseqc_bam_stat };
     use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -148,7 +160,7 @@ sub analysis_recipe {
     ## Set MIP program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
-    ## Unpack parameters
+    ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
@@ -160,55 +172,14 @@ sub analysis_recipe {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
-    );
+    my $FILEHANDLE      = IO::Handle->new();
+    my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Assign directories
     my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
         $sample_id, $active_parameter_href->{outaligner_dir} );
     my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
         $sample_id, $active_parameter_href->{outaligner_dir} );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{UPPSTREAM_DEPENDENCY_PROGRAM}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
-
-    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Get infile_suffix from baserecalibration jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain =>
-              $parameter_href->{UPPSTREAM_DEPENDENCY_PROGRAM}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
-    my $outfile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            program_name   => $program_name,
-            suffix_key     => q{outfile_suffix},
-        }
-    );
-
-    ## Files
-    my $infile_name  = $infile_prefix . $infile_suffix;
-    my $outfile_name = $outfile_prefix . $outfile_suffix;
-
-    ## Paths
-    my $infile_path  = catfile( $insample_directory,  $infile_name );
-    my $outfile_path = catfile( $outsample_directory, $outfile_name );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -220,48 +191,79 @@ sub analysis_recipe {
             job_id_href           => $job_id_href,
             log                   => $log,
             process_time          => $time,
-            program_directory => catfile( $outaligner_dir, q{PROGRAM_NAME} ),
-            program_name      => $program_name,
+            program_directory     => catfile(
+                $active_parameter_href->{outaligner_dir}, $program_name
+            ),
+            program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
+            temp_directory                  => $temp_directory,
         }
     );
 
-###############################
-###RECIPE TOOL COMMANDS HERE###
-###############################
+    ## Used downstream
+    $parameter_href->{$program_name}{$sample_id}{indirectory} =
+      $outsample_directory;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
+
+    ## Assign file_tags
+    my $infile_tag =
+      $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
+    my $outfile_tag =
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
+
+    ## Files
+    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
+    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
+
+    ## Assign suffix
+    my $infile_suffix = get_file_suffix(
+        {
+            jobid_chain    => $parameter_href->{gatk_baserecalibration}{chain},
+            parameter_href => $parameter_href,
+            suffix_key     => q{alignment_file_suffix},
+        }
+    );
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix(
+        {
+            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
+            parameter_href => $parameter_href,
+            suffix_key     => q{rseq_suffix},
+        }
+    );
+
+    ## Paths
+    my $infile_path =
+      catfile( $insample_directory, $infile_prefix . $infile_suffix );
+    my $outfile_path_prefix = catfile( $outsample_directory, $outfile_prefix );
+
+    ## Rseq
+    say {$FILEHANDLE} q{## Rseq};
+    rseqc_bam_stat(
+        {
+            FILEHANDLE      => $FILEHANDLE,
+            infile_path     => $infile_path,
+            stdoutfile_path => $outfile_path_prefix
+              . $UNDERSCORE
+              . q{bam_stat}
+              . $outfile_suffix,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    close $FILEHANDLE;
 
     if ( $program_mode == 1 ) {
 
-        my $program_outfile_path = catfile( $outsample_directory,
-            $outfile_prefix . $UNDERSCORE . q{ENDING} );
-        ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                infile           => $merged_infile_prefix,
-                path             => $program_outfile_path,
-                program_name     => $program_name,
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        my $most_complete_format_key =
-          q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        my $qc_metafile_path =
-          catfile( $outsample_directory, $infile_prefix . $outfile_suffix );
-        add_processing_metafile_to_sample_info(
-            {
-                metafile_tag     => $most_complete_format_key,
-                path             => $qc_metafile_path,
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        ## MODIY THE CHOICE OF SUB ACCORDING TO HOW YOU WANT SLURM TO PROCESSES IT AND DOWNSTREAM DEPENDENCIES
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
                 family_id               => $family_id,

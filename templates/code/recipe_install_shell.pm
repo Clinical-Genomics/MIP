@@ -1,5 +1,6 @@
 package MIP::Recipes::Install::PROGRAM;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
