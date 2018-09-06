@@ -1,6 +1,6 @@
 package MIP::Cli::Mip::Download;
 
-use 5.018;
+use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
 use strict;

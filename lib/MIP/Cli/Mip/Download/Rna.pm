@@ -1,6 +1,6 @@
-package MIP::Cli::Mip::Download::Rare_disease;
+package MIP::Cli::Mip::Download::Rna;
 
-use 5.022;
+use 5.026;
 use Carp;
 use Cwd qw{ abs_path };
 use File::Basename qw{ dirname };
@@ -26,15 +26,15 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Download qw{ mip_download };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = '0.2.0';
+our $VERSION = 0.01;
 
 extends(qw{ MIP::Cli::Mip::Download });
 
 command_short_description(q{Generate mip.sh for download of references});
 command_long_description(
-q{Generates a download script (download_reference.sh), which is used for downloading reference(s) for the rare disease flavor of the Mutation Identification Pipeline (MIP).}
+q{Generates a download script (download_reference.sh), which is used for downloading reference(s) for the rna flavor of the Mutation Identification Pipeline (MIP).}
 );
-command_usage(q{mip <download> <rare_disease> [options]});
+command_usage(q{mip <download> <rna> [options]});
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -89,7 +89,7 @@ sub _build_usage {
             isa     => Str,
             default => catfile(
                 dirname($Bin),
-                qw{ MIP definitions download_rare_disease_parameters.yaml }
+                qw{ MIP definitions download_rna_parameters.yaml }
             ),
         )
     );
