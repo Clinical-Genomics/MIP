@@ -104,6 +104,7 @@ module_time:
     gzip_fastq: 2
     markduplicates: 4
     picardtools_mergesamfiles: 2
+    rseqc: 3
     salmon_quant: 5
     star_aln: 5
     star_fusion: 1
@@ -123,6 +124,7 @@ module_core_number:
     gzip_fastq: 0
     markduplicates: 16
     picardtools_mergesamfiles: 16
+    rseqc: 1
     salmon_quant: 1
     star_aln: 16
     star_fusion: 1
@@ -199,6 +201,23 @@ salmon_rna_lib_configuration:
   data_type: SCALAR
   default: ISF
   type: program_argument
+salmon_quant_reference_genome:
+  associated_program:
+   - salmon_quant
+  build_file: 1
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  reference: reference_dir
+  type: path
+salmon_quant_transcripts_file:
+  associated_program:
+   - salmon_quant
+  data_type: SCALAR
+  default: GRCh37_transcripts_-v1_0-.GTF
+  exists_check: file
+  reference: reference_dir
+  type: path
 ## Star Aln
 star_aln:
   analysis_mode: sample
@@ -400,6 +419,15 @@ gatk_baserecalibration_static_quantized_quals:
    - 30
    - 40
   type: program_argument
+rseqc:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: _rseq
+  outfile_suffix: ".txt"
+  type: program
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample

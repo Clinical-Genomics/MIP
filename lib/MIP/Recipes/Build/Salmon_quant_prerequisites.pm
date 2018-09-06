@@ -1,4 +1,4 @@
-package MIP::Recipes::Build::Fusion_filter_prerequisites;
+package MIP::Recipes::Build::Salmon_quant_prerequisites;
 
 use 5.026;
 use Carp;
@@ -25,7 +25,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ build_fusion_filter_prerequisites };
+    our @EXPORT_OK = qw{ build_salmon_quant_prerequisites };
 
 }
 
@@ -34,7 +34,7 @@ Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
 
-sub build_fusion_filter_prerequisites {
+sub build_salmon_quant_prerequisites {
 
 ## Function : Creates the Fusion-filter prerequisites for the human genome and transcriptome
 ## Returns  :
@@ -157,27 +157,24 @@ sub build_fusion_filter_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
-    use MIP::Program::Alignment::Blast qw{ blast_blastn blast_makeblastdb };
     use MIP::Program::Utility::Fusion_filter
-      qw{ fusion_filter_gtf_file_to_feature_seqs fusion_filter_prep_genome_lib };
+      qw{ fusion_filter_gtf_file_to_feature_seqs };
+    use MIP::Program::Variantcalling::Salmon qw{ salmon_index };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Script::Setup_script
+      qw{ setup_script write_return_to_conda_environment write_source_environment_command };
 
     ## Constants
-    Readonly my $EXPECT_VALUE      => 1e-3;
-    Readonly my $MAX_TARGET_SEQS   => 1000;
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
     Readonly my $NUMBER_OF_CORES =>
       $active_parameter_href->{max_cores_per_node};
-    Readonly my $PROCESSING_TIME => 30;
-    Readonly my $TABULAR         => 6;
-    Readonly my $WORD_SIZE       => 11;
+    Readonly my $PROCESSING_TIME => 5;
 
     ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
@@ -232,17 +229,17 @@ sub build_fusion_filter_prerequisites {
         }
     );
 
-    if ( $parameter_href->{fusion_filter_reference_genome}{build_file} == 1 ) {
+    if ( $parameter_href->{salmon_quant_reference_genome}{build_file} == 1 ) {
 
         $log->warn( q{Will try to create required }
               . $human_genome_reference
-              . q{ Fusion-filter files before executing }
+              . q{ Salmon files before executing }
               . $program_name );
 
-        say {$FILEHANDLE} q{## Building Fusion-filter dir files};
+        say {$FILEHANDLE} q{## Building Salmon dir files};
         ## Get parameters
-        my $fusion_filter_directory_tmp =
-            $active_parameter_href->{fusion_filter_reference_genome}
+        my $salmon_quant_directory_tmp =
+            $active_parameter_href->{salmon_quant_reference_genome}
           . $UNDERSCORE
           . $random_integer;
 
@@ -250,70 +247,57 @@ sub build_fusion_filter_prerequisites {
         gnu_mkdir(
             {
                 FILEHANDLE       => $FILEHANDLE,
-                indirectory_path => $fusion_filter_directory_tmp,
+                indirectory_path => $salmon_quant_directory_tmp,
                 parents          => 1,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
+
+        ## Soure program specific env - required by STAR-fusion
+        my @program_source_commands = get_program_parameters(
+            {
+                active_parameter_href => $active_parameter_href,
+                program_name          => q{gtf_file_to_feature_seqs.pl},
+            }
+        );
+
+        write_source_environment_command(
+            {
+                FILEHANDLE                      => $FILEHANDLE,
+                source_environment_commands_ref => \@program_source_commands,
+            }
+        );
 
         ## Build cDNA sequence file
         fusion_filter_gtf_file_to_feature_seqs(
             {
                 FILEHANDLE => $FILEHANDLE,
                 gtf_path =>
-                  $active_parameter_href->{fusion_filter_transcripts_file},
+                  $active_parameter_href->{salmon_quant_transcripts_file},
                 referencefile_path => $human_genome_reference,
                 seq_type           => q{cDNA},
                 stdoutfile_path =>
-                  catfile( $fusion_filter_directory_tmp, q{cDNA_seqs.fa} ),
+                  catfile( $salmon_quant_directory_tmp, q{cDNA_seqs.fa} ),
             }
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        ## Make blast database
-        blast_makeblastdb(
+        write_return_to_conda_environment(
             {
-                cdna_seq_file_path =>
-                  catfile( $fusion_filter_directory_tmp, q{cDNA_seqs.fa} ),
-                db_type    => q{nucl},
                 FILEHANDLE => $FILEHANDLE,
+                source_main_environment_commands_ref =>
+                  \@source_environment_cmds,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
 
-        ## Create blast pairs
-        blast_blastn(
+        ## Build SAlmon index file
+        salmon_index(
             {
-                evalue => $EXPECT_VALUE,
-                database_name =>
-                  catfile( $fusion_filter_directory_tmp, q{cDNA_seqs.fa} ),
-                FILEHANDLE      => $FILEHANDLE,
-                lcase_masking   => 1,
-                max_target_seqs => $MAX_TARGET_SEQS,
-                output_format   => $TABULAR,
-                query_file_path =>
-                  catfile( $fusion_filter_directory_tmp, q{cDNA_seqs.fa} ),
-                stdoutfile_path => catfile(
-                    $fusion_filter_directory_tmp, q{blast_pairs.outfmt6}
-                ),
-                thread_number => $NUMBER_OF_CORES,
-                word_size     => $WORD_SIZE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Build genome lib
-        fusion_filter_prep_genome_lib(
-            {
-                blast_pairs_file_path => catfile(
-                    $fusion_filter_directory_tmp, q{blast_pairs.outfmt6}
-                ),
+                fasta_path =>
+                  catfile( $salmon_quant_directory_tmp, q{cDNA_seqs.fa} ),
                 FILEHANDLE => $FILEHANDLE,
-                gtf_path =>
-                  $active_parameter_href->{fusion_filter_transcripts_file},
-                output_dir_path    => catfile($fusion_filter_directory_tmp),
-                referencefile_path => $human_genome_reference,
-                thread_number      => $NUMBER_OF_CORES,
+                outfile_path =>
+                  catfile( $salmon_quant_directory_tmp, q{cDNA_seqs_index} ),
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -322,15 +306,14 @@ sub build_fusion_filter_prerequisites {
         foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
 
             my $intended_file_path =
-                $active_parameter_href->{fusion_filter_reference_genome}
-              . $suffix;
+              $active_parameter_href->{salmon_quant_reference_genome} . $suffix;
 
             ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
             check_exist_and_move_file(
                 {
                     FILEHANDLE          => $FILEHANDLE,
                     intended_file_path  => $intended_file_path,
-                    temporary_file_path => $fusion_filter_directory_tmp,
+                    temporary_file_path => $salmon_quant_directory_tmp,
                 }
             );
         }

@@ -1,4 +1,4 @@
-package MIP::PATH::TO::MODULE;
+package MIP::Program::Qc::Rseqc;
 
 use 5.026;
 use Carp;
@@ -27,17 +27,21 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ space separated subroutines };
+    our @EXPORT_OK = qw{ rseqc_bam_stat };
 }
 
 ## Constants
-Readonly my $SPACE => q{ };
+Readonly my $EQUAL           => q{=};
+Readonly my $MIN_MAP_QUALITY => q{30};
+Readonly my $SPACE           => q{ };
 
-sub name_of_subroutine {
+sub rseqc_bam_stat {
 
-## Function : Perl wrapper for generic commands module.
+## Function : Perl wrapper for rseqc bam_stat.py. Version 2.6.4.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Input file path
+##          : $min_map_quality        => Minimum mapping quality
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -46,16 +50,31 @@ sub name_of_subroutine {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
+    my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
     ## Default(s)
+    my $min_map_quality;
 
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
+        infile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path,
+        },
+        min_map_quality => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => $MIN_MAP_QUALITY,
+            strict_type => 1,
+            store       => \$min_map_quality,
+        },
+
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -73,11 +92,11 @@ sub name_of_subroutine {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ BASE COMMAND };
+    my @commands = qw{ bam_stat.py };
 
-    ############################################
-    ## ADD COMMAND SPECIFIC FLAGS AND OPTIONS ##
-    ############################################
+    push @commands, q{--input-file} . $EQUAL . $infile_path;
+
+    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
 
     push @commands,
       unix_standard_streams(

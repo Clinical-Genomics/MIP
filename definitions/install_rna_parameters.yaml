@@ -28,6 +28,7 @@ emip:
     picard: 2.18
     pip:
     python: 2.7
+    rseqc: 2.6.4
     r-optparse:
     r-readr:
     salmon: 0.9.1

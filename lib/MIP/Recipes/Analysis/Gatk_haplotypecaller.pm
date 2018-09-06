@@ -599,7 +599,7 @@ sub analysis_gatk_haplotypecaller_rna {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set MIP program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias

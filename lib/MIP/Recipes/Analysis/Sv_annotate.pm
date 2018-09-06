@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -165,7 +165,8 @@ sub analysis_sv_annotate {
     use MIP::Program::Variantcalling::Svdb qw{ svdb_query };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Script::Setup_script
+      qw{ setup_script write_return_to_conda_environment write_source_environment_command };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -389,6 +390,13 @@ sub analysis_sv_annotate {
             }
         );
 
+        write_source_environment_command(
+            {
+                FILEHANDLE                      => $FILEHANDLE,
+                source_environment_commands_ref => \@program_source_commands,
+            }
+        );
+
         say {$FILEHANDLE} q{## Remove common variants};
         genmod_annotate(
             {
@@ -397,8 +405,7 @@ sub analysis_sv_annotate {
                   . $alt_file_tag
                   . $file_suffix,
                 outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-                program_source_commands_ref => \@program_source_commands,
-                temp_directory_path         => $temp_directory,
+                temp_directory_path => $temp_directory,
                 thousand_g_file_path =>
                   $active_parameter_href->{sv_genmod_filter_1000g},
                 verbosity => q{v},
@@ -411,17 +418,23 @@ sub analysis_sv_annotate {
 
         genmod_filter(
             {
-                deactive_program_source => 1,
-                FILEHANDLE              => $FILEHANDLE,
-                infile_path             => $DASH,
-                outfile_path            => $outfile_path_prefix
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $DASH,
+                outfile_path => $outfile_path_prefix
                   . $alt_file_tag
                   . $file_suffix,
-                source_main_environment_commands_ref =>
-                  \@source_environment_cmds,
                 threshold =>
                   $active_parameter_href->{sv_genmod_filter_threshold},
                 verbosity => q{v},
+            }
+        );
+        print {$FILEHANDLE} $NEWLINE;
+
+        write_return_to_conda_environment(
+            {
+                FILEHANDLE => $FILEHANDLE,
+                source_main_environment_commands_ref =>
+                  \@source_environment_cmds,
             }
         );
         print {$FILEHANDLE} $NEWLINE;

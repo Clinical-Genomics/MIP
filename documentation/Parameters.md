@@ -23,13 +23,15 @@ To decide when and where the analysis recipe will be executed you the name of th
 So far we have defined the features of the analysis recipe, added it to the CLI, and decided where and when to execute the program module. We also have to point to the actual code of the recipe. This is done by adding your analysis recipe name and the code reference pointing to the analysis recipe perl module to the analysis_recipe and program_name hashes in the `lib/MIP/Recipe/Pipeline/[Pipeline]` perl module. 
 
 To add an analysis recipe switch follow these steps:
- - Add the parameter at the corresponding CLI command level YAML file in the `definition` folder in the MIP directory. Set the analysis_mode.
+ - Add the parameter at the corresponding CLI command level YAML file in the `definition` folder in the MIP directory. Set the key `analysis_mode`to sample or family.
  - Add the parameter to the corresponing CLI perl module in `lib/MIP/Cli` in MIPs lib directory.
  - Add the analysis recipe switch to the initiation map file in the `definition` folder in the MIP directory.
- - Add the parameter name to the analysis_recipe and program_name hashes in the `lib/MIP/Recipe/Pipeline/[Pipeline]` perl module.
+ - Add the parameter name to the analysis_recipe and program_name hashes in the `lib/MIP/Recipes/Pipeline/[Pipeline]` perl module.
+ - Fill your analysis_recipe with content.
 
 To add a build recipe switch follow these steps:
-- Add the parameter at the corresponding CLI command level YAML file in the `definition` folder in the MIP directory. Set the build_file to one and connect it to one or more programs.
-- Add the parameter to the corresponing CLI perl module in `lib/MIP/Cli` in MIPs lib directory (if required).
-- If custom defaults are required like setting the human genome reference per default depending on the `human_genome_reference` option. Add the build parameter in lib/MIP/MAIN for the call to sub set_custom_default_to_active_parameter. Add the build parameter to the set_to_active_parameter hash in MIP/Set/Parameter for sub set_custom_default_to_active_parameter and add the _set_human_genome code reference.
-- Add the build_recipe coderef to the build_recipe hash in the corresponding pipeline in `MIP/Recipes/Build/[PIPELINE]` perl module.
+ - Add the parameter at the corresponding CLI command level YAML file in the `definition` folder in the MIP directory. Set the keys `build_file` to one, `mandatory` to no and connect it to one or more programs using key `associated_program`.
+ - Add the parameter to the file_info hash in the corresponing CLI perl module in `lib/MIP/Cli` in MIPs lib directory (add input parameters used in the build recipe to the CLI if required).
+ - If custom defaults are required like setting the human genome reference per default depending on the `human_genome_reference` option. Add the build parameter in lib/MIP/MAIN/Analyse.pm for the call to sub set_custom_default_to_active_parameter. Add the build parameter to the set_to_active_parameter hash in MIP/Set/Parameter for sub set_custom_default_to_active_parameter and add the _set_human_genome code reference.
+ - Add the build_recipe coderef to the build_recipe hash in the corresponding pipeline in `MIP/Recipes/Build/[PIPELINE]` perl module.
+ - Fill your build_recipe with content. 

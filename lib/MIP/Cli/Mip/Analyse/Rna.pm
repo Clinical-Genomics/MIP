@@ -138,6 +138,7 @@ sub run {
 
         # Human genome meta files
         human_genome_reference_file_endings => [qw{ .dict .fai }],
+        salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
     );
 
@@ -427,6 +428,17 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
+        q{salmon_quant_transcripts_file} => (
+            cmd_aliases => [qw{ sqttf }],
+            cmd_tags    => [q{Salmon quant transcripts file: Format: GTF}],
+            documentation =>
+              q{Input for salmon quant to build genome/transcriptome indexes},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
         q{star_aln} => (
             cmd_aliases   => [qw{ stn }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -525,6 +537,16 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
               q{Input for fusion-filter to build genome/transcriptome indexes},
             is  => q{rw},
             isa => Str,
+        )
+    );
+
+    option(
+        q{rseq} => (
+            cmd_aliases   => [qw{ rseq }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Qc using rseqc},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 

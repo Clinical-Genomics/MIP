@@ -45,8 +45,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Build::Fusion_filter_prerequisites} =>
-          [qw{ build_fusion_filter_prerequisites }],
+        q{MIP::Recipes::Analysis::Rseqc} => [qw{ analysis_rseqc }],
         q{MIP::Test::Fixtures} =>
           [qw{ test_log test_mip_hashes test_standard_cli }],
     );
@@ -54,12 +53,10 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Build::Fusion_filter_prerequisites
-  qw{ build_fusion_filter_prerequisites };
+use MIP::Recipes::Analysis::Rseqc qw{ analysis_rseqc };
 
-diag(
-q{Test build_fusion_filter_prerequisites from Fusion_filter_prerequisites.pm v}
-      . $MIP::Recipes::Build::Fusion_filter_prerequisites::VERSION
+diag(   q{Test analysis_rseqc from Rseqc.pm v}
+      . $MIP::Recipes::Analysis::Rseqc::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -70,7 +67,7 @@ q{Test build_fusion_filter_prerequisites from Fusion_filter_prerequisites.pm v}
 my $log = test_log();
 
 ## Given build parameters
-my $program_name = q{star_fusion};
+my $program_name = q{rseqc};
 
 my %active_parameter = test_mip_hashes(
     {
@@ -90,12 +87,8 @@ my %parameter = test_mip_hashes( { mip_hash_name => q{parameter}, } );
 
 my %sample_info;
 
-## Special case
-$active_parameter{fusion_filter_reference_genome} = q{human_genome.fastq};
-$active_parameter{fusion_filter_transcripts_file} = q{GRCH37_transcripts.gtf};
-
 trap {
-    build_fusion_filter_prerequisites(
+    analysis_rseqc(
         {
             active_parameter_href   => \%active_parameter,
             file_info_href          => \%file_info,
@@ -103,17 +96,15 @@ trap {
             job_id_href             => \%job_id,
             log                     => $log,
             parameter_href          => \%parameter,
-            parameter_build_suffixes_ref =>
-              \@{ $file_info{fusion_filter_reference_genome} },
-            program_name     => $program_name,
-            sample_info_href => \%sample_info,
+            program_name            => $program_name,
+            sample_id               => $active_parameter{sample_ids}[0],
+            sample_info_href        => \%sample_info,
         }
       )
 };
 
 ## Then broadcast info log message
-my $log_msg =
-q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+Fusion-filter\s+files};
-like( $trap->stderr, qr/$log_msg/msx, q{Broadcast star_fusion log message} );
+my $log_msg = q{##\s+Rseq};
+like( $trap->stderr, qr/$log_msg/msx, q{Broadcast rseqc log message} );
 
 done_testing();
