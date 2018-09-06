@@ -40,7 +40,7 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_rseqc {
 
-## Function : Rseqc analysis for RNA
+## Function : Rseqc analysis for RNA-seq
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
