@@ -295,9 +295,8 @@ sub build_salmon_quant_prerequisites {
             {
                 fasta_path =>
                   catfile( $salmon_quant_directory_tmp, q{cDNA_seqs.fa} ),
-                FILEHANDLE => $FILEHANDLE,
-                outfile_path =>
-                  catfile( $salmon_quant_directory_tmp, q{cDNA_seqs_index} ),
+                FILEHANDLE   => $FILEHANDLE,
+                outfile_path => $salmon_quant_directory_tmp,
             }
         );
         say {$FILEHANDLE} $NEWLINE;

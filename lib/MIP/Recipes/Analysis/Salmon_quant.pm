@@ -171,8 +171,10 @@ sub analysis_salmon_quant {
 
     ## Directories
     my $insample_directory  = $file_info_href->{$sample_id}{mip_infiles_dir};
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
+    my $outsample_directory = catdir(
+        $active_parameter_href->{outdata_dir},    $sample_id,
+        $active_parameter_href->{outaligner_dir}, $program_name
+    );
 
     ## Assign file_tags
     my $outfile_tag =
@@ -200,7 +202,9 @@ sub analysis_salmon_quant {
 
         ## Assign file tags
         my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
-        my $outfile_path_prefix = $file_path_prefix . $outfile_tag;
+        my $file_path_prefix_out = $file_path_prefix . $outfile_tag;
+        my $outfile_path_prefix =
+          catfile( $outsample_directory, $infile_prefix . $outfile_tag );
 
         # Collect paired-end or single-end sequence run mode
         my $sequence_run_mode =
@@ -281,15 +285,18 @@ sub analysis_salmon_quant {
 
             #catfile( $temp_directory, $infiles[$paired_end_tracker] );
         }
-        my $referencefile_dir_path = $active_parameter_href->{reference_dir};
+        my $referencefile_dir_path =
+            $active_parameter_href->{salmon_quant_reference_genome}
+          . $file_info_href->{salmon_quant_reference_genome}[0];
 
         # If second read direction is present
         if ( $sequence_run_mode ne q{paired-end} ) {
+
             salmon_quant(
                 {
                     FILEHANDLE        => $FILEHANDLE,
                     index_path        => $referencefile_dir_path,
-                    outfile_path      => $outfile_path_prefix,
+                    outfile_path      => $file_path_prefix_out,
                     read_1_fastq_path => $fastq_files[0],
                 },
             );
@@ -300,7 +307,7 @@ sub analysis_salmon_quant {
                 {
                     FILEHANDLE        => $FILEHANDLE,
                     index_path        => $referencefile_dir_path,
-                    outfile_path      => $outfile_path_prefix,
+                    outfile_path      => $file_path_prefix_out,
                     read_1_fastq_path => $fastq_files[0],
                     read_2_fastq_path => $fastq_files[1],
                 },
@@ -316,8 +323,8 @@ sub analysis_salmon_quant {
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $outfile_path_prefix . $ASTERIX,
-                outfile_path => $outsample_directory,
+                infile_path  => $file_path_prefix_out . $ASTERIX,
+                outfile_path => catdir( $outsample_directory, $program_name ),
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
