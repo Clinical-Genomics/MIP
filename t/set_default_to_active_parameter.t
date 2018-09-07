@@ -159,7 +159,7 @@ is( $active_parameter{gatk_genotypegvcfs_ref_gvcf},
     q{test_file}, q{Returned for not required exome mode parameter} );
 
 is( $active_parameter{bwa_mem_bamstats},
-    q{0}, q{Did not set default for non active associated_program parameter} );
+    q{1}, q{Set default for non active associated_program parameter} );
 
 is( $active_parameter{markduplicates_picardtools_markduplicates},
     q{1}, q{Did not set default for not defined associated_program parameter} );

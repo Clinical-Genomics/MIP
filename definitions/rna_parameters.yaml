@@ -93,7 +93,7 @@ java_use_large_pages:
    - gatk_variantfiltration
    - star_aln
   data_type: SCALAR
-  default: 0
+  default: 1
   type: program_argument
 ####Bash
 module_time:
@@ -185,7 +185,7 @@ fastqc:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   infile_suffix: ".fastq"
   program_name_path:
@@ -197,7 +197,7 @@ salmon_quant:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _salmon
   outfile_suffix: ".sf"
   outdir_name: salmon
@@ -233,7 +233,7 @@ star_aln:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _star_sorted
   outfile_suffix: ".bam"
   outdir_name: star
@@ -300,7 +300,7 @@ star_fusion:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _fusion
   outfile_suffix: ".tsv"
   outdir_name: star
@@ -342,8 +342,10 @@ picardtools_mergesamfiles:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _merged
+  program_name_path:
+   - sambamba
   type: program
 ## Mark duplicates
 markduplicates:
@@ -392,7 +394,7 @@ gatk_splitncigarreads:
   associated_program:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _splitcigar
   type: program
 ## GATK BAM Calibration
@@ -401,7 +403,7 @@ gatk_baserecalibration:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _brecal
   type: program
 gatk_baserecalibration_covariates:
@@ -458,8 +460,10 @@ rseqc:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _rseq
+  program_name_path:
+   - bam_stat.py
   outfile_suffix: ".txt"
   type: program
 ## GATK Genotype
@@ -468,7 +472,7 @@ gatk_haplotypecaller:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _haptc
   outfile_suffix: ".vcf"
   type: program
@@ -525,7 +529,7 @@ gatk_asereadcounter:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _ase
   outfile_suffix: ".csv"
   type: program
@@ -535,7 +539,7 @@ gatk_variantfiltration:
   associated_program:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _filtered
   outfile_suffix: ".vcf"
   type: program
@@ -575,7 +579,7 @@ sacct:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 sacct_format_fields:

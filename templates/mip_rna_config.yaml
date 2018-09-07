@@ -13,6 +13,10 @@ program_source_environment_command:
     - activate
     - MIP_star
 module_source_environment_command:
+  rseqc:
+    - source
+    - activate
+    - MIP_rseqc
   star_aln:
     - source
     - activate

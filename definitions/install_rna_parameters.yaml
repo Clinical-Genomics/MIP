@@ -27,11 +27,10 @@ emip:
     picard: 2.18
     pip:
     python: 2.7
-    rseqc: 2.6.4
     r-optparse:
     r-readr:
     salmon: 0.9.1
-    sambamba:
+    sambamba: 0.6.6
     samtools: 1.8
     scipy:
   shell:
@@ -64,15 +63,23 @@ estar:
   pip:
   shell:
 
+erseqc:
+  conda:
+    rseqc: 2.6.4
+  pip:
+  shell:
+
 # Specify environment names
 environment_name:
   emip: MIP_rna
   estar: MIP_star
+  erseqc: MIP_rseqc
 
 # Environments to install
 installations:
   - emip
   - estar
+  - erseqc
 
 # Optional name of log file
 log_file: ~
