@@ -47,56 +47,56 @@ sub migrate_files {
 
 ## Function : Copies files from source to destination.
 ## Returns  :
-## Arguments: $infiles_ref  => Array of files to copy {REF}
+## Arguments: $core_number  => The number of cores that can be used
+##          : $file_ending  => File ending for infiles
+##          : $infiles_ref  => Array of files to copy {REF}
+##          : $indirectory  => The directory for the files to be copied
 ##          : $outfile_path => Outfile path
 ##          : $FILEHANDLE   => Filehandle to write to
-##          : $indirectory  => The directory for the files to be copied
-##          : $core_number  => The number of cores that can be used
-##          : $file_ending  => File ending for infiles
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infiles_ref;
-    my $outfile_path;
+    my $core_number;
     my $FILEHANDLE;
     my $indirectory;
-    my $core_number;
+    my $infiles_ref;
+    my $outfile_path;
 
     ## Default(s)
     my $file_ending;
 
     my $tmpl = {
-        infiles_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$infiles_ref
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        FILEHANDLE  => { required => 1, defined => 1, store => \$FILEHANDLE },
-        indirectory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$indirectory
-        },
         core_number => {
-            default     => 1,
             allow       => qr/ ^\d+$ /xsm,
+            default     => 1,
+            store       => \$core_number,
             strict_type => 1,
-            store       => \$core_number
         },
         file_ending => {
             default     => $EMPTY_STR,
+            store       => \$file_ending,
             strict_type => 1,
-            store       => \$file_ending
+        },
+        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        indirectory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$indirectory,
+            strict_type => 1,
+        },
+        infiles_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infiles_ref,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
         },
     };
 
@@ -113,10 +113,10 @@ sub migrate_files {
 
         $process_batches_count = print_wait(
             {
-                process_counter       => $file_index,
+                FILEHANDLE            => $FILEHANDLE,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
+                process_counter       => $file_index,
             }
         );
 
@@ -141,6 +141,7 @@ sub migrate_file {
 ## Arguments: $FILEHANDLE      => Filehandle to write to
 ##          : $infile_path     => Infile path
 ##          : $outfile_path    => Outfile path
+##          : $recursive       => Copy directories recursively
 ##          : $stderrfile_path => Stderrfile path
 ##          : $xargs           => Use xargs if defined {Optional}
 
@@ -153,22 +154,31 @@ sub migrate_file {
     my $stderrfile_path;
     my $xargs;
 
+    ## Default(s)
+    my $recursive;
+
     my $tmpl = {
-        FILEHANDLE  => { required => 1, defined => 1, store => \$FILEHANDLE },
+        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
         outfile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
             strict_type => 1,
-            store       => \$outfile_path
         },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        xargs           => { strict_type => 1, store => \$xargs },
+        recursive => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$recursive,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        xargs           => { store => \$xargs,           strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -183,6 +193,7 @@ sub migrate_file {
         {
             FILEHANDLE      => $FILEHANDLE,
             preserve        => 1,
+            recursive       => $recursive,
             infile_path     => $infile_path,
             outfile_path    => $outfile_path,
             stderrfile_path => $stderrfile_path,

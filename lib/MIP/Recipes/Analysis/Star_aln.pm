@@ -341,6 +341,7 @@ sub analysis_star_aln {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $outfile_path_prefix . $ASTERIX,
                 outfile_path => $outsample_directory,
+                recursive    => 1,
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
