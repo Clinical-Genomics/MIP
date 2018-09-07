@@ -660,6 +660,7 @@ sub decompress_file {
                 FILEHANDLE        => $FILEHANDLE,
             }
         );
+        say {$FILEHANDLE} $NEWLINE;
     }
     return;
 }

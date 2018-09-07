@@ -44,7 +44,6 @@ sub analysis_star_fusion {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $genome_lib_dir_path     => Path to the directory containing the genome library
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
@@ -58,7 +57,6 @@ sub analysis_star_fusion {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $genome_lib_dir_path;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
@@ -81,11 +79,6 @@ sub analysis_star_fusion {
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
-            strict_type => 1,
-        },
-        genome_lib_dir_path => {
-            default     => $arg_href->{active_parameter_href}{reference_dir},
-            store       => \$genome_lib_dir_path,
             strict_type => 1,
         },
         file_info_href => {
@@ -292,8 +285,9 @@ sub analysis_star_fusion {
 
         star_fusion(
             {
-                FILEHANDLE            => $FILEHANDLE,
-                genome_lib_dir_path   => $genome_lib_dir_path,
+                FILEHANDLE => $FILEHANDLE,
+                genome_lib_dir_path =>
+                  $active_parameter_href->{star_fusion_genome_lib_dir},
                 fastq_r1_path         => $fastq_r1_path,
                 fastq_r2_path         => $fastq_r2_path,
                 output_directory_path => $outsample_directory,

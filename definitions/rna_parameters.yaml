@@ -114,7 +114,7 @@ module_time:
     rseqc: 3
     salmon_quant: 5
     star_aln: 5
-    star_fusion: 1
+    star_fusion: 10
   type: mip
 module_core_number:
   associated_program:
@@ -309,6 +309,13 @@ star_fusion:
     - STAR
     - STAR-Fusion
   type: program
+star_fusion_genome_lib_dir:
+  associated_program:
+   - star_fusion
+  data_type: SCALAR
+  exists_check: directory
+  reference: reference_dir
+  type: path
 fusion_filter_reference_genome:
   associated_program:
    - star_fusion

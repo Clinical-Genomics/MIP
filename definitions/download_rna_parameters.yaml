@@ -30,6 +30,7 @@ CTAT_resource_lib:
       url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/
       outfile_decompress: tar
       outfile_check_method: md5sum
+      outfile_reformat_command: 'mv GRCh37_v19_CTAT_lib_Feb092018/ctat_genome_lib_build_dir/* GRCh37_v19_CTAT_lib_Feb092018'
 human_reference:
   grch37:
     decoy_5:

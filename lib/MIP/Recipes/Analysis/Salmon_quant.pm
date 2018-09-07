@@ -283,8 +283,6 @@ sub analysis_salmon_quant {
             $paired_end_tracker = $paired_end_tracker + 1;
             push @fastq_files,
               catfile( $temp_directory, $infiles[$paired_end_tracker] );
-
-            #catfile( $temp_directory, $infiles[$paired_end_tracker] );
         }
 
         # If second read direction is present
@@ -321,7 +319,7 @@ sub analysis_salmon_quant {
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $file_path_prefix_out . $ASTERIX,
+                infile_path  => catfile( $file_path_prefix_out, $ASTERIX ),
                 outfile_path => $outsample_directory,
             }
         );
