@@ -112,6 +112,7 @@ module_time:
     markduplicates: 4
     picardtools_mergesamfiles: 2
     rseqc: 3
+    sacct: 1
     salmon_quant: 5
     star_aln: 5
     star_fusion: 10
@@ -132,6 +133,7 @@ module_core_number:
     markduplicates: 16
     picardtools_mergesamfiles: 16
     rseqc: 1
+    sacct: 1
     salmon_quant: 1
     star_aln: 16
     star_fusion: 1
@@ -566,3 +568,30 @@ bootstrapann:
   file_tag: _bootstr
   outfile_suffix: ".vcf"
   type: program
+## Sacct
+sacct:
+  analysis_mode: family
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: nofile_tag
+  type: program
+sacct_format_fields:
+  associated_program:
+   - sacct
+  data_type: ARRAY
+  default:
+   - jobid
+   - "jobname%50"
+   - account
+   - partition
+   - alloccpus
+   - TotalCPU
+   - elapsed
+   - start
+   - end
+   - state
+   - exitcode
+  element_separator: ,
+  type: program_argument

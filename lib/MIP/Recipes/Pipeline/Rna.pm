@@ -3,6 +3,7 @@ package MIP::Recipes::Pipeline::Rna;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -163,6 +164,7 @@ sub pipeline_rna {
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles };
     use MIP::Recipes::Analysis::Rseqc qw{ analysis_rseqc };
+    use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
     use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
@@ -210,6 +212,7 @@ sub pipeline_rna {
         markduplicates            => \&analysis_markduplicates,
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
         rseqc                     => \&analysis_rseqc,
+        sacct                     => \&analysis_sacct,
         salmon_quant              => \&analysis_salmon_quant,
         star_aln                  => \&analysis_star_aln,
         star_fusion               => \&analysis_star_fusion,
@@ -227,6 +230,7 @@ sub pipeline_rna {
         markduplicates            => q{Markduplicates},
         picardtools_mergesamfiles => q{Picardtools MergeSamFiles},
         rseqc                     => q{Rseqc},
+        sacct                     => q{Sacct},
         salmon_quant              => q{Salmon Quant},
         star_aln                  => q{STAR},
         star_fusion               => q{STAR-Fusion},
@@ -267,23 +271,15 @@ sub pipeline_rna {
         ## Family mode
         elsif ( $parameter_href->{$program}{analysis_mode} eq q{family} ) {
 
-            my $outfamily_directory = catfile(
-                $active_parameter_href->{outdata_dir},
-                $active_parameter_href->{family_id},
-                $active_parameter_href->{outaligner_dir},
-                $program,
-            );
-
             $analysis_recipe{$program}->(
                 {
-                    parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
                     file_info_href          => $file_info_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
+                    parameter_href          => $parameter_href,
                     program_name            => $program,
-                    outfamily_directory     => $outfamily_directory,
+                    sample_info_href        => $sample_info_href,
                 }
             );
         }

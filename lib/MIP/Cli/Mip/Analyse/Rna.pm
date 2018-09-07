@@ -810,6 +810,28 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
         )
     );
 
+    option(
+        q{sacct} => (
+            cmd_aliases => [qw{ sac }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Generating sbatch script for SLURM info on each submitted job},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{sacct_format_fields} => (
+            cmd_aliases => [qw{ sacfrf }],
+            cmd_tags    => [
+q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
+            ],
+            documentation => q{Format and fields of sacct output},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
     return;
 }
 
