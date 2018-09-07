@@ -315,6 +315,7 @@ star_fusion_genome_lib_dir:
   associated_program:
    - star_fusion
   data_type: SCALAR
+  default: GRCh37_v19_CTAT_lib_Feb092018
   exists_check: directory
   reference: reference_dir
   type: path
