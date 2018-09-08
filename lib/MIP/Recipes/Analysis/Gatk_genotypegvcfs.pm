@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -137,14 +137,14 @@ sub analysis_gatk_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
-    use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_step_in_parallel_to_family };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_genotypegvcfs };
+    use MIP::Program::Variantcalling::Gatk
+      qw{ gatk_genomicsdbimport  gatk_genotypegvcfs };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Set::File qw{ set_file_suffix };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -168,16 +168,6 @@ sub analysis_gatk_genotypegvcfs {
             program_name          => $program_name,
         }
       );
-
-    ## Constants
-    Readonly my $INCLUDE_NONVARIANT_SITES_TIME => 50;
-
-    # If all sites should be included
-    if ( $active_parameter_href->{gatk_genotypegvcfs_all_sites} == 1 ) {
-
-        # Including all sites requires longer processing time
-        $time = $INCLUDE_NONVARIANT_SITES_TIME;
-    }
 
     my $sbatch_script_tracker = 0;
 
@@ -307,49 +297,54 @@ sub analysis_gatk_genotypegvcfs {
 
         }
 
-        ## GATK GenoTypeGVCFs
-        say {$FILEHANDLE} q{## GATK GenoTypeGVCFs};
+        ## GATK GenoicsDBImport
+        say {$FILEHANDLE} q{## GATK GenomicsDBImport};
 
-        ## Get parameters
-        ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-        my %commands = gatk_pedigree_flag(
-            {
-                fam_file_path => catfile(
-                    $outfamily_file_directory, $family_id . $DOT . q{fam}
-                ),
-                program_name => $program_name,
-            }
-        );
-        ## Files for genotypegvcfs
+        ## Files to import into GenomicsDB
         if ( $consensus_analysis_type eq q{wes} ) {
-
             push @file_paths,
               $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf};
         }
 
-        gatk_genotypegvcfs(
+        gatk_genomicsdbimport(
             {
-                dbsnp_file_path =>
-                  $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 FILEHANDLE       => $FILEHANDLE,
                 intervals_ref    => [$contig],
                 infile_paths_ref => \@file_paths,
-                include_nonvariant_sites =>
-                  $active_parameter_href->{gatk_genotypegvcfs_all_sites},
-                java_jar => catfile(
-                    $active_parameter_href->{gatk_path},
-                    q{GenomeAnalysisTK.jar}
-                ),
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                memory_allocation => q{Xmx24g},
+                verbosity => $active_parameter_href->{gatk_logging_level},
+                genomicsdb_workspace_path => $outfile_path_prefix
+                  . $UNDERSCORE . q{DB},
+                referencefile_path =>
+                  $active_parameter_href->{human_genome_reference},
+                temp_directory    => $temp_directory,
+                memory_allocation => q{Xmx8g},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+
+        ## GATK GenoTypeGVCFs
+        say {$FILEHANDLE} q{## GATK GenoTypeGVCFs};
+
+        gatk_genotypegvcfs(
+            {
+                dbsnp_path =>
+                  $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
+                FILEHANDLE    => $FILEHANDLE,
+                intervals_ref => [$contig],
+                infile_path   => q{gendb://}
+                  . $outfile_path_prefix
+                  . $UNDERSCORE . q{DB},
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation => q{Xmx8g},
                 outfile_path      => $outfile_path_prefix . $outfile_suffix,
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
+                pedigree          => $fam_file_path,
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
                 temp_directory => $temp_directory,
+                verbosity      => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$FILEHANDLE} $NEWLINE;

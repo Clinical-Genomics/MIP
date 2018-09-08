@@ -74,7 +74,7 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    variantfile_paths_ref => {
+    infile_paths_ref => {
         inputs_ref => [
             catfile(qw{ path to mother.g.vcf }),
             catfile(qw{ path to child.g.vcf })
@@ -99,7 +99,7 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    variantfile_paths_ref => {
+    infile_paths_ref => {
         inputs_ref => [
             catfile(qw{ path to mother.g.vcf }),
             catfile(qw{ path to child.g.vcf })

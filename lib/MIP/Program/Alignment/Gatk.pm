@@ -14,9 +14,7 @@ use Params::Check qw{ check allow last_error };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Language::Java qw{ java_core };
-use MIP::Program::Base::Gatk
-  qw{ gatk_base gatk_java_options gatk_common_options };
+use MIP::Program::Base::Gatk qw{ gatk_java_options gatk_common_options };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -25,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -391,7 +389,7 @@ sub gatk_haplotypecaller {
 ## Function : Perl wrapper for writing GATK haplotypecaller recipe to $FILEHANDLE. Based on GATK 4.0.8.
 ## Returns  : @commands
 ## Arguments: $annotations_ref                               => One or more specific annotations to apply to variant calls
-##          : $dbsnp                                         => DbSNP file
+##          : $dbsnp_path                                    => Path to DbSNP file
 ##          : $dont_use_soft_clipped_bases                   => Do not analyze soft clipped bases in the reads
 ##          : $emit_ref_confidence                           => Mode for emitting reference confidence scores
 ##          : $FILEHANDLE                                    => Sbatch filehandle to write to
@@ -415,7 +413,7 @@ sub gatk_haplotypecaller {
 
     ## Flatten argument(s)
     my $annotations_ref;
-    my $dbsnp;
+    my $dbsnp_path;
     my $dont_use_soft_clipped_bases;
     my $FILEHANDLE;
     my $infile_path;
@@ -445,8 +443,8 @@ sub gatk_haplotypecaller {
             store       => \$annotations_ref,
             strict_type => 1,
         },
-        dbsnp => {
-            store       => \$dbsnp,
+        dbsnp_path => {
+            store       => \$dbsnp_path,
             strict_type => 1,
         },
         dont_use_soft_clipped_bases => {
@@ -588,8 +586,8 @@ sub gatk_haplotypecaller {
     }
 
     ## Add dbsnp
-    if ($dbsnp) {
-        push @commands, q{--dbsnp} . $SPACE . $dbsnp;
+    if ($dbsnp_path) {
+        push @commands, q{--dbsnp} . $SPACE . $dbsnp_path;
     }
 
     ## No soft clipped bases
