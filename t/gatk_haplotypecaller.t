@@ -99,7 +99,7 @@ my %specific_argument = (
         expected_output =>
           q{--annotation BaseQualityRankSumTest --annotation ChromosomeCounts},
     },
-    dbsnp => {
+    dbsnp_path => {
         input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
         expected_output => q{--dbsnp }
           . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),

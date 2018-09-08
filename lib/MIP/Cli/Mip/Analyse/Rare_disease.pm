@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1375,15 +1375,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             documentation => q{Merge gVCF records using GATK GenotypeGVCFs},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{gatk_genotypegvcfs_all_sites} => (
-            cmd_aliases   => [qw{ ggtals }],
-            documentation => q{Emit non-variant sites to the output vcf file},
-            is            => q{rw},
-            isa           => Bool,
         )
     );
 

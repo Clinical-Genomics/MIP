@@ -186,7 +186,7 @@ module_core_number:
     frequency_filter: 16
     gatk_baserecalibration: 16
     gatk_combinevariantcallsets: 1
-    gatk_genotypegvcfs: 4
+    gatk_genotypegvcfs: 2
     gatk_concatenate_genotypegvcfs: 2
     gatk_haplotypecaller: 16
     gatk_variantevalall: 1
@@ -1202,12 +1202,6 @@ gatk_genotypegvcfs:
   file_tag: _gent_
   outfile_suffix: ".vcf"
   type: program
-gatk_genotypegvcfs_all_sites:
-  associated_program:
-   - gatk_genotypegvcfs
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 gatk_genotypegvcfs_ref_gvcf:
   associated_program:
    - gatk_genotypegvcfs

@@ -29,14 +29,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       gatk_applyrecalibration
       gatk_asereadcounter
       gatk_calculategenotypeposteriors
-      gatk_catvariants gatk_combinevariants
+      gatk_catvariants
+      gatk_combinevariants
       gatk_concatenate_variants
       gatk_genomicsdbimport
       gatk_genotypegvcfs
@@ -58,172 +59,141 @@ Readonly my $SPACE        => q{ };
 
 sub gatk_genotypegvcfs {
 
-## Function : Perl wrapper for writing GATK genotypegvcfs recipe to $FILEHANDLE. Based on GATK 3.7.0.
+## Function : Perl wrapper for writing GATK GenoTypeGVCFs recipe to $FILEHANDLE. Based on GATK 4.0.8.
 ## Returns  : @commands
-## Arguments: $memory_allocation                     => Memory allocation to run Gatk
-##          : $java_use_large_pages                  => Use java large pages
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $java_jar                              => Java jar
+## Arguments: $dbsnp_path                            => Path to DbSNP file
+##          : $FILEHANDLE                            => Sbatch filehandle to write to
+##          : $infile_path                           => Path to variant input
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $infile_paths_ref                      => Infile paths {REF}
+##          : $java_use_large_pages                  => Use java large pages
+##          : $memory_allocation                     => Memory allocation to run Gatk
 ##          : $outfile_path                          => Outfile path
+##          : $pedigree                              => Pedigree files for samples
 ##          : $referencefile_path                    => Reference sequence file
 ##          : $stderrfile_path                       => Stderrfile path
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $pedigree                              => Pedigree files for samples
-##          : $dbsnp_file_path                       => DbSNP file
-##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
-##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
-##          : $logging_level                         => Set the minimum level of logging
-##          : $pedigree_validation_type              => Validation strictness for pedigree
-##          : $include_nonvariant_sites              => Include loci found to be non-variant after genotyping
+##          : $temp_directory                        => Redirect tmp files to java temp
+##          : $verbosity                             => Set the minimum level of logging
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $memory_allocation;
-    my $java_use_large_pages;
-    my $temp_directory;
-    my $java_jar;
+    my $dbsnp_path;
+    my $FILEHANDLE;
+    my $infile_path;
     my $intervals_ref;
-    my $infile_paths_ref;
+    my $memory_allocation;
     my $outfile_path;
+    my $pedigree;
     my $referencefile_path;
     my $stderrfile_path;
-    my $FILEHANDLE;
-    my $pedigree;
-    my $dbsnp_file_path;
-    my $downsample_to_coverage;
+    my $temp_directory;
 
     ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $pedigree_validation_type;
-    my $include_nonvariant_sites;
+    my $java_use_large_pages;
+    my $verbosity;
+    my $xargs_mode;
 
     my $tmpl = {
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        java_use_large_pages => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        dbsnp_path => {
+            store       => \$dbsnp_path,
             strict_type => 1,
-            store       => \$java_use_large_pages
         },
-        temp_directory => { strict_type => 1, store => \$temp_directory },
-        java_jar       => { strict_type => 1, store => \$java_jar },
-        intervals_ref =>
-          { default => [], strict_type => 1, store => \$intervals_ref },
-        infile_paths_ref => {
-            required    => 1,
+        FILEHANDLE  => { store => \$FILEHANDLE, },
+        infile_path => {
             defined     => 1,
-            default     => [],
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_paths_ref
+        },
+        intervals_ref => {
+            default     => [],
+            store       => \$intervals_ref,
+            strict_type => 1,
+        },
+        java_use_large_pages => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => {
+            store       => \$memory_allocation,
+            strict_type => 1,
         },
         outfile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
             strict_type => 1,
-            store       => \$outfile_path
+        },
+        pedigree => {
+            store       => \$pedigree,
+            strict_type => 1,
         },
         referencefile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$referencefile_path,
             strict_type => 1,
-            store       => \$referencefile_path
         },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        pedigree        => { strict_type => 1, store => \$pedigree },
-        dbsnp_file_path => { strict_type => 1, store => \$dbsnp_file_path },
-        downsample_to_coverage => {
-            allow       => qr/ ^\d+$ /sxm,
+        stderrfile_path => {
+            store       => \$stderrfile_path,
             strict_type => 1,
-            store       => \$downsample_to_coverage
         },
-        gatk_disable_auto_index_and_file_lock => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        temp_directory => {
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$gatk_disable_auto_index_and_file_lock
         },
-        logging_level => {
-            default     => q{INFO},
+        verbosity => {
             allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$verbosity,
             strict_type => 1,
-            store       => \$logging_level
         },
-        pedigree_validation_type => {
-            default     => q{SILENT},
-            allow       => [qw{ STRICT SILENT }],
-            strict_type => 1,
-            store       => \$pedigree_validation_type
-        },
-        include_nonvariant_sites => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$include_nonvariant_sites
-        },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands;
+    ## GATK GenotyeGVCFs
 
-    if ($java_jar) {    # Write java core commands to filehandle.
-        @commands = java_core(
-            {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
-                java_jar             => $java_jar,
-            }
-        );
-    }
+    # Stores commands depending on input parameters
+    my @commands = qw{ gatk };
 
-    ### Gatk base args
-    @commands = gatk_base(
+    ## Add java options
+    gatk_java_options(
         {
-            commands_ref             => \@commands,
-            analysis_type            => q{GenotypeGVCFs},
-            logging_level            => $logging_level,
-            intervals_ref            => $intervals_ref,
-            referencefile_path       => $referencefile_path,
-            pedigree                 => $pedigree,
-            pedigree_validation_type => $pedigree_validation_type,
-            downsample_to_coverage   => $downsample_to_coverage,
-            gatk_disable_auto_index_and_file_lock =>
-              $gatk_disable_auto_index_and_file_lock,
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+            xargs_mode           => $xargs_mode,
         }
     );
 
-    # Tool-specific options
+    ## Add tool command
+    push @commands, q{GenotypeGVCFs};
 
-    if ($include_nonvariant_sites) {
+    ## Add infile
+    push @commands, q{--variant} . $SPACE . $infile_path;
 
-        push @commands, q{--includeNonVariantSites};
+    ## Add common options
+    gatk_common_options(
+        {
+            commands_ref       => \@commands,
+            intervals_ref      => $intervals_ref,
+            pedigree           => $pedigree,
+            referencefile_path => $referencefile_path,
+            temp_directory     => $temp_directory,
+            verbosity          => $verbosity,
+        }
+    );
+
+    ## Add dbsnp
+    if ($dbsnp_path) {
+        push @commands, q{--dbsnp} . $SPACE . $dbsnp_path;
     }
 
-    if ($dbsnp_file_path) {
-
-        push @commands, q{--dbsnp} . $SPACE . $dbsnp_file_path;
-    }
-
-    # Infile
-    if ( @{$infile_paths_ref} ) {
-
-        push @commands,
-          q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
-          @{$infile_paths_ref};
-    }
-
-    ## Output
-    if ($outfile_path) {
-
-        push @commands, q{--out} . $SPACE . $outfile_path;
-    }
+    ## Add output
+    push @commands, q{--output} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
@@ -241,7 +211,6 @@ sub gatk_genotypegvcfs {
     );
 
     return @commands;
-
 }
 
 sub gatk_selectvariants {
@@ -2463,6 +2432,7 @@ sub gatk_genomicsdbimport {
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE                => Sbatch filehandle to write to
 ##          : $genomicsdb_workspace_path => Workspace for GenomicsDB
+##          : $infile_paths_ref     => GVCF files to be imported to GenomicsDB {REF}
 ##          : $intervals_ref             => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages      => Use java large pages
 ##          : $memory_allocation         => Memory allocation to run Gatk
@@ -2471,7 +2441,6 @@ sub gatk_genomicsdbimport {
 ##          : $referencefile_path        => Reference sequence file
 ##          : $stderrfile_path           => Stderrfile path
 ##          : $temp_directory            => Redirect tmp files to java temp
-##          : $variantfile_paths_ref     => GVCF files to be imported to GenomicsDB {REF}
 ##          : $verbosity                 => Set the minimum level of logging
 ##          : $xargs_mode                => Set if the program will be executed via xargs
 
@@ -2480,6 +2449,7 @@ sub gatk_genomicsdbimport {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $genomicsdb_workspace_path;
+    my $infile_paths_ref;
     my $intervals_ref;
     my $java_use_large_pages;
     my $memory_allocation;
@@ -2487,7 +2457,6 @@ sub gatk_genomicsdbimport {
     my $referencefile_path;
     my $stderrfile_path;
     my $temp_directory;
-    my $variantfile_paths_ref;
 
     ## Default(s)
     my $verbosity;
@@ -2499,6 +2468,13 @@ sub gatk_genomicsdbimport {
             defined     => 1,
             required    => 1,
             store       => \$genomicsdb_workspace_path,
+            strict_type => 1,
+        },
+        infile_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_paths_ref,
             strict_type => 1,
         },
         intervals_ref => {
@@ -2529,14 +2505,7 @@ sub gatk_genomicsdbimport {
         },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         temp_directory  => { store => \$temp_directory,  strict_type => 1, },
-        variantfile_paths_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$variantfile_paths_ref,
-            strict_type => 1,
-        },
-        verbosity => {
+        verbosity       => {
             allow       => [qw{ INFO ERROR FATAL }],
             default     => q{INFO},
             store       => \$verbosity,
@@ -2573,14 +2542,13 @@ sub gatk_genomicsdbimport {
     ## Add GVCF files
     push @commands,
       q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
-      @{$variantfile_paths_ref};
+      @{$infile_paths_ref};
 
     ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
             intervals_ref      => $intervals_ref,
-            read_filters_ref   => $read_filters_ref,
             referencefile_path => $referencefile_path,
             temp_directory     => $temp_directory,
             verbosity          => $verbosity,
