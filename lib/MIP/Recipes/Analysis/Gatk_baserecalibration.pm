@@ -158,7 +158,6 @@ sub analysis_gatk_baserecalibration {
       qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file};
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
-    use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Gatk
@@ -688,7 +687,6 @@ sub analysis_gatk_baserecalibration_rio {
       qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file};
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
-    use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Gatk

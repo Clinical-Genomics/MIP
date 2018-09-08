@@ -149,7 +149,7 @@ sub analysis_gatk_haplotypecaller {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
       qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
@@ -388,14 +388,6 @@ sub analysis_gatk_haplotypecaller {
             }
         }
 
-        ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-        my %commands = gatk_pedigree_flag(
-            {
-                fam_file_path => $fam_file_path,
-                program_name  => $program_name,
-            }
-        );
-
         my $infile_path =
           $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
         my $outfile_path =
@@ -408,7 +400,7 @@ sub analysis_gatk_haplotypecaller {
                 annotations_ref =>
                   \@{ $active_parameter_href->{gatk_haplotypecaller_annotation}
                   },
-                dbsnp =>
+                dbsnp_path =>
                   $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 dont_use_soft_clipped_bases => $active_parameter_href
                   ->{gatk_haplotypecaller_no_soft_clipped_bases},
@@ -420,7 +412,7 @@ sub analysis_gatk_haplotypecaller {
                 memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 outfile_path      => $outfile_path,
                 pcr_indel_model   => $pcr_indel_model,
-                pedigree          => $commands{pedigree},
+                pedigree          => $fam_file_path,
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
                 sample_ploidy => $sample_ploidy,
@@ -580,7 +572,7 @@ sub analysis_gatk_haplotypecaller_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
@@ -755,14 +747,6 @@ sub analysis_gatk_haplotypecaller_rna {
 
         my @intervals = ($contig);
 
-        ##   Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-        my %commands = gatk_pedigree_flag(
-            {
-                fam_file_path => $fam_file_path,
-                program_name  => $program_name,
-            }
-        );
-
         ## Set file paths for haplotypecaller
         my $infile_path =
           $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
@@ -776,7 +760,7 @@ sub analysis_gatk_haplotypecaller_rna {
                 annotations_ref =>
                   \@{ $active_parameter_href->{gatk_haplotypecaller_annotation}
                   },
-                dbsnp =>
+                dbsnp_path =>
                   $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 dont_use_soft_clipped_bases => $active_parameter_href
                   ->{gatk_haplotypecaller_no_soft_clipped_bases},
@@ -790,7 +774,7 @@ sub analysis_gatk_haplotypecaller_rna {
                 outfile_path      => $outfile_path,
                 pcr_indel_model   => $active_parameter_href
                   ->{gatk_haplotypecaller_pcr_indel_model},
-                pedigree => $commands{pedigree},
+                pedigree => $fam_file_path,
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
                 standard_min_confidence_threshold_for_calling =>
