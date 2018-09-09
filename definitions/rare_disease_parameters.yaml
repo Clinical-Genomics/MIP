@@ -473,6 +473,8 @@ gatk_baserecalibration:
   data_type: SCALAR
   default: 1
   file_tag: _brecal
+  program_name_path:
+   - gatk
   type: program
 gatk_baserecalibration_known_sites:
   associated_program:
@@ -532,6 +534,8 @@ samtools_subsample_mt:
   default: 1
   file_tag: _subsample_MT
   outfile_suffix: ".bam"
+  program_name_path: 
+   - samtools
   type: program
 samtools_subsample_mt_depth:
   analysis_mode: sample
@@ -1144,6 +1148,8 @@ gatk_haplotypecaller:
   default: 1
   file_tag: _haptc
   outfile_suffix: ".g.vcf"
+  program_name_path:
+   - gatk
   type: program
 gatk_haplotypecaller_annotation:
   associated_program:
@@ -1201,6 +1207,8 @@ gatk_genotypegvcfs:
   default: 1
   file_tag: _gent_
   outfile_suffix: ".vcf"
+  program_name_path:
+   - gatk
   type: program
 gatk_genotypegvcfs_ref_gvcf:
   associated_program:
