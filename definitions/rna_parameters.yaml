@@ -48,7 +48,6 @@ gatk_disable_auto_index_and_file_lock:
 gatk_downsample_to_coverage:
   associated_program:
    - gatk_asereadcounter
-   - gatk_haplotypecaller
   data_type: SCALAR
   default: 1000
   type: program_argument
@@ -377,6 +376,8 @@ gatk_splitncigarreads:
   data_type: SCALAR
   default: 0
   file_tag: _splitcigar
+  program_name_path:
+   - gatk
   type: program
 ## GATK BAM Calibration
 gatk_baserecalibration:
@@ -386,6 +387,8 @@ gatk_baserecalibration:
   data_type: SCALAR
   default: 0
   file_tag: _brecal
+  program_name_path:
+   - gatk
   type: program
 gatk_baserecalibration_known_sites:
   associated_program:
@@ -437,6 +440,8 @@ gatk_haplotypecaller:
   default: 0
   file_tag: _haptc
   outfile_suffix: ".vcf"
+  program_name_path:
+   - gatk
   type: program
 gatk_haplotypecaller_annotation:
   associated_program:

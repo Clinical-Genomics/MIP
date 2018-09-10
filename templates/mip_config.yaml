@@ -11,6 +11,10 @@ module_source_environment_command:
     - source
     - activate
     - mip_travis_py3
+  freebayes:
+    - source
+    - activate
+    - mip_travis_freebayes
   frequency_filter:
     - source
     - activate
@@ -112,10 +116,11 @@ delly_reformat: 1
 endvariantannotationblock: 1
 evaluation: 1
 fastqc: 1
-freebayes: 0
+freebayes: 1
 frequency_filter: 1
 gatk_baserecalibration: 1
 gatk_combinevariantcallsets: 1
+gatk_gathervcfs: 1
 gatk_genotypegvcfs: 1
 gatk_haplotypecaller: 1
 gatk_variantevalall: 1
@@ -153,8 +158,8 @@ vt: 1
 qccollect: 1
 ## Parameters
 frequency_genmod_filter: 1
-gatk_combinevariants_prioritize_caller: gatk,bcftools
-gatk_concatenate_genotypegvcfs_bcf_file: 1
+gatk_combinevariants_prioritize_caller: gatk,bcftools,freebayes
+gatk_gathervcfs_bcf_file: 1
 gatk_path: cluster_constant_path!
 gatk_haplotypecaller_no_soft_clipped_bases: 1
 gatk_variantrecalibration_dp_annotation: 1
