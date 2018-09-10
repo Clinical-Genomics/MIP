@@ -266,10 +266,9 @@ sub analysis_gatk_variantevalall {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $file_path_prefix . $infile_suffix,
-            java_jar    => $gatk_jar,
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            logging_level     => $active_parameter_href->{gatk_logging_level},
+            verbosity         => $active_parameter_href->{gatk_logging_level},
             memory_allocation => q{Xmx2g},
             outfile_path => $outfile_path_prefix . $call_type . $infile_suffix,
             referencefile_path => $referencefile_path,
