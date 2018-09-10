@@ -41,7 +41,7 @@ gatk_bundle_download_version:
    - cnvnator
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
-   - gatk_concatenate_genotypegvcfs 
+   - gatk_gathervcfs 
    - bcftools_mpileup
    - gatk_variantrecalibration
    - gatk_variantevalall
@@ -62,7 +62,7 @@ gatk_logging_level:
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
-   - gatk_concatenate_genotypegvcfs
+   - gatk_gathervcfs
    - bcftools_mpileup
    - gatk_variantrecalibration
    - gatk_combinevariantcallsets
@@ -76,8 +76,6 @@ gatk_logging_level:
   type: program_argument
 gatk_path:
   associated_program:
-   - gatk_genotypegvcfs
-   - gatk_concatenate_genotypegvcfs
    - bcftools_mpileup
    - gatk_variantrecalibration
    - gatk_combinevariantcallsets
@@ -154,7 +152,7 @@ java_use_large_pages:
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
-   - gatk_concatenate_genotypegvcfs
+   - gatk_gathervcfs
    - gatk_variantrecalibration
    - gatk_combinevariantcallsets
    - gatk_variantevalall
@@ -187,7 +185,7 @@ module_core_number:
     gatk_baserecalibration: 16
     gatk_combinevariantcallsets: 1
     gatk_genotypegvcfs: 2
-    gatk_concatenate_genotypegvcfs: 2
+    gatk_gathervcfs: 2
     gatk_haplotypecaller: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
@@ -239,7 +237,7 @@ module_time:
     gatk_baserecalibration: 20
     gatk_combinevariantcallsets: 2
     gatk_genotypegvcfs: 10
-    gatk_concatenate_genotypegvcfs: 2
+    gatk_gathervcfs: 2
     gatk_haplotypecaller: 30
     gatk_variantevalall: 2
     gatk_variantevalexome: 2
@@ -1217,7 +1215,7 @@ gatk_genotypegvcfs_ref_gvcf:
   exists_check: file
   reference: reference_dir
   type: path
-gatk_concatenate_genotypegvcfs:
+gatk_gathervcfs:
   analysis_mode: family
   associated_program:
    - mip
@@ -1225,10 +1223,13 @@ gatk_concatenate_genotypegvcfs:
   default: 0
   file_tag: ""
   outfile_suffix: ".vcf"
+  program_name_path:
+   - bcftools
+   - gatk
   type: program
-gatk_concatenate_genotypegvcfs_bcf_file:
+gatk_gathervcfs_bcf_file:
   associated_program:
-   - gatk_concatenate_genotypegvcfs
+   - gatk_gathervcfs
   data_type: SCALAR
   default: 0
   type: program_argument

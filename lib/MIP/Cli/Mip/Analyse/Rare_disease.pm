@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1390,7 +1390,7 @@ q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
     );
 
     option(
-        q{gatk_concatenate_genotypegvcfs} => (
+        q{gatk_gathervcfs} => (
             cmd_aliases => [qw{ gcgt }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -1401,7 +1401,7 @@ q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
     );
 
     option(
-        q{gatk_concatenate_genotypegvcfs_bcf_file} => (
+        q{gatk_gathervcfs_bcf_file} => (
             cmd_aliases => [qw{ gcgbcf }],
             cmd_flag    => q{gatk_genotype_bcf_f},
             documentation =>

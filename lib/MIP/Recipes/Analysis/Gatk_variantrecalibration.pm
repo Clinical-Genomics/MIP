@@ -957,21 +957,20 @@ sub analysis_gatk_variantrecalibration_wes {
 
     gatk_selectvariants(
         {
-            FILEHANDLE          => $FILEHANDLE,
-            exclude_nonvariants => 1,
-            infile_path         => $outfile_path_prefix
+            FILEHANDLE           => $FILEHANDLE,
+            exclude_non_variants => 1,
+            infile_path          => $outfile_path_prefix
               . $UNDERSCORE
               . q{filtered_normalized}
               . $outfile_suffix,
-            java_jar => $gatk_jar,
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             memory_allocation  => q{Xmx2g},
-            logging_level      => $active_parameter_href->{gatk_logging_level},
             outfile_path       => $outfile_path_prefix . $outfile_suffix,
             referencefile_path => $referencefile_path,
             sample_names_ref   => \@{ $active_parameter_href->{sample_ids} },
             temp_directory     => $temp_directory,
+            verbosity          => $active_parameter_href->{gatk_logging_level},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
