@@ -10,7 +10,7 @@ requires qw{ Clone 0.39 };                          # MIP
 requires qw{ Data::Diver 1.0101 };                  # MIP
 requires qw{ Data::Printer 0.40 };                  # MIP
 requires qw{ DB_File 1.840 };                       # STAR-Fusion
-requires qw{ DBD::mysql 4.043 };                    # VEP
+requires 'DBD::mysql', '== 4.043';                    # VEP
 requires qw{ DBI 1.637 };                           # VEP
 requires qw{ DB_File 1.840 };                       # STAR-Fusion
 requires qw{ Email::Valid 1.202 };                  # MIP
