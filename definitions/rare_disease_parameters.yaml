@@ -530,7 +530,7 @@ samtools_subsample_mt:
   default: 1
   file_tag: _subsample_MT
   outfile_suffix: ".bam"
-  program_name_path: 
+  program_name_path:
    - samtools
   type: program
 samtools_subsample_mt_depth:
