@@ -375,7 +375,7 @@ fastqc:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   infile_suffix: ".fastq"
   program_name_path:
@@ -387,7 +387,7 @@ bwa_mem:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _sorted
   outfile_suffix: ".bam"
   outdir_name: bwa
@@ -443,7 +443,7 @@ picardtools_mergesamfiles:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ""
   type: program
 markduplicates:
@@ -451,7 +451,7 @@ markduplicates:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _md
   program_name_path:
    - sambamba
@@ -460,7 +460,7 @@ markduplicates_picardtools_markduplicates:
   associated_program:
    - markduplicates
   data_type: SCALAR
-  default: 0
+  default: 1
   type: program_argument
 markduplicates_sambamba_markdup:
   associated_program:
@@ -511,7 +511,7 @@ gatk_baserecalibration:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _brecal
   type: program
 gatk_baserecalibration_covariates:
@@ -569,7 +569,7 @@ chanjo_sexcheck:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _sex
   outfile_suffix: ".tsv"
   program_name_path:
@@ -586,7 +586,7 @@ samtools_subsample_mt:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _subsample_MT
   outfile_suffix: ".bam"
   type: program
@@ -602,7 +602,7 @@ sambamba_depth:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _coverage
   outfile_suffix: ".bed"
   program_name_path:
@@ -678,7 +678,7 @@ picardtools_collectmultiplemetrics:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 picardtools_collecthsmetrics:
@@ -686,7 +686,7 @@ picardtools_collecthsmetrics:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _collecthsmetrics
   type: program
 rcovplots:
@@ -703,7 +703,7 @@ cnvnator:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _cnvnator
   outdir_name: cnvnator
   outfile_suffix: ".vcf"
@@ -724,7 +724,7 @@ delly_call:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _dellycall
   program_name_path:
    - delly
@@ -736,7 +736,7 @@ delly_reformat:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _dellyreformat
   program_name_path:
    - delly
@@ -770,7 +770,7 @@ expansionhunter:
   associated_program:  
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _exphun
   outdir_name: expansionhunter
   outfile_suffix: ".vcf"
@@ -791,7 +791,7 @@ manta:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _manta
   program_name_path:
    - configManta.py
@@ -804,7 +804,7 @@ tiddit:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _tiddit
   outdir_name: tiddit
   outfile_suffix: ".vcf"
@@ -831,7 +831,7 @@ sv_combinevariantcallsets:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _comb_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -862,7 +862,7 @@ sv_annotate:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ann_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -949,7 +949,7 @@ vcf2cytosure:
   associated_program:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: cyto_
   outfile_suffix: ".cgh"
   outdir_name: vcf2cytosure
@@ -993,7 +993,7 @@ sv_varianteffectpredictor:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: vep_
   program_name_path:
    - vep
@@ -1036,7 +1036,7 @@ sv_vcfparser:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: parsed_
   type: program
 sv_vcfparser_range_feature_annotation_columns:
@@ -1097,7 +1097,7 @@ sv_rankvariant:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ranked_
   type: program
 sv_genmod_annotate_regions:
@@ -1138,7 +1138,7 @@ sv_reformat:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ""
   program_name_path:
    - grep
@@ -1163,7 +1163,7 @@ bcftools_mpileup:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _mpileup_
   outdir_name: bcftools
   program_name_path:
@@ -1183,7 +1183,7 @@ freebayes:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _freebayes_
   program_name_path:
    - freebayes
@@ -1198,7 +1198,7 @@ gatk_haplotypecaller:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _haptc
   outfile_suffix: ".g.vcf"
   type: program
@@ -1255,7 +1255,7 @@ gatk_genotypegvcfs:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _gent_
   outfile_suffix: ".vcf"
   type: program
@@ -1277,7 +1277,7 @@ gatk_concatenate_genotypegvcfs:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
   type: program
@@ -1292,7 +1292,7 @@ gatk_variantrecalibration:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: vrecal_
   program_name_path:
    - bcftools
@@ -1378,7 +1378,7 @@ gatk_combinevariantcallsets:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _comb_
   outfile_suffix: ".vcf"
   type: program
@@ -1415,7 +1415,7 @@ prepareforvariantannotationblock:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outfile_suffix: ".vcf.gz"
   type: program
@@ -1425,7 +1425,7 @@ rhocall:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: rhocall_
   program_name_path:
    - rhocall
@@ -1446,7 +1446,7 @@ vt:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: vt_
   program_name_path:
    - vt
@@ -1484,7 +1484,7 @@ frequency_filter:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: frqf_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -1521,7 +1521,7 @@ gatk_variantevalall:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outfile_suffix: ".varianteval"
   type: program
@@ -1530,7 +1530,7 @@ gatk_variantevalexome:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outfile_suffix: ".varianteval"
   program_name_path:
@@ -1560,7 +1560,7 @@ varianteffectpredictor:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: vep_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -1628,7 +1628,7 @@ vcfparser:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: parsed_
   outfile_suffix: ".vcf"
   type: program
@@ -1685,7 +1685,7 @@ snpeff:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: snpeff_
   outfile_suffix: ".vcf"
   type: program
@@ -1759,7 +1759,7 @@ peddy:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   program_name_path:
    - peddy
@@ -1769,7 +1769,7 @@ plink:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   program_name_path:
    - plink2
@@ -1779,7 +1779,7 @@ variant_integrity:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   program_name_path:
    - variant_integrity
@@ -1844,7 +1844,7 @@ rankvariant:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ranked_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -1905,7 +1905,7 @@ endvariantannotationblock:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outfile_suffix: ".vcf"
   program_name_path:
@@ -1931,7 +1931,7 @@ qccollect:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 qccollect_regexp_file:
@@ -1960,7 +1960,7 @@ multiqc:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outdir_name: multiqc
   program_name_path:
@@ -1978,7 +1978,7 @@ analysisrunstatus:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 ## Sacct
@@ -1987,7 +1987,7 @@ sacct:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 sacct_format_fields:

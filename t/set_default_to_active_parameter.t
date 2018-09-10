@@ -116,7 +116,7 @@ my $log = initiate_logger(
 );
 
 my @order_parameters =
-  qw{ bwa_mem_bamstats gatk_baserecalibration_covariates gatk_genotypegvcfs_ref_gvcf gatk_variantrecalibration_resource_indel bwa_mem freebayes markduplicates sv_vcfparser_range_feature_file };
+  qw{ bcftools_mpileup_filter_variant bwa_mem bwa_mem_bamstats gatk_baserecalibration_covariates gatk_genotypegvcfs_ref_gvcf gatk_variantrecalibration_resource_indel markduplicates sv_vcfparser_range_feature_file };
 
 my %active_parameter = (
     bwa_mem_bamstats                          => 0,
@@ -164,7 +164,7 @@ is( $active_parameter{bwa_mem_bamstats},
 is( $active_parameter{markduplicates_picardtools_markduplicates},
     q{1}, q{Did not set default for not defined associated_program parameter} );
 
-is( $active_parameter{freebayes}, 0, q{Set default for scalar parameter} );
+is( $active_parameter{bcftools_mpileup_filter_variant}, 0, q{Set default for scalar parameter} );
 
 my @expected_covariets =
   qw{ ReadGroupCovariate ContextCovariate CycleCovariate QualityScoreCovariate };
