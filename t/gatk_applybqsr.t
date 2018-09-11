@@ -33,8 +33,10 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+Readonly my $COMMA       => q{,};
+Readonly my $SPACE       => q{ };
+Readonly my $QUALSCORE_1 => 10;
+Readonly my $QUALSCORE_2 => 20;
 
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
@@ -104,9 +106,14 @@ my %specific_argument = (
         expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
     },
     static_quantized_quals_ref => {
-        inputs_ref => [qw{ 10 20 }],
-        expected_output =>
-          q{--static-quantized-quals 10 --static-quantized-quals 20},
+        inputs_ref      => [ $QUALSCORE_1, $QUALSCORE_2 ],
+        expected_output => q{--static-quantized-quals}
+          . $SPACE
+          . $QUALSCORE_1
+          . $SPACE
+          . q{--static-quantized-quals}
+          . $SPACE
+          . $QUALSCORE_2,
     },
 );
 
