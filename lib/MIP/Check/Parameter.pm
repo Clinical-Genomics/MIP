@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -588,6 +588,7 @@ sub check_mutually_exclusive_parameters {
       ( markduplicates_picardtools_markduplicates =>
           [qw{ markduplicates_sambamba_markdup }] );
 
+  PARAMETER:
     while ( my ( $parameter, $exclusive_parameters_ref ) =
         each %mutally_exclusive_params )
     {
