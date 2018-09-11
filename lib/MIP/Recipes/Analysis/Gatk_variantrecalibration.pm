@@ -147,13 +147,12 @@ sub analysis_gatk_variantrecalibration_wgs {
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::Language::Java qw{ java_core };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
     use MIP::Program::Variantcalling::Gatk
-      qw{ gatk_variantrecalibrator gatk_applyrecalibration gatk_selectvariants gatk_calculategenotypeposteriors };
+      qw{ gatk_variantrecalibrator gatk_applyvqsr gatk_selectvariants gatk_calculategenotypeposteriors };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_processing_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -385,8 +384,8 @@ sub analysis_gatk_variantrecalibration_wgs {
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        ## GATK ApplyRecalibration
-        say {$FILEHANDLE} q{## GATK ApplyRecalibration};
+        ## GATK ApplyVQSR
+        say {$FILEHANDLE} q{## GATK ApplyVQSR};
 
         ## Get parameters
         my $outfile_path;
@@ -411,24 +410,21 @@ sub analysis_gatk_variantrecalibration_wgs {
               ->{gatk_variantrecalibration_indel_tsfilter_level};
         }
 
-        gatk_applyrecalibration(
+        gatk_applyvqsr(
             {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => $infile_path,
-                java_jar    => $gatk_jar,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                memory_allocation        => q{Xmx10g},
-                mode                     => $mode,
-                outfile_path             => $outfile_path,
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
-                recal_file_path          => $recal_file_path,
-                referencefile_path       => $referencefile_path,
-                temp_directory           => $temp_directory,
+                memory_allocation  => q{Xmx10g},
+                mode               => $mode,
+                outfile_path       => $outfile_path,
+                recal_file_path    => $recal_file_path,
+                referencefile_path => $referencefile_path,
+                temp_directory     => $temp_directory,
                 tranches_file_path => $recal_file_path . $DOT . q{tranches},
                 ts_filter_level    => $ts_filter_level,
+                verbosity => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -663,13 +659,12 @@ sub analysis_gatk_variantrecalibration_wes {
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::Language::Java qw{ java_core };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
     use MIP::Program::Variantcalling::Gatk
-      qw{ gatk_variantrecalibrator gatk_applyrecalibration gatk_selectvariants gatk_calculategenotypeposteriors };
+      qw{ gatk_variantrecalibrator gatk_applyvqsr gatk_selectvariants gatk_calculategenotypeposteriors };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
@@ -880,8 +875,8 @@ sub analysis_gatk_variantrecalibration_wes {
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        ## GATK ApplyRecalibration
-        say {$FILEHANDLE} q{## GATK ApplyRecalibration};
+        ## GATK ApplyVQSR
+        say {$FILEHANDLE} q{## GATK ApplyVQSR};
 
         ## Get parameters
         my $outfile_path;
@@ -895,24 +890,21 @@ sub analysis_gatk_variantrecalibration_wes {
         $ts_filter_level = $active_parameter_href
           ->{gatk_variantrecalibration_snv_tsfilter_level};
 
-        gatk_applyrecalibration(
+        gatk_applyvqsr(
             {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => $infile_path,
-                java_jar    => $gatk_jar,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                memory_allocation        => q{Xmx10g},
-                mode                     => $mode,
-                outfile_path             => $outfile_path,
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
-                recal_file_path          => $recal_file_path,
-                referencefile_path       => $referencefile_path,
-                temp_directory           => $temp_directory,
+                memory_allocation  => q{Xmx10g},
+                mode               => $mode,
+                outfile_path       => $outfile_path,
+                recal_file_path    => $recal_file_path,
+                referencefile_path => $referencefile_path,
+                temp_directory     => $temp_directory,
                 tranches_file_path => $recal_file_path . $DOT . q{tranches},
                 ts_filter_level    => $ts_filter_level,
+                verbosity => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
