@@ -27,7 +27,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ rseqc_bam_stat };
+    our @EXPORT_OK = qw{ rseqc_bam_stat rseqc_read_duplication };
 }
 
 ## Constants
@@ -74,7 +74,6 @@ sub rseqc_bam_stat {
             strict_type => 1,
             store       => \$min_map_quality,
         },
-
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -97,6 +96,98 @@ sub rseqc_bam_stat {
     push @commands, q{--input-file} . $EQUAL . $infile_path;
 
     push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
+sub rseqc_read_duplication {
+
+## Function : Perl wrapper for rseqc read_duplication.py. Version 2.6.4.
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Input file path
+##          : $min_map_quality        => Minimum mapping quality
+##          : $outfiles_path_prefix   => Outpath prefix for output files
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfiles_path_prefix;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $min_map_quality;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path,
+        },
+        min_map_quality => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => $MIN_MAP_QUALITY,
+            strict_type => 1,
+            store       => \$min_map_quality,
+        },
+        outfiles_path_prefix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfiles_path_prefix,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ read_duplication.py };
+
+    push @commands, q{--input-file} . $EQUAL . $infile_path;
+
+    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+
+    push @commands, q{--out-prefix} . $EQUAL . $outfiles_path_prefix;
 
     push @commands,
       unix_standard_streams(

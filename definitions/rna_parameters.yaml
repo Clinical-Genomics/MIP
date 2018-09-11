@@ -466,6 +466,7 @@ rseqc:
   file_tag: _rseq
   program_name_path:
    - bam_stat.py
+   - read_duplication.py
   outfile_suffix: ".txt"
   type: program
 ## GATK Genotype

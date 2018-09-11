@@ -150,7 +150,7 @@ sub analysis_rseqc {
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::Program::Qc::Rseqc qw{ rseqc_bam_stat };
+    use MIP::Program::Qc::Rseqc qw{ rseqc_bam_stat rseqc_read_duplication };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 
@@ -247,7 +247,7 @@ sub analysis_rseqc {
     my $outfile_path_prefix = catfile( $outsample_directory, $outfile_prefix );
 
     ## Rseq
-    say {$FILEHANDLE} q{## Rseq};
+    say {$FILEHANDLE} q{## Rseq bam_stat.py};
     rseqc_bam_stat(
         {
             FILEHANDLE      => $FILEHANDLE,
@@ -256,6 +256,18 @@ sub analysis_rseqc {
               . $UNDERSCORE
               . q{bam_stat}
               . $outfile_suffix,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    say {$FILEHANDLE} q{## Rseqc read_duplication};
+    rseqc_read_duplication(
+        {
+            FILEHANDLE           => $FILEHANDLE,
+            infile_path          => $infile_path,
+            outfiles_path_prefix => $outfile_path_prefix
+              . $UNDERSCORE
+              . q{read_duplication},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
