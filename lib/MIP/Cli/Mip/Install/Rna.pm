@@ -70,7 +70,7 @@ sub run {
 
     ## Update installation array
     if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
-        @{ $parameter{installations} } = qw{ emip estar erseqc };
+        @{ $parameter{installations} } = qw{ emip epy3 erseqc estar };
     }
 
     ## Nest the command line parameters and overwrite the default
@@ -106,8 +106,9 @@ sub _build_usage {
             is            => q{rw},
             isa           => Dict [
                 emip   => Optional [Str],
-                estar  => Optional [Str],
+                epy3   => Optional [Str],
                 erseqc => Optional [Str],
+                estar  => Optional [Str],
             ],
             required => 0,
         ),
@@ -134,7 +135,7 @@ sub _build_usage {
             cmd_tags      => [q{Default: emip}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa      => ArrayRef [ enum( [qw{ emip full estar erseqc }] ), ],
+            isa => ArrayRef [ enum( [qw{ emip full epy3 erseqc estar }] ), ],
             required => 0,
         ),
     );
@@ -146,18 +147,21 @@ sub _build_usage {
             documentation => q{Set program versions},
             is            => q{rw},
             isa           => Dict [
-                bcftools    => Optional [Str],
-                cufflinks   => Optional [Str],
-                fastqc      => Optional [Str],
-                htslib      => Optional [Str],
-                java_jdk    => Optional [Str],
-                picard      => Optional [Str],
-                pip         => Optional [Str],
-                python      => Optional [Str],
-                salmon      => Optional [Str],
-                samtools    => Optional [Str],
-                star        => Optional [Str],
-                star_fusion => Optional [Str],
+                bcftools         => Optional [Str],
+                cufflinks        => Optional [Str],
+                fastqc           => Optional [Str],
+                q{fusion-filter} => Optional [Str],
+                htslib           => Optional [Str],
+                java_jdk         => Optional [Str],
+                multiqc          => Optional [Str],
+                picard           => Optional [Str],
+                pip              => Optional [Str],
+                python           => Optional [Str],
+                rseqc            => Optional [Str],
+                salmon           => Optional [Str],
+                samtools         => Optional [Str],
+                star             => Optional [Str],
+                star_fusion      => Optional [Str],
             ],
             required => 0,
         ),
@@ -197,7 +201,7 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          fusion-filter gatk htslib mip_scripts picard rseqc
+                          fusion-filter gatk htslib mip_scripts multiqc picard rseqc
                           salmon sambamba samtools
                           star star_fusion }
                     ]
@@ -228,7 +232,7 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          fusion-filter gatk htslib mip_scripts picard rseqc
+                          fusion-filter gatk htslib mip_scripts multiqc picard rseqc
                           salmon sambamba samtools
                           star star_fusion }
                     ]

@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.010;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rna };
@@ -160,6 +160,7 @@ sub pipeline_rna {
     use MIP::Recipes::Analysis::Gatk_variantfiltration
       qw{ analysis_gatk_variantfiltration };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
+    use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles };
@@ -210,6 +211,7 @@ sub pipeline_rna {
         gatk_splitncigarreads     => \&analysis_gatk_splitncigarreads,
         gatk_variantfiltration    => \&analysis_gatk_variantfiltration,
         markduplicates            => \&analysis_markduplicates,
+        multiqc                   => \&analysis_multiqc,
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
         rseqc                     => \&analysis_rseqc,
         sacct                     => \&analysis_sacct,
@@ -227,6 +229,7 @@ sub pipeline_rna {
         gatk_haplotypecaller      => q{GATK Haplotypecaller},
         gatk_splitncigarreads     => q{GATK SplitNCigarReads},
         gatk_variantfiltration    => q{GATK VariantFiltration},
+        multiqc                   => q{Multiqc},
         markduplicates            => q{Markduplicates},
         picardtools_mergesamfiles => q{Picardtools MergeSamFiles},
         rseqc                     => q{Rseqc},

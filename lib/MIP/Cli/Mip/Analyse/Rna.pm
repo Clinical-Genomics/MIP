@@ -811,6 +811,26 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
     );
 
     option(
+        q{multiqc} => (
+            cmd_aliases => [qw{ mqc }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+q{Create aggregate bioinformatics analysis report across many samples},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{multiqc_per_sample} => (
+            cmd_aliases   => [qw{ mqcps }],
+            documentation => q{Generate sample specific reports},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{sacct} => (
             cmd_aliases => [qw{ sac }],
             cmd_tags    => [q{Analysis recipe switch}],

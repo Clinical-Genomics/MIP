@@ -110,6 +110,7 @@ module_time:
     gatk_variantfiltration: 1
     gzip_fastq: 2
     markduplicates: 4
+    multiqc: 1
     picardtools_mergesamfiles: 2
     rseqc: 3
     sacct: 1
@@ -130,6 +131,7 @@ module_core_number:
     gatk_splitncigarreads: 16
     gatk_variantfiltration: 1
     gzip_fastq: 0
+    multiqc: 1
     markduplicates: 16
     picardtools_mergesamfiles: 16
     rseqc: 1
@@ -573,6 +575,24 @@ bootstrapann:
   file_tag: _bootstr
   outfile_suffix: ".vcf"
   type: program
+## MultiQC
+multiqc:
+  analysis_mode: family
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  outdir_name: multiqc
+  program_name_path:
+   - multiqc
+  type: program
+multiqc_per_sample:
+  associated_program:
+   - multiqc
+  data_type: SCALAR
+  default: 0
+  type: program_argument
 ## Sacct
 sacct:
   analysis_mode: family

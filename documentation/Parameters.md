@@ -26,7 +26,7 @@ To add an analysis recipe switch follow these steps:
  - Add the parameter at the corresponding CLI command level YAML file in the `definition` folder in the MIP directory. Set the key `analysis_mode`to sample or family.
  - Add the parameter to the corresponing CLI perl module in `lib/MIP/Cli` in MIPs lib directory.
  - Add the analysis recipe switch to the initiation map file in the `definition` folder in the MIP directory.
- - Add the parameter name to the analysis_recipe and program_name hashes in the `lib/MIP/Recipes/Pipeline/[Pipeline]` perl module.
+ - Add the parameter name to the `analysis_recipe` and `program_name` hashes in the `lib/MIP/Recipes/Pipeline/[Pipeline]` perl module.
  - Fill your analysis_recipe with content.
 
 To add a build recipe switch follow these steps:

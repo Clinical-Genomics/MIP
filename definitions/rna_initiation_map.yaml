@@ -22,4 +22,5 @@ CHAIN_ALL:
       - CHAIN_ASE:
          - gatk_asereadcounter
          - bootstrapann
+   - multiqc
    - sacct
