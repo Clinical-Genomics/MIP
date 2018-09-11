@@ -767,6 +767,7 @@ delly_types:
    - INS
   type: program_argument
 expansionhunter:
+  analysis_mode: sample
   associated_program:  
    - mip
   data_type: SCALAR
@@ -779,7 +780,6 @@ expansionhunter:
   program_type: structural_variant_callers
   type: program
 expansionhunter_repeat_specs_dir:
-  analysis_mode: sample
   associated_program:
    - expansionhunter
   data_type: SCALAR
