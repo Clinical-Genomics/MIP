@@ -41,11 +41,7 @@ gatk_bundle_download_version:
    - cnvnator
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
-<<<<<<< HEAD
-   - gatk_concatenate_genotypegvcfs
-=======
-   - gatk_gathervcfs 
->>>>>>> GATK4 GatherVcfs, #306
+   - gatk_gathervcfs
    - bcftools_mpileup
    - gatk_variantrecalibration
    - gatk_variantevalall
@@ -536,7 +532,7 @@ samtools_subsample_mt:
   default: 1
   file_tag: _subsample_MT
   outfile_suffix: ".bam"
-  program_name_path: 
+  program_name_path:
    - samtools
   type: program
 samtools_subsample_mt_depth:

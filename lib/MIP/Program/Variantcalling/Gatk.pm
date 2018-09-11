@@ -36,7 +36,6 @@ BEGIN {
       gatk_applyrecalibration
       gatk_asereadcounter
       gatk_calculategenotypeposteriors
-      gatk_catvariants
       gatk_combinevariants
       gatk_concatenate_variants
       gatk_gathervcfscloud
@@ -398,197 +397,6 @@ sub gatk_selectvariants {
       );
 
     return @commands;
-}
-
-sub gatk_catvariants {
-
-## Function : Perl wrapper for writing GATK catvariants recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : @commands
-## Arguments: $memory_allocation                     => Memory allocation to run Gatk
-##          : $java_use_large_pages                  => Use java large pages
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $java_jar                              => Java jar
-##          : $gatk_path                             => Path to java jar and analysis to run
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $infile_paths_ref                      => Infile paths {REF}
-##          : $outfile_path                          => Outfile path
-##          : $referencefile_path                    => Reference sequence file
-##          : $stderrfile_path                       => Stderrfile path
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
-##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
-##          : $logging_level                         => Set the minimum level of logging
-##          : $assume_sorted                         => Assume_sorted should be true if the input files are already sorted
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $memory_allocation;
-    my $java_use_large_pages;
-    my $temp_directory;
-    my $gatk_path;
-    my $intervals_ref;
-    my $infile_paths_ref;
-    my $outfile_path;
-    my $referencefile_path;
-    my $stderrfile_path;
-    my $FILEHANDLE;
-    my $downsample_to_coverage;
-
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $assume_sorted;
-
-    my $tmpl = {
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        java_use_large_pages => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$java_use_large_pages
-        },
-        temp_directory => { strict_type => 1, store => \$temp_directory },
-        gatk_path      => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$gatk_path
-        },
-        intervals_ref =>
-          { default => [], strict_type => 1, store => \$intervals_ref },
-        infile_paths_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$infile_paths_ref
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        referencefile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$referencefile_path
-        },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        FILEHANDLE             => { store => \$FILEHANDLE },
-        downsample_to_coverage => {
-            allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
-            store       => \$downsample_to_coverage
-        },
-        gatk_disable_auto_index_and_file_lock => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$gatk_disable_auto_index_and_file_lock
-        },
-        logging_level => {
-            default     => q{INFO},
-            allow       => [qw{ INFO ERROR FATAL }],
-            strict_type => 1,
-            store       => \$logging_level
-        },
-        assume_sorted => {
-            default     => 1,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$assume_sorted
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    # Stores commands depending on input parameters
-    my @commands;
-
-    ## Write java core commands to filehandle
-    if ($memory_allocation) {
-
-        @commands = java_core(
-            {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
-            }
-        );
-    }
-    ## Base command
-    push @commands, q{-cp};
-
-    ## Gatk path
-    push @commands, $gatk_path;
-
-    push @commands, q{--logging_level} . $SPACE . $logging_level;
-
-    if ( @{$intervals_ref} ) {
-
-        push @commands,
-          q{--intervals} . $SPACE . join $SPACE . q{--intervals} . $SPACE,
-          @{$intervals_ref};
-    }
-
-    if ($referencefile_path) {
-
-        push @commands, q{--reference} . $SPACE . $referencefile_path;
-    }
-
-    if ($downsample_to_coverage) {
-
-        push @commands,
-          q{--downsample_to_coverage} . $SPACE . $downsample_to_coverage;
-    }
-
-    if ($gatk_disable_auto_index_and_file_lock) {
-
-        push @commands,
-          q{--disable_auto_index_creation_and_locking_when_reading_rods};
-    }
-
-    ## Tool-specific options
-    if ($assume_sorted) {
-
-        push @commands, q{--assumeSorted};
-    }
-
-    ## Infile
-    if ( @{$infile_paths_ref} ) {
-
-        push @commands,
-          q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
-          @{$infile_paths_ref};
-
-    }
-
-    ## Output
-    if ($outfile_path) {
-
-        push @commands, q{--outputFile} . $SPACE . $outfile_path;
-    }
-
-    push @commands,
-      unix_standard_streams(
-        {
-            stderrfile_path => $stderrfile_path,
-        }
-      );
-
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-
-    return @commands;
-
 }
 
 sub gatk_variantrecalibrator {
@@ -1817,7 +1625,6 @@ sub gatk_concatenate_variants {
 ##          : $infile_postfix         => Will be combined with the each array element
 ##          : $outfile_path_prefix    => Combined outfile path prefix
 ##          : $outfile_suffix         => Combined outfile suffix
-##          : $human_genome_reference => Human genome reference {REF}
 
     my ($arg_href) = @_;
 
@@ -1831,97 +1638,88 @@ sub gatk_concatenate_variants {
     my $outfile_path_prefix;
     my $outfile_suffix;
 
-    ## Default(s)
-    my $human_genome_reference;
-
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         continue => {
             allow => [ 0, 1 ],
             store => \$continue,
         },
         elements_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
-            store       => \$elements_ref
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
-        infile_prefix => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$elements_ref,
             strict_type => 1,
-            store       => \$infile_prefix
         },
-        infile_postfix => { strict_type => 1, store => \$infile_postfix },
-        outfile_path_prefix =>
-          { strict_type => 1, store => \$outfile_path_prefix, },
+        FILEHANDLE => {
+            defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+        infile_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_prefix,
+            strict_type => 1,
+        },
+        infile_postfix => {
+            store       => \$infile_postfix,
+            strict_type => 1,
+        },
+        outfile_path_prefix => {
+            store       => \$outfile_path_prefix,
+            strict_type => 1,
+        },
         outfile_suffix => {
-            default     => q{.vcf},
             allow       => [qw{ .vcf }],
-            strict_type => 1,
+            default     => q{.vcf},
             store       => \$outfile_suffix,
-        },
-        human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
             strict_type => 1,
-            store       => \$human_genome_reference
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Variantcalling::Gatk qw(gatk_catvariants);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_gathervcfscloud);
 
     ## Outfile path be built
     my $outfile_path;
 
     ## No postfix
     if ( not defined $infile_postfix ) {
-
         $infile_postfix = $EMPTY_STR;
     }
 
     ## Build $outfile_path
     if ( defined $outfile_path_prefix ) {
-
         $outfile_path = $outfile_path_prefix . $outfile_suffix;
     }
     else {
-
         $outfile_path = $infile_prefix . $outfile_suffix;
     }
 
-    say {$FILEHANDLE} q{## GATK CatVariants};
+    say {$FILEHANDLE} q{## GATK GatherVCFs};
 
     ## Assemble infile paths
     my @infile_paths =
       map { $infile_prefix . $_ . $infile_postfix } @{$elements_ref};
 
-    my $gatk_jar =
-        catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} )
-      . $SPACE
-      . q{org.broadinstitute.gatk.tools.CatVariants};
-    gatk_catvariants(
+    gatk_gathervcfscloud(
         {
-            memory_allocation => q{Xmx4g},
+            FILEHANDLE       => $FILEHANDLE,
+            infile_paths_ref => \@infile_paths,
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            temp_directory     => $active_parameter_href->{temp_directory},
-            gatk_path          => $gatk_jar,
-            infile_paths_ref   => \@infile_paths,
-            outfile_path       => $outfile_path,
-            referencefile_path => $human_genome_reference,
-            logging_level      => $active_parameter_href->{gatk_logging_level},
-            FILEHANDLE         => $FILEHANDLE,
+            memory_allocation => q{Xmx4g},
+            outfile_path      => $outfile_path,
+            temp_directory    => $active_parameter_href->{temp_directory},
+            verbosity         => $active_parameter_href->{gatk_logging_level},
         }
     );
 
