@@ -866,7 +866,6 @@ sub analysis_gatk_variantrecalibration_wes {
                 infile_path     => $infile_path,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                logging_level => $active_parameter_href->{gatk_logging_level},
                 max_gaussian_level => $max_gaussian_level,
                 memory_allocation  => q{Xmx10g},
                 mode               => $mode,
@@ -876,6 +875,7 @@ sub analysis_gatk_variantrecalibration_wes {
                 rscript_file_path  => $recal_file_path . $DOT . q{plots.R},
                 temp_directory     => $temp_directory,
                 tranches_file_path => $recal_file_path . $DOT . q{tranches},
+                verbosity => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$FILEHANDLE} $NEWLINE;

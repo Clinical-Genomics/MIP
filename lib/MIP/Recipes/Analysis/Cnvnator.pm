@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cnvnator };
@@ -158,7 +158,6 @@ sub analysis_cnvnator {
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files};
-    use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Samtools
@@ -166,7 +165,7 @@ sub analysis_cnvnator {
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate };
     use MIP::Program::Variantcalling::Cnvnator
       qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_catvariants };
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_gathervcfscloud };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -475,29 +474,22 @@ sub analysis_cnvnator {
         $outfile = $infile_prefix . $outfile_suffix;
     }
 
-    say {$FILEHANDLE} q{## GATK CatVariants};
+    say {$FILEHANDLE} q{## GATK GatherVCFs};
 
     ## Assemble infile paths
     my @infile_paths =
       map { $infile_prefix . $_ . $infile_postfix } @{$elements_ref};
 
-    my $gatk_path =
-        catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} )
-      . $SPACE
-      . q{org.broadinstitute.gatk.tools.CatVariants};
-
-    gatk_catvariants(
+    gatk_gathervcfscloud(
         {
-            memory_allocation => q{Xmx4g},
+            FILEHANDLE       => $FILEHANDLE,
+            infile_paths_ref => \@infile_paths,
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            temp_directory     => $active_parameter_href->{temp_directory},
-            gatk_path          => $gatk_path,
-            infile_paths_ref   => \@infile_paths,
-            outfile_path       => $outfile,
-            referencefile_path => $human_genome_reference,
-            logging_level      => $active_parameter_href->{gatk_logging_level},
-            FILEHANDLE         => $FILEHANDLE,
+            memory_allocation => q{Xmx4g},
+            outfile_path      => $outfile,
+            temp_directory    => $active_parameter_href->{temp_directory},
+            verbosity         => $active_parameter_href->{gatk_logging_level},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
