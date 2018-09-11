@@ -1124,4 +1124,3 @@ sub _build_gatk_resource_command {
 }
 
 1;
-
