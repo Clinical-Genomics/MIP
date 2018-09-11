@@ -33,6 +33,7 @@ BEGIN {
 ## Constants
 Readonly my $ASTERIX    => q{*};
 Readonly my $AMPERSAND  => q{&};
+Readonly my $COLON      => q{:};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
@@ -309,12 +310,12 @@ sub analysis_gatk_variantrecalibration_wgs {
         say {$FILEHANDLE} q{## GATK VariantRecalibrator};
 
         ##Get parameters
-        my @infiles;
+        my $infile_path;
         my $max_gaussian_level;
 
         if ( $mode eq q{SNP} ) {
 
-            push @infiles, $file_path_prefix . $infile_suffix;
+            $infile_path = $file_path_prefix . $infile_suffix;
 
             ## Use hard filtering
             if ($enable_snv_max_gaussians_filter) {
@@ -326,7 +327,7 @@ sub analysis_gatk_variantrecalibration_wgs {
         ## Use created recalibrated snp vcf as input
         if ( $mode eq q{INDEL} ) {
 
-            push @infiles,
+            $infile_path =
               $outfile_path_prefix . $DOT . q{SNV} . $infile_suffix;
 
             ## Use hard filtering
@@ -365,24 +366,21 @@ sub analysis_gatk_variantrecalibration_wgs {
         my $recal_file_path = $file_path_prefix . $DOT . q{intervals};
         gatk_variantrecalibrator(
             {
-                annotations_ref  => \@annotations,
-                FILEHANDLE       => $FILEHANDLE,
-                infile_paths_ref => \@infiles,
-                java_jar         => $gatk_jar,
+                annotations_ref => \@annotations,
+                FILEHANDLE      => $FILEHANDLE,
+                infile_path     => $infile_path,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                max_gaussian_level       => $max_gaussian_level,
-                memory_allocation        => q{Xmx10g},
-                mode                     => $mode,
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
-                recal_file_path          => $recal_file_path,
-                referencefile_path       => $referencefile_path,
-                resources_ref            => \@resources,
+                max_gaussian_level => $max_gaussian_level,
+                memory_allocation  => q{Xmx10g},
+                mode               => $mode,
+                outfile_path       => $recal_file_path,
+                referencefile_path => $referencefile_path,
+                resources_ref      => \@resources,
                 rscript_file_path  => $recal_file_path . $DOT . q{plots.R},
                 temp_directory     => $temp_directory,
                 tranches_file_path => $recal_file_path . $DOT . q{tranches},
+                verbosity => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -391,7 +389,6 @@ sub analysis_gatk_variantrecalibration_wgs {
         say {$FILEHANDLE} q{## GATK ApplyRecalibration};
 
         ## Get parameters
-        my $infile_path;
         my $outfile_path;
         my $ts_filter_level;
 
@@ -828,12 +825,12 @@ sub analysis_gatk_variantrecalibration_wes {
         say {$FILEHANDLE} q{## GATK VariantRecalibrator};
 
         ##Get parameters
-        my @infiles;
         my $max_gaussian_level;
+        my $infile_path;
 
         ## Exome analysis use combined reference for more power
 # Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
-        push @infiles, $file_path_prefix . $infile_suffix;
+        $infile_path = $file_path_prefix . $infile_suffix;
 
         my @annotations =
           @{ $active_parameter_href->{gatk_variantrecalibration_annotations} };
@@ -845,7 +842,6 @@ sub analysis_gatk_variantrecalibration_wes {
                 remove_contigs_ref => [qw{ DP }],
             }
         );
-
         my @snv_resources = _build_gatk_resource_command(
             { resources_href => $resource_snv_href, } );
         my @indel_resources = _build_gatk_resource_command(
@@ -865,21 +861,18 @@ sub analysis_gatk_variantrecalibration_wes {
         my $recal_file_path = $file_path_prefix . $DOT . q{intervals};
         gatk_variantrecalibrator(
             {
-                annotations_ref  => \@annotations,
-                FILEHANDLE       => $FILEHANDLE,
-                infile_paths_ref => \@infiles,
-                java_jar         => $gatk_jar,
+                annotations_ref => \@annotations,
+                FILEHANDLE      => $FILEHANDLE,
+                infile_path     => $infile_path,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
                 logging_level => $active_parameter_href->{gatk_logging_level},
-                max_gaussian_level       => $max_gaussian_level,
-                memory_allocation        => q{Xmx10g},
-                mode                     => $mode,
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
-                recal_file_path          => $recal_file_path,
-                referencefile_path       => $referencefile_path,
-                resources_ref            => \@resources,
+                max_gaussian_level => $max_gaussian_level,
+                memory_allocation  => q{Xmx10g},
+                mode               => $mode,
+                outfile_path       => $recal_file_path,
+                referencefile_path => $referencefile_path,
+                resources_ref      => \@resources,
                 rscript_file_path  => $recal_file_path . $DOT . q{plots.R},
                 temp_directory     => $temp_directory,
                 tranches_file_path => $recal_file_path . $DOT . q{tranches},
@@ -891,7 +884,6 @@ sub analysis_gatk_variantrecalibration_wes {
         say {$FILEHANDLE} q{## GATK ApplyRecalibration};
 
         ## Get parameters
-        my $infile_path;
         my $outfile_path;
         my $ts_filter_level;
         ## Exome analysis use combined reference for more power
@@ -1128,7 +1120,7 @@ sub _build_gatk_resource_command {
 
     while ( my ( $file, $string ) = each %{$resources_href} ) {
 
-        push @built_resources, $string . $SPACE . $file;
+        push @built_resources, $string . $COLON . $file;
     }
     return @built_resources;
 }

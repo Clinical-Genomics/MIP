@@ -237,8 +237,8 @@ sub gatk_selectvariants {
 ##          : $sample_names_ref                      => Include genotypes from this sample {REF}
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $xargs_mode                            => Set if the program will be executed via xargs
 ##          : $verbosity                             => Set the minimum level of logging
+##          : $xargs_mode                            => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
@@ -595,278 +595,210 @@ sub gatk_variantrecalibrator {
 
 ## Function : Perl wrapper for writing GATK variantrecalibrator recipe to $FILEHANDLE. Based on GATK 3.7.0.
 ## Returns  : @commands
-## Arguments: $memory_allocation                     => Memory allocation to run Gatk
-##          : $java_use_large_pages                  => Use java large pages
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $java_jar                              => Java jar
-##          : $infile_paths_ref                      => Infile paths
-##          : $resources_ref                         => A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm (training and truth setsare required to run)
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $read_filters_ref                      => Filters to apply to reads before analysis {REF}
-##          : $static_quantized_quals_ref            => Use static quantized quality scores to a given number of levels (with -BQSR) {REF}
 ##          : $annotations_ref                       => One or more specific annotations to apply to variant calls
-##          : $referencefile_path                    => Reference sequence file
-##          : $mode                                  => Mode for emitting reference confidence scores
-##          : $base_quality_score_recalibration_file => Input covariates table file for on-the-fly base quality score recalibration
-##          : $stderrfile_path                       => Stderrfile path
 ##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $pedigree                              => Pedigree files for samples
-##          : $rscript_file_path                     => Rscript file path
-##          : $recal_file_path                       => The output recal file used by ApplyRecalibration
-##          : $tranches_file_path                    => The output tranches file used by ApplyRecalibration
-##          : $num_cpu_threads_per_data_thread       => Number of CPU threads to allocate per data thread
-##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
+##          : $infile_path                           => Infile path
+##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages                  => Use java large pages
 ##          : $max_gaussian_level                    => Max number of Gaussians for the positive model
-##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
-##          : $disable_indel_qual                    => Disable printing of base insertion and deletion tags (with -BQSR)
-##          : $logging_level                         => Set the minimum level of logging
-##          : $pedigree_validation_type              => Validation strictness for pedigree
+##          : $memory_allocation                     => Memory allocation to run Gatk
+##          : $mode                                  => Mode for emitting reference confidence scores
+##          : $outfile_path                          => The output recal file used by ApplyRecalibration
+##          : $read_filters_ref                      => Filters to apply to reads before analysis {REF}
+##          : $referencefile_path                    => Reference sequence file
+##          : $resources_ref                         => A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm (training and truth setsare required to run)
+##          : $rscript_file_path                     => Rscript file path
+##          : $stderrfile_path                       => Stderrfile path
+##          : $temp_directory                        => Redirect tmp files to java temp
+##          : $tranches_file_path                    => The output tranches file used by ApplyRecalibration
+##          : $verbosity	                         => Set the minimum level of logging
+##          : $xargs_mode                            => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $memory_allocation;
-    my $java_use_large_pages;
-    my $temp_directory;
-    my $java_jar;
-    my $infile_paths_ref;
-    my $resources_ref;
-    my $intervals_ref;
-    my $read_filters_ref;
-    my $static_quantized_quals_ref;
     my $annotations_ref;
-    my $referencefile_path;
-    my $mode;
-    my $base_quality_score_recalibration_file;
-    my $stderrfile_path;
     my $FILEHANDLE;
-    my $pedigree;
-    my $rscript_file_path;
-    my $recal_file_path;
-    my $tranches_file_path;
-    my $num_cpu_threads_per_data_thread;
-    my $downsample_to_coverage;
+    my $infile_path;
+    my $intervals_ref;
     my $max_gaussian_level;
+    my $memory_allocation;
+    my $mode;
+    my $outfile_path;
+    my $read_filters_ref;
+    my $referencefile_path;
+    my $resources_ref;
+    my $rscript_file_path;
+    my $stderrfile_path;
+    my $temp_directory;
+    my $tranches_file_path;
 
     ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $disable_indel_qual;
-    my $logging_level;
-    my $pedigree_validation_type;
+    my $java_use_large_pages;
+    my $verbosity;
+    my $xargs_mode;
 
     my $tmpl = {
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        java_use_large_pages => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$java_use_large_pages
-        },
-        temp_directory   => { strict_type => 1, store => \$temp_directory },
-        java_jar         => { strict_type => 1, store => \$java_jar },
-        infile_paths_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$infile_paths_ref
-        },
-        resources_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$resources_ref
-        },
-        intervals_ref =>
-          { default => [], strict_type => 1, store => \$intervals_ref },
-        read_filters_ref =>
-          { default => [], strict_type => 1, store => \$read_filters_ref },
-        static_quantized_quals_ref => {
-            default     => [],
-            strict_type => 1,
-            store       => \$static_quantized_quals_ref
-        },
         annotations_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
-            store       => \$annotations_ref
-        },
-        referencefile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
-            store       => \$referencefile_path
-        },
-        mode => {
             required    => 1,
+            store       => \$annotations_ref,
+            strict_type => 1,
+        },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
+        infile_path => {
             defined     => 1,
-            allow       => [qw{ SNP INDEL BOTH }],
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$mode
         },
-        base_quality_score_recalibration_file => {
+        intervals_ref => {
+            default     => [],
+            store       => \$intervals_ref,
             strict_type => 1,
-            store       => \$base_quality_score_recalibration_file
         },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        FILEHANDLE        => { store       => \$FILEHANDLE },
-        pedigree          => { strict_type => 1, store => \$pedigree },
-        rscript_file_path => { strict_type => 1, store => \$rscript_file_path },
-        recal_file_path   => { strict_type => 1, store => \$recal_file_path },
-        tranches_file_path =>
-          { strict_type => 1, store => \$tranches_file_path },
-        num_cpu_threads_per_data_thread => {
-            allow       => qr/ ^\d+$ /sxm,
+        java_use_large_pages => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
             strict_type => 1,
-            store       => \$num_cpu_threads_per_data_thread
-        },
-        downsample_to_coverage => {
-            allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
-            store       => \$downsample_to_coverage
         },
         max_gaussian_level => {
             allow       => [ undef, qr/ ^\d+$ /sxm ],
+            store       => \$max_gaussian_level,
             strict_type => 1,
-            store       => \$max_gaussian_level
         },
-        gatk_disable_auto_index_and_file_lock => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        memory_allocation => {
+            store       => \$memory_allocation,
             strict_type => 1,
-            store       => \$gatk_disable_auto_index_and_file_lock
         },
-        disable_indel_qual => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        mode => {
+            allow       => [ undef, qw{ SNP INDEL BOTH } ],
+            defined     => 1,
+            store       => \$mode,
             strict_type => 1,
-            store       => \$disable_indel_qual
         },
-        logging_level => {
-            default     => q{INFO},
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        read_filters_ref => {
+            default     => [],
+            store       => \$read_filters_ref,
+            strict_type => 1,
+        },
+        referencefile_path => {
+            defined     => 1,
+            store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        resources_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$resources_ref,
+            strict_type => 1,
+        },
+        rscript_file_path => {
+            store       => \$rscript_file_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        tranches_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$tranches_file_path,
+            strict_type => 1,
+        },
+        verbosity => {
             allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$verbosity,
             strict_type => 1,
-            store       => \$logging_level
         },
-        pedigree_validation_type => {
-            default     => q{SILENT},
-            allow       => [qw{ STRICT SILENT }],
+        xargs_mode => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$xargs_mode,
             strict_type => 1,
-            store       => \$pedigree_validation_type
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands;
+    ## GATK GenotyeGVCFs
 
-    if ($java_jar) {    # Write java core commands to filehandle.
-        @commands = java_core(
-            {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
-                java_jar             => $java_jar,
-            }
-        );
-    }
+    # Stores commands depending on input parameters
+    my @commands = qw{ gatk };
 
-    ### Gatk base args
-    @commands = gatk_base(
+    ## Add java options
+    gatk_java_options(
         {
-            commands_ref             => \@commands,
-            analysis_type            => q{VariantRecalibrator},
-            logging_level            => $logging_level,
-            intervals_ref            => $intervals_ref,
-            referencefile_path       => $referencefile_path,
-            pedigree                 => $pedigree,
-            pedigree_validation_type => $pedigree_validation_type,
-            downsample_to_coverage   => $downsample_to_coverage,
-            gatk_disable_auto_index_and_file_lock =>
-              $gatk_disable_auto_index_and_file_lock,
-            base_quality_score_recalibration_file =>
-              $base_quality_score_recalibration_file,
-            disable_indel_qual         => $disable_indel_qual,
-            static_quantized_quals_ref => $static_quantized_quals_ref,
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+            xargs_mode           => $xargs_mode,
         }
     );
 
-    if ($num_cpu_threads_per_data_thread) {
+    ## Add tool command
+    push @commands, q{VariantRecalibrator};
 
-        push @commands,
-            q{--num_cpu_threads_per_data_thread}
-          . $SPACE
-          . $num_cpu_threads_per_data_thread;
-    }
+    ## Add infile
+    push @commands, q{--variant} . $SPACE . $infile_path;
 
-    if ( @{$read_filters_ref} ) {
+    ## Add common options
+    gatk_common_options(
+        {
+            commands_ref       => \@commands,
+            intervals_ref      => $intervals_ref,
+            read_filters_ref   => $read_filters_ref,
+            referencefile_path => $referencefile_path,
+            temp_directory     => $temp_directory,
+            verbosity          => $verbosity,
+        }
+    );
 
-        push @commands,
-          q{--read_filter} . $SPACE . join $SPACE . q{--read_filter} . $SPACE,
-          @{$read_filters_ref};
-    }
+    ## Add annotations
+    push @commands,
+      q{--use-annotation} . $SPACE . join $SPACE . q{--use-annotation} . $SPACE,
+      @{$annotations_ref};
 
-    if ( @{$static_quantized_quals_ref} ) {
-
-        push
-          @commands,
-          q{--static_quantized_quals}
-          . $SPACE
-          . join $SPACE
-          . q{--static_quantized_quals}
-          . $SPACE, @{$static_quantized_quals_ref};
-    }
-
-    if ($rscript_file_path) {
-
-        push @commands, q{--rscript_file} . $SPACE . $rscript_file_path;
-    }
-
-    if ($recal_file_path) {
-
-        push @commands, q{--recal_file} . $SPACE . $recal_file_path;
-    }
-
-    if ($tranches_file_path) {
-
-        push @commands, q{--tranches_file} . $SPACE . $tranches_file_path;
-    }
-
+    ## Add max gaussians for positive model
     if ($max_gaussian_level) {
-
-        push @commands, q{--maxGaussians} . $SPACE . $max_gaussian_level;
+        push @commands, q{--max-gaussians} . $SPACE . $max_gaussian_level;
     }
 
-    if ( @{$annotations_ref} ) {
-
-        push @commands,
-            q{--use_annotation}
-          . $SPACE
-          . join $SPACE
-          . q{--use_annotation}
-          . $SPACE, @{$annotations_ref};
-    }
-
-    if ( @{$resources_ref} ) {
-
-        push @commands,
-          q{--resource:} . join $SPACE . q{--resource:}, @{$resources_ref};
-    }
-
+    ## Add mode
     if ($mode) {
-
         push @commands, q{--mode} . $SPACE . $mode;
     }
 
-    ## Infile
-    if ( @{$infile_paths_ref} ) {
-
-        push @commands, q{--input} . $SPACE . join q{--input_file} . $SPACE,
-          @{$infile_paths_ref};
+    ## Add path to r-script
+    if ($rscript_file_path) {
+        push @commands, q{--rscript-file} . $SPACE . $rscript_file_path;
     }
+
+    ## Add list of resources
+    push @commands,
+      q{--resource} . $SPACE . join $SPACE . q{--resource} . $SPACE,
+      @{$resources_ref};
+
+    ## Add path to tranches file
+    push @commands, q{--tranches-file} . $SPACE . $tranches_file_path;
+
+    ## Add path to output recal file
+    push @commands, q{--output} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
@@ -884,7 +816,6 @@ sub gatk_variantrecalibrator {
     );
 
     return @commands;
-
 }
 
 sub gatk_applyrecalibration {
