@@ -466,7 +466,11 @@ rseqc:
   file_tag: _rseq
   program_name_path:
    - bam_stat.py
-   - gtf2bed
+   - infer_experiment.py
+   - inner_distance.py
+   - junction_annotation.py
+   - junction_saturation.py
+   - read_distribution.py
    - read_duplication.py
   outfile_suffix: ".txt"
   type: program
