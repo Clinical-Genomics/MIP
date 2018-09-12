@@ -1291,7 +1291,7 @@ gatk_variantrecalibration_resource_indel:
   data_type: HASH
   default:
      GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
-     GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,VCF,known=true,training=true,truth=true,prior=12.0"
+     GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,known=true,training=true,truth=true,prior=12.0"
   exists_check: file
   reference: reference_dir
   type: path
@@ -1301,8 +1301,8 @@ gatk_variantrecalibration_resource_snv:
   data_type: HASH
   default:
      GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
-     GRCh37_hapmap_-3.3-.vcf: "hapmap,VCF,known=false,training=true,truth=true,prior=15.0"
-     GRCh37_1000g_omni_-2.5-.vcf: "omni,VCF,known=false,training=true,truth=false,prior=12.0"
+     GRCh37_hapmap_-3.3-.vcf: "hapmap,known=false,training=true,truth=true,prior=15.0"
+     GRCh37_1000g_omni_-2.5-.vcf: "omni,known=false,training=true,truth=false,prior=12.0"
      GRCh37_1000g_snps_high_confidence_-phase1-.vcf: "1000G,known=false,training=true,truth=false,prior=10.0"
   exists_check: file
   reference: reference_dir
