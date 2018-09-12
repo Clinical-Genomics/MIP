@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename };
+use File::Basename qw{ basename fileparse };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -153,6 +153,7 @@ sub analysis_rseqc {
     use MIP::Program::Qc::Rseqc qw{ rseqc_bam_stat rseqc_read_duplication };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
+    use MIP::Program::Utility::Bedops qw{ bedops_gtf2bed };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -245,6 +246,25 @@ sub analysis_rseqc {
     my $infile_path =
       catfile( $insample_directory, $infile_prefix . $infile_suffix );
     my $outfile_path_prefix = catfile( $outsample_directory, $outfile_prefix );
+
+    say {$FILEHANDLE} q{## Rseq gtf to bed conversion};
+    ## Preprocessing gtf to bed
+    # Get file name and remove file_suffix and add new file suffix
+    my $bed_file =
+      fileparse( basename( $active_parameter_href->{rseqc_transcripts_file} ),
+        qr/[.]GTF/xsm )
+      . $DOT . q{bed};
+    my $bed_file_path_prefix = catfile( $outsample_directory, $bed_file );
+
+    bedops_gtf2bed(
+        {
+            FILEHANDLE      => $FILEHANDLE,
+            stdinfile_path  => $active_parameter_href->{rseqc_transcripts_file},
+            stdoutfile_path => $bed_file_path_prefix,
+
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Rseq
     say {$FILEHANDLE} q{## Rseq bam_stat.py};

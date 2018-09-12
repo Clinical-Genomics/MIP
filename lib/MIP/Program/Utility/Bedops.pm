@@ -1,4 +1,4 @@
-package MIP::PATH::TO::MODULE;
+package MIP::Program::Utility::Bedops;
 
 use 5.026;
 use Carp;
@@ -24,18 +24,18 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ space separated subroutines };
+    our @EXPORT_OK = qw{ bedops_gtf2bed };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
 
-sub name_of_subroutine {
+sub bedops_gtf2bed {
 
-## Function : Perl wrapper for generic commands module.
+## Function : Perl wrapper for bedops bedops_gtf2bed. Version 2.4.35.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
@@ -51,8 +51,6 @@ sub name_of_subroutine {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
-
-    ## Default(s)
 
     my $tmpl = {
         FILEHANDLE => {
@@ -76,11 +74,7 @@ sub name_of_subroutine {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ BASE COMMAND };
-
-    ############################################
-    ## ADD COMMAND SPECIFIC FLAGS AND OPTIONS ##
-    ############################################
+    my @commands = qw{ gtf2bed };
 
     push @commands,
       unix_standard_streams(

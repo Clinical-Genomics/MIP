@@ -64,6 +64,7 @@ epy3:
   shell:
 erseqc:
   conda:
+    bedops: 2.4.35
     rseqc: 2.6.4
   pip:
   shell:
