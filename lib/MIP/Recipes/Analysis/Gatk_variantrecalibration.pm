@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -441,18 +441,16 @@ sub analysis_gatk_variantrecalibration_wgs {
             {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => $outfile_path_prefix . $outfile_suffix,
-                java_jar    => $gatk_jar,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                memory_allocation        => q{Xmx6g},
-                outfile_path             => $outfile_path,
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
-                referencefile_path       => $referencefile_path,
+                memory_allocation            => q{Xmx6g},
+                outfile_path                 => $outfile_path,
+                pedigree                     => $commands{pedigree},
+                referencefile_path           => $referencefile_path,
                 supporting_callset_file_path => $active_parameter_href
                   ->{gatk_calculategenotypeposteriors_support_set},
                 temp_directory => $temp_directory,
+                verbosity      => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -970,18 +968,16 @@ sub analysis_gatk_variantrecalibration_wes {
             {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => $outfile_path_prefix . $outfile_suffix,
-                java_jar    => $gatk_jar,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                memory_allocation        => q{Xmx6g},
-                outfile_path             => $outfile_path,
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
-                temp_directory           => $temp_directory,
-                referencefile_path       => $referencefile_path,
+                memory_allocation            => q{Xmx6g},
+                outfile_path                 => $outfile_path,
+                pedigree                     => $commands{pedigree},
+                referencefile_path           => $referencefile_path,
                 supporting_callset_file_path => $active_parameter_href
                   ->{gatk_calculategenotypeposteriors_support_set},
+                temp_directory => $temp_directory,
+                verbosity      => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
