@@ -150,7 +150,8 @@ sub analysis_rseqc {
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::Program::Qc::Rseqc qw{ rseqc_bam_stat rseqc_read_duplication };
+    use MIP::Program::Qc::Rseqc
+      qw{ rseqc_bam_stat rseqc_infer_experiment rseqc_inner_distance rseqc_junction_annotation rseqc_junction_saturation rseqc_read_distribution rseqc_read_duplication };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
     use MIP::Program::Utility::Bedops qw{ bedops_gtf2bed };
@@ -180,21 +181,19 @@ sub analysis_rseqc {
     my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
         $sample_id, $active_parameter_href->{outaligner_dir} );
     my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
+        $sample_id, $program_name );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            program_directory     => catfile(
-                $active_parameter_href->{outaligner_dir}, $program_name
-            ),
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
@@ -247,6 +246,7 @@ sub analysis_rseqc {
       catfile( $insample_directory, $infile_prefix . $infile_suffix );
     my $outfile_path_prefix = catfile( $outsample_directory, $outfile_prefix );
 
+    ## Bedops conversion
     say {$FILEHANDLE} q{## Rseq gtf to bed conversion};
     ## Preprocessing gtf to bed
     # Get file name and remove file_suffix and add new file suffix
@@ -254,19 +254,72 @@ sub analysis_rseqc {
       fileparse( basename( $active_parameter_href->{rseqc_transcripts_file} ),
         qr/[.]GTF/xsm )
       . $DOT . q{bed};
-    my $bed_file_path_prefix = catfile( $outsample_directory, $bed_file );
+    my $bed_file_path = catfile( $outsample_directory, $bed_file );
 
     bedops_gtf2bed(
         {
             FILEHANDLE      => $FILEHANDLE,
             stdinfile_path  => $active_parameter_href->{rseqc_transcripts_file},
-            stdoutfile_path => $bed_file_path_prefix,
+            stdoutfile_path => $bed_file_path,
 
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Rseq
+    say {$FILEHANDLE} q{## Rseq infer_experiment.py};
+    rseqc_infer_experiment(
+        {
+            bed_file_path   => $bed_file_path,
+            FILEHANDLE      => $FILEHANDLE,
+            infile_path     => $infile_path,
+            stdoutfile_path => $outfile_path_prefix
+              . $UNDERSCORE
+              . q{infer_experiment}
+              . $outfile_suffix,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    say {$FILEHANDLE} q{## Rseq junction_annotation.py};
+    rseqc_junction_annotation(
+        {
+            bed_file_path        => $bed_file_path,
+            FILEHANDLE           => $FILEHANDLE,
+            infile_path          => $infile_path,
+            outfiles_path_prefix => $outfile_path_prefix
+              . $UNDERSCORE
+              . q{junction_annotation},
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    say {$FILEHANDLE} q{## Rseq junction_saturation.py};
+    rseqc_junction_saturation(
+        {
+            bed_file_path        => $bed_file_path,
+            FILEHANDLE           => $FILEHANDLE,
+            infile_path          => $infile_path,
+            outfiles_path_prefix => $outfile_path_prefix
+              . $UNDERSCORE
+              . q{junction_saturation},
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    say {$FILEHANDLE} q{## Rseq inner_distance.py};
+    rseqc_inner_distance(
+        {
+            bed_file_path        => $bed_file_path,
+            FILEHANDLE           => $FILEHANDLE,
+            infile_path          => $infile_path,
+            outfiles_path_prefix => $outfile_path_prefix
+              . $UNDERSCORE
+              . q{inner_distance},
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
     say {$FILEHANDLE} q{## Rseq bam_stat.py};
     rseqc_bam_stat(
         {
@@ -275,6 +328,20 @@ sub analysis_rseqc {
             stdoutfile_path => $outfile_path_prefix
               . $UNDERSCORE
               . q{bam_stat}
+              . $outfile_suffix,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    say {$FILEHANDLE} q{## Rseq read_distribution.py};
+    rseqc_read_distribution(
+        {
+            bed_file_path   => $bed_file_path,
+            FILEHANDLE      => $FILEHANDLE,
+            infile_path     => $infile_path,
+            stdoutfile_path => $outfile_path_prefix
+              . $UNDERSCORE
+              . q{read_distribution}
               . $outfile_suffix,
         }
     );
