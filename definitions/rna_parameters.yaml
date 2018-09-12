@@ -474,7 +474,7 @@ rseqc_transcripts_file:
   associated_program:
    - rseqc
   data_type: SCALAR
-  default: GRCh37_transcripts_-v1_0-.GTF
+  default: GRCh37_gencode_-v28-.bed
   exists_check: file
   reference: reference_dir
   type: path

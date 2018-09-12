@@ -154,7 +154,6 @@ sub analysis_rseqc {
       qw{ rseqc_bam_stat rseqc_infer_experiment rseqc_inner_distance rseqc_junction_annotation rseqc_junction_saturation rseqc_read_distribution rseqc_read_duplication };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
-    use MIP::Program::Utility::Bedops qw{ bedops_gtf2bed };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -163,7 +162,8 @@ sub analysis_rseqc {
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $bed_file_path = $active_parameter_href->{rseqc_transcripts_file};
+    my $job_id_chain  = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -245,26 +245,6 @@ sub analysis_rseqc {
     my $infile_path =
       catfile( $insample_directory, $infile_prefix . $infile_suffix );
     my $outfile_path_prefix = catfile( $outsample_directory, $outfile_prefix );
-
-    ## Bedops conversion
-    say {$FILEHANDLE} q{## Rseq gtf to bed conversion};
-    ## Preprocessing gtf to bed
-    # Get file name and remove file_suffix and add new file suffix
-    my $bed_file =
-      fileparse( basename( $active_parameter_href->{rseqc_transcripts_file} ),
-        qr/[.]GTF/xsm )
-      . $DOT . q{bed};
-    my $bed_file_path = catfile( $outsample_directory, $bed_file );
-
-    bedops_gtf2bed(
-        {
-            FILEHANDLE      => $FILEHANDLE,
-            stdinfile_path  => $active_parameter_href->{rseqc_transcripts_file},
-            stdoutfile_path => $bed_file_path,
-
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
 
     ## Rseq
     say {$FILEHANDLE} q{## Rseq infer_experiment.py};
