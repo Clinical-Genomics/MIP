@@ -90,7 +90,7 @@ genmod_annotate_cadd_files:
   - GRCh37_cadd_1000g_phase3_-v1.3-.tsv.gz
   - GRCh37_cadd_exac_r0.3_-v1.3-.tsv.gz
 genmod_annotate_spidex_file: GRCh37_spidex_public_noncommercial_-v1_0-.tab.gz
-genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv 
+genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
 rank_model_file: rank_model_cmms_-v1.19-.ini
 sambamba_depth_bed: GRCh37_scout_exons_-2017-01-.bed
