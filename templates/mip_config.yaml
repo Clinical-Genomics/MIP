@@ -59,6 +59,10 @@ module_source_environment_command:
    - source
    - activate
    - mip_travis_cnvnator
+  tiddit :
+   - source
+   - activate
+   - mip_travis_tiddit
 project_id: travis_test
 program_source_environment_command:
   genmod:
