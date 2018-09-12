@@ -278,11 +278,12 @@ sub analysis_gatk_gathervcfs {
             ignore_safety_checks => 0,
             infile_paths_ref     => \@vcffile_paths,
             memory_allocation    => q{Xmx4G},
-            outfile_path   => catfile( $outfile_path_prefix, $outfile_suffix ),
-            temp_directory => $temp_directory,
-            verbosity      => $active_parameter_href->{gatk_logging_level},
+            outfile_path         => $outfile_path_prefix . $outfile_suffix,
+            temp_directory       => $temp_directory,
+            verbosity => $active_parameter_href->{gatk_logging_level},
         }
     );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Produce a bcf compressed and index from vcf
     if ( $active_parameter_href->{gatk_gathervcfs_bcf_file} ) {
