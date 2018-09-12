@@ -106,7 +106,7 @@ module_time:
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
     gatk_haplotypecaller: 2
-    gatk_splitncigarreads: 1
+    gatk_splitncigarreads: 5
     gatk_variantfiltration: 1
     gzip_fastq: 2
     markduplicates: 4
@@ -469,6 +469,14 @@ rseqc:
    - read_duplication.py
   outfile_suffix: ".txt"
   type: program
+rseqc_transcripts_file:
+  associated_program:
+   - rseqc
+  data_type: SCALAR
+  default: GRCh37_transcripts_-v1_0-.GTF
+  exists_check: file
+  reference: reference_dir
+  type: path
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample
