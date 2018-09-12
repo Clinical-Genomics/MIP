@@ -27,7 +27,8 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ rseqc_bam_stat rseqc_read_duplication };
+    our @EXPORT_OK =
+      qw{ rseqc_bam_stat rseqc_infer_experiment rseqc_inner_distance rseqc_junction_annotation rseqc_junction_saturation rseqc_read_distribution rseqc_read_duplication };
 }
 
 ## Constants
@@ -63,10 +64,10 @@ sub rseqc_bam_stat {
             store => \$FILEHANDLE,
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infile_path,
+            strict_type => 1,
         },
         min_map_quality => {
             allow       => qr/ ^\d+$ /sxm,
@@ -96,6 +97,484 @@ sub rseqc_bam_stat {
     push @commands, q{--input-file} . $EQUAL . $infile_path;
 
     push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
+sub rseqc_infer_experiment {
+
+## Function : Perl wrapper for rseqc infer_experiment.py. Version 2.6.4.
+## Returns  : @commands
+## Arguments: $bed_file_path          => Transcript bed file path
+##          : $infile_path            => Input file path
+##          : $min_map_quality        => Minimum mapping quality
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $bed_file_path;
+    my $FILEHANDLE;
+    my $infile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $min_map_quality;
+
+    my $tmpl = {
+        bed_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$bed_file_path,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        min_map_quality => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => $MIN_MAP_QUALITY,
+            strict_type => 1,
+            store       => \$min_map_quality,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ infer_experiment.py };
+
+    push @commands, q{--input-file} . $EQUAL . $infile_path;
+
+    push @commands, q{--refgene} . $EQUAL . $bed_file_path;
+
+    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
+sub rseqc_inner_distance {
+
+## Function : Perl wrapper for rseqc inner_distance.py. Version 2.6.4.
+## Returns  : @commands
+## Arguments: $bed_file_path          => Transcript bed file path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Input file path
+##          : $min_map_quality        => Minimum mapping quality
+##          : $outfiles_path_prefix   => Outpath prefix for output files
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $bed_file_path;
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfiles_path_prefix;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $min_map_quality;
+
+    my $tmpl = {
+        bed_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$bed_file_path,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        min_map_quality => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => $MIN_MAP_QUALITY,
+            strict_type => 1,
+            store       => \$min_map_quality,
+        },
+        outfiles_path_prefix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfiles_path_prefix,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ inner_distance.py };
+
+    push @commands, q{--input-file} . $EQUAL . $infile_path;
+
+    push @commands, q{--refgene} . $EQUAL . $bed_file_path;
+
+    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+
+    push @commands, q{--out-prefix} . $EQUAL . $outfiles_path_prefix;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
+sub rseqc_junction_annotation {
+
+## Function : Perl wrapper for rseqc junction_annotation.py. Version 2.6.4.
+## Returns  : @commands
+## Arguments: $bed_file_path          => Transcript bed file path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Input file path
+##          : $min_map_quality        => Minimum mapping quality
+##          : $outfiles_path_prefix   => Outpath prefix for output files
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $bed_file_path;
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfiles_path_prefix;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $min_map_quality;
+
+    my $tmpl = {
+        bed_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$bed_file_path,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        min_map_quality => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => $MIN_MAP_QUALITY,
+            strict_type => 1,
+            store       => \$min_map_quality,
+        },
+        outfiles_path_prefix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfiles_path_prefix,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ junction_annotation.py };
+
+    push @commands, q{--input-file} . $EQUAL . $infile_path;
+
+    push @commands, q{--refgene} . $EQUAL . $bed_file_path;
+
+    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+
+    push @commands, q{--out-prefix} . $EQUAL . $outfiles_path_prefix;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
+sub rseqc_junction_saturation {
+
+## Function : Perl wrapper for rseqc junction_saturation.py. Version 2.6.4.
+## Returns  : @commands
+## Arguments: $bed_file_path          => Transcript bed file path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Input file path
+##          : $min_map_quality        => Minimum mapping quality
+##          : $outfiles_path_prefix   => Outpath prefix for output files
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $bed_file_path;
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfiles_path_prefix;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $min_map_quality;
+
+    my $tmpl = {
+        bed_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$bed_file_path,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        min_map_quality => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => $MIN_MAP_QUALITY,
+            strict_type => 1,
+            store       => \$min_map_quality,
+        },
+        outfiles_path_prefix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfiles_path_prefix,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ junction_saturation.py };
+
+    push @commands, q{--input-file} . $EQUAL . $infile_path;
+
+    push @commands, q{--refgene} . $EQUAL . $bed_file_path;
+
+    push @commands, q{--mapq} . $EQUAL . $min_map_quality;
+
+    push @commands, q{--out-prefix} . $EQUAL . $outfiles_path_prefix;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
+sub rseqc_read_distribution {
+
+## Function : Perl wrapper for rseqc read_distribution.py. Version 2.6.4.
+## Returns  : @commands
+## Arguments: $bed_file_path          => Transcript bed file path
+##          : $infile_path            => Input file path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $bed_file_path;
+    my $FILEHANDLE;
+    my $infile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        bed_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$bed_file_path,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ read_distribution.py };
+
+    push @commands, q{--input-file} . $EQUAL . $infile_path;
+
+    push @commands, q{--refgene} . $EQUAL . $bed_file_path;
 
     push @commands,
       unix_standard_streams(
@@ -147,10 +626,10 @@ sub rseqc_read_duplication {
             store => \$FILEHANDLE,
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infile_path,
+            strict_type => 1,
         },
         min_map_quality => {
             allow       => qr/ ^\d+$ /sxm,
