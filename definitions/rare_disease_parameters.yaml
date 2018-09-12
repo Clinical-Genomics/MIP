@@ -7,7 +7,6 @@ decompose_normalize_references:
   default:
    - gatk_baserecalibration_known_sites
    - gatk_haplotypecaller_snp_known_set
-   - gatk_variantrecalibration_resource_snv
    - gatk_variantrecalibration_resource_indel
    - frequency_genmod_filter_1000g
    - sv_vcfanno_config_file
@@ -189,7 +188,7 @@ module_core_number:
     gatk_haplotypecaller: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
-    gatk_variantrecalibration: 16
+    gatk_variantrecalibration: 2
     gzip_fastq: 0
     manta: 16
     markduplicates: 16
@@ -1242,6 +1241,7 @@ gatk_variantrecalibration:
   file_tag: vrecal_
   program_name_path:
    - bcftools
+   - gatk
   outdir_name: gatk
   program_type: variant_callers
   outfile_suffix: ".vcf"

@@ -75,13 +75,6 @@ emip:
         pip:
         python: 2.7
       version: 1.1.2
-    tiddit:
-      conda_dependency:
-        cmake:
-        gcc:
-        numpy:
-        python: 2.7
-      version: 2.2.1
     vcf2cytosure:
       version: gitRepo
     vt:
@@ -139,6 +132,33 @@ epy3:
   shell:
     sambamba: 0.6.1
 
+## Tiddit env spec
+etiddit:
+  conda:
+    cython:
+    gcc:
+    numpy:
+    python: 2.7
+    scipy:
+    svdb: 1.1.2
+  pip:
+  shell:
+    svdb:
+      conda_dependency:
+        cython:
+        numpy:
+        pip:
+        python: 2.7
+        scipy:
+      version: 1.1.2
+    tiddit:
+      conda_dependency:
+        cmake:
+        gcc:
+        numpy:
+        python: 2.7
+      version: 2.2.5
+
 # VEP environment spec
 evep:
   conda:
@@ -170,6 +190,7 @@ environment_name:
   epeddy:
   epy3:
   evep:
+  etiddit:
 
 # Environments to install
 installations:
@@ -179,6 +200,7 @@ installations:
   - epeddy
   - epy3
   - evep
+  - etiddit
 
 # Optional name of log file
 log_file: ~
