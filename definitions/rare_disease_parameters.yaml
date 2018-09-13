@@ -254,7 +254,7 @@ module_time:
     evaluation: 1
     expansionhunter: 1
     fastqc: 10
-    freebayes: 20
+    freebayes: 30
     frequency_filter: 2
     gatk_baserecalibration: 20
     gatk_combinevariantcallsets: 2
@@ -296,7 +296,7 @@ module_time:
     variant_integrity: 1
     vcfparser: 5
     vt: 10
-    vcf2cytosure: 10
+    vcf2cytosure: 20
   type: mip
 infile_dirs:
   associated_program:
