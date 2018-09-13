@@ -76,7 +76,7 @@ my ( @range_feature_annotation_columns, @select_feature_annotation_columns );
 my ( %consequence_severity, %range_data, %select_data, %snpeff_cmd, %tree,
     %meta_data );
 
-my $vcfparser_version = q{1.2.12};
+my $vcfparser_version = q{1.2.13};
 
 ## Enables cmd "vcfparser.pl" to print usage help
 if ( !@ARGV ) {
