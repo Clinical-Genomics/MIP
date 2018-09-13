@@ -94,7 +94,7 @@ sub create_fam_file {
             strict_type => 1,
         },
         FILEHANDLE => {
-            store => \$FILEHANDLE
+            store => \$FILEHANDLE,
         },
         include_header => {
             allow       => [ 0, 1 ],

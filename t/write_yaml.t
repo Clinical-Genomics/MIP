@@ -103,7 +103,7 @@ my $quoted_numeric_string;
 LINE:
 while ( my $line = <$YAML> ) {
 
-    ($quoted_numeric_string) = $line =~ /java_use_large_pages:\s+'1'/xsm;
+    ($quoted_numeric_string) = $line =~ /(java_use_large_pages:\s+'1')/xsm;
     last LINE if ($quoted_numeric_string);
 }
 
