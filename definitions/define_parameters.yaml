@@ -249,7 +249,7 @@ module_time:
     pendvariantannotationblock: 2
     pevaluation: 1
     pfastqc: 10
-    pfreebayes: 20
+    pfreebayes: 40
     pfrequency_filter: 2
     pgatk_baserecalibration: 20
     pgatk_combinevariantcallsets: 2
@@ -291,7 +291,7 @@ module_time:
     pvariant_integrity: 1
     pvcfparser: 5
     pvt: 10
-    pvcf2cytosure: 2
+    pvcf2cytosure: 20
   type: mip
 module_core_number:
   associated_program:
@@ -765,8 +765,8 @@ sambamba_depth_cutoffs:
   data_type: ARRAY
   default:
    - 10
+   - 15
    - 20
-   - 30
    - 50
    - 100
   type: program_argument

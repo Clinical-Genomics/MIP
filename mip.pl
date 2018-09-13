@@ -1862,7 +1862,7 @@ sub build_usage {
     -psvre/--psv_reformat                                          Concatenating files (defaults to "0" (=no))
       -svrevbf/--sv_rankvariant_binary_file                        Produce binary file from the rank variant chromosome sorted vcfs (supply flag to enable)
       -svrergf/--sv_reformat_remove_genes_file                     Remove variants in hgnc_ids (defaults to "")
-    -pv2cs/--vcf2cytosure                                          Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software (defaults to "0" (=no))
+    -pv2cs/--pvcf2cytosure                                          Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software (defaults to "0" (=no))
       -vc2csef/--vcf2cytosure_exclude_filter                       Filter vcf using bcftools exclude filter string (defaults to "")
       -v2csfq/--vcf2cytosure_freq                                  Specify maximum frequency (defaults to "0.01")
       -v2csfqt/--vcf2cytosure_freq_tag                             Specify frequency tag (defaults to "FRQ")

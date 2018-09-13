@@ -421,7 +421,7 @@ sub sort_vcf {
                 $active_parameter_href->{picardtools_path},
                 q{picard.jar}
             ),
-            memory_allocation => q{Xmx2g},
+            memory_allocation => q{Xmx4g},
             outfile_path      => $outfile,
             referencefile_path =>
               $active_parameter_href->{human_genome_reference},
