@@ -59,7 +59,11 @@ module_source_environment_command:
    - source
    - activate
    - mip_travis_cnvnator
-  tiddit :
+  tiddit:
+   - source
+   - activate
+   - mip_travis_tiddit
+  vcf2cytosure:
    - source
    - activate
    - mip_travis_tiddit
