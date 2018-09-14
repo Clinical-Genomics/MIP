@@ -135,9 +135,11 @@ epy3:
 ## Tiddit env spec
 etiddit:
   conda:
+    bcftools: 1.6
     cython:
     gcc:
     numpy:
+    pip:
     python: 2.7
     scipy:
     svdb: 1.1.2
@@ -158,6 +160,8 @@ etiddit:
         numpy:
         python: 2.7
       version: 2.2.5
+    vcf2cytosure:
+      version: gitRepo
 
 # VEP environment spec
 evep:
