@@ -20,7 +20,6 @@ emip:
     bioconductor-tximport:
     cufflinks: 2.2
     fastqc: 0.11.4
-    gatk: 3.8
     gatk4: 4.0
     htslib: 1.8
     java-jdk:
