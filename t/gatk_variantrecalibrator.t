@@ -33,9 +33,10 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA     => q{,};
-Readonly my $SPACE     => q{ };
-Readonly my $GAUSSIANS => 8;
+Readonly my $COMMA        => q{,};
+Readonly my $GAUSSIANS    => 8;
+Readonly my $MAX_ATTEMPTS => 2;
+Readonly my $SPACE        => q{ };
 
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
@@ -103,6 +104,10 @@ my %specific_argument = (
         input           => catfile(qw{ my family.vcf }),
         expected_output => q{--variant } . catfile(qw{ my family.vcf }),
     },
+    max_attempts => {
+        input           => $MAX_ATTEMPTS,
+        expected_output => q{--max-attempts } . $MAX_ATTEMPTS,
+    },
     max_gaussian_level => {
         input           => $GAUSSIANS,
         expected_output => q{--max-gaussians } . $GAUSSIANS,
@@ -127,6 +132,10 @@ my %specific_argument = (
         input           => catfile(qw{ my output.tranches }),
         expected_output => q{--tranches-file }
           . catdir(qw{ my output.tranches }),
+    },
+    trust_all_polymorphic => {
+        input           => 1,
+        expected_output => q{--trust-all-polymorphic},
     },
 );
 

@@ -408,6 +408,7 @@ sub gatk_variantrecalibrator {
 ##          : $infile_path                           => Infile path
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                  => Use java large pages
+##          : $max_attempts                          => Number of attempts to build the model
 ##          : $max_gaussian_level                    => Max number of Gaussians for the positive model
 ##          : $memory_allocation                     => Memory allocation to run Gatk
 ##          : $mode                                  => Mode for emitting reference confidence scores
@@ -419,6 +420,7 @@ sub gatk_variantrecalibrator {
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $tranches_file_path                    => The output tranches file used by ApplyRecalibration
+##          : $trust_all_polymorphic                 => Trust that all the input training sets' unfiltered records contain only polymorphic sites to speed up computation
 ##          : $verbosity	                         => Set the minimum level of logging
 ##          : $xargs_mode                            => Set if the program will be executed via xargs
 
@@ -440,9 +442,11 @@ sub gatk_variantrecalibrator {
     my $stderrfile_path;
     my $temp_directory;
     my $tranches_file_path;
+    my $trust_all_polymorphic;
 
     ## Default(s)
     my $java_use_large_pages;
+    my $max_attempts;
     my $verbosity;
     my $xargs_mode;
 
@@ -470,6 +474,12 @@ sub gatk_variantrecalibrator {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        max_attempts => {
+            allow       => [qr/ ^\d+$ /sxm],
+            default     => 3,
+            store       => \$max_attempts,
             strict_type => 1,
         },
         max_gaussian_level => {
@@ -528,6 +538,11 @@ sub gatk_variantrecalibrator {
             store       => \$tranches_file_path,
             strict_type => 1,
         },
+        trust_all_polymorphic => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$trust_all_polymorphic,
+            strict_type => 1,
+        },
         verbosity => {
             allow       => [qw{ INFO ERROR FATAL }],
             default     => q{INFO},
@@ -582,6 +597,11 @@ sub gatk_variantrecalibrator {
       q{--use-annotation} . $SPACE . join $SPACE . q{--use-annotation} . $SPACE,
       @{$annotations_ref};
 
+    ## Add max attempts to build model
+    if ($max_attempts) {
+        push @commands, q{--max-attempts} . $SPACE . $max_attempts;
+    }
+
     ## Add max gaussians for positive model
     if ($max_gaussian_level) {
         push @commands, q{--max-gaussians} . $SPACE . $max_gaussian_level;
@@ -604,6 +624,11 @@ sub gatk_variantrecalibrator {
 
     ## Add path to tranches file
     push @commands, q{--tranches-file} . $SPACE . $tranches_file_path;
+
+    ## Trust all training sites to be polymorphic
+    if ($trust_all_polymorphic) {
+        push @commands, q{--trust-all-polymorphic};
+    }
 
     ## Add path to output recal file
     push @commands, q{--output} . $SPACE . $outfile_path;
@@ -1879,50 +1904,44 @@ sub gatk_asereadcounter {
 
 sub gatk_variantfiltration {
 
-## Function : Perl wrapper for writing GATK VariantFiltration recipe to $FILEHANDLE. Based on GATK 3.8.0.
+## Function : Perl wrapper for writing GATK VariantFiltration recipe to $FILEHANDLE. Based on GATK 4.0.8.
 ## Returns  : @commands
-## Arguments: $cluster_size                          => Number of SNPs which make up a cluster
-##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
+##          : $cluster_size                          => Number of SNPs which make up a cluster
+##          : $cluster_window_size                   => Window size (in bases) in which to evaluate clustered SNPs
 ##          : $FILEHANDLE                            => Sbatch filehandle to write to
 ##          : $filter_href                           => Hash with the name of the filter as key and the filter expression as value {REF}
-##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
 ##          : $infile_path                           => Infile paths
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $java_jar                              => Java jar
 ##          : $java_use_large_pages                  => Use java large pages
-##          : $logging_level                         => Set the minimum level of logging
 ##          : $memory_allocation                     => Memory allocation to run Gatk
 ##          : $outfile_path                          => Outfile path
-##          : $pedigree                              => Pedigree files for samples
-##          : $pedigree_validation_type              => Validation strictness for pedigree
+##          : $read_filters_ref                      => Filters to apply on reads {REF}
 ##          : $referencefile_path                    => Reference sequence file
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $cluster_window_size                   => Window size (in bases) in which to evaluate clustered SNPs
+##          : $verbosity                             => Set the minimum level of logging
+##          : $xargs_mode                            => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $cluster_size;
-    my $downsample_to_coverage;
+    my $cluster_window_size;
     my $FILEHANDLE;
     my $filter_href;
     my $infile_path;
     my $intervals_ref;
-    my $java_jar;
-    my $java_use_large_pages;
     my $memory_allocation;
     my $outfile_path;
-    my $pedigree;
+    my $read_filters_ref;
     my $referencefile_path;
     my $stderrfile_path;
     my $temp_directory;
-    my $cluster_window_size;
 
     ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $pedigree_validation_type;
+    my $java_use_large_pages;
+    my $verbosity;
+    my $xargs_mode;
 
     my $tmpl = {
         cluster_size => {
@@ -1930,9 +1949,9 @@ sub gatk_variantfiltration {
             store       => \$cluster_size,
             strict_type => 1,
         },
-        downsample_to_coverage => {
-            allow       => qr/ ^\d+$ /sxm,
-            store       => \$downsample_to_coverage,
+        cluster_window_size => {
+            allow       => qr/ ^\d+$ /xms,
+            store       => \$cluster_window_size,
             strict_type => 1,
         },
         FILEHANDLE => {
@@ -1941,12 +1960,6 @@ sub gatk_variantfiltration {
         filter_href => {
             default     => {},
             store       => \$filter_href,
-            strict_type => 1,
-        },
-        gatk_disable_auto_index_and_file_lock => {
-            allow       => [ 0, 1 ],
-            default     => 0,
-            store       => \$gatk_disable_auto_index_and_file_lock,
             strict_type => 1,
         },
         infile_path => {
@@ -1958,16 +1971,6 @@ sub gatk_variantfiltration {
         intervals_ref => {
             default     => [],
             store       => \$intervals_ref,
-            strict_type => 1,
-        },
-        logging_level => {
-            allow       => [qw{INFO ERROR FATAL }],
-            default     => q{INFO},
-            store       => \$logging_level,
-            strict_type => 1,
-        },
-        java_jar => {
-            store       => \$java_jar,
             strict_type => 1,
         },
         java_use_large_pages => {
@@ -1986,19 +1989,13 @@ sub gatk_variantfiltration {
             store       => \$outfile_path,
             strict_type => 1,
         },
-        pedigree => {
-            store       => \$pedigree,
-            strict_type => 1,
-        },
-        pedigree_validation_type => {
-            allow       => [qw{ STRICT SILENT }],
-            default     => q{SILENT},
-            store       => \$pedigree_validation_type,
+        read_filters_ref => {
+            default     => [],
+            store       => \$read_filters_ref,
             strict_type => 1,
         },
         referencefile_path => {
             defined     => 1,
-            required    => 1,
             store       => \$referencefile_path,
             strict_type => 1,
         },
@@ -2010,74 +2007,85 @@ sub gatk_variantfiltration {
             store       => \$temp_directory,
             strict_type => 1,
         },
-        cluster_window_size => {
-            allow       => qr/ ^\d+$ /xms,
-            store       => \$cluster_window_size,
+        verbosity => {
+            allow       => [qw{INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$verbosity,
+            strict_type => 1,
+        },
+        xargs_mode => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$xargs_mode,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands;
+    ## GATK VariantFiltration
 
-    # Write java core commands to filehandle.
-    if ($java_jar) {
-        @commands = java_core(
-            {
-                java_jar             => $java_jar,
-                java_use_large_pages => $java_use_large_pages,
-                memory_allocation    => $memory_allocation,
-                temp_directory       => $temp_directory,
-            }
-        );
-    }
+    # Stores commands depending on input parameters
+    my @commands = qw{ gatk };
 
-    ### Gatk base args
-    @commands = gatk_base(
+    ## Add java options
+    gatk_java_options(
         {
-            analysis_type          => q{VariantFiltration},
-            commands_ref           => \@commands,
-            downsample_to_coverage => $downsample_to_coverage,
-            gatk_disable_auto_index_and_file_lock =>
-              $gatk_disable_auto_index_and_file_lock,
-            intervals_ref            => $intervals_ref,
-            logging_level            => $logging_level,
-            pedigree                 => $pedigree,
-            pedigree_validation_type => $pedigree_validation_type,
-            referencefile_path       => $referencefile_path,
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+            xargs_mode           => $xargs_mode,
         }
     );
 
-    ## Tool specific options
+    ## Add tool command
+    push @commands, q{VariantFiltration};
 
-    ## Infile
+    ## Add infile
     push @commands, q{--variant} . $SPACE . $infile_path;
 
-    ## Output
-    push @commands, q{--out} . $SPACE . $outfile_path;
+    ## Add common options
+    gatk_common_options(
+        {
+            commands_ref       => \@commands,
+            intervals_ref      => $intervals_ref,
+            read_filters_ref   => $read_filters_ref,
+            referencefile_path => $referencefile_path,
+            temp_directory     => $temp_directory,
+            verbosity          => $verbosity,
+        }
+    );
 
+    ## Add number of cluster
     if ($cluster_size) {
-        push @commands, q{--clusterSize} . $SPACE . $cluster_size;
+        push @commands, q{--cluster-size} . $SPACE . $cluster_size;
     }
+
+    ## Add window size
+    if ($cluster_window_size) {
+        push @commands,
+          q{--cluster-window-size} . $SPACE . $cluster_window_size;
+    }
+
+    ## Add filters
     if ($filter_href) {
       FILTERNAME:
         foreach my $filtername ( keys %{$filter_href} ) {
             push @commands,
-                q{--filterName}
+                q{--filter-name}
               . $SPACE
               . $filtername
               . $SPACE
-              . q{--filterExpression}
+              . q{--filter-expression}
               . $SPACE
               . $DOUBLE_QOUTE
               . $filter_href->{$filtername}
               . $DOUBLE_QOUTE;
         }
     }
-    if ($cluster_window_size) {
-        push @commands, q{--clusterWindowSize} . $SPACE . $cluster_window_size;
-    }
+
+    ## Output
+    push @commands, q{--output} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
