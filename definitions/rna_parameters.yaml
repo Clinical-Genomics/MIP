@@ -38,19 +38,6 @@ gatk_bundle_download_version:
   data_type: SCALAR
   default: 2.8
   type: program_argument
-gatk_disable_auto_index_and_file_lock:
-  associated_program:
-   - gatk_asereadcounter
-   - gatk_variantfiltration
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-gatk_downsample_to_coverage:
-  associated_program:
-   - gatk_asereadcounter
-  data_type: SCALAR
-  default: 1000
-  type: program_argument
 gatk_logging_level:
   associated_program:
    - gatk_asereadcounter
@@ -61,13 +48,6 @@ gatk_logging_level:
   data_type: SCALAR
   default: INFO
   type: program_argument
-gatk_path:
-  associated_program:
-   - gatk_asereadcounter
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 infile_dirs:
   associated_program:
    - mip
@@ -528,6 +508,8 @@ gatk_asereadcounter:
   default: 1
   file_tag: _ase
   outfile_suffix: ".csv"
+  program_name_path:
+   - gatk
   type: program
 ## GATK VariantFiltration
 gatk_variantfiltration:
