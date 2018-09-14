@@ -170,7 +170,6 @@ sub create_star_fusion_sample_file {
             strings_ref           => \@strings,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
     return 1;
 }
 

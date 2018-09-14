@@ -137,13 +137,12 @@ sub analysis_star_fusion {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Star_fusion qw{ create_star_fusion_sample_file };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
-    use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
+      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::QC::Record
       qw{ add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -192,157 +191,85 @@ sub analysis_star_fusion {
         }
     );
 
-    # Too avoid adjusting infile_index in submitting to jobs
-    my $paired_end_tracker = 0;
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ( $file_path, $program_info_path ) = setup_script(
+        {
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            program_directory               => $program_name,
+            program_name                    => $program_name,
+            process_time                    => $time,
+            source_environment_commands_ref => \@source_environment_cmds,
+            temp_directory                  => $temp_directory,
+        }
+    );
 
-    ## Perform per single-end or read pair
-  INFILE_PREFIX:
-    while ( my ( $infile_index, $infile_prefix ) =
-        each @{ $infile_lane_prefix_href->{$sample_id} } )
-    {
+    ## Star-fusion
+    say {$FILEHANDLE} q{## Performing fusion transcript detections using }
+      . $program_name;
 
-        ## Assign file tags
-        my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
-        my $outfile_path_prefix = $file_path_prefix . $outfile_tag;
+    my $sample_files_path =
+      catfile( $outsample_directory, $sample_id . q{_file.txt} );
+    ### Get parameters
+    ## Infile(s)
+    create_star_fusion_sample_file(
+        {
+            FILEHANDLE              => $FILEHANDLE,
+            infiles_ref             => \@infiles,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            insample_directory      => $insample_directory,
+            samples_file_path       => $sample_files_path,
+            sample_id               => $sample_id,
+            sample_info_href        => $sample_info_href,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
-        # Collect paired-end or single-end sequence run mode
-        my $sequence_run_mode =
-          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {sequence_run_type};
+    star_fusion(
+        {
+            FILEHANDLE => $FILEHANDLE,
+            genome_lib_dir_path =>
+              $active_parameter_href->{star_fusion_genome_lib_dir},
+            output_directory_path => $outsample_directory,
+            samples_file_path     => $sample_files_path,
+        }
+    );
 
-        # Collect interleaved info
-        my $interleaved_fastq_file =
-          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {interleaved};
+    say {$FILEHANDLE} $NEWLINE;
 
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $file_path, $program_info_path ) = setup_script(
+    ## Close FILEHANDLES
+    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+
+    if ( $program_mode == 1 ) {
+
+        #            my $program_outfile_path =
+        #              $outfile_path_prefix . $UNDERSCORE . q{bam};
+
+        ## Collect QC metadata info for later use
+        #            add_program_outfile_to_sample_info(
+        #                {
+        #                    path             => $program_outfile_path,
+        #                    program_name     => $program_name,
+        #                    sample_id        => $sample_id,
+        #                    sample_info_href => $sample_info_href,
+        #                }
+        #            );
+
+        slurm_submit_job_sample_id_dependency_add_to_sample(
             {
-                active_parameter_href           => $active_parameter_href,
-                core_number                     => $core_number,
-                directory_id                    => $sample_id,
-                FILEHANDLE                      => $FILEHANDLE,
-                job_id_href                     => $job_id_href,
-                log                             => $log,
-                program_directory               => $program_name,
-                program_name                    => $program_name,
-                process_time                    => $time,
-                source_environment_commands_ref => \@source_environment_cmds,
-                temp_directory                  => $temp_directory,
+                family_id               => $family_id,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
+                sbatch_file_name        => $file_path,
             }
         );
-
-        ## Copies file to temporary directory.
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-
-        # Read 1
-        my $insample_dir_fastqc_path_read_one =
-          catfile( $insample_directory, $infiles[$paired_end_tracker] );
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $insample_dir_fastqc_path_read_one,
-                outfile_path => $temp_directory,
-            }
-        );
-
-        # If second read direction is present
-        if ( $sequence_run_mode eq q{paired-end} ) {
-
-            my $insample_dir_fastqc_path_read_two =
-              catfile( $insample_directory,
-                $infiles[ $paired_end_tracker + 1 ] );
-
-            # Read 2
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $insample_dir_fastqc_path_read_two,
-                    outfile_path => $temp_directory,
-                }
-            );
-        }
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-        ## Star aln
-        say {$FILEHANDLE} q{## Performing fusion transcript detections using }
-          . $program_name;
-
-        ### Get parameters
-        ## Infile(s)
-        my $fastq_r1_path =
-          catfile( $temp_directory, $infiles[$paired_end_tracker] );
-        my $fastq_r2_path;
-
-        # If second read direction is present
-        if ( $sequence_run_mode eq q{paired-end} ) {
-
-            # Increment to collect correct read 2 from %infile
-            $paired_end_tracker++;
-            $fastq_r2_path =
-              catfile( $temp_directory, $infiles[$paired_end_tracker] );
-        }
-
-        star_fusion(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                genome_lib_dir_path =>
-                  $active_parameter_href->{star_fusion_genome_lib_dir},
-                fastq_r1_path         => $fastq_r1_path,
-                fastq_r2_path         => $fastq_r2_path,
-                output_directory_path => $outsample_directory,
-            }
-        );
-
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Increment paired end tracker
-        $paired_end_tracker++;
-
-        ## Close FILEHANDLES
-        close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-
-        if ( $program_mode == 1 ) {
-
-            my $program_outfile_path =
-              $outfile_path_prefix . $UNDERSCORE . q{bam};
-
-            ## Collect QC metadata info for later use
-            add_program_outfile_to_sample_info(
-                {
-                    path             => $program_outfile_path,
-                    program_name     => $program_name,
-                    sample_id        => $sample_id,
-                    sample_info_href => $sample_info_href,
-                }
-            );
-
-            my $most_complete_format_key =
-              q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-            my $qc_metafile_path =
-              catfile( $outsample_directory, $infile_prefix . $outfile_suffix );
-            add_processing_metafile_to_sample_info(
-                {
-                    metafile_tag     => $most_complete_format_key,
-                    path             => $qc_metafile_path,
-                    sample_id        => $sample_id,
-                    sample_info_href => $sample_info_href,
-                }
-            );
-
-            slurm_submit_job_sample_id_dependency_step_in_parallel(
-                {
-                    family_id               => $family_id,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    log                     => $log,
-                    path                    => $job_id_chain,
-                    sample_id               => $sample_id,
-                    sbatch_file_name        => $file_path,
-                    sbatch_script_tracker   => $infile_index,
-                }
-            );
-        }
     }
     return;
 }

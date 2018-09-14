@@ -138,7 +138,7 @@ module_core_number:
     sacct: 1
     salmon_quant: 1
     star_aln: 16
-    star_fusion: 1
+    star_fusion: 4
   type: mip
 ## Choosen MIP Aligner
 outaligner_dir:
