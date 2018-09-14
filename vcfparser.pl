@@ -70,7 +70,7 @@ my ($parse_vep, $per_gene);
 my (@range_feature_annotation_columns, @select_feature_annotation_columns);
 my (%consequence_severity, %range_data, %select_data, %snpeff_cmd, %tree, %meta_data);
 
-my $vcfparser_version = q{1.2.12};
+my $vcfparser_version = q{1.2.13};
 
 ## Enables cmd "vcfparser.pl" to print usage help
 if(!@ARGV) {
@@ -992,6 +992,14 @@ sub parse_vep_csq {
 
 	    $record_href->{INFO_addition_range_feature}{most_severe_consequence} = join(",", @most_severe_range_consequences);
 	}
+
+	## Mainly for SV BNDs without consequence and within a gene
+        if (    not keys %$consequence_href
+            and not exists $record_href->{range_transcripts} )
+        {
+            push( @{ $record_href->{range_transcripts} }, @transcripts )
+              ;    #Add all transcripts to range transcripts
+	  }
     }
 }
 
