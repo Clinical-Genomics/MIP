@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cnvnator };
@@ -158,15 +158,14 @@ sub analysis_cnvnator {
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files};
-    use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Samtools
       qw{ samtools_create_chromosome_files };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate };
+    use MIP::Program::Variantcalling::Bcftools
+      qw{ bcftools_annotate bcftools_concat };
     use MIP::Program::Variantcalling::Cnvnator
       qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_catvariants };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -460,9 +459,7 @@ sub analysis_cnvnator {
     ## Write sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
     $infile_prefix = $outfile_path_prefix . $UNDERSCORE;
     my $infile_postfix = $outfile_suffix;
-    my $outfile =
-      $outfile_path_prefix . $UNDERSCORE . q{concat} . $outfile_suffix;
-    my $elements_ref = \@{ $file_info_href->{contigs} };
+    my $elements_ref   = \@{ $file_info_href->{contigs} };
 
     if ( not defined $infile_postfix ) {
 
@@ -470,60 +467,55 @@ sub analysis_cnvnator {
         $infile_postfix = $EMPTY_STR;
     }
 
-    if ( not defined $outfile ) {
+    say {$FILEHANDLE} q{## Format the VCF};
 
-        $outfile = $infile_prefix . $outfile_suffix;
+    ## Store infiles for bcftools concat
+    my @concat_infile_paths;
+
+    foreach my $element ( @{$elements_ref} ) {
+
+        ## Name intermediary files
+        my $cnvnator_outfile_path = $infile_prefix . $element . $infile_postfix;
+        my $fixed_vcffile_path =
+          $infile_prefix . $element . $UNDERSCORE . q{fixed} . $infile_postfix;
+        my $fixed_header_vcffile_path =
+          $infile_prefix . $element . $UNDERSCORE . q{annot} . $infile_postfix;
+
+        ## Save infiles for bcftools annotate
+        push @concat_infile_paths, $fixed_header_vcffile_path;
+
+        ## Change the sample name in the VCF header to the sample ID
+        _rename_sample_in_header(
+            {
+                sample_id    => $sample_id,
+                infile_path  => $cnvnator_outfile_path,
+                outfile_path => $fixed_vcffile_path,
+                FILEHANDLE   => $FILEHANDLE,
+            }
+        );
+
+        ## Add contigs to header
+        bcftools_annotate(
+            {
+                infile_path  => $fixed_vcffile_path,
+                outfile_path => $fixed_header_vcffile_path,
+                output_type  => q{v},
+                headerfile_path =>
+                  catfile( $temp_directory, q{contig_header.txt} ),
+                FILEHANDLE => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
     }
 
-    say {$FILEHANDLE} q{## GATK CatVariants};
-
-    ## Assemble infile paths
-    my @infile_paths =
-      map { $infile_prefix . $_ . $infile_postfix } @{$elements_ref};
-
-    my $gatk_path =
-        catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} )
-      . $SPACE
-      . q{org.broadinstitute.gatk.tools.CatVariants};
-
-    gatk_catvariants(
+    say {$FILEHANDLE} q{## Concatenate VCFs};
+    bcftools_concat(
         {
-            memory_allocation => q{Xmx4g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory     => $active_parameter_href->{temp_directory},
-            gatk_path          => $gatk_path,
-            infile_paths_ref   => \@infile_paths,
-            outfile_path       => $outfile,
-            referencefile_path => $human_genome_reference,
-            logging_level      => $active_parameter_href->{gatk_logging_level},
-            FILEHANDLE         => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Fix GT FORMAT in header and Sample_id and GT and Genotype call
-    _fix_gt_format_in_header(
-        {
-            sample_id           => $sample_id,
-            outfile_path_prefix => $outfile_path_prefix,
-            outfile_suffix      => $outfile_suffix,
-            FILEHANDLE          => $FILEHANDLE,
-
-        }
-    );
-
-    ## Add contigs to header
-    bcftools_annotate(
-        {
-            infile_path => $outfile_path_prefix
-              . $UNDERSCORE
-              . q{concat_fix}
-              . $outfile_suffix,
-            outfile_path    => $outfile_path_prefix . $outfile_suffix,
-            output_type     => q{v},
-            headerfile_path => catfile( $temp_directory, q{contig_header.txt} ),
-            FILEHANDLE      => $FILEHANDLE,
+            FILEHANDLE       => $FILEHANDLE,
+            infile_paths_ref => \@concat_infile_paths,
+            outfile_path     => $outfile_path_prefix . $outfile_suffix,
+            output_type      => q{v},
+            rm_dups          => 0,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -567,12 +559,11 @@ sub analysis_cnvnator {
     }
 
     return;
-
 }
 
 sub _add_contigs_to_vcfheader {
 
-## Function : Add contigs to VCF header
+## Function : Change the sample ID in the VCF header
 ##          : $human_genome_reference => Human genome reference
 ##          : $temp_directory         => Temporary directory
 ##          : $FILEHANDLE             => Filehandle to write to
@@ -626,44 +617,43 @@ sub _add_contigs_to_vcfheader {
     return;
 }
 
-sub _fix_gt_format_in_header {
+sub _rename_sample_in_header {
 
-## Function : Fix GT format in header
+## Function : Rename the sample in the chromosome header
+## Arguments: $FILEHANDLE          => Filehandle to write to
+##          : $infile_path         => Outfile path prefix
+##          : $outfile_path        => Outfile suffix
 ##          : $sample_id           => Sample id
-##          : $outfile_path_prefix => Outfile path prefix
-##          : $outfile_suffix      => Outfile suffix
-##          : $FILEHANDLE          => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_id;
-    my $outfile_path_prefix;
-    my $outfile_suffix;
     my $FILEHANDLE;
+    my $infile_path;
+    my $outfile_path;
+    my $sample_id;
 
     my $tmpl = {
         sample_id => {
-            required => 1,
             defined  => 1,
+            required => 1,
             store    => \$sample_id,
         },
-        outfile_path_prefix => {
-            required => 1,
+        infile_path => {
             defined  => 1,
-            store    => \$outfile_path_prefix,
+            required => 1,
+            store    => \$infile_path,
         },
-        outfile_suffix => {
-            required => 1,
+        outfile_path => {
             defined  => 1,
-            store    => \$outfile_suffix,
+            required => 1,
+            store    => \$outfile_path,
         },
         FILEHANDLE => {
-            required => 1,
             defined  => 1,
+            required => 1,
             store    => \$FILEHANDLE,
         },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -673,28 +663,29 @@ sub _fix_gt_format_in_header {
     ## Execute perl
     $regexp = q?perl -nae '?;
 
-    ## Fix standard header fields
-    $regexp .=
-q?chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t?;
+    ## Chomp line
+    $regexp .= q?chomp; ?;
 
-    ## Add sample ID
-    $regexp .= $sample_id . q?", "\n"} else {print $_, "\n"}'?;
+    ## Print VCF headers starting with '##'
+    $regexp .= q?if( $_=~/^##/ ) {print $_, "\n"} ?;
+
+    ## Capture line staring with '#CHROM', split on tab and capture in array
+    $regexp .= q?elsif( $_=~/^#CHROM/ ) {my @a = split("\t", $_); ?;
+
+    ## Remove last element and print
+    $regexp .= q?pop(@a); print join("\t", @a) ."\t ?;
+
+    ## Append Sample ID
+    $regexp .= $sample_id . q?", "\n"} ?;
+
+    ## Print the records
+    $regexp .= q?else {print $_, "\n"}'?;
 
     print {$FILEHANDLE} $regexp . $SPACE;
-    print {$FILEHANDLE} $outfile_path_prefix
-      . $UNDERSCORE
-      . q{concat}
-      . $outfile_suffix
-      . $SPACE;
-    say {$FILEHANDLE} q{>}
-      . $SPACE
-      . $outfile_path_prefix
-      . $UNDERSCORE
-      . q{concat_fix}
-      . $outfile_suffix, $NEWLINE;
+    print {$FILEHANDLE} $infile_path . $SPACE;
+    say   {$FILEHANDLE} q{>} . $SPACE . $outfile_path;
 
     return;
-
 }
 
 1;

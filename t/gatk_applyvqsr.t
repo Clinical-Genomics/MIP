@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +33,9 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA        => q{,};
-Readonly my $GAUSSIANS    => 8;
-Readonly my $MAX_ATTEMPTS => 2;
-Readonly my $SPACE        => q{ };
+Readonly my $COMMA           => q{,};
+Readonly my $SPACE           => q{ };
+Readonly my $TS_FILTER_LEVEL => q{99.0};
 
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
@@ -47,10 +46,10 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Gatk qw{ gatk_variantrecalibrator };
+use MIP::Program::Variantcalling::Gatk qw{ gatk_applyvqsr };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test gatk_variantrecalibrator from Variantcalling::Gatk.pm v}
+diag(   q{Test gatk_applyvqsr from Variantcalling::Gatk.pm v}
       . $MIP::Program::Variantcalling::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -60,7 +59,7 @@ diag(   q{Test gatk_variantrecalibrator from Variantcalling::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ gatk VariantRecalibrator };
+my @function_base_commands = qw{ gatk ApplyVQSR };
 
 my %base_argument = (
     stderrfile_path => {
@@ -76,21 +75,17 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    annotations_ref => {
-        inputs_ref      => [qw{ MQRankSum QD }],
-        expected_output => q{--use-annotation MQRankSum --use-annotation: QD},
-    },
     infile_path => {
         input           => catfile(qw{ my family.vcf  }),
         expected_output => q{--variant } . catfile(qw{ my family.vcf }),
     },
     outfile_path => {
-        input           => catfile(qw{ my output.recal }),
-        expected_output => q{--output } . catfile(qw{ my output.recal }),
+        input           => catfile(qw{ my output.vcf }),
+        expected_output => q{--output } . catfile(qw{ my output.vcf }),
     },
-    resources_ref => {
-        inputs_ref      => [qw{ resource_1 resource_2 }],
-        expected_output => q{--resource resource_1 --resource resource_2},
+    recal_file_path => {
+        input           => catfile(qw{ my output.recal }),
+        expected_output => q{--recal-file } . catfile(qw{ my output.recal }),
     },
     tranches_file_path => {
         input           => catfile(qw{ my output.tranches }),
@@ -101,46 +96,35 @@ my %required_argument = (
 
 my %specific_argument = (
     infile_path => {
-        input           => catfile(qw{ my family.vcf }),
+        input           => catfile(qw{ my family.vcf  }),
         expected_output => q{--variant } . catfile(qw{ my family.vcf }),
     },
-    max_attempts => {
-        input           => $MAX_ATTEMPTS,
-        expected_output => q{--max-attempts } . $MAX_ATTEMPTS,
-    },
-    max_gaussian_level => {
-        input           => $GAUSSIANS,
-        expected_output => q{--max-gaussians } . $GAUSSIANS,
-    },
-    mode => {
-        input           => q{SNP},
-        expected_output => q{--mode SNP},
-    },
     outfile_path => {
+        input           => catfile(qw{ my output.vcf }),
+        expected_output => q{--output } . catfile(qw{ my output.vcf }),
+    },
+    recal_file_path => {
         input           => catfile(qw{ my output.recal }),
-        expected_output => q{--output } . catfile(qw{ my output.recal }),
-    },
-    rscript_file_path => {
-        input           => catfile(qw{ my plots.R }),
-        expected_output => q{--rscript-file } . catfile(qw{ my plots.R }),
-    },
-    resources_ref => {
-        inputs_ref      => [qw{ resource_1 resource_2 }],
-        expected_output => q{--resource resource_1 --resource resource_2},
+        expected_output => q{--recal-file } . catfile(qw{ my output.recal }),
     },
     tranches_file_path => {
         input           => catfile(qw{ my output.tranches }),
         expected_output => q{--tranches-file }
           . catdir(qw{ my output.tranches }),
     },
-    trust_all_polymorphic => {
-        input           => 1,
-        expected_output => q{--trust-all-polymorphic},
+    mode => {
+        input           => q{SNP},
+        expected_output => q{--mode SNP},
+    },
+    ts_filter_level => {
+        input           => $TS_FILTER_LEVEL,
+        expected_output => q{--truth-sensitivity-filter-level }
+          . $TS_FILTER_LEVEL,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gatk_variantrecalibrator;
+my $module_function_cref = \&gatk_applyvqsr;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1514,6 +1514,16 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
               q{Truth sensitivity level for snvs at which to start filtering},
             is  => q{rw},
             isa => Num,
+        )
+    );
+
+    option(
+        q{gatk_variantrecalibration_trust_all_polymorphic} => (
+            cmd_aliases   => [qw{ gvrtap }],
+            cmd_flag      => q{gatk_varrecal_trust_poly},
+            documentation => q{Trust all training sites to be polymorphic},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 

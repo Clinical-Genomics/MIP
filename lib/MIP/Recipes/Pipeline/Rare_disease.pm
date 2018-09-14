@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rare_disease };
@@ -336,29 +336,28 @@ sub pipeline_rare_disease {
 
     ## Program names for the log
     my %program_name = (
-        analysisrunstatus           => q{Analysis run status},
-        bcftools_mpileup            => q{Bcftools mpileup},
-        bedtools_genomecov          => q{Bedtools genomecov},
-        bwa_mem                     => q{BWA mem},
-        chanjo_sexcheck             => q{Chanjo sexcheck},
-        cnvnator                    => q{CNVnator},
-        delly_call                  => q{Delly call},
-        delly_reformat              => q{Delly reformat},
-        endvariantannotationblock   => q{Endvariantannotationblock},
-        expansionhunter             => q{ExpansionHunter},
-        evaluation                  => q{Evaluation},
-        fastqc                      => q{FastQC},
-        freebayes                   => q{Freebayes},
-        frequency_filter            => q{Frequency filter},
-        gatk_baserecalibration      => q{GATK BaseRecalibrator/ApplyBQSR},
-        gatk_gathervcfs             => q{GATK GatherVcfs},
-        gatk_combinevariantcallsets => q{GATK combinevariantcallsets},
-        gatk_genotypegvcfs          => q{GATK genotypegvcfs},
-        gatk_haplotypecaller        => q{GATK Haplotypecaller},
-        gatk_variantevalall         => q{GATK variantevalall},
-        gatk_variantevalexome       => q{GATK variantevalexome},
-        gatk_variantrecalibration =>
-          q{GATK variantrecalibrator/applyrecalibration},
+        analysisrunstatus            => q{Analysis run status},
+        bcftools_mpileup             => q{Bcftools mpileup},
+        bedtools_genomecov           => q{Bedtools genomecov},
+        bwa_mem                      => q{BWA mem},
+        chanjo_sexcheck              => q{Chanjo sexcheck},
+        cnvnator                     => q{CNVnator},
+        delly_call                   => q{Delly call},
+        delly_reformat               => q{Delly reformat},
+        endvariantannotationblock    => q{Endvariantannotationblock},
+        expansionhunter              => q{ExpansionHunter},
+        evaluation                   => q{Evaluation},
+        fastqc                       => q{FastQC},
+        freebayes                    => q{Freebayes},
+        frequency_filter             => q{Frequency filter},
+        gatk_baserecalibration       => q{GATK BaseRecalibrator/ApplyBQSR},
+        gatk_gathervcfs              => q{GATK GatherVcfs},
+        gatk_combinevariantcallsets  => q{GATK combinevariantcallsets},
+        gatk_genotypegvcfs           => q{GATK GenotypeGVCFs},
+        gatk_haplotypecaller         => q{GATK Haplotypecaller},
+        gatk_variantevalall          => q{GATK variantevalall},
+        gatk_variantevalexome        => q{GATK variantevalexome},
+        gatk_variantrecalibration    => q{GATK VariantRecalibrator/ApplyVQSR},
         gzip_fastq                   => q{Gzip for fastq files},
         manta                        => q{Manta},
         markduplicates               => q{Markduplicates},

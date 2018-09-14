@@ -7,7 +7,6 @@ decompose_normalize_references:
   default:
    - gatk_baserecalibration_known_sites
    - gatk_haplotypecaller_snp_known_set
-   - gatk_variantrecalibration_resource_snv
    - gatk_variantrecalibration_resource_indel
    - frequency_genmod_filter_1000g
    - sv_vcfanno_config_file
@@ -66,7 +65,6 @@ gatk_logging_level:
    - bcftools_mpileup
    - gatk_variantrecalibration
    - gatk_combinevariantcallsets
-   - cnvnator
    - gatk_variantevalall
    - gatk_variantevalexome
    - varianteffectpredictor
@@ -189,7 +187,7 @@ module_core_number:
     gatk_haplotypecaller: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
-    gatk_variantrecalibration: 16
+    gatk_variantrecalibration: 4
     gzip_fastq: 0
     manta: 16
     markduplicates: 16
@@ -712,6 +710,7 @@ delly_types:
    - INS
   type: program_argument
 expansionhunter:
+  analysis_mode: sample
   associated_program:  
    - mip
   data_type: SCALAR
@@ -724,7 +723,6 @@ expansionhunter:
   program_type: structural_variant_callers
   type: program
 expansionhunter_repeat_specs_dir:
-  analysis_mode: sample
   associated_program:
    - expansionhunter
   data_type: SCALAR
@@ -1242,6 +1240,7 @@ gatk_variantrecalibration:
   file_tag: vrecal_
   program_name_path:
    - bcftools
+   - gatk
   outdir_name: gatk
   program_type: variant_callers
   outfile_suffix: ".vcf"
@@ -1291,7 +1290,7 @@ gatk_variantrecalibration_resource_indel:
   data_type: HASH
   default:
      GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
-     GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,VCF,known=true,training=true,truth=true,prior=12.0"
+     GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,known=true,training=true,truth=true,prior=12.0"
   exists_check: file
   reference: reference_dir
   type: path
@@ -1301,8 +1300,8 @@ gatk_variantrecalibration_resource_snv:
   data_type: HASH
   default:
      GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
-     GRCh37_hapmap_-3.3-.vcf: "hapmap,VCF,known=false,training=true,truth=true,prior=15.0"
-     GRCh37_1000g_omni_-2.5-.vcf: "omni,VCF,known=false,training=true,truth=false,prior=12.0"
+     GRCh37_hapmap_-3.3-.vcf: "hapmap,known=false,training=true,truth=true,prior=15.0"
+     GRCh37_1000g_omni_-2.5-.vcf: "omni,known=false,training=true,truth=false,prior=12.0"
      GRCh37_1000g_snps_high_confidence_-phase1-.vcf: "1000G,known=false,training=true,truth=false,prior=10.0"
   exists_check: file
   reference: reference_dir
@@ -1318,6 +1317,12 @@ gatk_variantrecalibration_snv_tsfilter_level:
    - gatk_variantrecalibration
   data_type: SCALAR
   default: 99.9
+  type: program_argument
+gatk_variantrecalibration_trust_all_polymorphic:
+  associated_program:
+   - gatk_variantrecalibration
+  data_type: SCALAR
+  default: 0
   type: program_argument
 gatk_combinevariantcallsets:
   analysis_mode: family
