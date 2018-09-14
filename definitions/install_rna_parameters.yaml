@@ -28,11 +28,10 @@ emip:
     picard: 2.18
     pip:
     python: 2.7
-    rseqc: 2.6.4
     r-optparse:
     r-readr:
     salmon: 0.9.1
-    sambamba:
+    sambamba: 0.6.6
     samtools: 1.8
     scipy:
   shell:
@@ -56,6 +55,20 @@ emip:
       version: Your current MIP version
     picard:
       version: 2.17.11
+## Python 3 environment spec
+epy3:
+  conda:
+    pip: 
+    python: 3.6
+  pip:
+    multiqc: 1.4
+  shell:
+erseqc:
+  conda:
+    bedops: 2.4.35
+    rseqc: 2.6.4
+  pip:
+  shell:
 estar:
   conda:
     fusion-filter: 0.5.0
@@ -68,12 +81,16 @@ estar:
 # Specify environment names
 environment_name:
   emip: MIP_rna
+  epy3: MIP_py3
+  erseqc: MIP_rseqc
   estar: MIP_star
 
 # Environments to install
 installations:
   - emip
   - estar
+  - erseqc
+  - epy3
 
 # Optional name of log file
 log_file: ~

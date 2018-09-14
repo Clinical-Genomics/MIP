@@ -209,7 +209,6 @@ sub gatk_applybqsr {
 ##          : $FILEHANDLE                            => Sbatch filehandle to write to
 ##          : $infile_path                           => Infile paths
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $java_jar                              => Java jar
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $memory_allocation                     => Memory allocation to run Gatk
 ##          : $outfile_path                          => Outfile path
@@ -228,7 +227,6 @@ sub gatk_applybqsr {
     my $FILEHANDLE;
     my $infile_path;
     my $intervals_ref;
-    my $known_sites_ref;
     my $memory_allocation;
     my $outfile_path;
     my $read_filters_ref;
@@ -345,14 +343,14 @@ sub gatk_applybqsr {
     );
 
     ## Add static_quantized_quals
-    if ( @{$static_quantized_quals_ref} ) {
+    if ( @{ $static_quantized_quals_ref } ) {
         push
           @commands,
           q{--static-quantized-quals}
           . $SPACE
           . join $SPACE
           . q{--static-quantized-quals}
-          . $SPACE, @{$static_quantized_quals_ref};
+          . $SPACE, @{ $static_quantized_quals_ref };
     }
 
     ## Add BQSR table

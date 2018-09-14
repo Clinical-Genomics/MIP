@@ -64,7 +64,6 @@ gatk_logging_level:
 gatk_path:
   associated_program:
    - gatk_asereadcounter
-   - gatk_variantfiltration
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -85,7 +84,7 @@ java_use_large_pages:
    - gatk_variantfiltration
    - star_aln
   data_type: SCALAR
-  default: 0
+  default: 1
   type: program_argument
 ####Bash
 module_time:
@@ -98,15 +97,17 @@ module_time:
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
     gatk_haplotypecaller: 2
-    gatk_splitncigarreads: 1
+    gatk_splitncigarreads: 5
     gatk_variantfiltration: 1
     gzip_fastq: 2
     markduplicates: 4
+    multiqc: 1
     picardtools_mergesamfiles: 2
     rseqc: 3
+    sacct: 1
     salmon_quant: 5
     star_aln: 5
-    star_fusion: 1
+    star_fusion: 10
   type: mip
 module_core_number:
   associated_program:
@@ -121,12 +122,14 @@ module_core_number:
     gatk_splitncigarreads: 16
     gatk_variantfiltration: 1
     gzip_fastq: 0
+    multiqc: 1
     markduplicates: 16
     picardtools_mergesamfiles: 16
     rseqc: 1
+    sacct: 1
     salmon_quant: 1
     star_aln: 16
-    star_fusion: 1
+    star_fusion: 4
   type: mip
 ## Choosen MIP Aligner
 outaligner_dir:
@@ -175,7 +178,7 @@ fastqc:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   infile_suffix: ".fastq"
   program_name_path:
@@ -187,7 +190,7 @@ salmon_quant:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _salmon
   outfile_suffix: ".sf"
   outdir_name: salmon
@@ -223,7 +226,7 @@ star_aln:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _star_sorted
   outfile_suffix: ".bam"
   outdir_name: star
@@ -290,7 +293,7 @@ star_fusion:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _fusion
   outfile_suffix: ".tsv"
   outdir_name: star
@@ -301,6 +304,14 @@ star_fusion:
     - STAR
     - STAR-Fusion
   type: program
+star_fusion_genome_lib_dir:
+  associated_program:
+   - star_fusion
+  data_type: SCALAR
+  default: GRCh37_v19_CTAT_lib_Feb092018
+  exists_check: directory
+  reference: reference_dir
+  type: path
 fusion_filter_reference_genome:
   associated_program:
    - star_fusion
@@ -324,8 +335,10 @@ picardtools_mergesamfiles:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _merged
+  program_name_path:
+   - sambamba
   type: program
 ## Mark duplicates
 markduplicates:
@@ -374,7 +387,7 @@ gatk_splitncigarreads:
   associated_program:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _splitcigar
   program_name_path:
    - gatk
@@ -385,7 +398,7 @@ gatk_baserecalibration:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _brecal
   program_name_path:
    - gatk
@@ -427,17 +440,33 @@ rseqc:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _rseq
+  program_name_path:
+   - bam_stat.py
+   - infer_experiment.py
+   - inner_distance.py
+   - junction_annotation.py
+   - junction_saturation.py
+   - read_distribution.py
+   - read_duplication.py
   outfile_suffix: ".txt"
   type: program
+rseqc_transcripts_file:
+  associated_program:
+   - rseqc
+  data_type: SCALAR
+  default: GRCh37_gencode_-v28-.bed
+  exists_check: file
+  reference: reference_dir
+  type: path
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _haptc
   outfile_suffix: ".vcf"
   program_name_path:
@@ -496,7 +525,7 @@ gatk_asereadcounter:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _ase
   outfile_suffix: ".csv"
   type: program
@@ -506,13 +535,15 @@ gatk_variantfiltration:
   associated_program:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _filtered
   outfile_suffix: ".vcf"
+  program_name_path:
+   - gatk
   type: program
 gatk_variantfiltration_cluster_size:
   associated_program:
-    - gatk_variantfiltration
+   - gatk_variantfiltration
   data_type: SCALAR
   default: 3
   type: program_argument
@@ -534,9 +565,56 @@ gatk_variantfiltration_cluster_window_size:
 bootstrapann:
   analysis_mode: sample
   associated_program:
-    - mip
+   - mip
   data_type: SCALAR
   default: 0
   file_tag: _bootstr
   outfile_suffix: ".vcf"
+  program_name_path:
+   - BootstrapAnn.py
   type: program
+## MultiQC
+multiqc:
+  analysis_mode: family
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  outdir_name: multiqc
+  program_name_path:
+   - multiqc
+  type: program
+multiqc_per_sample:
+  associated_program:
+   - multiqc
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+## Sacct
+sacct:
+  analysis_mode: family
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  type: program
+sacct_format_fields:
+  associated_program:
+   - sacct
+  data_type: ARRAY
+  default:
+   - jobid
+   - "jobname%50"
+   - account
+   - partition
+   - alloccpus
+   - TotalCPU
+   - elapsed
+   - start
+   - end
+   - state
+   - exitcode
+  element_separator: ,
+  type: program_argument

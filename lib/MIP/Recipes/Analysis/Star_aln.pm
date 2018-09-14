@@ -281,7 +281,9 @@ sub analysis_star_aln {
               catfile( $temp_directory, $infiles[$paired_end_tracker] );
             catfile( $temp_directory, $infiles[$paired_end_tracker] );
         }
-        my $referencefile_dir_path = $active_parameter_href->{reference_dir};
+        my $referencefile_dir_path =
+            $active_parameter_href->{star_aln_reference_genome}
+          . $file_info_href->{star_aln_reference_genome}[0];
 
         star_aln(
             {
@@ -339,6 +341,7 @@ sub analysis_star_aln {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $outfile_path_prefix . $ASTERIX,
                 outfile_path => $outsample_directory,
+                recursive    => 1,
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;

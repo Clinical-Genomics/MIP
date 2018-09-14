@@ -3,7 +3,9 @@ package MIP::Cli::Mip::Download::Rare_disease;
 use 5.022;
 use Carp;
 use Cwd qw{ abs_path };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
 use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
@@ -77,6 +79,20 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
+
+    option(
+        q{config_file} => (
+            cmd_aliases => [qw{ config c }],
+            documentation =>
+              q{File with configuration parameters in YAML format},
+            is      => q{rw},
+            isa     => Str,
+            default => catfile(
+                dirname($Bin),
+                qw{ MIP definitions download_rare_disease_parameters.yaml }
+            ),
+        )
+    );
 
     option(
         q{cmd_reference} => (

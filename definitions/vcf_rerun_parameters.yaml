@@ -119,7 +119,7 @@ sv_vcf_rerun_reformat:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _vrn_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -137,7 +137,7 @@ sv_annotate:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ann_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -224,7 +224,7 @@ sv_varianteffectpredictor:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: vep_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -268,7 +268,7 @@ sv_vcfparser:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: parsed_
   type: program
 sv_vcfparser_range_feature_annotation_columns:
@@ -329,7 +329,7 @@ sv_rankvariant:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ranked_
   type: program
 sv_genmod_annotate_regions:
@@ -370,7 +370,7 @@ sv_reformat:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ""
   program_name_path:
    - grep
@@ -394,7 +394,7 @@ vcf_rerun_reformat:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _vrn_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -421,7 +421,7 @@ prepareforvariantannotationblock:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outfile_suffix: ".vcf.gz"
   type: program
@@ -431,7 +431,7 @@ rhocall:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: rhocall_
   program_name_path:
    - rhocall
@@ -452,7 +452,7 @@ vt:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: vt_
   program_name_path:
    - vt
@@ -490,7 +490,7 @@ frequency_filter:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: frqf_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -528,7 +528,7 @@ varianteffectpredictor:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: vep_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -596,7 +596,7 @@ vcfparser:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: parsed_
   outfile_suffix: ".vcf"
   type: program
@@ -653,7 +653,7 @@ snpeff:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: snpeff_
   outfile_suffix: ".vcf"
   type: program
@@ -727,7 +727,7 @@ rankvariant:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ranked_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -787,7 +787,7 @@ endvariantannotationblock:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outfile_suffix: ".vcf"
   program_name_path:
@@ -813,7 +813,7 @@ analysisrunstatus:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 ## Sacct
@@ -822,7 +822,7 @@ sacct:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 sacct_format_fields:

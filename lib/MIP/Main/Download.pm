@@ -609,6 +609,7 @@ sub decompress_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Program::Compression::Zip qw{ unzip };
 
     return if ( not defined $outfile_path );
@@ -646,6 +647,20 @@ sub decompress_file {
                 FILEHANDLE  => $FILEHANDLE,
             }
         );
+    }
+
+    if ( defined $file_decompress && $file_decompress eq q{tar} ) {
+
+        tar(
+            {
+                extract           => 1,
+                filter_gzip       => 1,
+                file_path         => $outfile_path,
+                outdirectory_path => $parameter_href->{reference_dir},
+                FILEHANDLE        => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
     }
     return;
 }

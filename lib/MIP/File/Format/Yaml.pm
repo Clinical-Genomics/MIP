@@ -11,19 +11,19 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use Readonly;
-use YAML;
 use autodie;
+use Readonly;
+use YAML qw{ Dump LoadFile };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ load_yaml write_yaml order_parameter_names };
+    our @EXPORT_OK = qw{ load_yaml order_parameter_names write_yaml };
 }
 
 ## Constants
@@ -47,10 +47,10 @@ sub load_yaml {
 
     my $tmpl = {
         yaml_file => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$yaml_file,
+            strict_type => 1,
         },
     };
 
@@ -63,7 +63,7 @@ sub load_yaml {
       $NEWLINE;
 
     ## Load hashreference as hash
-    %yaml = %{ YAML::LoadFile($yaml_file) };
+    %yaml = %{ LoadFile($yaml_file) };
 
     close $YAML;
 
@@ -74,38 +74,35 @@ sub write_yaml {
 
 ## Function : Writes a YAML hash to file
 ## Returns  :
-## Arguments: $yaml_href      => The hash to dump {REF}
-##          : $yaml_file_path => The yaml file to write to
+## Arguments: $yaml_file_path => Yaml file to write to
+##          : $yaml_href      => Hash to dump {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $yaml_href;
     my $yaml_file_path;
+    my $yaml_href;
 
     my $tmpl = {
-        yaml_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$yaml_href,
-        },
         yaml_file_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$yaml_file_path,
+            strict_type => 1,
+        },
+        yaml_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$yaml_href,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Localize the current value
-    local $YAML::QuoteNumericStrings = $YAML::QuoteNumericStrings;
-
-    # Force numeric values to strings in YAML representation
-    $YAML::QuoteNumericStrings = 1;
+    local $YAML::QuoteNumericStrings = 1;
 
     open my $YAML, q{>}, $yaml_file_path
       or croak q{Cannot open}
@@ -137,10 +134,10 @@ sub order_parameter_names {
 
     my $tmpl = {
         file_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$file_path,
+            strict_type => 1,
         },
     };
 
@@ -176,7 +173,7 @@ sub _parse_yaml_file {
     ## Flatten argument(s)
     my $FILEHANDLE;
 
-    my $tmpl = { filehandle => { store => \$FILEHANDLE }, };
+    my $tmpl = { filehandle => { store => \$FILEHANDLE, }, };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
@@ -184,18 +181,18 @@ sub _parse_yaml_file {
     my @order_parameters;
 
   LINE:
-    while (<$FILEHANDLE>) {
+    while ( my $line = <$FILEHANDLE> ) {
 
-        chomp;
+        chomp $line;
 
         ## Next line if header
-        next LINE if ( $INPUT_LINE_NUMBER == 1 && m/---/sxm );
+        next LINE if ( $INPUT_LINE_NUMBER == 1 && $line =~ /---/sxm );
 
         ## Next line if commment
-        next LINE if (/^#/sm);
+        next LINE if ( $line =~ /^#/sm );
 
         ## First level key
-        if (m/^(\w+):/sxm) {
+        if ( $line =~ /^(\w+):/sxm ) {
 
             my $parameter_name = $1;
 

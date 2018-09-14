@@ -122,7 +122,7 @@ epeddy:
 epy3:
   conda:
     pip: 
-    python: 2.7
+    python: 3.6
     sambamba: 0.6.6 
   pip:
     chanjo: 4.2.0

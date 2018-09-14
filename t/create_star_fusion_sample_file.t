@@ -1,0 +1,134 @@
+#!/usr/bin/env perl
+
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile };
+use File::Temp;
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2014 };
+use Readonly;
+
+## MIPs lib/
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
+
+my $VERBOSE = 1;
+our $VERSION = 1.00;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
+
+## Constants
+Readonly my $INDEX_READ_1_SECOND_PAIR => 2;
+Readonly my $INDEX_READ_2_SECOND_PAIR => 3;
+Readonly my $COLON                    => q{:};
+Readonly my $COMMA                    => q{,};
+Readonly my $SPACE                    => q{ };
+Readonly my $TAB                      => q{\t};
+
+BEGIN {
+
+    use MIP::Test::Fixtures qw{ test_import };
+
+### Check all internal dependency modules and imports
+## Modules with import
+    my %perl_module = (
+        q{MIP::File::Format::Star_fusion} =>
+          [qw{ create_star_fusion_sample_file }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
+
+    test_import( { perl_module_href => \%perl_module, } );
+}
+
+use MIP::File::Format::Star_fusion qw{ create_star_fusion_sample_file };
+
+diag(   q{Test create_star_fusion_sample_file from Star_fusion.pm v}
+      . $MIP::File::Format::Star_fusion::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
+
+my $test_dir = File::Temp->newdir();
+
+# Create anonymous filehandle
+my $FILEHANDLE = IO::Handle->new();
+
+# For storing info to write
+my $file_content;
+
+## Given a sample id and infiles
+my @infiles = qw{ file_1.fastq file_2.fastq file_x_1.fastq file_x_2.fastq };
+my $insample_directory = catdir(qw{ a test dir });
+my $sample_id          = q{sample_1};
+my $samples_file_path  = catfile( $test_dir, q{sample_file} );
+my %infile_lane_prefix = ( $sample_id => [qw{ file file_x }], );
+my %sample_info        = (
+    sample => {
+        $sample_id => {
+            file => {
+                file   => { sequence_run_type => q{paired-end}, },
+                file_x => { sequence_run_type => q{paired-end}, },
+            },
+        },
+    },
+);
+
+## Store file content in memory by using referenced variable
+open $FILEHANDLE, q{>}, \$file_content
+  or croak q{Cannot write to}
+  . $SPACE
+  . $file_content
+  . $COLON
+  . $SPACE
+  . $OS_ERROR;
+
+create_star_fusion_sample_file(
+    {
+        FILEHANDLE              => $FILEHANDLE,
+        infiles_ref             => \@infiles,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        insample_directory      => $insample_directory,
+        samples_file_path       => $samples_file_path,
+        sample_id               => $sample_id,
+        sample_info_href        => \%sample_info,
+    }
+);
+close $FILEHANDLE;
+
+## Then file content should exist and string with sample_id and path should written
+ok( $file_content, q{Created file content} );
+
+my ($returned_sample_id) = $file_content =~ /($sample_id)/msx;
+
+my ($returned_samples_file_path) = $file_content =~ /($samples_file_path)/mxs;
+
+is( $returned_sample_id, $sample_id, q{Found sample_id in line} );
+
+is( $returned_samples_file_path, $samples_file_path,
+    q{Found sample path in line} );
+my $second_pair = $infiles[$INDEX_READ_1_SECOND_PAIR] . q{\S+}
+  . $infiles[$INDEX_READ_2_SECOND_PAIR];
+my ($returned_second_pair) = $file_content =~ /($second_pair)/msx;
+
+ok( $returned_second_pair, q{Found second pair} );
+
+done_testing();

@@ -263,9 +263,11 @@ sub analysis_gatk_splitncigarreads {
     );
 
     ## Division by X according to the java heap
-    Readonly my $JAVA_MEMORY_ALLOCATION => 6;
-    $core_number = floor(
-        $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
+    Readonly my $JAVA_MEMORY_ALLOCATION => 12;
+    Readonly my $MEMORY_SPLIT           => 1.25;
+    my $node_ram_split =
+      $active_parameter_href->{node_ram_memory} / $MEMORY_SPLIT;
+    $core_number = floor( $node_ram_split / $JAVA_MEMORY_ALLOCATION );
 
     ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
