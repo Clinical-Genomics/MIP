@@ -64,7 +64,6 @@ gatk_logging_level:
 gatk_path:
   associated_program:
    - gatk_asereadcounter
-   - gatk_variantfiltration
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -539,10 +538,12 @@ gatk_variantfiltration:
   default: 1
   file_tag: _filtered
   outfile_suffix: ".vcf"
+  program_name_path:
+   - gatk
   type: program
 gatk_variantfiltration_cluster_size:
   associated_program:
-    - gatk_variantfiltration
+   - gatk_variantfiltration
   data_type: SCALAR
   default: 3
   type: program_argument
@@ -564,11 +565,13 @@ gatk_variantfiltration_cluster_window_size:
 bootstrapann:
   analysis_mode: sample
   associated_program:
-    - mip
+   - mip
   data_type: SCALAR
   default: 0
   file_tag: _bootstr
   outfile_suffix: ".vcf"
+  program_name_path:
+   - BootstrapAnn.py
   type: program
 ## MultiQC
 multiqc:

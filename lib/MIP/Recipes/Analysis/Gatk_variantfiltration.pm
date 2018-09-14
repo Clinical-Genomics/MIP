@@ -282,24 +282,20 @@ sub analysis_gatk_variantfiltration {
         {
             cluster_size =>
               $active_parameter_href->{gatk_variantfiltration_cluster_size},
+            cluster_window_size => $active_parameter_href
+              ->{gatk_variantfiltration_cluster_window_size},
             FILEHANDLE => $FILEHANDLE,
             filter_href =>
               $active_parameter_href->{gatk_variantfiltration_filter},
             infile_path => $infile_path,
-            java_jar    => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar},
-            ),
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            logging_level     => $active_parameter_href->{gatk_logging_level},
             memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path      => $outfile_path,
             referencefile_path =>
               $active_parameter_href->{human_genome_reference},
-            temp_directory      => $temp_directory,
-            cluster_window_size => $active_parameter_href
-              ->{gatk_variantfiltration_cluster_window_size},
+            temp_directory => $temp_directory,
+            verbosity      => $active_parameter_href->{gatk_logging_level},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
