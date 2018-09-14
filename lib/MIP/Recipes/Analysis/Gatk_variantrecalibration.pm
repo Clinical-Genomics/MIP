@@ -159,7 +159,9 @@ sub analysis_gatk_variantrecalibration_wgs {
     use MIP::Set::File qw{ set_file_suffix };
 
     ## Constants
-    Readonly my $MAX_GAUSSIAN_LEVEL => 4;
+    Readonly my $MAX_GAUSSIAN_LEVEL_INDEL             => 4;
+    Readonly my $MAX_GAUSSIAN_LEVEL_SNV               => 6;
+    Readonly my $MAX_GAUSSIAN_LEVEL_SNV_SINGLE_SAMPLE => 4;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -277,7 +279,7 @@ sub analysis_gatk_variantrecalibration_wgs {
         }
     );
 
-    ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+    ## Check if "--pedigree" should be included in analysis
     my %commands = gatk_pedigree_flag(
         {
             fam_file_path => $fam_file_path,
@@ -319,7 +321,13 @@ sub analysis_gatk_variantrecalibration_wgs {
             ## Use hard filtering
             if ($enable_snv_max_gaussians_filter) {
 
-                $max_gaussian_level = $MAX_GAUSSIAN_LEVEL;
+                ## Use fewer Gaussians for single sample cases
+                if ( scalar @{ $active_parameter_href->{sample_ids} } == 1 ) {
+                    $max_gaussian_level = $MAX_GAUSSIAN_LEVEL_SNV_SINGLE_SAMPLE;
+                }
+                else {
+                    $max_gaussian_level = $MAX_GAUSSIAN_LEVEL_SNV;
+                }
             }
         }
 
@@ -332,7 +340,7 @@ sub analysis_gatk_variantrecalibration_wgs {
             ## Use hard filtering
             if ($enable_indel_max_gaussians_filter) {
 
-                $max_gaussian_level = $MAX_GAUSSIAN_LEVEL;
+                $max_gaussian_level = $MAX_GAUSSIAN_LEVEL_INDEL;
             }
         }
 
@@ -370,15 +378,17 @@ sub analysis_gatk_variantrecalibration_wgs {
                 infile_path     => $infile_path,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                max_gaussian_level => $max_gaussian_level,
-                memory_allocation  => q{Xmx10g},
-                mode               => $mode,
-                outfile_path       => $recal_file_path,
-                referencefile_path => $referencefile_path,
-                resources_ref      => \@resources,
-                rscript_file_path  => $recal_file_path . $DOT . q{plots.R},
-                temp_directory     => $temp_directory,
-                tranches_file_path => $recal_file_path . $DOT . q{tranches},
+                max_gaussian_level    => $max_gaussian_level,
+                memory_allocation     => q{Xmx24g},
+                mode                  => $mode,
+                outfile_path          => $recal_file_path,
+                referencefile_path    => $referencefile_path,
+                resources_ref         => \@resources,
+                rscript_file_path     => $recal_file_path . $DOT . q{plots.R},
+                temp_directory        => $temp_directory,
+                tranches_file_path    => $recal_file_path . $DOT . q{tranches},
+                trust_all_polymorphic => $active_parameter_href
+                  ->{gatk_variantrecalibration_trust_all_polymorphic},
                 verbosity => $active_parameter_href->{gatk_logging_level},
             }
         );

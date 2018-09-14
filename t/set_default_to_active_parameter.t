@@ -33,9 +33,9 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA => q{,};
+Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE => q{ };
+Readonly my $SPACE   => q{ };
 
 BEGIN {
 
@@ -43,8 +43,10 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Set::Parameter} => [qw{ set_default_to_active_parameter }],
-			q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }], );
+    my %perl_module = (
+        q{MIP::Set::Parameter} => [qw{ set_default_to_active_parameter }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -119,7 +121,7 @@ my %expected_resource_indel = (
     q{GRCh37_dbsnp_-138-.vcf} =>
       q{dbsnp,known=true,training=false,truth=false,prior=2.0},
     q{GRCh37_mills_and_1000g_indels_-gold_standard-.vcf} =>
-      q{mills,VCF,known=true,training=true,truth=true,prior=12.0},
+      q{mills,known=true,training=true,truth=true,prior=12.0},
 );
 is_deeply( \%{ $active_parameter{gatk_variantrecalibration_resource_indel} },
     \%expected_resource_indel, 'Set default for hash parameter' );
