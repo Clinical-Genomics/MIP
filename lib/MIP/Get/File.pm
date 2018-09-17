@@ -30,6 +30,7 @@ BEGIN {
       get_fastq_file_header_info
       get_files
       get_file_suffix
+      get_io_files
       get_matching_values_key
       get_merged_infile_prefix
       get_path_entries
@@ -358,6 +359,124 @@ sub get_file_suffix {
         exit 1;
     }
     return;
+}
+
+sub get_io_files {
+
+## Function : Get the io files per chain
+## Returns  : %io
+## Arguments: $chain_id       => Chain of recipe
+##          : $id             => Id (sample or family)
+##          : $file_info_href => File info hash {REF}
+##          : $order_programs_ref => Order of programs
+##          : $parameter_href        => Parameter hash {REF}
+##          : $program_name => Program name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $order_programs_ref;
+    my $parameter_href;
+    my $program_name;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        order_programs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_programs_ref,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Avoid autovivification of variable
+    use Data::Diver qw{ Dive };
+    use List::MoreUtils qw{ before };
+    use MIP::Set::File qw{ set_io_files };
+
+    ## Constants
+    Readonly my $CHAIN_MAIN => q{CHAIN_MAIN};
+
+    ## Not first in chain - return file features
+    if ( Dive( $file_info_href, ( q{io}, $chain_id, $id ) ) ) {
+
+        return %{ $file_info_href->{io}{$chain_id}{$id} };
+    }
+    else {
+
+        ## Find upstream programs starting from (and not including) program_name
+        my @upstream_programs =
+          reverse before { $_ eq $program_name } @{$order_programs_ref};
+
+      UPSTREAM_PROGRAM:
+        foreach my $upstream_program (@upstream_programs) {
+
+            my $upstream_chain_id = $parameter_href->{$upstream_program}{chain};
+
+            ## Not found in chain
+            next UPSTREAM_PROGRAM
+              if (
+                not Dive( $file_info_href, ( q{io}, $upstream_chain_id, $id ) )
+              );
+
+            ## Do not inherit from other chains
+            next UPSTREAM_PROGRAM if ( $upstream_chain_id ne q{CHAIN_MAIN} );
+
+            if ( Dive( $file_info_href, ( q{io}, $upstream_chain_id, $id ) ) ) {
+
+                ##  Return file features
+                return %{ $file_info_href->{io}{$upstream_chain_id}{$id} };
+            }
+        }
+    }
+
+    ## At root of initation map - add base
+    set_io_files(
+        {
+            chain_id       => $CHAIN_MAIN,
+            id             => $id,
+            file_paths_ref => \@{ $file_info_href->{$id}{mip_infiles} },
+            file_info_href => $file_info_href,
+        }
+    );
+    return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id} };
 }
 
 sub get_matching_values_key {

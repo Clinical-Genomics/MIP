@@ -4,7 +4,8 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd qw(abs_path);
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Basename qw{ basename dirname fileparse };
+use File::Spec::Functions qw{ catdir catfile splitpath };
 use Params::Check qw{ check allow last_error };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
@@ -27,7 +28,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_absolute_path set_file_compression_features set_file_prefix_tag set_file_suffix set_infiles set_merged_infile_prefix };
+      qw{ set_absolute_path set_file_compression_features set_file_prefix_tag set_file_suffix set_infiles set_io_files set_merged_infile_prefix };
 }
 
 ## Constants
@@ -376,6 +377,86 @@ sub set_infiles {
 
     ## Set infiles in hash
     $file_info_href->{$sample_id}{mip_infiles} = [ @{$infiles_ref} ];
+    return;
+}
+
+sub set_io_files {
+
+## Function : Set the io files per chain
+## Returns  : io
+## Arguments: $chain_id       => Chain of recipe
+##          : $id             => Id (sample or family)
+##          : $file_info_href => File info hash {REF}
+##          : $file_paths_ref => File paths {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $file_paths_ref;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$file_paths_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Delete previous record (if any)
+    delete $file_info_href->{io}{$chain_id}{$id};
+
+  FILE_PATH:
+    foreach my $file_path ( @{$file_paths_ref} ) {
+
+        my ( $file_name_prefix, $dirs, $suffix ) =
+          fileparse( $file_path, qr/[.][^.]*/sxm );
+
+        push @{ $file_info_href->{io}{$chain_id}{$id}{file_names} },
+          basename($file_path);
+        push @{ $file_info_href->{io}{$chain_id}{$id}{file_name_prefixes} },
+          $file_name_prefix;
+        push @{ $file_info_href->{io}{$chain_id}{$id}{file_paths} }, $file_path;
+
+    }
+
+    ## Split relative infile_path to file(s)
+    my ( $infile_path_volume, $file_path_directory, $file_path_file_name ) =
+      splitpath( $file_paths_ref->[0] );
+
+    $file_info_href->{io}{$chain_id}{$id}{dir_path} = $file_path_directory;
+    $file_info_href->{io}{$chain_id}{$id}{dir_name} =
+      dirname( $file_paths_ref->[0] );
+
+    my ( $filename, $dirs, $suffix ) =
+      fileparse( $file_paths_ref->[0], qr/[.][^.]*/sxm );
+    $file_info_href->{io}{$chain_id}{$id}{file_suffix} = $suffix;
+
     return;
 }
 

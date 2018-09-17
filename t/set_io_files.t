@@ -44,17 +44,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::IO::Files}      => [qw{ set_io_files }],
+        q{MIP::Set::File}      => [qw{ set_io_files }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::IO::Files qw{ set_io_files };
+use MIP::Set::File qw{ set_io_files };
 
-diag(   q{Test set_io_files from Files.pm v}
-      . $MIP::IO::Files::VERSION
+diag(   q{Test set_io_files from File.pm v}
+      . $MIP::Set::File::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,6 +64,7 @@ diag(   q{Test set_io_files from Files.pm v}
 
 ## Given
 my $chain_id = 1;
+my $id       = q{sample_1};
 my @file_paths =
   ( catfile(qw{ a test dir file_1.txt}), catfile(qw{ a test dir file_2.txt}), );
 my %file_info;
@@ -71,6 +72,7 @@ my %file_info;
 set_io_files(
     {
         chain_id       => $chain_id,
+        id             => $id,
         file_paths_ref => \@file_paths,
         file_info_href => \%file_info,
     }
@@ -78,29 +80,29 @@ set_io_files(
 
 ## Then set io features for $chain_id
 is(
-    $file_info{io}{$chain_id}{dir_path},
+    $file_info{io}{$chain_id}{$id}{dir_path},
     catfile(qw{ a test dir }) . $FRW_SLASH,
     q{Set file path}
 );
 
 is(
-    $file_info{io}{$chain_id}{dir_name},
+    $file_info{io}{$chain_id}{$id}{dir_name},
     catfile(qw{ a test dir }),
     q{Set dir name}
 );
 
 is_deeply(
-    $file_info{io}{$chain_id}{file_names},
+    $file_info{io}{$chain_id}{$id}{file_names},
     [qw{ file_1.txt file_2.txt }],
     q{Set file name}
 );
 
-is_deeply( \@{ $file_info{io}{$chain_id}{file_name_prefixes} },
+is_deeply( \@{ $file_info{io}{$chain_id}{$id}{file_name_prefixes} },
     [qw{ file_1 file_2 }], q{Set file name prefixes} );
 
-is_deeply( \@{ $file_info{io}{$chain_id}{file_paths} },
+is_deeply( \@{ $file_info{io}{$chain_id}{$id}{file_paths} },
     \@file_paths, q{Set file paths} );
 
-is( $file_info{io}{$chain_id}{file_suffix}, q{.txt}, q{Set file suffix} );
+is( $file_info{io}{$chain_id}{$id}{file_suffix}, q{.txt}, q{Set file suffix} );
 
 done_testing();
