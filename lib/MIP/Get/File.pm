@@ -363,32 +363,26 @@ sub get_file_suffix {
 
 sub get_io_files {
 
-## Function : Get the io files per chain
+## Function : Get the io files per chain, id and stream
 ## Returns  : %io
-## Arguments: $chain_id       => Chain of recipe
-##          : $id             => Id (sample or family)
+## Arguments: $id             => Id (sample or family)
 ##          : $file_info_href => File info hash {REF}
-##          : $order_programs_ref => Order of programs
-##          : $parameter_href        => Parameter hash {REF}
-##          : $program_name => Program name
+##          : $parameter_href => Parameter hash {REF}
+##          : $program_name   => Program name
+##          : $stream         => Stream (in or out or temp)
+##          : $temp_directory => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $chain_id;
     my $id;
     my $file_info_href;
-    my $order_programs_ref;
     my $parameter_href;
     my $program_name;
+    my $stream;
+    my $temp_directory;
 
     my $tmpl = {
-        chain_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$chain_id,
-            strict_type => 1,
-        },
         id => {
             defined     => 1,
             required    => 1,
@@ -400,13 +394,6 @@ sub get_io_files {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
-            strict_type => 1,
-        },
-        order_programs_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$order_programs_ref,
             strict_type => 1,
         },
         parameter_href => {
@@ -422,6 +409,17 @@ sub get_io_files {
             store       => \$program_name,
             strict_type => 1,
         },
+        stream => {
+            allow       => [qw{ in temp out }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -434,32 +432,48 @@ sub get_io_files {
     ## Constants
     Readonly my $CHAIN_MAIN => q{CHAIN_MAIN};
 
+    ## Unpack
+    my $chain_id = $parameter_href->{$program_name}{chain};
+
     ## Not first in chain - return file features
-    if ( Dive( $file_info_href, ( q{io}, $chain_id, $id ) ) ) {
+    if ( Dive( $file_info_href, ( q{io}, $chain_id, $id, $stream ) ) ) {
 
         return %{ $file_info_href->{io}{$chain_id}{$id} };
     }
     else {
+        ## First in chain
 
+        ## Unpack
+        my @order_programs =
+          @{ $parameter_href->{dynamic_parameter}{order_programs_ref} };
         ## Find upstream programs starting from (and not including) program_name
         my @upstream_programs =
-          reverse before { $_ eq $program_name } @{$order_programs_ref};
+          reverse before { $_ eq $program_name } @order_programs;
 
       UPSTREAM_PROGRAM:
         foreach my $upstream_program (@upstream_programs) {
 
+            # Get chain id
             my $upstream_chain_id = $parameter_href->{$upstream_program}{chain};
 
-            ## Not found in chain
+            ## No io file features found in chain and stream
             next UPSTREAM_PROGRAM
               if (
-                not Dive( $file_info_href, ( q{io}, $upstream_chain_id, $id ) )
+                not Dive(
+                    $file_info_href, ( q{io}, $upstream_chain_id, $id, $stream )
+                )
               );
 
-            ## Do not inherit from other chains
+            ## Do not inherit from other chains than MAIN
             next UPSTREAM_PROGRAM if ( $upstream_chain_id ne q{CHAIN_MAIN} );
 
-            if ( Dive( $file_info_href, ( q{io}, $upstream_chain_id, $id ) ) ) {
+            ## Found io file features found in chain and stream
+            if (
+                Dive(
+                    $file_info_href, ( q{io}, $upstream_chain_id, $id, $stream )
+                )
+              )
+            {
 
                 ##  Return file features
                 return %{ $file_info_href->{io}{$upstream_chain_id}{$id} };
@@ -468,12 +482,19 @@ sub get_io_files {
     }
 
     ## At root of initation map - add base
+    # Build infiles path
+    my @base_file_paths =
+      map { catfile( $file_info_href->{$id}{mip_infiles_dir}, $_ ) }
+      @{ $file_info_href->{$id}{mip_infiles} };
+
     set_io_files(
         {
             chain_id       => $CHAIN_MAIN,
             id             => $id,
-            file_paths_ref => \@{ $file_info_href->{$id}{mip_infiles} },
+            file_paths_ref => \@base_file_paths,
             file_info_href => $file_info_href,
+            stream         => $stream,
+            temp_directory => $temp_directory,
         }
     );
     return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id} };

@@ -382,12 +382,14 @@ sub set_infiles {
 
 sub set_io_files {
 
-## Function : Set the io files per chain
+## Function : Set the io files per chain and stream
 ## Returns  : io
 ## Arguments: $chain_id       => Chain of recipe
 ##          : $id             => Id (sample or family)
 ##          : $file_info_href => File info hash {REF}
 ##          : $file_paths_ref => File paths {REF}
+##          : $stream         => Stream (in or out or temp)
+##          : $temp_directory => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -396,6 +398,8 @@ sub set_io_files {
     my $id;
     my $file_info_href;
     my $file_paths_ref;
+    my $stream;
+    my $temp_directory;
 
     my $tmpl = {
         chain_id => {
@@ -424,39 +428,73 @@ sub set_io_files {
             store       => \$file_paths_ref,
             strict_type => 1,
         },
+        stream => {
+            allow       => [qw{ in temp out }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Delete previous record (if any)
-    delete $file_info_href->{io}{$chain_id}{$id};
+    delete $file_info_href->{io}{$chain_id}{$id}{$stream};
 
   FILE_PATH:
     foreach my $file_path ( @{$file_paths_ref} ) {
 
         my ( $file_name_prefix, $dirs, $suffix ) =
-          fileparse( $file_path, qr/[.][^.]*/sxm );
+          fileparse( $file_path, qr/([.][^.]*)*/sxm );
 
-        push @{ $file_info_href->{io}{$chain_id}{$id}{file_names} },
+        push @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_names} },
           basename($file_path);
-        push @{ $file_info_href->{io}{$chain_id}{$id}{file_name_prefixes} },
-          $file_name_prefix;
-        push @{ $file_info_href->{io}{$chain_id}{$id}{file_paths} }, $file_path;
-
+        push
+          @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_name_prefixes}
+          }, $file_name_prefix;
+        push @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_paths} },
+          $file_path;
+        push
+          @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_path_prefixes}
+          }, catfile( $dirs, $file_name_prefix );
     }
 
     ## Split relative infile_path to file(s)
     my ( $infile_path_volume, $file_path_directory, $file_path_file_name ) =
       splitpath( $file_paths_ref->[0] );
 
-    $file_info_href->{io}{$chain_id}{$id}{dir_path} = $file_path_directory;
-    $file_info_href->{io}{$chain_id}{$id}{dir_name} =
+    $file_info_href->{io}{$chain_id}{$id}{$stream}{dir_path} =
+      $file_path_directory;
+    $file_info_href->{io}{$chain_id}{$id}{$stream}{dir_name} =
       dirname( $file_paths_ref->[0] );
 
     my ( $filename, $dirs, $suffix ) =
-      fileparse( $file_paths_ref->[0], qr/[.][^.]*/sxm );
-    $file_info_href->{io}{$chain_id}{$id}{file_suffix} = $suffix;
+      fileparse( $file_paths_ref->[0], qr/([.][^.]*)*/sxm );
+    $file_info_href->{io}{$chain_id}{$id}{$stream}{file_suffix} = $suffix;
 
+    ## Also set the temporary file features for stream
+    if ($temp_directory) {
+
+        ## Switch to temp dir for path
+        my @file_paths_temp = map { catfile( $temp_directory, $_ ) }
+          @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_names} };
+
+        set_io_files(
+            {
+                chain_id       => $chain_id,
+                id             => $id,
+                file_paths_ref => \@file_paths_temp,
+                file_info_href => $file_info_href,
+                stream         => q{temp},
+            }
+        );
+        return;
+    }
     return;
 }
 

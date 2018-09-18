@@ -74,45 +74,45 @@ my @file_paths   = (
 );
 my %file_info = (
     $id => {
-        mip_infiles => [
-            catfile(qw{ a dir fastq_sample_1_1.fastq.gz }),
-            catfile(qw{ a dir fastq_sample_1_2.fastq.gz })
-        ],
+        mip_infiles_dir => catfile(qw{ a dir }),
+        mip_infiles =>
+          [qw{ fastq_sample_1_1.fastq.gz fastq_sample_1_2.fastq.gz }],
     },
 );
 my @order_programs =
-  qw{ bwa_mem picard_mergesamfiles markduplicates gatk_baserecalibration chanjo_sexcheck cnvnator};
+  qw{ bwa_mem picard_mergesamfiles markduplicates gatk_baserecalibration chanjo_sexcheck cnvnator sv_combinevariantcallsets };
 
 my %parameter = (
-    bwa_mem                   => { chain => $chain_main, },
-    picard_mergesamfiles      => { chain => $chain_main, },
-    markduplicates            => { chain => $chain_main, },
-    chanjo_sexcheck           => { chain => $chain_chanjo, },
-    cnvnator                  => { chain => q{CNVNATOR}, },
-    sv_combinevariantcallsets => { chain => q{CHAIN_SV}, },
+    bwa_mem                   => { chain              => $chain_main, },
+    chanjo_sexcheck           => { chain              => $chain_chanjo, },
+    cnvnator                  => { chain              => q{CNVNATOR}, },
+    dynamic_parameter         => { order_programs_ref => \@order_programs, },
+    markduplicates            => { chain              => $chain_main, },
+    picard_mergesamfiles      => { chain              => $chain_main, },
+    sv_combinevariantcallsets => { chain              => q{CHAIN_SV}, },
 );
 my $program_name = q{picard_mergesamfiles};
+my $stream       = q{in};
 
-## Given no set files - inherit from base i.e MIP infiles
+## Given no set infiles - inherit from base i.e MIP infiles
 my %io = get_io_files(
     {
-        chain_id           => $chain_main,
-        id                 => $id,
-        file_info_href     => \%file_info,
-        order_programs_ref => \@order_programs,
-        parameter_href     => \%parameter,
-        program_name       => $program_name,
+        id             => $id,
+        file_info_href => \%file_info,
+        parameter_href => \%parameter,
+        program_name   => $program_name,
+        stream         => $stream,
     }
 );
 
 ## Then infile for new program should be returned
-is_deeply( \%{ $file_info{io}{$chain_main}{$id} },
-    \%io, q{Got fastq file features for sample_1} );
+is_deeply(
+    \%{ $file_info{io}{$chain_main}{$id}{$stream} },
+    \%{ $io{$stream} },
+    q{Got fastq file features for sample_1}
+);
 
-#use Data::Printer;
-#p(%io);
-
-## Set for $id
+## Set for infiles for $id
 ## Program name does not matter - features gets overwritten
 set_io_files(
     {
@@ -120,10 +120,11 @@ set_io_files(
         id             => $id,
         file_paths_ref => \@file_paths,
         file_info_href => \%file_info,
+        stream         => $stream,
     }
 );
 
-## Set for $id_2
+## Set for infiles for $id_2
 ## Program name does not matter - features gets overwritten
 set_io_files(
     {
@@ -131,24 +132,27 @@ set_io_files(
         id             => $id_2,
         file_paths_ref => \@file_paths,
         file_info_href => \%file_info,
+        stream         => $stream,
     }
 );
 
 ## Given new program
 %io = get_io_files(
     {
-        chain_id           => $chain_main,
-        id                 => $id,
-        file_info_href     => \%file_info,
-        order_programs_ref => \@order_programs,
-        parameter_href     => \%parameter,
-        program_name       => $program_name,
+        id             => $id,
+        file_info_href => \%file_info,
+        parameter_href => \%parameter,
+        program_name   => $program_name,
+        stream         => $stream,
     }
 );
 
 ## Then infile for new program should be returned
-is_deeply( \%{ $file_info{io}{$chain_main}{$id} },
-    \%io, q{Got file features for sample_1} );
+is_deeply(
+    \%{ $file_info{io}{$chain_main}{$id}{$stream} },
+    \%{ $io{$stream} },
+    q{Got file features for sample_1}
+);
 
 ## Given second program in MAIN chain
 my @file_paths_2 = (
@@ -156,12 +160,14 @@ my @file_paths_2 = (
     catfile(qw{ a test picard_mergesamfiles file_2.txt}),
 );
 
+## Set new infiles
 set_io_files(
     {
         chain_id       => $chain_main,
         id             => $id,
         file_paths_ref => \@file_paths_2,
         file_info_href => \%file_info,
+        stream         => $stream,
     }
 );
 
@@ -169,50 +175,55 @@ set_io_files(
 my $first_in_chain_program_name = q{chanjo_sexcheck};
 %io = get_io_files(
     {
-        chain_id           => $chain_chanjo,
-        id                 => $id,
-        file_info_href     => \%file_info,
-        order_programs_ref => \@order_programs,
-        parameter_href     => \%parameter,
-        program_name       => $first_in_chain_program_name,
+        id             => $id,
+        file_info_href => \%file_info,
+        parameter_href => \%parameter,
+        program_name   => $first_in_chain_program_name,
+        stream         => $stream,
     }
 );
 
-is_deeply( \%{ $file_info{io}{$chain_main}{$id} },
-    \%io, q{Got inherited file features from MAIN for sample_1} );
+is_deeply(
+    \%{ $file_info{io}{$chain_main}{$id}{$stream} },
+    \%{ $io{$stream} },
+    q{Got inherited file features from MAIN for sample_1}
+);
 
 ## Given a program downstream of PARALLEL chain and other chain
 my $downstream_program = q{combinevariantcallsets};
 
 %io = get_io_files(
     {
-        chain_id           => $chain_chanjo,
-        id                 => $id,
-        file_info_href     => \%file_info,
-        order_programs_ref => \@order_programs,
-        parameter_href     => \%parameter,
-        program_name       => $first_in_chain_program_name,
+        id             => $id,
+        file_info_href => \%file_info,
+        parameter_href => \%parameter,
+        program_name   => $first_in_chain_program_name,
+        stream         => $stream,
     }
 );
 
-is_deeply( \%{ $file_info{io}{$chain_main}{$id} },
-    \%io,
-    q{Got inherited file features from MAIN from downstream for sample_1} );
+is_deeply(
+    \%{ $file_info{io}{$chain_main}{$id}{$stream} },
+    \%{ $io{$stream} },
+    q{Got inherited file features from MAIN from downstream for sample_1}
+);
 
 ## Given a program for sample_2
 %io = get_io_files(
     {
-        chain_id           => $chain_chanjo,
-        id                 => $id_2,
-        file_info_href     => \%file_info,
-        order_programs_ref => \@order_programs,
-        parameter_href     => \%parameter,
-        program_name       => $first_in_chain_program_name,
+        id             => $id_2,
+        file_info_href => \%file_info,
+        parameter_href => \%parameter,
+        program_name   => $first_in_chain_program_name,
+        stream         => $stream,
     }
 );
 
 ## The inherit from sample_2 main chain
-is_deeply( \%{ $file_info{io}{$chain_main}{$id_2} },
-    \%io, q{Got inherited file features from MAIN for sample_2} );
+is_deeply(
+    \%{ $file_info{io}{$chain_main}{$id_2}{$stream} },
+    \%{ $io{$stream} },
+    q{Got inherited file features from MAIN for sample_2}
+);
 
 done_testing();
