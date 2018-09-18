@@ -330,18 +330,6 @@ sub analysis_fastqc {
 
     if ( $program_mode == 1 ) {
 
-        ## Set stream out to in for io files for next module in chain and id
-        set_io_files(
-            {
-                chain_id       => $job_id_chain,
-                id             => $sample_id,
-                file_paths_ref => \@outfile_paths,
-                file_info_href => $file_info_href,
-                stream         => q{in},
-                temp_directory => $temp_directory,
-            }
-        );
-
         slurm_submit_job_no_dependency_dead_end(
             {
                 job_id_href      => $job_id_href,
@@ -350,6 +338,18 @@ sub analysis_fastqc {
             }
         );
     }
+
+    ## Set stream out to in for io files for next module in chain and id
+    set_io_files(
+        {
+            chain_id       => $job_id_chain,
+            id             => $sample_id,
+            file_paths_ref => \@outfile_paths,
+            file_info_href => $file_info_href,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
     return;
 }
 

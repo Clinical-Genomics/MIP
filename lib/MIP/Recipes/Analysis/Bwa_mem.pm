@@ -227,7 +227,6 @@ sub analysis_bwa_mem {
 
     ### Assign suffix
     ## Set file suffix for next module within jobid chain
-    #####CAN BE REMOVED ONCE chain inhertiance is done for all alignment recipes#####
     set_file_suffix(
         {
             file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
@@ -291,6 +290,8 @@ sub analysis_bwa_mem {
         # Split to enable submission to %sample_info_qc later
         my ( $volume, $directory, $stderr_file ) =
           splitpath( $program_info_path . $DOT . q{stderr.txt} );
+
+        ### SHELL:
 
         ## Copies file to temporary directory.
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -609,18 +610,6 @@ sub analysis_bwa_mem {
                 );
             }
 
-            ## Set stream out to in for io files for next module in chain and id
-            set_io_files(
-                {
-                    chain_id       => $job_id_chain,
-                    id             => $sample_id,
-                    file_paths_ref => \@outfile_paths,
-                    file_info_href => $file_info_href,
-                    stream         => q{in},
-                    temp_directory => $temp_directory,
-                }
-            );
-
             slurm_submit_job_sample_id_dependency_step_in_parallel(
                 {
                     family_id               => $family_id,
@@ -634,6 +623,18 @@ sub analysis_bwa_mem {
                 }
             );
         }
+
+        ## Set stream out to in for io files for next module in chain and id
+        set_io_files(
+            {
+                chain_id       => $job_id_chain,
+                id             => $sample_id,
+                file_paths_ref => \@outfile_paths,
+                file_info_href => $file_info_href,
+                stream         => q{in},
+                temp_directory => $temp_directory,
+            }
+        );
     }
     return;
 }
