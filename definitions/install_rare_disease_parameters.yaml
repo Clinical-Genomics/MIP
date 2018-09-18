@@ -184,6 +184,9 @@ log_file: ~
 # Skip updating existing packages
 noupdate: 0
 
+## Which pipeline are these instructions for
+pipeline: rare_disease
+
 # Prefer installation via shell instead of via conda,
 # only applicaple for shell programs that overlap with existing conda packages
 prefer_shell: 0

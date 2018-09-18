@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_reference };
@@ -40,6 +40,7 @@ sub download_reference {
 ## Returns  : @commands
 ## Arguments: $config_file_path              => Config file path
 ##          : $FILEHANDLE                    => Filehandle to write to
+##          : $pipeline						 => Pipeline
 ##          : $reference_dir_path            => Reference directory
 ##          : $reference_genome_versions_ref => Array with genome versions to downlaod {REF}
 ##          : $stderrfile_path               => Stderrfile path
@@ -49,26 +50,32 @@ sub download_reference {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $config_file_path;
     my $FILEHANDLE;
+    my $pipeline;
     my $reference_dir_path;
     my $reference_genome_versions_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
-    ## Defaults
-    my $config_file_path;
-
     my $tmpl = {
         config_file_path => {
-            default =>
-              catfile( $Bin, qw{ definitions download_rare_disease.yaml } ),
+            defined     => 1,
             store       => \$config_file_path,
+            required    => 1,
             strict_type => 1,
         },
         FILEHANDLE => {
             required => 1,
             store    => \$FILEHANDLE,
+        },
+        pipeline => {
+            allow       => [qw{ rare_disease rna }],
+            defined     => 1,
+            required    => 1,
+            store       => \$pipeline,
+            strict_type => 1,
         },
         reference_dir_path => {
             defined     => 1,
@@ -100,7 +107,9 @@ sub download_reference {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{mip download rare_disease};
+    my @commands = q{mip download};
+
+    push @commands, $pipeline;
 
     push @commands, q{--config_file} . $SPACE . $config_file_path;
 
