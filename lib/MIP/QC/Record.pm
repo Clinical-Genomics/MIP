@@ -1028,13 +1028,13 @@ sub _file_name_formats {
 
     my $mip_file_format =
         $sample_id
-      . $DOT
+      . $UNDERSCORE
       . $date
       . $UNDERSCORE
       . $flowcell
       . $UNDERSCORE
       . $index
-      . $DOT . q{lane}
+      . $UNDERSCORE . q{lane}
       . $lane;
 
     my $mip_file_format_with_direction =

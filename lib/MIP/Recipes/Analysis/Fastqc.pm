@@ -158,7 +158,6 @@ sub analysis_fastqc {
         }
     );
     my $indir_name                = $io{in}{dir_name};
-    my @infile_paths              = @{ $io{in}{file_paths} };
     my @infile_names              = @{ $io{in}{file_names} };
     my @infile_name_prefixes      = @{ $io{in}{file_name_prefixes} };
     my @temp_infile_paths         = @{ $io{temp}{file_paths} };
@@ -179,8 +178,10 @@ sub analysis_fastqc {
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );
     my @outfile_paths =
-      map { catdir( $outsample_directory, $_, q{fastqc_data.txt} ) }
-      @infile_name_prefixes;
+      map {
+        catdir( $outsample_directory, $_ . $UNDERSCORE . $program_name,
+            q{fastqc_data.txt} )
+      } @infile_name_prefixes;
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -198,8 +199,8 @@ sub analysis_fastqc {
         )
     );
 
-    my $outdir_name   = $io{out}{dir_name};
-    my @outfile_names = @{ $io{out}{file_names} };
+    my $outdir_name = $io{out}{dir_name};
+    @outfile_paths = @{ $io{out}{file_paths} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -313,9 +314,11 @@ sub analysis_fastqc {
 
         gnu_cp(
             {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $temp_infile_path_prefixes[$index],
-                outfile_path => $outsample_directory,
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $temp_infile_path_prefixes[$index]
+                  . $UNDERSCORE
+                  . $program_name,
+                outfile_path => $outdir_name,
                 recursive    => 1,
             }
         );
