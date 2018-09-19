@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -222,13 +222,13 @@ sub xargs_migrate_contig_files {
 ##          : $file_path          => File name
 ##          : $first_command      => The inital command
 ##          : $indirectory        => In directory
-##          : $infile             => Infile name without ending attached
-##          : $outdirectory       => Out directory
-##          : $outfile            => OutFile name without ending attached
-##          : $program_info_path  => The program info path
+##          : $infile             => Infile name without suffix attached
+##          : $outdirectory       => Outdirectory
+##          : $outfile            => Outfile name without suffix attached
+##          : $program_info_path  => Program info path
 ##          : $temp_directory     => Temporary directory
 ##          : $XARGSFILEHANDLE    => XARGS filehandle to write to
-##          : $xargs_file_counter => The xargs file counter
+##          : $xargs_file_counter => Xargs file counter
 
     my ($arg_href) = @_;
 
@@ -325,8 +325,8 @@ sub xargs_migrate_contig_files {
         if ( defined $infile ) {
 
             ## Get parameters
-            my $infile_path = catfile( $indirectory,
-                $infile . $UNDERSCORE . $contig . $file_ending );
+            my $infile_path =
+              catfile( $indirectory, $infile . $DOT . $contig . $file_ending );
 
             ## Copy file(s) to temporary directory.
             migrate_file(
@@ -343,7 +343,7 @@ sub xargs_migrate_contig_files {
 
             ## Get parameters
             my $infile_path = catfile( $temp_directory,
-                $outfile . $UNDERSCORE . $contig . $file_ending );
+                $outfile . $DOT . $contig . $file_ending );
             ## Copy file(s) from temporary directory.
             migrate_file(
                 {

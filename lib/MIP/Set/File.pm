@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { any };
+use List::MoreUtils qw { any uniq };
 use Readonly;
 
 BEGIN {
@@ -462,6 +462,10 @@ sub set_io_files {
         push
           @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_path_prefixes}
           }, catfile( $dirs, $file_name_prefix );
+
+        ## Collect everything after first dot
+        push @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_suffixes} },
+          $suffix;
     }
 
     ## Split relative infile_path to file(s)
@@ -470,12 +474,25 @@ sub set_io_files {
 
     $file_info_href->{io}{$chain_id}{$id}{$stream}{dir_path} =
       $file_path_directory;
-    $file_info_href->{io}{$chain_id}{$id}{$stream}{dir_name} =
+    $file_info_href->{io}{$chain_id}{$id}{$stream}{dir_path_prefix} =
       dirname( $file_paths_ref->[0] );
 
+    ## Collect everything after last dot
     my ( $filename, $dirs, $suffix ) =
-      fileparse( $file_paths_ref->[0], qr/([.][^.]*)*/sxm );
+      fileparse( $file_paths_ref->[0], qr/[.][^.]*/sxm );
     $file_info_href->{io}{$chain_id}{$id}{$stream}{file_suffix} = $suffix;
+
+    ## Get unique suffixes
+    my @uniq_elements = uniq(
+        @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_suffixes} } );
+
+    ## If unique
+    if ( scalar @uniq_elements eq 1 ) {
+
+        ## Set file constant suffix
+        $file_info_href->{io}{$chain_id}{$id}{$stream}{file_constant_suffix} =
+          $uniq_elements[0];
+    }
 
     ## Also set the temporary file features for stream
     if ($temp_directory) {

@@ -196,7 +196,7 @@ sub analysis_picardtools_mergesamfiles {
             temp_directory => $temp_directory,
         }
     );
-    my $indir_name                = $io{in}{dir_name};
+    my $indir_path_prefix         = $io{in}{dir_path_prefix};
     my $infile_suffix             = $io{in}{file_suffix};
     my @infile_name_prefixes      = @{ $io{in}{file_name_prefixes} };
     my @temp_infile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
@@ -222,6 +222,7 @@ sub analysis_picardtools_mergesamfiles {
             suffix_key     => q{alignment_file_suffix},
         }
     );
+
     ## Extract lanes
     my $lanes_id = join $EMPTY_STRING,
       @{ $file_info_href->{$sample_id}{lanes} };
@@ -241,7 +242,7 @@ sub analysis_picardtools_mergesamfiles {
               . $UNDERSCORE
               . $lanes_id
               . $outfile_tag
-              . $UNDERSCORE
+              . $DOT
               . $_
               . $outfile_suffix )
       } @{ $file_info_href->{contigs_size_ordered} };
@@ -262,9 +263,10 @@ sub analysis_picardtools_mergesamfiles {
         )
     );
 
-    my $outdir_name = $io{out}{dir_name};
+    my $outdir_path_prefix = $io{out}{dir_path_prefix};
     @outfile_paths = @{ $io{out}{file_paths} };
     my @outfile_name_prefixes = @{ $io{out}{file_name_prefixes} };
+    my @outfile_suffixes      = @{ $io{out}{file_suffixes} };
     my @temp_outfile_paths    = @{ $io{temp}{file_paths} };
 
     ## Filehandles
@@ -306,7 +308,7 @@ sub analysis_picardtools_mergesamfiles {
             core_number  => $core_number,
             FILEHANDLE   => $FILEHANDLE,
             file_ending  => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
-            indirectory  => $indir_name,
+            indirectory  => $indir_path_prefix,
             infiles_ref  => \@infile_name_prefixes,
             outfile_path => $temp_directory,
         }
@@ -382,9 +384,9 @@ sub analysis_picardtools_mergesamfiles {
         {
 
             ## Get parameters
-            # Assemble infile paths by adding directory and file ending
+            # Assemble infile paths by adding directory and file suffixes
             my @merge_infile_paths =
-              map { $_ . $UNDERSCORE . $contig . $infile_suffix }
+              map { $_ . $DOT . $contig . $infile_suffix }
               @temp_infile_path_prefixes;
             my $outfile_path = $temp_outfile_paths[$contig_index];
             my $stderrfile_path =
@@ -433,10 +435,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
 
                 ## Get parameters
                 my $gnu_mv_infile_path =
-                    $temp_infile_path_prefix
-                  . $UNDERSCORE
-                  . $contig
-                  . $infile_suffix;
+                  $temp_infile_path_prefix . $DOT . $contig . $infile_suffix;
                 my $gnu_mv_outfile_path = $temp_outfile_paths[$contig_index];
 
                 ## Rename
@@ -462,18 +461,23 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         }
     }
 
-    ## Copies files from source to destination
-    migrate_files(
+    ## Copies file from temporary directory. Per contig
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
+    ($xargs_file_counter) = xargs_migrate_contig_files(
         {
-            core_number  => $core_number,
-            FILEHANDLE   => $FILEHANDLE,
-            file_ending  => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
-            indirectory  => $outdir_name,
-            infiles_ref  => \@outfile_name_prefixes,
-            outfile_path => $temp_directory,
+            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+            core_number        => $core_number,
+            FILEHANDLE         => $FILEHANDLE,
+            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
+            file_path          => $file_path,
+            outdirectory       => $outdir_path_prefix,
+            outfile            => $outfile_name_prefixes[0],
+            program_info_path  => $program_info_path,
+            temp_directory     => $temp_directory,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargs_file_counter => $xargs_file_counter,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
 
     close $XARGSFILEHANDLE;
     close $FILEHANDLE;

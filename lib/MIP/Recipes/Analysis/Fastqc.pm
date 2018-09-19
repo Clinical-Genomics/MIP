@@ -157,7 +157,7 @@ sub analysis_fastqc {
             temp_directory => $temp_directory,
         }
     );
-    my $indir_name                = $io{in}{dir_name};
+    my $indir_path_prefix         = $io{in}{dir_path_prefix};
     my @infile_names              = @{ $io{in}{file_names} };
     my @infile_name_prefixes      = @{ $io{in}{file_name_prefixes} };
     my @temp_infile_paths         = @{ $io{temp}{file_paths} };
@@ -199,7 +199,7 @@ sub analysis_fastqc {
         )
     );
 
-    my $outdir_name = $io{out}{dir_name};
+    my $outdir_path_prefix = $io{out}{dir_path_prefix};
     @outfile_paths = @{ $io{out}{file_paths} };
 
     ## Filehandles
@@ -252,7 +252,7 @@ sub analysis_fastqc {
         {
             core_number  => $core_number,
             FILEHANDLE   => $FILEHANDLE,
-            indirectory  => $indir_name,
+            indirectory  => $indir_path_prefix,
             infiles_ref  => \@infile_names,
             outfile_path => $temp_directory,
         }
@@ -318,7 +318,7 @@ sub analysis_fastqc {
                 infile_path => $temp_infile_path_prefixes[$index]
                   . $UNDERSCORE
                   . $program_name,
-                outfile_path => $outdir_name,
+                outfile_path => $outdir_path_prefix,
                 recursive    => 1,
             }
         );

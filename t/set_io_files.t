@@ -63,14 +63,19 @@ diag(   q{Test set_io_files from File.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given
-my $chain_id = 1;
-my $id       = q{sample_1};
-my @file_paths =
-  ( catfile(qw{ a test dir file_1.txt}), catfile(qw{ a test dir file_2.txt}), );
+my $chain_id   = 1;
+my $id         = q{sample_1};
+my @file_paths = (
+    catfile(qw{ a test dir file_1.1.txt}),
+    catfile(qw{ a test dir file_2.txt}),
+);
 my @file_path_prefixes =
   ( catfile(qw{ a test dir file_1}), catfile(qw{ a test dir file_2}), );
-my @temp_file_paths =
-  ( catfile(qw{ a temp dir file_1.txt}), catfile(qw{ a temp dir file_2.txt}), );
+my @file_suffixes   = qw{.1.txt .txt};
+my @temp_file_paths = (
+    catfile(qw{ a temp dir file_1.1.txt}),
+    catfile(qw{ a temp dir file_2.txt}),
+);
 my @temp_file_path_prefixes =
   ( catfile(qw{ a temp dir file_1}), catfile(qw{ a temp dir file_2}), );
 my %file_info;
@@ -96,14 +101,14 @@ is(
 );
 
 is(
-    $file_info{io}{$chain_id}{$id}{$stream}{dir_name},
+    $file_info{io}{$chain_id}{$id}{$stream}{dir_path_prefix},
     catfile(qw{ a test dir }),
-    q{Set dir name}
+    q{Set dir path prefix}
 );
 
 is_deeply(
     $file_info{io}{$chain_id}{$id}{$stream}{file_names},
-    [qw{ file_1.txt file_2.txt }],
+    [qw{ file_1.1.txt file_2.txt }],
     q{Set file name}
 );
 
@@ -116,8 +121,14 @@ is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$stream}{file_paths} },
 is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$stream}{file_path_prefixes} },
     \@file_path_prefixes, q{Set file path prefixes} );
 
+is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$stream}{file_suffixes} },
+    \@file_suffixes, q{Set file suffixes} );
+
 is( $file_info{io}{$chain_id}{$id}{$stream}{file_suffix},
     q{.txt}, q{Set file suffix} );
+
+is( $file_info{io}{$chain_id}{$id}{$stream}{file_constant_suffix},
+    undef, q{Did not set file constant suffix} );
 
 ## And for the temp dir
 my $temp_stream = q{temp};
@@ -129,14 +140,14 @@ is(
 );
 
 is(
-    $file_info{io}{$chain_id}{$id}{$temp_stream}{dir_name},
+    $file_info{io}{$chain_id}{$id}{$temp_stream}{dir_path_prefix},
     catfile(qw{ a temp dir }),
-    q{Set dir name for temp stream}
+    q{Set dir path prefix for temp stream}
 );
 
 is_deeply(
     $file_info{io}{$chain_id}{$id}{$temp_stream}{file_names},
-    [qw{ file_1.txt file_2.txt }],
+    [qw{ file_1.1.txt file_2.txt }],
     q{Set file name for temp stream}
 );
 
@@ -151,6 +162,37 @@ is_deeply(
     \@{ $file_info{io}{$chain_id}{$id}{$temp_stream}{file_path_prefixes} },
     \@temp_file_path_prefixes, q{Set file path prefixes for temp stream} );
 
+is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$temp_stream}{file_suffixes} },
+    \@file_suffixes, q{Set file suffixes for temp stream} );
+
 is( $file_info{io}{$chain_id}{$id}{$temp_stream}{file_suffix},
     q{.txt}, q{Set file suffix for temp stream} );
+
+is( $file_info{io}{$chain_id}{$id}{$temp_stream}{file_constant_suffix},
+    undef, q{Did not set file constant suffix for temp stream} );
+
+## Given constant suffix
+@file_paths = (
+    catfile(qw{ a test dir file_1.fastq.gz}),
+    catfile(qw{ a test dir file_2.fastq.gz}),
+);
+
+set_io_files(
+    {
+        chain_id       => $chain_id,
+        id             => $id,
+        file_paths_ref => \@file_paths,
+        file_info_href => \%file_info,
+        stream         => $stream,
+        temp_directory => $temp_directory,
+    }
+);
+
+## Then set file constant suffix
+is( $file_info{io}{$chain_id}{$id}{$stream}{file_constant_suffix},
+    q{.fastq.gz}, q{Set file constant suffix} );
+
+is( $file_info{io}{$chain_id}{$id}{$temp_stream}{file_constant_suffix},
+    q{.fastq.gz}, q{Set file constant suffix for temp stream} );
+
 done_testing();

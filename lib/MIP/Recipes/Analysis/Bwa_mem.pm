@@ -174,7 +174,6 @@ sub analysis_bwa_mem {
             temp_directory => $temp_directory,
         }
     );
-    my $indir_name           = $io{in}{dir_name};
     my @infile_paths         = @{ $io{in}{file_paths} };
     my @infile_names         = @{ $io{in}{file_names} };
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
