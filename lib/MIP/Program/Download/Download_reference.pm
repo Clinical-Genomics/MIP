@@ -40,7 +40,7 @@ sub download_reference {
 ## Returns  : @commands
 ## Arguments: $config_file_path              => Config file path
 ##          : $FILEHANDLE                    => Filehandle to write to
-##          : $pipeline						 => Pipeline
+##          : $pipeline                      => Pipeline
 ##          : $reference_dir_path            => Reference directory
 ##          : $reference_genome_versions_ref => Array with genome versions to downlaod {REF}
 ##          : $stderrfile_path               => Stderrfile path
@@ -62,8 +62,8 @@ sub download_reference {
     my $tmpl = {
         config_file_path => {
             defined     => 1,
-            store       => \$config_file_path,
             required    => 1,
+            store       => \$config_file_path,
             strict_type => 1,
         },
         FILEHANDLE => {
