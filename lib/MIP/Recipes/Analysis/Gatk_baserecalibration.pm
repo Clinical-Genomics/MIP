@@ -155,7 +155,7 @@ sub analysis_gatk_baserecalibration {
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
-      qw{ get_file_suffix get_exom_target_bed_file get_merged_infile_prefix get_io_files };
+      qw{ get_exom_target_bed_file get_file_suffix get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Language::Java qw{ java_core };
@@ -488,17 +488,17 @@ sub analysis_gatk_baserecalibration {
                 logging_level => $active_parameter_href->{gatk_logging_level},
                 num_cpu_threads_per_data_thread =>
                   $active_parameter_href->{max_cores_per_node},
+                outfile_path     => $temp_outfile_paths[$infile_index],
                 read_filters_ref => \@{
                     $active_parameter_href
                       ->{gatk_baserecalibration_read_filters}
                 },
+                referencefile_path         => $referencefile_path,
                 static_quantized_quals_ref => \@{
                     $active_parameter_href
                       ->{gatk_baserecalibration_static_quantized_quals}
                 },
-                outfile_path       => $temp_outfile_paths[$infile_index],
-                referencefile_path => $referencefile_path,
-                stderrfile_path    => $stderrfile_path,
+                stderrfile_path => $stderrfile_path,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -513,8 +513,8 @@ sub analysis_gatk_baserecalibration {
             FILEHANDLE         => $FILEHANDLE,
             file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
             file_path          => $file_path,
-            outfile            => $outfile_name_prefix,
             outdirectory       => $outdir_path_prefix,
+            outfile            => $outfile_name_prefix,
             program_info_path  => $program_info_path,
             temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -723,10 +723,11 @@ sub analysis_gatk_baserecalibration_rio {
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
-      qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file};
+      qw{ get_exom_target_bed_file get_file_suffix get_merged_infile_prefix get_io_files};
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Language::Java qw{ java_core };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Gatk
@@ -736,14 +737,30 @@ sub analysis_gatk_baserecalibration_rio {
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $indir_path_prefix  = $io{in}{dir_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my @temp_infile_paths  = @{ $io{temp}{file_paths} };
 
-    ## Alias
     my $job_id_chain       = $parameter_href->{$program_name}{chain};
+    my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
     my $xargs_file_path_prefix;
@@ -755,17 +772,6 @@ sub analysis_gatk_baserecalibration_rio {
         }
       );
 
-    ## Filehandles
-    # Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();
-
-    ## Assign directories
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-
-    $parameter_href->{$program_name}{$sample_id}{indirectory} =
-      $outsample_directory;    #Used downstream
-
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
         {
@@ -774,28 +780,51 @@ sub analysis_gatk_baserecalibration_rio {
         }
     );
 
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{gatk_realigner}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
-
-    ## Files
-    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Paths
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
+    ## Outpaths
     ## Assign suffix
-    my $infile_suffix = my $outfile_suffix = get_file_suffix(
+    my $outfile_suffix = get_file_suffix(
         {
             jobid_chain    => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
         }
     );
+    my $outsample_directory =
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
+        $program_name );
+    my $outfile_tag =
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
+    my @outfile_paths =
+      map {
+        catdir( $outsample_directory,
+            $merged_infile_prefix . $outfile_tag . $DOT . $_ . $outfile_suffix )
+      } @{ $file_info_href->{contigs_size_ordered} };
+
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id       => $job_id_chain,
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                file_paths_ref => \@outfile_paths,
+                parameter_href => $parameter_href,
+                program_name   => $program_name,
+                temp_directory => $temp_directory,
+            }
+        )
+    );
+
+    my $outdir_path_prefix      = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix     = $io{out}{file_name_prefix};
+    my $temp_infile_name_prefix = $io{temp}{file_name_prefix};
+    my $temp_file_path_prefix   = $io{temp}{file_path_prefix};
+    my @temp_outfile_paths      = @{ $io{temp}{file_paths} };
+
+    ## Filehandles
+    # Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
     my $exome_target_bed_file = get_exom_target_bed_file(
@@ -806,6 +835,8 @@ sub analysis_gatk_baserecalibration_rio {
             sample_id             => $sample_id,
         }
     );
+
+    ### SHELL:
 
     ## Exome analysis
     if ( $analysis_type eq q{wes} ) {
@@ -866,7 +897,9 @@ sub analysis_gatk_baserecalibration_rio {
     );
 
   CONTIG:
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+    while ( my ( $infile_index, $contig ) =
+        each @{ $file_info_href->{contigs_size_ordered} } )
+    {
 
         ## Get parameters
         # Exome analysis
@@ -888,10 +921,8 @@ sub analysis_gatk_baserecalibration_rio {
             @intervals = ($contig);
         }
 
-        my $infile_path =
-          $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
-        my $outfile_path =
-          $file_path_prefix . $UNDERSCORE . $contig . $DOT . q{grp};
+        my $base_quality_score_recalibration_file =
+          $temp_outfile_paths[$infile_index] . $DOT . q{grp};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
@@ -904,7 +935,7 @@ sub analysis_gatk_baserecalibration_rio {
                 FILEHANDLE                            => $XARGSFILEHANDLE,
                 gatk_disable_auto_index_and_file_lock => $active_parameter_href
                   ->{gatk_disable_auto_index_and_file_lock},
-                infile_path       => $infile_path,
+                infile_path       => $temp_infile_paths[$infile_index],
                 intervals_ref     => \@intervals,
                 known_alleles_ref => \@{
                     $active_parameter_href->{gatk_baserecalibration_known_sites}
@@ -912,7 +943,7 @@ sub analysis_gatk_baserecalibration_rio {
                 logging_level => $active_parameter_href->{gatk_logging_level},
                 num_cpu_threads_per_data_thread =>
                   $active_parameter_href->{max_cores_per_node},
-                outfile_path       => $outfile_path,
+                outfile_path       => $base_quality_score_recalibration_file,
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
             }
@@ -945,7 +976,9 @@ sub analysis_gatk_baserecalibration_rio {
     );
 
   CONTIG:
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+    while ( my ( $infile_index, $contig ) =
+        each @{ $file_info_href->{contigs_size_ordered} } )
+    {
 
         ## Get parameters
         # Exome  analysis
@@ -967,14 +1000,10 @@ sub analysis_gatk_baserecalibration_rio {
             @intervals = ($contig);
         }
 
-        my $infile_path =
-          $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
-        my $outfile_path =
-          $outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $base_quality_score_recalibration_file =
-          $file_path_prefix . $UNDERSCORE . $contig . $DOT . q{grp};
+          $temp_outfile_paths[$infile_index] . $DOT . q{grp};
         gatk_printreads(
             {
                 base_quality_score_recalibration_file =>
@@ -986,12 +1015,12 @@ sub analysis_gatk_baserecalibration_rio {
                 FILEHANDLE                            => $XARGSFILEHANDLE,
                 gatk_disable_auto_index_and_file_lock => $active_parameter_href
                   ->{gatk_disable_auto_index_and_file_lock},
-                infile_path   => $infile_path,
+                infile_path   => $temp_infile_paths[$infile_index],
                 intervals_ref => \@intervals,
                 logging_level => $active_parameter_href->{gatk_logging_level},
                 num_cpu_threads_per_data_thread =>
                   $active_parameter_href->{max_cores_per_node},
-                outfile_path     => $outfile_path,
+                outfile_path     => $temp_outfile_paths[$infile_index],
                 read_filters_ref => \@{
                     $active_parameter_href
                       ->{gatk_baserecalibration_read_filters}
@@ -1013,11 +1042,11 @@ sub analysis_gatk_baserecalibration_rio {
         {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
             file_path          => $file_path,
             core_number        => $core_number,
-            outdirectory       => $outsample_directory,
-            outfile            => $outfile_prefix,
+            outdirectory       => $outdir_path_prefix,
+            outfile            => $outfile_name_prefix,
             program_info_path  => $program_info_path,
             temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -1032,7 +1061,7 @@ sub analysis_gatk_baserecalibration_rio {
             FILEHANDLE        => $FILEHANDLE,
             file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
             file_ending       => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
-            file_name         => $infile_prefix,
+            file_name         => $temp_infile_name_prefix,
             indirectory       => $temp_directory,
         }
     );
@@ -1040,26 +1069,19 @@ sub analysis_gatk_baserecalibration_rio {
     ## Gather BAM files
     say {$FILEHANDLE} q{## Gather BAM files};
 
-    ## Assemble infile paths by adding directory and file ending
-    my @infile_paths = map {
-        catfile( $temp_directory,
-            $outfile_prefix . $UNDERSCORE . $_ . $outfile_suffix )
-    } @{ $file_info_href->{contigs} };
-
     picardtools_gatherbamfiles(
         {
             create_index     => q{true},
             FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => \@infile_paths,
+            infile_paths_ref => \@temp_outfile_paths,
             java_jar         => catfile(
                 $active_parameter_href->{picardtools_path},
                 q{picard.jar}
             ),
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            memory_allocation => q{Xmx4g},
-            outfile_path =>
-              catfile( $temp_directory, $outfile_prefix . $outfile_suffix ),
+            memory_allocation  => q{Xmx4g},
+            outfile_path       => $temp_file_path_prefix . $outfile_suffix,
             referencefile_path => $referencefile_path,
             temp_directory     => $temp_directory,
         }
@@ -1071,10 +1093,10 @@ sub analysis_gatk_baserecalibration_rio {
     migrate_file(
         {
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_path_prefix
-              . substr( $infile_suffix, 0, 2 )
+            infile_path => $outfile_name_prefix
+              . substr( $outfile_suffix, 0, 2 )
               . $ASTERIX,
-            outfile_path => $outsample_directory,
+            outfile_path => $outdir_path_prefix,
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -1084,14 +1106,15 @@ sub analysis_gatk_baserecalibration_rio {
 
     if ( $program_mode == 1 ) {
 
-        my $program_outfile_path =
-          catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
+        my $gathered_outfile_path =
+          catfile( $outdir_path_prefix,
+            $outfile_name_prefix . $outfile_suffix );
 
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                infile           => $merged_infile_prefix,
-                path             => $program_outfile_path,
+                infile           => $outfile_name_prefix,
+                path             => $gathered_outfile_path,
                 program_name     => q{gatk_baserecalibration},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
@@ -1102,7 +1125,7 @@ sub analysis_gatk_baserecalibration_rio {
         add_processing_metafile_to_sample_info(
             {
                 metafile_tag     => $most_complete_format_key,
-                path             => $program_outfile_path,
+                path             => $gathered_outfile_path,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
