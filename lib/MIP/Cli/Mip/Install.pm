@@ -12,9 +12,9 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
-use MooseX::Types::Moose qw{ Str Int HashRef Bool };
+use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 
-our $VERSION = 0.0.5;
+our $VERSION = 1.00;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -76,6 +76,25 @@ sub _build_usage {
     );
 
     option(
+        q{email} => (
+            cmd_aliases   => [qw{ em }],
+            documentation => q{E-mail},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{email_types} => (
+            cmd_aliases   => [qw{ emt }],
+            cmd_tags      => [q{Default: FAIL}],
+            documentation => q{E-mail type},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ FAIL BEGIN END }] ), ],
+        )
+    );
+
+    option(
         q{noupdate} => (
             cmd_aliases   => [qw{ nup }],
             cmd_flag      => q{noupdate},
@@ -110,6 +129,15 @@ q{Shell will be used for overlapping shell and biconda installations},
     );
 
     option(
+        q{project_id} => (
+            cmd_aliases   => [qw{ pro }],
+            documentation => q{Project id},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{quiet} => (
             cmd_aliases   => [qw{ q }],
             cmd_flag      => q{quiet},
@@ -118,6 +146,34 @@ q{Shell will be used for overlapping shell and biconda installations},
             isa           => Bool,
             required      => 0,
         ),
+    );
+
+    option(
+        q{sbatch_mode} => (
+            documentation => q{Write install script for sbatch submisson},
+            is            => q{rw},
+            isa           => Bool,
+            required      => 0,
+
+        ),
+    );
+
+    option(
+        q{sbatch_process_time} => (
+            cmd_aliases   => [qw{ spt }],
+            documentation => q{Time limit for sbatch job},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{slurm_quality_of_service} => (
+            cmd_aliases   => [qw{ qos }],
+            documentation => q{SLURM quality of service},
+            is            => q{rw},
+            isa           => enum( [qw{ low normal high }] ),
+        )
     );
 
     return;

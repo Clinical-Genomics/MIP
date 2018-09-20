@@ -122,7 +122,7 @@ $ perl t/mip_install.test
 ```Bash
 $ perl mip install rare_disease --installations full --environment_name emip=MIP
 ```
-This will generate a batch script called "mip.sh" in your working directory.
+This will generate a bash script called "mip.sh" in your working directory.
 
 ###### *Note:*
   The batch script will attempt to install the MIP dependencies in a conda environment called MIP. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:
@@ -133,7 +133,7 @@ This will generate a batch script called "mip.sh" in your working directory.
   * MIP_py3
   * MIP_vep
 
-It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.
+It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.   
 
   - For a full list of available options and parameters, run: ``$ perl mip install rare_disease --help``
   - For a full list of parameter defaults, run: ``$ perl mip install rare_disease --ppd``
@@ -146,7 +146,7 @@ $ bash mip.sh
 A conda environment will be created where MIP with most of its dependencies will be installed.
 
 ###### *Note:*
-  - Some references are quite large and will take time to download. You might want to run this using screen or tmux.
+  Some references are quite large and will take time to download. You might want to run this using screen or tmux. Alternatively, the installation script can be submitted as a sbatch job if the flag ``--sbatch_mode`` is used when generating the installation script.
 
 ##### 6.Test your MIP installation (optional)
 

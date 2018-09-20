@@ -60,7 +60,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.2.9};
+    our $VERSION = q{1.3.0};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -166,12 +166,15 @@ sub mip_install {
     ## Create bash file for writing install instructions
     create_bash_file(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            file_name   => $file_name_path,
-            log         => $log,
-            remove_dir  => catfile( cwd(), $DOT . q{MIP} ),
-            set_errexit => $parameter{bash_set_errexit},
-            set_nounset => $parameter{bash_set_nounset},
+            FILEHANDLE         => $FILEHANDLE,
+            file_name          => $file_name_path,
+            invoke_login_shell => $parameter{sbatch_mode},
+            log                => $log,
+            parameter_href     => \%parameter,
+            remove_dir         => catfile( cwd(), $DOT . q{MIP} ),
+            sbatch_mode        => $parameter{sbatch_mode},
+            set_errexit        => $parameter{bash_set_errexit},
+            set_nounset        => $parameter{bash_set_nounset},
         }
     );
 
