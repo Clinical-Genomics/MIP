@@ -64,8 +64,8 @@ diag(   q{Test get_io_files from File.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given
-my $chain_main     = q{CHAIN_MAIN};
-my $chain_chanjo   = q{CHAIN_CHSEX};
+my $chain_main     = q{MAIN};
+my $chain_chanjo   = q{CHSEX};
 my $id             = q{sample_1};
 my $id_2           = q{sample_2};
 my $temp_directory = catfile(qw{ a temp dir });
