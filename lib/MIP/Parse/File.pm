@@ -440,6 +440,7 @@ sub parse_io_outfiles {
             id             => $id,
             file_paths_ref => \@file_paths,
             file_info_href => $file_info_href,
+            program_name   => $program_name,
             stream         => $stream,
             temp_directory => $temp_directory,
         }

@@ -81,6 +81,7 @@ my @temp_file_path_prefixes =
 my %file_info;
 my $stream         = q{in};
 my $temp_directory = catfile(qw{ a temp dir});
+my $program_name   = q{bwa_mem};
 
 set_io_files(
     {
@@ -88,6 +89,7 @@ set_io_files(
         id             => $id,
         file_paths_ref => \@file_paths,
         file_info_href => \%file_info,
+        program_name   => $program_name,
         stream         => $stream,
         temp_directory => $temp_directory,
     }
@@ -95,81 +97,124 @@ set_io_files(
 
 ## Then set io features for $chain_id
 is(
-    $file_info{io}{$chain_id}{$id}{$stream}{dir_path},
+    $file_info{io}{$chain_id}{$id}{$program_name}{$stream}{dir_path},
     catfile(qw{ a test dir }) . $FRW_SLASH,
     q{Set file path}
 );
 
 is(
-    $file_info{io}{$chain_id}{$id}{$stream}{dir_path_prefix},
+    $file_info{io}{$chain_id}{$id}{$program_name}{$stream}{dir_path_prefix},
     catfile(qw{ a test dir }),
     q{Set dir path prefix}
 );
 
 is_deeply(
-    $file_info{io}{$chain_id}{$id}{$stream}{file_names},
+    $file_info{io}{$chain_id}{$id}{$program_name}{$stream}{file_names},
     [qw{ file_1.1.txt file_2.txt }],
     q{Set file name}
 );
 
-is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$stream}{file_name_prefixes} },
-    [qw{ file_1 file_2 }], q{Set file name prefixes} );
+is_deeply(
+    \@{
+        $file_info{io}{$chain_id}{$id}{$program_name}{$stream}
+          {file_name_prefixes}
+    },
+    [qw{ file_1 file_2 }],
+    q{Set file name prefixes}
+);
 
-is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$stream}{file_paths} },
+is_deeply(
+    \@{ $file_info{io}{$chain_id}{$id}{$program_name}{$stream}{file_paths} },
     \@file_paths, q{Set file paths} );
 
-is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$stream}{file_path_prefixes} },
-    \@file_path_prefixes, q{Set file path prefixes} );
+is_deeply(
+    \@{
+        $file_info{io}{$chain_id}{$id}{$program_name}{$stream}
+          {file_path_prefixes}
+    },
+    \@file_path_prefixes,
+    q{Set file path prefixes}
+);
 
-is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$stream}{file_suffixes} },
-    \@file_suffixes, q{Set file suffixes} );
+is_deeply(
+    \@{ $file_info{io}{$chain_id}{$id}{$program_name}{$stream}{file_suffixes} },
+    \@file_suffixes,
+    q{Set file suffixes}
+);
 
-is( $file_info{io}{$chain_id}{$id}{$stream}{file_suffix},
+is( $file_info{io}{$chain_id}{$id}{$program_name}{$stream}{file_suffix},
     q{.txt}, q{Set file suffix} );
 
-is( $file_info{io}{$chain_id}{$id}{$stream}{file_constant_suffix},
-    undef, q{Did not set file constant suffix} );
+is(
+    $file_info{io}{$chain_id}{$id}{$program_name}{$stream}
+      {file_constant_suffix},
+    undef, q{Did not set file constant suffix}
+);
 
 ## And for the temp dir
 my $temp_stream = q{temp};
 
 is(
-    $file_info{io}{$chain_id}{$id}{$temp_stream}{dir_path},
+    $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}{dir_path},
     catfile(qw{ a temp dir }) . $FRW_SLASH,
     q{Set file path for temp stream}
 );
 
 is(
-    $file_info{io}{$chain_id}{$id}{$temp_stream}{dir_path_prefix},
-    catfile(qw{ a temp dir }),
-    q{Set dir path prefix for temp stream}
+    $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}
+      {dir_path_prefix},
+    catfile(qw{ a temp dir }), q{Set dir path prefix for temp stream}
 );
 
 is_deeply(
-    $file_info{io}{$chain_id}{$id}{$temp_stream}{file_names},
+    $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}{file_names},
     [qw{ file_1.1.txt file_2.txt }],
     q{Set file name for temp stream}
 );
 
 is_deeply(
-    \@{ $file_info{io}{$chain_id}{$id}{$temp_stream}{file_name_prefixes} },
-    [qw{ file_1 file_2 }], q{Set file name prefixes for temp stream} );
-
-is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$temp_stream}{file_paths} },
-    \@temp_file_paths, q{Set file paths for temp stream} );
+    \@{
+        $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}
+          {file_name_prefixes}
+    },
+    [qw{ file_1 file_2 }],
+    q{Set file name prefixes for temp stream}
+);
 
 is_deeply(
-    \@{ $file_info{io}{$chain_id}{$id}{$temp_stream}{file_path_prefixes} },
-    \@temp_file_path_prefixes, q{Set file path prefixes for temp stream} );
+    \@{
+        $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}{file_paths}
+    },
+    \@temp_file_paths,
+    q{Set file paths for temp stream}
+);
 
-is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$temp_stream}{file_suffixes} },
-    \@file_suffixes, q{Set file suffixes for temp stream} );
+is_deeply(
+    \@{
+        $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}
+          {file_path_prefixes}
+    },
+    \@temp_file_path_prefixes,
+    q{Set file path prefixes for temp stream}
+);
 
-is( $file_info{io}{$chain_id}{$id}{$temp_stream}{file_suffix},
+is_deeply(
+    \@{
+        $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}
+          {file_suffixes}
+    },
+    \@file_suffixes,
+    q{Set file suffixes for temp stream}
+);
+
+is( $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}{file_suffix},
     q{.txt}, q{Set file suffix for temp stream} );
 
-is( $file_info{io}{$chain_id}{$id}{$temp_stream}{file_constant_suffix},
-    undef, q{Did not set file constant suffix for temp stream} );
+is(
+    $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}
+      {file_constant_suffix},
+    undef, q{Did not set file constant suffix for temp stream}
+);
 
 ## Given constant suffix
 @file_paths = (
@@ -183,16 +228,23 @@ set_io_files(
         id             => $id,
         file_paths_ref => \@file_paths,
         file_info_href => \%file_info,
+        program_name   => $program_name,
         stream         => $stream,
         temp_directory => $temp_directory,
     }
 );
 
 ## Then set file constant suffix
-is( $file_info{io}{$chain_id}{$id}{$stream}{file_constant_suffix},
-    q{.fastq.gz}, q{Set file constant suffix} );
+is(
+    $file_info{io}{$chain_id}{$id}{$program_name}{$stream}
+      {file_constant_suffix},
+    q{.fastq.gz}, q{Set file constant suffix}
+);
 
-is( $file_info{io}{$chain_id}{$id}{$temp_stream}{file_constant_suffix},
-    q{.fastq.gz}, q{Set file constant suffix for temp stream} );
+is(
+    $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}
+      {file_constant_suffix},
+    q{.fastq.gz}, q{Set file constant suffix for temp stream}
+);
 
 done_testing();

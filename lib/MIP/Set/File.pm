@@ -398,6 +398,7 @@ sub set_io_files {
     my $id;
     my $file_info_href;
     my $file_paths_ref;
+    my $program_name;
     my $stream;
     my $temp_directory;
 
@@ -428,6 +429,12 @@ sub set_io_files {
             store       => \$file_paths_ref,
             strict_type => 1,
         },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
         stream => {
             allow       => [qw{ in temp out }],
             defined     => 1,
@@ -444,7 +451,7 @@ sub set_io_files {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Delete previous record (if any)
-    delete $file_info_href->{io}{$chain_id}{$id}{$stream};
+    delete $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream};
 
   FILE_PATH:
     foreach my $file_path ( @{$file_paths_ref} ) {
@@ -452,19 +459,22 @@ sub set_io_files {
         my ( $file_name_prefix, $dirs, $suffix ) =
           fileparse( $file_path, qr/([.][^.]*)*/sxm );
 
-        push @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_names} },
+        push @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_names} },
           basename($file_path);
         push
-          @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_name_prefixes}
-          }, $file_name_prefix;
-        push @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_paths} },
+          @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_name_prefixes} }, $file_name_prefix;
+        push @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_paths} },
           $file_path;
         push
-          @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_path_prefixes}
-          }, catfile( $dirs, $file_name_prefix );
+          @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_path_prefixes} }, catfile( $dirs, $file_name_prefix );
 
         ## Collect everything after first dot
-        push @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_suffixes} },
+        push @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_suffixes} },
           $suffix;
     }
 
@@ -472,34 +482,41 @@ sub set_io_files {
     my ( $infile_path_volume, $file_path_directory, $file_path_file_name ) =
       splitpath( $file_paths_ref->[0] );
 
-    $file_info_href->{io}{$chain_id}{$id}{$stream}{dir_path} =
+    $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}{dir_path} =
       $file_path_directory;
-    $file_info_href->{io}{$chain_id}{$id}{$stream}{dir_path_prefix} =
-      dirname( $file_paths_ref->[0] );
+    $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+      {dir_path_prefix} = dirname( $file_paths_ref->[0] );
 
     ## Collect everything after last dot
     my ( $filename, $dirs, $suffix ) =
       fileparse( $file_paths_ref->[0], qr/[.][^.]*/sxm );
-    $file_info_href->{io}{$chain_id}{$id}{$stream}{file_suffix} = $suffix;
+    $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}{file_suffix}
+      = $suffix;
 
     ## Get unique suffixes
     my @uniq_elements = uniq(
-        @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_suffixes} } );
+        @{
+            $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_suffixes}
+        }
+    );
 
     ## If unique
-    if ( scalar @uniq_elements eq 1 ) {
+    if ( scalar @uniq_elements == 1 ) {
 
         ## Set file constant suffix
-        $file_info_href->{io}{$chain_id}{$id}{$stream}{file_constant_suffix} =
-          $uniq_elements[0];
+        $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+          {file_constant_suffix} = $uniq_elements[0];
     }
 
     ## Also set the temporary file features for stream
     if ($temp_directory) {
 
         ## Switch to temp dir for path
-        my @file_paths_temp = map { catfile( $temp_directory, $_ ) }
-          @{ $file_info_href->{io}{$chain_id}{$id}{$stream}{file_names} };
+        my @file_paths_temp =
+          map { catfile( $temp_directory, $_ ) }
+          @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_names} };
 
         set_io_files(
             {
@@ -507,6 +524,7 @@ sub set_io_files {
                 id             => $id,
                 file_paths_ref => \@file_paths_temp,
                 file_info_href => $file_info_href,
+                program_name   => $program_name,
                 stream         => q{temp},
             }
         );

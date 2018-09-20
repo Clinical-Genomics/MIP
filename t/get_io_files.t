@@ -64,19 +64,37 @@ diag(   q{Test get_io_files from File.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given
-my $chain_main   = q{CHAIN_MAIN};
-my $chain_chanjo = q{CHAIN_CHSEX};
-my $id           = q{sample_1};
-my $id_2         = q{sample_2};
-my @file_paths   = (
+my $chain_main     = q{CHAIN_MAIN};
+my $chain_chanjo   = q{CHAIN_CHSEX};
+my $id             = q{sample_1};
+my $id_2           = q{sample_2};
+my $temp_directory = catfile(qw{ a temp dir });
+
+my @base_paths = (
+    catfile(qw{ a dir fastq_sample_1_1.fastq.gz }),
+    catfile(qw{ a dir fastq_sample_1_2.fastq.gz }),
+);
+my @base_temp_paths = (
+    catfile( $temp_directory, q{fastq_sample_1_1.fastq.gz} ),
+    catfile( $temp_directory, q{fastq_sample_1_2.fastq.gz} ),
+);
+my @file_paths = (
     catfile(qw{ a test bwa_mem file_1.txt}),
     catfile(qw{ a test bwa_mem file_2.txt}),
+);
+my @file_paths_2 = (
+    catfile(qw{ a test picard_mergesamfiles file_1.txt}),
+    catfile(qw{ a test picard_mergesamfiles file_2.txt}),
 );
 my %file_info = (
     $id => {
         mip_infiles_dir => catfile(qw{ a dir }),
         mip_infiles =>
           [qw{ fastq_sample_1_1.fastq.gz fastq_sample_1_2.fastq.gz }],
+        base                 => { file_paths => \@base_paths, },
+        base_temp            => { file_paths => \@base_temp_paths, },
+        bwa_mem              => { file_paths => \@file_paths, },
+        picard_mergesamfiles => { file_paths => \@file_paths_2, },
     },
 );
 my @order_programs =
@@ -91,8 +109,10 @@ my %parameter = (
     picard_mergesamfiles      => { chain              => $chain_main, },
     sv_combinevariantcallsets => { chain              => q{CHAIN_SV}, },
 );
-my $program_name = q{picard_mergesamfiles};
+
+my $program_name = q{bwa_mem};
 my $stream       = q{in};
+my $stream_out   = q{out};
 
 ## Given no set infiles - inherit from base i.e MIP infiles
 my %io = get_io_files(
@@ -102,76 +122,116 @@ my %io = get_io_files(
         parameter_href => \%parameter,
         program_name   => $program_name,
         stream         => $stream,
+        temp_directory => $temp_directory,
     }
 );
 
 ## Then infile for new program should be returned
 is_deeply(
-    \%{ $file_info{io}{$chain_main}{$id}{$stream} },
-    \%{ $io{$stream} },
-    q{Got fastq file features for sample_1}
+    \@{ $io{$stream}{file_paths} },
+    \@{ $file_info{$id}{base}{file_paths} },
+    q{Got fastq infile features for sample_1}
 );
 
-## Set for infiles for $id
-## Program name does not matter - features gets overwritten
+is_deeply(
+    \@{ $io{temp}{file_paths} },
+    \@{ $file_info{$id}{base_temp}{file_paths} },
+    q{Got fastq tempfile features for sample_1}
+);
+
+## Given of bwa_mem for $id and $id_2 for chain main - set io out
 set_io_files(
     {
         chain_id       => $chain_main,
         id             => $id,
         file_paths_ref => \@file_paths,
         file_info_href => \%file_info,
-        stream         => $stream,
+        program_name   => $program_name,
+        stream         => $stream_out,
+        temp_directory => $temp_directory,
     }
 );
 
-## Set for infiles for $id_2
-## Program name does not matter - features gets overwritten
+# Set for $id_2
 set_io_files(
     {
         chain_id       => $chain_main,
         id             => $id_2,
         file_paths_ref => \@file_paths,
         file_info_href => \%file_info,
-        stream         => $stream,
+        program_name   => $program_name,
+        stream         => $stream_out,
     }
 );
 
 ## Given new program
+my $merge_sam = q{picard_mergesamfiles};
+
 %io = get_io_files(
     {
         id             => $id,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $program_name,
+        program_name   => $merge_sam,
         stream         => $stream,
     }
 );
 
-## Then infile for new program should be returned
+## Then outfile for bwa_mem should be returned as infiles for merge_sam for sample_1
 is_deeply(
-    \%{ $file_info{io}{$chain_main}{$id}{$stream} },
-    \%{ $io{$stream} },
-    q{Got file features for sample_1}
+    \@{ $file_info{$id}{bwa_mem}{file_paths} },
+    \@{ $io{$stream}{file_paths} },
+    q{Got bwa_mem infile features for merge_sam for sample_1}
 );
 
-## Given second program in MAIN chain
-my @file_paths_2 = (
-    catfile(qw{ a test picard_mergesamfiles file_1.txt}),
-    catfile(qw{ a test picard_mergesamfiles file_2.txt}),
+## Given another id
+my %io_id_2 = get_io_files(
+    {
+        id             => $id_2,
+        file_info_href => \%file_info,
+        parameter_href => \%parameter,
+        program_name   => $merge_sam,
+        stream         => $stream,
+    }
 );
 
-## Set new infiles
+## Then outfile for bwa_mem should be returned as infiles for merge_sam sample_2
+is_deeply(
+    \@{ $file_info{$id}{bwa_mem}{file_paths} },
+    \@{ $io_id_2{$stream}{file_paths} },
+    q{Got bwa_mem infile features for merge_sam for sample_2}
+);
+
+## Set new outfiles for second program
 set_io_files(
     {
         chain_id       => $chain_main,
         id             => $id,
         file_paths_ref => \@file_paths_2,
         file_info_href => \%file_info,
-        stream         => $stream,
+        program_name   => $merge_sam,
+        stream         => $stream_out,
     }
 );
 
-## Given the first program in a chain that should inherit
+%io = get_io_files(
+    {
+        id             => $id,
+        file_info_href => \%file_info,
+        parameter_href => \%parameter,
+        program_name   => $merge_sam,
+        stream         => $stream_out,
+    }
+);
+
+## Then outfile for merge_sam should be returned
+is_deeply(
+    \@{ $file_info{$id}{picard_mergesamfiles}{file_paths} },
+    \@{ $io{$stream_out}{file_paths} },
+    q{Got picard_mergesamfiles outfile features for merge_sam for sample_1}
+);
+
+## Given the first program in a chain that should inherit from MAIN
 my $first_in_chain_program_name = q{chanjo_sexcheck};
 %io = get_io_files(
     {
@@ -184,46 +244,47 @@ my $first_in_chain_program_name = q{chanjo_sexcheck};
 );
 
 is_deeply(
-    \%{ $file_info{io}{$chain_main}{$id}{$stream} },
-    \%{ $io{$stream} },
-    q{Got inherited file features from MAIN for sample_1}
+    \@{ $file_info{$id}{picard_mergesamfiles}{file_paths} },
+    \@{ $io{$stream}{file_paths} },
+q{Got picard_mergesamfiles outfile features as infiles for chanjo_sexcheck for sample_1}
 );
 
 ## Given a program downstream of PARALLEL chain and other chain
-my $downstream_program = q{combinevariantcallsets};
+my $downstream_program = q{sv_combinevariantcallsets};
 
 %io = get_io_files(
     {
         id             => $id,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $first_in_chain_program_name,
+        program_name   => $downstream_program,
         stream         => $stream,
     }
 );
 
 is_deeply(
-    \%{ $file_info{io}{$chain_main}{$id}{$stream} },
-    \%{ $io{$stream} },
-    q{Got inherited file features from MAIN from downstream for sample_1}
+    \@{ $file_info{$id}{picard_mergesamfiles}{file_paths} },
+    \@{ $io{$stream}{file_paths} },
+q{Got picard_mergesamfiles outfile features as infiles for sv_combinevariantcallsets for sample_1}
 );
 
-## Given a program for sample_2
-%io = get_io_files(
+## Given a already processed program
+my %io_bwa = get_io_files(
     {
-        id             => $id_2,
+        id             => $id,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $first_in_chain_program_name,
+        program_name   => $program_name,
         stream         => $stream,
+        temp_directory => $temp_directory,
     }
 );
 
-## The inherit from sample_2 main chain
+## Then infile for program should be returned
 is_deeply(
-    \%{ $file_info{io}{$chain_main}{$id_2}{$stream} },
-    \%{ $io{$stream} },
-    q{Got inherited file features from MAIN for sample_2}
+    \@{ $io_bwa{$stream}{file_paths} },
+    \@{ $file_info{$id}{base}{file_paths} },
+    q{Got persistent infile features for program and sample_1}
 );
 
 done_testing();

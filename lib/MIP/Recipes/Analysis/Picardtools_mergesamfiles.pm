@@ -232,7 +232,7 @@ sub analysis_picardtools_mergesamfiles {
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );
     my $outfile_tag =
-      $file_info_href->{$sample_id}{picardtools_mergesamfiles}{file_tag};
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
     my @outfile_paths =
       map {
         catdir( $outsample_directory,
@@ -263,11 +263,11 @@ sub analysis_picardtools_mergesamfiles {
         )
     );
 
-    my $outdir_path_prefix = $io{out}{dir_path_prefix};
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
     @outfile_paths = @{ $io{out}{file_paths} };
-    my @outfile_name_prefixes = @{ $io{out}{file_name_prefixes} };
-    my @outfile_suffixes      = @{ $io{out}{file_suffixes} };
-    my @temp_outfile_paths    = @{ $io{temp}{file_paths} };
+    my @outfile_suffixes   = @{ $io{out}{file_suffixes} };
+    my @temp_outfile_paths = @{ $io{temp}{file_paths} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -291,6 +291,9 @@ sub analysis_picardtools_mergesamfiles {
         }
     );
 
+    ####
+    #####set_merged_infile_prefix CAN PROBALBY BE REMOVED ONCE IO MIGRATION IS COMPLETE FOR BAMS####
+    ####
     ## Set helper value for finding merged_infiles downstream
     my $merged_infile_prefix =
       $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
@@ -471,7 +474,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
             file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
             file_path          => $file_path,
             outdirectory       => $outdir_path_prefix,
-            outfile            => $outfile_name_prefixes[0],
+            outfile            => $outfile_name_prefix,
             program_info_path  => $program_info_path,
             temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,

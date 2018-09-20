@@ -101,9 +101,9 @@ my %io = parse_io_outfiles(
     }
 );
 
-## Then infile for new program should be returned
+## Then outfile for program should be returned
 is_deeply(
-    \%{ $file_info{io}{$chain_main}{$id}{out} },
+    \%{ $file_info{io}{$chain_main}{$id}{$program_name}{out} },
     \%{ $io{out} },
     q{Set and got fastq file features for sample_1}
 );

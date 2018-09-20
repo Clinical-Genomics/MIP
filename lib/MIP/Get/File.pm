@@ -436,16 +436,25 @@ sub get_io_files {
     my $chain_id = $parameter_href->{$program_name}{chain};
 
     ## Not first in chain - return file features
-    if ( Dive( $file_info_href, ( q{io}, $chain_id, $id, $stream ) ) ) {
+    if (
+        Dive(
+            $file_info_href, ( q{io}, $chain_id, $id, $program_name, $stream )
+        )
+      )
+    {
 
-        return %{ $file_info_href->{io}{$chain_id}{$id} };
+        return %{ $file_info_href->{io}{$chain_id}{$id}{$program_name} };
     }
     else {
-        ## First in chain
+        ## First in chain - need to find out stream file features of
+        ## correct upstream program
+
+        my $upstream_direction = q{out};
 
         ## Unpack
         my @order_programs =
           @{ $parameter_href->{dynamic_parameter}{order_programs_ref} };
+
         ## Find upstream programs starting from (and not including) program_name
         my @upstream_programs =
           reverse before { $_ eq $program_name } @order_programs;
@@ -460,23 +469,50 @@ sub get_io_files {
             next UPSTREAM_PROGRAM
               if (
                 not Dive(
-                    $file_info_href, ( q{io}, $upstream_chain_id, $id, $stream )
+                    $file_info_href,
+                    (
+                        q{io}, $upstream_chain_id,
+                        $id,   $upstream_program,
+                        $upstream_direction
+                    )
                 )
               );
 
             ## Do not inherit from other chains than MAIN
             next UPSTREAM_PROGRAM if ( $upstream_chain_id ne q{CHAIN_MAIN} );
 
-            ## Found io file features found in chain and stream
+            ## Found io file features found in chain, id, program and stream
             if (
                 Dive(
-                    $file_info_href, ( q{io}, $upstream_chain_id, $id, $stream )
+                    $file_info_href,
+                    (
+                        q{io}, $upstream_chain_id,
+                        $id,   $upstream_program,
+                        $upstream_direction
+                    )
                 )
               )
             {
 
-                ##  Return file features
-                return %{ $file_info_href->{io}{$upstream_chain_id}{$id} };
+                ## Switch upstream out to program in - i.e. inherit from upstream
+                my @upstream_outfile_paths =
+                  @{ $file_info_href->{io}{$upstream_chain_id}{$id}
+                      {$upstream_program}{$upstream_direction}{file_paths} };
+                set_io_files(
+                    {
+                        chain_id       => $chain_id,
+                        id             => $id,
+                        file_paths_ref => \@upstream_outfile_paths,
+                        file_info_href => $file_info_href,
+                        program_name   => $program_name,
+                        stream         => $stream,
+                        temp_directory => $temp_directory,
+                    }
+                );
+
+                ##  Return set file features
+                return %{ $file_info_href->{io}{$chain_id}{$id}{$program_name}
+                };
             }
         }
     }
@@ -493,11 +529,12 @@ sub get_io_files {
             id             => $id,
             file_paths_ref => \@base_file_paths,
             file_info_href => $file_info_href,
+            program_name   => $program_name,
             stream         => $stream,
             temp_directory => $temp_directory,
         }
     );
-    return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id} };
+    return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id}{$program_name} };
 }
 
 sub get_matching_values_key {

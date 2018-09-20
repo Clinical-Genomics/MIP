@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rio };
@@ -152,10 +152,12 @@ sub analysis_markduplicates {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Delete::File qw{ delete_contig_files };
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File
+      qw{ get_file_suffix get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Sambamba
@@ -163,17 +165,32 @@ sub analysis_markduplicates {
     use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_io_files };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $indir_path_prefix  = $io{in}{dir_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my @temp_infile_paths  = @{ $io{temp}{file_paths} };
 
-    ## Alias
     my $job_id_chain       = $parameter_href->{$program_name}{chain};
+    my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $xargs_file_path_prefix;
     my ( $core_number, $time, @source_environment_cmds ) =
@@ -184,21 +201,6 @@ sub analysis_markduplicates {
         }
       );
 
-    ## Filehandles
-    # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-
-    # Used downstream
-    $parameter_href->{$program_name}{$sample_id}{indirectory} =
-      $outsample_directory;
-
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
         {
@@ -207,28 +209,51 @@ sub analysis_markduplicates {
         }
     );
 
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{picardtools_mergesamfiles}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
-
-    ## Files
-    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Paths
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
+    ## Outpaths
     ## Assign suffix
-    my $infile_suffix = my $outfile_suffix = get_file_suffix(
+    my $outfile_suffix = get_file_suffix(
         {
             jobid_chain    => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
         }
     );
+    my $outsample_directory =
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
+        $program_name );
+    my $outfile_tag =
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
+    my @outfile_paths =
+      map {
+        catdir( $outsample_directory,
+            $merged_infile_prefix . $outfile_tag . $DOT . $_ . $outfile_suffix )
+      } @{ $file_info_href->{contigs_size_ordered} };
+
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id       => $job_id_chain,
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                file_paths_ref => \@outfile_paths,
+                parameter_href => $parameter_href,
+                program_name   => $program_name,
+                temp_directory => $temp_directory,
+            }
+        )
+    );
+
+    my $outdir_path_prefix    = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix   = $io{out}{file_name_prefix};
+    my $temp_file_path_prefix = $io{temp}{file_path_prefix};
+    my @temp_outfile_paths    = @{ $io{temp}{file_paths} };
+
+    ## Filehandles
+    # Create anonymous filehandle
+    my $FILEHANDLE      = IO::Handle->new();
+    my $XARGSFILEHANDLE = IO::Handle->new();
 
     # Store which program performed the markduplication
     my $markduplicates_program;
@@ -236,19 +261,21 @@ sub analysis_markduplicates {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            program_directory     => $active_parameter_href->{outaligner_dir},
-            program_name          => $program_name,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            program_directory               => $program_name,
+            program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
+
+    ### SHELL:
 
     ## Copy file(s) to temporary directory
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -259,8 +286,8 @@ sub analysis_markduplicates {
             FILEHANDLE         => $FILEHANDLE,
             file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
             file_path          => $file_path,
-            indirectory        => $insample_directory,
-            infile             => $infile_prefix,
+            indirectory        => $indir_path_prefix,
+            infile             => $infile_name_prefix,
             program_info_path  => $program_info_path,
             temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -271,7 +298,7 @@ sub analysis_markduplicates {
     ## Marking Duplicates
     say {$FILEHANDLE} q{## Marking Duplicates};
 
-    ##Picardtools
+    ## Picardtools
     if ( $active_parameter_href->{markduplicates_picardtools_markduplicates} ) {
 
         $markduplicates_program = q{picardtools_markduplicates};
@@ -298,26 +325,21 @@ sub analysis_markduplicates {
         );
 
       CONTIG:
-        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+        while ( my ( $infile_index, $contig ) =
+            each @{ $file_info_href->{contigs_size_ordered} } )
+        {
 
-            my $outfile_path =
-              $outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
             my $metrics_file =
-              $outfile_path_prefix . $UNDERSCORE . $contig . $DOT . q{metric};
+              $temp_file_path_prefix . $DOT . $contig . $DOT . q{metric};
             picardtools_markduplicates(
                 {
-                    create_index     => q{true},
-                    FILEHANDLE       => $XARGSFILEHANDLE,
-                    infile_paths_ref => [
-                            $file_path_prefix
-                          . $UNDERSCORE
-                          . $contig
-                          . $infile_suffix
-                    ],
+                    create_index       => q{true},
+                    FILEHANDLE         => $XARGSFILEHANDLE,
+                    infile_paths_ref   => [ $temp_infile_paths[$infile_index] ],
                     metrics_file       => $metrics_file,
-                    outfile_path       => $outfile_path,
+                    outfile_path       => $temp_outfile_paths[$infile_index],
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
                 }
@@ -328,9 +350,9 @@ sub analysis_markduplicates {
             sambamba_flagstat(
                 {
                     FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $outfile_path,
-                    outfile_path => $outfile_path_prefix
-                      . $UNDERSCORE
+                    infile_path  => $temp_outfile_paths[$infile_index],
+                    outfile_path => $temp_file_path_prefix
+                      . $DOT
                       . $contig
                       . $UNDERSCORE
                       . q{metric},
@@ -358,12 +380,10 @@ sub analysis_markduplicates {
         );
 
       CONTIG:
-        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+        while ( my ( $infile_index, $contig ) =
+            each @{ $file_info_href->{contigs_size_ordered} } )
+        {
 
-            my $infile_path =
-              $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
-            my $outfile_path =
-              $outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
             sambamba_markdup(
@@ -371,10 +391,10 @@ sub analysis_markduplicates {
                     FILEHANDLE      => $XARGSFILEHANDLE,
                     hash_table_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_hash_table_size},
-                    infile_path    => $infile_path,
+                    infile_path    => [ $temp_infile_paths[$infile_index] ],
                     io_buffer_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_io_buffer_size},
-                    outfile_path       => $outfile_path,
+                    outfile_path       => $temp_outfile_paths[$infile_index],
                     overflow_list_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_overflow_list_size},
                     temp_directory  => $temp_directory,
@@ -388,9 +408,9 @@ sub analysis_markduplicates {
             sambamba_flagstat(
                 {
                     FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $outfile_path,
-                    outfile_path => $outfile_path_prefix
-                      . $UNDERSCORE
+                    infile_path  => $temp_outfile_paths[$infile_index],
+                    outfile_path => $temp_file_path_prefix
+                      . $DOT
                       . $contig
                       . $UNDERSCORE
                       . q{metric},
@@ -406,13 +426,15 @@ sub analysis_markduplicates {
         {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => [
-                    $outfile_path_prefix
-                  . $UNDERSCORE
+                    $temp_file_path_prefix
+                  . $DOT
                   . $ASTERIX
                   . $UNDERSCORE
                   . q{metric}
             ],
-            outfile_path => $outfile_path_prefix . $UNDERSCORE . q{metric_all},
+            outfile_path => $temp_file_path_prefix
+              . $UNDERSCORE
+              . q{metric_all},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -422,15 +444,15 @@ sub analysis_markduplicates {
     _calculate_fraction_duplicates_for_all_metric_files(
         {
             FILEHANDLE          => $FILEHANDLE,
-            outfile_path_prefix => $outfile_path_prefix,
+            outfile_path_prefix => $temp_file_path_prefix,
         }
     );
 
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path_prefix . $UNDERSCORE . q{metric},
-            outfile_path => $outsample_directory,
+            infile_path  => $temp_file_path_prefix . $UNDERSCORE . q{metric},
+            outfile_path => $outdir_path_prefix,
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -443,9 +465,9 @@ sub analysis_markduplicates {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $file_path,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
-            outdirectory       => $outsample_directory,
-            outfile            => $outfile_prefix,
+            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
+            outdirectory       => $outdir_path_prefix,
+            outfile            => $outfile_name_prefix,
             program_info_path  => $program_info_path,
             temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -462,10 +484,10 @@ sub analysis_markduplicates {
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                infile => $merged_infile_prefix,
+                infile => $outfile_name_prefix,
                 path   => catfile(
-                    $outsample_directory,
-                    $outfile_prefix . $UNDERSCORE . q{metric}
+                    $outdir_path_prefix,
+                    $outfile_name_prefix . $UNDERSCORE . q{metric}
                 ),
                 program_name     => q{markduplicates},
                 sample_id        => $sample_id,
@@ -476,7 +498,7 @@ sub analysis_markduplicates {
 # Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
         add_program_metafile_to_sample_info(
             {
-                infile           => $merged_infile_prefix,
+                infile           => $outfile_name_prefix,
                 metafile_tag     => q{marking_duplicates},
                 processed_by     => $markduplicates_program,
                 program_name     => $program_name,
