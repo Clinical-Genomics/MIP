@@ -216,10 +216,10 @@ is(
     undef, q{Did not set file constant suffix for temp stream}
 );
 
-## Given constant suffix
+## Given constant file features
 @file_paths = (
-    catfile(qw{ a test dir file_1.fastq.gz}),
-    catfile(qw{ a test dir file_2.fastq.gz}),
+    catfile(qw{ a test dir file.fastq.gz}),
+    catfile(qw{ a test dir file.fastq.gz}),
 );
 
 set_io_files(
@@ -245,6 +245,27 @@ is(
     $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}
       {file_constant_suffix},
     q{.fastq.gz}, q{Set file constant suffix for temp stream}
+);
+
+is( $file_info{io}{$chain_id}{$id}{$program_name}{$stream}{file_name_prefix},
+    q{file}, q{Set file constant file name prefix} );
+
+is(
+    $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}
+      {file_name_prefix},
+    q{file}, q{Set file constant file name prefix for temp stream}
+);
+
+is(
+    $file_info{io}{$chain_id}{$id}{$program_name}{$stream}{dir_path_prefix},
+    catfile(qw{ a test dir }),
+    q{Set file constant dir path}
+);
+
+is(
+    $file_info{io}{$chain_id}{$id}{$program_name}{$temp_stream}
+      {dir_path_prefix},
+    catfile(qw{ a temp dir }), q{Set file constant dir path for temp stream}
 );
 
 done_testing();

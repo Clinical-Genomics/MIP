@@ -177,7 +177,7 @@ sub analysis_picardtools_mergesamfiles {
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_merged_infile_prefix set_io_files };
+    use MIP::Set::File qw{ set_merged_infile_prefix };
 
     ### PREPROCESSING:
 
@@ -291,9 +291,6 @@ sub analysis_picardtools_mergesamfiles {
         }
     );
 
-    ####
-    #####set_merged_infile_prefix CAN PROBALBY BE REMOVED ONCE IO MIGRATION IS COMPLETE FOR BAMS####
-    ####
     ## Set helper value for finding merged_infiles downstream
     my $merged_infile_prefix =
       $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
@@ -510,19 +507,6 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
             }
         );
     }
-
-    ## Set stream out to in for io files for next module in chain and id
-    set_io_files(
-        {
-            chain_id       => $job_id_chain,
-            id             => $sample_id,
-            file_paths_ref => \@outfile_paths,
-            file_info_href => $file_info_href,
-            stream         => q{in},
-            temp_directory => $temp_directory,
-        }
-    );
-
     return;
 }
 

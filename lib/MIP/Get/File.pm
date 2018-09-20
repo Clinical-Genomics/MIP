@@ -479,7 +479,7 @@ sub get_io_files {
               );
 
             ## Do not inherit from other chains than MAIN
-            next UPSTREAM_PROGRAM if ( $upstream_chain_id ne q{CHAIN_MAIN} );
+            next UPSTREAM_PROGRAM if ( $upstream_chain_id ne q{MAIN} );
 
             ## Found io file features found in chain, id, program and stream
             if (

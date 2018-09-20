@@ -165,7 +165,6 @@ sub analysis_markduplicates {
     use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_io_files };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
 

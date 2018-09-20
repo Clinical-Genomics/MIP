@@ -493,21 +493,15 @@ sub set_io_files {
     $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}{file_suffix}
       = $suffix;
 
-    ## Get unique suffixes
-    my @uniq_elements = uniq(
-        @{
-            $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
-              {file_suffixes}
+    _set_io_files_constant(
+        {
+            chain_id       => $chain_id,
+            file_info_href => $file_info_href,
+            id             => $id,
+            program_name   => $program_name,
+            stream         => $stream,
         }
     );
-
-    ## If unique
-    if ( scalar @uniq_elements == 1 ) {
-
-        ## Set file constant suffix
-        $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
-          {file_constant_suffix} = $uniq_elements[0];
-    }
 
     ## Also set the temporary file features for stream
     if ($temp_directory) {
@@ -574,6 +568,90 @@ sub set_merged_infile_prefix {
 
     $file_info_href->{$sample_id}{merged_infile} = $merged_infile_prefix;
 
+    return;
+}
+
+sub _set_io_files_constant {
+
+## Function : Set the io files per chain and stream for constant features
+## Returns  : io
+## Arguments: $chain_id       => Chain of recipe
+##          : $id             => Id (sample or family)
+##          : $file_info_href => File info hash {REF}
+##          : $stream         => Stream (in or out or temp)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $program_name;
+    my $stream;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in temp out }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %constant_map = (
+        file_name_prefixes => q{file_name_prefix},
+        file_path_prefixes => q{file_path_prefix},
+        file_suffixes      => q{file_constant_suffix},
+        dir_path_prefixes  => q{dir_path_prefix},
+    );
+
+    while ( my ( $file_feature, $file_constant_feature ) = each %constant_map )
+    {
+
+        ## Get unique suffixes
+        my @uniq_elements = uniq(
+            @{
+                $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+                  {$file_feature}
+            }
+        );
+
+        ## If unique
+        if ( scalar @uniq_elements == 1 ) {
+
+            ## Set file constant suffix
+            $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {$file_constant_feature} = $uniq_elements[0];
+        }
+    }
     return;
 }
 

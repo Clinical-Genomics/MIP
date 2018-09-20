@@ -138,7 +138,6 @@ sub analysis_fastqc {
     use MIP::Program::Qc::Fastqc qw{ fastqc };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_io_files };
 
     ### PREPROCESSING:
 
@@ -338,18 +337,6 @@ sub analysis_fastqc {
             }
         );
     }
-
-    ## Set stream out to in for io files for next module in chain and id
-    set_io_files(
-        {
-            chain_id       => $job_id_chain,
-            id             => $sample_id,
-            file_paths_ref => \@outfile_paths,
-            file_info_href => $file_info_href,
-            stream         => q{in},
-            temp_directory => $temp_directory,
-        }
-    );
     return;
 }
 
