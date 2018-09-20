@@ -164,10 +164,11 @@ sub analysis_picardtools_mergesamfiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Cluster qw{ check_max_core_number };
-    use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::File qw{ get_file_suffix get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
@@ -178,22 +179,32 @@ sub analysis_picardtools_mergesamfiles {
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_merged_infile_prefix };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $indir_path_prefix         = $io{in}{dir_path_prefix};
+    my $infile_suffix             = $io{in}{file_suffix};
+    my @infile_name_prefixes      = @{ $io{in}{file_name_prefixes} };
+    my @temp_infile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
 
-    ## Directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-
-    ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $program_mode = $active_parameter_href->{$program_name};
     my $xargs_file_path_prefix;
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
@@ -203,9 +214,60 @@ sub analysis_picardtools_mergesamfiles {
         }
       );
 
-    # Extract lanes
+    ## Assign suffix
+    my $outfile_suffix = get_file_suffix(
+        {
+            jobid_chain    => $job_id_chain,
+            parameter_href => $parameter_href,
+            suffix_key     => q{alignment_file_suffix},
+        }
+    );
+
+    ## Extract lanes
     my $lanes_id = join $EMPTY_STRING,
       @{ $file_info_href->{$sample_id}{lanes} };
+
+    ## Outpaths
+    my $outsample_directory =
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
+        $program_name );
+    my $outfile_tag =
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
+    my @outfile_paths =
+      map {
+        catdir( $outsample_directory,
+                $sample_id
+              . $UNDERSCORE
+              . q{lanes}
+              . $UNDERSCORE
+              . $lanes_id
+              . $outfile_tag
+              . $DOT
+              . $_
+              . $outfile_suffix )
+      } @{ $file_info_href->{contigs_size_ordered} };
+
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id       => $job_id_chain,
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                file_paths_ref => \@outfile_paths,
+                parameter_href => $parameter_href,
+                program_name   => $program_name,
+                temp_directory => $temp_directory,
+            }
+        )
+    );
+
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    @outfile_paths = @{ $io{out}{file_paths} };
+    my @outfile_suffixes   = @{ $io{out}{file_suffixes} };
+    my @temp_outfile_paths = @{ $io{temp}{file_paths} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -215,36 +277,17 @@ sub analysis_picardtools_mergesamfiles {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            program_directory     => $active_parameter_href->{outaligner_dir},
-            program_name          => $program_name,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            program_directory               => $program_name,
+            program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
-        }
-    );
-
-    # Used downstream
-    $parameter_href->{$program_name}{$sample_id}{indirectory} =
-      $outsample_directory;
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$sample_id}
-      { $parameter_href->{active_aligner} }{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{picardtools_mergesamfiles}{file_tag};
-
-    ## Assign suffix
-    my $infile_suffix = my $outfile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
         }
     );
 
@@ -259,24 +302,24 @@ sub analysis_picardtools_mergesamfiles {
         }
     );
 
+    ### SHELL:
+
     ## Copies files from source to destination
     migrate_files(
         {
-            core_number => $core_number,
-            FILEHANDLE  => $FILEHANDLE,
-            file_ending => $infile_tag
-              . substr( $infile_suffix, 0, 2 )
-              . $ASTERIX,
-            indirectory  => $insample_directory,
-            infiles_ref  => \@{ $infile_lane_prefix_href->{$sample_id} },
+            core_number  => $core_number,
+            FILEHANDLE   => $FILEHANDLE,
+            file_ending  => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            indirectory  => $indir_path_prefix,
+            infiles_ref  => \@infile_name_prefixes,
             outfile_path => $temp_directory,
         }
     );
 
   INFILE:
-    foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+    foreach my $infile (@infile_name_prefixes) {
 
-        ## Split BAMs using Samtools
+        ## Split BAMs
         say {$FILEHANDLE} q{## Split alignment files per contig};
         ($xargs_file_counter) = split_and_index_aligment_file(
             {
@@ -285,7 +328,7 @@ sub analysis_picardtools_mergesamfiles {
                 core_number   => $core_number,
                 FILEHANDLE    => $FILEHANDLE,
                 file_path     => $file_path,
-                infile        => $infile . $infile_tag,
+                infile        => $infile,
                 output_format => substr( $infile_suffix, 1 ),
                 program_info_path  => $program_info_path,
                 temp_directory     => $temp_directory,
@@ -296,7 +339,7 @@ sub analysis_picardtools_mergesamfiles {
     }
 
     ## More than one file - we have something to merge
-    if ( scalar @{ $infile_lane_prefix_href->{$sample_id} } > 1 ) {
+    if ( scalar @infile_name_prefixes > 1 ) {
 
         ## picardtools_mergesamfiles
         say {$FILEHANDLE} q{## Merging alignment files};
@@ -338,37 +381,24 @@ sub analysis_picardtools_mergesamfiles {
         );
 
       CONTIG:
-        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+        while ( my ( $contig_index, $contig ) =
+            each @{ $file_info_href->{contigs_size_ordered} } )
+        {
 
             ## Get parameters
-            # Assemble infile paths by adding directory and file ending
-            my @infile_paths = map {
-                    catfile( $temp_directory, $_ )
-                  . $infile_tag
-                  . $UNDERSCORE
-                  . $contig
-                  . $infile_suffix
-            } @{ $infile_lane_prefix_href->{$sample_id} };
-
-            my $outfile_path = catfile( $temp_directory,
-                    $sample_id
-                  . $UNDERSCORE
-                  . q{lanes}
-                  . $UNDERSCORE
-                  . $lanes_id
-                  . $outfile_tag
-                  . $UNDERSCORE
-                  . $contig
-                  . $outfile_suffix );
+            # Assemble infile paths by adding directory and file suffixes
+            my @merge_temp_infile_paths =
+              map { $_ . $DOT . $contig . $infile_suffix }
+              @temp_infile_path_prefixes;
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
             picardtools_mergesamfiles(
                 {
-                    FILEHANDLE         => $XARGSFILEHANDLE,
                     create_index       => q{true},
-                    infile_paths_ref   => \@infile_paths,
-                    outfile_path       => $outfile_path,
+                    FILEHANDLE         => $XARGSFILEHANDLE,
+                    infile_paths_ref   => \@merge_temp_infile_paths,
+                    outfile_path       => $temp_outfile_paths[$contig_index],
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
                     threading          => q{true},
@@ -397,37 +427,24 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         );
 
       CONTIG:
-        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+        while ( my ( $contig_index, $contig ) =
+            each @{ $file_info_href->{contigs_size_ordered} } )
+        {
 
           INFILES:
-            foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+            foreach my $temp_infile_path_prefix (@temp_infile_path_prefixes) {
 
                 ## Get parameters
-                my $gnu_mv_infile_path = catfile( $temp_directory,
-                        $infile
-                      . $infile_tag
-                      . $UNDERSCORE
-                      . $contig
-                      . $infile_suffix );
-                my $outfile_name =
-                    $sample_id
-                  . $UNDERSCORE
-                  . q{lanes}
-                  . $UNDERSCORE
-                  . $lanes_id
-                  . $outfile_tag
-                  . $UNDERSCORE
-                  . $contig
-                  . $outfile_suffix;
+                my $gnu_temp_infile_path =
+                  $temp_infile_path_prefix . $DOT . $contig . $infile_suffix;
+                my $gnu_temp_outfile_path = $temp_outfile_paths[$contig_index];
 
-                my $gnu_mv_outfile_path =
-                  catfile( $temp_directory, $outfile_name );
                 ## Rename
                 gnu_mv(
                     {
                         FILEHANDLE   => $XARGSFILEHANDLE,
-                        infile_path  => $gnu_mv_infile_path,
-                        outfile_path => $gnu_mv_outfile_path,
+                        infile_path  => $gnu_temp_infile_path,
+                        outfile_path => $gnu_temp_outfile_path,
                     }
                 );
                 print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -437,7 +454,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                     {
                         bai_format  => 1,
                         FILEHANDLE  => $XARGSFILEHANDLE,
-                        infile_path => $gnu_mv_outfile_path,
+                        infile_path => $gnu_temp_outfile_path,
                     }
                 );
             }
@@ -449,18 +466,13 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     ($xargs_file_counter) = xargs_migrate_contig_files(
         {
-            contigs_ref  => \@{ $file_info_href->{contigs_size_ordered} },
-            core_number  => $core_number,
-            FILEHANDLE   => $FILEHANDLE,
-            file_ending  => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
-            file_path    => $file_path,
-            outdirectory => $outsample_directory,
-            outfile      => $sample_id
-              . $UNDERSCORE
-              . q{lanes}
-              . $UNDERSCORE
-              . $lanes_id
-              . $outfile_tag,
+            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+            core_number        => $core_number,
+            FILEHANDLE         => $FILEHANDLE,
+            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
+            file_path          => $file_path,
+            outdirectory       => $outdir_path_prefix,
+            outfile            => $outfile_name_prefix,
             program_info_path  => $program_info_path,
             temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -473,16 +485,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
 
     if ( $program_mode == 1 ) {
 
-        my $qc_outfile_path = catfile( $outsample_directory,
-                $sample_id
-              . $UNDERSCORE
-              . q{lanes}
-              . $UNDERSCORE
-              . $lanes_id
-              . $outfile_tag
-              . $UNDERSCORE
-              . $file_info_href->{contigs_size_ordered}[0]
-              . $outfile_suffix );
+        my $qc_outfile_path = $outfile_paths[0];
         add_program_outfile_to_sample_info(
             {
                 infile           => $merged_infile_prefix,
@@ -643,10 +646,11 @@ sub analysis_picardtools_mergesamfiles_rio {
 
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Delete::File qw{ delete_files };
-    use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::File qw{ get_file_suffix get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
@@ -655,16 +659,33 @@ sub analysis_picardtools_mergesamfiles_rio {
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Set::File qw{ set_merged_infile_prefix };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $indir_path_prefix         = $io{in}{dir_path_prefix};
+    my $infile_suffix             = $io{in}{file_suffix};
+    my @infile_name_prefixes      = @{ $io{in}{file_name_prefixes} };
+    my @temp_infile_name_prefixes = @{ $io{temp}{file_name_prefixes} };
+    my @temp_infile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
 
-    ## Alias
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain  = $parameter_href->{$program_name}{chain};
+    my $program_mode  = $active_parameter_href->{$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_path_prefix;
     my ( $core_number, $time, @source_environment_cmds ) =
@@ -675,32 +696,64 @@ sub analysis_picardtools_mergesamfiles_rio {
         }
       );
 
-    # Extract lanes
-    my $lanes_id = join $EMPTY_STRING,
-      @{ $file_info_href->{$sample_id}{lanes} };
-
-    ## Filehandles
-    # Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $outaligner_dir );
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$sample_id}
-      { $parameter_href->{active_aligner} }{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{picardtools_mergesamfiles}{file_tag};
-
     ## Assign suffix
-    my $infile_suffix = my $outfile_suffix = get_file_suffix(
+    my $outfile_suffix = get_file_suffix(
         {
             jobid_chain    => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
         }
     );
+
+    # Extract lanes
+    my $lanes_id = join $EMPTY_STRING,
+      @{ $file_info_href->{$sample_id}{lanes} };
+
+    ## Outpaths
+    my $outsample_directory =
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
+        $program_name );
+    my $outfile_tag =
+      $file_info_href->{$sample_id}{$program_name}{file_tag};
+    my @outfile_paths =
+      map {
+        catdir( $outsample_directory,
+                $sample_id
+              . $UNDERSCORE
+              . q{lanes}
+              . $UNDERSCORE
+              . $lanes_id
+              . $outfile_tag
+              . $DOT
+              . $_
+              . $outfile_suffix )
+      } @{ $file_info_href->{contigs_size_ordered} };
+
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id       => $job_id_chain,
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                file_paths_ref => \@outfile_paths,
+                parameter_href => $parameter_href,
+                program_name   => $program_name,
+                temp_directory => $temp_directory,
+            }
+        )
+    );
+
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    @outfile_paths = @{ $io{out}{file_paths} };
+    my @outfile_suffixes   = @{ $io{out}{file_suffixes} };
+    my @temp_outfile_paths = @{ $io{temp}{file_paths} };
+
+    ## Filehandles
+    # Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Set helper value for finding merged_infiles downstream
     my $merged_infile_prefix =
@@ -713,20 +766,22 @@ sub analysis_picardtools_mergesamfiles_rio {
         }
     );
 
+    ### SHELL:
+
     ## Copies files from source to destination
     migrate_files(
         {
             core_number  => $core_number,
             FILEHANDLE   => $FILEHANDLE,
-            file_ending  => $infile_tag . $infile_suffix . $ASTERIX,
-            indirectory  => $insample_directory,
-            infiles_ref  => \@{ $infile_lane_prefix_href->{$sample_id} },
+            file_ending  => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            indirectory  => $indir_path_prefix,
+            infiles_ref  => \@infile_name_prefixes,
             outfile_path => $temp_directory,
         }
     );
 
   INFILE:
-    foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+    foreach my $infile (@infile_name_prefixes) {
 
         ## Split BAMs using Samtools
         say {$FILEHANDLE} q{## Split alignment files per contig};
@@ -737,7 +792,7 @@ sub analysis_picardtools_mergesamfiles_rio {
                 core_number   => $core_number,
                 FILEHANDLE    => $FILEHANDLE,
                 file_path     => $file_path,
-                infile        => $infile . $infile_tag,
+                infile        => $infile,
                 output_format => substr( $infile_suffix, 1 ),
                 program_info_path  => $program_info_path,
                 temp_directory     => $temp_directory,
@@ -748,7 +803,7 @@ sub analysis_picardtools_mergesamfiles_rio {
     }
 
     ## More than one file - we have something to merge
-    if ( scalar @{ $infile_lane_prefix_href->{$sample_id} } > 1 ) {
+    if ( scalar @infile_name_prefixes > 1 ) {
 
         ## picardtools_mergesamfiles
         say {$FILEHANDLE} q{## Merging alignment files};
@@ -790,28 +845,15 @@ sub analysis_picardtools_mergesamfiles_rio {
         );
 
       CONTIG:
-        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+        while ( my ( $contig_index, $contig ) =
+            each @{ $file_info_href->{contigs_size_ordered} } )
+        {
 
             ## Get parameters
             # Assemble infile paths by adding directory and file ending
-            my @infile_paths = map {
-                    catfile( $temp_directory, $_ )
-                  . $infile_tag
-                  . $UNDERSCORE
-                  . $contig
-                  . $infile_suffix
-            } @{ $infile_lane_prefix_href->{$sample_id} };
-
-            my $outfile_path = catfile( $temp_directory,
-                    $sample_id
-                  . $UNDERSCORE
-                  . q{lanes}
-                  . $UNDERSCORE
-                  . $lanes_id
-                  . $outfile_tag
-                  . $UNDERSCORE
-                  . $contig
-                  . $outfile_suffix );
+            my @merge_temp_infile_paths =
+              map { $_ . $DOT . $contig . $infile_suffix }
+              @temp_infile_path_prefixes;
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
@@ -819,8 +861,8 @@ sub analysis_picardtools_mergesamfiles_rio {
                 {
                     create_index       => q{true},
                     FILEHANDLE         => $XARGSFILEHANDLE,
-                    infile_paths_ref   => \@infile_paths,
-                    outfile_path       => $outfile_path,
+                    infile_paths_ref   => \@merge_temp_infile_paths,
+                    outfile_path       => $temp_outfile_paths[$contig_index],
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
                     threading          => q{true},
@@ -849,37 +891,24 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         );
 
       CONTIG:
-        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+        while ( my ( $contig_index, $contig ) =
+            each @{ $file_info_href->{contigs_size_ordered} } )
+        {
 
           INFILES:
-            foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+            foreach my $temp_infile_path_prefix (@temp_infile_path_prefixes) {
 
                 ## Get parameters
-                my $gnu_infile_path = catfile( $temp_directory,
-                        $infile
-                      . $infile_tag
-                      . $UNDERSCORE
-                      . $contig
-                      . $infile_suffix );
-                my $outfile_name =
-                    $sample_id
-                  . $UNDERSCORE
-                  . q{lanes}
-                  . $UNDERSCORE
-                  . $lanes_id
-                  . $outfile_tag
-                  . $UNDERSCORE
-                  . $contig
-                  . $outfile_suffix;
+                my $gnu_temp_infile_path =
+                  $temp_infile_path_prefix . $DOT . $contig . $infile_suffix;
+                my $gnu_temp_outfile_path = $temp_outfile_paths[$contig_index];
 
-                my $gnu_outfile_path =
-                  catfile( $temp_directory, $outfile_name );
                 ## Rename
                 gnu_mv(
                     {
                         FILEHANDLE   => $XARGSFILEHANDLE,
-                        infile_path  => $gnu_infile_path,
-                        outfile_path => $gnu_outfile_path,
+                        infile_path  => $gnu_temp_infile_path,
+                        outfile_path => $gnu_temp_outfile_path,
                     }
                 );
                 print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -889,7 +918,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                     {
                         bai_format  => 1,
                         FILEHANDLE  => $XARGSFILEHANDLE,
-                        infile_path => $gnu_outfile_path,
+                        infile_path => $gnu_temp_outfile_path,
                     }
                 );
             }
@@ -903,9 +932,9 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         {
             core_number => $core_number,
             FILEHANDLE  => $FILEHANDLE,
-            file_ending => $infile_tag . $ASTERIX,
+            file_ending => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
             indirectory => $temp_directory,
-            infiles_ref => \@{ $infile_lane_prefix_href->{$sample_id} },
+            infiles_ref => \@temp_infile_name_prefixes,
         }
     );
 

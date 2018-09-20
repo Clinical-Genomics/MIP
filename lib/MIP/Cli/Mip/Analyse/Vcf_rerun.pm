@@ -111,11 +111,11 @@ sub run {
     );
 
     ## Order programs - Parsed from initiation file
-    my @order_programs;
     get_dependency_tree_order(
         {
             dependency_tree_href => \%dependency_tree,
-            programs_ref         => \@order_programs
+            programs_ref =>
+              \@{ $parameter{dynamic_parameter}{order_programs_ref} },
         }
     );
 
@@ -145,7 +145,6 @@ sub run {
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
             order_parameters_ref  => \@order_parameters,
-            order_programs_ref    => \@order_programs,
             parameter_href        => \%parameter,
         }
     );

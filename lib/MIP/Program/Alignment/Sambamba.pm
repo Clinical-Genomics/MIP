@@ -16,7 +16,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Inherit from Exporter to export functions and variables
     use base qw {Exporter};
@@ -804,8 +804,8 @@ sub split_and_index_aligment_file {
 
         ## Get parameters
         my $infile_path = catfile( $temp_directory, $infile . $file_suffix );
-        my $outfile_path = catfile( $temp_directory,
-            $infile . $UNDERSCORE . $contig . $file_suffix );
+        my $outfile_path =
+          catfile( $temp_directory, $infile . $DOT . $contig . $file_suffix );
         my $stderrfile_path_view =
             $xargs_file_path_prefix
           . $UNDERSCORE . q{view}
