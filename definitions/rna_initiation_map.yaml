@@ -14,8 +14,13 @@ CHAIN_ALL:
       - markduplicates
       - gatk_splitncigarreads
       - gatk_baserecalibration
+      - CHAIN_RSEQC:
+         - rseqc
+   - CHAIN_MAIN:
       - gatk_haplotypecaller
       - gatk_variantfiltration
       - CHAIN_ASE:
          - gatk_asereadcounter
          - bootstrapann
+   - multiqc
+   - sacct

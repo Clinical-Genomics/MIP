@@ -163,7 +163,7 @@ sub analysis_gatk_haplotypecaller {
     use MIP::Set::File qw{ set_file_suffix };
 
     ## Constants
-    Readonly my $MITOCHONDRIA_PLOIDY           => 3;
+    Readonly my $MITOCHONDRIA_PLOIDY           => 2;
     Readonly my $JAVA_MEMORY_ALLOCATION        => 4;
     Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
     Readonly my $VARIANT_INDEX_PARAMETER       => 128_000;
@@ -612,7 +612,7 @@ sub analysis_gatk_haplotypecaller_rna {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
+    ## Set MIP program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias

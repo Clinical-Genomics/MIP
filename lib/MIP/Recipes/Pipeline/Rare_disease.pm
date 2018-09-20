@@ -39,24 +39,30 @@ sub pipeline_rare_disease {
 
 ## Function : Pipeline recipe for wes and or wgs data analysis.
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $log                     => Log object to write to
-##          : $order_programs_ref      => Order of programs
-##          : $outaligner_dir          => Outaligner dir used in the analysis
-##          : $parameter_href          => Parameter hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href                  => File info hash {REF}
+##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
+##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
+##          : $job_id_href                     => Job id hash {REF}
+##          : $log                             => Log object to write to
+##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
+##          : $order_programs_ref              => Order of programs
+##          : $outaligner_dir                  => Outaligner dir used in the analysis
+##          : $parameter_href                  => Parameter hash {REF}
+##          : $sample_info_href                => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $broadcasts_ref;
     my $file_info_href;
+    my $infile_both_strands_prefix_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
+    my $order_parameters_ref;
     my $order_programs_ref;
     my $parameter_href;
     my $sample_info_href;
@@ -72,11 +78,25 @@ sub pipeline_rare_disease {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
+        broadcasts_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$broadcasts_ref,
+            strict_type => 1,
+        },
         file_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infile_both_strands_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_both_strands_prefix_href,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -97,6 +117,13 @@ sub pipeline_rare_disease {
             defined  => 1,
             required => 1,
             store    => \$log,
+        },
+        order_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
+            strict_type => 1,
         },
         order_programs_ref => {
             default     => [],
@@ -128,6 +155,8 @@ sub pipeline_rare_disease {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Pipeline qw{ check_rare_disease };
+
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus
       qw{ analysis_analysisrunstatus };
@@ -138,8 +167,6 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Bedtools_genomecov
       qw{ analysis_bedtools_genomecov };
     use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Analysis::Chanjo_sex_check
       qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
@@ -202,6 +229,7 @@ sub pipeline_rare_disease {
       qw{ analysis_samtools_subsample_mt };
     use MIP::Recipes::Analysis::Split_fastq_file
       qw{ analysis_split_fastq_file };
+    use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
     use MIP::Recipes::Analysis::Snpeff
       qw{ analysis_snpeff analysis_snpeff_rio };
@@ -217,6 +245,21 @@ sub pipeline_rare_disease {
       qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt analysis_vt_rio };
     use MIP::Recipes::Build::Rare_disease qw{build_rare_disease_meta_files};
+
+    ### Pipeline specific checks
+    check_rare_disease(
+        {
+            active_parameter_href           => $active_parameter_href,
+            broadcasts_ref                  => $broadcasts_ref,
+            file_info_href                  => $file_info_href,
+            infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
+            infile_lane_prefix_href         => $infile_lane_prefix_href,
+            log                             => $log,
+            order_parameters_ref            => $order_parameters_ref,
+            parameter_href                  => $parameter_href,
+            sample_info_href                => $sample_info_href,
+        }
+    );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
@@ -282,6 +325,7 @@ sub pipeline_rare_disease {
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
         snpeff                    => \&analysis_snpeff,
         split_fastq_file          => \&analysis_split_fastq_file,
+        sv_annotate               => \&analysis_sv_annotate,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
         sv_rankvariant => undef,                    # Depends on sample features
         sv_reformat    => \&analysis_sv_reformat,
@@ -343,6 +387,7 @@ sub pipeline_rare_disease {
         samtools_subsample_mt            => q{Samtools subsample MT},
         snpeff                           => q{Snpeff},
         split_fastq_file                 => q{Split fastq files in batches},
+        sv_annotate                      => q{SV annotate},
         sv_combinevariantcallsets        => q{SV combinevariantcallsets},
         sv_varianteffectpredictor        => q{SV varianteffectpredictor},
         sv_vcfparser                     => q{SV vcfparser},
@@ -729,6 +774,9 @@ sub _update_rankvariants_ar {
 q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
         );
 
+        $analysis_recipe_href->{sv_rankvariant} =
+          \&analysis_sv_rankvariant_unaffected;
+
         ## Rio recipe
         if ( $active_parameter_href->{reduce_io} ) {
 
@@ -738,10 +786,10 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
         }
         $analysis_recipe_href->{rankvariant} =
           \&analysis_rankvariant_unaffected;
-        $analysis_recipe_href->{sv_rankvariant} =
-          \&analysis_sv_rankvariant_unaffected;
     }
     else {
+
+        $analysis_recipe_href->{sv_rankvariant} = \&analysis_sv_rankvariant;
 
         ## Rio recipe
         if ( $active_parameter_href->{reduce_io} ) {
@@ -749,8 +797,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             $varann_ar_href->{rankvariant} = \&analysis_rankvariant_rio;
             return;
         }
-        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant;
-        $analysis_recipe_href->{sv_rankvariant} = \&analysis_sv_rankvariant;
+        $analysis_recipe_href->{rankvariant} = \&analysis_rankvariant;
     }
     return;
 }

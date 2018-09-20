@@ -103,7 +103,7 @@ my $cmds_ref = [
         $cluster_constant_path,
         qw{ 118-rnatest test_data 118-2-2U fastq=118-2-2U }
     ),
-    qw{--dra },
+    qw{--dra --vb },
 ];
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
@@ -112,8 +112,7 @@ ok( $success, q{Executed mip} );
 
 my $qc_sample_info_file = catfile( $cluster_constant_path,
     qw{ 118-rnatest analysis 118-rnatest_qc_sample_info.yaml } );
-ok( -f $qc_sample_info_file,
-    q{Checking for 118-rnatest_qc_sample_info.yaml} );
+ok( -f $qc_sample_info_file, q{Checking for 118-rnatest_qc_sample_info.yaml} );
 
 ## Clean-up
 remove_tree( catfile( $cluster_constant_path, qw{ 118-rnatest analysis } ) );

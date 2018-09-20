@@ -129,7 +129,7 @@ my %active_parameter = (
     # To test scalar parameter
     human_genome_reference =>
       catfile( $Bin, qw{data references GRCh37_homo_sapiens_-d5-.fasta} ),
-    mip                     => 1,
+    mip                    => 1,
     gatk_baserecalibration => 1,
     gatk_genotypegvcfs     => 1,
     snpeff                 => 1,

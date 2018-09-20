@@ -7,8 +7,28 @@ bash_set_pipefail: 1
 java_use_large_pages: 1
 max_cores_per_node: 16
 project_id: test
-program_source_environment_command: {}
+program_source_environment_command:
+  gtf_file_to_feature_seqs.pl:
+    - source
+    - activate
+    - MIP_star
 module_source_environment_command:
+  multiqc:
+    - source
+    - activate
+    - MIP_py3
+  rseqc:
+    - source
+    - activate
+    - MIP_rseqc
+  star_aln:
+    - source
+    - activate
+    - MIP_star
+  star_fusion:
+    - source
+    - activate
+    - MIP_star
 source_main_environment_commands:
   - source
   - activate
@@ -26,17 +46,6 @@ sample_info_file: cluster_constant_path!/family_id!/analysis_constant_path!/fami
 human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
 ### Analysis
 ## Programs
-bootstrapann: 1
-fastqc: 1
-gatk_asereadcounter: 1
-gatk_baserecalibration: 1
-gatk_haplotypecaller: 1
-gatk_splitncigarreads: 1
-gatk_variantfiltration: 1
-picardtools_mergesamfiles: 1
-salmon_quant: 1
-star_aln: 1
-star_fusion: 1
 ## Parameters
 gatk_baserecalibration_disable_indel_qual: 1
 gatk_path: cluster_constant_path!

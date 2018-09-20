@@ -1,9 +1,11 @@
 package MIP::Cli::Mip::Install::Rna;
 
-use 5.022;
+use 5.026;
 use Carp;
 use Cwd qw{ abs_path };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
 use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
@@ -26,7 +28,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils
   qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = '0.2.4';
+our $VERSION = 1.00;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -68,7 +70,7 @@ sub run {
 
     ## Update installation array
     if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
-        @{ $parameter{installations} } = qw{ emip };
+        @{ $parameter{installations} } = qw{ emip epy3 erseqc estar };
     }
 
     ## Nest the command line parameters and overwrite the default
@@ -103,10 +105,27 @@ sub _build_usage {
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip => Optional [Str],
+                emip   => Optional [Str],
+                epy3   => Optional [Str],
+                erseqc => Optional [Str],
+                estar  => Optional [Str],
             ],
             required => 0,
         ),
+    );
+
+    option(
+        q{config_file} => (
+            cmd_aliases => [qw{ config c }],
+            documentation =>
+              q{File with configuration parameters in YAML format},
+            is      => q{rw},
+            isa     => Str,
+            default => catfile(
+                dirname($Bin),
+                qw{ MIP definitions install_rna_parameters.yaml }
+            ),
+        )
     );
 
     option(
@@ -116,8 +135,8 @@ sub _build_usage {
             cmd_tags      => [q{Default: emip}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip full }] ), ],
-            required      => 0,
+            isa => ArrayRef [ enum( [qw{ emip full epy3 erseqc estar }] ), ],
+            required => 0,
         ),
     );
 
@@ -128,18 +147,21 @@ sub _build_usage {
             documentation => q{Set program versions},
             is            => q{rw},
             isa           => Dict [
-                bcftools    => Optional [Str],
-                cufflinks   => Optional [Str],
-                fastqc      => Optional [Str],
-                htslib      => Optional [Str],
-                java_jdk    => Optional [Str],
-                picard      => Optional [Str],
-                pip         => Optional [Str],
-                python      => Optional [Str],
-                salmon      => Optional [Str],
-                samtools    => Optional [Str],
-                star        => Optional [Str],
-                star_fusion => Optional [Str],
+                bcftools         => Optional [Str],
+                cufflinks        => Optional [Str],
+                fastqc           => Optional [Str],
+                q{fusion-filter} => Optional [Str],
+                htslib           => Optional [Str],
+                java_jdk         => Optional [Str],
+                multiqc          => Optional [Str],
+                picard           => Optional [Str],
+                pip              => Optional [Str],
+                python           => Optional [Str],
+                rseqc            => Optional [Str],
+                salmon           => Optional [Str],
+                samtools         => Optional [Str],
+                star             => Optional [Str],
+                star_fusion      => Optional [Str],
             ],
             required => 0,
         ),
@@ -179,7 +201,8 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          gatk htslib mip_scripts picard salmon samtools
+                          fusion-filter gatk htslib mip_scripts multiqc picard rseqc
+                          salmon sambamba samtools
                           star star_fusion }
                     ]
                 ),
@@ -209,7 +232,8 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          gatk htslib mip_scripts picard salmon samtools
+                          fusion-filter gatk htslib mip_scripts multiqc picard rseqc
+                          salmon sambamba samtools
                           star star_fusion }
                     ]
                 ),

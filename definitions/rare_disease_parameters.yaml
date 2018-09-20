@@ -28,6 +28,12 @@ exome_target_bed:
   exists_check: file
   reference: reference_dir
   type: path
+expected_coverage:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 ## genomeAnalysisToolKitPath
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 gatk_bundle_download_version:
@@ -129,10 +135,35 @@ human_genome_reference:
    - gatk_variantevalexome
    - picardtools_collecthsmetrics
    - picardtools_collectmultiplemetrics
-  build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
   exists_check: file
+  reference: reference_dir
+  type: path
+human_genome_reference_file_endings:
+  associated_program:
+   - bwa_mem
+   - expansionhunter
+   - gatk_realigner
+   - gatk_baserecalibration
+   - gatk_haplotypecaller
+   - gatk_genotypegvcfs
+   - bcftools_mpileup
+   - freebayes
+   - manta
+   - delly_call
+   - cnvnator
+   - tiddit
+   - gatk_variantrecalibration
+   - vt
+   - gatk_variantevalall
+   - gatk_variantevalexome
+   - picardtools_collecthsmetrics
+   - picardtools_collectmultiplemetrics
+  build_file: 1
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
   reference: reference_dir
   type: path
 ## java large pages - affects all modules using java
@@ -153,66 +184,6 @@ java_use_large_pages:
   default: 0
   type: program_argument
 ####Bash
-module_time:
-  associated_program:
-   - mip
-  data_type: HASH
-  default:
-    analysisrunstatus: 1
-    bwa_mem: 30
-    bcftools_mpileup: 40
-    bedtools_genomecov: 15
-    chanjo_sexcheck: 2
-    cnvnator: 5
-    delly_call: 10
-    delly_reformat: 7
-    endvariantannotationblock: 2
-    evaluation: 1
-    expansionhunter: 1
-    fastqc: 10
-    freebayes: 20
-    frequency_filter: 2
-    gatk_baserecalibration: 20
-    gatk_combinevariantcallsets: 2
-    gatk_genotypegvcfs: 10
-    gatk_concatenate_genotypegvcfs: 2
-    gatk_haplotypecaller: 30
-    gatk_realigner: 20
-    gatk_variantevalall: 2
-    gatk_variantevalexome: 2
-    gatk_variantrecalibration: 10
-    gzip_fastq: 2
-    manta: 10
-    markduplicates: 20
-    multiqc: 1
-    peddy: 1
-    picardtools_collecthsmetrics: 10
-    picardtools_collectmultiplemetrics: 10
-    picardtools_mergesamfiles: 20
-    plink: 1
-    prepareforvariantannotationblock: 5
-    qccollect: 1
-    rankvariant: 10
-    rcovplots: 1
-    rhocall: 5
-    rtg_vcfeval: 1
-    sacct: 1
-    sambamba_depth: 10
-    samtools_subsample_mt: 1
-    split_fastq_file: 10
-    snpeff: 10
-    sv_combinevariantcallsets: 2
-    sv_rankvariant: 2
-    sv_reformat: 1
-    sv_varianteffectpredictor: 10
-    sv_vcfparser: 2
-    tiddit: 10
-    varianteffectpredictor: 10
-    variant_integrity: 1
-    vcfparser: 5
-    vt: 10
-    vcf2cytosure: 2
-  type: mip
 module_core_number:
   associated_program:
    - mip
@@ -257,6 +228,7 @@ module_core_number:
     sambamba_depth: 2
     samtools_subsample_mt: 1
     split_fastq_file: 4
+    sv_annotate: 1
     sv_combinevariantcallsets: 1
     sv_rankvariant: 16
     sv_reformat: 1
@@ -265,6 +237,74 @@ module_core_number:
     variant_integrity: 1
     vcf2cytosure: 1
   type: mip
+module_time:
+  associated_program:
+   - mip
+  data_type: HASH
+  default:
+    analysisrunstatus: 1
+    bwa_mem: 30
+    bcftools_mpileup: 40
+    bedtools_genomecov: 15
+    chanjo_sexcheck: 2
+    cnvnator: 5
+    delly_call: 10
+    delly_reformat: 7
+    endvariantannotationblock: 2
+    evaluation: 1
+    expansionhunter: 1
+    fastqc: 10
+    freebayes: 30
+    frequency_filter: 2
+    gatk_baserecalibration: 20
+    gatk_combinevariantcallsets: 2
+    gatk_genotypegvcfs: 10
+    gatk_concatenate_genotypegvcfs: 2
+    gatk_haplotypecaller: 30
+    gatk_realigner: 20
+    gatk_variantevalall: 2
+    gatk_variantevalexome: 2
+    gatk_variantrecalibration: 10
+    gzip_fastq: 2
+    manta: 10
+    markduplicates: 20
+    multiqc: 1
+    peddy: 1
+    picardtools_collecthsmetrics: 10
+    picardtools_collectmultiplemetrics: 10
+    picardtools_mergesamfiles: 20
+    plink: 1
+    prepareforvariantannotationblock: 5
+    qccollect: 1
+    rankvariant: 10
+    rcovplots: 1
+    rhocall: 5
+    rtg_vcfeval: 1
+    sacct: 1
+    sambamba_depth: 10
+    samtools_subsample_mt: 1
+    split_fastq_file: 10
+    snpeff: 10
+    sv_annotate: 2
+    sv_combinevariantcallsets: 2
+    sv_rankvariant: 2
+    sv_reformat: 1
+    sv_varianteffectpredictor: 10
+    sv_vcfparser: 2
+    tiddit: 10
+    varianteffectpredictor: 10
+    variant_integrity: 1
+    vcfparser: 5
+    vt: 10
+    vcf2cytosure: 20
+  type: mip
+infile_dirs:
+  associated_program:
+   - mip
+  exists_check: directory
+  data_type: HASH
+  type: path
+  update_path: absolute_path
 ## Choosen MIP Aligner
 outaligner_dir:
   associated_program:
@@ -279,6 +319,7 @@ picardtools_path:
    - markduplicates
    - picardtools_collecthsmetrics
    - picardtools_collectmultiplemetrics
+   - prepareforvariantannotationblock
    - delly_reformat
   data_type: SCALAR
   exists_check: directory
@@ -297,13 +338,56 @@ replace_iupac:
   default: 0
   type: mip
 ###Programs
+split_fastq_file:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  outfile_suffix: ".fastq.gz"
+  program_name_path:
+   - pigz
+   - split
+  type: program
+split_fastq_file_read_batch:
+  associated_program:
+   - split_fastq_file
+  data_type: SCALAR
+  default: 25000000
+  type: program_argument
+## Gzip
+gzip_fastq:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  program_name_path:
+   - gzip
+  type: program
+## FastQC
+fastqc:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  program_name_path:
+   - fastqc
+  type: program
 ## BWA
 bwa_mem:
   analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _sorted
   outfile_suffix: ".bam"
   outdir_name: bwa
@@ -359,7 +443,7 @@ picardtools_mergesamfiles:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ""
   type: program
 markduplicates:
@@ -367,7 +451,7 @@ markduplicates:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _md
   program_name_path:
    - sambamba
@@ -376,7 +460,7 @@ markduplicates_picardtools_markduplicates:
   associated_program:
    - markduplicates
   data_type: SCALAR
-  default: 0
+  default: 1
   type: program_argument
 markduplicates_sambamba_markdup:
   associated_program:
@@ -427,7 +511,7 @@ gatk_baserecalibration:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _brecal
   type: program
 gatk_baserecalibration_covariates:
@@ -485,7 +569,7 @@ chanjo_sexcheck:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _sex
   outfile_suffix: ".tsv"
   program_name_path:
@@ -502,7 +586,7 @@ samtools_subsample_mt:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _subsample_MT
   outfile_suffix: ".bam"
   type: program
@@ -518,7 +602,7 @@ sambamba_depth:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _coverage
   outfile_suffix: ".bed"
   program_name_path:
@@ -544,8 +628,8 @@ sambamba_depth_cutoffs:
   data_type: ARRAY
   default:
    - 10
+   - 15
    - 20
-   - 30
    - 50
    - 100
   type: program_argument
@@ -594,7 +678,7 @@ picardtools_collectmultiplemetrics:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 picardtools_collecthsmetrics:
@@ -602,7 +686,7 @@ picardtools_collecthsmetrics:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _collecthsmetrics
   type: program
 rcovplots:
@@ -619,7 +703,7 @@ cnvnator:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _cnvnator
   outdir_name: cnvnator
   outfile_suffix: ".vcf"
@@ -640,7 +724,7 @@ delly_call:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _dellycall
   program_name_path:
    - delly
@@ -652,7 +736,7 @@ delly_reformat:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _dellyreformat
   program_name_path:
    - delly
@@ -683,10 +767,11 @@ delly_types:
    - INS
   type: program_argument
 expansionhunter:
+  analysis_mode: sample
   associated_program:  
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _exphun
   outdir_name: expansionhunter
   outfile_suffix: ".vcf"
@@ -695,7 +780,6 @@ expansionhunter:
   program_type: structural_variant_callers
   type: program
 expansionhunter_repeat_specs_dir:
-  analysis_mode: sample
   associated_program:
    - expansionhunter
   data_type: SCALAR
@@ -707,7 +791,7 @@ manta:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _manta
   program_name_path:
    - configManta.py
@@ -720,7 +804,7 @@ tiddit:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _tiddit
   outdir_name: tiddit
   outfile_suffix: ".vcf"
@@ -747,7 +831,7 @@ sv_combinevariantcallsets:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _comb_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -755,80 +839,98 @@ sv_combinevariantcallsets:
    - svdb
    - vt
   type: program
-sv_bcftools_view_filter:
-  associated_program:
-   - sv_combinevariantcallsets
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 sv_combinevariantcallsets_bcf_file:
   associated_program:
    - sv_combinevariantcallsets
   data_type: SCALAR
   default: 0
   type: program_argument
-sv_genmod_filter:
-  associated_program:
-   - sv_combinevariantcallsets
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-sv_genmod_filter_threshold:
-  associated_program:
-   - sv_combinevariantcallsets
-  data_type: SCALAR
-  default: 0.10
-  type: program_argument
-sv_genmod_filter_1000g:
-  associated_program:
-   - sv_combinevariantcallsets
-  data_type: SCALAR
-  default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
-  exists_check: file
-  reference: reference_dir
-  type: path
 sv_svdb_merge_prioritize:
   associated_program:
    - sv_combinevariantcallsets
   data_type: SCALAR
   mandatory: no
   type: program_argument
-sv_svdb_query:
+sv_vt_decompose:
   associated_program:
    - sv_combinevariantcallsets
   data_type: SCALAR
   default: 0
   type: program_argument
+sv_annotate:
+  analysis_mode: family
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ann_
+  outfile_suffix: ".vcf"
+  program_name_path:
+   - bcftools
+   - svdb
+  type: program
+sv_bcftools_view_filter:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+sv_genmod_filter:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+sv_genmod_filter_threshold:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: 0.10
+  type: program_argument
+sv_genmod_filter_1000g:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
+  exists_check: file
+  reference: reference_dir
+  type: path
+sv_svdb_query:
+  associated_program:
+   - sv_annotate
+  data_type: SCALAR
+  default: 0
+  type: program_argument
 sv_svdb_query_db_files:
   associated_program:
-   - sv_combinevariantcallsets
+   - sv_annotate
   data_type: HASH
   exists_check: file
   reference: reference_dir
   type: path
 sv_vcfanno:
   associated_program:
-   - sv_combinevariantcallsets
+   - sv_annotate
   data_type: SCALAR
   default: 0
   type: program_argument
 sv_vcfannotation_header_lines_file:
   associated_program:
-   - sv_combinevariantcallsets
+   - sv_annotate
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path
 sv_vcfanno_config:
   associated_program:
-   - sv_combinevariantcallsets
+   - sv_annotate
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path
 sv_vcfanno_config_file:
   associated_program:
-   - sv_combinevariantcallsets
+   - sv_annotate
   data_type: SCALAR
   default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz
   exists_check: file
@@ -837,23 +939,17 @@ sv_vcfanno_config_file:
   type: program_argument
 sv_vcfanno_lua:
   associated_program:
-   - sv_combinevariantcallsets
+   - sv_annotate
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path
-sv_vt_decompose:
-  associated_program:
-   - sv_combinevariantcallsets
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 vcf2cytosure:
   analysis_mode: family
   associated_program:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: cyto_
   outfile_suffix: ".cgh"
   outdir_name: vcf2cytosure
@@ -897,7 +993,7 @@ sv_varianteffectpredictor:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: vep_
   program_name_path:
    - vep
@@ -940,7 +1036,7 @@ sv_vcfparser:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: parsed_
   type: program
 sv_vcfparser_range_feature_annotation_columns:
@@ -1001,7 +1097,7 @@ sv_rankvariant:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ranked_
   type: program
 sv_genmod_annotate_regions:
@@ -1042,7 +1138,7 @@ sv_reformat:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ""
   program_name_path:
    - grep
@@ -1067,7 +1163,7 @@ bcftools_mpileup:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _mpileup_
   outdir_name: bcftools
   program_name_path:
@@ -1087,7 +1183,7 @@ freebayes:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _freebayes_
   program_name_path:
    - freebayes
@@ -1102,7 +1198,7 @@ gatk_haplotypecaller:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _haptc
   outfile_suffix: ".g.vcf"
   type: program
@@ -1159,7 +1255,7 @@ gatk_genotypegvcfs:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _gent_
   outfile_suffix: ".vcf"
   type: program
@@ -1181,7 +1277,7 @@ gatk_concatenate_genotypegvcfs:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
   type: program
@@ -1196,7 +1292,7 @@ gatk_variantrecalibration:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: vrecal_
   program_name_path:
    - bcftools
@@ -1282,7 +1378,7 @@ gatk_combinevariantcallsets:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _comb_
   outfile_suffix: ".vcf"
   type: program
@@ -1319,7 +1415,7 @@ prepareforvariantannotationblock:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outfile_suffix: ".vcf.gz"
   type: program
@@ -1329,7 +1425,7 @@ rhocall:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: rhocall_
   program_name_path:
    - rhocall
@@ -1350,7 +1446,7 @@ vt:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: vt_
   program_name_path:
    - vt
@@ -1388,7 +1484,7 @@ frequency_filter:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: frqf_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -1425,7 +1521,7 @@ gatk_variantevalall:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outfile_suffix: ".varianteval"
   type: program
@@ -1434,7 +1530,7 @@ gatk_variantevalexome:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outfile_suffix: ".varianteval"
   program_name_path:
@@ -1464,7 +1560,7 @@ varianteffectpredictor:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: vep_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -1532,7 +1628,7 @@ vcfparser:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: parsed_
   outfile_suffix: ".vcf"
   type: program
@@ -1589,7 +1685,7 @@ snpeff:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: snpeff_
   outfile_suffix: ".vcf"
   type: program
@@ -1663,7 +1759,7 @@ peddy:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   program_name_path:
    - peddy
@@ -1673,7 +1769,7 @@ plink:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   program_name_path:
    - plink2
@@ -1683,7 +1779,7 @@ variant_integrity:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   program_name_path:
    - variant_integrity
@@ -1748,7 +1844,7 @@ rankvariant:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ranked_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -1809,7 +1905,7 @@ endvariantannotationblock:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outfile_suffix: ".vcf"
   program_name_path:
@@ -1835,7 +1931,7 @@ qccollect:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 qccollect_regexp_file:
@@ -1864,7 +1960,7 @@ multiqc:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   outdir_name: multiqc
   program_name_path:
@@ -1882,7 +1978,7 @@ analysisrunstatus:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 ## Sacct
@@ -1891,7 +1987,7 @@ sacct:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 sacct_format_fields:

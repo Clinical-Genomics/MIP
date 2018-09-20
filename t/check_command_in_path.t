@@ -117,7 +117,7 @@ my $log = initiate_logger(
 
 my %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
-    bwa_mem   => 0,
+    bwa_mem    => 0,
 );
 my %parameter;
 
@@ -154,7 +154,7 @@ is( $return, undef,
 ## Given switched on active parameter, defined program and program_name_path parameter, when program is in path and executable
 %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
-    bwa_mem   => 1,
+    bwa_mem    => 1,
 );
 
 %parameter = (
@@ -181,7 +181,7 @@ like( $trap->stderr, qr/INFO/xms,
 ## Given switched on active parameter, defined program and program_name_path parameter, when program is in path and executable
 %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
-    bwa_mem   => 1,
+    bwa_mem    => 1,
 );
 
 %parameter = (

@@ -250,6 +250,7 @@ sub star_aln {
 
     }
     if ($two_pass_mode) {
+
         push @commands, q{--twopassMode} . $SPACE . $two_pass_mode;
 
     }

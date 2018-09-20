@@ -40,13 +40,12 @@ sub build_capture_file_prerequisites {
 ## Arguments: $active_parameter_href       => Active parameters for this analysis hash {REF}
 ##          : $family_id                   => Family ID
 ##          : $FILEHANDLE                  => Filehandle to write to
+##          : $file_info_href              => File info hash {REF}
 ##          : $infile_lane_prefix_href     => Infile(s) without the ".ending" {REF}
-##          : $infile_list_suffix          => Infile list suffix
 ##          : $job_id_href                 => Job id hash {REF}
 ##          : $log                         => Log object
 ##          : $outaligner_dir              => Outaligner_dir used in the analysis {REF}
-##          : $padded_infile_list_suffix   => Padded infile list suffix
-##          : $padded_interval_list_suffix => Padded interval list suffix
+##          : $parameter_build_suffixes_ref => Exome target bed associated file endings
 ##          : $parameter_href              => Parameter hash {REF}
 ##          : $program_name                => Program name
 ##          : $sample_info_href            => Info on samples and family hash {REF}
@@ -57,12 +56,11 @@ sub build_capture_file_prerequisites {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $FILEHANDLE;
+    my $file_info_href;
     my $infile_lane_prefix_href;
-    my $infile_list_suffix;
     my $job_id_href;
     my $log;
-    my $padded_infile_list_suffix;
-    my $padded_interval_list_suffix;
+    my $parameter_build_suffixes_ref;
     my $parameter_href;
     my $program_name;
     my $sample_info_href;
@@ -85,18 +83,19 @@ sub build_capture_file_prerequisites {
             store       => \$family_id,
             strict_type => 1,
         },
-        FILEHANDLE              => { store => \$FILEHANDLE, },
+        FILEHANDLE     => { store => \$FILEHANDLE, },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        infile_list_suffix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_list_suffix,
             strict_type => 1,
         },
         job_id_href => {
@@ -112,16 +111,11 @@ sub build_capture_file_prerequisites {
             store       => \$outaligner_dir,
             strict_type => 1,
         },
-        padded_infile_list_suffix => {
+        parameter_build_suffixes_ref => {
+            default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$padded_infile_list_suffix,
-            strict_type => 1,
-        },
-        padded_interval_list_suffix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$padded_interval_list_suffix,
+            store       => \$parameter_build_suffixes_ref,
             strict_type => 1,
         },
         parameter_href => {
@@ -167,15 +161,21 @@ sub build_capture_file_prerequisites {
     Readonly my $MAX_RANDOM_NUMBER   => 100_00;
 
     my $file_path;
+    my $submit_switch;
 
     ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
+    my $infile_list_suffix = $parameter_build_suffixes_ref->[0];
+    my $padded_infile_list_suffix   = $parameter_build_suffixes_ref->[1];
+    my $padded_interval_list_suffix = $parameter_build_suffixes_ref->[2];
 
     ## No supplied FILEHANDLE i.e. create new sbatch script
     if ( not defined $FILEHANDLE ) {
+
+        $submit_switch = 1;
 
         ## Create anonymous filehandle
         $FILEHANDLE = IO::Handle->new();
@@ -384,8 +384,12 @@ sub build_capture_file_prerequisites {
             say {$FILEHANDLE} $NEWLINE;
         }
     }
+
+    ## Only create once
+    $parameter_href->{exome_target_bed}{build_file} = 0;
+
     ## Unless FILEHANDLE was supplied close filehandle and submit
-    if ( not defined $arg_href->{active_parameter_href}{FILEHANDLE} ) {
+    if ($submit_switch) {
 
         close $FILEHANDLE;
 

@@ -116,18 +116,18 @@ my $log = initiate_logger(
 );
 
 my @order_parameters =
-  qw{ bwa_mem_bamstats gatk_baserecalibration_covariates gatk_genotypegvcfs_ref_gvcf gatk_variantrecalibration_resource_indel bwa_mem freebayes markduplicates sv_vcfparser_range_feature_file };
+  qw{ bcftools_mpileup_filter_variant bwa_mem bwa_mem_bamstats gatk_baserecalibration_covariates gatk_genotypegvcfs_ref_gvcf gatk_variantrecalibration_resource_indel markduplicates sv_vcfparser_range_feature_file };
 
 my %active_parameter = (
     bwa_mem_bamstats                          => 0,
     gatk_genotypegvcfs_ref_gvcf               => q{test_file},
     markduplicates_picardtools_markduplicates => 1,
     mip                                       => 1,
-    bwa_mem                                  => 0,
-    gatk_baserecalibration                   => 1,
-    gatk_genotypegvcfs                       => 1,
-    gatk_variantrecalibration                => 1,
-    sv_vcfparser                             => 1,
+    bwa_mem                                   => 0,
+    gatk_baserecalibration                    => 1,
+    gatk_genotypegvcfs                        => 1,
+    gatk_variantrecalibration                 => 1,
+    sv_vcfparser                              => 1,
 );
 
 my %parameter = load_yaml(
@@ -159,12 +159,12 @@ is( $active_parameter{gatk_genotypegvcfs_ref_gvcf},
     q{test_file}, q{Returned for not required exome mode parameter} );
 
 is( $active_parameter{bwa_mem_bamstats},
-    q{0}, q{Did not set default for non active associated_program parameter} );
+    q{1}, q{Set default for non active associated_program parameter} );
 
 is( $active_parameter{markduplicates_picardtools_markduplicates},
     q{1}, q{Did not set default for not defined associated_program parameter} );
 
-is( $active_parameter{freebayes}, 0, q{Set default for scalar parameter} );
+is( $active_parameter{bcftools_mpileup_filter_variant}, 0, q{Set default for scalar parameter} );
 
 my @expected_covariets =
   qw{ ReadGroupCovariate ContextCovariate CycleCovariate QualityScoreCovariate };

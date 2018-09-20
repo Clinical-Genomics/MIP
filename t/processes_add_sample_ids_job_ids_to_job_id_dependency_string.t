@@ -29,7 +29,7 @@ our $USAGE = build_usage( {} );
 ##Constants
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
-Readonly my $EMPTY_STR      => q{};
+Readonly my $EMPTY_STR  => q{};
 Readonly my $UNDERSCORE => q{_};
 
 my $VERBOSE = 1;
@@ -84,14 +84,15 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes qw{add_sample_ids_job_ids_to_job_id_dependency_string};
+use MIP::Processmanagement::Processes
+  qw{add_sample_ids_job_ids_to_job_id_dependency_string};
 
 diag(
 "Test add_sample_ids_job_ids_to_job_id_dependency_string $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $family_id = q{family1};
+my $family_id           = q{family1};
 my $sample_id           = q{sample2};
 my $path                = q{MAIN};
 my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
@@ -111,11 +112,11 @@ my %infile_lane_prefix = (
 my %job_id = (
     $family_id_chain_key => {
         q{sample1} . $UNDERSCORE . $path => [qw{job_id_1 job_id_2}],
-        q{sample2} . $UNDERSCORE . $path      => [qw{job_id_3}],
-        q{sample3} . $UNDERSCORE . $path      => [qw{job_id_4 job_id_5 job_id_8}],
-			     q{sample4} . $UNDERSCORE . $path      => [undef],
-			     $sample_id_parallel_chain_key => [qw{job_id_10 job_id_11}],
-        $family_id_chain_key => [qw{job_id_6}],
+        q{sample2} . $UNDERSCORE . $path => [qw{job_id_3}],
+        q{sample3} . $UNDERSCORE . $path => [qw{job_id_4 job_id_5 job_id_8}],
+        q{sample4} . $UNDERSCORE . $path => [undef],
+        $sample_id_parallel_chain_key    => [qw{job_id_10 job_id_11}],
+        $family_id_chain_key             => [qw{job_id_6}],
     },
 );
 
@@ -124,63 +125,54 @@ my %job_id = (
 ## No sample no parallel jobs
 
 my $job_ids_string = add_sample_ids_job_ids_to_job_id_dependency_string(
-				{
-				 job_id_href         => \%job_id,
-				 infile_lane_prefix_href => \%infile_lane_prefix,
-				 sample_ids_ref => \@samples,
-				 family_id_chain_key => $family_id_chain_key,
-				 family_id => $family_id,
-				 path => $path,
-				}
-			       );
-my $expected_job_id_string;
-is(
-    $job_ids_string,
-    $expected_job_id_string,
-    q{No sample_id and no parallel jobs to job_id_string}
+    {
+        job_id_href             => \%job_id,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        sample_ids_ref          => \@samples,
+        family_id_chain_key     => $family_id_chain_key,
+        family_id               => $family_id,
+        path                    => $path,
+    }
 );
+my $expected_job_id_string;
+is( $job_ids_string, $expected_job_id_string,
+    q{No sample_id and no parallel jobs to job_id_string} );
 
 ## 1 sample no parallel jobs
 @samples = qw{sample1};
 
 $job_ids_string = add_sample_ids_job_ids_to_job_id_dependency_string(
-				{
-				 job_id_href         => \%job_id,
-				 infile_lane_prefix_href => \%infile_lane_prefix,
-				 sample_ids_ref => \@samples,
-				 family_id_chain_key => $family_id_chain_key,
-				 family_id => $family_id,
-				 path => $path,
-				}
-			       );
-$expected_job_id_string = q{:job_id_1:job_id_2};
-is(
-    $job_ids_string,
-    $expected_job_id_string,
-    q{Added sample_id and no parallel jobs to job_id_string}
+    {
+        job_id_href             => \%job_id,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        sample_ids_ref          => \@samples,
+        family_id_chain_key     => $family_id_chain_key,
+        family_id               => $family_id,
+        path                    => $path,
+    }
 );
-
+$expected_job_id_string = q{:job_id_1:job_id_2};
+is( $job_ids_string, $expected_job_id_string,
+    q{Added sample_id and no parallel jobs to job_id_string} );
 
 ## 1 sample no parallel jobs
 
 @samples = qw{sample1 sample2 sample3};
 
 $job_ids_string = add_sample_ids_job_ids_to_job_id_dependency_string(
-				{
-				 job_id_href         => \%job_id,
-				 infile_lane_prefix_href => \%infile_lane_prefix,
-				 sample_ids_ref => \@samples,
-				 family_id_chain_key => $family_id_chain_key,
-				 family_id => $family_id,
-				 path => $path,
-				}
-			       );
-$expected_job_id_string = q{:job_id_1:job_id_2:job_id_3:job_id_10:job_id_11:job_id_4:job_id_5:job_id_8};
-is(
-    $job_ids_string,
-    $expected_job_id_string,
-    q{Added sample_ids and parallel jobs to job_id_string}
+    {
+        job_id_href             => \%job_id,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        sample_ids_ref          => \@samples,
+        family_id_chain_key     => $family_id_chain_key,
+        family_id               => $family_id,
+        path                    => $path,
+    }
 );
+$expected_job_id_string =
+  q{:job_id_1:job_id_2:job_id_3:job_id_10:job_id_11:job_id_4:job_id_5:job_id_8};
+is( $job_ids_string, $expected_job_id_string,
+    q{Added sample_ids and parallel jobs to job_id_string} );
 done_testing();
 
 ######################

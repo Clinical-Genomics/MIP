@@ -97,16 +97,16 @@ diag(   q{Test add_parameter_to_sample_info from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my @add_keys = qw{ analysis_type sample_origin };
+my @add_keys = qw{ analysis_type expected_coverage };
 
 my %active_parameter = (
     analysis_type => {
         sample_1 => q{wgs},
         sample_2 => q{wes},
     },
-    sample_origin => {
-        sample_1 => q{sample_x},
-        sample_2 => q{sample_2},
+    expected_coverage => {
+        sample_1 => 1,
+        sample_2 => 1,
     },
 );
 my %sample_info;

@@ -120,7 +120,8 @@ my $log = initiate_logger(
 my %active_parameter = (
     gatk_baserecalibration_known_sites =>
       catfile( $Bin, qw{ data references GRCh37_dbsnp_-138-.vcf} ),
-    human_genome_reference => catfile( $Bin, qw{Should_not_exist_file} ),
+    human_genome_reference_file_endings =>
+      catfile( $Bin, qw{Should_not_exist_file} ),
     snpsift_annotation_files =>
       catfile( $Bin, qw{data references GRCh37_clinvar_-2017-01-04-.vcf.gz} ),
 );
@@ -137,12 +138,12 @@ my %parameter = load_yaml(
 my ($exist) = check_filesystem_objects_and_index_existance(
     {
         log         => $log,
-        object_name => $active_parameter{human_genome_reference},
+        object_name => $active_parameter{human_genome_reference_file_endings},
         ,
         object_type    => q{file},
         parameter_href => \%parameter,
-        parameter_name => q{human_genome_reference},
-        path           => $active_parameter{human_genome_reference},
+        parameter_name => q{human_genome_reference_file_endings},
+        path => $active_parameter{human_genome_reference_file_endings},
     }
 );
 

@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rna_meta_files };
@@ -32,7 +32,7 @@ Readonly my $TAB       => qq{\t};
 
 sub build_rna_meta_files {
 
-## Function : Pipeline recipe for rna data analysis.
+## Function : Pipeline build recipes for rna data analysis.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
@@ -105,31 +105,54 @@ sub build_rna_meta_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Reference qw{ check_human_genome_prerequisites };
+    use MIP::Recipes::Build::Fusion_filter_prerequisites
+      qw{ build_fusion_filter_prerequisites };
+    use MIP::Recipes::Build::Human_genome_prerequisites
+      qw{ build_human_genome_prerequisites };
+    use MIP::Recipes::Build::Salmon_quant_prerequisites
+      qw{ build_salmon_quant_prerequisites };
+    use MIP::Recipes::Build::Star_prerequisites qw{ build_star_prerequisites };
 
-## Check human genome prerequistes exists
-  PROGRAM:
-    foreach my $program_name (
-        @{ $parameter_href->{human_genome_reference}{associated_program} } )
-    {
+    my %build_recipe = (
+        fusion_filter_reference_genome => \&build_fusion_filter_prerequisites,
+        human_genome_reference_file_endings =>
+          \&build_human_genome_prerequisites,
+        salmon_quant_reference_genome => \&build_salmon_quant_prerequisites,
+        star_aln_reference_genome     => \&build_star_prerequisites,
+    );
 
-        next PROGRAM if ( $program_name eq q{mip} );
+  BUILD_RECIPE:
+    foreach my $parameter_build_name ( keys %build_recipe ) {
 
-        next PROGRAM if ( not $active_parameter_href->{$program_name} );
+      PROGRAM:
+        foreach my $program (
+            @{ $parameter_href->{$parameter_build_name}{associated_program} } )
+        {
 
-        my $is_finished = check_human_genome_prerequisites(
-            {
-                active_parameter_href   => $active_parameter_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
-                parameter_href          => $parameter_href,
-                program_name            => $program_name,
-                sample_info_href        => $sample_info_href,
-            }
-        );
-        last PROGRAM if ($is_finished);
+            next PROGRAM if ( not $active_parameter_href->{$program} );
+
+            next BUILD_RECIPE
+              if (
+                not $parameter_href->{$parameter_build_name}{build_file} == 1 );
+
+            $build_recipe{$parameter_build_name}->(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    log                     => $log,
+                    parameter_build_suffixes_ref =>
+                      \@{ $file_info_href->{$parameter_build_name} },
+                    parameter_href   => $parameter_href,
+                    program_name     => $program,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+
+            ## Build once for all associated programs
+            $parameter_href->{$parameter_build_name}{build_file} = 0;
+        }
     }
 
     return;

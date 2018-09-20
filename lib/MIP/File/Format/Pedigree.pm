@@ -94,7 +94,7 @@ sub create_fam_file {
             strict_type => 1,
         },
         FILEHANDLE => {
-            store => \$FILEHANDLE
+            store => \$FILEHANDLE,
         },
         include_header => {
             allow       => [ 0, 1 ],
@@ -678,9 +678,9 @@ sub parse_yaml_pedigree_file {
     ## Check that founder_ids are included in the pedigree info and the analysis run
     check_founder_id(
         {
+            active_sample_ids_ref => \@{ $active_parameter_href->{sample_ids} },
             log                   => $log,
             pedigree_href         => $pedigree_href,
-            active_sample_ids_ref => \@{ $active_parameter_href->{sample_ids} },
         }
     );
 

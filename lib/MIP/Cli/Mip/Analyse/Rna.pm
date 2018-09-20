@@ -18,7 +18,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 0.04;
+our $VERSION = 1.00;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -134,8 +134,10 @@ sub run {
     ## File info hash
     my %file_info = (
 
-        # Human genome meta files
+        fusion_filter_reference_genome => [qw{ _fusion_filter_genome_dir }],
         human_genome_reference_file_endings => [qw{ .dict .fai }],
+        salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
+        star_aln_reference_genome           => [qw{ _star_genome_dir }],
     );
 
     mip_analyse(
@@ -159,11 +161,52 @@ sub _build_usage {
 
     option(
         q{pbootstrapann} => (
-            cmd_aliases   => [qw{ pba }],
+            cmd_aliases   => [qw{ ba }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Run BootstrapAnn on ASE file},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_bundle_download_version} => (
+            cmd_aliases   => [qw{ gbdv }],
+            cmd_tags      => [q{Default: 2.8}],
+            documentation => q{GATK FTP bundle download version},
+            is            => q{rw},
+            isa           => Num,
+        )
+    );
+
+    option(
+        q{gatk_disable_auto_index_and_file_lock} => (
+            cmd_aliases => [qw{ gdai }],
+            cmd_flag    => q{gatk_dis_auto_ind_fl},
+            documentation =>
+              q{Disable auto index creation and locking when reading rods},
+            is  => q{rw},
+            isa => Bool,
+        )
+    );
+
+    option(
+        q{gatk_downsample_to_coverage} => (
+            cmd_aliases   => [qw{ gdco }],
+            cmd_tags      => [q{Default: 1000}],
+            documentation => q{Coverage to downsample to at any given locus},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{infile_dirs} => (
+            cmd_aliases   => [qw{ ifd }],
+            cmd_tags      => [q{infile_dirs=sample_id}],
+            documentation => q{Infile directory(s)},
+            is            => q{rw},
+            isa           => HashRef,
         )
     );
 
@@ -216,8 +259,70 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{sample_origin} => (
+            cmd_aliases   => [qw{ samo }],
+            cmd_tags      => [q{sample_id=sample_origin}],
+            documentation => q{Sample origin of replicate},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{time_point} => (
+            cmd_aliases   => [qw{ timp }],
+            cmd_tags      => [q{sample_id=time_point}],
+            documentation => q{Time point of replicate},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{split_fastq_file} => (
+            cmd_aliases => [qw{ sfq }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Split fastq files in batches of X reads and exits},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{split_fastq_file_read_batch} => (
+            cmd_aliases   => [qw{ sfqrdb }],
+            cmd_flag      => q{spt_fsq_rd_bt},
+            cmd_tags      => [q{Default: 25,000,000}],
+            documentation => q{Number of sequence reads to place in each batch},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{gzip_fastq} => (
+            cmd_aliases   => [qw{ gz }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Gzip fastq files},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{fastqc} => (
+            cmd_aliases   => [qw{ fqc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Sequence quality analysis using FastQC},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{picardtools_mergesamfiles} => (
-            cmd_aliases   => [qw{ ppms }],
+            cmd_aliases   => [qw{ pms }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Merge bam files using Picardtools},
             is            => q{rw},
@@ -226,8 +331,109 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{gatk_realigner} => (
+            cmd_aliases => [qw{ gra }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+q{Realignments of reads using GATK ReAlignerTargetCreator/IndelRealigner},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_realigner_indel_known_sites} => (
+            cmd_aliases => [qw{ graks }],
+            cmd_flag    => q{gatk_realigner_ind_ks},
+            cmd_tags    => [
+q{Default: GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
+            ],
+            documentation =>
+              q{GATK ReAlignerTargetCreator/IndelRealigner known indel site},
+            is  => q{rw},
+            isa => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration} => (
+            cmd_aliases => [qw{ gbr }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Recalibration of bases using GATK BaseReCalibrator/PrintReads},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_covariates} => (
+            cmd_aliases => [qw{ gbrcov }],
+            cmd_flag    => q{gatk_baserecal_covariates},
+            cmd_tags    => [
+q{Default: ReadGroupCovariate, ContextCovariate, CycleCovariate, QualityScoreCovariate}
+            ],
+            documentation => q{GATK BaseReCalibration covariates},
+            is            => q{rw},
+            isa           => ArrayRef [
+                enum(
+                    [
+                        qw{ ContextCovariate CycleCovariate QualityScoreCovariate ReadGroupCovariate RepeatLengthCovariate RepeatUnitCovariate RepeatUnitAndLengthCovariate }
+                    ]
+                )
+            ],
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_disable_indel_qual} => (
+            cmd_aliases   => [qw{ gbrdiq }],
+            cmd_flag      => q{gatk_baserecal_dis_indel_q},
+            documentation => q{Disable indel quality scores},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_known_sites} => (
+            cmd_aliases => [qw{ gbrkst }],
+            cmd_flag    => q{gatk_baserecal_ks},
+            cmd_tags    => [
+q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
+            ],
+            documentation =>
+              q{GATK BaseReCalibration known SNV and INDEL sites},
+            is  => q{rw},
+            isa => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_read_filters} => (
+            cmd_aliases   => [qw{ gbrrf }],
+            cmd_flag      => q{gatk_baserecal_read_filts},
+            cmd_tags      => [q{Default: OverclippedRead}],
+            documentation => q{Filter out reads according to set filter},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{gatk_baserecalibration_static_quantized_quals} => (
+            cmd_aliases   => [qw{ gbrsqq }],
+            cmd_flag      => q{gatk_baserecal_sta_qua_qua},
+            cmd_tags      => [q{Default: 10,20,30,40}],
+            documentation => q{Static binning of base quality scores},
+            is            => q{rw},
+            isa           => ArrayRef [Int],
+        )
+    );
+
+    option(
         q{salmon_quant} => (
-            cmd_aliases   => [qw{ psqt }],
+            cmd_aliases   => [qw{ sqt }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Quantify transcripts using salmon},
             is            => q{rw},
@@ -236,7 +442,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
     option(
         q{salmon_rna_lib_configuration} => (
-            cmd_aliases   => [qw{ psqt_bob }],
+            cmd_aliases   => [qw{ sqt_bob }],
             cmd_tags      => [q{Default: ISF}],
             documentation => q{Library orientation and strandedness},
             is            => q{rw},
@@ -245,12 +451,33 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{salmon_quant_transcripts_file} => (
+            cmd_aliases => [qw{ sqttf }],
+            cmd_tags    => [q{Salmon quant transcripts file: Format: GTF}],
+            documentation =>
+              q{Input for salmon quant to build genome/transcriptome indexes},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
         q{star_aln} => (
-            cmd_aliases   => [qw{ pstn }],
+            cmd_aliases   => [qw{ stn }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Align reads using Star aln},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{star_aln_transcripts_file} => (
+            cmd_aliases   => [qw{ statf }],
+            cmd_tags      => [q{Star transcripts file: Format: GTF}],
+            documentation => q{Input for star to build genome indexes},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -317,7 +544,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{star_fusion} => (
-            cmd_aliases   => [qw{ pstf }],
+            cmd_aliases   => [qw{ stf }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Detect fusion transcripts with star fusion},
             is            => q{rw},
@@ -326,8 +553,40 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{fusion_filter_transcripts_file} => (
+            cmd_aliases => [qw{ stftf }],
+            cmd_tags    => [q{Fusion filter transcripts file: Format: GTF}],
+            documentation =>
+              q{Input for fusion-filter to build genome/transcriptome indexes},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{rseq} => (
+            cmd_aliases   => [qw{ rseq }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Qc using rseqc},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{rseqc_transcripts_file} => (
+            cmd_aliases => [qw{ rseqctf }],
+            cmd_tags    => [q{Rseqc transcripts file: Format: GTF}],
+            documentation =>
+              q{Input for rseqc to build transcript bed format file},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
         q{gatk_haplotypecaller} => (
-            cmd_aliases   => [qw{ pghc }],
+            cmd_aliases   => [qw{ ghc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},
             is            => q{rw},
@@ -439,7 +698,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{pgatk_splitncigarrreads} => (
-            cmd_aliases   => [qw{ pgs }],
+            cmd_aliases   => [qw{ gs }],
             cmd_flag      => q{gatk_splitncigarreads},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Split reads that contain Ns in their cigar},
@@ -450,7 +709,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{gatk_haplotypecaller} => (
-            cmd_aliases   => [qw{ pghc }],
+            cmd_aliases   => [qw{ ghc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},
             is            => q{rw},
@@ -507,7 +766,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_asereadcounter} => (
-            cmd_aliases   => [qw{ pgae }],
+            cmd_aliases   => [qw{ gae }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Allel specific expression},
             is            => q{rw},
@@ -517,7 +776,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_variantfiltration} => (
-            cmd_aliases   => [qw{ pgvf }],
+            cmd_aliases   => [qw{ gvf }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Hard filterering of variants},
             is            => q{rw},
@@ -560,6 +819,48 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
         )
     );
 
+    option(
+        q{multiqc} => (
+            cmd_aliases => [qw{ mqc }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+q{Create aggregate bioinformatics analysis report across many samples},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{multiqc_per_sample} => (
+            cmd_aliases   => [qw{ mqcps }],
+            documentation => q{Generate sample specific reports},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{sacct} => (
+            cmd_aliases => [qw{ sac }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Generating sbatch script for SLURM info on each submitted job},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{sacct_format_fields} => (
+            cmd_aliases => [qw{ sacfrf }],
+            cmd_tags    => [
+q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
+            ],
+            documentation => q{Format and fields of sacct output},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
     return;
 }
 

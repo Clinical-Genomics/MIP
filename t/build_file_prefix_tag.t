@@ -105,8 +105,8 @@ my @order_programs = qw{ bwa_mem pmerge pmark manta };
 
 my %active_parameter = (
     family_id             => q{simpsons},
-    bwa_mem              => 1,
-    manta                => 1,
+    bwa_mem               => 1,
+    manta                 => 1,
     pmark                 => 1,
     pmerge                => 0,
     random_test_parameter => undef,
@@ -116,7 +116,7 @@ my %active_parameter = (
 my %file_info;
 my %parameter = (
     dynamic_parameter => { program => [qw{ bwa_mem pmark manta pmerge }], },
-    bwa_mem          => {
+    bwa_mem           => {
         chain    => $current_chain,
         file_tag => q{mem},
     },
@@ -147,12 +147,12 @@ build_file_prefix_tag(
 my %expected_file_tag = (
     $sample_id => {
         bwa_mem => { file_tag => q{mem}, },
-        pmark    => { file_tag => q{memmd}, },
+        pmark   => { file_tag => q{memmd}, },
         manta   => { file_tag => q{memmdmanta}, },
     },
     q{simpsons} => {
         bwa_mem => { file_tag => q{mem}, },
-        pmark    => { file_tag => q{memmd}, },
+        pmark   => { file_tag => q{memmd}, },
         manta   => { file_tag => q{memmdmanta}, },
     },
 );

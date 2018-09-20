@@ -120,13 +120,11 @@ my %pedigree = (
         {
             analysis_type => q{wes},
             phenotype     => q{affected},
-            sample_origin => q{normal},
             sex           => q{female},
         },
         {
             analysis_type => q{wgs},
             phenotype     => q{unaffected},
-            sample_origin => q{tumor},
             sex           => q{male},
         },
         {
@@ -135,7 +133,7 @@ my %pedigree = (
             sex           => q{other},
         },
         {
-            analysis_type => q{cancer},
+            analysis_type => q{wgs},
             phenotype     => q{unknown},
             sex           => q{unknown},
         },

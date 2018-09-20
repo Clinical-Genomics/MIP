@@ -14,8 +14,7 @@ There is currently two main commands:
 - Analyse
   - rare_disease
   - rna
-  - cancer
-
+  - vcf_rerun
 There are three levels of parameters:
 - Global
 - Commands

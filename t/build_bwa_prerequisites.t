@@ -21,10 +21,10 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 $VERBOSE = test_standard_cli(
     {
@@ -47,7 +47,8 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Build::Bwa_prerequisites} =>
           [qw{ build_bwa_prerequisites }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} =>
+          [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -66,59 +67,41 @@ diag(   q{Test build_bwa_prerequisites from Bwa_prerequisites.pm v}
 
 my $log = test_log();
 
-## Create temp logger
-my $test_dir = File::Temp->newdir();
-
 ## Given build parameters
-my $call_type            = q{both};
 my $parameter_build_name = q{bwa_build_reference};
 my $program_name         = q{bwa_mem};
-my $temp_dir             = catfile($test_dir);
-my $test_program_name    = q{bwa_mem};
 
-my %active_parameter = (
-    bash_set_errexit                => 1,
-    bash_set_nounset                => 1,
-    bash_set_pipefail               => 1,
-    email_types                     => [qw{ BEGIN FAIL }],
-    family_id                       => q{family_1},
-    human_genome_reference          => q{human_genome.fasta},
-    outaligner_dir                  => q{bwa},
-    outdata_dir                     => catfile( $test_dir, q{test_data_dir} ),
-    outscript_dir                   => catfile( $test_dir, q{test_script_dir} ),
-    $program_name                   => 2,
-    project_id                      => q{wamdu},
-    sample_ids                      => [qw{ sample-1 sample-2 }],
-    slurm_quality_of_service        => q{low},
-    source_environment_commands_ref => [qw{ source activate test }],
-    temp_directory                  => $temp_dir,
+my %active_parameter = test_mip_hashes(
+    {
+        mip_hash_name => q{active_parameter},
+        program_name  => $program_name,
+    }
 );
-my %file_info = (
-    human_genome_compressed => q{not_compressed},
-    $parameter_build_name   => [qw{ .bwt .ann .amb .pac .sa }],
+my %file_info = test_mip_hashes(
+    {
+        mip_hash_name => q{file_info},
+        program_name  => $program_name,
+    }
 );
 my %infile_lane_prefix;
 my %job_id;
-my %parameter = (
-    human_genome_reference => { build_file => 0, },
-    $parameter_build_name  => { build_file => 1, },
-    $program_name          => { chain      => q{TEST}, },
-);
+my %parameter = test_mip_hashes( { mip_hash_name => q{parameter}, } );
+
 my %sample_info;
 
 trap {
     build_bwa_prerequisites(
         {
-            active_parameter_href => \%active_parameter,
-            bwa_build_reference_file_endings_ref =>
-              \@{ $file_info{$parameter_build_name} },
+            active_parameter_href   => \%active_parameter,
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
             log                     => $log,
-            parameter_href          => \%parameter,
-            program_name            => $program_name,
-            sample_info_href        => \%sample_info,
+            parameter_build_suffixes_ref =>
+              \@{ $file_info{$parameter_build_name} },
+            parameter_href   => \%parameter,
+            program_name     => $program_name,
+            sample_info_href => \%sample_info,
         }
       )
 };

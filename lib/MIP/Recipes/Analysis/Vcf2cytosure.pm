@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -216,9 +216,9 @@ sub analysis_vcf2cytosure {
     my %file_path_prefix;
     my $merged_sv_vcf_path;
 
-    # Copy family-merged SV VCF file in temporary directory:
+    ## Copy family-merged SV VCF file in temporary directory:
     $infile_tag =
-      $file_info_href->{$family_id}{sv_combinevariantcallsets}{file_tag};
+      $file_info_href->{$family_id}{sv_annotate}{file_tag};
 
     $merged_sv_vcf = $family_id . $infile_tag . q{SV} . $DOT . q{vcf};
     $merged_sv_vcf_path = catfile( $infamily_directory, $merged_sv_vcf );
@@ -276,7 +276,7 @@ sub analysis_vcf2cytosure {
           $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
         $infile_prefix = $merged_infile_prefix . $infile_tag;
         $outfile_tag =
-          $file_info_href->{$family_id}{sv_combinevariantcallsets}{file_tag};
+          $file_info_href->{$family_id}{sv_annotate}{file_tag};
         $sample_outfile_prefix = $merged_infile_prefix . $outfile_tag;
 
         ## Assign suffix
@@ -358,7 +358,7 @@ sub analysis_vcf2cytosure {
           . $NEWLINE;
 
         $infile_tag =
-          $file_info_href->{$sample_id}{sv_combinevariantcallsets}{file_tag};
+          $file_info_href->{$sample_id}{sv_annotate}{file_tag};
         my $sample_vcf_file = $sample_id . $infile_tag . q{SV} . $DOT . q{vcf};
 
         # Bcftools view

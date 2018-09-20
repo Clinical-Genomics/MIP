@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -452,7 +452,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
             contigs_ref  => \@{ $file_info_href->{contigs_size_ordered} },
             core_number  => $core_number,
             FILEHANDLE   => $FILEHANDLE,
-            file_ending  => $outfile_suffix . $ASTERIX,
+            file_ending  => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
             file_path    => $file_path,
             outdirectory => $outsample_directory,
             outfile      => $sample_id

@@ -36,68 +36,73 @@ sub bwa_mem {
 
 ## Function : Perl wrapper for writing bwa mem recipe to $FILEHANDLE. Based on bwa 0.7.15-r1140.
 ## Returns  : @commands
-## Arguments: $infile_path             => Infile path (read 1 or interleaved i.e. read 1 and 2)
+## Arguments: $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $idxbase                 => Idxbase (human genome references and bwa mem idx files)
+##          : $infile_path             => Infile path (read 1 or interleaved i.e. read 1 and 2)
+##          : $interleaved_fastq_file  => Smart pairing
+##          : $mark_split_as_secondary => Mark shorter split hits as secondary
+##          : $read_group_header       => Read group header line, such as '@RG\tID:foo\tSM:bar'
 ##          : $second_infile_path      => Second infile path (read 2)
-##          : $stdoutfile_path         => Stdoutfile path
 ##          : $stderrfile_path         => Stderrfile path
 ##          : $stderrfile_path_append  => Stderrfile path append
-##          : $FILEHANDLE              => Sbatch filehandle to write to
+##          : $stdoutfile_path         => Stdoutfile path
 ##          : $thread_number           => Number of threads
-##          : $read_group_header       => Read group header line, such as '@RG\tID:foo\tSM:bar'
-##          : $mark_split_as_secondary => Mark shorter split hits as secondary
-##          : $interleaved_fastq_file  => Smart pairing
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infile_path;
+    my $FILEHANDLE;
     my $idxbase;
+    my $infile_path;
     my $second_infile_path;
-    my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
-    my $thread_number;
+    my $stdoutfile_path;
     my $read_group_header;
+    my $thread_number;
 
     ## Default(s)
-    my $mark_split_as_secondary;
     my $interleaved_fastq_file;
+    my $mark_split_as_secondary;
 
     my $tmpl = {
-        infile_path => {
-            required    => 1,
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        idxbase    => {
             defined     => 1,
+            required    => 1,
+            store       => \$idxbase,
             strict_type => 1,
-            store       => \$infile_path
         },
-        idxbase =>
-          { required => 1, defined => 1, strict_type => 1, store => \$idxbase },
-        second_infile_path =>
-          { strict_type => 1, store => \$second_infile_path },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE    => { store => \$FILEHANDLE },
-        thread_number => {
-            allow       => qr/ ^\d+$ /xms,
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$thread_number
-        },
-        read_group_header => { strict_type => 1, store => \$read_group_header },
-        mark_split_as_secondary => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$mark_split_as_secondary
         },
         interleaved_fastq_file => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$interleaved_fastq_file,
             strict_type => 1,
-            store       => \$interleaved_fastq_file
+        },
+        mark_split_as_secondary => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$mark_split_as_secondary,
+            strict_type => 1,
+        },
+        read_group_header =>
+          { store => \$read_group_header, strict_type => 1, },
+        second_infile_path =>
+          { store => \$second_infile_path, strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        thread_number   => {
+            allow       => qr/ ^\d+$ /xms,
+            store       => \$thread_number,
+            strict_type => 1,
         },
     };
 
@@ -144,17 +149,17 @@ sub bwa_mem {
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 
@@ -165,65 +170,70 @@ sub run_bwamem {
 
 ## Function : Perl wrapper for writing run_bwamem recipe to $FILEHANDLE. Based on bwakit 0.7.12.
 ## Returns  : @commands
-## Arguments: $infile_path            => Infile path (read 1 or interleaved i.e. read 1 and 2)
+## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
+##          : $hla_typing             => Apply HLA typing
 ##          : $idxbase                => Idxbase (human genome references and bwa mem idx files)
+##          : $infile_path            => Infile path (read 1 or interleaved i.e. read 1 and 2)
 ##          : $outfiles_prefix_path   => Prefix for output files
+##          : $read_group_header      => Read group header line, such as '@RG\tID:foo\tSM:bar'
 ##          : $second_infile_path     => Second infile path (read 2)
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Stderrfile path append
-##          : $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $thread_number          => Number of threads
-##          : $read_group_header      => Read group header line, such as '@RG\tID:foo\tSM:bar'
-##          : $hla_typing             => Apply HLA typing
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infile_path;
+    my $FILEHANDLE;
     my $idxbase;
+    my $infile_path;
     my $outfiles_prefix_path;
+    my $read_group_header;
     my $second_infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
     my $thread_number;
-    my $read_group_header;
 
     ## Default(s)
     my $hla_typing;
 
     my $tmpl = {
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        hla_typing => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$hla_typing,
+            strict_type => 1,
+        },
+        idxbase => {
+            defined     => 1,
+            required    => 1,
+            store       => \$idxbase,
+            strict_type => 1,
+        },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        idxbase =>
-          { required => 1, defined => 1, strict_type => 1, store => \$idxbase },
         outfiles_prefix_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outfiles_prefix_path,
             strict_type => 1,
-            store       => \$outfiles_prefix_path
         },
+        read_group_header =>
+          { store => \$read_group_header, strict_type => 1, },
         second_infile_path =>
-          { strict_type => 1, store => \$second_infile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+          { store => \$second_infile_path, strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+          { store => \$stderrfile_path_append, strict_type => 1, },
         thread_number => {
             allow       => qr/ ^\d+$ /xms,
+            store       => \$thread_number,
             strict_type => 1,
-            store       => \$thread_number
-        },
-        read_group_header => { strict_type => 1, store => \$read_group_header },
-        hla_typing        => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$hla_typing
         },
     };
 
@@ -276,8 +286,8 @@ sub run_bwamem {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 
@@ -288,57 +298,56 @@ sub bwa_index {
 
 ## Function : Perl wrapper for writing bwa mem recipe to $FILEHANDLE. Based on bwa 0.7.15-r1140.
 ## Returns  : @commands
-## Arguments: $prefix                 => Prefix of the index [same as fasta name]
-##          : $construction_algorithm => BWT construction algorithm: bwtsw, is or rb2 [auto]
+## Arguments: $construction_algorithm => BWT construction algorithm: bwtsw, is or rb2 [auto]
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $prefix                 => Prefix of the index [same as fasta name]
 ##          : $reference_genome       => Reference genome [.fasta]
-##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $construction_algorithm;
+    my $FILEHANDLE;
     my $prefix;
     my $reference_genome;
-    my $construction_algorithm;
-    my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
+    my $stdoutfile_path;
 
     ## Default(s)
 
     my $tmpl = {
-        prefix =>
-          { required => 1, defined => 1, strict_type => 1, store => \$prefix },
-        reference_genome => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$reference_genome
-        },
         construction_algorithm => {
             allow       => [qw{ bwtsw rb2 }],
+            store       => \$construction_algorithm,
             strict_type => 1,
-            store       => \$construction_algorithm
-        },
-        stdoutfile_path => {
-            strict_type => 1,
-            store       => \$stdoutfile_path,
-        },
-        stderrfile_path => {
-            strict_type => 1,
-            store       => \$stderrfile_path,
-        },
-        stderrfile_path_append => {
-            strict_type => 1,
-            store       => \$stderrfile_path_append,
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-
+        prefix =>
+          { defined => 1, required => 1, store => \$prefix, strict_type => 1, },
+        reference_genome => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_genome,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -358,17 +367,17 @@ sub bwa_index {
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 

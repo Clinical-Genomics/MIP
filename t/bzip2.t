@@ -100,7 +100,7 @@ diag(   q{Test bzip2 from Bzip2.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{bzip2};
+my @function_base_commands = qw{ bzip2 };
 
 my %base_argument = (
     stderrfile_path => {
@@ -113,7 +113,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -121,8 +121,8 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => catfile( qw{ path to file } ),
-        expected_output => catfile( qw{ path to file } ),
+        input           => catfile(qw{ path to file }),
+        expected_output => catfile(qw{ path to file }),
     },
 );
 
@@ -140,12 +140,12 @@ my %specific_argument = (
         expected_output => q{--decompress},
     },
     infile_path => {
-        input           => catfile( qw{ path to file } ),
-        expected_output => catfile( qw{ path to file } ),
+        input           => catfile(qw{ path to file }),
+        expected_output => catfile(qw{ path to file }),
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     quiet => {
         input           => 1,
@@ -171,11 +171,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

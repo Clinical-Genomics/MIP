@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{help};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.3';
+our $VERSION = '1.0.4';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -90,12 +90,12 @@ diag(   q{Test conda_install from Conda.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{conda install};
+my @function_base_commands = qw{ conda install };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -107,7 +107,7 @@ my %required_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -123,6 +123,10 @@ my %specific_argument = (
     no_confirmation => {
         input           => 1,
         expected_output => q{--yes},
+    },
+    no_update_deps => {
+        input           => 1,
+        expected_output => q{--no-update-deps},
     },
     packages_ref => {
         inputs_ref      => [qw{ test_package_1 test_package_2}],
@@ -143,11 +147,11 @@ my @arguments = ( \%base_argument, \%specific_argument );
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

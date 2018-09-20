@@ -33,7 +33,7 @@ $ mip analyse rare_disease --family_id [family_id] --bwa_mem 1 --config_file [mi
 ## Features
 
 * Installation
-  * Simple automated install of all programs using conda/SHELL via supplied install script
+  * Simple automated install of all programs using conda/SHELL via supplied install application
   * Downloads and prepares references in the installation process
   * Handle conflicting tool dependencies
 * Autonomous
@@ -53,14 +53,13 @@ $ mip analyse rare_disease --family_id [family_id] --bwa_mem 1 --config_file [mi
   * Supply parameters on the command line, in a pedigree.yaml file or via config files
   * Simulate your analysis before performing it
   * Redirect each modules analysis process to a temporary directory \(@nodes or @login\)
-  * Limit a run to a specific set of genomic intervals
+  * Limit a run to a specific set of genomic intervals or chromosomes
   * Use multiple variant callers for both snv, indels and SV
   * Use multiple annotation programs
   * Optionally split data into clinical variants and research variants
 * Fast
   * Analyses an exome trio in approximately 4 h
   * Analyses a genome in approximately 21 h
-  * Rapid mode analyzes a WGS sample in approximately 4 h using a data reduction and parallelization scheme
 * Traceability
   * Track the status of each modules through dynamically updated status logs
   * Recreate your analysis from the MIP log or generated config files
@@ -74,7 +73,7 @@ $ mip analyse rare_disease --family_id [family_id] --bwa_mem 1 --config_file [mi
   * Transcript level annotation
     * Separate pathogenic transcripts for correct downstream annotation
   * Annotate all alleles for a position
-    * Split multi-allelic records into single records to ease annotation
+    * Split multi-allelic records into single records to facilitate annotation
     * Left align and trim variants to normalise them prior to annotation
   * Extracts QC-metrics and stores them in YAML format
   * Annotate coverage across genetic regions via Sambamba and Chanjo
@@ -91,7 +90,7 @@ $ mip analyse rare_disease --family_id [family_id] --bwa_mem 1 --config_file [mi
 MIP is written in perl and therefore requires that perl is installed on your OS.
 
 #### Prerequisites
-* [Perl], version 5.22.0 or above
+* [Perl], version 5.26.0 or above
 * [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
 * [Miniconda]
 
@@ -119,24 +118,25 @@ $ cd -
 $ perl t/mip_install.test
 ```
 
-##### 4.Create the install instructions for MIP  
+##### 4.Create the install instructions for MIP
 ```Bash
-$ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --installations full --environment_name emip=MIP
+$ perl mip install rare_disease --installations full --environment_name emip=MIP
 ```
 This will generate a batch script called "mip.sh" in your working directory.
 
-  ###### *Note:*  
-  The batch script will attempt to install the MIP dependencies in a conda environment called MIP. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:  
+###### *Note:*
+  The batch script will attempt to install the MIP dependencies in a conda environment called MIP. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:
   * MIP's base environment (named MIP in the example above)
   * MIP_cnvnator
+  * MIP_freebayes
   * MIP_peddy
   * MIP_py3
-  * MIP_vep  
+  * MIP_vep
 
-It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.   
+It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.
 
   - For a full list of available options and parameters, run: ``$ perl mip install rare_disease --help``
-  - For a full list of parameter defaults, run: ``$ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --ppd``
+  - For a full list of parameter defaults, run: ``$ perl mip install rare_disease --ppd``
 
 ##### 5.Run the bash script
 
@@ -145,12 +145,12 @@ $ bash mip.sh
 ```
 A conda environment will be created where MIP with most of its dependencies will be installed.
 
-  ###### *Note:*  
+###### *Note:*
   - Some references are quite large and will take time to download. You might want to run this using screen or tmux.
 
 ##### 6.Test your MIP installation (optional)
 
-Make sure to activate your conda environment if that option was used above.  
+Make sure to activate your conda environment if that option was used above.
 
 ```Bash
 $ prove t -r
@@ -180,6 +180,10 @@ $ perl t/mip_analyse_rare_disease.test
      - source
      - activate
      - MIP_cnvnator
+	freebayes:
+	 - source
+	 - activate
+	 - MIP_freebayes
     multiqc:
      - source
      - activate

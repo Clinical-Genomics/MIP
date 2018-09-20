@@ -1,0 +1,26 @@
+---
+bash_set_errexit: 1
+bash_set_nounset: 1
+bash_set_pipefail: 1
+bwa_mem: 2
+email_types:
+  - BEGIN
+  - FAIL
+exome_target_bed:
+  GRCh37_agilent_sureselect_targets_cre_-v1-.bed: 'sample-1,sample-2'
+family_id: family_1
+human_genome_reference: human_genome.fasta
+java_use_large_pages: 1
+max_cores_per_node: 16
+outaligner_dir: bwa
+picardtools_path: a_test_path
+project_id: wamdu
+sample_ids:
+  - sample-1
+  - sample-2
+  - sample-3
+slurm_quality_of_service: low
+source_environment_commands_ref:
+  - source
+  - activate
+  - test

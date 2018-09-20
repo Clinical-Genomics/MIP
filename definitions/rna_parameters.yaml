@@ -10,10 +10,23 @@ human_genome_reference:
    - gatk_splitncigarreads
    - gatk_variantfiltration
    - star_aln
-  build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
   exists_check: file
+  reference: reference_dir
+  type: path
+human_genome_reference_file_endings:
+  associated_program:
+   - gatk_asereadcounter
+   - gatk_baserecalibration
+   - gatk_haplotypecaller
+   - gatk_splitncigarreads
+   - gatk_variantfiltration
+   - star_aln
+  build_file: 1
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
   reference: reference_dir
   type: path
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
@@ -64,6 +77,13 @@ gatk_path:
   exists_check: directory
   type: path
   update_path: absolute_path
+infile_dirs:
+  associated_program:
+   - mip
+  exists_check: directory
+  data_type: HASH
+  type: path
+  update_path: absolute_path
 ## java large pages - affects all modules using java
 java_use_large_pages:
   associated_program:
@@ -73,7 +93,7 @@ java_use_large_pages:
    - gatk_variantfiltration
    - star_aln
   data_type: SCALAR
-  default: 0
+  default: 1
   type: program_argument
 ####Bash
 module_time:
@@ -86,14 +106,17 @@ module_time:
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
     gatk_haplotypecaller: 2
-    gatk_splitncigarreads: 1
+    gatk_splitncigarreads: 5
     gatk_variantfiltration: 1
     gzip_fastq: 2
     markduplicates: 4
+    multiqc: 1
     picardtools_mergesamfiles: 2
+    rseqc: 3
+    sacct: 1
     salmon_quant: 5
     star_aln: 5
-    star_fusion: 1
+    star_fusion: 10
   type: mip
 module_core_number:
   associated_program:
@@ -108,11 +131,14 @@ module_core_number:
     gatk_splitncigarreads: 16
     gatk_variantfiltration: 1
     gzip_fastq: 0
+    multiqc: 1
     markduplicates: 16
     picardtools_mergesamfiles: 16
+    rseqc: 1
+    sacct: 1
     salmon_quant: 1
     star_aln: 16
-    star_fusion: 1
+    star_fusion: 4
   type: mip
 ## Choosen MIP Aligner
 outaligner_dir:
@@ -130,14 +156,50 @@ picardtools_path:
   exists_check: directory
   type: path
   update_path: absolute_path
+sample_origin:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+time_point:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 ###Programs
+## Gzip
+gzip_fastq:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  program_name_path:
+   - gzip
+  type: program
+## FastQC
+fastqc:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  program_name_path:
+   - fastqc
+  type: program
 ## Salmon
 salmon_quant:
   analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _salmon
   outfile_suffix: ".sf"
   outdir_name: salmon
@@ -150,13 +212,30 @@ salmon_rna_lib_configuration:
   data_type: SCALAR
   default: ISF
   type: program_argument
+salmon_quant_reference_genome:
+  associated_program:
+   - salmon_quant
+  build_file: 1
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  reference: reference_dir
+  type: path
+salmon_quant_transcripts_file:
+  associated_program:
+   - salmon_quant
+  data_type: SCALAR
+  default: GRCh37_transcripts_-v1_0-.GTF
+  exists_check: file
+  reference: reference_dir
+  type: path
 ## Star Aln
 star_aln:
   analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _star_sorted
   outfile_suffix: ".bam"
   outdir_name: star
@@ -194,6 +273,23 @@ chim_segment_min:
   data_type: SCALAR
   default: 12
   type: program_argument
+star_aln_reference_genome:
+  associated_program:
+   - star_aln
+  build_file: 1
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  reference: reference_dir
+  type: path
+star_aln_transcripts_file:
+  associated_program:
+   - star_aln
+  data_type: SCALAR
+  default: GRCh37_transcripts_-v1_0-.GTF 
+  exists_check: file
+  reference: reference_dir
+  type: path
 two_pass_mode:
   associated_program:
    - star_aln
@@ -206,21 +302,52 @@ star_fusion:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _fusion
   outfile_suffix: ".tsv"
   outdir_name: star
   program_name_path:
+    - gtf_file_to_feature_seqs.pl
+    - prep_genome_lib.pl
+    - samtools
+    - STAR
     - STAR-Fusion
   type: program
+star_fusion_genome_lib_dir:
+  associated_program:
+   - star_fusion
+  data_type: SCALAR
+  default: GRCh37_v19_CTAT_lib_Feb092018
+  exists_check: directory
+  reference: reference_dir
+  type: path
+fusion_filter_reference_genome:
+  associated_program:
+   - star_fusion
+  build_file: 1
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  reference: reference_dir
+  type: path
+fusion_filter_transcripts_file:
+  associated_program:
+   - star_fusion
+  data_type: SCALAR
+  default: GRCh37_transcripts_-v1_0-.GTF
+  exists_check: file
+  reference: reference_dir
+  type: path
 ## Merge bam files
 picardtools_mergesamfiles:
   analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _merged
+  program_name_path:
+   - sambamba
   type: program
 ## Mark duplicates
 markduplicates:
@@ -269,7 +396,7 @@ gatk_splitncigarreads:
   associated_program:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _splitcigar
   type: program
 ## GATK BAM Calibration
@@ -278,7 +405,7 @@ gatk_baserecalibration:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _brecal
   type: program
 gatk_baserecalibration_covariates:
@@ -330,13 +457,38 @@ gatk_baserecalibration_static_quantized_quals:
    - 30
    - 40
   type: program_argument
+rseqc:
+  analysis_mode: sample
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _rseq
+  program_name_path:
+   - bam_stat.py
+   - infer_experiment.py
+   - inner_distance.py
+   - junction_annotation.py
+   - junction_saturation.py
+   - read_distribution.py
+   - read_duplication.py
+  outfile_suffix: ".txt"
+  type: program
+rseqc_transcripts_file:
+  associated_program:
+   - rseqc
+  data_type: SCALAR
+  default: GRCh37_gencode_-v28-.bed
+  exists_check: file
+  reference: reference_dir
+  type: path
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _haptc
   outfile_suffix: ".vcf"
   type: program
@@ -393,7 +545,7 @@ gatk_asereadcounter:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _ase
   outfile_suffix: ".csv"
   type: program
@@ -403,7 +555,7 @@ gatk_variantfiltration:
   associated_program:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _filtered
   outfile_suffix: ".vcf"
   type: program
@@ -437,3 +589,48 @@ bootstrapann:
   file_tag: _bootstr
   outfile_suffix: ".vcf"
   type: program
+## MultiQC
+multiqc:
+  analysis_mode: family
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  outdir_name: multiqc
+  program_name_path:
+   - multiqc
+  type: program
+multiqc_per_sample:
+  associated_program:
+   - multiqc
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+## Sacct
+sacct:
+  analysis_mode: family
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  type: program
+sacct_format_fields:
+  associated_program:
+   - sacct
+  data_type: ARRAY
+  default:
+   - jobid
+   - "jobname%50"
+   - account
+   - partition
+   - alloccpus
+   - TotalCPU
+   - elapsed
+   - start
+   - end
+   - state
+   - exitcode
+  element_separator: ,
+  type: program_argument

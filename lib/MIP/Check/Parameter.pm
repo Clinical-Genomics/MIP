@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -35,6 +35,7 @@ BEGIN {
       check_gzipped
       check_infile_contain_sample_id
       check_infiles
+      check_mutually_exclusive_parameters
       check_parameter_hash
       check_program_exists_in_hash
       check_prioritize_variant_callers
@@ -42,6 +43,7 @@ BEGIN {
       check_sample_ids
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
+      check_sample_id_in_parameter_value
       check_snpsift_keys
       check_vep_directories
     };
@@ -342,7 +344,6 @@ sub check_email_address {
 
     my $tmpl = {
         email => {
-            defined     => 1,
             required    => 1,
             store       => \$email,
             strict_type => 1,
@@ -355,6 +356,8 @@ sub check_email_address {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $email );
 
     ## Check syntax and mail host
     my $address = Email::Valid->address(
@@ -543,9 +546,68 @@ sub check_infiles {
               . q{ in supplied infile: }
               . catfile( $infile_directory, $infile ) );
         $log->fatal(
-q{Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
+q{Check that: '--sample_ids' and '--infile_dirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
         );
         exit 1;
+    }
+    return 1;
+}
+
+sub check_mutually_exclusive_parameters {
+
+## Function : Check mutually exclusive parameters and croak if mutually enabled
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $log                   => Log object
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Mutually exclusive parameters
+    my %mutally_exclusive_params =
+      ( markduplicates_picardtools_markduplicates =>
+          [qw{ markduplicates_sambamba_markdup }] );
+
+  PARAMETER:
+    while ( my ( $parameter, $exclusive_parameters_ref ) =
+        each %mutally_exclusive_params )
+    {
+
+        # Not active parameter no need to check
+        next PARAMETER if ( not $active_parameter_href->{$parameter} );
+
+      EXCLUSIVE_PARAM:
+        foreach my $exclusive_parameter ( @{$exclusive_parameters_ref} ) {
+
+            # Not active exclusive aprameter no need to check
+            next EXCLUSIVE_PARAM
+              if ( not $active_parameter_href->{$exclusive_parameter} );
+
+            $log->fatal(
+qq{Enable either $parameter or $exclusive_parameter as they are mutually exclusive}
+            );
+            exit 1;
+        }
     }
     return 1;
 }
@@ -629,7 +691,7 @@ sub check_program_exists_in_hash {
 ## Returns  :
 ## Arguments: $log            => Log object
 ##          : $parameter_name => Parameter name
-##          : $query_ref      => Query (ARRAY|HASH) {REF}
+##          : $query_ref      => Query (ARRAY|HASH|SCALAR) {REF}
 ##          : $truth_href     => Truth hash {REF}
 
     my ($arg_href) = @_;
@@ -694,6 +756,16 @@ sub check_program_exists_in_hash {
                   . $error_msg );
             exit 1;
         }
+    }
+    if ( ref $query_ref eq q{SCALAR} ) {
+
+        return if ( exists $truth_href->{$parameter_name} );
+
+        $log->fatal( $parameter_name
+              . qq{ element $SINGLE_QUOTE}
+              . $parameter_name
+              . $error_msg );
+        exit 1;
     }
     return;
 }
@@ -1161,6 +1233,113 @@ sub check_sample_id_in_hash_parameter_path {
                       . join $COMMA
                       . $SPACE,
                     ( keys %seen ),
+                );
+                exit 1;
+            }
+        }
+    }
+    return 1;
+}
+
+sub check_sample_id_in_parameter_value {
+
+## Function : Check sample_id provided in hash parameter value is included in the analysis
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $log                   => Log object
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_names_ref   => Parameter name list {REF}
+##          : $sample_ids_ref        => Array to loop in for parameter {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $parameter_names_ref;
+    my $parameter_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_names_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_names_ref,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  PARAMETER:
+    foreach my $parameter_name ( @{$parameter_names_ref} ) {
+
+        ## Skip undef parameters in current analysis
+        next PARAMETER
+          if ( not defined $active_parameter_href->{$parameter_name} );
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+            ## Unpack
+            my $sample_id_value =
+              $active_parameter_href->{$parameter_name}{$sample_id};
+
+            ## Check that a value exists
+            if ( not defined $sample_id_value ) {
+
+                $log->fatal(
+                    q{Could not find value for }
+                      . $sample_id
+                      . q{ for parameter '--}
+                      . $parameter_name
+                      . $SINGLE_QUOTE
+                      . q{. Provided sample_ids for parameter are: }
+                      . join $COMMA
+                      . $SPACE,
+                    ( keys %{ $active_parameter_href->{$parameter_name} } )
+                );
+                exit 1;
+            }
+            if ( not any { $_ eq $sample_id_value } @{$sample_ids_ref} ) {
+
+                $log->fatal(
+                    q{Could not find matching sample_id in analysis for }
+                      . $sample_id_value
+                      . q{ for parameter '--}
+                      . $parameter_name
+                      . $SINGLE_QUOTE
+                      . q{. Provided sample_ids for analysis are: }
+                      . join $COMMA
+                      . $SPACE,
+                    @{$sample_ids_ref}
                 );
                 exit 1;
             }

@@ -27,10 +27,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ test_import test_log test_standard_cli };
+    our @EXPORT_OK =
+      qw{ test_import test_log test_mip_hashes test_standard_cli };
 }
 
 ## Constants
@@ -128,6 +129,86 @@ sub test_log {
     );
 
     return $log;
+}
+
+sub test_mip_hashes {
+
+## Function : Loads test MIP hashes with core parameters set e.g. active_parameter
+## Returns  : MIP core hash
+## Arguments: $mip_hash_name  => MIP core hash to return
+##          : $program_name   => Program name
+##          : $temp_directory => Temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $mip_hash_name;
+    my $program_name;
+    my $temp_directory;
+
+    my $tmpl = {
+        mip_hash_name => {
+            allow    => [qw{ active_parameter file_info parameter pedigree }],
+            defined  => 1,
+            required => 1,
+            store    => \$mip_hash_name,
+            strict_type => 1,
+        },
+        program_name => {
+            default     => q{bwa_mem},
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        temp_directory => {
+            default     => catfile( File::Temp->newdir() ),
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Yaml qw{ load_yaml };
+
+    my %test_hash = (
+        active_parameter =>
+          catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
+        file_info =>
+          catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
+        parameter =>
+          catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
+        pedigree => catfile( $Bin, qw{ data test_data pedigree.yaml } ),
+    );
+
+    my %hash_to_return = load_yaml(
+        {
+            yaml_file => $test_hash{$mip_hash_name},
+        }
+    );
+
+    ## Add dynamic parameters
+    if ( $mip_hash_name eq q{active_parameter} ) {
+
+        ## Adds the program name
+        $hash_to_return{$program_name} = 2;
+
+        ## Adds reference dir
+        $hash_to_return{reference_dir} =
+          catfile( $Bin, qw{ data test_data references } );
+
+        ## Adds parameters with temp directory
+        $hash_to_return{outdata_dir} =
+          catfile( $temp_directory, q{test_data_dir} );
+        $hash_to_return{outscript_dir} =
+          catfile( $temp_directory, q{test_script_dir} );
+        $hash_to_return{temp_directory} = $temp_directory;
+    }
+    if ( $mip_hash_name eq q{parameter} ) {
+
+        ## Adds a program chain
+        $hash_to_return{$program_name}{chain} = q{TEST};
+    }
+    return %hash_to_return;
 }
 
 sub test_standard_cli {
