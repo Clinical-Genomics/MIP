@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_freebayes_calling };
@@ -153,7 +153,7 @@ sub analysis_freebayes_calling {
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
     use MIP::Program::Variantcalling::Bcftools
-      qw(bcftools_filter bcftools_norm);
+      qw(bcftools_filter bcftools_norm bcftools_view);
     use MIP::Program::Variantcalling::Freebayes qw(freebayes_calling);
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Perl qw{ replace_iupac };
@@ -371,6 +371,50 @@ sub analysis_freebayes_calling {
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
+
+    ## Order samples in vcf
+    say {$FILEHANDLE} q{## Bcftools view};
+
+    ## Create file commands for xargs
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+        {
+            core_number        => $core_number,
+            file_path          => $file_path,
+            program_info_path  => $program_info_path,
+            FILEHANDLE         => $FILEHANDLE,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargs_file_counter => $xargs_file_counter,
+        }
+    );
+
+    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig;
+
+        bcftools_view(
+            {
+                FILEHANDLE  => $XARGSFILEHANDLE,
+                infile_path => $outfile_path_prefix
+                  . $UNDERSCORE
+                  . $contig
+                  . $outfile_suffix,
+                outfile_path => $outfile_path_prefix
+                  . $UNDERSCORE
+                  . q{ordered}
+                  . $UNDERSCORE
+                  . $contig
+                  . $outfile_suffix,
+                output_type     => q{v},
+                samples_ref     => $active_parameter_href->{sample_ids},
+                stderrfile_path => $stderrfile_path
+                  . $UNDERSCORE
+                  . q{ordered.stderr.txt},
+            }
+        );
+        say {$XARGSFILEHANDLE} $NEWLINE;
+    }
+
+    ## GatherVCFs
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
     gatk_concatenate_variants(
         {
@@ -378,9 +422,12 @@ sub analysis_freebayes_calling {
             elements_ref          => \@{ $file_info_href->{contigs} },
             FILEHANDLE            => $FILEHANDLE,
             infile_postfix        => $outfile_suffix,
-            infile_prefix         => $outfile_path_prefix . $UNDERSCORE,
-            outfile_path_prefix   => $outfile_path_prefix,
-            outfile_suffix        => $outfile_suffix,
+            infile_prefix         => $outfile_path_prefix
+              . $UNDERSCORE
+              . q{ordered}
+              . $UNDERSCORE,
+            outfile_path_prefix => $outfile_path_prefix,
+            outfile_suffix      => $outfile_suffix,
         }
     );
 
