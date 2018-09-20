@@ -1,90 +1,54 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ dirname  };
 use File::Spec::Functions qw{ catdir catfile };
-use Getopt::Long;
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.02;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
+    my %perl_module = (
+        q{MIP::Program::Download::Download_reference} =>
+          [qw{ download_reference }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
-
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Program::Download::Download_reference});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Download::Download_reference qw{ download_reference };
@@ -100,7 +64,7 @@ diag(   q{Test download_reference from Download_reference.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ mip download rare_disease };
+my @function_base_commands = q{mip download};
 
 my %base_argument = (
     stdoutfile_path => {
@@ -124,6 +88,20 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
+    config_file_path => {
+        input           => catfile(qw{ a test file }),
+        expected_output => q{--config_file}
+          . $SPACE
+          . catfile(qw{ a test file }),
+    },
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => \@function_base_commands,
+    },
+    pipeline => {
+        input           => q{rna},
+        expected_output => q{rna},
+    },
     reference_genome_versions_ref => {
         inputs_ref => [qw{ test_v1 test_v2 }],
         expected_output =>
@@ -135,10 +113,6 @@ q{--reference_genome_versions test_v1 --reference_genome_versions test_v2},
           . $SPACE
           . catdir(qw{ a test path }),
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => \@function_base_commands,
-    },
 );
 
 my %specific_argument = (
@@ -147,6 +121,10 @@ my %specific_argument = (
         expected_output => q{--config_file}
           . $SPACE
           . catfile(qw{ a test file }),
+    },
+    pipeline => {
+        input           => q{rna},
+        expected_output => q{rna},
     },
     reference_genome_versions_ref => {
         inputs_ref => [qw{ test_v1 test_v2 }],

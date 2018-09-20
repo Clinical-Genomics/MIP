@@ -60,7 +60,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.2.8};
+    our $VERSION = q{1.2.9};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -276,6 +276,7 @@ sub mip_install {
                     conda_environment  => $parameter{environment_name}{emip},
                     conda_prefix_path  => $parameter{emip}{conda_prefix_path},
                     FILEHANDLE         => $FILEHANDLE,
+                    pipeline           => $parameter{pipeline},
                     reference_dir_path => $parameter{reference_dir},
                     reference_genome_versions_ref =>
                       $parameter{reference_genome_versions},
@@ -303,7 +304,6 @@ sub mip_install {
     $log->info(q{Finished writing installation instructions for MIP});
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-
     return;
 }
 
