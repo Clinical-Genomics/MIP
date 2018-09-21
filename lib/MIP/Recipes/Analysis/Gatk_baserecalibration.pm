@@ -386,7 +386,7 @@ sub analysis_gatk_baserecalibration {
         gatk_baserecalibrator(
             {
                 FILEHANDLE    => $XARGSFILEHANDLE,
-                infile_path       => $temp_infile_paths[$infile_index],
+                infile_path   => $temp_infile_paths[$infile_index],
                 intervals_ref => \@intervals,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -398,8 +398,8 @@ sub analysis_gatk_baserecalibration {
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
-                verbosity    => $active_parameter_href->{gatk_logging_level},
-                xargs_mode         => 1,
+                verbosity  => $active_parameter_href->{gatk_logging_level},
+                xargs_mode => 1,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -448,7 +448,7 @@ sub analysis_gatk_baserecalibration {
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $base_quality_score_recalibration_file =
-          $temp_file_path_prefix . $UNDERSCORE . $contig . $DOT . q{grp};
+          $temp_outfile_path_prefix . $UNDERSCORE . $contig . $DOT . q{grp};
         gatk_applybqsr(
             {
                 base_quality_score_recalibration_file =>
@@ -469,7 +469,7 @@ sub analysis_gatk_baserecalibration {
                     $active_parameter_href
                       ->{gatk_baserecalibration_static_quantized_quals}
                 },
-                outfile_path     => $temp_outfile_paths[$infile_index],
+                outfile_path       => $temp_outfile_paths[$infile_index],
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
@@ -898,7 +898,7 @@ sub analysis_gatk_baserecalibration_rio {
         gatk_baserecalibrator(
             {
                 FILEHANDLE    => $XARGSFILEHANDLE,
-                infile_path       => $temp_infile_paths[$infile_index],
+                infile_path   => $temp_infile_paths[$infile_index],
                 intervals_ref => \@intervals,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -907,7 +907,7 @@ sub analysis_gatk_baserecalibration_rio {
                     $active_parameter_href->{gatk_baserecalibration_known_sites}
                 },
                 verbosity    => $active_parameter_href->{gatk_logging_level},
-                outfile_path       => $base_quality_score_recalibration_file,
+                outfile_path => $base_quality_score_recalibration_file,
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
@@ -980,7 +980,7 @@ sub analysis_gatk_baserecalibration_rio {
                     $active_parameter_href
                       ->{gatk_baserecalibration_static_quantized_quals}
                 },
-                outfile_path     => $temp_outfile_paths[$infile_index],
+                outfile_path       => $temp_outfile_paths[$infile_index],
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
