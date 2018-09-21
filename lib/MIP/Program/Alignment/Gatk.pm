@@ -217,7 +217,6 @@ sub gatk_applybqsr {
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $num_cpu_threads_per_data_thread       => Number of CPU threads to allocate per data thread
 ##          : $outfile_path                          => Outfile path
 ##          : $read_filters_ref                      => Filters to apply on reads {REF}
 ##          : $referencefile_path                    => Reference sequence file
@@ -234,9 +233,7 @@ sub gatk_applybqsr {
     my $FILEHANDLE;
     my $infile_path;
     my $intervals_ref;
-    my $known_sites_ref;
     my $memory_allocation;
-    my $num_cpu_threads_per_data_thread;
     my $outfile_path;
     my $read_filters_ref;
     my $referencefile_path;
@@ -505,10 +502,8 @@ sub gatk_haplotypecaller {
             store       => \$read_filters_ref,
             strict_type => 1,
         },
-        referencefile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$referencefile_path,
+        temp_directory => {
+            store       => \$temp_directory,
             strict_type => 1,
         },
         sample_ploidy => {
