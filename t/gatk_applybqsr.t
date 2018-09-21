@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,8 +33,10 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+Readonly my $COMMA       => q{,};
+Readonly my $SPACE       => q{ };
+Readonly my $QUALSCORE_1 => 10;
+Readonly my $QUALSCORE_2 => 20;
 
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
@@ -45,11 +47,11 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Gatk qw{ gatk_genotypegvcfs };
+use MIP::Program::Alignment::Gatk qw{ gatk_applybqsr };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test gatk_genotypegvcfs from Variantcalling::Gatk.pm v}
-      . $MIP::Program::Variantcalling::Gatk::VERSION
+diag(   q{Test gatk_applybqsr from Alignment::Gatk.pm v}
+      . $MIP::Program::Alignment::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,7 +60,7 @@ diag(   q{Test gatk_genotypegvcfs from Variantcalling::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ gatk GenotypeGVCFs };
+my @function_base_commands = qw{ gatk ApplyBQSR };
 
 my %base_argument = (
     stderrfile_path => {
@@ -74,42 +76,49 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
+    base_quality_score_recalibration_file => {
+        input           => catfile(qw{ dir infile.bsqr }),
+        expected_output => q{--bqsr-recal-file }
+          . catfile(qw{ dir infile.bsqr }),
+    },
     infile_path => {
-        input           => q{gendb://} . catdir(qw{ path to my_db }),
-        expected_output => q{--variant gendb://} . catdir(qw{ path to my_db }),
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--input } . catfile(qw{ dir infile.bam }),
     },
     outfile_path => {
-        input           => catfile(qw{ my outfile }),
-        expected_output => q{--output } . catfile(qw{ my outfile }),
-    },
-    referencefile_path => {
-        input           => catfile(qw{ my genome }),
-        expected_output => q{--reference } . catdir(qw{ my genome }),
+        input           => catfile(qw{ dir outfile.bam }),
+        expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
     },
 );
 
 my %specific_argument = (
-    dbsnp_path => {
-        input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
-        expected_output => q{--dbsnp }
-          . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+    base_quality_score_recalibration_file => {
+        input           => catfile(qw{ dir infile.bsqr }),
+        expected_output => q{--bqsr-recal-file }
+          . catfile(qw{ dir infile.bsqr }),
     },
     infile_path => {
-        input           => q{gendb://} . catdir(qw{ path to my_db }),
-        expected_output => q{--variant gendb://} . catdir(qw{ path to my_db }),
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--input } . catfile(qw{ dir infile.bam }),
     },
     outfile_path => {
-        input           => catfile(qw{ my outfile }),
-        expected_output => q{--output } . catfile(qw{ my outfile }),
+        input           => catfile(qw{ dir outfile.bam }),
+        expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
     },
-    referencefile_path => {
-        input           => catfile(qw{ my genome }),
-        expected_output => q{--reference } . catdir(qw{ my genome }),
+    static_quantized_quals_ref => {
+        inputs_ref      => [ $QUALSCORE_1, $QUALSCORE_2 ],
+        expected_output => q{--static-quantized-quals}
+          . $SPACE
+          . $QUALSCORE_1
+          . $SPACE
+          . q{--static-quantized-quals}
+          . $SPACE
+          . $QUALSCORE_2,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gatk_genotypegvcfs;
+my $module_function_cref = \&gatk_applybqsr;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

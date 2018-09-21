@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.00;
+our $VERSION = 1.04;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -174,7 +174,7 @@ sub _build_usage {
             cmd_aliases => [qw{ dnr }],
             cmd_flag    => q{dec_norm_ref},
             cmd_tags    => [
-q{gatk_realigner_indel_known_sites, gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config_file, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
+q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config_file, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
             ],
             documentation =>
               q{Set the references to be decomposed and normalized},
@@ -498,31 +498,6 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
             documentation => q{Sambamba size of the overflow list},
             is            => q{rw},
             isa           => Int,
-        )
-    );
-
-    option(
-        q{gatk_realigner} => (
-            cmd_aliases => [qw{ gra }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-q{Realignments of reads using GATK ReAlignerTargetCreator/IndelRealigner},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{gatk_realigner_indel_known_sites} => (
-            cmd_aliases => [qw{ graks }],
-            cmd_flag    => q{gatk_realigner_ind_ks},
-            cmd_tags    => [
-q{Default: GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
-            ],
-            documentation =>
-              q{GATK ReAlignerTargetCreator/IndelRealigner known indel site},
-            is  => q{rw},
-            isa => ArrayRef [Str],
         )
     );
 
@@ -1403,15 +1378,6 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
-        q{gatk_genotypegvcfs_all_sites} => (
-            cmd_aliases   => [qw{ ggtals }],
-            documentation => q{Emit non-variant sites to the output vcf file},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{gatk_genotypegvcfs_ref_gvcf} => (
             cmd_aliases => [qw{ ggtgrl }],
             cmd_flag    => q{gatk_genotype_ref_gvcf},
@@ -1423,7 +1389,7 @@ q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
     );
 
     option(
-        q{gatk_concatenate_genotypegvcfs} => (
+        q{gatk_gathervcfs} => (
             cmd_aliases => [qw{ gcgt }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -1434,7 +1400,7 @@ q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
     );
 
     option(
-        q{gatk_concatenate_genotypegvcfs_bcf_file} => (
+        q{gatk_gathervcfs_bcf_file} => (
             cmd_aliases => [qw{ gcgbcf }],
             cmd_flag    => q{gatk_genotype_bcf_f},
             documentation =>
@@ -1547,6 +1513,16 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
               q{Truth sensitivity level for snvs at which to start filtering},
             is  => q{rw},
             isa => Num,
+        )
+    );
+
+    option(
+        q{gatk_variantrecalibration_trust_all_polymorphic} => (
+            cmd_aliases   => [qw{ gvrtap }],
+            cmd_flag      => q{gatk_varrecal_trust_poly},
+            documentation => q{Trust all training sites to be polymorphic},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 

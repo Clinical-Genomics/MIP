@@ -47,6 +47,4 @@ human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
 ### Analysis
 ## Programs
 ## Parameters
-gatk_baserecalibration_disable_indel_qual: 1
-gatk_path: cluster_constant_path!
 picardtools_path: cluster_constant_path!

@@ -10,7 +10,6 @@ CHAIN_ALL:
       - bwa_mem
       - picardtools_mergesamfiles
       - markduplicates
-      - gatk_realigner
       - gatk_baserecalibration
 # Parallel chains (branches), which inherit from MAIN in initiation
       - CHAIN_CHSEX:
@@ -51,7 +50,7 @@ CHAIN_ALL:
          - GATK_HAPLOTYPECALLER:
             - gatk_haplotypecaller
             - gatk_genotypegvcfs
-            - gatk_concatenate_genotypegvcfs
+            - gatk_gathervcfs
             - gatk_variantrecalibration
       - gatk_combinevariantcallsets
 # Parallel chains (branches), which inherit from MAIN in initiation

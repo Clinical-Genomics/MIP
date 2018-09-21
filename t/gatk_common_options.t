@@ -39,17 +39,18 @@ Readonly my $SPACE => q{ };
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
     ### Check all internal dependency modules and imports
-## Modules with import
+
+    ## Modules with import
     my %perl_module = ( q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Alignment::Gatk qw{ gatk_asereadcounter };
+use MIP::Program::Base::Gatk qw{ gatk_common_options };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test gatk_asereadcounter from Alignment::Gatk.pm v}
-      . $MIP::Program::Alignment::Gatk::VERSION
+diag(   q{Test gatk_common_options from Base::Gatk.pm v}
+      . $MIP::Program::Base::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -57,64 +58,61 @@ diag(   q{Test gatk_asereadcounter from Alignment::Gatk.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Base arguments
-my @function_base_commands = qw{ gatk ASEReadCounter };
-
-my %base_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => \@function_base_commands,
-    },
-);
+my @function_base_commands = qw{ program };
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_path => {
-        input           => catfile(qw{ dir infile.bam }),
-        expected_output => q{--input } . catfile(qw{ dir infile.bam }),
-    },
-    variant_infile_path => {
-        input           => catfile(qw{ dir infile.vcf }),
-        expected_output => q{--variant } . catfile(qw{ dir infile.vcf }),
+    commands_ref => {
+        inputs_ref      => [qw{ program }],
+        expected_output => [qw{ program }],
     },
 );
 
 my %specific_argument = (
-    infile_path => {
-        input           => catfile(qw{ dir infile.bam }),
-        expected_output => q{--input } . catfile(qw{ dir infile.bam }),
+    intervals_ref => {
+        inputs_ref      => [qw{ chr1 chr2 }],
+        expected_output => q{--intervals chr1 --intervals chr2},
     },
-    outfile_path => {
-        input           => catfile(qw{ dir outfile.table }),
-        expected_output => q{--output } . catfile(qw{ dir outfile.table }),
+    pedigree => {
+        input           => catfile(qw{ a pedigree }),
+        expected_output => q{--pedigree } . catfile(qw{ a pedigree }),
     },
-    variant_infile_path => {
-        input           => catfile(qw{ dir infile.vcf }),
-        expected_output => q{--variant } . catfile(qw{ dir infile.vcf }),
+    read_filters_ref => {
+        inputs_ref => [qw{ MalformedRead BadCigar}],
+        expected_output =>
+          q{--read-filter MalformedRead --read-filter BadCigar},
+    },
+    referencefile_path => {
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference }
+          . catfile(qw{reference_dir human_genome_build.fasta }),
+    },
+    verbosity => {
+        input           => q{INFO},
+        expected_output => q{--verbosity INFO},
+    },
+    temp_directory => {
+        input           => catdir(qw{ a dir }),
+        expected_output => q{-TMP_DIR } . catdir(qw{ a dir }),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gatk_asereadcounter;
+my $module_function_cref = \&gatk_common_options;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
+my @arguments = ( \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            base_commands_index        => 1,
-            do_test_base_command       => 1,
-            function_base_commands_ref => \@function_base_commands,
-            module_function_cref       => $module_function_cref,
             required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

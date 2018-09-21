@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -45,10 +45,10 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Gatk qw{ gatk_genotypegvcfs };
+use MIP::Program::Variantcalling::Gatk qw{ gatk_genomicsdbimport };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test gatk_genotypegvcfs from Variantcalling::Gatk.pm v}
+diag(   q{Test gatk_genomicsdbimport from Variantcalling::Gatk.pm v}
       . $MIP::Program::Variantcalling::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -58,7 +58,7 @@ diag(   q{Test gatk_genotypegvcfs from Variantcalling::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ gatk GenotypeGVCFs };
+my @function_base_commands = qw{ gatk GenomicsDBImport };
 
 my %base_argument = (
     stderrfile_path => {
@@ -74,42 +74,57 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_path => {
-        input           => q{gendb://} . catdir(qw{ path to my_db }),
-        expected_output => q{--variant gendb://} . catdir(qw{ path to my_db }),
+    infile_paths_ref => {
+        inputs_ref => [
+            catfile(qw{ path to mother.g.vcf }),
+            catfile(qw{ path to child.g.vcf })
+        ],
+        expected_output => q{--variant}
+          . $SPACE
+          . catfile(qw{ path to mother.g.vcf})
+          . $SPACE
+          . q{--variant}
+          . $SPACE
+          . catfile(qw{ path to child.g.vcf}),
     },
-    outfile_path => {
-        input           => catfile(qw{ my outfile }),
-        expected_output => q{--output } . catfile(qw{ my outfile }),
+    genomicsdb_workspace_path => {
+        input           => catdir(qw{ a dir }),
+        expected_output => q{--genomicsdb-workspace-path }
+          . catdir(qw{ a dir }),
     },
-    referencefile_path => {
-        input           => catfile(qw{ my genome }),
-        expected_output => q{--reference } . catdir(qw{ my genome }),
+    intervals_ref => {
+        inputs_ref      => [qw{ chr1 chr2 }],
+        expected_output => q{--intervals chr1 --intervals chr2},
     },
 );
 
 my %specific_argument = (
-    dbsnp_path => {
-        input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
-        expected_output => q{--dbsnp }
-          . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+    infile_paths_ref => {
+        inputs_ref => [
+            catfile(qw{ path to mother.g.vcf }),
+            catfile(qw{ path to child.g.vcf })
+        ],
+        expected_output => q{--variant}
+          . $SPACE
+          . catfile(qw{ path to mother.g.vcf})
+          . $SPACE
+          . q{--variant}
+          . $SPACE
+          . catfile(qw{ path to child.g.vcf}),
     },
-    infile_path => {
-        input           => q{gendb://} . catdir(qw{ path to my_db }),
-        expected_output => q{--variant gendb://} . catdir(qw{ path to my_db }),
+    genomicsdb_workspace_path => {
+        input           => catdir(qw{ a dir }),
+        expected_output => q{--genomicsdb-workspace-path }
+          . catdir(qw{ a dir }),
     },
-    outfile_path => {
-        input           => catfile(qw{ my outfile }),
-        expected_output => q{--output } . catfile(qw{ my outfile }),
-    },
-    referencefile_path => {
-        input           => catfile(qw{ my genome }),
-        expected_output => q{--reference } . catdir(qw{ my genome }),
+    intervals_ref => {
+        inputs_ref      => [qw{ chr1 chr2 }],
+        expected_output => q{--intervals chr1 --intervals chr2},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gatk_genotypegvcfs;
+my $module_function_cref = \&gatk_genomicsdbimport;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

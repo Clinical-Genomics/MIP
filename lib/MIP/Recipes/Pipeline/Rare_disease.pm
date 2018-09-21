@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rare_disease };
@@ -183,14 +183,11 @@ sub pipeline_rare_disease {
       qw{ analysis_gatk_baserecalibration analysis_gatk_baserecalibration_rio };
     use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
       qw{ analysis_gatk_combinevariantcallsets };
-    use MIP::Recipes::Analysis::Gatk_concatenate_genotypegvcfs
-      qw{ analysis_gatk_concatenate_genotypegvcfs };
+    use MIP::Recipes::Analysis::Gatk_gathervcfs qw{ analysis_gatk_gathervcfs };
     use MIP::Recipes::Analysis::Gatk_genotypegvcfs
       qw{ analysis_gatk_genotypegvcfs };
     use MIP::Recipes::Analysis::Gatk_haplotypecaller
       qw{ analysis_gatk_haplotypecaller };
-    use MIP::Recipes::Analysis::Gatk_realigner
-      qw{ analysis_gatk_realigner analysis_gatk_realigner_rio };
     use MIP::Recipes::Analysis::Gatk_variantevalall
       qw{ analysis_gatk_variantevalall };
     use MIP::Recipes::Analysis::Gatk_variantevalexome
@@ -294,12 +291,10 @@ sub pipeline_rare_disease {
         freebayes                 => \&analysis_freebayes_calling,
         frequency_filter          => \&analysis_frequency_filter,
         gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
-        gatk_concatenate_genotypegvcfs =>
-          \&analysis_gatk_concatenate_genotypegvcfs,
+        gatk_gathervcfs           => \&analysis_gatk_gathervcfs,
         gatk_combinevariantcallsets => \&analysis_gatk_combinevariantcallsets,
         gatk_genotypegvcfs          => \&analysis_gatk_genotypegvcfs,
         gatk_haplotypecaller        => \&analysis_gatk_haplotypecaller,
-        gatk_realigner              => \&analysis_gatk_realigner,
         gatk_variantevalall         => \&analysis_gatk_variantevalall,
         gatk_variantevalexome       => \&analysis_gatk_variantevalexome,
         gatk_variantrecalibration => undef,    # Depends on analysis type
@@ -341,31 +336,28 @@ sub pipeline_rare_disease {
 
     ## Program names for the log
     my %program_name = (
-        analysisrunstatus         => q{Analysis run status},
-        bcftools_mpileup          => q{Bcftools mpileup},
-        bedtools_genomecov        => q{Bedtools genomecov},
-        bwa_mem                   => q{BWA mem},
-        chanjo_sexcheck           => q{Chanjo sexcheck},
-        cnvnator                  => q{CNVnator},
-        delly_call                => q{Delly call},
-        delly_reformat            => q{Delly reformat},
-        endvariantannotationblock => q{Endvariantannotationblock},
-        expansionhunter           => q{ExpansionHunter},
-        evaluation                => q{Evaluation},
-        fastqc                    => q{FastQC},
-        freebayes                 => q{Freebayes},
-        frequency_filter          => q{Frequency filter},
-        gatk_baserecalibration    => q{GATK BaseRecalibrator/PrintReads},
-        gatk_concatenate_genotypegvcfs =>
-          q{GATK concatenate genotypegvcfs files},
-        gatk_combinevariantcallsets => q{GATK combinevariantcallsets},
-        gatk_genotypegvcfs          => q{GATK genotypegvcfs},
-        gatk_haplotypecaller        => q{GATK Haplotypecaller},
-        gatk_realigner        => q{GATK RealignerTargetCreator/IndelRealigner},
-        gatk_variantevalall   => q{GATK variantevalall},
-        gatk_variantevalexome => q{GATK variantevalexome},
-        gatk_variantrecalibration =>
-          q{GATK variantrecalibrator/applyrecalibration},
+        analysisrunstatus            => q{Analysis run status},
+        bcftools_mpileup             => q{Bcftools mpileup},
+        bedtools_genomecov           => q{Bedtools genomecov},
+        bwa_mem                      => q{BWA mem},
+        chanjo_sexcheck              => q{Chanjo sexcheck},
+        cnvnator                     => q{CNVnator},
+        delly_call                   => q{Delly call},
+        delly_reformat               => q{Delly reformat},
+        endvariantannotationblock    => q{Endvariantannotationblock},
+        expansionhunter              => q{ExpansionHunter},
+        evaluation                   => q{Evaluation},
+        fastqc                       => q{FastQC},
+        freebayes                    => q{Freebayes},
+        frequency_filter             => q{Frequency filter},
+        gatk_baserecalibration       => q{GATK BaseRecalibrator/ApplyBQSR},
+        gatk_gathervcfs              => q{GATK GatherVcfs},
+        gatk_combinevariantcallsets  => q{GATK combinevariantcallsets},
+        gatk_genotypegvcfs           => q{GATK GenotypeGVCFs},
+        gatk_haplotypecaller         => q{GATK Haplotypecaller},
+        gatk_variantevalall          => q{GATK variantevalall},
+        gatk_variantevalexome        => q{GATK variantevalexome},
+        gatk_variantrecalibration    => q{GATK VariantRecalibrator/ApplyVQSR},
         gzip_fastq                   => q{Gzip for fastq files},
         manta                        => q{Manta},
         markduplicates               => q{Markduplicates},
@@ -617,13 +609,11 @@ sub _define_bamcalibration_ar {
     ## Define rio blocks programs and order
     @{$order_bamcal_programs_ref} = qw{ picardtools_mergesamfiles
       markduplicates
-      gatk_realigner
       gatk_baserecalibration
     };
 
     %{$bamcal_ar_href} = (
         gatk_baserecalibration    => \&analysis_gatk_baserecalibration_rio,
-        gatk_realigner            => \&analysis_gatk_realigner_rio,
         markduplicates            => \&analysis_markduplicates_rio,
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles_rio,
     );

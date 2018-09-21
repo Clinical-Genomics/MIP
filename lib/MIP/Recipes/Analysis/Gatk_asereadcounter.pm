@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_asereadcounter };
@@ -142,7 +142,7 @@ sub analysis_gatk_asereadcounter {
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_asereadcounter };
+    use MIP::Program::Alignment::Gatk qw{ gatk_asereadcounter };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
@@ -306,19 +306,15 @@ sub analysis_gatk_asereadcounter {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $infile_path,
-            java_jar    => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar},
-            ),
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            logging_level     => $active_parameter_href->{gatk_logging_level},
             memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path      => $outfile_path,
             referencefile_path =>
               $active_parameter_href->{human_genome_reference},
-            gatk_sites_vcffile => $sitesfile_path_prefix . $sitesfile_suffix,
-            temp_directory     => $temp_directory,
+            variant_infile_path => $sitesfile_path_prefix . $sitesfile_suffix,
+            verbosity           => $active_parameter_href->{gatk_logging_level},
+            temp_directory      => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

@@ -28,7 +28,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils
   qw{ nest_hash print_parameter_defaults update_program_versions};
 
-our $VERSION = 0.04;
+our $VERSION = 1.00;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -78,7 +78,7 @@ sub run {
     ## Add all environments to installation if full installation was selected
     if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
         @{ $parameter{installations} } =
-          qw{ emip ecnvnator efreebayes epeddy epy3 evep };
+          qw{ emip ecnvnator efreebayes epeddy epy3 etiddit evep };
     }
 
     ## Make sure that the cnvnator environment is installed last
@@ -125,6 +125,7 @@ sub _build_usage {
                 efreebayes => Optional [Str],
                 epeddy     => Optional [Str],
                 epy3       => Optional [Str],
+                etiddit    => Optional [Str],
                 evep       => Optional [Str],
             ],
             required => 0,
@@ -153,7 +154,11 @@ sub _build_usage {
             documentation => q{Environments to install},
             is            => q{rw},
             isa           => ArrayRef [
-                enum( [qw{ emip ecnvnator efreebayes epeddy epy3 evep full }] ),
+                enum(
+                    [
+                        qw{ emip ecnvnator efreebayes epeddy epy3 etiddit evep full }
+                    ]
+                ),
             ],
             required => 0,
         ),
@@ -180,6 +185,7 @@ sub _build_usage {
                 fastqc            => Optional [Str],
                 freebayes         => Optional [Str],
                 gatk              => Optional [Str],
+                gatk4             => Optional [Str],
                 gcc               => Optional [Str],
                 genmod            => Optional [Str],
                 htslib            => Optional [Str],
@@ -261,7 +267,7 @@ sub _build_usage {
                     [
                         qw{ bcftools bedtools bwa bwakit chanjo cmake cnvnator
                           cramtools cutadapt delly expansionhunter fastqc
-                          freebayes gatk genmod gcc htslib libxml2 libxslt
+                          freebayes gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
                           scikit-learn snpeff snpsift svdb tiddit
@@ -297,7 +303,7 @@ sub _build_usage {
                     [
                         qw{ bcftools bedtools bwa bwakit chanjo cmake cnvnator
                           cramtools cutadapt delly expansionhunter fastqc
-                          freebayes gatk genmod gcc htslib libxml2 libxslt
+                          freebayes gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
                           scikit-learn snpeff snpsift svdb tiddit

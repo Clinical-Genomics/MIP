@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Gatk_concatenate_genotypegvcfs;
+package MIP::Recipes::Analysis::Gatk_gathervcfs;
 
 use Carp;
 use charnames qw{ :full :short };
@@ -21,10 +21,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_gatk_concatenate_genotypegvcfs };
+    our @EXPORT_OK = qw{ analysis_gatk_gathervcfs };
 
 }
 
@@ -34,9 +34,9 @@ Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
 
-sub analysis_gatk_concatenate_genotypegvcfs {
+sub analysis_gatk_gathervcfs {
 
-## Function : Concatenate GVCFs produced after gatk_genotypegvcfs done per contig.
+## Function : Gather VCFs produced after gatk_genotypegvcfs done per contig.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
@@ -137,13 +137,13 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::IO::Files qw{ migrate_file };
-    use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
-    use MIP::Program::Variantcalling::Bcftools qw{bcftools_view_and_index_vcf};
+    use MIP::Program::Variantcalling::Bcftools
+      qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Gatk
-      qw{ gatk_selectvariants gatk_concatenate_variants };
+      qw{ gatk_gathervcfscloud gatk_selectvariants };
     use MIP::QC::Record
       qw{ add_processing_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -160,8 +160,7 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $gatk_jar =
-      catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
+
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -232,6 +231,9 @@ sub analysis_gatk_concatenate_genotypegvcfs {
 
     my $process_batches_count = 1;
 
+    ## Gather vcf files
+    my @vcffile_paths;
+
   CONTIG:
     while ( my ( $contig_index, $contig ) =
         each @{ $file_info_href->{contigs} } )
@@ -245,6 +247,10 @@ sub analysis_gatk_concatenate_genotypegvcfs {
                 process_counter       => $contig_index,
             }
         );
+
+        ## Store infile
+        push @vcffile_paths,
+          $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
 
         ## Copy file(s) to temporary directory
         migrate_file(
@@ -261,41 +267,38 @@ sub analysis_gatk_concatenate_genotypegvcfs {
                 outfile_path => $temp_directory
             }
         );
+        ## Store infile
     }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
-    gatk_concatenate_variants(
+    ## GATK GatherVcfsCloud
+    gatk_gathervcfscloud(
         {
-            active_parameter_href => $active_parameter_href,
-            elements_ref          => \@{ $file_info_href->{contigs} },
-            FILEHANDLE            => $FILEHANDLE,
-            infile_postfix        => $infile_suffix,
-            infile_prefix         => $file_path_prefix . $UNDERSCORE,
-            outfile_path_prefix   => $outfile_path_prefix,
-            outfile_suffix        => $outfile_suffix,
+            FILEHANDLE           => $FILEHANDLE,
+            ignore_safety_checks => 0,
+            infile_paths_ref     => \@vcffile_paths,
+            memory_allocation    => q{Xmx4G},
+            outfile_path         => $outfile_path_prefix . $outfile_suffix,
+            temp_directory       => $temp_directory,
+            verbosity => $active_parameter_href->{gatk_logging_level},
         }
     );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Produce a bcf compressed and index from vcf
-    if ( $active_parameter_href->{gatk_concatenate_genotypegvcfs_bcf_file} ) {
+    if ( $active_parameter_href->{gatk_gathervcfs_bcf_file} ) {
 
         # Exome analysis
         if ( $consensus_analysis_type eq q{wes} ) {
 
             say {$FILEHANDLE} q{### Remove extra reference samples};
-
             say {$FILEHANDLE} q{## GATK SelectVariants};
-
             gatk_selectvariants(
                 {
-                    FILEHANDLE => $FILEHANDLE,
-                    java_jar   => $gatk_jar,
+                    FILEHANDLE  => $FILEHANDLE,
+                    infile_path => $outfile_path_prefix . $outfile_suffix,
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
-                    infile_path => $outfile_path_prefix . $outfile_suffix,
-                    logging_level =>
-                      $active_parameter_href->{gatk_logging_level},
                     memory_allocation => q{Xmx2g},
                     outfile_path      => $outfile_path_prefix
                       . $UNDERSCORE
@@ -305,6 +308,7 @@ sub analysis_gatk_concatenate_genotypegvcfs {
                     sample_names_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
                     temp_directory => $temp_directory,
+                    verbosity => $active_parameter_href->{gatk_logging_level},
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -360,9 +364,7 @@ sub analysis_gatk_concatenate_genotypegvcfs {
 
     if ( $program_mode == 1 ) {
 
-        if ( $active_parameter_href->{gatk_concatenate_genotypegvcfs_bcf_file}
-            == 1 )
-        {
+        if ( $active_parameter_href->{gatk_gathervcfs_bcf_file} == 1 ) {
 
             my $program_gbcf_file_path =
               catfile( $outfamily_directory, $outfile_prefix . $DOT . q{bcf} );

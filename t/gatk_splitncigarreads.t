@@ -1,92 +1,48 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ dirname  };
 use File::Spec::Functions qw{ catdir catfile };
-use Getopt::Long;
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.01;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $COMMA                => q{,};
-Readonly my $NEWLINE              => qq{\n};
-Readonly my $MAPPING_QUALITY_FROM => 255;
-Readonly my $MAPPING_QUALITY_TO   => 60;
-Readonly my $SPACE                => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
-
-### Check all internal dependency modules and imports
+    use MIP::Test::Fixtures qw{ test_import };
+    ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
+    my %perl_module = ( q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
 
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
-
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Program::Alignment::Gatk});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Alignment::Gatk qw{ gatk_splitncigarreads };
@@ -102,7 +58,7 @@ diag(   q{Test gatk_splitncigarreads from Alignment::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ --analysis_type SplitNCigarReads };
+my @function_base_commands = qw{ gatk SplitNCigarReads };
 
 my %base_argument = (
     stderrfile_path => {
@@ -120,16 +76,15 @@ my %base_argument = (
 my %required_argument = (
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),
-        expected_output => q{-I} . $SPACE . catfile(qw{ dir infile.bam }),
+        expected_output => q{--input } . catfile(qw{ dir infile.bam }),
     },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
-        expected_output => q{-o} . $SPACE . catfile(qw{ dir infile.bam }),
+        expected_output => q{--output } . catfile(qw{ dir infile.bam }),
     },
     referencefile_path => {
         input => catfile(qw{ reference_dir human_genome_build.fasta }),
-        expected_output => q{--reference_sequence}
-          . $SPACE
+        expected_output => q{--reference }
           . catfile(qw{ reference_dir human_genome_build.fasta }),
     },
 );
@@ -137,35 +92,16 @@ my %required_argument = (
 my %specific_argument = (
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),
-        expected_output => q{-I} . $SPACE . catfile(qw{ dir infile.bam }),
-    },
-    maping_quality_from => {
-        input           => $MAPPING_QUALITY_FROM,
-        expected_output => q{-RMQF} . $SPACE . $MAPPING_QUALITY_FROM,
-
-    },
-    maping_quality_to => {
-        input           => $MAPPING_QUALITY_TO,
-        expected_output => q{-RMQT} . $SPACE . $MAPPING_QUALITY_TO,
-
+        expected_output => q{--input } . catfile(qw{ dir infile.bam }),
     },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
-        expected_output => q{-o} . $SPACE . catfile(qw{ dir outfile.bam }),
-    },
-    operation => {
-        input           => q{STUFF},
-        expected_output => q{-U} . $SPACE . q{STUFF},
+        expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
     },
     referencefile_path => {
         input => catfile(qw{ reference_dir human_genome_build.fasta }),
-        expected_output => q{--reference_sequence}
-          . $SPACE
+        expected_output => q{--reference }
           . catfile(qw{ reference_dir human_genome_build.fasta }),
-    },
-    readfilter => {
-        input           => q{deleteAllReads},
-        expected_output => q{-rf} . $SPACE . q{deleteAllReads},
     },
 );
 
@@ -180,6 +116,7 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
+            base_commands_index        => 1,
             required_argument_href     => \%required_argument,
             module_function_cref       => $module_function_cref,
             function_base_commands_ref => \@function_base_commands,
@@ -189,36 +126,3 @@ foreach my $argument_href (@arguments) {
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

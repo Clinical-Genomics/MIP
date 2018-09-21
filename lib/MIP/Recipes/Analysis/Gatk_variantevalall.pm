@@ -266,15 +266,14 @@ sub analysis_gatk_variantevalall {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $file_path_prefix . $infile_suffix,
-            java_jar    => $gatk_jar,
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            logging_level     => $active_parameter_href->{gatk_logging_level},
             memory_allocation => q{Xmx2g},
             outfile_path => $outfile_path_prefix . $call_type . $infile_suffix,
             referencefile_path => $referencefile_path,
             sample_names_ref   => [$sample_id],
             temp_directory     => $temp_directory,
+            verbosity          => $active_parameter_href->{gatk_logging_level},
         }
     );
     say {$FILEHANDLE} $NEWLINE;

@@ -12,7 +12,7 @@ conda_update: 0
 # Disable environment check
 disable_env_check: 0
 
-# MIP main environment spec 
+# MIP main environment spec
 emip:
   conda:
     bcftools: 1.6
@@ -26,10 +26,11 @@ emip:
     delly: 0.7.7
     fastqc: 0.11.4
     gatk: 3.8
+    gatk4: 4.0
     gcc: 4.8.5
     htslib: 1.6
     manta: 1.1.0
-    numpy: 
+    numpy:
     picard: 2.14.1
     pip:
     plink2: 1.90b3.35
@@ -74,13 +75,6 @@ emip:
         pip:
         python: 2.7
       version: 1.1.2
-    tiddit:
-      conda_dependency:
-        cmake:
-        gcc:
-        numpy:
-        python: 2.7
-      version: 2.2.1
     vcf2cytosure:
       version: gitRepo
     vt:
@@ -108,17 +102,18 @@ efreebayes:
     bcftools: 1.6
     freebayes: 1.1.0
     gatk: 3.8
+    gatk4: 4.0
     pip:
     python: 2.7
   pip:
-  shell: 
+  shell:
 
 # Peddy environment spec
 epeddy:
   conda:
     bcftools: 1.6
     peddy: 0.3.1
-    pip: 
+    pip:
     python: 2.7
   pip:
   shell:
@@ -126,9 +121,9 @@ epeddy:
 # Python 3 environment spec
 epy3:
   conda:
-    pip: 
+    pip:
     python: 3.6
-    sambamba: 0.6.6 
+    sambamba: 0.6.6
   pip:
     chanjo: 4.2.0
     genmod: 3.7.2
@@ -137,12 +132,43 @@ epy3:
   shell:
     sambamba: 0.6.1
 
+## Tiddit env spec
+etiddit:
+  conda:
+    bcftools: 1.6
+    cython:
+    gcc:
+    numpy:
+    pip:
+    python: 2.7
+    scipy:
+    svdb: 1.1.2
+  pip:
+  shell:
+    svdb:
+      conda_dependency:
+        cython:
+        numpy:
+        pip:
+        python: 2.7
+        scipy:
+      version: 1.1.2
+    tiddit:
+      conda_dependency:
+        cmake:
+        gcc:
+        numpy:
+        python: 2.7
+      version: 2.2.5
+    vcf2cytosure:
+      version: gitRepo
+
 # VEP environment spec
 evep:
   conda:
     bcftools: 1.6
     htslib: 1.6
-    pip: 
+    pip:
     python: 2.7
   pip:
   shell:
@@ -168,6 +194,7 @@ environment_name:
   epeddy:
   epy3:
   evep:
+  etiddit:
 
 # Environments to install
 installations:
@@ -177,6 +204,7 @@ installations:
   - epeddy
   - epy3
   - evep
+  - etiddit
 
 # Optional name of log file
 log_file: ~
@@ -191,7 +219,7 @@ pipeline: rare_disease
 # only applicaple for shell programs that overlap with existing conda packages
 prefer_shell: 0
 
-# Programs that needs to be installed together with pyhton 3, only touch if you know what you're doing 
+# Programs that needs to be installed together with pyhton 3, only touch if you know what you're doing
 python3_programs:
   - chanjo
   - genmod

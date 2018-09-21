@@ -11,6 +11,10 @@ module_source_environment_command:
     - source
     - activate
     - mip_travis_py3
+  freebayes:
+    - source
+    - activate
+    - mip_travis_freebayes
   frequency_filter:
     - source
     - activate
@@ -55,6 +59,14 @@ module_source_environment_command:
    - source
    - activate
    - mip_travis_cnvnator
+  tiddit:
+   - source
+   - activate
+   - mip_travis_tiddit
+  vcf2cytosure:
+   - source
+   - activate
+   - mip_travis_tiddit
 project_id: travis_test
 program_source_environment_command:
   genmod:
@@ -78,7 +90,7 @@ genmod_annotate_cadd_files:
   - GRCh37_cadd_1000g_phase3_-v1.3-.tsv.gz
   - GRCh37_cadd_exac_r0.3_-v1.3-.tsv.gz
 genmod_annotate_spidex_file: GRCh37_spidex_public_noncommercial_-v1_0-.tab.gz
-genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv 
+genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
 rank_model_file: rank_model_cmms_-v1.19-.ini
 sambamba_depth_bed: GRCh37_scout_exons_-2017-01-.bed
@@ -112,10 +124,11 @@ delly_reformat: 1
 endvariantannotationblock: 1
 evaluation: 1
 fastqc: 1
-freebayes: 0
+freebayes: 1
 frequency_filter: 1
 gatk_baserecalibration: 1
 gatk_combinevariantcallsets: 1
+gatk_gathervcfs: 1
 gatk_genotypegvcfs: 1
 gatk_haplotypecaller: 1
 gatk_variantevalall: 1
@@ -153,10 +166,9 @@ vt: 1
 qccollect: 1
 ## Parameters
 frequency_genmod_filter: 1
-gatk_combinevariants_prioritize_caller: gatk,bcftools
-gatk_concatenate_genotypegvcfs_bcf_file: 1
+gatk_combinevariants_prioritize_caller: gatk,bcftools,freebayes
+gatk_gathervcfs_bcf_file: 1
 gatk_path: cluster_constant_path!
-gatk_baserecalibration_disable_indel_qual: 1
 gatk_haplotypecaller_no_soft_clipped_bases: 1
 gatk_variantrecalibration_dp_annotation: 1
 gatk_variantrecalibration_indel_max_gaussians: 1

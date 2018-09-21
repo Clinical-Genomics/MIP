@@ -5,10 +5,8 @@ decompose_normalize_references:
    - mip
   data_type: ARRAY
   default:
-   - gatk_realigner_indel_known_sites
    - gatk_baserecalibration_known_sites
    - gatk_haplotypecaller_snp_known_set
-   - gatk_variantrecalibration_resource_snv
    - gatk_variantrecalibration_resource_indel
    - frequency_genmod_filter_1000g
    - sv_vcfanno_config_file
@@ -20,7 +18,6 @@ decompose_normalize_references:
 exome_target_bed:
   associated_program:
    - picardtools_collecthsmetrics
-   - gatk_realigner
    - gatk_baserecalibration
    - gatk_haplotypecaller
   build_file: 1
@@ -39,12 +36,11 @@ expected_coverage:
 gatk_bundle_download_version:
   associated_program:
    - bwa_mem
-   - gatk_realigner
    - gatk_baserecalibration
    - cnvnator
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
-   - gatk_concatenate_genotypegvcfs 
+   - gatk_gathervcfs
    - bcftools_mpileup
    - gatk_variantrecalibration
    - gatk_variantevalall
@@ -54,32 +50,21 @@ gatk_bundle_download_version:
   data_type: SCALAR
   default: 2.8
   type: program_argument
-gatk_disable_auto_index_and_file_lock:
-  associated_program:
-   - gatk_realigner
-   - gatk_baserecalibration
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 gatk_downsample_to_coverage:
   associated_program:
-   - gatk_realigner
-   - gatk_baserecalibration
    - gatk_haplotypecaller
   data_type: SCALAR
   default: 1000
   type: program_argument
 gatk_logging_level:
   associated_program:
-   - gatk_realigner
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
-   - gatk_concatenate_genotypegvcfs
+   - gatk_gathervcfs
    - bcftools_mpileup
    - gatk_variantrecalibration
    - gatk_combinevariantcallsets
-   - cnvnator
    - gatk_variantevalall
    - gatk_variantevalexome
    - varianteffectpredictor
@@ -89,18 +74,9 @@ gatk_logging_level:
   type: program_argument
 gatk_path:
   associated_program:
-   - gatk_realigner
-   - gatk_baserecalibration
-   - gatk_haplotypecaller
-   - gatk_genotypegvcfs
-   - gatk_concatenate_genotypegvcfs
-   - bcftools_mpileup
-   - gatk_variantrecalibration
    - gatk_combinevariantcallsets
    - gatk_variantevalall
    - gatk_variantevalexome
-   - varianteffectpredictor
-   - rankvariant
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -119,7 +95,6 @@ human_genome_reference:
    - mip
    - bwa_mem
    - expansionhunter
-   - gatk_realigner
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
@@ -144,7 +119,6 @@ human_genome_reference_file_endings:
   associated_program:
    - bwa_mem
    - expansionhunter
-   - gatk_realigner
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
@@ -169,11 +143,10 @@ human_genome_reference_file_endings:
 ## java large pages - affects all modules using java
 java_use_large_pages:
   associated_program:
-   - gatk_realigner
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
-   - gatk_concatenate_genotypegvcfs
+   - gatk_gathervcfs
    - gatk_variantrecalibration
    - gatk_combinevariantcallsets
    - gatk_variantevalall
@@ -205,13 +178,12 @@ module_core_number:
     frequency_filter: 16
     gatk_baserecalibration: 16
     gatk_combinevariantcallsets: 1
-    gatk_genotypegvcfs: 4
-    gatk_concatenate_genotypegvcfs: 2
+    gatk_genotypegvcfs: 2
+    gatk_gathervcfs: 2
     gatk_haplotypecaller: 16
-    gatk_realigner: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
-    gatk_variantrecalibration: 16
+    gatk_variantrecalibration: 4
     gzip_fastq: 0
     manta: 16
     markduplicates: 16
@@ -252,16 +224,15 @@ module_time:
     delly_reformat: 7
     endvariantannotationblock: 2
     evaluation: 1
-    expansionhunter: 1
+    expansionhunter: 2
     fastqc: 10
     freebayes: 30
     frequency_filter: 2
     gatk_baserecalibration: 20
     gatk_combinevariantcallsets: 2
     gatk_genotypegvcfs: 10
-    gatk_concatenate_genotypegvcfs: 2
+    gatk_gathervcfs: 2
     gatk_haplotypecaller: 30
-    gatk_realigner: 20
     gatk_variantevalall: 2
     gatk_variantevalexome: 2
     gatk_variantrecalibration: 10
@@ -487,25 +458,6 @@ markduplicates_sambamba_markdup_overflow_list_size:
   default: 200000
   type: program_argument
 ## GATK BAM Calibration
-gatk_realigner:
-  analysis_mode: sample
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: _rreal
-  type: program
-gatk_realigner_indel_known_sites:
-  associated_program:
-   - gatk_realigner
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - GRCh37_1000g_indels_-phase1-.vcf
-   - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
-  exists_check: file
-  reference: reference_dir
-  type: path
 gatk_baserecalibration:
   analysis_mode: sample
   associated_program:
@@ -513,24 +465,9 @@ gatk_baserecalibration:
   data_type: SCALAR
   default: 1
   file_tag: _brecal
+  program_name_path:
+   - gatk
   type: program
-gatk_baserecalibration_covariates:
-  associated_program:
-   - gatk_baserecalibration
-  element_separator: ,
-  data_type: ARRAY
-  default:
-   - ReadGroupCovariate
-   - ContextCovariate
-   - CycleCovariate
-   - QualityScoreCovariate
-  type: program_argument
-gatk_baserecalibration_disable_indel_qual:
-  associated_program:
-   - gatk_baserecalibration
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 gatk_baserecalibration_known_sites:
   associated_program:
    - gatk_baserecalibration
@@ -549,7 +486,7 @@ gatk_baserecalibration_read_filters:
   element_separator: ,
   data_type: ARRAY
   default:
-   - OverclippedRead
+   - OverclippedReadFilter
   type: program_argument
 gatk_baserecalibration_static_quantized_quals:
   associated_program:
@@ -589,6 +526,8 @@ samtools_subsample_mt:
   default: 1
   file_tag: _subsample_MT
   outfile_suffix: ".bam"
+  program_name_path:
+   - samtools
   type: program
 samtools_subsample_mt_depth:
   analysis_mode: sample
@@ -768,7 +707,7 @@ delly_types:
   type: program_argument
 expansionhunter:
   analysis_mode: sample
-  associated_program:  
+  associated_program:
    - mip
   data_type: SCALAR
   default: 1
@@ -815,8 +754,8 @@ tiddit:
   type: program
 tiddit_bin_size:
   associated_program:
-   - vcf2cytosure
    - tiddit
+   - vcf2cytosure
   data_type: SCALAR
   default: 500
   type: program_argument
@@ -954,9 +893,9 @@ vcf2cytosure:
   outfile_suffix: ".cgh"
   outdir_name: vcf2cytosure
   program_name_path:
+    - bcftools
     - TIDDIT.py
     - vcf2cytosure
-    - bcftools
   type: program
 vcf2cytosure_exclude_filter:
   associated_program:
@@ -1201,6 +1140,8 @@ gatk_haplotypecaller:
   default: 1
   file_tag: _haptc
   outfile_suffix: ".g.vcf"
+  program_name_path:
+   - gatk
   type: program
 gatk_haplotypecaller_annotation:
   associated_program:
@@ -1258,13 +1199,9 @@ gatk_genotypegvcfs:
   default: 1
   file_tag: _gent_
   outfile_suffix: ".vcf"
+  program_name_path:
+   - gatk
   type: program
-gatk_genotypegvcfs_all_sites:
-  associated_program:
-   - gatk_genotypegvcfs
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 gatk_genotypegvcfs_ref_gvcf:
   associated_program:
    - gatk_genotypegvcfs
@@ -1272,7 +1209,7 @@ gatk_genotypegvcfs_ref_gvcf:
   exists_check: file
   reference: reference_dir
   type: path
-gatk_concatenate_genotypegvcfs:
+gatk_gathervcfs:
   analysis_mode: family
   associated_program:
    - mip
@@ -1280,10 +1217,13 @@ gatk_concatenate_genotypegvcfs:
   default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
+  program_name_path:
+   - bcftools
+   - gatk
   type: program
-gatk_concatenate_genotypegvcfs_bcf_file:
+gatk_gathervcfs_bcf_file:
   associated_program:
-   - gatk_concatenate_genotypegvcfs
+   - gatk_gathervcfs
   data_type: SCALAR
   default: 0
   type: program_argument
@@ -1296,6 +1236,7 @@ gatk_variantrecalibration:
   file_tag: vrecal_
   program_name_path:
    - bcftools
+   - gatk
   outdir_name: gatk
   program_type: variant_callers
   outfile_suffix: ".vcf"
@@ -1345,7 +1286,7 @@ gatk_variantrecalibration_resource_indel:
   data_type: HASH
   default:
      GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
-     GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,VCF,known=true,training=true,truth=true,prior=12.0"
+     GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,known=true,training=true,truth=true,prior=12.0"
   exists_check: file
   reference: reference_dir
   type: path
@@ -1355,8 +1296,8 @@ gatk_variantrecalibration_resource_snv:
   data_type: HASH
   default:
      GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
-     GRCh37_hapmap_-3.3-.vcf: "hapmap,VCF,known=false,training=true,truth=true,prior=15.0"
-     GRCh37_1000g_omni_-2.5-.vcf: "omni,VCF,known=false,training=true,truth=false,prior=12.0"
+     GRCh37_hapmap_-3.3-.vcf: "hapmap,known=false,training=true,truth=true,prior=15.0"
+     GRCh37_1000g_omni_-2.5-.vcf: "omni,known=false,training=true,truth=false,prior=12.0"
      GRCh37_1000g_snps_high_confidence_-phase1-.vcf: "1000G,known=false,training=true,truth=false,prior=10.0"
   exists_check: file
   reference: reference_dir
@@ -1372,6 +1313,12 @@ gatk_variantrecalibration_snv_tsfilter_level:
    - gatk_variantrecalibration
   data_type: SCALAR
   default: 99.9
+  type: program_argument
+gatk_variantrecalibration_trust_all_polymorphic:
+  associated_program:
+   - gatk_variantrecalibration
+  data_type: SCALAR
+  default: 0
   type: program_argument
 gatk_combinevariantcallsets:
   analysis_mode: family

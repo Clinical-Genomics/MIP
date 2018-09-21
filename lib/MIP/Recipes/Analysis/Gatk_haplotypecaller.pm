@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -149,7 +149,7 @@ sub analysis_gatk_haplotypecaller {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
       qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
@@ -163,10 +163,8 @@ sub analysis_gatk_haplotypecaller {
     use MIP::Set::File qw{ set_file_suffix };
 
     ## Constants
-    Readonly my $MITOCHONDRIA_PLOIDY           => 2;
-    Readonly my $JAVA_MEMORY_ALLOCATION        => 4;
+    Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
     Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
-    Readonly my $VARIANT_INDEX_PARAMETER       => 128_000;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -346,19 +344,10 @@ sub analysis_gatk_haplotypecaller {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number   => $core_number,
-            FILEHANDLE    => $FILEHANDLE,
-            file_path     => $file_path,
-            first_command => q{java},
-            java_jar      => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar}
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation  => q{Xmx8g},
+            core_number        => $core_number,
+            FILEHANDLE         => $FILEHANDLE,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
-            temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -399,19 +388,6 @@ sub analysis_gatk_haplotypecaller {
             }
         }
 
-        ## Special case for mitochondria
-        if ( $contig =~ /MT|M/xms ) {
-            $sample_ploidy = $MITOCHONDRIA_PLOIDY;
-        }
-
-        ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-        my %commands = gatk_pedigree_flag(
-            {
-                fam_file_path => $fam_file_path,
-                program_name  => $program_name,
-            }
-        );
-
         my $infile_path =
           $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
         my $outfile_path =
@@ -424,25 +400,28 @@ sub analysis_gatk_haplotypecaller {
                 annotations_ref =>
                   \@{ $active_parameter_href->{gatk_haplotypecaller_annotation}
                   },
-                dbsnp =>
+                dbsnp_path =>
                   $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 dont_use_soft_clipped_bases => $active_parameter_href
                   ->{gatk_haplotypecaller_no_soft_clipped_bases},
-                FILEHANDLE      => $XARGSFILEHANDLE,
-                infile_path     => $infile_path,
-                intervals_ref   => \@intervals,
-                logging_level   => $active_parameter_href->{gatk_logging_level},
-                outfile_path    => $outfile_path,
-                pcr_indel_model => $pcr_indel_model,
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
+                FILEHANDLE    => $XARGSFILEHANDLE,
+                infile_path   => $infile_path,
+                intervals_ref => \@intervals,
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                outfile_path      => $outfile_path,
+                pcr_indel_model   => $pcr_indel_model,
+                pedigree          => $fam_file_path,
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
                 sample_ploidy => $sample_ploidy,
                 standard_min_confidence_threshold_for_calling =>
                   $STANDARD_MIN_CONFIDENCE_THRSD,
-                stderrfile_path         => $stderrfile_path,
-                variant_index_parameter => $VARIANT_INDEX_PARAMETER,
+                stderrfile_path => $stderrfile_path,
+                temp_directory  => $temp_directory,
+                verbosity       => $active_parameter_href->{gatk_logging_level},
+                xargs_mode      => 1,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -593,7 +572,7 @@ sub analysis_gatk_haplotypecaller_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
@@ -736,15 +715,15 @@ sub analysis_gatk_haplotypecaller_rna {
         {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             core_number        => $core_number,
-            indirectory        => $insample_directory,
-            infile             => $infile_prefix,
-            FILEHANDLE         => $FILEHANDLE,
             file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
             file_path          => $file_path,
+            FILEHANDLE         => $FILEHANDLE,
+            indirectory        => $insample_directory,
+            infile             => $infile_prefix,
             program_info_path  => $program_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
             temp_directory     => $temp_directory,
+            xargs_file_counter => $xargs_file_counter,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
         }
     );
 
@@ -754,21 +733,12 @@ sub analysis_gatk_haplotypecaller_rna {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number   => $core_number,
-            FILEHANDLE    => $FILEHANDLE,
-            file_path     => $file_path,
-            first_command => q{java},
-            java_jar      => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar}
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            core_number        => $core_number,
+            file_path          => $file_path,
+            FILEHANDLE         => $FILEHANDLE,
             program_info_path  => $program_info_path,
-            temp_directory     => $temp_directory,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
         }
     );
 
@@ -776,14 +746,6 @@ sub analysis_gatk_haplotypecaller_rna {
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         my @intervals = ($contig);
-
-        ##   Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-        my %commands = gatk_pedigree_flag(
-            {
-                fam_file_path => $fam_file_path,
-                program_name  => $program_name,
-            }
-        );
 
         ## Set file paths for haplotypecaller
         my $infile_path =
@@ -798,7 +760,7 @@ sub analysis_gatk_haplotypecaller_rna {
                 annotations_ref =>
                   \@{ $active_parameter_href->{gatk_haplotypecaller_annotation}
                   },
-                dbsnp =>
+                dbsnp_path =>
                   $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 dont_use_soft_clipped_bases => $active_parameter_href
                   ->{gatk_haplotypecaller_no_soft_clipped_bases},
@@ -806,18 +768,21 @@ sub analysis_gatk_haplotypecaller_rna {
                 FILEHANDLE          => $XARGSFILEHANDLE,
                 infile_path         => $infile_path,
                 intervals_ref       => \@intervals,
-                logging_level   => $active_parameter_href->{gatk_logging_level},
-                outfile_path    => $outfile_path,
-                pcr_indel_model => $active_parameter_href
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                outfile_path      => $outfile_path,
+                pcr_indel_model   => $active_parameter_href
                   ->{gatk_haplotypecaller_pcr_indel_model},
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
+                pedigree => $fam_file_path,
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
                 standard_min_confidence_threshold_for_calling =>
                   $STANDARD_MIN_CONFIDENCE_THRSD,
-                stderrfile_path    => $stderrfile_path,
-                variant_index_type => 0,
+                stderrfile_path => $stderrfile_path,
+                temp_directory  => $temp_directory,
+                verbosity       => $active_parameter_href->{gatk_logging_level},
+                xargs_mode      => 1,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
