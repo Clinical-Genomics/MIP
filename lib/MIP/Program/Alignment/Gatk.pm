@@ -502,8 +502,9 @@ sub gatk_haplotypecaller {
             store       => \$read_filters_ref,
             strict_type => 1,
         },
-        temp_directory => {
-            store       => \$temp_directory,
+        referencefile_path => {
+            defined     => 1,
+            store       => \$referencefile_path,
             strict_type => 1,
         },
         sample_ploidy => {
