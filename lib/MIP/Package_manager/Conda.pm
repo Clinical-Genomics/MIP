@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use Getopt::Long;
 use IO::Handle;
 use Params::Check qw{ check allow last_error };
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -31,7 +30,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -325,17 +324,17 @@ sub conda_install {
 
 ##Function : Install packages into conda environment
 ##Returns  : @commands
-##Arguments: $conda_channel   => Search for packages in specified conda channel
-##         : $env_name        => Name of environment to create
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $no_confirmation => Do not ask for confirmation
-##         : $packages_ref    => Packages to be installed
-##         : $quiet           => Do not display progress bar
+##Arguments: $conda_channels_ref => Search for packages in specified conda channel {REF}
+##         : $env_name           => Name of environment to create
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $no_confirmation    => Do not ask for confirmation
+##         : $packages_ref       => Packages to be installed
+##         : $quiet              => Do not display progress bar
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $conda_channel;
+    my $conda_channels_ref;
     my $env_name;
     my $FILEHANDLE;
     my $no_confirmation;
@@ -343,10 +342,11 @@ sub conda_install {
     my $quiet;
 
     my $tmpl = {
-        conda_channel => {
+        conda_channels_ref => {
+            default     => [],
             defined     => 1,
             strict_type => 1,
-            store       => \$conda_channel,
+            store       => \$conda_channels_ref,
         },
         env_name => {
             default     => undef,
@@ -396,8 +396,10 @@ sub conda_install {
         push @commands, q{--yes};
     }
 
-    if ($conda_channel) {
-        push @commands, q{--channel} . $SPACE . $conda_channel;
+    if ( @{$conda_channels_ref} ) {
+        push @commands,
+          q{--channel} . $SPACE . join $SPACE . q{--channel} . $SPACE,
+          @{$conda_channels_ref};
     }
 
     push @commands, join $SPACE, @{$packages_ref};

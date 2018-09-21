@@ -157,10 +157,14 @@ Tools that have conflicting dependencies needs to be installed in separate conda
 
   * Genmod, Chanjo, Multiqc and Variant_integrity
     - requires python 3
+  * Freebayes  
+    - conda installs perl
   * Peddy
   * CNVnator  
     - Requires access to ROOT which disturbs the normal linking of C libraries  
   * SVDB  
+  * Tiddit  
+    - scipy conflicts
   * VEP
 
 
@@ -169,12 +173,12 @@ Tools that have conflicting dependencies needs to be installed in separate conda
   $ perl mip_install.pl -env mip_pyv3.6 --python_version 3.6 --select_program genmod --select_program chanjo --select_program variant_integrity --select_program multiqc
   $ bash mip.sh
 
+  ## Freebayes
+  $ perl mip_install.pl -env mip_freebayes --select_program freebayes
+  $ bash mip.sh
+  
   ## Peddy
   $ perl mip_install.pl -env mip_peddy --select_program peddy
-  $ bash mip.sh
-
-  ## CNVnator
-  $ perl mip_install.pl -env mip_cnvnator --select_program cnvnator
   $ bash mip.sh
 
   ## SVDB
@@ -184,6 +188,11 @@ Tools that have conflicting dependencies needs to be installed in separate conda
   ## VEP
   $ perl mip_install.pl -env mip_vep --select_program vep
   $ bash mip.sh
+  
+  ## CNVnator
+  $ perl mip_install.pl -env mip_cnvnator --select_program cnvnator
+  $ bash mip.sh
+
   ```
 
   In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator, SVDB and VEP in each own, with some extra initialization:
@@ -194,12 +203,15 @@ Tools that have conflicting dependencies needs to be installed in separate conda
   module_source_environment_command:
     pchanjo_sexcheck: "source activate mip_pyv3.6"
     pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
+    pfreebayes: "source activate mip_freebayes"
     pmultiqc: "source activate mip_pyv3.6"
     ppeddy: "source activate mip_peddy"
     prankvariant: "source activate mip_pyv3.6"
     psv_rankvariant: "source activate mip_pyv3.6"
     psv_combinevariantcallsets: "source activate mip_svdb"
+    psvdb: "source activate mip_tiddit"
     psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
+    ptiddit: "source activate mip_tiddit"
     pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
     pvariant_integrity: "source activate mip_pyv3.6"
   source_main_environment_commands:

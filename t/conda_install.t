@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{help};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.2';
+our $VERSION = '1.0.3';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -112,9 +112,9 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    conda_channel => {
-        input           => q{test-channel},
-        expected_output => q{--channel test-channel},
+    conda_channels_ref => {
+        inputs_ref      => [qw{ test-channel test-channel2 }],
+        expected_output => q{--channel test-channel --channel test-channel2},
     },
     env_name => {
         input           => q{test_env},
