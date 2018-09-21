@@ -16,7 +16,11 @@ open $FILEHANDLE, q{>}, \$file_content
     . $SPACE
     . $OS_ERROR;
 
-# Close the filehandle
+## Write to file
+my $base_command = q{samtools};
+say {$FILEHANDLE} $base_command;
+
+## Close the filehandle 
 close $FILEHANDLE;
 ```
 

@@ -22,7 +22,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(analysis_fastqc);
@@ -125,24 +125,44 @@ sub analysis_fastqc {
 
     check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{check_max_core_number};
-    use MIP::Cluster qw{update_core_number_to_seq_mode};
+    use MIP::Check::Cluster qw{ check_max_core_number };
+    use MIP::Cluster qw{ update_core_number_to_seq_mode };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::Gnu::Coreutils qw{gnu_cp};
-    use MIP::IO::Files qw{migrate_files};
-    use MIP::Processmanagement::Processes qw{print_wait};
+    use MIP::Gnu::Coreutils qw{ gnu_cp };
+    use MIP::IO::Files qw{ migrate_files };
+    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
-      qw{slurm_submit_job_no_dependency_dead_end};
-    use MIP::Program::Qc::Fastqc qw{fastqc};
-    use MIP::QC::Record qw{add_program_outfile_to_sample_info};
-    use MIP::Script::Setup_script qw{setup_script};
+      qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Program::Qc::Fastqc qw{ fastqc };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
+
+    ### PREPROCESSING:
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-    my @infiles = @{ $file_info_href->{$sample_id}{mip_infiles} };
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $indir_path_prefix         = $io{in}{dir_path_prefix};
+    my @infile_names              = @{ $io{in}{file_names} };
+    my @infile_name_prefixes      = @{ $io{in}{file_name_prefixes} };
+    my @temp_infile_paths         = @{ $io{temp}{file_paths} };
+    my @temp_infile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
 
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
@@ -152,15 +172,38 @@ sub analysis_fastqc {
         }
       );
 
-    ## Filehandles
-    # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
-    ## Directories
-    my $insample_directory = $file_info_href->{$sample_id}{mip_infiles_dir};
+    ## Outpaths
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );
+    my @outfile_paths =
+      map {
+        catdir( $outsample_directory, $_ . $UNDERSCORE . $program_name,
+            q{fastqc_data.txt} )
+      } @infile_name_prefixes;
+
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id       => $job_id_chain,
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                file_paths_ref => \@outfile_paths,
+                parameter_href => $parameter_href,
+                program_name   => $program_name,
+                temp_directory => $temp_directory,
+            }
+        )
+    );
+
+    my $outdir_path_prefix = $io{out}{dir_path_prefix};
+    @outfile_paths = @{ $io{out}{file_paths} };
+
+    ## Filehandles
+    # Create anonymous filehandle
+    my $FILEHANDLE = IO::Handle->new();
 
   INFILE_LANE:
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
@@ -201,16 +244,15 @@ sub analysis_fastqc {
         }
     );
 
-    ## Assign suffix
-    my $infile_suffix = $parameter_href->{$program_name}{infile_suffix};
+    ### SHELL:
 
     ## Copies files from source to destination
     migrate_files(
         {
             core_number  => $core_number,
             FILEHANDLE   => $FILEHANDLE,
-            indirectory  => $insample_directory,
-            infiles_ref  => \@infiles,
+            indirectory  => $indir_path_prefix,
+            infiles_ref  => \@infile_names,
             outfile_path => $temp_directory,
         }
     );
@@ -219,7 +261,7 @@ sub analysis_fastqc {
 
     my $process_batches_count = 1;
 
-    while ( my ( $index, $infile ) = each @infiles ) {
+    while ( my ( $index, $infile ) = each @infile_names ) {
 
         $process_batches_count = print_wait(
             {
@@ -230,15 +272,11 @@ sub analysis_fastqc {
             }
         );
 
-        ## Removes ".file_ending" in filename.FILENDING(.gz)
-        my $file_at_lane_level =
-          fileparse( $infile, qr/$infile_suffix|$infile_suffix[.]gz/sxm );
-
         fastqc(
             {
                 extract           => 1,
                 FILEHANDLE        => $FILEHANDLE,
-                infile_path       => catfile( $temp_directory, $infile ),
+                infile_path       => $temp_infile_paths[$index],
                 outdirectory_path => $temp_directory,
             }
         );
@@ -247,16 +285,10 @@ sub analysis_fastqc {
         ## Collect QC metadata info for active program for later use
         if ( $program_mode == 1 ) {
 
-            my $qc_fastqc_outdirectory =
-              catdir( $outsample_directory,
-                $file_at_lane_level . $UNDERSCORE . $program_name );
             add_program_outfile_to_sample_info(
                 {
-                    infile       => $infile,
-                    outdirectory => $qc_fastqc_outdirectory,
-                    outfile      => q{fastqc_data.txt},
-                    path =>
-                      catfile( $qc_fastqc_outdirectory, q{fastqc_data.txt} ),
+                    infile           => $infile,
+                    path             => $outfile_paths[$index],
                     program_name     => $program_name,
                     sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,
@@ -268,7 +300,7 @@ sub analysis_fastqc {
 
     ## Copies files from temporary folder to source.
     $process_batches_count = 1;
-    while ( my ( $index, $infile ) = each @infiles ) {
+    while ( my ( $index, $infile ) = each @infile_names ) {
 
         $process_batches_count = print_wait(
             {
@@ -279,17 +311,13 @@ sub analysis_fastqc {
             }
         );
 
-        ## Removes ".file_ending" in filename.FILENDING(.gz)
-        my $file_at_lane_level =
-          fileparse( $infile, qr/$infile_suffix|$infile_suffix[.]gz/sxm );
-
-        my $infile_path = catfile( $temp_directory,
-            $file_at_lane_level . $UNDERSCORE . $program_name );
         gnu_cp(
             {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $infile_path,
-                outfile_path => $outsample_directory,
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $temp_infile_path_prefixes[$index]
+                  . $UNDERSCORE
+                  . $program_name,
+                outfile_path => $outdir_path_prefix,
                 recursive    => 1,
             }
         );

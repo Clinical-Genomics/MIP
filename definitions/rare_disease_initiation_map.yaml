@@ -33,7 +33,7 @@ CHAIN_ALL:
             - expansionhunter
             - manta
             - tiddit
-            - PDELLY_CALL:
+            - DELLY_CALL:
                - delly_call
                - delly_reformat
          - sv_combinevariantcallsets

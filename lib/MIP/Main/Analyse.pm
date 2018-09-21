@@ -94,7 +94,6 @@ sub mip_analyse {
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $file_info_href        => File info hash {REF}
 #           : $order_parameters_ref  => Order of addition to parameter array {REF}
-##          : $order_programs_ref    => Order of programs {REF}
 ##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
@@ -103,7 +102,6 @@ sub mip_analyse {
     my $active_parameter_href;
     my $file_info_href;
     my $order_parameters_ref;
-    my $order_programs_ref;
     my $parameter_href;
 
     my $tmpl = {
@@ -128,13 +126,6 @@ sub mip_analyse {
             store       => \$order_parameters_ref,
             strict_type => 1,
         },
-        order_programs_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$order_programs_ref,
-            strict_type => 1,
-        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -153,7 +144,6 @@ sub mip_analyse {
     my @broadcasts;
     my %file_info        = %{$file_info_href};
     my @order_parameters = @{$order_parameters_ref};
-    my @order_programs   = @{$order_programs_ref};
     my %parameter        = %{$parameter_href};
 
 #### Script parameters
@@ -680,8 +670,9 @@ sub mip_analyse {
         {
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
-            order_programs_ref    => \@order_programs,
-            parameter_href        => \%parameter,
+            order_programs_ref =>
+              \@{ $parameter{dynamic_parameter}{order_programs_ref} },
+            parameter_href => \%parameter,
         }
     );
 
@@ -691,7 +682,7 @@ sub mip_analyse {
             parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
             sample_info_href      => \%sample_info,
-            execution_mode        => 'system',
+            execution_mode        => q{system},
             fam_file_path         => catfile(
                 $active_parameter{outdata_dir},
                 $active_parameter{family_id},
@@ -729,9 +720,10 @@ sub mip_analyse {
                 job_id_href                     => \%job_id,
                 log                             => $log,
                 order_parameters_ref            => \@order_parameters,
-                order_programs_ref              => \@order_programs,
-                parameter_href                  => \%parameter,
-                sample_info_href                => \%sample_info,
+                order_programs_ref =>
+                  \@{ $parameter{dynamic_parameter}{order_programs_ref} },
+                parameter_href   => \%parameter,
+                sample_info_href => \%sample_info,
             }
         );
     }
@@ -751,9 +743,10 @@ sub mip_analyse {
                 job_id_href             => \%job_id,
                 log                     => $log,
                 order_parameters_ref    => \@order_parameters,
-                order_programs_ref      => \@order_programs,
-                parameter_href          => \%parameter,
-                sample_info_href        => \%sample_info,
+                order_programs_ref =>
+                  \@{ $parameter{dynamic_parameter}{order_programs_ref} },
+                parameter_href   => \%parameter,
+                sample_info_href => \%sample_info,
             }
         );
     }
@@ -777,7 +770,8 @@ sub mip_analyse {
                 job_id_href                     => \%job_id,
                 log                             => $log,
                 order_parameters_ref            => \@order_parameters,
-                order_programs_ref              => \@order_programs,
+                order_programs_ref =>
+                  \@{ $parameter{dynamic_parameter}{order_programs_ref} },
                 outaligner_dir   => $active_parameter{outaligner_dir},
                 parameter_href   => \%parameter,
                 sample_info_href => \%sample_info,
