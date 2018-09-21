@@ -249,10 +249,10 @@ sub analysis_gatk_baserecalibration {
         )
     );
 
-    my $outdir_path_prefix    = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix   = $io{out}{file_name_prefix};
-    my $temp_file_path_prefix = $io{temp}{file_path_prefix};
-    my @temp_outfile_paths    = @{ $io{temp}{file_paths} };
+    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix      = $io{out}{file_name_prefix};
+    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my @temp_outfile_paths       = @{ $io{temp}{file_paths} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -525,11 +525,16 @@ sub analysis_gatk_baserecalibration {
     ## Gather BAM files
     say {$FILEHANDLE} q{## Gather BAM files};
 
+    ## Assemble infile paths in contig order and not per size
+    my @gather_infile_paths =
+      map { catdir( $temp_outfile_path_prefix . $DOT . $_ . $outfile_suffix ) }
+      @{ $file_info_href->{contigs} };
+
     picardtools_gatherbamfiles(
         {
             create_index     => q{true},
             FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => \@temp_outfile_paths,
+            infile_paths_ref => \@gather_infile_paths,
             java_jar         => catfile(
                 $active_parameter_href->{picardtools_path},
                 q{picard.jar}
@@ -537,7 +542,7 @@ sub analysis_gatk_baserecalibration {
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             memory_allocation  => q{Xmx4g},
-            outfile_path       => $temp_file_path_prefix . $outfile_suffix,
+            outfile_path       => $temp_outfile_path_prefix . $outfile_suffix,
             referencefile_path => $referencefile_path,
             temp_directory     => $temp_directory,
         }
@@ -549,7 +554,7 @@ sub analysis_gatk_baserecalibration {
     migrate_file(
         {
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_name_prefix
+            infile_path => $temp_outfile_path_prefix
               . substr( $outfile_suffix, 0, 2 )
               . $ASTERIX,
             outfile_path => $outdir_path_prefix,
@@ -754,10 +759,11 @@ sub analysis_gatk_baserecalibration_rio {
             temp_directory => $temp_directory,
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my @temp_infile_paths  = @{ $io{temp}{file_paths} };
+    my $indir_path_prefix       = $io{in}{dir_path_prefix};
+    my $infile_suffix           = $io{in}{file_suffix};
+    my $infile_name_prefix      = $io{in}{file_name_prefix};
+    my $temp_infile_name_prefix = $io{temp}{file_name_prefix};
+    my @temp_infile_paths       = @{ $io{temp}{file_paths} };
 
     my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $program_mode       = $active_parameter_href->{$program_name};
@@ -816,11 +822,10 @@ sub analysis_gatk_baserecalibration_rio {
         )
     );
 
-    my $outdir_path_prefix      = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix     = $io{out}{file_name_prefix};
-    my $temp_infile_name_prefix = $io{temp}{file_name_prefix};
-    my $temp_file_path_prefix   = $io{temp}{file_path_prefix};
-    my @temp_outfile_paths      = @{ $io{temp}{file_paths} };
+    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix      = $io{out}{file_name_prefix};
+    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my @temp_outfile_paths       = @{ $io{temp}{file_paths} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -1069,11 +1074,16 @@ sub analysis_gatk_baserecalibration_rio {
     ## Gather BAM files
     say {$FILEHANDLE} q{## Gather BAM files};
 
+    ## Assemble infile paths in contig order and not per size
+    my @gather_infile_paths =
+      map { catdir( $temp_outfile_path_prefix . $DOT . $_ . $outfile_suffix ) }
+      @{ $file_info_href->{contigs} };
+
     picardtools_gatherbamfiles(
         {
             create_index     => q{true},
             FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => \@temp_outfile_paths,
+            infile_paths_ref => \@gather_infile_paths,
             java_jar         => catfile(
                 $active_parameter_href->{picardtools_path},
                 q{picard.jar}
@@ -1081,7 +1091,7 @@ sub analysis_gatk_baserecalibration_rio {
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             memory_allocation  => q{Xmx4g},
-            outfile_path       => $temp_file_path_prefix . $outfile_suffix,
+            outfile_path       => $temp_outfile_path_prefix . $outfile_suffix,
             referencefile_path => $referencefile_path,
             temp_directory     => $temp_directory,
         }
@@ -1093,7 +1103,7 @@ sub analysis_gatk_baserecalibration_rio {
     migrate_file(
         {
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_name_prefix
+            infile_path => $temp_outfile_path_prefix
               . substr( $outfile_suffix, 0, 2 )
               . $ASTERIX,
             outfile_path => $outdir_path_prefix,
