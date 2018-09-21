@@ -145,7 +145,7 @@ $ bash mip.sh
 A conda environment will be created where MIP with most of its dependencies will be installed.
 
 ###### *Note:*
-  - Some references are quite large and will take time to download. You might want to run this using screen or tmux.
+  Some references are quite large and will take time to download. You might want to run this using screen or tmux. Alternatively, the installation script can be submitted as a sbatch job if the flag ``--sbatch_mode`` is used when generating the installation script.
 
 ##### 6.Test your MIP installation (optional)
 
