@@ -6,7 +6,7 @@ requires qw{ Archive::Zip 1.59 };               # VEP
 requires qw{ Array::Utils 0.5 };                # MIP
 requires qw{ Bio::Root::Version 1.007002 };     # VEP
 requires qw{ CGI 4.37 };                        # VEP
-requires qw{ DBD::mysql 4.043 };                # VEP
+requires 'DBD::mysql', '= 4.043';               # VEP
 requires qw{ DBI 1.637 };                       # VEP
 requires qw{ File::Copy::Recursive 0.38 };      # VEP
 requires qw{ HTML::Lint 2.26 };                 # VEP
