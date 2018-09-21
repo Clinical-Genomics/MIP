@@ -630,7 +630,6 @@ sub _set_io_files_constant {
         file_name_prefixes => q{file_name_prefix},
         file_path_prefixes => q{file_path_prefix},
         file_suffixes      => q{file_constant_suffix},
-        dir_path_prefixes  => q{dir_path_prefix},
     );
 
     while ( my ( $file_feature, $file_constant_feature ) = each %constant_map )
