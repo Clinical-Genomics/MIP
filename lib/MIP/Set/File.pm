@@ -4,7 +4,8 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd qw(abs_path);
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Basename qw{ basename dirname fileparse };
+use File::Spec::Functions qw{ catdir catfile splitpath };
 use Params::Check qw{ check allow last_error };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
@@ -14,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { any };
+use List::MoreUtils qw { any uniq };
 use Readonly;
 
 BEGIN {
@@ -27,7 +28,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_absolute_path set_file_compression_features set_file_prefix_tag set_file_suffix set_infiles set_merged_infile_prefix };
+      qw{ set_absolute_path set_file_compression_features set_file_prefix_tag set_file_suffix set_infiles set_io_files set_merged_infile_prefix };
 }
 
 ## Constants
@@ -379,6 +380,153 @@ sub set_infiles {
     return;
 }
 
+sub set_io_files {
+
+## Function : Set the io files per chain and stream
+## Returns  : io
+## Arguments: $chain_id       => Chain of recipe
+##          : $id             => Id (sample or family)
+##          : $file_info_href => File info hash {REF}
+##          : $file_paths_ref => File paths {REF}
+##          : $stream         => Stream (in or out or temp)
+##          : $temp_directory => Temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $file_paths_ref;
+    my $program_name;
+    my $stream;
+    my $temp_directory;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$file_paths_ref,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in temp out }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Delete previous record (if any)
+    delete $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream};
+
+  FILE_PATH:
+    foreach my $file_path ( @{$file_paths_ref} ) {
+
+        my ( $file_name_prefix, $dirs, $suffix ) =
+          fileparse( $file_path, qr/([.][^.]*)*/sxm );
+
+        push @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_names} },
+          basename($file_path);
+        push
+          @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_name_prefixes} }, $file_name_prefix;
+        push @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_paths} },
+          $file_path;
+        push
+          @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_path_prefixes} }, catfile( $dirs, $file_name_prefix );
+
+        ## Collect everything after first dot
+        push @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_suffixes} },
+          $suffix;
+    }
+
+    ## Split relative infile_path to file(s)
+    my ( $infile_path_volume, $file_path_directory, $file_path_file_name ) =
+      splitpath( $file_paths_ref->[0] );
+
+    $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}{dir_path} =
+      $file_path_directory;
+    $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+      {dir_path_prefix} = dirname( $file_paths_ref->[0] );
+
+    ## Collect everything after last dot
+    my ( $filename, $dirs, $suffix ) =
+      fileparse( $file_paths_ref->[0], qr/[.][^.]*/sxm );
+    $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}{file_suffix}
+      = $suffix;
+
+    _set_io_files_constant(
+        {
+            chain_id       => $chain_id,
+            file_info_href => $file_info_href,
+            id             => $id,
+            program_name   => $program_name,
+            stream         => $stream,
+        }
+    );
+
+    ## Also set the temporary file features for stream
+    if ($temp_directory) {
+
+        ## Switch to temp dir for path
+        my @file_paths_temp =
+          map { catfile( $temp_directory, $_ ) }
+          @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {file_names} };
+
+        set_io_files(
+            {
+                chain_id       => $chain_id,
+                id             => $id,
+                file_paths_ref => \@file_paths_temp,
+                file_info_href => $file_info_href,
+                program_name   => $program_name,
+                stream         => q{temp},
+            }
+        );
+        return;
+    }
+    return;
+}
+
 sub set_merged_infile_prefix {
 
 ## Function : Set the merged infile prefix for sample id
@@ -420,6 +568,90 @@ sub set_merged_infile_prefix {
 
     $file_info_href->{$sample_id}{merged_infile} = $merged_infile_prefix;
 
+    return;
+}
+
+sub _set_io_files_constant {
+
+## Function : Set the io files per chain and stream for constant features
+## Returns  : io
+## Arguments: $chain_id       => Chain of recipe
+##          : $id             => Id (sample or family)
+##          : $file_info_href => File info hash {REF}
+##          : $stream         => Stream (in or out or temp)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $program_name;
+    my $stream;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in temp out }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %constant_map = (
+        file_name_prefixes => q{file_name_prefix},
+        file_path_prefixes => q{file_path_prefix},
+        file_suffixes      => q{file_constant_suffix},
+        dir_path_prefixes  => q{dir_path_prefix},
+    );
+
+    while ( my ( $file_feature, $file_constant_feature ) = each %constant_map )
+    {
+
+        ## Get unique suffixes
+        my @uniq_elements = uniq(
+            @{
+                $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+                  {$file_feature}
+            }
+        );
+
+        ## If unique
+        if ( scalar @uniq_elements == 1 ) {
+
+            ## Set file constant suffix
+            $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
+              {$file_constant_feature} = $uniq_elements[0];
+        }
+    }
     return;
 }
 

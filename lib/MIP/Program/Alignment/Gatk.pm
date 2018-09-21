@@ -70,6 +70,7 @@ sub gatk_baserecalibrator {
     my $outfile_path;
     my $read_filters_ref;
     my $referencefile_path;
+    my $static_quantized_quals_ref;
     my $stderrfile_path;
     my $temp_directory;
 
@@ -122,8 +123,12 @@ sub gatk_baserecalibrator {
         },
         referencefile_path => {
             defined     => 1,
-            required    => 1,
             store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        static_quantized_quals_ref => {
+            default     => [],
+            store       => \$static_quantized_quals_ref,
             strict_type => 1,
         },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
@@ -497,10 +502,8 @@ sub gatk_haplotypecaller {
             store       => \$read_filters_ref,
             strict_type => 1,
         },
-        referencefile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$referencefile_path,
+        temp_directory => {
+            store       => \$temp_directory,
             strict_type => 1,
         },
         sample_ploidy => {

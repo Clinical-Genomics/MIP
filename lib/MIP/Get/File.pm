@@ -30,6 +30,7 @@ BEGIN {
       get_fastq_file_header_info
       get_files
       get_file_suffix
+      get_io_files
       get_matching_values_key
       get_merged_infile_prefix
       get_path_entries
@@ -358,6 +359,182 @@ sub get_file_suffix {
         exit 1;
     }
     return;
+}
+
+sub get_io_files {
+
+## Function : Get the io files per chain, id and stream
+## Returns  : %io
+## Arguments: $id             => Id (sample or family)
+##          : $file_info_href => File info hash {REF}
+##          : $parameter_href => Parameter hash {REF}
+##          : $program_name   => Program name
+##          : $stream         => Stream (in or out or temp)
+##          : $temp_directory => Temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $id;
+    my $file_info_href;
+    my $parameter_href;
+    my $program_name;
+    my $stream;
+    my $temp_directory;
+
+    my $tmpl = {
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in temp out }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Avoid autovivification of variable
+    use Data::Diver qw{ Dive };
+    use List::MoreUtils qw{ before };
+    use MIP::Set::File qw{ set_io_files };
+
+    ## Constants
+    Readonly my $CHAIN_MAIN => q{CHAIN_MAIN};
+
+    ## Unpack
+    my $chain_id = $parameter_href->{$program_name}{chain};
+
+    ## Not first in chain - return file features
+    if (
+        Dive(
+            $file_info_href, ( q{io}, $chain_id, $id, $program_name, $stream )
+        )
+      )
+    {
+
+        return %{ $file_info_href->{io}{$chain_id}{$id}{$program_name} };
+    }
+    else {
+        ## First in chain - need to find out stream file features of
+        ## correct upstream program
+
+        my $upstream_direction = q{out};
+
+        ## Unpack
+        my @order_programs =
+          @{ $parameter_href->{dynamic_parameter}{order_programs_ref} };
+
+        ## Find upstream programs starting from (and not including) program_name
+        my @upstream_programs =
+          reverse before { $_ eq $program_name } @order_programs;
+
+      UPSTREAM_PROGRAM:
+        foreach my $upstream_program (@upstream_programs) {
+
+            # Get chain id
+            my $upstream_chain_id = $parameter_href->{$upstream_program}{chain};
+
+            ## No io file features found in chain and stream
+            next UPSTREAM_PROGRAM
+              if (
+                not Dive(
+                    $file_info_href,
+                    (
+                        q{io}, $upstream_chain_id,
+                        $id,   $upstream_program,
+                        $upstream_direction
+                    )
+                )
+              );
+
+            ## Do not inherit from other chains than MAIN
+            next UPSTREAM_PROGRAM if ( $upstream_chain_id ne q{MAIN} );
+
+            ## Found io file features found in chain, id, program and stream
+            if (
+                Dive(
+                    $file_info_href,
+                    (
+                        q{io}, $upstream_chain_id,
+                        $id,   $upstream_program,
+                        $upstream_direction
+                    )
+                )
+              )
+            {
+
+                ## Switch upstream out to program in - i.e. inherit from upstream
+                my @upstream_outfile_paths =
+                  @{ $file_info_href->{io}{$upstream_chain_id}{$id}
+                      {$upstream_program}{$upstream_direction}{file_paths} };
+                set_io_files(
+                    {
+                        chain_id       => $chain_id,
+                        id             => $id,
+                        file_paths_ref => \@upstream_outfile_paths,
+                        file_info_href => $file_info_href,
+                        program_name   => $program_name,
+                        stream         => $stream,
+                        temp_directory => $temp_directory,
+                    }
+                );
+
+                ##  Return set file features
+                return %{ $file_info_href->{io}{$chain_id}{$id}{$program_name}
+                };
+            }
+        }
+    }
+
+    ## At root of initation map - add base
+    # Build infiles path
+    my @base_file_paths =
+      map { catfile( $file_info_href->{$id}{mip_infiles_dir}, $_ ) }
+      @{ $file_info_href->{$id}{mip_infiles} };
+
+    set_io_files(
+        {
+            chain_id       => $CHAIN_MAIN,
+            id             => $id,
+            file_paths_ref => \@base_file_paths,
+            file_info_href => $file_info_href,
+            program_name   => $program_name,
+            stream         => $stream,
+            temp_directory => $temp_directory,
+        }
+    );
+    return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id}{$program_name} };
 }
 
 sub get_matching_values_key {

@@ -176,8 +176,6 @@ sub analysis_gatk_variantrecalibration_wgs {
       $active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians};
     my $enable_snv_max_gaussians_filter =
       $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
-    my $gatk_jar =
-      catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
     my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $resource_indel_href =
@@ -693,8 +691,6 @@ sub analysis_gatk_variantrecalibration_wes {
       $active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians};
     my $enable_snv_max_gaussians_filter =
       $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
-    my $gatk_jar =
-      catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
     my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $resource_indel_href =
@@ -1124,4 +1120,3 @@ sub _build_gatk_resource_command {
 }
 
 1;
-

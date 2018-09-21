@@ -6,11 +6,12 @@ use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
 use FindBin qw{ $Bin };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catfile catdir devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
+use Time::Piece;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -28,22 +29,32 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ create_bash_file build_shebang
-      create_housekeeping_function create_error_trap_function
-      enable_trap clear_trap track_progress quote_bash_variable check_exist_and_move_file };
+    our @EXPORT_OK = qw{
+      build_shebang
+      check_exist_and_move_file
+      clear_trap
+      create_bash_file
+      create_error_trap_function
+      create_housekeeping_function
+      enable_trap
+      quote_bash_variable
+      track_progress
+    };
 }
 
 ## Constants
 Readonly my $AMPERSAND    => q{&};
 Readonly my $COMMA        => q{,};
+Readonly my $DOT          => q{.};
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $PIPE         => q{|};
 Readonly my $SINGLE_QUOTE => q{'};
 Readonly my $SPACE        => q{ };
 Readonly my $TAB          => qq{\t};
+Readonly my $UNDERSCORE   => q{_};
 
 sub create_bash_file {
 
@@ -54,6 +65,8 @@ sub create_bash_file {
 ##          : $remove_dir         => Directory to remove when caught by trap function
 ##          : $log                => Log object to write to
 ##          : $invoke_login_shell => Invoked as a login shell. Reinitilize bashrc and bash_profile
+##          : $parameter_href     => Master hash, used when running in sbatch mode {REF}
+##          : $sbatch_mode        => Create headers for sbatch submission;
 ##          : $set_errexit        => Halt script if command has non-zero exit code (-e)
 ##          : $set_nounset        => Halt script if variable is uninitialised (-u)
 ##          : $set_pipefail       => Detect errors within pipes (-o pipefail)
@@ -63,6 +76,7 @@ sub create_bash_file {
     ## Flatten argument(s)
     my $file_name;
     my $FILEHANDLE;
+    my $parameter_href;
     my $remove_dir;
     my $log;
 
@@ -71,54 +85,84 @@ sub create_bash_file {
     my $set_errexit;
     my $set_nounset;
     my $set_pipefail;
+    my $sbatch_mode;
 
     my $tmpl = {
-        file_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_name,
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
         },
-        FILEHANDLE => { required => 1, store => \$FILEHANDLE, },
-        log        => { store    => \$log, },
-        remove_dir => {
-            allow       => qr/ ^\S+$ /xsm,
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
             strict_type => 1,
-            store       => \$remove_dir,
         },
         invoke_login_shell => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$invoke_login_shell,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        remove_dir => {
+            allow       => qr/ ^\S+$ /xsm,
+            store       => \$remove_dir,
+            strict_type => 1,
+        },
+        sbatch_mode => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$sbatch_mode,
+            strict_type => 1,
         },
         set_errexit => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$set_errexit,
+            strict_type => 1,
         },
         set_nounset => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$set_nounset,
+            strict_type => 1,
         },
         set_pipefail => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$set_pipefail,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Gnu::Bash qw{ gnu_set };
+    use MIP::Workloadmanager::Slurm qw{ slurm_build_sbatch_header };
+
+    ## Set $bash_bin_path default
+    my $bash_bin_path =
+      catfile( dirname( dirname( devnull() ) ), qw{ usr bin env bash } );
+
+    if ($sbatch_mode) {
+        $bash_bin_path =
+          catfile( dirname( dirname( devnull() ) ), qw{ bin bash } );
+    }
 
     ## Build bash shebang line
     build_shebang(
         {
+            bash_bin_path      => $bash_bin_path,
             FILEHANDLE         => $FILEHANDLE,
             invoke_login_shell => $invoke_login_shell,
         }
@@ -134,12 +178,58 @@ sub create_bash_file {
         }
     );
 
+    if ($sbatch_mode) {
+
+        ## Check that a project id has been set
+        if ( not $parameter_href->{project_id} ) {
+            $log->fatal(
+q{The parameter "project_id" must be set when a sbatch installation has been requested}
+            );
+            $log->fatal(
+q{It is also recommended that the parameter "process_time" has been set to an approrpriate time (default: 2-00:00:00)}
+            );
+            exit 1;
+        }
+
+        ## Get local time
+        my $date_time       = localtime;
+        my $date_time_stamp = $date_time->datetime;
+
+        ## Get bash_file_name minus suffix and add time stamp.
+        my $job_name =
+            fileparse( $file_name, qr/\.[^.]*/xms )
+          . $UNDERSCORE
+          . $date_time_stamp;
+
+        ## Set STDERR/STDOUT paths
+        my $stderrfile_path =
+          catfile( cwd(), $job_name . $DOT . q{stderr.txt} );
+        my $stdoutfile_path =
+          catfile( cwd(), $job_name . $DOT . q{stdout.txt} );
+
+        slurm_build_sbatch_header(
+            {
+                core_number     => $parameter_href->{core_number},
+                email           => $parameter_href->{email},
+                email_types_ref => $parameter_href->{email_types},
+                FILEHANDLE      => $FILEHANDLE,
+                job_name        => $job_name,
+                process_time    => $parameter_href->{process_time},
+                project_id      => $parameter_href->{project_id},
+                slurm_quality_of_service =>
+                  $parameter_href->{slurm_quality_of_service},
+                stderrfile_path => $stderrfile_path,
+                stdoutfile_path => $stdoutfile_path,
+            }
+        );
+    }
+
     ## Create housekeeping function which removes entire directory when finished
     create_housekeeping_function(
         {
+            FILEHANDLE         => $FILEHANDLE,
             remove_dir         => $remove_dir,
             trap_function_name => q{finish},
-            FILEHANDLE         => $FILEHANDLE,
         }
     );
 
@@ -147,24 +237,16 @@ sub create_bash_file {
     enable_trap(
         {
             FILEHANDLE         => $FILEHANDLE,
-            trap_signals_ref   => [qw{ DEBUG }],
             trap_function_call => q{previous_command="$BASH_COMMAND"},
+            trap_signals_ref   => [qw{ DEBUG }],
         }
     );
 
     ## Create error handling function and trap
     create_error_trap_function( { FILEHANDLE => $FILEHANDLE, } );
 
-    if ( defined $log && $log ) {
+    $log->info( q{Created bash file: '} . catfile($file_name), $SINGLE_QUOTE );
 
-        $log->info( q{Created bash file: '} . catfile($file_name),
-            $SINGLE_QUOTE );
-    }
-    else {
-
-        say {*STDERR} q{Created bash file: '} . catfile($file_name),
-          $SINGLE_QUOTE;
-    }
     return;
 }
 

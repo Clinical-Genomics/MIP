@@ -97,6 +97,9 @@ log_file: ~
 # Skip updating existing packages
 noupdate: 0
 
+## Which pipeline are these instructions for
+pipeline: rna
+
 # Prefer installation via shell instead of via conda,
 # only applicaple for shell programs that overlap with existing conda packages
 prefer_shell: 0
@@ -114,6 +117,16 @@ reference_dir: ~
 reference_genome_versions:
   - GRCh37
   - hg38
+
+## Sbath options
+core_number: 1
+email:
+email_types:
+  - FAIL
+process_time: 2-00:00:00
+project_id:
+sbatch_mode: 0
+slurm_quality_of_service: low
 
 # Select programs to install, skip the rest
 select_programs: []

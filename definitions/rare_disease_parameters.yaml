@@ -40,7 +40,7 @@ gatk_bundle_download_version:
    - cnvnator
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
-   - gatk_gathervcfs 
+   - gatk_gathervcfs
    - bcftools_mpileup
    - gatk_variantrecalibration
    - gatk_variantevalall
@@ -74,13 +74,9 @@ gatk_logging_level:
   type: program_argument
 gatk_path:
   associated_program:
-   - bcftools_mpileup
-   - gatk_variantrecalibration
    - gatk_combinevariantcallsets
    - gatk_variantevalall
    - gatk_variantevalexome
-   - varianteffectpredictor
-   - rankvariant
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -228,7 +224,7 @@ module_time:
     delly_reformat: 7
     endvariantannotationblock: 2
     evaluation: 1
-    expansionhunter: 1
+    expansionhunter: 2
     fastqc: 10
     freebayes: 30
     frequency_filter: 2
@@ -530,7 +526,7 @@ samtools_subsample_mt:
   default: 1
   file_tag: _subsample_MT
   outfile_suffix: ".bam"
-  program_name_path: 
+  program_name_path:
    - samtools
   type: program
 samtools_subsample_mt_depth:
@@ -711,7 +707,7 @@ delly_types:
   type: program_argument
 expansionhunter:
   analysis_mode: sample
-  associated_program:  
+  associated_program:
    - mip
   data_type: SCALAR
   default: 1

@@ -3,7 +3,7 @@ package MIP::Parse::File;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -24,7 +24,8 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ parse_fastq_infiles parse_fastq_infiles_format };
+    our @EXPORT_OK =
+      qw{ parse_fastq_infiles parse_fastq_infiles_format parse_io_outfiles };
 
 }
 
@@ -320,6 +321,142 @@ sub parse_fastq_infiles_format {
         $file_info{$feature} = $file_features[$index];
     }
     return %file_info;
+}
+
+sub parse_io_outfiles {
+
+## Function : Set and get the io files per chain, id and stream
+## Returns  : %io
+## Arguments: $chain_id               => Chain of recipe
+##          : $id                     => Id (sample or family)
+##          : $file_info_href         => File info hash {REF}
+##          : $file_name_prefixes_ref => Build outfile using file name prefixes
+##          : $file_paths_ref         => File paths {REF}
+##          : $outdata_dir            => Outdata directory
+##          : $parameter_href         => Parameter hash {REF}
+##          : $program_name           => Program name
+##          : $stream                 => Stream (out)
+##          : $temp_directory         => Temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $file_name_prefixes_ref;
+    my $file_paths_ref;
+    my $outdata_dir;
+    my $parameter_href;
+    my $program_name;
+    my $temp_directory;
+
+    ## Default(s)
+    my $stream;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_name_prefixes_ref => {
+            default     => [],
+            store       => \$file_name_prefixes_ref,
+            strict_type => 1,
+        },
+        file_paths_ref => {
+            default     => [],
+            store       => \$file_paths_ref,
+            strict_type => 1,
+        },
+        outdata_dir => {
+            store       => \$outdata_dir,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ out }],
+            default     => q{out},
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Set::File qw{ set_io_files };
+
+    my @file_paths = @{$file_paths_ref};
+
+    ## Build default @file_paths
+    if ( not @file_paths and $outdata_dir ) {
+
+        my $outfile_tag = $parameter_href->{$program_name}{file_tag} //=
+          $EMPTY_STR;
+        my $outfile_suffix =
+          $parameter_href->{$program_name}{outfile_suffix} //= $EMPTY_STR;
+        my $directory = catdir( $outdata_dir, $id, $program_name );
+        @file_paths =
+          map { catfile( $directory, $_ . $outfile_tag . $outfile_suffix ) }
+          @{$file_name_prefixes_ref};
+
+    }
+    ## Set the io files per chain and stream
+    set_io_files(
+        {
+            chain_id       => $chain_id,
+            id             => $id,
+            file_paths_ref => \@file_paths,
+            file_info_href => $file_info_href,
+            program_name   => $program_name,
+            stream         => $stream,
+            temp_directory => $temp_directory,
+        }
+    );
+
+    my %io = get_io_files(
+        {
+            id             => $id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => $stream,
+        }
+    );
+
+    return %io;
 }
 
 1;

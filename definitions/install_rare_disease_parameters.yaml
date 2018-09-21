@@ -12,7 +12,7 @@ conda_update: 0
 # Disable environment check
 disable_env_check: 0
 
-# MIP main environment spec 
+# MIP main environment spec
 emip:
   conda:
     bcftools: 1.6
@@ -30,7 +30,7 @@ emip:
     gcc: 4.8.5
     htslib: 1.6
     manta: 1.1.0
-    numpy: 
+    numpy:
     picard: 2.14.1
     pip:
     plink2: 1.90b3.35
@@ -106,14 +106,14 @@ efreebayes:
     pip:
     python: 2.7
   pip:
-  shell: 
+  shell:
 
 # Peddy environment spec
 epeddy:
   conda:
     bcftools: 1.6
     peddy: 0.3.1
-    pip: 
+    pip:
     python: 2.7
   pip:
   shell:
@@ -121,9 +121,9 @@ epeddy:
 # Python 3 environment spec
 epy3:
   conda:
-    pip: 
+    pip:
     python: 3.6
-    sambamba: 0.6.6 
+    sambamba: 0.6.6
   pip:
     chanjo: 4.2.0
     genmod: 3.7.2
@@ -168,7 +168,7 @@ evep:
   conda:
     bcftools: 1.6
     htslib: 1.6
-    pip: 
+    pip:
     python: 2.7
   pip:
   shell:
@@ -212,11 +212,14 @@ log_file: ~
 # Skip updating existing packages
 noupdate: 0
 
+## Which pipeline are these instructions for
+pipeline: rare_disease
+
 # Prefer installation via shell instead of via conda,
 # only applicaple for shell programs that overlap with existing conda packages
 prefer_shell: 0
 
-# Programs that needs to be installed together with pyhton 3, only touch if you know what you're doing 
+# Programs that needs to be installed together with pyhton 3, only touch if you know what you're doing
 python3_programs:
   - chanjo
   - genmod
@@ -233,6 +236,16 @@ reference_dir: ~
 reference_genome_versions:
   - GRCh37
   - hg38
+
+## Sbath options
+core_number: 1
+email:
+email_types:
+  - FAIL
+process_time: 2-00:00:00
+project_id:
+sbatch_mode: 0
+slurm_quality_of_service: low
 
 # Select programs to install, skip the rest
 select_programs: []

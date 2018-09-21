@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_genotypeconcordance };
@@ -160,9 +160,8 @@ sub analysis_picardtools_genotypeconcordance {
       qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
     use MIP::Program::Interval::Picardtools qw{ picardtools_intervallisttools };
     use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_stats bcftools_rename_vcf_samples };
-    use MIP::Program::Variantcalling::Gatk
-      qw{ gatk_selectvariants gatk_leftalignandtrimvariants };
+      qw{ bcftools_norm bcftools_rename_vcf_samples bcftools_stats bcftools_rename_vcf_samples };
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_selectvariants };
     use MIP::Program::Variantcalling::Picardtools
       qw{ picardtools_genotypeconcordance };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -297,18 +296,14 @@ sub analysis_picardtools_genotypeconcordance {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $nist_file_path . $DOT . q{vcf},
-            java_jar    => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar}
-            ),
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            logging_level      => $active_parameter_href->{gatk_logging_level},
             memory_allocation  => q{Xmx2g},
             outfile_path       => $nist_file_path . q{XXX.vcf},
             referencefile_path => $referencefile_path,
             sample_names_ref   => [ $sample_id . q{XXX} ],
             temp_directory     => $temp_directory,
+            verbosity          => $active_parameter_href->{gatk_logging_level},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -391,41 +386,28 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
             exclude_nonvariants => 1,
             FILEHANDLE          => $FILEHANDLE,
             infile_path         => $file_path_prefix . $DOT . q{vcf},
-            java_jar            => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar}
-            ),
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            logging_level      => $active_parameter_href->{gatk_logging_level},
             memory_allocation  => q{Xmx2g},
             outfile_path       => $call_file_path . $DOT . q{vcf},
             referencefile_path => $referencefile_path,
             sample_names_ref   => [$sample_id],
             temp_directory     => $temp_directory,
+            verbosity          => $active_parameter_href->{gatk_logging_level},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Left align, trim and split allels
-    say {$FILEHANDLE} q{## GATK LeftAlignAndTrimVariants};
+    ## Left align, normalize and split allels
+    say {$FILEHANDLE} q{## bcftools norm};
 
-    gatk_leftalignandtrimvariants(
+    bcftools_norm(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $call_file_path . $DOT . q{vcf},
-            java_jar    => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar}
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            logging_level       => $active_parameter_href->{gatk_logging_level},
-            memory_allocation   => q{Xmx2g},
-            outfile_path        => $call_file_path . $UNDERSCORE . q{lts.vcf},
-            referencefile_path  => $referencefile_path,
-            split_multiallelics => 1,
-            temp_directory      => $temp_directory,
+            FILEHANDLE     => $FILEHANDLE,
+            infile_path    => $call_file_path . $DOT . q{vcf},
+            multiallelic   => q{-},
+            outfile_path   => $call_file_path . $UNDERSCORE . q{norm.vcf},
+            reference_path => $referencefile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -436,14 +418,14 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
 q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig=<ID=hs37d5,length=35477943>/ || $_=~/##contig=<ID=GL\d+/) {print $_}' ?;
 
     ## Infile
-    print {$FILEHANDLE} $call_file_path . $UNDERSCORE . q{lts.vcf} . $SPACE;
+    print {$FILEHANDLE} $call_file_path . $UNDERSCORE . q{norm.vcf} . $SPACE;
 
     ## Outfile
     print {$FILEHANDLE} q{>}
       . $SPACE
       . $call_file_path
       . $UNDERSCORE
-      . q{lts_refrm.vcf}
+      . q{norm_refrm.vcf}
       . $SPACE;
     say {$FILEHANDLE} $NEWLINE;
 
@@ -451,11 +433,11 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
     say {$FILEHANDLE} q{## bcftools stats};
     bcftools_stats(
         {
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $call_file_path . $UNDERSCORE . q{norm_refrm.vcf},
             stdoutfile_path => $call_file_path
               . $UNDERSCORE
-              . q{lts_refrm.vcf.stats},
+              . q{norm_refrm.vcf.stats},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -467,19 +449,15 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
     gatk_selectvariants(
         {
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
-            java_jar    => catfile(
-                $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar}
-            ),
+            infile_path => $call_file_path . $UNDERSCORE . q{norm_refrm.vcf},
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            logging_level      => $active_parameter_href->{gatk_logging_level},
             memory_allocation  => q{Xmx2g},
             outfile_path       => $call_file_path . q{XXX.vcf},
             referencefile_path => $referencefile_path,
             sample_names_ref   => [ $sample_id . q{XXX} ],
             temp_directory     => $temp_directory,
+            verbosity          => $active_parameter_href->{gatk_logging_level},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -490,7 +468,7 @@ q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
         {
             call_sample   => $sample_id,
             FILEHANDLE    => $FILEHANDLE,
-            infile_path   => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
+            infile_path   => $call_file_path . $UNDERSCORE . q{norm_refrm.vcf},
             intervals_ref => [ $nist_file_path . $DOT . q{bed.interval_list} ],
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -515,7 +493,7 @@ q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
         {
             call_sample => $sample_id,
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
+            infile_path => $call_file_path . $UNDERSCORE . q{norm_refrm.vcf},
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             java_jar => catfile(
