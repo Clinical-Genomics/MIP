@@ -189,6 +189,10 @@ Tools that have conflicting dependencies needs to be installed in separate conda
   $ perl mip_install.pl -env mip_vep --select_program vep
   $ bash mip.sh
   
+  ## TIDDIT
+  $ perl mip_install.pl -env mip_tiddit --select_program tiddit
+  $ bash mip.sh
+  
   ## CNVnator
   $ perl mip_install.pl -env mip_cnvnator --select_program cnvnator
   $ bash mip.sh
@@ -209,7 +213,6 @@ Tools that have conflicting dependencies needs to be installed in separate conda
     prankvariant: "source activate mip_pyv3.6"
     psv_rankvariant: "source activate mip_pyv3.6"
     psv_combinevariantcallsets: "source activate mip_svdb"
-    psvdb: "source activate mip_tiddit"
     psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
     ptiddit: "source activate mip_tiddit"
     pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
