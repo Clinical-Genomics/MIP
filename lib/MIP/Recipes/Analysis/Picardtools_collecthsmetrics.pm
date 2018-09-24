@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_collecthsmetrics };
@@ -133,25 +133,44 @@ sub analysis_picardtools_collecthsmetrics {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File
-      qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
+    use MIP::Get::File qw{ get_exom_target_bed_file get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Language::Java qw{ java_core };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_collecthsmetrics };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_dead_end };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_path =
+      $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX;
+    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
+    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
 
-    ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -160,78 +179,62 @@ sub analysis_picardtools_collecthsmetrics {
         }
       );
 
-    ## Filehandles
-    # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                program_name           => $program_name,
+                temp_directory         => $temp_directory,
+            }
+        )
     );
 
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir},    $sample_id,
-        $active_parameter_href->{outaligner_dir}, q{coveragereport}
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
-    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{gatk_baserecalibration}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
+    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix      = $io{out}{file_name_prefix};
+    my $outfile_path_prefix      = $io{out}{file_path_prefix};
+    my $outfile_suffix           = $io{out}{file_suffix};
+    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
+    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
 
     ## Alias exome_target_bed endings
     my $infile_list_ending        = $file_info_href->{exome_target_bed}[0];
     my $padded_infile_list_ending = $file_info_href->{exome_target_bed}[1];
 
+    ## Filehandles
+    # Create anonymous filehandle
+    my $FILEHANDLE = IO::Handle->new();
+
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_path) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            program_directory     => catfile(
-                $active_parameter_href->{outaligner_dir},
-                q{coveragereport}
-            ),
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
 
+    ### SHELL:
+
     ## Copy file(s) to temporary directory
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     migrate_file(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX
-            ),
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => $infile_path,
             outfile_path => $temp_directory,
         }
     );
@@ -254,7 +257,7 @@ sub analysis_picardtools_collecthsmetrics {
             bait_interval_file_paths_ref =>
               [ $exome_target_bed_file . $padded_infile_list_ending ],
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $file_path_prefix . $infile_suffix,
+            infile_path => $temp_infile_path,
             java_jar    => catfile(
                 $active_parameter_href->{picardtools_path},
                 q{picard.jar}
@@ -262,7 +265,7 @@ sub analysis_picardtools_collecthsmetrics {
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             memory_allocation => q{Xmx4g},
-            outfile_path      => $outfile_path_prefix,
+            outfile_path      => $temp_outfile_path_prefix,
             referencefile_path =>
               $active_parameter_href->{human_genome_reference},
             target_interval_file_paths_ref =>
@@ -277,8 +280,8 @@ sub analysis_picardtools_collecthsmetrics {
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path_prefix,
-            outfile_path => $outsample_directory,
+            infile_path  => $temp_outfile_path_prefix,
+            outfile_path => $outdir_path_prefix,
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -288,8 +291,8 @@ sub analysis_picardtools_collecthsmetrics {
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                infile => $merged_infile_prefix,
-                path   => catfile( $outsample_directory, $outfile_prefix ),
+                infile           => $outfile_name_prefix,
+                path             => $outfile_path,
                 program_name     => q{collecthsmetrics},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,

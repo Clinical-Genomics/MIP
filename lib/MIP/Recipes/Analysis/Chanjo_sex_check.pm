@@ -22,14 +22,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chanjo_sex_check };
 
 }
 
-##Constants
+## Constants
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
@@ -127,8 +127,9 @@ sub analysis_chanjo_sex_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_dead_end };
     use MIP::Program::Alignment::Chanjo qw{ chanjo_sex };
@@ -136,14 +137,30 @@ sub analysis_chanjo_sex_check {
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+        }
+    );
+    my $indir_path_prefix  = $io{in}{dir_path_prefix};
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-    ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -152,79 +169,50 @@ sub analysis_chanjo_sex_check {
         }
       );
 
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                program_name           => $program_name,
+            }
+        )
+    );
+
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
+
+    my $log_file_path =
+      $outfile_path_prefix . $UNDERSCORE . q{chanjo_sexcheck.log};
+
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir},    $sample_id,
-        $active_parameter_href->{outaligner_dir}, q{coveragereport}
-    );
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
-
-    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Get infile_suffix from baserecalibration jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{gatk_baserecalibration}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
-    my $outfile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            program_name   => $program_name,
-            suffix_key     => q{outfile_suffix},
-        }
-    );
-
-    ## Files
-    my $infile_name  = $infile_prefix . $infile_suffix;
-    my $outfile_name = $outfile_prefix . $outfile_suffix;
-
-    ## Paths
-    my $infile_path  = catfile( $insample_directory,  $infile_name );
-    my $outfile_path = catfile( $outsample_directory, $outfile_name );
-    my $log_file_path = catfile( $outsample_directory,
-        $infile_prefix . $UNDERSCORE . q{chanjo_sexcheck.log} );
-
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_name, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            log                   => $log,
-            job_id_href           => $job_id_href,
-            process_time          => $time,
-            program_directory     => catfile(
-                lc( $active_parameter_href->{outaligner_dir} ),
-                q{coveragereport}
-            ),
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            log                             => $log,
+            job_id_href                     => $job_id_href,
+            process_time                    => $time,
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
         }
     );
+
+    ### SHELL:
 
     ## chanjo_sexcheck
     say {$FILEHANDLE} q{## Predicting sex from alignment};
@@ -255,21 +243,18 @@ sub analysis_chanjo_sex_check {
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                infile       => $merged_infile_prefix,
-                path         => catfile( $outsample_directory, $outfile_name ),
-                program_name => q{chanjo_sexcheck},
-                sample_id    => $sample_id,
+                infile           => $outfile_name_prefix,
+                path             => $outfile_path,
+                program_name     => q{chanjo_sexcheck},
+                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
         add_program_metafile_to_sample_info(
             {
-                infile       => $merged_infile_prefix,
-                metafile_tag => q{log},
-                path         => catfile(
-                    $outsample_directory,
-                    $infile_prefix . $UNDERSCORE . q{chanjo_sexcheck.log}
-                ),
+                infile           => $outfile_name_prefix,
+                metafile_tag     => q{log},
+                path             => $log_file_path,
                 program_name     => q{chanjo_sexcheck},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,

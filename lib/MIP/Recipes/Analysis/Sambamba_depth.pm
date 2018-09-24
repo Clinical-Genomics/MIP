@@ -13,6 +13,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw { any };
 use Readonly;
 
 BEGIN {
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sambamba_depth };
@@ -135,25 +136,43 @@ sub analysis_sambamba_depth {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use List::MoreUtils qw { any };
-    use MIP::Script::Setup_script qw{ setup_script};
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file};
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_dead_end };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_depth };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script};
+
+    ### PREPROCESSING:
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program mode
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_path =
+      $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX;
+    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
+    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
 
-    ## Alias
-    my $job_id_chain   = $parameter_href->{$program_name}{chain};
-    my $outaligner_dir = $active_parameter_href->{outaligner_dir};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -162,80 +181,52 @@ sub analysis_sambamba_depth {
         }
       );
 
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                program_name           => $program_name,
+                temp_directory         => $temp_directory,
+            }
+        )
+    );
+
+    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix      = $io{out}{file_name_prefix};
+    my $outfile_path_prefix      = $io{out}{file_path_prefix};
+    my $outfile_suffix           = $io{out}{file_suffix};
+    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
+    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $temp_outfile_path        = $temp_outfile_path_prefix . $outfile_suffix;
+
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Get merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
-    );
-
-    ## Get infile_suffix from baserecalibration jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{gatk_baserecalibration}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
-    my $outfile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            program_name   => $program_name,
-            suffix_key     => q{outfile_suffix},
-        }
-    );
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir},    $sample_id,
-        $active_parameter_href->{outaligner_dir}, q{coveragereport}
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
-    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Files
-    my $infile_name  = $infile_prefix . $infile_suffix;
-    my $outfile_name = $outfile_prefix . $outfile_suffix;
-
-    ## Paths
-    # q{.bam} -> ".b*" for getting index as well)
-    my $infile_path = catfile( $insample_directory,
-        $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX );
-    my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path     = catfile( $temp_directory, $outfile_name );
-
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_path) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            program_directory     => catfile(
-                $active_parameter_href->{outaligner_dir},
-                q{coveragereport}
-            ),
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
+
+    ### SHELL:
 
     ## Copy file(s) to temporary directory
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -259,13 +250,13 @@ sub analysis_sambamba_depth {
       . $active_parameter_href->{sambamba_depth_mapping_quality}
       . $SPACE;
 
-    #Do not include duplicates in coverage calculation
+    # Do not include duplicates in coverage calculation
     if ( $active_parameter_href->{sambamba_depth_noduplicates} ) {
 
         $sambamba_filter .= q{and not duplicate} . $SPACE;
     }
 
-    #Do not include failed quality control reads in coverage calculation
+    # Do not include failed quality control reads in coverage calculation
     if ( $active_parameter_href->{sambamba_depth_quality_control} ) {
 
         $sambamba_filter .= q{and not failed_quality_control};
@@ -279,11 +270,11 @@ sub analysis_sambamba_depth {
             FILEHANDLE       => $FILEHANDLE,
             filter           => $sambamba_filter,
             fix_mate_overlap => 1,
-            infile_path      => $file_path_prefix . $infile_suffix,
+            infile_path      => $temp_infile_path,
             min_base_quality =>
               $active_parameter_href->{sambamba_depth_base_quality},
             mode         => $active_parameter_href->{sambamba_depth_mode},
-            outfile_path => $outfile_path,
+            outfile_path => $temp_outfile_path,
             region       => $active_parameter_href->{sambamba_depth_bed},
         }
     );
@@ -294,8 +285,8 @@ sub analysis_sambamba_depth {
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path,
-            outfile_path => $outsample_directory,
+            infile_path  => $temp_outfile_path,
+            outfile_path => $outdir_path_prefix,
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -303,12 +294,10 @@ sub analysis_sambamba_depth {
 
     if ( $program_mode == 1 ) {
 
-        my $qc_sambamba_path = catfile( $outsample_directory, $outfile_name );
-
         add_program_outfile_to_sample_info(
             {
-                infile           => $merged_infile_prefix,
-                path             => $qc_sambamba_path,
+                infile           => $outfile_name_prefix,
+                path             => $outfile_path,
                 program_name     => $program_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,

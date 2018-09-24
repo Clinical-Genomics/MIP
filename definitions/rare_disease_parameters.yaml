@@ -618,7 +618,7 @@ picardtools_collectmultiplemetrics:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
+  file_tag: _collectmultiplemetrics
   type: program
 picardtools_collecthsmetrics:
   analysis_mode: sample
