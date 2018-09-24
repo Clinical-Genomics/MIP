@@ -397,7 +397,7 @@ sub analysis_star_aln {
             add_program_metafile_to_sample_info(
                 {
                     infile           => $outfile_name_prefix,
-                    path             => => $star_aln_log,
+                    path             => $star_aln_log,
                     program_name     => $program_name,
                     metafile_tag     => q{log},
                     sample_id        => $sample_id,
