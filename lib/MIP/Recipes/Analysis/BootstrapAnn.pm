@@ -33,7 +33,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX => q{*};
+Readonly my $ASTERISK => q{*};
 Readonly my $NEWLINE => qq{\n};
 
 sub analysis_bootstrapann {
@@ -280,7 +280,7 @@ sub analysis_bootstrapann {
                 $insample_directory,
                 $vcf_infile_prefix
                   . substr( $vcf_infile_suffix, 0, 2 )
-                  . $ASTERIX
+                  . $ASTERISK
             ),
             outfile_path => $temp_directory,
         }

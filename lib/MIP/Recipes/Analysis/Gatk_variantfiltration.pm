@@ -33,7 +33,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX => q{*};
+Readonly my $ASTERISK => q{*};
 Readonly my $NEWLINE => qq{\n};
 
 sub analysis_gatk_variantfiltration {
@@ -264,7 +264,7 @@ sub analysis_gatk_variantfiltration {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK
             ),
             outfile_path => $temp_directory,
         }
@@ -305,7 +305,7 @@ sub analysis_gatk_variantfiltration {
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path_prefix . $ASTERIX,
+            infile_path  => $outfile_path_prefix . $ASTERISK,
             outfile_path => $outsample_directory,
         }
     );

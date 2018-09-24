@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
@@ -286,7 +286,7 @@ sub analysis_markduplicates {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             file_path          => $file_path,
             indirectory        => $indir_path_prefix,
             infile             => $infile_name_prefix,
@@ -430,7 +430,7 @@ sub analysis_markduplicates {
             infile_paths_ref => [
                     $temp_file_path_prefix
                   . $DOT
-                  . $ASTERIX
+                  . $ASTERISK
                   . $UNDERSCORE
                   . q{metric}
             ],
@@ -467,7 +467,7 @@ sub analysis_markduplicates {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $file_path,
-            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
             outdirectory       => $outdir_path_prefix,
             outfile            => $outfile_name_prefix,
             program_info_path  => $program_info_path,
@@ -885,7 +885,7 @@ sub analysis_markduplicates_rio {
             infile_paths_ref => [
                     $temp_file_path_prefix
                   . $DOT
-                  . $ASTERIX
+                  . $ASTERISK
                   . $UNDERSCORE
                   . q{metric}
             ],
@@ -920,7 +920,7 @@ sub analysis_markduplicates_rio {
             core_number       => $core_number,
             FILEHANDLE        => $FILEHANDLE,
             file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
-            file_ending       => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending       => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             file_name         => $temp_infile_name_prefix,
             indirectory       => $temp_directory,
         }

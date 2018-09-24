@@ -32,7 +32,7 @@ BEGIN {
 
 ## Constants
 Readonly my $AMPERSAND  => q{&};
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DASH       => q{-};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
@@ -342,7 +342,7 @@ sub analysis_rankvariant {
                 FILEHANDLE  => $FILEHANDLE,
                 file_ending => $vcfparser_analysis_type
                   . $infile_suffix
-                  . $ASTERIX,
+                  . $ASTERISK,
                 file_path          => $file_path,
                 indirectory        => $infamily_directory,
                 infile             => $infile_prefix,
@@ -521,7 +521,7 @@ sub analysis_rankvariant {
                 file_path   => $file_path,
                 file_ending => $vcfparser_analysis_type
                   . $outfile_suffix
-                  . $ASTERIX,
+                  . $ASTERISK,
                 outdirectory       => $outfamily_directory,
                 outfile            => $outfile_prefix,
                 program_info_path  => $program_info_path,
@@ -1845,7 +1845,7 @@ sub analysis_rankvariant_unaffected {
                 FILEHANDLE  => $FILEHANDLE,
                 file_ending => $vcfparser_analysis_type
                   . $infile_suffix
-                  . $ASTERIX,
+                  . $ASTERISK,
                 file_path          => $file_path,
                 indirectory        => $infamily_directory,
                 infile             => $infile_prefix,
@@ -1935,7 +1935,7 @@ sub analysis_rankvariant_unaffected {
                 file_path   => $file_path,
                 file_ending => $vcfparser_analysis_type
                   . $outfile_suffix
-                  . $ASTERIX,
+                  . $ASTERISK,
                 outdirectory       => $outfamily_directory,
                 outfile            => $outfile_prefix,
                 program_info_path  => $program_info_path,
@@ -2369,7 +2369,7 @@ sub analysis_sv_rankvariant {
     say {$FILEHANDLE} q{wait} . $NEWLINE;
 
     ## Copy file(s) to back to directory
-    my @genmod_outfiles = map { $outfile_prefix . $_ . $file_suffix . $ASTERIX }
+    my @genmod_outfiles = map { $outfile_prefix . $_ . $file_suffix . $ASTERISK }
       @vcfparser_analysis_types;
     migrate_files(
         {
@@ -2712,7 +2712,7 @@ sub analysis_sv_rankvariant_unaffected {
     say {$FILEHANDLE} q{wait} . $NEWLINE;
 
     ## Copy file(s) to back to directory
-    my @genmod_outfiles = map { $outfile_prefix . $_ . $file_suffix . $ASTERIX }
+    my @genmod_outfiles = map { $outfile_prefix . $_ . $file_suffix . $ASTERISK }
       @vcfparser_analysis_types;
     migrate_files(
         {

@@ -30,7 +30,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
 Readonly my $NEWLINE    => qq{\n};
@@ -309,7 +309,7 @@ sub analysis_endvariantannotationblock {
                 xargs_file_counter => $xargs_file_counter,
                 file_ending        => $vcfparser_analysis_type
                   . $infile_suffix
-                  . $ASTERIX,
+                  . $ASTERISK,
                 indirectory    => $infamily_directory,
                 temp_directory => $active_parameter_href->{temp_directory},
             }
@@ -434,7 +434,7 @@ sub analysis_endvariantannotationblock {
                 infile_path => $outfile_path_prefix
                   . $vcfparser_analysis_type
                   . $outfile_suffix
-                  . $ASTERIX,
+                  . $ASTERISK,
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -899,7 +899,7 @@ sub analysis_endvariantannotationblock_rio {
                 infile_path => $outfile_path_prefix
                   . $vcfparser_analysis_type
                   . $outfile_suffix
-                  . $ASTERIX,
+                  . $ASTERISK,
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }

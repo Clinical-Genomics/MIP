@@ -30,7 +30,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX     => q{*};
+Readonly my $ASTERISK     => q{*};
 Readonly my $DOT         => q{.};
 Readonly my $EMPTY_STR   => q{};
 Readonly my $NEWLINE     => qq{\n};
@@ -275,7 +275,7 @@ sub analysis_prepareforvariantannotationblock {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERIX
+                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERISK
             ),
             outfile_path => $temp_directory
         }
@@ -364,9 +364,9 @@ sub analysis_prepareforvariantannotationblock {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $file_path_prefix
               . $UNDERSCORE
-              . $ASTERIX
+              . $ASTERISK
               . $infile_suffix
-              . $ASTERIX,
+              . $ASTERISK,
             outfile_path => $outfamily_directory,
         }
     );
@@ -602,7 +602,7 @@ sub analysis_prepareforvariantannotationblock_rio {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERIX
+                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERISK
             ),
             outfile_path => $temp_directory
         }

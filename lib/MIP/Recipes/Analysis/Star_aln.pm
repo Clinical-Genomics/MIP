@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -339,7 +339,7 @@ sub analysis_star_aln {
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $outfile_path_prefix . $ASTERIX,
+                infile_path  => $outfile_path_prefix . $ASTERISK,
                 outfile_path => $outsample_directory,
                 recursive    => 1,
             }

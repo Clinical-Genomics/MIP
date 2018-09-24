@@ -32,7 +32,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX      => q{*};
+Readonly my $ASTERISK      => q{*};
 Readonly my $DOT          => q{.};
 Readonly my $EMPTY_STRING => q{};
 Readonly my $NEWLINE      => qq{\n};
@@ -309,7 +309,7 @@ sub analysis_picardtools_mergesamfiles {
         {
             core_number  => $core_number,
             FILEHANDLE   => $FILEHANDLE,
-            file_ending  => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending  => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             indirectory  => $indir_path_prefix,
             infiles_ref  => \@infile_name_prefixes,
             outfile_path => $temp_directory,
@@ -469,7 +469,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
             file_path          => $file_path,
             outdirectory       => $outdir_path_prefix,
             outfile            => $outfile_name_prefix,
@@ -773,7 +773,7 @@ sub analysis_picardtools_mergesamfiles_rio {
         {
             core_number  => $core_number,
             FILEHANDLE   => $FILEHANDLE,
-            file_ending  => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending  => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             indirectory  => $indir_path_prefix,
             infiles_ref  => \@infile_name_prefixes,
             outfile_path => $temp_directory,
@@ -932,7 +932,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         {
             core_number => $core_number,
             FILEHANDLE  => $FILEHANDLE,
-            file_ending => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             indirectory => $temp_directory,
             infiles_ref => \@temp_infile_name_prefixes,
         }

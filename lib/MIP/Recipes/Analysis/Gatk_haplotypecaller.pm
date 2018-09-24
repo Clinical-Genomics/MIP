@@ -35,7 +35,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
@@ -327,7 +327,7 @@ sub analysis_gatk_haplotypecaller {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             file_path          => $file_path,
             indirectory        => $insample_directory,
             infile             => $infile_prefix,
@@ -434,7 +434,7 @@ sub analysis_gatk_haplotypecaller {
             core_number        => $core_number,
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             FILEHANDLE         => $FILEHANDLE,
-            file_ending        => $outfile_suffix . $ASTERIX,
+            file_ending        => $outfile_suffix . $ASTERISK,
             file_path          => $file_path,
             outdirectory       => $outsample_directory,
             outfile            => $outfile_prefix,
@@ -715,7 +715,7 @@ sub analysis_gatk_haplotypecaller_rna {
         {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             core_number        => $core_number,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             file_path          => $file_path,
             FILEHANDLE         => $FILEHANDLE,
             indirectory        => $insample_directory,
@@ -795,7 +795,7 @@ sub analysis_gatk_haplotypecaller_rna {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
             file_path          => $file_path,
             outfile            => $outfile_prefix,
             outdirectory       => $outsample_directory,

@@ -32,7 +32,7 @@ BEGIN {
 
 ## Constants
 Readonly my $AMPERSAND    => q{&};
-Readonly my $ASTERIX      => q{*};
+Readonly my $ASTERISK      => q{*};
 Readonly my $DOT          => q{.};
 Readonly my $EMPTY_STR    => q{};
 Readonly my $MITO_PADDING => 10;
@@ -467,7 +467,7 @@ sub analysis_mip_vcfparser {
                 FILEHANDLE  => $FILEHANDLE,
                 file_ending => $vcfparser_analysis_type
                   . $infile_suffix
-                  . $ASTERIX,
+                  . $ASTERISK,
                 file_path          => $file_path,
                 outdirectory       => $outfamily_directory,
                 outfile            => $outfile_prefix,
@@ -1398,7 +1398,7 @@ sub analysis_sv_vcfparser {
                 infile_path => $outfile_path_prefix
                   . $vcfparser_analysis_type
                   . $file_suffix
-                  . $ASTERIX,
+                  . $ASTERISK,
                 outfile_path => $outfamily_directory,
             }
         );

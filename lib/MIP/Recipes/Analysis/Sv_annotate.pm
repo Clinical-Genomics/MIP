@@ -31,7 +31,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $COLON      => q{:};
 Readonly my $DASH       => q{-};
 Readonly my $DOT        => q{.};
@@ -256,7 +256,7 @@ sub analysis_sv_annotate {
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path . $ASTERIX,
+            infile_path  => $infile_path . $ASTERISK,
             outfile_path => $temp_directory
         }
     );

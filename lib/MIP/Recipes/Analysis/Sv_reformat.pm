@@ -31,7 +31,7 @@ BEGIN {
 
 ## Constants
 Readonly my $AMPERSAND  => q{&};
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
 Readonly my $NEWLINE    => qq{\n};
@@ -412,7 +412,7 @@ sub analysis_sv_reformat {
 
     ## Copies file from temporary directory.
     say {$FILEHANDLE} q{## Copy file(s) from temporary directory};
-    my @outfiles = map { $outfile_prefix . $_ . $file_suffix . $ASTERIX }
+    my @outfiles = map { $outfile_prefix . $_ . $file_suffix . $ASTERISK }
       @vcfparser_analysis_types;
     migrate_files(
         {

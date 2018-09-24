@@ -37,7 +37,7 @@ BEGIN {
 
 ## Constants
 Readonly my $AMPERSAND  => q{&};
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
 Readonly my $NEWLINE    => qq{\n};
@@ -266,7 +266,7 @@ sub xargs_migrate_contig_files {
         },
         FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE },
         file_ending => {
-            default     => $DOT . q{vcf} . $ASTERIX,
+            default     => $DOT . q{vcf} . $ASTERISK,
             store       => \$file_ending,
             strict_type => 1,
         },

@@ -30,7 +30,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX      => q{*};
+Readonly my $ASTERISK      => q{*};
 Readonly my $DOT          => q{.};
 Readonly my $DOUBLE_QUOTE => q{"};
 Readonly my $EMPTY_STR    => q{};
@@ -444,7 +444,7 @@ sub analysis_bwa_mem {
             migrate_file(
                 {
                     FILEHANDLE  => $FILEHANDLE,
-                    infile_path => $file_path_prefix . $DOT . $ASTERIX,
+                    infile_path => $file_path_prefix . $DOT . $ASTERISK,
                     ,
                     outfile_path => $outdir_path,
                 }
@@ -454,9 +454,9 @@ sub analysis_bwa_mem {
         if ( $bwa_binary eq q{run-bwamem} ) {
 
             my @run_bwa_files = (
-                $file_path . substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
-                $file_path_prefix . $DOT . q{log} . $ASTERIX,
-                $file_path_prefix . $DOT . q{hla} . $ASTERIX,
+                $file_path . substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
+                $file_path_prefix . $DOT . q{log} . $ASTERISK,
+                $file_path_prefix . $DOT . q{hla} . $ASTERISK,
             );
 
           OUTFILE:

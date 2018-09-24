@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
@@ -239,7 +239,7 @@ sub analysis_picardtools_genotypeconcordance {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $DOT . q{vcf} . $ASTERIX
+                $infamily_directory, $infile_prefix . $DOT . q{vcf} . $ASTERISK
             ),
             outfile_path => $temp_directory
         }
@@ -514,7 +514,7 @@ q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
 
     ## Copies file from temporary directory.
     say {$FILEHANDLE} q{## Copy file from temporary directory};
-    my @outfiles = ( $outfile_prefix . $ASTERIX, $ASTERIX . q{vcf.stats} );
+    my @outfiles = ( $outfile_prefix . $ASTERISK, $ASTERISK . q{vcf.stats} );
   OUTFILE:
     foreach my $outfile (@outfiles) {
 

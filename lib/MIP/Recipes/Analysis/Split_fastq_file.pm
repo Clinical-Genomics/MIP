@@ -30,7 +30,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
 Readonly my $NEWLINE    => qq{\n};
@@ -304,7 +304,7 @@ sub analysis_split_fastq_file {
             {
                 FILEHANDLE => $FILEHANDLE,
                 infile_path =>
-                  catfile( $temp_directory, $ASTERIX . $infile_suffix ),
+                  catfile( $temp_directory, $ASTERISK . $infile_suffix ),
             }
         );
         say {$FILEHANDLE} $NEWLINE;

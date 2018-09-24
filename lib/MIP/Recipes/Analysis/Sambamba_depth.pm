@@ -30,7 +30,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX      => q{*};
+Readonly my $ASTERISK      => q{*};
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $SINGLE_QUOTE => q{'};
 Readonly my $SPACE        => q{ };
@@ -167,7 +167,7 @@ sub analysis_sambamba_depth {
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path =
-      $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX;
+      $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
     my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
     my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
 

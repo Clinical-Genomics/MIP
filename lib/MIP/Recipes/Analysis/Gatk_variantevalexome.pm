@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $PIPE       => q{|};
@@ -244,7 +244,7 @@ sub analysis_gatk_variantevalexome {
 
     ## Paths
     my $infile_path = catfile( $infamily_directory,
-        $infile_prefix . $infile_suffix . $ASTERIX );
+        $infile_prefix . $infile_suffix . $ASTERISK );
     my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
     my $outfile_path =

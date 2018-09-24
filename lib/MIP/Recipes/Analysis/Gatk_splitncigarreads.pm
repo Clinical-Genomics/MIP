@@ -31,7 +31,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $MINUS_ONE  => -1;
 Readonly my $NEWLINE    => qq{\n};
@@ -253,7 +253,7 @@ sub analysis_gatk_splitncigarreads {
             indirectory        => $insample_directory,
             infile             => $infile_prefix,
             FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             file_path          => $file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -326,7 +326,7 @@ sub analysis_gatk_splitncigarreads {
         {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             core_number        => $core_number,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             file_path          => $file_path,
             FILEHANDLE         => $FILEHANDLE,
             outdirectory       => $insample_directory,

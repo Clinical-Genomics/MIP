@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -262,7 +262,7 @@ sub analysis_gatk_gathervcfs {
                       . $UNDERSCORE
                       . $contig
                       . $infile_suffix
-                      . $ASTERIX
+                      . $ASTERISK
                 ),
                 outfile_path => $temp_directory
             }
@@ -342,7 +342,7 @@ sub analysis_gatk_gathervcfs {
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $outfile_path_prefix . $DOT . q{bcf} . $ASTERIX,
+                infile_path  => $outfile_path_prefix . $DOT . q{bcf} . $ASTERISK,
                 outfile_path => $outfamily_directory,
             }
         );
@@ -354,7 +354,7 @@ sub analysis_gatk_gathervcfs {
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path_prefix . $outfile_suffix . $ASTERIX,
+            infile_path  => $outfile_path_prefix . $outfile_suffix . $ASTERISK,
             outfile_path => $outfamily_directory,
         }
     );

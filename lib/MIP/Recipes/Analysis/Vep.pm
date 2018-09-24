@@ -31,7 +31,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX                => q{*};
+Readonly my $ASTERISK                => q{*};
 Readonly my $DOT                    => q{.};
 Readonly my $EMPTY_STR              => q{};
 Readonly my $NEWLINE                => qq{\n};
@@ -400,10 +400,10 @@ sub analysis_vep {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $outfile_path_prefix
               . $UNDERSCORE
-              . $ASTERIX
+              . $ASTERISK
               . $infile_suffix
               . $UNDERSCORE . q{s}
-              . $ASTERIX,
+              . $ASTERISK,
             outfile_path => $outfamily_directory,
         }
     );
@@ -418,9 +418,9 @@ sub analysis_vep {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $outfile_path_prefix
               . $UNDERSCORE
-              . $ASTERIX
+              . $ASTERISK
               . $infile_suffix
-              . $ASTERIX,
+              . $ASTERISK,
             outfile_path => $outfamily_directory,
         }
     );
@@ -836,10 +836,10 @@ sub analysis_vep_rio {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $outfile_path_prefix
               . $UNDERSCORE
-              . $ASTERIX
+              . $ASTERISK
               . $infile_suffix
               . $UNDERSCORE . q{s}
-              . $ASTERIX,
+              . $ASTERISK,
             outfile_path => $outfamily_directory,
         }
     );
@@ -1141,7 +1141,7 @@ sub analysis_vep_sv {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $file_suffix . $ASTERIX
+                $infamily_directory, $infile_prefix . $file_suffix . $ASTERISK
             ),
             outfile_path => $temp_directory
         }
@@ -1321,10 +1321,10 @@ sub analysis_vep_sv {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $outfile_path_prefix
-              . $ASTERIX
+              . $ASTERISK
               . $file_suffix
               . $UNDERSCORE . q{s}
-              . $ASTERIX,
+              . $ASTERISK,
             outfile_path => $outfamily_directory,
         }
     );
@@ -1336,9 +1336,9 @@ sub analysis_vep_sv {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $outfile_path_prefix
-              . $ASTERIX
+              . $ASTERISK
               . $file_suffix
-              . $ASTERIX,
+              . $ASTERISK,
             outfile_path => $outfamily_directory,
         }
     );

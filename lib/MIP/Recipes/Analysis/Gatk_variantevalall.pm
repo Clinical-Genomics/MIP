@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
 
@@ -250,7 +250,7 @@ sub analysis_gatk_variantevalall {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERIX
+                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERISK
             ),
             outfile_path => $temp_directory
         }

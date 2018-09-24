@@ -32,7 +32,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -317,7 +317,7 @@ sub analysis_gatk_baserecalibration {
             indirectory        => $indir_path_prefix,
             infile             => $infile_name_prefix,
             FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             file_path          => $file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -486,7 +486,7 @@ sub analysis_gatk_baserecalibration {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
             file_path          => $file_path,
             outdirectory       => $outdir_path_prefix,
             outfile            => $outfile_name_prefix,
@@ -531,7 +531,7 @@ sub analysis_gatk_baserecalibration {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $temp_outfile_path_prefix
               . substr( $outfile_suffix, 0, 2 )
-              . $ASTERIX,
+              . $ASTERISK,
             outfile_path => $outdir_path_prefix,
         }
     );
@@ -996,7 +996,7 @@ sub analysis_gatk_baserecalibration_rio {
         {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
             file_path          => $file_path,
             core_number        => $core_number,
             outdirectory       => $outdir_path_prefix,
@@ -1014,7 +1014,7 @@ sub analysis_gatk_baserecalibration_rio {
             core_number       => $core_number,
             FILEHANDLE        => $FILEHANDLE,
             file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
-            file_ending       => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_ending       => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             file_name         => $temp_infile_name_prefix,
             indirectory       => $temp_directory,
         }
@@ -1054,7 +1054,7 @@ sub analysis_gatk_baserecalibration_rio {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $temp_outfile_path_prefix
               . substr( $outfile_suffix, 0, 2 )
-              . $ASTERIX,
+              . $ASTERISK,
             outfile_path => $outdir_path_prefix,
         }
     );

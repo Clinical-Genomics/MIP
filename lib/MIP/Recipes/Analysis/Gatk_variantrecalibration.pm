@@ -31,7 +31,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $AMPERSAND  => q{&};
 Readonly my $COLON      => q{:};
 Readonly my $DOT        => q{.};
@@ -291,7 +291,7 @@ sub analysis_gatk_variantrecalibration_wgs {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERIX
+                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERISK
             ),
             outfile_path => $temp_directory
         }
@@ -502,7 +502,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     ## Copies file from temporary directory.
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     my @outfiles = (
-        $outfile_path_prefix . $outfile_suffix . $ASTERIX,
+        $outfile_path_prefix . $outfile_suffix . $ASTERISK,
         $file_path_prefix . $DOT . q{intervals} . $DOT . q{tranches.pdf},
     );
 
@@ -806,7 +806,7 @@ sub analysis_gatk_variantrecalibration_wes {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERIX
+                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERISK
             ),
             outfile_path => $temp_directory
         }
@@ -1031,7 +1031,7 @@ sub analysis_gatk_variantrecalibration_wes {
     ## Copies file from temporary directory.
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     my @outfiles = (
-        $outfile_path_prefix . $outfile_suffix . $ASTERIX,
+        $outfile_path_prefix . $outfile_suffix . $ASTERISK,
         $file_path_prefix . $DOT . q{intervals} . $DOT . q{tranches.pdf},
     );
 

@@ -33,7 +33,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX => q{*};
+Readonly my $ASTERISK => q{*};
 Readonly my $NEWLINE => qq{\n};
 
 sub analysis_gatk_asereadcounter {
@@ -276,7 +276,7 @@ sub analysis_gatk_asereadcounter {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK
             ),
             outfile_path => $temp_directory,
         }
@@ -288,7 +288,7 @@ sub analysis_gatk_asereadcounter {
                 $insample_directory,
                 $sitesfile_prefix
                   . substr( $sitesfile_suffix, 0, 2 )
-                  . $ASTERIX
+                  . $ASTERISK
             ),
             outfile_path => $temp_directory,
         }

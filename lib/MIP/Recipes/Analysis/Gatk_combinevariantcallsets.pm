@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
@@ -282,7 +282,7 @@ sub analysis_gatk_combinevariantcallsets {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => catfile(
                     $infamily_directory,
-                    $infile_prefix . $infile_suffix . $ASTERIX
+                    $infile_prefix . $infile_suffix . $ASTERISK
                 ),
                 outfile_path => $temp_directory
             }
@@ -331,7 +331,7 @@ sub analysis_gatk_combinevariantcallsets {
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $outfile_path_prefix . $DOT . q{bcf} . $ASTERIX,
+                infile_path  => $outfile_path_prefix . $DOT . q{bcf} . $ASTERISK,
                 outfile_path => $outfamily_directory,
             }
         );

@@ -154,7 +154,7 @@ sub analysis_cnvnator {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix get_io_files };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files};
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -193,9 +193,9 @@ sub analysis_cnvnator {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my @temp_infile_paths  = @{ $io{temp}{file_paths} };
 
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $human_genome_reference =
       $active_parameter_href->{human_genome_reference};
+    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(

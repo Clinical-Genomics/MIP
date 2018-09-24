@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -319,7 +319,7 @@ sub analysis_salmon_quant {
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => catfile( $file_path_prefix_out, $ASTERIX ),
+                infile_path  => catfile( $file_path_prefix_out, $ASTERISK ),
                 outfile_path => $outsample_directory,
             }
         );

@@ -31,7 +31,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $COLON      => q{:};
 Readonly my $DASH       => q{-};
 Readonly my $DOT        => q{.};
@@ -361,7 +361,7 @@ sub analysis_sv_combinevariantcallsets {
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $outfile_path_prefix . $DOT . q{bcf} . $ASTERIX,
+                infile_path  => $outfile_path_prefix . $DOT . q{bcf} . $ASTERISK,
                 outfile_path => $outfamily_directory,
             }
         );
@@ -628,7 +628,7 @@ sub _migrate_joint_callers_file {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => catfile(
                     $infamily_directory,
-                    $infile_prefix . $infile_suffix . $ASTERIX
+                    $infile_prefix . $infile_suffix . $ASTERISK
                 ),
                 outfile_path => $temp_directory
             }
@@ -826,7 +826,7 @@ sub _migrate_and_preprocess_single_callers_file {
                         $insample_directory,
                         $infile_prefix
                           . $suffix_href->{$structural_variant_caller}
-                          . $ASTERIX
+                          . $ASTERISK
                     ),
                     outfile_path => $temp_directory
                 }
