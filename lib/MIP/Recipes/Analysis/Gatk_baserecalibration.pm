@@ -448,7 +448,7 @@ sub analysis_gatk_baserecalibration {
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $base_quality_score_recalibration_file =
-          $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
+          $temp_outfile_paths[$infile_index] . $DOT . q{grp};
         gatk_applybqsr(
             {
                 base_quality_score_recalibration_file =>

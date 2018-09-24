@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gzip_fastq };
@@ -125,13 +125,15 @@ sub analysis_gzip_fastq {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw(check_max_core_number);
-    use MIP::Cluster qw(update_core_number_to_seq_mode);
+    use MIP::Check::Cluster qw{ check_max_core_number };
+    use MIP::Cluster qw{ update_core_number_to_seq_mode };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_no_dependency_add_to_sample);
-    use MIP::Program::Compression::Gzip qw(gzip);
-    use MIP::Script::Setup_script qw(setup_script);
+      qw{ slurm_submit_job_no_dependency_add_to_sample };
+    use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ## No uncompressed fastq infiles
     return if ( not $file_info_href->{is_file_uncompressed}{$sample_id} );
@@ -139,10 +141,24 @@ sub analysis_gzip_fastq {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+        }
+    );
+    my $indir_path_prefix    = $io{in}{dir_path_prefix};
+    my @infile_names         = @{ $io{in}{file_names} };
+    my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
+    my @infile_paths         = @{ $io{in}{file_paths} };
+    my @infile_suffixes      = @{ $io{in}{file_suffixes} };
 
-    ## Alias
-    my @infiles      = @{ $file_info_href->{$sample_id}{mip_infiles} };
+    my $program_mode = $active_parameter_href->{$program_name};
     my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
@@ -152,9 +168,29 @@ sub analysis_gzip_fastq {
         }
       );
 
+    ## Outpaths
+    my @outfile_paths =
+      map { catdir( $indir_path_prefix, $_ . $DOT . q{fastq.gz} ) }
+      @infile_name_prefixes;
+
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id       => $job_id_chain,
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                file_paths_ref => \@outfile_paths,
+                parameter_href => $parameter_href,
+                program_name   => $program_name,
+            }
+        )
+    );
+
     ## Adjust according to number of infiles to process
     # One full lane on Hiseq takes approx. 2 h for gzip to process
-    $time = $time * scalar @infiles;
+    $time = $time * scalar @infile_names;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -192,17 +228,11 @@ sub analysis_gzip_fastq {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => lc($program_name),
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
         }
     );
-
-    ## Assign directories
-    my $insample_directory = $file_info_href->{$sample_id}{mip_infiles_dir};
-
-    ## Assign suffix
-    my $infile_suffix = $parameter_href->{$program_name}{infile_suffix};
 
     my $process_batches_count = 1;
 
@@ -213,10 +243,10 @@ sub analysis_gzip_fastq {
     say {$FILEHANDLE} q{## } . $program_name;
 
   INFILE:
-    foreach my $infile (@infiles) {
+    while ( my ( $infile_index, $infile ) = each @infile_names ) {
 
-        ## For files ending with .fastq required since there can be a mixture (also .fastq.gz) within the sample dir
-        if ( $infile =~ /$infile_suffix$/sxm ) {
+        ## For files ending with ".fastq" required since there can be a mixture (also .fastq.gz) within the sample dir
+        if ( $infile_suffixes[$infile_index] eq q{.fastq} ) {
 
             ## Using only $active_parameter{max_cores_per_node} cores
             if ( $uncompressed_file_counter == $process_batches_count *
@@ -231,14 +261,11 @@ sub analysis_gzip_fastq {
             gzip(
                 {
                     FILEHANDLE  => $FILEHANDLE,
-                    infile_path => catfile( $insample_directory, $infile ),
+                    infile_path => $infile_paths[$infile_index],
                 }
             );
             say {$FILEHANDLE} q{&};
             $uncompressed_file_counter++;
-
-            ## Add ".gz" to original fastq ending, since this will execute before fastQC and bwa.
-            $infile .= $DOT . q{gz};
         }
     }
     print {$FILEHANDLE} $NEWLINE;
