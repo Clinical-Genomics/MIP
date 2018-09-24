@@ -164,7 +164,6 @@ module_core_number:
   default:
     analysisrunstatus: 1
     bcftools_mpileup: 16
-    bedtools_genomecov: 1
     bwa_mem: 16
     chanjo_sexcheck: 1
     cnvnator: 16
@@ -194,7 +193,6 @@ module_core_number:
     picardtools_mergesamfiles: 16
     plink: 1
     qccollect: 1
-    rcovplots: 1
     rtg_vcfeval: 1
     sacct: 1
     sambamba_depth: 2
@@ -217,7 +215,6 @@ module_time:
     analysisrunstatus: 1
     bwa_mem: 30
     bcftools_mpileup: 40
-    bedtools_genomecov: 15
     chanjo_sexcheck: 2
     cnvnator: 5
     delly_call: 10
@@ -248,7 +245,6 @@ module_time:
     prepareforvariantannotationblock: 5
     qccollect: 1
     rankvariant: 10
-    rcovplots: 1
     rhocall: 5
     rtg_vcfeval: 1
     sacct: 1
@@ -596,22 +592,6 @@ sambamba_depth_quality_control:
   data_type: SCALAR
   default: 1
   type: program_argument
-bedtools_genomecov:
-  analysis_mode: sample
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: _genomecov
-  program_name_path:
-   - bedtools
-  type: program
-bedtools_genomecov_max_coverage:
-  associated_program:
-   - bedtools_genomecov
-  data_type: SCALAR
-  default: 30
-  type: program_argument
 picardtools_collectmultiplemetrics:
   analysis_mode: sample
   associated_program:
@@ -627,14 +607,6 @@ picardtools_collecthsmetrics:
   data_type: SCALAR
   default: 1
   file_tag: _collecthsmetrics
-  type: program
-rcovplots:
-  analysis_mode: sample
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
   type: program
 ## Structural Variant Calling
 cnvnator:

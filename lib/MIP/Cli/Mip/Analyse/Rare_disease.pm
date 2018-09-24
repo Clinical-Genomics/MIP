@@ -680,28 +680,6 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{bedtools_genomecov} => (
-            cmd_aliases => [qw{ bgc }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-              q{Genome coverage calculation using bedtools genomecov},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{bedtools_genomecov_max_coverage} => (
-            cmd_aliases   => [qw{ bgcmc }],
-            cmd_flag      => q{bgc_max_cov},
-            cmd_tags      => [q{Default: 30}],
-            documentation => q{Max coverage depth},
-            is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
         q{picardtools_collectmultiplemetrics} => (
             cmd_aliases   => [qw{ ptcmm }],
             cmd_flag      => q{ppt_col_mul_met},
@@ -718,16 +696,6 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
             cmd_flag      => q{ppt_col_hs_met},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Qc metrics calculation for capture},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{rcovplots} => (
-            cmd_aliases   => [qw{ rcp }],
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Plots of genome coverage using rcovplots},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )

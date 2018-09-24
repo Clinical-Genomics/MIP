@@ -164,8 +164,6 @@ sub pipeline_rare_disease {
       qw{ analysis_bamcalibrationblock };
     use MIP::Recipes::Analysis::Bcftools_mpileup
       qw { analysis_bcftools_mpileup };
-    use MIP::Recipes::Analysis::Bedtools_genomecov
-      qw{ analysis_bedtools_genomecov };
     use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem };
     use MIP::Recipes::Analysis::Chanjo_sex_check
       qw{ analysis_chanjo_sex_check };
@@ -216,7 +214,6 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Qccollect qw{ analysis_qccollect };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
-    use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
     use MIP::Recipes::Analysis::Rhocall
       qw{ analysis_rhocall_annotate analysis_rhocall_annotate_rio };
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
@@ -278,7 +275,6 @@ sub pipeline_rare_disease {
     my %analysis_recipe = (
         analysisrunstatus         => \&analysis_analysisrunstatus,
         bcftools_mpileup          => \&analysis_bcftools_mpileup,
-        bedtools_genomecov        => \&analysis_bedtools_genomecov,
         bwa_mem                   => \&analysis_bwa_mem,
         chanjo_sexcheck           => \&analysis_chanjo_sex_check,
         cnvnator                  => \&analysis_cnvnator,
@@ -312,7 +308,6 @@ sub pipeline_rare_disease {
           \&analysis_prepareforvariantannotationblock,
         qccollect   => \&analysis_qccollect,
         rankvariant => undef,                       # Depends on sample features
-        rcovplots   => \&analysis_rcoverageplots,
         rhocall     => \&analysis_rhocall_annotate,
         rtg_vcfeval => \&analysis_rtg_vcfeval,
         sacct       => \&analysis_sacct,
@@ -338,7 +333,6 @@ sub pipeline_rare_disease {
     my %program_name = (
         analysisrunstatus            => q{Analysis run status},
         bcftools_mpileup             => q{Bcftools mpileup},
-        bedtools_genomecov           => q{Bedtools genomecov},
         bwa_mem                      => q{BWA mem},
         chanjo_sexcheck              => q{Chanjo sexcheck},
         cnvnator                     => q{CNVnator},
@@ -371,7 +365,6 @@ sub pipeline_rare_disease {
         prepareforvariantannotationblock => q{Prepareforvariantannotationblock},
         qccollect                        => q{Qccollect},
         rankvariant                      => q{Rankvariant},
-        rcovplots                        => q{Rcovplots},
         rhocall                          => q{Rhocall},
         rtg_vcfeval                      => q{Rtg evaluation},
         sacct                            => q{Sacct},

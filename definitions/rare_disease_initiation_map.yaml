@@ -22,9 +22,6 @@ CHAIN_ALL:
          - picardtools_collectmultiplemetrics
       - CHAIN_PTCHSM:
          - picardtools_collecthsmetrics
-      - CHAIN_BEDCOV:
-         - bedtools_genomecov
-         - rcovplots
       - CHAIN_SV:
 # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_SV after execution
          - PARALLEL:
