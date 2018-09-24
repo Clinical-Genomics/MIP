@@ -28,7 +28,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.00';
+our $VERSION = 1.00;
 
 ## Constants
 Readonly my $NEWLINE => qq{\n};
