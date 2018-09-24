@@ -255,8 +255,8 @@ sub analysis_gatk_baserecalibration {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();
     my $FILEHANDLE      = IO::Handle->new();
+    my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(

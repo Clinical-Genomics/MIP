@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cnvnator };
@@ -59,7 +59,6 @@ sub analysis_cnvnator {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $FILEHANDLE;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
@@ -155,9 +154,10 @@ sub analysis_cnvnator {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::File qw{ get_file_suffix get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files};
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Samtools
@@ -171,14 +171,32 @@ sub analysis_cnvnator {
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $indir_path_prefix  = $io{in}{dir_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my @temp_infile_paths  = @{ $io{temp}{file_paths} };
 
-    ## Alias
     my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $human_genome_reference =
+      $active_parameter_href->{human_genome_reference};
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -186,92 +204,71 @@ sub analysis_cnvnator {
             program_name          => $program_name,
         }
       );
-    my $program_outdirectory_name =
-      $parameter_href->{$program_name}{outdir_name};
     my $xargs_file_path_prefix;
-    my $phenotype_info =
-      $sample_info_href->{sample}{$sample_id}{phenotype};
-    my $human_genome_reference =
-      $active_parameter_href->{human_genome_reference};
+
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                program_name           => $program_name,
+                temp_directory         => $temp_directory,
+            }
+        )
+    );
+
+    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix      = $io{out}{file_path_prefix};
+    my $outfile_suffix           = $io{out}{file_suffix};
+    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
+    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $temp_outfile_path        = $temp_outfile_path_prefix . $outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandle
-    $FILEHANDLE = IO::Handle->new();
-
-    # Create a second anonymous filehandle
+    my $FILEHANDLE      = IO::Handle->new();
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $sample_id,
-            log                   => $log,
-            program_name          => $program_name,
-            program_directory     => catfile(
-                $active_parameter_href->{outaligner_dir},
-                $program_outdirectory_name
-            ),
+            active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            program_directory               => $program_name,
+            program_name                    => $program_name,
             process_time                    => $time,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
 
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir},    $sample_id,
-        $active_parameter_href->{outaligner_dir}, $program_name
-    );
-
-    # Used downstream
-    $parameter_href->{$program_name}{$sample_id}{indirectory} =
-      $outsample_directory;
-
-    ## Files
-    my $infile = $file_info_href->{$sample_id}{merged_infile};
-    my $infile_tag =
-      $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
-    my $infile_prefix  = $infile . $infile_tag;
-    my $outfile_prefix = $infile . $outfile_tag;
-
-    ## Paths
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ### Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{gatk_baserecalibration}{chain},
-        }
-    );
-
     ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
+    set_file_suffix(
         {
+            file_suffix    => $outfile_suffix,
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
         }
     );
+
+    ### SHELL:
 
     ## Add contigs to vcfheader
     _add_contigs_to_vcfheader(
         {
+            FILEHANDLE             => $FILEHANDLE,
             human_genome_reference => $human_genome_reference,
             temp_directory         => $temp_directory,
-            FILEHANDLE             => $FILEHANDLE,
         }
     );
 
@@ -279,15 +276,14 @@ sub analysis_cnvnator {
     say {$FILEHANDLE} q{## Create by cnvnator required 'chr.fa' files};
     samtools_create_chromosome_files(
         {
-            regions_ref        => $file_info_href->{contigs},
-            infile_path        => $human_genome_reference,
-            temp_directory     => $temp_directory,
-            suffix             => $DOT . q{fa},
-            max_process_number => $core_number,
             FILEHANDLE         => $FILEHANDLE,
+            infile_path        => $human_genome_reference,
+            max_process_number => $core_number,
+            regions_ref        => $file_info_href->{contigs},
+            suffix             => $DOT . q{fa},
+            temp_directory     => $temp_directory,
         }
     );
-
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Copy file(s) to temporary directory
@@ -301,8 +297,8 @@ sub analysis_cnvnator {
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
-            infile             => $infile_prefix,
-            indirectory        => $insample_directory,
+            infile             => $infile_name_prefix,
+            indirectory        => $indir_path_prefix,
             file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             temp_directory     => $temp_directory,
         }
@@ -324,29 +320,28 @@ sub analysis_cnvnator {
     );
 
   CONTIG:
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+    while ( my ( $infile_index, $contig ) =
+        each @{ $file_info_href->{contigs_size_ordered} } )
+    {
 
-        my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
+        my $stdbasefile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
 
         ## Assemble parameter
         # Output ROOT file
-        my $root_file =
-          $file_path_prefix . $UNDERSCORE . $contig . $DOT . q{root};
+        my $root_file = $temp_infile_paths[$infile_index] . $DOT . q{root};
+        my $temp_outfile_path_prefix_contig =
+          $temp_outfile_path_prefix . $UNDERSCORE . $contig;
 
         cnvnator_read_extraction(
             {
-                infile_paths_ref => [
-                    $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix
-                ],
-                outfile_path    => $root_file,
-                regions_ref     => [$contig],
-                unique          => 1,
-                stdoutfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
+                infile_paths_ref => [ $temp_infile_paths[$infile_index] ],
+                outfile_path     => $root_file,
+                regions_ref      => [$contig],
+                unique           => 1,
+                stdoutfile_path  => $stdbasefile_path_prefix
                   . $DOT
                   . q{stdout.txt},
-                stderrfile_path => $stderrfile_path_prefix
+                stderrfile_path => $stdbasefile_path_prefix
                   . $DOT
                   . q{stderr.txt},
                 FILEHANDLE => $XARGSFILEHANDLE,
@@ -361,12 +356,10 @@ sub analysis_cnvnator {
                 cnv_bin_size => $active_parameter_href->{cnv_bin_size},
                 referencedirectory_path => $temp_directory,
                 FILEHANDLE              => $XARGSFILEHANDLE,
-                stdoutfile_path         => $stderrfile_path_prefix
+                stdoutfile_path         => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{histogram.stdout.txt},
-                stderrfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
+                stderrfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{histogram.stderr.txt},
             }
@@ -379,14 +372,10 @@ sub analysis_cnvnator {
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
                 FILEHANDLE      => $XARGSFILEHANDLE,
-                stdoutfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
+                stdoutfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{statistics.stdout.txt},
-                stderrfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
+                stderrfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{statistics.stderr.txt},
             }
@@ -399,14 +388,10 @@ sub analysis_cnvnator {
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
                 FILEHANDLE      => $XARGSFILEHANDLE,
-                stdoutfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
+                stdoutfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{partition.stdout.txt},
-                stderrfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
+                stderrfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{partition.stderr.txt},
             }
@@ -416,7 +401,7 @@ sub analysis_cnvnator {
         cnvnator_calling(
             {
                 infile_path     => $root_file,
-                stdoutfile_path => $outfile_path_prefix
+                stdoutfile_path => $temp_outfile_path_prefix
                   . $UNDERSCORE
                   . $contig
                   . $DOT
@@ -424,9 +409,7 @@ sub analysis_cnvnator {
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
                 FILEHANDLE      => $XARGSFILEHANDLE,
-                stderrfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
+                stderrfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{calling.stderr.txt},
             }
@@ -435,18 +418,12 @@ sub analysis_cnvnator {
 
         cnvnator_convert_to_vcf(
             {
-                infile_path => $outfile_path_prefix
-                  . $UNDERSCORE
-                  . $contig
+                infile_path => $temp_outfile_path_prefix_contig
                   . $DOT
                   . q{cnvnator},
-                stdoutfile_path => $outfile_path_prefix
-                  . $UNDERSCORE
-                  . $contig
+                stdoutfile_path => $temp_outfile_path_prefix_contig
                   . $outfile_suffix,
-                stderrfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
+                stderrfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{convert_to_vcf.stderr.txt},
                 referencedirectory_path => $temp_directory,
@@ -456,30 +433,32 @@ sub analysis_cnvnator {
         print {$XARGSFILEHANDLE} $NEWLINE;
     }
 
-    ## Write sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
-    $infile_prefix = $outfile_path_prefix . $UNDERSCORE;
-    my $infile_postfix = $outfile_suffix;
-    my $elements_ref   = \@{ $file_info_href->{contigs} };
-
-    if ( not defined $infile_postfix ) {
-
-        #No postfix
-        $infile_postfix = $EMPTY_STR;
-    }
-
+    ## Write sbatch code to supplied filehandle to concatenate variants in vcf format.
     say {$FILEHANDLE} q{## Format the VCF};
 
     ## Store infiles for bcftools concat
     my @concat_infile_paths;
 
-    foreach my $element ( @{$elements_ref} ) {
+  CONTIG:
+    foreach my $contig ( @{ $file_info_href->{contigs} } ) {
 
         ## Name intermediary files
-        my $cnvnator_outfile_path = $infile_prefix . $element . $infile_postfix;
+        my $cnvnator_outfile_path =
+          $temp_outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
         my $fixed_vcffile_path =
-          $infile_prefix . $element . $UNDERSCORE . q{fixed} . $infile_postfix;
+            $temp_outfile_path_prefix
+          . $UNDERSCORE
+          . $contig
+          . $UNDERSCORE
+          . q{fixed}
+          . $outfile_suffix;
         my $fixed_header_vcffile_path =
-          $infile_prefix . $element . $UNDERSCORE . q{annot} . $infile_postfix;
+            $temp_outfile_path_prefix
+          . $UNDERSCORE
+          . $contig
+          . $UNDERSCORE
+          . q{annot}
+          . $outfile_suffix;
 
         ## Save infiles for bcftools annotate
         push @concat_infile_paths, $fixed_header_vcffile_path;
@@ -487,22 +466,22 @@ sub analysis_cnvnator {
         ## Change the sample name in the VCF header to the sample ID
         _rename_sample_in_header(
             {
-                sample_id    => $sample_id,
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $cnvnator_outfile_path,
                 outfile_path => $fixed_vcffile_path,
-                FILEHANDLE   => $FILEHANDLE,
+                sample_id    => $sample_id,
             }
         );
 
         ## Add contigs to header
         bcftools_annotate(
             {
+                FILEHANDLE => $FILEHANDLE,
+                headerfile_path =>
+                  catfile( $temp_directory, q{contig_header.txt} ),
                 infile_path  => $fixed_vcffile_path,
                 outfile_path => $fixed_header_vcffile_path,
                 output_type  => q{v},
-                headerfile_path =>
-                  catfile( $temp_directory, q{contig_header.txt} ),
-                FILEHANDLE => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -513,7 +492,7 @@ sub analysis_cnvnator {
         {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@concat_infile_paths,
-            outfile_path     => $outfile_path_prefix . $outfile_suffix,
+            outfile_path     => $temp_outfile_path,
             output_type      => q{v},
             rm_dups          => 0,
         }
@@ -524,8 +503,8 @@ sub analysis_cnvnator {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . $ASTERISK,
-            outfile_path => $outsample_directory,
+            infile_path  => $temp_outfile_path . $ASTERISK,
+            outfile_path => $outdir_path_prefix,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
@@ -539,59 +518,55 @@ sub analysis_cnvnator {
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{cnvnator},
-                path             => catfile(
-                    $outsample_directory, $outfile_prefix . $outfile_suffix
-                ),
+                path             => $outfile_path,
             }
         );
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
                 family_id               => $family_id,
-                sample_id               => $sample_id,
-                path                    => $job_id_chain,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
                 log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
                 sbatch_file_name        => $file_path
             }
         );
     }
-
     return;
 }
 
 sub _add_contigs_to_vcfheader {
 
 ## Function : Change the sample ID in the VCF header
+##          : $FILEHANDLE             => Filehandle to write to
 ##          : $human_genome_reference => Human genome reference
 ##          : $temp_directory         => Temporary directory
-##          : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $human_genome_reference;
     my $temp_directory;
-    my $FILEHANDLE;
 
     my $tmpl = {
-        human_genome_reference => {
-            required => 1,
+        FILEHANDLE => {
             defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+        human_genome_reference => {
+            defined  => 1,
+            required => 1,
             store    => \$human_genome_reference,
         },
         temp_directory => {
-            required => 1,
             defined  => 1,
+            required => 1,
             store    => \$temp_directory,
         },
-        FILEHANDLE => {
-            required => 1,
-            defined  => 1,
-            store    => \$FILEHANDLE,
-        },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -634,10 +609,10 @@ sub _rename_sample_in_header {
     my $sample_id;
 
     my $tmpl = {
-        sample_id => {
+        FILEHANDLE => {
             defined  => 1,
             required => 1,
-            store    => \$sample_id,
+            store    => \$FILEHANDLE,
         },
         infile_path => {
             defined  => 1,
@@ -649,10 +624,10 @@ sub _rename_sample_in_header {
             required => 1,
             store    => \$outfile_path,
         },
-        FILEHANDLE => {
+        sample_id => {
             defined  => 1,
             required => 1,
-            store    => \$FILEHANDLE,
+            store    => \$sample_id,
         },
     };
 
