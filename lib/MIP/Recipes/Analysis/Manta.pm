@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_manta };
@@ -147,9 +147,10 @@ sub analysis_manta {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
@@ -159,16 +160,16 @@ sub analysis_manta {
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
-
-    ## Alias
+    ## Unpack parameters
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $program_mode = $active_parameter_href->{$program_name};
     my $program_outdirectory_name =
       $parameter_href->{$program_name}{outdir_name};
     my ( $core_number, $time, @source_environment_cmds ) =
@@ -179,6 +180,28 @@ sub analysis_manta {
         }
       );
 
+    ## Set and get the io files per chain, id and stream
+    my %io = parse_io_outfiles(
+        {
+            chain_id               => $job_id_chain,
+            id                     => $family_id,
+            file_info_href         => $file_info_href,
+            file_name_prefixes_ref => [$family_id],
+            outdata_dir            => $active_parameter_href->{outdata_dir},
+            parameter_href         => $parameter_href,
+            program_name           => $program_name,
+            temp_directory         => $temp_directory,
+        }
+    );
+
+    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix      = $io{out}{file_path_prefix};
+    my $outfile_suffix           = $io{out}{file_suffix};
+    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
+    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $temp_outfile_suffix      = $io{temp}{file_suffix};
+    my $temp_outfile_path = $temp_outfile_path_prefix . $temp_outfile_suffix;
+
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
@@ -186,49 +209,22 @@ sub analysis_manta {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_path) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $family_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            program_directory =>
-              catfile( $outaligner_dir, $program_outdirectory_name ),
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
 
-    ## Assign directories
-    my $outfamily_directory = catfile(
-        $active_parameter_href->{outdata_dir},
-        $active_parameter_href->{family_id},
-        $active_parameter_href->{outaligner_dir},
-        $program_outdirectory_name,
-    );
-
-    # Used downstream
-    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
-
-    ## Assign file_tags
-    my $outfile_tag =
-      $file_info_href->{$family_id}{$program_name}{file_tag};
-    my $outfile_prefix = $family_id . $outfile_tag . $call_type;
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{gatk_baserecalibration}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
-
     ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
+    set_file_suffix(
         {
             file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
@@ -236,10 +232,12 @@ sub analysis_manta {
             suffix_key     => q{variant_file_suffix},
         }
     );
-    my %file_path_prefix;
-    my $process_batches_count = 1;
+
+    ### SHELL:
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
+    my @manta_temp_infile_paths;
+    my $process_batches_count = 1;
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
@@ -253,28 +251,26 @@ sub analysis_manta {
             }
         );
 
-        ## Assign directories
-        my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-            $sample_id, $outaligner_dir );
-
-        ## Add merged infile name prefix after merging all BAM files per sample_id
-        my $merged_infile_prefix = get_merged_infile_prefix(
+        ## Get the io infiles per chain and id
+        my %sample_io = get_io_files(
             {
+                id             => $sample_id,
                 file_info_href => $file_info_href,
-                sample_id      => $sample_id,
+                parameter_href => $parameter_href,
+                program_name   => $program_name,
+                stream         => q{in},
+                temp_directory => $temp_directory,
             }
         );
+        my $infile_path_prefix = $sample_io{in}{file_path_prefix};
+        my $infile_suffix      = $sample_io{in}{file_suffix};
+        my $infile_path =
+          $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
+        my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
+        my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
 
-        ## Assign file_tags
-        my $infile_tag =
-          $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
-        my $infile_prefix = $merged_infile_prefix . $infile_tag;
-
-        my $infile_path = catfile( $insample_directory,
-            $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK );
-
-        $file_path_prefix{$sample_id} =
-          catfile( $temp_directory, $infile_prefix );
+        ## Store temp infile path for each sample_id
+        push @manta_temp_infile_paths, $temp_infile_path;
 
         ## Copy file(s) to temporary directory
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -288,7 +284,7 @@ sub analysis_manta {
     }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    ## manta
+    ## Manta
     say {$FILEHANDLE} q{## Manta};
 
     ## Get parameters
@@ -298,15 +294,11 @@ sub analysis_manta {
         $exome_analysis = 1;
     }
 
-    ## Assemble file paths by adding file ending
-    my @file_paths = map { $file_path_prefix{$_} . $infile_suffix }
-      @{ $active_parameter_href->{sample_ids} };
-
     manta_config(
         {
             exome_analysis     => $exome_analysis,
             FILEHANDLE         => $FILEHANDLE,
-            infile_paths_ref   => \@file_paths,
+            infile_paths_ref   => \@manta_temp_infile_paths,
             outdirectory_path  => $temp_directory,
             referencefile_path => $referencefile_path,
         }
@@ -323,16 +315,16 @@ sub analysis_manta {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    my $infile_path =
-      catfile( $temp_directory, q{results}, q{variants}, q{diploidSV.vcf.gz} );
+    my $manta_temp_outfile_path =
+      catfile( $temp_directory, qw{ results variants diploidSV.vcf.gz } );
 
     ## Perl wrapper for writing gzip recipe to $FILEHANDLE
     gzip(
         {
             decompress   => 1,
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $outfile_path_prefix . $outfile_suffix,
+            infile_path  => $manta_temp_outfile_path,
+            outfile_path => $temp_outfile_path,
             stdout       => 1,
         }
     );
@@ -343,8 +335,8 @@ sub analysis_manta {
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path_prefix . $outfile_suffix . $ASTERISK,
-            outfile_path => $outfamily_directory,
+            infile_path  => $temp_outfile_path . $ASTERISK,
+            outfile_path => $outdir_path_prefix,
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -354,9 +346,7 @@ sub analysis_manta {
 
         add_program_outfile_to_sample_info(
             {
-                path => catfile(
-                    $outfamily_directory, $outfile_prefix . $outfile_suffix
-                ),
+                path             => $outfile_path,
                 program_name     => q{manta},
                 sample_info_href => $sample_info_href,
             }

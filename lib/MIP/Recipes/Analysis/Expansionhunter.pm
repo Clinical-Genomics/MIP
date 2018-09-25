@@ -192,6 +192,7 @@ sub analysis_expansionhunter {
         }
       );
 
+    ## Set and get the io files per chain, id and stream
     %io = (
         %io,
         parse_io_outfiles(
