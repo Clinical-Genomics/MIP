@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ delly_call delly_filter delly_merge };
@@ -33,7 +33,7 @@ Readonly my $SPACE => q{ };
 
 sub delly_call {
 
-## Function : Perl wrapper for writing Delly call recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.6.
+## Function : Perl wrapper for writing Delly call recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.8.
 ## Returns  : @commands
 ## Arguments: $exclude_file_path      => File with regions to exclude
 ##          : $FILEHANDLE             => Filehandle to write to
@@ -94,8 +94,6 @@ sub delly_call {
             store       => \$stdoutfile_path,
         },
         sv_type => {
-            required    => 1,
-            defined     => 1,
             allow       => [qw{ DEL DUP INV INS TRA }],
             strict_type => 1,
             store       => \$sv_type,
@@ -161,7 +159,7 @@ sub delly_call {
 
 sub delly_merge {
 
-## Function : Perl wrapper for writing Delly merge recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.6.
+## Function : Perl wrapper for writing Delly merge recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.8.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $infile_paths_ref       => Infile paths {REF}
@@ -221,8 +219,6 @@ sub delly_merge {
             store       => \$stdoutfile_path,
         },
         sv_type => {
-            required    => 1,
-            defined     => 1,
             allow       => [qw{ DEL DUP INV INS TRA }],
             strict_type => 1,
             store       => \$sv_type,

@@ -478,7 +478,31 @@ sub get_io_files {
                 )
               );
 
-            ## Do not inherit from other chains than MAIN
+            ## PARALLEL CHAIN with multiple recipes
+            # second in chain
+            if ( uc $upstream_program eq $chain_id ) {
+
+                ## Switch upstream out to program in - i.e. inherit from upstream
+                _inherit_upstream_io_files(
+                    {
+                        chain_id           => $chain_id,
+                        id                 => $id,
+                        file_info_href     => $file_info_href,
+                        program_name       => $program_name,
+                        stream             => $stream,
+                        temp_directory     => $temp_directory,
+                        upstream_direction => $upstream_direction,
+                        upstream_chain_id  => $upstream_chain_id,
+                        upstream_program   => $upstream_program,
+                    }
+                );
+
+                ##  Return set file features
+                return %{ $file_info_href->{io}{$chain_id}{$id}{$program_name}
+                };
+            }
+
+            ## Do not inherit from other chains than self or MAIN
             next UPSTREAM_PROGRAM if ( $upstream_chain_id ne q{MAIN} );
 
             ## Found io file features found in chain, id, program and stream
@@ -495,18 +519,17 @@ sub get_io_files {
             {
 
                 ## Switch upstream out to program in - i.e. inherit from upstream
-                my @upstream_outfile_paths =
-                  @{ $file_info_href->{io}{$upstream_chain_id}{$id}
-                      {$upstream_program}{$upstream_direction}{file_paths} };
-                set_io_files(
+                _inherit_upstream_io_files(
                     {
-                        chain_id       => $chain_id,
-                        id             => $id,
-                        file_paths_ref => \@upstream_outfile_paths,
-                        file_info_href => $file_info_href,
-                        program_name   => $program_name,
-                        stream         => $stream,
-                        temp_directory => $temp_directory,
+                        chain_id           => $chain_id,
+                        id                 => $id,
+                        file_info_href     => $file_info_href,
+                        program_name       => $program_name,
+                        stream             => $stream,
+                        temp_directory     => $temp_directory,
+                        upstream_direction => $upstream_direction,
+                        upstream_chain_id  => $upstream_chain_id,
+                        upstream_program   => $upstream_program,
                     }
                 );
 
@@ -1004,6 +1027,110 @@ sub _collect_outfile {
             @{$outfiles_ref}       = ();
         }
     }
+    return;
+}
+
+sub _inherit_upstream_io_files {
+
+## Function : Switch upstream out to program in - i.e. inherit from upstream
+## Returns  : %io
+## Arguments: $chain_id           => Chain id
+##          : $id                 => Id (sample or family)
+##          : $file_info_href     => File info hash {REF}
+##          : $program_name       => Program name
+##          : $stream             => Stream (in or out or temp)
+##          : $temp_directory     => Temporary directory
+##          : $upstream_direction => Upstream direction
+##          : $upstream_chain_id  => Upstream chain id
+##          : $upstream_program   => Upstream program
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $program_name;
+    my $stream;
+    my $temp_directory;
+    my $upstream_direction;
+    my $upstream_chain_id;
+    my $upstream_program;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in temp out }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        upstream_direction => {
+            defined     => 1,
+            required    => 1,
+            store       => \$upstream_direction,
+            strict_type => 1,
+        },
+        upstream_chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$upstream_chain_id,
+            strict_type => 1,
+        },
+        upstream_program => {
+            defined     => 1,
+            required    => 1,
+            store       => \$upstream_program,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Switch upstream out to program in - i.e. inherit from upstream
+    my @upstream_outfile_paths =
+      @{ $file_info_href->{io}{$upstream_chain_id}{$id}
+          {$upstream_program}{$upstream_direction}{file_paths} };
+    set_io_files(
+        {
+            chain_id       => $chain_id,
+            id             => $id,
+            file_paths_ref => \@upstream_outfile_paths,
+            file_info_href => $file_info_href,
+            program_name   => $program_name,
+            stream         => $stream,
+            temp_directory => $temp_directory,
+        }
+    );
     return;
 }
 

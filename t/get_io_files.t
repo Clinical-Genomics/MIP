@@ -86,6 +86,11 @@ my @file_paths_2 = (
     catfile(qw{ a test picard_mergesamfiles file_1.txt}),
     catfile(qw{ a test picard_mergesamfiles file_2.txt}),
 );
+my @delly_file_paths = (
+    catfile(qw{ a test delly_call dc_file_1.bcf}),
+    catfile(qw{ a test delly_call dc_file_2.bcf}),
+);
+
 my %file_info = (
     $id => {
         mip_infiles_dir => catfile(qw{ a dir }),
@@ -95,15 +100,18 @@ my %file_info = (
         base_temp            => { file_paths => \@base_temp_paths, },
         bwa_mem              => { file_paths => \@file_paths, },
         picard_mergesamfiles => { file_paths => \@file_paths_2, },
+        delly_call           => { file_paths => \@delly_file_paths, },
     },
 );
 my @order_programs =
-  qw{ bwa_mem picard_mergesamfiles markduplicates gatk_baserecalibration chanjo_sexcheck cnvnator sv_combinevariantcallsets };
+  qw{ bwa_mem picard_mergesamfiles markduplicates gatk_baserecalibration chanjo_sexcheck cnvnator delly_call delly_reformat sv_combinevariantcallsets };
 
 my %parameter = (
     bwa_mem                   => { chain              => $chain_main, },
     chanjo_sexcheck           => { chain              => $chain_chanjo, },
     cnvnator                  => { chain              => q{CNVNATOR}, },
+    delly_call                => { chain              => q{DELLY_CALL}, },
+    delly_reformat            => { chain              => q{DELLY_CALL}, },
     dynamic_parameter         => { order_programs_ref => \@order_programs, },
     markduplicates            => { chain              => $chain_main, },
     picard_mergesamfiles      => { chain              => $chain_main, },
@@ -266,6 +274,56 @@ is_deeply(
     \@{ $file_info{$id}{picard_mergesamfiles}{file_paths} },
     \@{ $io{$stream}{file_paths} },
 q{Got picard_mergesamfiles outfile features as infiles for sv_combinevariantcallsets for sample_1}
+);
+
+## Given a program in a PARALLEL chain and other chain
+my $delly_call = q{delly_call};
+
+%io = get_io_files(
+    {
+        id             => $id,
+        file_info_href => \%file_info,
+        parameter_href => \%parameter,
+        program_name   => $delly_call,
+        stream         => $stream,
+    }
+);
+
+is_deeply(
+    \@{ $file_info{$id}{picard_mergesamfiles}{file_paths} },
+    \@{ $io{$stream}{file_paths} },
+q{Got picard_mergesamfiles outfile features as infiles for delly_call for sample_1}
+);
+
+## Set new outfiles for second program in PARALLEL self chain
+set_io_files(
+    {
+        chain_id       => q{DELLY_CALL},
+        id             => $id,
+        file_paths_ref => \@delly_file_paths,
+        file_info_href => \%file_info,
+        program_name   => $delly_call,
+        stream         => $stream_out,
+    }
+);
+
+## Given a program in a PARALLEL chain and other chain
+my $delly_reformat = q{delly_reformat};
+
+%io = get_io_files(
+    {
+        id             => $id,
+        file_info_href => \%file_info,
+        parameter_href => \%parameter,
+        program_name   => $delly_reformat,
+        stream         => $stream,
+    }
+);
+
+is_deeply(
+    \@{ $file_info{$id}{delly_call}{file_paths} },
+    \@{ $io{$stream}{file_paths} },
+q{Got delly_call outfile features as infiles for delly_reformat for sample_1}
 );
 
 ## Given a already processed program
