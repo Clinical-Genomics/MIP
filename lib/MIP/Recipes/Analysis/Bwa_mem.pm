@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem };
@@ -140,7 +140,7 @@ sub analysis_bwa_mem {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_read_group };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
@@ -347,11 +347,22 @@ sub analysis_bwa_mem {
         }
 
         ## Read group header line
+        my %read_group = get_read_group(
+            {
+                infile_prefix    => $infile_prefix,
+                platform         => $active_parameter_href->{platform},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         my @read_group_headers = (
             $DOUBLE_QUOTE . q{@RG} . q{\t},
-            q{ID:} . $infile_prefix . q{\t},
-            q{SM:} . $sample_id . q{\t},
-            q{PL:} . $active_parameter_href->{platform} . $DOUBLE_QUOTE,
+            q{ID:} . $read_group{id} . q{\t},
+            q{SM:} . $read_group{sm} . q{\t},
+            q{PL:} . $read_group{pl} . q{\t},
+            q{PU:} . $read_group{pu} . q{\t},
+            q{LB:} . $read_group{lb} . $DOUBLE_QUOTE,
         );
 
         ## Prepare for downstream processing
