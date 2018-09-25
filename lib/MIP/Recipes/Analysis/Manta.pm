@@ -38,7 +38,6 @@ sub analysis_manta {
 ## Function : Joint analysis of structural variation
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $call_type               => The variant call type
 ##          : $family_id               => Family id
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
@@ -62,7 +61,6 @@ sub analysis_manta {
     my $sample_info_href;
 
     ## Default(s)
-    my $call_type;
     my $family_id;
     my $outaligner_dir;
     my $referencefile_path;
@@ -74,11 +72,6 @@ sub analysis_manta {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        call_type => {
-            default     => $UNDERSCORE . q{SV},
-            store       => \$call_type,
             strict_type => 1,
         },
         family_id => {
@@ -226,7 +219,7 @@ sub analysis_manta {
     ## Set file suffix for next module within jobid chain
     set_file_suffix(
         {
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
+            file_suffix    => $outfile_suffix,
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
