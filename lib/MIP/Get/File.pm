@@ -480,7 +480,7 @@ sub get_io_files {
 
             ## PARALLEL CHAIN with multiple recipes
             # second in chain
-            if ( uc $upstream_program eq $chain_id ) {
+            if ( $upstream_chain_id eq $chain_id ) {
 
                 ## Switch upstream out to program in - i.e. inherit from upstream
                 _inherit_upstream_io_files(
