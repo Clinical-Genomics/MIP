@@ -157,7 +157,7 @@ sub analysis_delly_reformat {
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_merge bcftools_index };
+      qw{ bcftools_merge bcftools_index bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Delly qw{ delly_call delly_merge };
     use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
     use MIP::Processmanagement::Processes qw{ print_wait };
@@ -404,6 +404,9 @@ sub analysis_delly_reformat {
             say {$XARGSFILEHANDLE} $NEWLINE;
         }
 
+        close $XARGSFILEHANDLE
+          or $log->logcroak(q{Could not close XARGSFILEHANDLE});
+
         ### Merge calls
         say {$FILEHANDLE} q{## bcftools merge};
 
@@ -450,11 +453,11 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
 
         bcftools_view_and_index_vcf(
             {
-                FILEHANDLE   => $FILEHANDLE,
-                index        => 1,
-                output_type  => q{v},
-                infile_path  => $delly_merge_temp_infile_paths[0],
-                outfile_path => $temp_outfile_path_prefix
+                FILEHANDLE          => $FILEHANDLE,
+                index               => 1,
+                output_type         => q{v},
+                infile_path         => $delly_merge_temp_infile_paths[0],
+                outfile_path_prefix => $temp_outfile_path_prefix
                   . $UNDERSCORE
                   . q{to_sort},
             }
@@ -504,8 +507,6 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
     if ( $program_mode == 1 ) {
 
