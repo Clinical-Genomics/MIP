@@ -135,7 +135,7 @@ sub analysis_star_aln {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_read_group };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Alignment::Picardtools
@@ -153,9 +153,6 @@ sub analysis_star_aln {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program mode
-    my $program_mode = $active_parameter_href->{$program_name};
-
     ## Unpack parameters
     ## Get the io infiles per chain and id
     my %io = get_io_files(
@@ -172,7 +169,8 @@ sub analysis_star_aln {
     my @infile_names         = @{ $io{in}{file_names} };
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
     my @temp_infile_paths    = @{ $io{temp}{file_paths} };
-
+    my $program_mode         = $active_parameter_href->{$program_name};
+    my $job_id_chain         = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -180,9 +178,6 @@ sub analysis_star_aln {
             program_name          => $program_name,
         }
       );
-
-    ## Assign job_id_chain
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
 
     %io = (
         %io,
@@ -200,7 +195,6 @@ sub analysis_star_aln {
             }
         )
     );
-
     my $outdir_path                = $io{out}{dir_path};
     my $outfile_suffix             = $io{out}{file_suffix};
     my @outfile_name_prefixes      = @{ $io{out}{file_name_prefixes} };
@@ -212,10 +206,6 @@ sub analysis_star_aln {
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
-
-    ## Assign file_tags
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
 
     ### Assign suffix
     ## Set file suffix for next module within jobid chain
@@ -271,6 +261,8 @@ sub analysis_star_aln {
                 temp_directory                  => $temp_directory,
             }
         );
+
+        ### SHELL
 
         ## Copies file to temporary directory.
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -339,6 +331,15 @@ sub analysis_star_aln {
         ## Increment paired end tracker
         $paired_end_tracker++;
 
+        my %read_group = get_read_group(
+            {
+                infile_prefix    => $infile_prefix,
+                platform         => $active_parameter_href->{platform},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         picardtools_addorreplacereadgroups(
             {
                 create_index => q{true},
@@ -355,11 +356,11 @@ sub analysis_star_aln {
                   $active_parameter_href->{java_use_large_pages},
                 memory_allocation       => q{Xmx1g},
                 outfile_path            => $file_path,
-                readgroup_id            => $infile_prefix,
-                readgroup_library       => q{RNA},
-                readgroup_platform      => $active_parameter_href->{platform},
-                readgroup_platform_unit => q{0},
-                readgroup_sample        => $sample_id,
+                readgroup_id            => $read_group{id},
+                readgroup_library       => $read_group{lb},
+                readgroup_platform      => $read_group{pl},
+                readgroup_platform_unit => $read_group{pu},
+                readgroup_sample        => $read_group{sm},
             },
         );
 
@@ -410,7 +411,7 @@ sub analysis_star_aln {
             add_processing_metafile_to_sample_info(
                 {
                     metafile_tag     => $most_complete_format_key,
-                    path             => $outfile_name_prefix,
+                    path             => $outfile_path,
                     sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,
                 }

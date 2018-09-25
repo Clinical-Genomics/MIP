@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -31,12 +31,14 @@ BEGIN {
       get_program_parameters
       get_program_version
       get_programs_for_shell_installation
+      get_read_group
       get_user_supplied_info
     };
 }
 
 ## Constants
 Readonly my $COLON      => q{:};
+Readonly my $DOT        => q{.};
 Readonly my $MINUS_FOUR => -4;
 Readonly my $MINUS_ONE  => -1;
 Readonly my $MINUS_TWO  => -2;
@@ -657,6 +659,84 @@ sub get_programs_for_shell_installation {
     }
 
     return @shell_programs;
+}
+
+sub get_read_group {
+
+## Function : Builds hash with read group headers
+## Returns  : %read_group
+## Arguments: $infile_prefix    => Name of Fastq file minus read direction information
+##          : $platform         => Sequencing platform
+##          : $sample_id        => Sample ID
+##          : $sample_info_href => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_prefix;
+    my $platform;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        infile_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_prefix,
+            strict_type => 1,
+        },
+        platform => {
+            defined     => 1,
+            required    => 1,
+            store       => \$platform,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Traverse down $sample_info_href
+    my %fastq_file =
+      %{ $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
+          {read_direction_file}{ $infile_prefix . q{_1} } };
+
+    ## RG hash
+    my %rg;
+
+    ## Add ID
+    $rg{id} = $infile_prefix;
+
+    ## Add platform unit
+    $rg{pu} =
+        $fastq_file{flowcell}
+      . $DOT
+      . $fastq_file{lane}
+      . $DOT
+      . $fastq_file{sample_barcode};
+
+    ## Add sample
+    $rg{sm} = $sample_id;
+
+    ## Add platform
+    $rg{pl} = $platform;
+
+    ## Add molecular library (Dummy value since the actual LB isn't available)
+    $rg{lb} = $sample_id;
+
+    return %rg;
 }
 
 1;
