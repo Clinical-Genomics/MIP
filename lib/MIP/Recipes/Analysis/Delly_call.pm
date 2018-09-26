@@ -263,6 +263,7 @@ sub analysis_delly_call {
             outfile_path => $temp_directory,
         }
     );
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Delly
     say {$FILEHANDLE} q{## Delly call};
