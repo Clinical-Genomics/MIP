@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_delly_call analysis_delly_call_old };
@@ -272,6 +272,7 @@ sub analysis_delly_call {
         {
             exclude_file_path => $active_parameter_href->{delly_exclude_file},
             FILEHANDLE        => $FILEHANDLE,
+            no_small_indel    => 1,
             infile_path       => $temp_infile_path,
             outfile_path      => $temp_outfile_path,
             referencefile_path =>
