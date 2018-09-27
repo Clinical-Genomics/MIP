@@ -31,9 +31,9 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
+Readonly my $ASTERISK => q{*};
+Readonly my $DOT      => q{.};
+Readonly my $NEWLINE  => qq{\n};
 
 sub analysis_gatk_splitncigarreads {
 
@@ -178,7 +178,7 @@ sub analysis_gatk_splitncigarreads {
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my @temp_infile_paths  = @{ $io{temp}{file_paths} };
+    my %temp_infile_path   = %{ $io{temp}{file_path_href} };
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $program_mode       = $active_parameter_href->{$program_name};
     my $job_id_chain       = $parameter_href->{$program_name}{chain};
@@ -223,7 +223,7 @@ sub analysis_gatk_splitncigarreads {
         )
     );
     my $outdir_path              = $io{out}{dir_path};
-    my @temp_outfile_paths       = @{ $io{temp}{file_paths} };
+    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
     my $xargs_file_path_prefix;
 
@@ -235,19 +235,21 @@ sub analysis_gatk_splitncigarreads {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            program_directory     => $active_parameter_href->{outaligner_dir},
-            program_name          => $program_name,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            program_directory               => $program_name,
+            program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
+
+    ### SHELL
 
     ## Copy file(s) to temporary directory
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -291,12 +293,10 @@ sub analysis_gatk_splitncigarreads {
     );
 
   CONTIG:
-    while ( my ( $infile_index, $contig ) =
-        each @{ $file_info_href->{contigs_size_ordered} } )
-    {
+    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        my $infile_path  = $temp_infile_paths[$infile_index];
-        my $outfile_path = $temp_outfile_paths[$infile_index];
+        my $infile_path  = $temp_infile_path{$contig};
+        my $outfile_path = $temp_outfile_path{$contig};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
