@@ -78,7 +78,7 @@ sub run {
     ## Add all environments to installation if full installation was selected
     if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
         @{ $parameter{installations} } =
-          qw{ emip ecnvnator efreebayes epeddy epy3 etiddit evep };
+          qw{ emip ecnvnator edelly efreebayes epeddy epy3 etiddit evep };
     }
 
     ## Make sure that the cnvnator environment is installed last
@@ -122,6 +122,7 @@ sub _build_usage {
             isa           => Dict [
                 emip       => Optional [Str],
                 ecnvnator  => Optional [Str],
+                edelly     => Optional [Str],
                 efreebayes => Optional [Str],
                 epeddy     => Optional [Str],
                 epy3       => Optional [Str],
@@ -156,7 +157,7 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ emip ecnvnator efreebayes epeddy epy3 etiddit evep full }
+                        qw{ emip ecnvnator edelly efreebayes epeddy epy3 etiddit evep full }
                     ]
                 ),
             ],

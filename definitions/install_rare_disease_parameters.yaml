@@ -23,7 +23,6 @@ emip:
     cramtools: 3.0.b47
     cutadapt: 1.14
     cython:
-    delly: 0.7.7
     fastqc: 0.11.4
     gatk: 3.8
     gatk4: 4.0
@@ -95,6 +94,17 @@ ecnvnator:
       conda_dependency:
         gcc:
       version: 0.3.3
+
+# Delly environment spec
+edelly:
+  conda:
+    bcftools: 1.6
+    delly: 0.7.8
+    picard: 2.14.1
+    pip:
+    python: 2.7
+  pip:
+  shell:
 
 # Freebayes environment spec
 efreebayes:
@@ -190,6 +200,7 @@ evep:
 environment_name:
   emip: MIP_rare
   ecnvnator:
+  edelly:
   efreebayes:
   epeddy:
   epy3:
@@ -199,6 +210,7 @@ environment_name:
 # Environments to install
 installations:
   - ecnvnator
+  - edelly
   - efreebayes
   - emip
   - epeddy
