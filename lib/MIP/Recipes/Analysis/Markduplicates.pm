@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rio };
@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK    => q{*};
+Readonly my $ASTERISK   => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
@@ -188,7 +188,7 @@ sub analysis_markduplicates {
     my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my @temp_infile_paths  = @{ $io{temp}{file_paths} };
+    my %temp_infile_path   = %{ $io{temp}{file_path_href} };
 
     my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $program_mode       = $active_parameter_href->{$program_name};
@@ -250,7 +250,7 @@ sub analysis_markduplicates {
     my $outfile_name_prefix      = $io{out}{file_name_prefix};
     my $outfile_path_name_prefix = $io{out}{file_path_prefix};
     my $temp_file_path_prefix    = $io{temp}{file_path_prefix};
-    my @temp_outfile_paths       = @{ $io{temp}{file_paths} };
+    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -327,9 +327,7 @@ sub analysis_markduplicates {
         );
 
       CONTIG:
-        while ( my ( $infile_index, $contig ) =
-            each @{ $file_info_href->{contigs_size_ordered} } )
-        {
+        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
@@ -339,9 +337,9 @@ sub analysis_markduplicates {
                 {
                     create_index       => q{true},
                     FILEHANDLE         => $XARGSFILEHANDLE,
-                    infile_paths_ref   => [ $temp_infile_paths[$infile_index] ],
+                    infile_paths_ref   => [ $temp_infile_path{$contig} ],
                     metrics_file       => $metrics_file,
-                    outfile_path       => $temp_outfile_paths[$infile_index],
+                    outfile_path       => $temp_outfile_path{$contig},
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
                 }
@@ -352,7 +350,7 @@ sub analysis_markduplicates {
             sambamba_flagstat(
                 {
                     FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $temp_outfile_paths[$infile_index],
+                    infile_path  => $temp_outfile_path{$contig},
                     outfile_path => $temp_file_path_prefix
                       . $DOT
                       . $contig
@@ -382,9 +380,7 @@ sub analysis_markduplicates {
         );
 
       CONTIG:
-        while ( my ( $infile_index, $contig ) =
-            each @{ $file_info_href->{contigs_size_ordered} } )
-        {
+        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
@@ -393,10 +389,10 @@ sub analysis_markduplicates {
                     FILEHANDLE      => $XARGSFILEHANDLE,
                     hash_table_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_hash_table_size},
-                    infile_path    => [ $temp_infile_paths[$infile_index] ],
+                    infile_path    => [ $temp_infile_path{$contig} ],
                     io_buffer_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_io_buffer_size},
-                    outfile_path       => $temp_outfile_paths[$infile_index],
+                    outfile_path       => $temp_outfile_path{$contig},
                     overflow_list_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_overflow_list_size},
                     show_progress   => 1,
@@ -410,7 +406,7 @@ sub analysis_markduplicates {
             sambamba_flagstat(
                 {
                     FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $temp_outfile_paths[$infile_index],
+                    infile_path  => $temp_outfile_path{$contig},
                     outfile_path => $temp_file_path_prefix
                       . $DOT
                       . $contig
@@ -681,7 +677,7 @@ sub analysis_markduplicates_rio {
     my $infile_suffix           = $io{in}{file_suffix};
     my $infile_name_prefix      = $io{in}{file_name_prefix};
     my $temp_infile_name_prefix = $io{temp}{file_name_prefix};
-    my @temp_infile_paths       = @{ $io{temp}{file_paths} };
+    my %temp_infile_path        = %{ $io{temp}{file_path_href} };
 
     ## Unpack parameters
     my $job_id_chain       = $parameter_href->{$program_name}{chain};
@@ -743,7 +739,7 @@ sub analysis_markduplicates_rio {
     my $outfile_name_prefix      = $io{out}{file_name_prefix};
     my $outfile_path_name_prefix = $io{out}{file_path_prefix};
     my $temp_file_path_prefix    = $io{temp}{file_path_prefix};
-    my @temp_outfile_paths       = @{ $io{temp}{file_paths} };
+    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -782,9 +778,7 @@ sub analysis_markduplicates_rio {
         );
 
       CONTIG:
-        while ( my ( $infile_index, $contig ) =
-            each @{ $file_info_href->{contigs_size_ordered} } )
-        {
+        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
@@ -794,9 +788,9 @@ sub analysis_markduplicates_rio {
                 {
                     create_index       => q{true},
                     FILEHANDLE         => $XARGSFILEHANDLE,
-                    infile_paths_ref   => [ $temp_infile_paths[$infile_index] ],
+                    infile_paths_ref   => [ $temp_infile_path{$contig} ],
                     metrics_file       => $metrics_file,
-                    outfile_path       => $temp_outfile_paths[$infile_index],
+                    outfile_path       => $temp_outfile_path{$contig},
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
                 }
@@ -807,7 +801,7 @@ sub analysis_markduplicates_rio {
             sambamba_flagstat(
                 {
                     FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $temp_outfile_paths[$infile_index],
+                    infile_path  => $temp_outfile_path{$contig},
                     outfile_path => $temp_file_path_prefix
                       . $DOT
                       . $contig
@@ -837,9 +831,7 @@ sub analysis_markduplicates_rio {
         );
 
       CONTIG:
-        while ( my ( $infile_index, $contig ) =
-            each @{ $file_info_href->{contigs_size_ordered} } )
-        {
+        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
@@ -848,10 +840,10 @@ sub analysis_markduplicates_rio {
                     FILEHANDLE      => $XARGSFILEHANDLE,
                     hash_table_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_hash_table_size},
-                    infile_path    => [ $temp_infile_paths[$infile_index] ],
+                    infile_path    => [ $temp_infile_path{$contig} ],
                     io_buffer_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_io_buffer_size},
-                    outfile_path       => $temp_outfile_paths[$infile_index],
+                    outfile_path       => $temp_outfile_path{$contig},
                     overflow_list_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_overflow_list_size},
                     show_progress   => 1,
@@ -865,7 +857,7 @@ sub analysis_markduplicates_rio {
             sambamba_flagstat(
                 {
                     FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $temp_outfile_paths[$infile_index],
+                    infile_path  => $temp_outfile_path{$contig},
                     outfile_path => $temp_file_path_prefix
                       . $DOT
                       . $contig

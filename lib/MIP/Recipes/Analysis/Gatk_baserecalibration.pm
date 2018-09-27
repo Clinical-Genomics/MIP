@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -32,7 +32,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK    => q{*};
+Readonly my $ASTERISK   => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -189,7 +189,7 @@ sub analysis_gatk_baserecalibration {
     my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my @temp_infile_paths  = @{ $io{temp}{file_paths} };
+    my %temp_infile_path   = %{ $io{temp}{file_path_href} };
 
     my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $program_mode       = $active_parameter_href->{$program_name};
@@ -251,7 +251,7 @@ sub analysis_gatk_baserecalibration {
     my $outdir_path_prefix       = $io{out}{dir_path_prefix};
     my $outfile_name_prefix      = $io{out}{file_name_prefix};
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my @temp_outfile_paths       = @{ $io{temp}{file_paths} };
+    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -355,9 +355,7 @@ sub analysis_gatk_baserecalibration {
     );
 
   CONTIG:
-    while ( my ( $infile_index, $contig ) =
-        each @{ $file_info_href->{contigs_size_ordered} } )
-    {
+    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## Get parameters
         # Exome analysis
@@ -380,13 +378,13 @@ sub analysis_gatk_baserecalibration {
         }
 
         my $base_quality_score_recalibration_file =
-          $temp_outfile_paths[$infile_index] . $DOT . q{grp};
+          $temp_outfile_path{$contig} . $DOT . q{grp};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
             {
                 FILEHANDLE    => $XARGSFILEHANDLE,
-                infile_path   => $temp_infile_paths[$infile_index],
+                infile_path   => $temp_infile_path{$contig},
                 intervals_ref => \@intervals,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -421,9 +419,7 @@ sub analysis_gatk_baserecalibration {
     );
 
   CONTIG:
-    while ( my ( $infile_index, $contig ) =
-        each @{ $file_info_href->{contigs_size_ordered} } )
-    {
+    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## Get parameters
         # Exome  analysis
@@ -448,13 +444,13 @@ sub analysis_gatk_baserecalibration {
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $base_quality_score_recalibration_file =
-          $temp_outfile_paths[$infile_index] . $DOT . q{grp};
+          $temp_outfile_path{$contig} . $DOT . q{grp};
         gatk_applybqsr(
             {
                 base_quality_score_recalibration_file =>
                   $base_quality_score_recalibration_file,
                 FILEHANDLE    => $XARGSFILEHANDLE,
-                infile_path   => $temp_infile_paths[$infile_index],
+                infile_path   => $temp_infile_path{$contig},
                 intervals_ref => \@intervals,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -469,7 +465,7 @@ sub analysis_gatk_baserecalibration {
                     $active_parameter_href
                       ->{gatk_baserecalibration_static_quantized_quals}
                 },
-                outfile_path       => $temp_outfile_paths[$infile_index],
+                outfile_path       => $temp_outfile_path{$contig},
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
@@ -737,7 +733,7 @@ sub analysis_gatk_baserecalibration_rio {
     my $infile_suffix           = $io{in}{file_suffix};
     my $infile_name_prefix      = $io{in}{file_name_prefix};
     my $temp_infile_name_prefix = $io{temp}{file_name_prefix};
-    my @temp_infile_paths       = @{ $io{temp}{file_paths} };
+    my %temp_infile_path        = %{ $io{temp}{file_path_href} };
 
     my $job_id_chain       = $parameter_href->{$program_name}{chain};
     my $program_mode       = $active_parameter_href->{$program_name};
@@ -799,7 +795,7 @@ sub analysis_gatk_baserecalibration_rio {
     my $outdir_path_prefix       = $io{out}{dir_path_prefix};
     my $outfile_name_prefix      = $io{out}{file_name_prefix};
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my @temp_outfile_paths       = @{ $io{temp}{file_paths} };
+    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -867,9 +863,7 @@ sub analysis_gatk_baserecalibration_rio {
     );
 
   CONTIG:
-    while ( my ( $infile_index, $contig ) =
-        each @{ $file_info_href->{contigs_size_ordered} } )
-    {
+    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## Get parameters
         # Exome analysis
@@ -892,13 +886,13 @@ sub analysis_gatk_baserecalibration_rio {
         }
 
         my $base_quality_score_recalibration_file =
-          $temp_outfile_paths[$infile_index] . $DOT . q{grp};
+          $temp_outfile_path{$contig} . $DOT . q{grp};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
             {
                 FILEHANDLE    => $XARGSFILEHANDLE,
-                infile_path   => $temp_infile_paths[$infile_index],
+                infile_path   => $temp_infile_path{$contig},
                 intervals_ref => \@intervals,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -933,9 +927,7 @@ sub analysis_gatk_baserecalibration_rio {
     );
 
   CONTIG:
-    while ( my ( $infile_index, $contig ) =
-        each @{ $file_info_href->{contigs_size_ordered} } )
-    {
+    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## Get parameters
         # Exome  analysis
@@ -960,13 +952,13 @@ sub analysis_gatk_baserecalibration_rio {
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $base_quality_score_recalibration_file =
-          $temp_outfile_paths[$infile_index] . $DOT . q{grp};
+          $temp_outfile_path{$contig} . $DOT . q{grp};
         gatk_applybqsr(
             {
                 base_quality_score_recalibration_file =>
                   $base_quality_score_recalibration_file,
                 FILEHANDLE    => $XARGSFILEHANDLE,
-                infile_path   => $temp_infile_paths[$infile_index],
+                infile_path   => $temp_infile_path{$contig},
                 intervals_ref => \@intervals,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -980,7 +972,7 @@ sub analysis_gatk_baserecalibration_rio {
                     $active_parameter_href
                       ->{gatk_baserecalibration_static_quantized_quals}
                 },
-                outfile_path       => $temp_outfile_paths[$infile_index],
+                outfile_path       => $temp_outfile_path{$contig},
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,

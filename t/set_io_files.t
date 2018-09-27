@@ -33,8 +33,9 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $FRW_SLASH => q{/};
 Readonly my $COMMA     => q{,};
+Readonly my $FRW_SLASH => q{/};
+Readonly my $CHR_23    => q{23};
 Readonly my $SPACE     => q{ };
 
 BEGIN {
@@ -78,6 +79,16 @@ my @temp_file_paths = (
 );
 my @temp_file_path_prefixes =
   ( catfile(qw{ a temp dir file_1}), catfile(qw{ a temp dir file_2}), );
+my @contigs = ( 1 .. $CHR_23, qw{ X Y MT } );
+my @contig_files =
+  map { catfile( qw{ a temp dir }, q{file.} . $_ . q{.bam} ) } @contigs;
+my %file_contig;
+
+while ( my ( $index, $contig ) = each @contigs ) {
+
+    $file_contig{$contig} = $contig_files[$index];
+}
+
 my %file_info;
 my $stream         = q{in};
 my $temp_directory = catfile(qw{ a temp dir});
@@ -268,4 +279,24 @@ is(
     catfile(qw{ a temp dir }), q{Set file constant dir path for temp stream}
 );
 
+## Given contig files
+set_io_files(
+    {
+        chain_id       => $chain_id,
+        id             => $id,
+        file_paths_ref => \@contig_files,
+        file_info_href => \%file_info,
+        program_name   => $program_name,
+        stream         => $stream,
+        temp_directory => $temp_directory,
+    }
+);
+
+is_deeply(
+    \%{
+        $file_info{io}{$chain_id}{$id}{$program_name}{$stream}{file_path_href}
+    },
+    \%{file_contig},
+    q{Set file path hash}
+);
 done_testing();

@@ -58,7 +58,6 @@ Paths without suffix
 File name without suffix
 - "file_1"
 
-
 ##### file_constant_suffix:
 Only for identical file_suffixes otherwise undef
 
@@ -68,3 +67,18 @@ For paths:
 
 *file_constant_suffix*:
 - ".1.txt"
+
+### Hash file features
+
+iterator: string between dots in file_suffixes, e.g. ".1.txt" => iterator = "1".
+
+#### file_path_href:
+Complete paths per iterator.
+{ 1 => "a/dir/file_1.1.txt",
+}
+
+#### file_name_href:
+File name per iterator.
+{ 1 => "file_1.1.txt",
+}
+

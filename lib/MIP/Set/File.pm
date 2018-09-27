@@ -450,8 +450,12 @@ sub set_io_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Alias
+    my $io_program_href =
+      \%{ $file_info_href->{io}{$chain_id}{$id}{$program_name} };
+
     ## Delete previous record (if any)
-    delete $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream};
+    delete $io_program_href->{$stream};
 
   FILE_PATH:
     foreach my $file_path ( @{$file_paths_ref} ) {
@@ -459,39 +463,43 @@ sub set_io_files {
         my ( $file_name_prefix, $dirs, $suffix ) =
           fileparse( $file_path, qr/([.][^.]*)*/sxm );
 
-        push @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
-              {file_names} },
-          basename($file_path);
-        push
-          @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
-              {file_name_prefixes} }, $file_name_prefix;
-        push @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
-              {file_paths} },
-          $file_path;
-        push
-          @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
-              {file_path_prefixes} }, catfile( $dirs, $file_name_prefix );
+        push @{ $io_program_href->{$stream}{file_names} }, basename($file_path);
+        push @{ $io_program_href->{$stream}{file_name_prefixes} },
+          $file_name_prefix;
+        push @{ $io_program_href->{$stream}{file_paths} }, $file_path;
+        push @{ $io_program_href->{$stream}{file_path_prefixes} },
+          catfile( $dirs, $file_name_prefix );
 
         ## Collect everything after first dot
-        push @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
-              {file_suffixes} },
-          $suffix;
+        push @{ $io_program_href->{$stream}{file_suffixes} }, $suffix;
+    }
+
+    if ( scalar @{ $io_program_href->{$stream}{file_suffixes} } > 1 ) {
+
+        _set_io_files_hash(
+            {
+                chain_id       => $chain_id,
+                file_info_href => $file_info_href,
+                id             => $id,
+                program_name   => $program_name,
+                stream         => $stream,
+            }
+        );
+
     }
 
     ## Split relative infile_path to file(s)
     my ( $infile_path_volume, $file_path_directory, $file_path_file_name ) =
       splitpath( $file_paths_ref->[0] );
 
-    $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}{dir_path} =
-      $file_path_directory;
-    $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
-      {dir_path_prefix} = dirname( $file_paths_ref->[0] );
+    $io_program_href->{$stream}{dir_path} = $file_path_directory;
+    $io_program_href->{$stream}{dir_path_prefix} =
+      dirname( $file_paths_ref->[0] );
 
     ## Collect everything after last dot
     my ( $filename, $dirs, $suffix ) =
       fileparse( $file_paths_ref->[0], qr/[.][^.]*/sxm );
-    $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}{file_suffix}
-      = $suffix;
+    $io_program_href->{$stream}{file_suffix} = $suffix;
 
     _set_io_files_constant(
         {
@@ -509,8 +517,7 @@ sub set_io_files {
         ## Switch to temp dir for path
         my @file_paths_temp =
           map { catfile( $temp_directory, $_ ) }
-          @{ $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
-              {file_names} };
+          @{ $io_program_href->{$stream}{file_names} };
 
         set_io_files(
             {
@@ -626,6 +633,10 @@ sub _set_io_files_constant {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Alias
+    my $io_program_href =
+      \%{ $file_info_href->{io}{$chain_id}{$id}{$program_name} };
+
     my %constant_map = (
         file_name_prefixes => q{file_name_prefix},
         file_path_prefixes => q{file_path_prefix},
@@ -636,19 +647,103 @@ sub _set_io_files_constant {
     {
 
         ## Get unique suffixes
-        my @uniq_elements = uniq(
-            @{
-                $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
-                  {$file_feature}
-            }
-        );
+        my @uniq_elements =
+          uniq( @{ $io_program_href->{$stream}{$file_feature} } );
 
         ## If unique
         if ( scalar @uniq_elements == 1 ) {
 
             ## Set file constant suffix
-            $file_info_href->{io}{$chain_id}{$id}{$program_name}{$stream}
-              {$file_constant_feature} = $uniq_elements[0];
+            $io_program_href->{$stream}{$file_constant_feature} =
+              $uniq_elements[0];
+        }
+    }
+    return;
+}
+
+sub _set_io_files_hash {
+
+## Function : Set the io hash files per chain, id, program and stream
+## Returns  : io
+## Arguments: $chain_id       => Chain of recipe
+##          : $id             => Id (sample or family)
+##          : $file_info_href => File info hash {REF}
+##          : $file_paths_ref => File paths {REF}
+##          : $stream         => Stream (in or out or temp)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $file_paths_ref;
+    my $program_name;
+    my $stream;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in temp out }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Alias
+    my $io_program_href =
+      \%{ $file_info_href->{io}{$chain_id}{$id}{$program_name} };
+
+    my %file_map = (
+        file_names => q{file_name_href},
+        file_paths => q{file_path_href},
+    );
+
+  FILE_MAP:
+    while ( my ( $array_key, $hash_key ) = each %file_map ) {
+
+      SUFFIX:
+        while ( my ( $file_index, $suffix ) =
+            each @{ $io_program_href->{$stream}{file_suffixes} } )
+        {
+
+            my $file = $io_program_href->{$stream}{$array_key}[$file_index];
+
+            ## Find iterator string between dots
+            my ($iterator) = $suffix =~ /[.]([^.]+)[.]/sxm;
+
+            if ($iterator) {
+
+                $io_program_href->{$stream}{$hash_key}{$iterator} = $file;
+            }
         }
     }
     return;

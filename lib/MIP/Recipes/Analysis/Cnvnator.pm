@@ -191,7 +191,7 @@ sub analysis_cnvnator {
     my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my @temp_infile_paths  = @{ $io{temp}{file_paths} };
+    my %temp_infile_path   = %{ $io{temp}{file_path_href} };
 
     my $human_genome_reference =
       $active_parameter_href->{human_genome_reference};
@@ -320,21 +320,19 @@ sub analysis_cnvnator {
     );
 
   CONTIG:
-    while ( my ( $infile_index, $contig ) =
-        each @{ $file_info_href->{contigs_size_ordered} } )
-    {
+    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         my $stdbasefile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
 
         ## Assemble parameter
         # Output ROOT file
-        my $root_file = $temp_infile_paths[$infile_index] . $DOT . q{root};
+        my $root_file = $temp_infile_path{$contig} . $DOT . q{root};
         my $temp_outfile_path_prefix_contig =
           $temp_outfile_path_prefix . $UNDERSCORE . $contig;
 
         cnvnator_read_extraction(
             {
-                infile_paths_ref => [ $temp_infile_paths[$infile_index] ],
+                infile_paths_ref => [ $temp_infile_path{$contig} ],
                 outfile_path     => $root_file,
                 regions_ref      => [$contig],
                 unique           => 1,
@@ -430,7 +428,7 @@ sub analysis_cnvnator {
                 FILEHANDLE              => $XARGSFILEHANDLE,
             }
         );
-        print {$XARGSFILEHANDLE} $NEWLINE;
+        say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
     ## Write sbatch code to supplied filehandle to concatenate variants in vcf format.

@@ -34,7 +34,11 @@ io:
       file_path_prefix: "a/dir/file_1",
       file_name_prefix: "file_1"
       file_constant_suffix: undef,
-    }
+      file_path_href: { 1 => "a/dir/file_1.1.txt",
+			},
+      file_name_href: { 1 => "file_1.1.txt",
+                        },
+	}
   out {"exactly the same keys and types"}                  
   temp {"exactly the same keys and types, but with a temp directory base instead of 'in' or 'out' base"}                  
 }
