@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -79,7 +79,10 @@ my @order_programs =
   qw{ bwa_mem picard_mergesamfiles markduplicates gatk_baserecalibration chanjo_sexcheck cnvnator sv_combinevariantcallsets };
 
 my %parameter = (
-    bwa_mem                   => { chain              => $chain_main, },
+    bwa_mem => {
+        chain          => $chain_main,
+        outfile_suffix => q{.bam},
+    },
     chanjo_sexcheck           => { chain              => q{CHAIN_CHANJO}, },
     cnvnator                  => { chain              => q{CNVNATOR}, },
     dynamic_parameter         => { order_programs_ref => \@order_programs, },
@@ -107,5 +110,28 @@ is_deeply(
     \%{ $io{out} },
     q{Set and got fastq file features for sample_1}
 );
+
+## Given set of iterators and infile prefix - construct default paths with iterator
+%io = parse_io_outfiles(
+    {
+        chain_id         => $chain_main,
+        file_info_href   => \%file_info,
+        file_name_prefix => q{alignment_file},
+        id               => $id,
+        iterators_ref    => [qw{ MT X }],
+        outdata_dir      => catdir(qw{ test dir }),
+        parameter_href   => \%parameter,
+        program_name     => $program_name,
+    }
+);
+
+## Then construct outfile paths
+my %expected_outfile_hash = (
+    MT => catfile( qw{test dir}, $id, $program_name, q{alignment_file.MT.bam} ),
+    X  => catfile( qw{test dir}, $id, $program_name, q{alignment_file.X.bam} ),
+);
+is_deeply( \%{ $io{out}{file_path_href} },
+    \%expected_outfile_hash,
+    q{Construct default filenames from prefix and iterators} );
 
 done_testing();

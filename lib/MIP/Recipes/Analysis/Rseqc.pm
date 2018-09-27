@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rseqc };
@@ -32,10 +32,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK    => q{*};
-Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
 
 sub analysis_rseqc {
@@ -146,24 +143,38 @@ sub analysis_rseqc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Qc::Rseqc
       qw{ rseqc_bam_stat rseqc_infer_experiment rseqc_inner_distance rseqc_junction_annotation rseqc_junction_saturation rseqc_read_distribution rseqc_read_duplication };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
+
+    ### PREPROCESSING
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program mode
-    my $program_mode = $active_parameter_href->{$program_name};
-
-    ## Alias
-    my $bed_file_path = $active_parameter_href->{rseqc_transcripts_file};
-    my $job_id_chain  = $parameter_href->{$program_name}{chain};
+    ## Unpack parameters
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $infile_path_prefix   = $io{in}{file_path_prefix};
+    my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
+    my $infile_suffix        = $io{in}{file_suffix};
+    my $infile_path          = $infile_path_prefix . $infile_suffix;
+    my $program_mode         = $active_parameter_href->{$program_name};
+    my $job_id_chain         = $parameter_href->{$program_name}{chain};
+    my $bed_file_path        = $active_parameter_href->{rseqc_transcripts_file};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -172,16 +183,28 @@ sub analysis_rseqc {
         }
       );
 
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                file_name_prefixes_ref => \@infile_name_prefixes,
+                parameter_href         => $parameter_href,
+                program_name           => $program_name,
+                temp_directory         => $temp_directory,
+            }
+        )
+    );
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $program_name );
+    my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -200,51 +223,7 @@ sub analysis_rseqc {
         }
     );
 
-    ## Used downstream
-    $parameter_href->{$program_name}{$sample_id}{indirectory} =
-      $outsample_directory;
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
-
-    ## Files
-    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{gatk_baserecalibration}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
-
-    ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
-        {
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{rseq_suffix},
-        }
-    );
-
-    ## Paths
-    my $infile_path =
-      catfile( $insample_directory, $infile_prefix . $infile_suffix );
-    my $outfile_path_prefix = catfile( $outsample_directory, $outfile_prefix );
+    ## SHELL
 
     ## Rseq
     say {$FILEHANDLE} q{## Rseq infer_experiment.py};
