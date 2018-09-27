@@ -368,7 +368,7 @@ gatk_splitncigarreads:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _splitcigar
+  file_tag: _splitncigar
   program_name_path:
    - gatk
   type: program

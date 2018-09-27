@@ -11,6 +11,14 @@ module_source_environment_command:
     - source
     - activate
     - mip_travis_py3
+  delly_call:
+    - source
+    - activate
+    - mip_travis_delly
+  delly_reformat:
+    - source
+    - activate
+    - mip_travis_delly
   freebayes:
     - source
     - activate
