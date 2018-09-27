@@ -293,7 +293,9 @@ sub analysis_gatk_splitncigarreads {
     );
 
   CONTIG:
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+    while ( my ( $infile_index, $contig ) =
+        each @{ $file_info_href->{contigs_size_ordered} } )
+    {
 
         my $infile_path  = $temp_infile_path{$contig};
         my $outfile_path = $temp_outfile_path{$contig};
