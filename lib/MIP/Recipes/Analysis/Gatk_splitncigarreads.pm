@@ -31,9 +31,10 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK => q{*};
-Readonly my $DOT      => q{.};
-Readonly my $NEWLINE  => qq{\n};
+Readonly my $ASTERISK   => q{*};
+Readonly my $DOT        => q{.};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $UNDERSCORE => q{_};
 
 sub analysis_gatk_splitncigarreads {
 
@@ -222,6 +223,8 @@ sub analysis_gatk_splitncigarreads {
             }
         )
     );
+    my $outfile_name_prefix      = $io{out}{file_name_prefix};
+    my %outfile_path             = %{ $io{out}{file_path_href} };
     my $outdir_path              = $io{out}{dir_path};
     my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
@@ -335,6 +338,30 @@ sub analysis_gatk_splitncigarreads {
     close $XARGSFILEHANDLE;
 
     if ( $program_mode == 1 ) {
+
+        my $first_outfile_path = $outfile_path{q{1}};
+
+        ## Collect QC metadata info for later use
+        add_program_outfile_to_sample_info(
+            {
+                infile           => $outfile_name_prefix,
+                path             => $first_outfile_path,
+                program_name     => $program_name,
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        my $most_complete_format_key =
+          q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
+        add_processing_metafile_to_sample_info(
+            {
+                metafile_tag     => $most_complete_format_key,
+                path             => $first_outfile_path,
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
