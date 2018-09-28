@@ -93,7 +93,7 @@ is(
 );
 
 ## Given parameters
-my %parameter = test_mip_hashes( { mip_hash_name => q{parameter}, } );
+my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
 
 ## Then dynamic parameters should be set
 is( $parameter{$program_name}{chain}, q{TEST}, q{Set program chain} );

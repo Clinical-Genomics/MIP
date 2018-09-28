@@ -84,7 +84,7 @@ my %file_info = test_mip_hashes(
 );
 my %infile_lane_prefix;
 my %job_id;
-my %parameter = test_mip_hashes( { mip_hash_name => q{parameter}, } );
+my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
 
 my %sample_info;
 

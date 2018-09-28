@@ -83,7 +83,7 @@ my %file_info = test_mip_hashes(
 );
 my %infile_lane_prefix;
 my %job_id;
-my %parameter = test_mip_hashes( { mip_hash_name => q{parameter}, } );
+my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
 
 my %sample_info;
 
@@ -110,6 +110,6 @@ parameter_build_suffixes_ref =>
 
 ## Then broadcast info log message
 my $log_msg = q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+Salmon\s+files};
-like( $trap->stderr, qr/$log_msg/msx, q{Broadcast PROGRAM_NAME log message} );
+like( $trap->stderr, qr/$log_msg/msx, q{Broadcast Salmon log message} );
 
 done_testing();

@@ -69,7 +69,7 @@ my $log = test_log();
 ## Given all samples in pedigree present in analysis
 my %active_parameter =
   test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
-my %parameter = test_mip_hashes( { mip_hash_name => q{parameter}, } );
+my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
 
 my $is_skipped = check_sample_id_in_parameter_value(
     {

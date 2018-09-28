@@ -89,7 +89,7 @@ $file_info{human_genome_reference_name_prefix} = q{human_genome};
 
 my %infile_lane_prefix;
 my %job_id;
-my %parameter = test_mip_hashes( { mip_hash_name => q{parameter}, } );
+my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
 
 my %sample_info;
 
