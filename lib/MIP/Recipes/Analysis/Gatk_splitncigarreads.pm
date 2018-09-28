@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -153,7 +153,7 @@ sub analysis_gatk_splitncigarreads {
 
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
@@ -172,8 +172,8 @@ sub analysis_gatk_splitncigarreads {
     ## Unpack parameters
     my %io = get_io_files(
         {
-            id             => $sample_id,
             file_info_href => $file_info_href,
+            id             => $sample_id,
             parameter_href => $parameter_href,
             program_name   => $program_name,
             stream         => q{in},
@@ -184,7 +184,13 @@ sub analysis_gatk_splitncigarreads {
     my %temp_infile_path   = %{ $io{temp}{file_path_href} };
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $program_mode       = $active_parameter_href->{$program_name};
-    my $job_id_chain       = $parameter_href->{$program_name}{chain};
+    my $job_id_chain       = get_program_attributes(
+        {
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+        }
+    );
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
