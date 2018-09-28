@@ -317,10 +317,9 @@ sub analysis_tiddit {
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Get parameters
-    ## Tiddit sample outfiles
+    ## Tiddit sample outfiles needs to be lexiographically sorted for svdb merge
     my @svdb_temp_infile_paths =
-      map { $tiddit_sample_file_info{$_}{out} . $outfile_suffix }
-      ( keys %tiddit_sample_file_info );
+      map { $tiddit_sample_file_info{$_}{out} . $outfile_suffix } @{ $active_parameter_href->{sample_ids} };
 
     svdb_merge(
         {

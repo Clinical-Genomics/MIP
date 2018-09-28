@@ -37,8 +37,9 @@ program_type:
   key_data_type: SCALAR
   values:
     - aligners
-    - variant_callers
+    - repeats_variant_callers
     - structural_variant_callers
+    - variant_callers
 outdir_name:
   key_data_type: SCALAR
 reference:
