@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -152,7 +152,7 @@ sub analysis_gatk_splitncigarreads {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Cluster qw{ check_max_core_number };
-    use MIP::Get::File qw{ get_io_files get_file_suffix };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -161,6 +161,8 @@ sub analysis_gatk_splitncigarreads {
     use MIP::Program::Alignment::Gatk qw{ gatk_splitncigarreads };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::QC::Record
+      qw{ add_program_outfile_to_sample_info add_processing_metafile_to_sample_info };
 
     ### PREPROCESSING
 
@@ -191,39 +193,25 @@ sub analysis_gatk_splitncigarreads {
         }
       );
 
-    ## Build outfile paths
-    my $outfile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
-    my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
-        $program_name );
-    my $program_tag   = $parameter_href->{$program_name}{file_tag};
-    my @outfile_paths = map {
-        catfile( $outsample_directory,
-            $infile_name_prefix . $program_tag . $DOT . $_ . $outfile_suffix )
-    } @{ $file_info_href->{contigs_size_ordered} };
-
     ## Set and get the io files per chain, id and stream
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                file_paths_ref => \@outfile_paths,
-                parameter_href => $parameter_href,
-                program_name   => $program_name,
-                temp_directory => $temp_directory,
+                chain_id         => $job_id_chain,
+                id               => $sample_id,
+                file_info_href   => $file_info_href,
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref    => $file_info_href->{contigs_size_ordered},
+                parameter_href   => $parameter_href,
+                program_name     => $program_name,
+                temp_directory   => $temp_directory,
             }
         )
     );
     my $outfile_name_prefix      = $io{out}{file_name_prefix};
+    my $outfile_suffix           = $io{out}{file_suffix};
     my %outfile_path             = %{ $io{out}{file_path_href} };
     my $outdir_path              = $io{out}{dir_path};
     my %temp_outfile_path        = %{ $io{temp}{file_path_href} };

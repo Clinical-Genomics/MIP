@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -30,6 +30,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $DOT       => q{.};
 Readonly my $EMPTY_STR => q{};
 
 sub parse_fastq_infiles {
@@ -328,10 +329,12 @@ sub parse_io_outfiles {
 ## Function : Set and get the io files per chain, id and stream
 ## Returns  : %io
 ## Arguments: $chain_id               => Chain of recipe
-##          : $id                     => Id (sample or family)
 ##          : $file_info_href         => File info hash {REF}
-##          : $file_name_prefixes_ref => Build outfile using file name prefixes
+##          : $file_name_prefixes     => Build outfile using file name prefix
+##          : $file_name_prefixes_ref => Build outfile using file name prefixes {REF}
 ##          : $file_paths_ref         => File paths {REF}
+##          : $id                     => Id (sample or family)
+##          : $iterators_ref          => Build outfile using iterator (e.g contigs) {REF}
 ##          : $outdata_dir            => Outdata directory
 ##          : $parameter_href         => Parameter hash {REF}
 ##          : $program_name           => Program name
@@ -342,10 +345,12 @@ sub parse_io_outfiles {
 
     ## Flatten argument(s)
     my $chain_id;
-    my $id;
     my $file_info_href;
+    my $file_name_prefix;
     my $file_name_prefixes_ref;
     my $file_paths_ref;
+    my $id;
+    my $iterators_ref;
     my $outdata_dir;
     my $parameter_href;
     my $program_name;
@@ -361,17 +366,15 @@ sub parse_io_outfiles {
             store       => \$chain_id,
             strict_type => 1,
         },
-        id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$id,
-            strict_type => 1,
-        },
         file_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_name_prefix => {
+            store       => \$file_name_prefix,
             strict_type => 1,
         },
         file_name_prefixes_ref => {
@@ -382,6 +385,17 @@ sub parse_io_outfiles {
         file_paths_ref => {
             default     => [],
             store       => \$file_paths_ref,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        iterators_ref => {
+            default     => [],
+            store       => \$iterators_ref,
             strict_type => 1,
         },
         outdata_dir => {
@@ -428,11 +442,31 @@ sub parse_io_outfiles {
         my $outfile_suffix =
           $parameter_href->{$program_name}{outfile_suffix} //= $EMPTY_STR;
         my $directory = catdir( $outdata_dir, $id, $program_name );
-        @file_paths =
-          map { catfile( $directory, $_ . $outfile_tag . $outfile_suffix ) }
-          @{$file_name_prefixes_ref};
 
+        ## Default paths with iterators
+        if ( @{$iterators_ref} and $file_name_prefix ) {
+
+            @file_paths =
+              map {
+                catfile( $directory,
+                        $file_name_prefix
+                      . $outfile_tag
+                      . $DOT
+                      . $_
+                      . $outfile_suffix )
+              } @{$iterators_ref};
+        }
+        ## Default paths without iterators
+        else {
+
+            ## $file_name_prefixes_needs to be set
+            croak q{Missing argument!} if not @{$file_name_prefixes_ref};
+            @file_paths =
+              map { catfile( $directory, $_ . $outfile_tag . $outfile_suffix ) }
+              @{$file_name_prefixes_ref};
+        }
     }
+
     ## Set the io files per chain and stream
     set_io_files(
         {

@@ -371,6 +371,7 @@ gatk_splitncigarreads:
   data_type: SCALAR
   default: 1
   file_tag: _splitncigar
+  outfile_suffix: ".bam"
   program_name_path:
    - gatk
   type: program
