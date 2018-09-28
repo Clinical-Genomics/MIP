@@ -152,7 +152,7 @@ sub analysis_delly_reformat {
 
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -176,7 +176,13 @@ sub analysis_delly_reformat {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-    my $job_id_chain       = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
     my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my ( $core_number, $time, @source_environment_cmds ) =
@@ -405,7 +411,8 @@ sub analysis_delly_reformat {
                 infile_paths_ref => \@delly_genotype_temp_outfile_paths,
                 outfile_path     => $temp_outfile_path_prefix
                   . $UNDERSCORE
-                  . q{to_sort} . $outfile_suffix,
+                  . q{to_sort}
+                  . $outfile_suffix,
                 output_type     => q{v},
                 stderrfile_path => $xargs_file_path_prefix
                   . $DOT
@@ -426,12 +433,13 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
 
         bcftools_view(
             {
-                FILEHANDLE          => $FILEHANDLE,
-                output_type         => q{v},
-                infile_path         => $delly_merge_temp_infile_paths[0],
+                FILEHANDLE   => $FILEHANDLE,
+                output_type  => q{v},
+                infile_path  => $delly_merge_temp_infile_paths[0],
                 outfile_path => $temp_outfile_path_prefix
                   . $UNDERSCORE
-                  . q{to_sort} . $outfile_suffix,
+                  . q{to_sort}
+                  . $outfile_suffix,
             }
         );
         say {$FILEHANDLE} $NEWLINE;

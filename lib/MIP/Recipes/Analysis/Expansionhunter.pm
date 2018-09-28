@@ -142,7 +142,7 @@ sub analysis_expansionhunter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -179,7 +179,13 @@ sub analysis_expansionhunter {
 
     my $human_genome_reference =
       $arg_href->{active_parameter_href}{human_genome_reference};
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
     my $program_mode = $active_parameter_href->{$program_name};
     my $repeat_specs_dir_path =
       $active_parameter_href->{expansionhunter_repeat_specs_dir};

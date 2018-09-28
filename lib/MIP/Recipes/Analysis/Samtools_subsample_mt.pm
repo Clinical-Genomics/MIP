@@ -134,7 +134,7 @@ sub analysis_samtools_subsample_mt {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Alignment::Samtools
       qw{ samtools_depth samtools_index samtools_view };
@@ -167,7 +167,13 @@ sub analysis_samtools_subsample_mt {
     my $infile_path =
       first_value { / $infile_name_prefix [.]M /sxm } @infile_paths;
 
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
     my $mt_subsample_depth =
       $active_parameter_href->{samtools_subsample_mt_depth};
     my $program_mode = $active_parameter_href->{$program_name};

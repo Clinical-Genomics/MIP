@@ -156,7 +156,7 @@ sub analysis_gatk_baserecalibration {
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
       qw{ get_exom_target_bed_file get_merged_infile_prefix get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
@@ -191,7 +191,13 @@ sub analysis_gatk_baserecalibration {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %temp_infile_path   = %{ $io{temp}{file_path_href} };
 
-    my $job_id_chain       = $parameter_href->{$program_name}{chain};
+    my %prg_atr = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+        }
+    );
+    my $job_id_chain       = $prg_atr{chain};
     my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
@@ -214,7 +220,7 @@ sub analysis_gatk_baserecalibration {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
+    my $outfile_suffix = $prg_atr{outfile_suffix};
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );
@@ -492,8 +498,7 @@ sub analysis_gatk_baserecalibration {
 
     ## Assemble infile paths in contig order and not per size
     my @gather_infile_paths =
-      map { catdir( $temp_outfile_path_prefix . $DOT . $_ . $outfile_suffix ) }
-      @{ $file_info_href->{contigs} };
+      map { $temp_outfile_path{$_} } @{ $file_info_href->{contigs} };
 
     picardtools_gatherbamfiles(
         {
@@ -694,7 +699,7 @@ sub analysis_gatk_baserecalibration_rio {
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
       qw{ get_exom_target_bed_file get_merged_infile_prefix get_io_files};
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
@@ -729,7 +734,13 @@ sub analysis_gatk_baserecalibration_rio {
     my $temp_infile_name_prefix = $io{temp}{file_name_prefix};
     my %temp_infile_path        = %{ $io{temp}{file_path_href} };
 
-    my $job_id_chain       = $parameter_href->{$program_name}{chain};
+    my %prg_atr = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+        }
+    );
+    my $job_id_chain       = $prg_atr{chain};
     my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
@@ -752,7 +763,7 @@ sub analysis_gatk_baserecalibration_rio {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
+    my $outfile_suffix = $prg_atr{outfile_suffix};
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );
@@ -1005,8 +1016,7 @@ sub analysis_gatk_baserecalibration_rio {
 
     ## Assemble infile paths in contig order and not per size
     my @gather_infile_paths =
-      map { catdir( $temp_outfile_path_prefix . $DOT . $_ . $outfile_suffix ) }
-      @{ $file_info_href->{contigs} };
+      map { $temp_outfile_path{$_} } @{ $file_info_href->{contigs} };
 
     picardtools_gatherbamfiles(
         {

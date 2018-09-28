@@ -152,9 +152,8 @@ sub analysis_markduplicates {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Delete::File qw{ delete_contig_files };
-    use MIP::Get::File
-      qw{ get_merged_infile_prefix get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -190,7 +189,13 @@ sub analysis_markduplicates {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %temp_infile_path   = %{ $io{temp}{file_path_href} };
 
-    my $job_id_chain       = $parameter_href->{$program_name}{chain};
+    my %prg_atr = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+        }
+    );
+    my $job_id_chain       = $prg_atr{chain};
     my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $xargs_file_path_prefix;
@@ -212,7 +217,7 @@ sub analysis_markduplicates {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
+    my $outfile_suffix = $prg_atr{outfile_suffix};
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );
@@ -638,8 +643,8 @@ sub analysis_markduplicates_rio {
 
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Get::File qw{ get_merged_infile_prefix };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
-    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
@@ -674,7 +679,13 @@ sub analysis_markduplicates_rio {
     my %temp_infile_path        = %{ $io{temp}{file_path_href} };
 
     ## Unpack parameters
-    my $job_id_chain       = $parameter_href->{$program_name}{chain};
+    my %prg_atr = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+        }
+    );
+    my $job_id_chain       = $prg_atr{chain};
     my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $xargs_file_path_prefix;
@@ -695,7 +706,7 @@ sub analysis_markduplicates_rio {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
+    my $outfile_suffix = $prg_atr{outfile_suffix};
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );

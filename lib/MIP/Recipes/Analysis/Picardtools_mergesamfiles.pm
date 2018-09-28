@@ -32,7 +32,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK      => q{*};
+Readonly my $ASTERISK     => q{*};
 Readonly my $DOT          => q{.};
 Readonly my $EMPTY_STRING => q{};
 Readonly my $NEWLINE      => qq{\n};
@@ -165,7 +165,7 @@ sub analysis_picardtools_mergesamfiles {
 
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters  get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -201,7 +201,13 @@ sub analysis_picardtools_mergesamfiles {
     my @infile_name_prefixes      = @{ $io{in}{file_name_prefixes} };
     my @temp_infile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
 
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my %prg_atr = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+        }
+    );
+    my $job_id_chain = $prg_atr{chain};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $program_mode = $active_parameter_href->{$program_name};
@@ -215,7 +221,7 @@ sub analysis_picardtools_mergesamfiles {
       );
 
     ## Assign suffix
-    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
+    my $outfile_suffix = $prg_atr{outfile_suffix};
 
     ## Extract lanes
     my $lanes_id = join $EMPTY_STRING,
@@ -260,8 +266,8 @@ sub analysis_picardtools_mergesamfiles {
     my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     @outfile_paths = @{ $io{out}{file_paths} };
-    my @outfile_suffixes   = @{ $io{out}{file_suffixes} };
-    my @temp_outfile_paths = @{ $io{temp}{file_paths} };
+    my @outfile_suffixes  = @{ $io{out}{file_suffixes} };
+    my %temp_outfile_path = %{ $io{temp}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -375,9 +381,7 @@ sub analysis_picardtools_mergesamfiles {
         );
 
       CONTIG:
-        while ( my ( $contig_index, $contig ) =
-            each @{ $file_info_href->{contigs_size_ordered} } )
-        {
+        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
             ## Get parameters
             # Assemble infile paths by adding directory and file suffixes
@@ -392,7 +396,7 @@ sub analysis_picardtools_mergesamfiles {
                     create_index       => q{true},
                     FILEHANDLE         => $XARGSFILEHANDLE,
                     infile_paths_ref   => \@merge_temp_infile_paths,
-                    outfile_path       => $temp_outfile_paths[$contig_index],
+                    outfile_path       => $temp_outfile_path{$contig},
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
                     threading          => q{true},
@@ -421,9 +425,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         );
 
       CONTIG:
-        while ( my ( $contig_index, $contig ) =
-            each @{ $file_info_href->{contigs_size_ordered} } )
-        {
+        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
           INFILES:
             foreach my $temp_infile_path_prefix (@temp_infile_path_prefixes) {
@@ -431,7 +433,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                 ## Get parameters
                 my $gnu_temp_infile_path =
                   $temp_infile_path_prefix . $DOT . $contig . $infile_suffix;
-                my $gnu_temp_outfile_path = $temp_outfile_paths[$contig_index];
+                my $gnu_temp_outfile_path = $temp_outfile_path{$contig};
 
                 ## Rename
                 gnu_mv(
@@ -678,7 +680,13 @@ sub analysis_picardtools_mergesamfiles_rio {
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain  = $parameter_href->{$program_name}{chain};
+    my %prg_atr = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+        }
+    );
+    my $job_id_chain  = $prg_atr{chain};
     my $program_mode  = $active_parameter_href->{$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_path_prefix;
@@ -691,7 +699,7 @@ sub analysis_picardtools_mergesamfiles_rio {
       );
 
     ## Assign suffix
-    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
+    my $outfile_suffix = $prg_atr{outfile_suffix};
 
     # Extract lanes
     my $lanes_id = join $EMPTY_STRING,
@@ -736,8 +744,8 @@ sub analysis_picardtools_mergesamfiles_rio {
     my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     @outfile_paths = @{ $io{out}{file_paths} };
-    my @outfile_suffixes   = @{ $io{out}{file_suffixes} };
-    my @temp_outfile_paths = @{ $io{temp}{file_paths} };
+    my @outfile_suffixes  = @{ $io{out}{file_suffixes} };
+    my %temp_outfile_path = %{ $io{temp}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -833,9 +841,7 @@ sub analysis_picardtools_mergesamfiles_rio {
         );
 
       CONTIG:
-        while ( my ( $contig_index, $contig ) =
-            each @{ $file_info_href->{contigs_size_ordered} } )
-        {
+        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
             ## Get parameters
             # Assemble infile paths by adding directory and file ending
@@ -850,7 +856,7 @@ sub analysis_picardtools_mergesamfiles_rio {
                     create_index       => q{true},
                     FILEHANDLE         => $XARGSFILEHANDLE,
                     infile_paths_ref   => \@merge_temp_infile_paths,
-                    outfile_path       => $temp_outfile_paths[$contig_index],
+                    outfile_path       => $temp_outfile_path{$contig},
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
                     threading          => q{true},
@@ -879,9 +885,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         );
 
       CONTIG:
-        while ( my ( $contig_index, $contig ) =
-            each @{ $file_info_href->{contigs_size_ordered} } )
-        {
+        foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
           INFILES:
             foreach my $temp_infile_path_prefix (@temp_infile_path_prefixes) {
@@ -889,7 +893,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                 ## Get parameters
                 my $gnu_temp_infile_path =
                   $temp_infile_path_prefix . $DOT . $contig . $infile_suffix;
-                my $gnu_temp_outfile_path = $temp_outfile_paths[$contig_index];
+                my $gnu_temp_outfile_path = $temp_outfile_path{$contig};
 
                 ## Rename
                 gnu_mv(

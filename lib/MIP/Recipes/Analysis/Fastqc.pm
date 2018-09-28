@@ -128,7 +128,7 @@ sub analysis_fastqc {
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Cluster qw{ update_core_number_to_seq_mode };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::IO::Files qw{ migrate_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -162,7 +162,13 @@ sub analysis_fastqc {
     my @temp_infile_paths         = @{ $io{temp}{file_paths} };
     my @temp_infile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
 
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
     my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(

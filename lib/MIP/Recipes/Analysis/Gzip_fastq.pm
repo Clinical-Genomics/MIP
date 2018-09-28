@@ -128,7 +128,7 @@ sub analysis_gzip_fastq {
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Cluster qw{ update_core_number_to_seq_mode };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_sample };
@@ -158,8 +158,14 @@ sub analysis_gzip_fastq {
     my @infile_paths         = @{ $io{in}{file_paths} };
     my @infile_suffixes      = @{ $io{in}{file_suffixes} };
 
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
     my $program_mode = $active_parameter_href->{$program_name};
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
