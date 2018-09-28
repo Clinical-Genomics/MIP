@@ -317,6 +317,7 @@ picardtools_mergesamfiles:
   data_type: SCALAR
   default: 1
   file_tag: _merged
+  outfile_suffix: ".bam"
   program_name_path:
    - sambamba
   type: program
@@ -328,6 +329,7 @@ markduplicates:
   data_type: SCALAR
   default: 0
   file_tag: _md
+  outfile_suffix: ".bam"
   program_name_path:
    - sambamba
   type: program
@@ -380,6 +382,7 @@ gatk_baserecalibration:
   data_type: SCALAR
   default: 1
   file_tag: _brecal
+  outfile_suffix: ".bam"
   program_name_path:
    - gatk
   type: program

@@ -412,6 +412,7 @@ picardtools_mergesamfiles:
   data_type: SCALAR
   default: 1
   file_tag: ""
+  outfile_suffix: ".bam"
   type: program
 markduplicates:
   analysis_mode: sample
@@ -420,6 +421,7 @@ markduplicates:
   data_type: SCALAR
   default: 1
   file_tag: _md
+  outfile_suffix: ".bam"
   program_name_path:
    - sambamba
   type: program
@@ -461,6 +463,7 @@ gatk_baserecalibration:
   data_type: SCALAR
   default: 1
   file_tag: _brecal
+  outfile_suffix: ".bam"
   program_name_path:
    - gatk
   type: program
@@ -743,7 +746,7 @@ sv_combinevariantcallsets:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: _comb_
+  file_tag: _comb
   outfile_suffix: ".vcf"
   program_name_path:
    - bcftools

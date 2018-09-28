@@ -157,7 +157,7 @@ sub analysis_delly_reformat {
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_merge bcftools_index bcftools_view_and_index_vcf };
+      qw{ bcftools_merge bcftools_index bcftools_view };
     use MIP::Program::Variantcalling::Delly qw{ delly_call delly_merge };
     use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
     use MIP::Processmanagement::Processes qw{ print_wait };
@@ -166,7 +166,6 @@ sub analysis_delly_reformat {
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
 
     ### PREPROCESSING:
 
@@ -229,16 +228,6 @@ sub analysis_delly_reformat {
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
-        }
-    );
-
-    ## Set file suffix for next module within jobid chain
-    set_file_suffix(
-        {
-            file_suffix    => $outfile_suffix,
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
         }
     );
 
@@ -416,7 +405,7 @@ sub analysis_delly_reformat {
                 infile_paths_ref => \@delly_genotype_temp_outfile_paths,
                 outfile_path     => $temp_outfile_path_prefix
                   . $UNDERSCORE
-                  . q{to_sort},
+                  . q{to_sort} . $outfile_suffix,
                 output_type     => q{v},
                 stderrfile_path => $xargs_file_path_prefix
                   . $DOT
@@ -427,39 +416,22 @@ sub analysis_delly_reformat {
             }
         );
         say {$FILEHANDLE} $NEWLINE;
-
-        bcftools_index(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $temp_outfile_path_prefix
-                  . $UNDERSCORE
-                  . q{to_sort}
-                  . $DOT . q{vcf},
-                output_type     => q{csi},
-                stderrfile_path => $file_path
-                  . $UNDERSCORE
-                  . q{index.stderr.txt},
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
     }
     else {
 
         # Only one sample
-
         say {$FILEHANDLE} q{## Only one sample - skip merging and regenotyping};
         say {$FILEHANDLE}
 q{## Reformat bcf infile to match outfile from regenotyping with multiple samples};
 
-        bcftools_view_and_index_vcf(
+        bcftools_view(
             {
                 FILEHANDLE          => $FILEHANDLE,
-                index               => 1,
                 output_type         => q{v},
                 infile_path         => $delly_merge_temp_infile_paths[0],
-                outfile_path_prefix => $temp_outfile_path_prefix
+                outfile_path => $temp_outfile_path_prefix
                   . $UNDERSCORE
-                  . q{to_sort},
+                  . q{to_sort} . $outfile_suffix,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -474,7 +446,7 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
                     $temp_outfile_path_prefix
                   . $UNDERSCORE
                   . q{to_sort}
-                  . $DOT . q{vcf}
+                  . $outfile_suffix
             ],
             java_jar => catfile(
                 $active_parameter_href->{picardtools_path},

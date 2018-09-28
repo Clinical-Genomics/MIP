@@ -150,7 +150,6 @@ sub analysis_bwa_mem {
     use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
     use MIP::QC::Record
       qw{ add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
-    use MIP::Set::File qw{ set_file_suffix };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -222,17 +221,6 @@ sub analysis_bwa_mem {
     ## Assign file tags
     my $outfile_tag =
       $file_info_href->{$sample_id}{$program_name}{file_tag};
-
-    ### Assign suffix
-    ## Set file suffix for next module within jobid chain
-    set_file_suffix(
-        {
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
 
     my $uncompressed_bam_output;
     if ( $outfile_suffix eq q{.bam} ) {

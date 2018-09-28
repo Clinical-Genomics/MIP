@@ -155,7 +155,7 @@ sub analysis_gatk_baserecalibration {
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
-      qw{ get_exom_target_bed_file get_file_suffix get_merged_infile_prefix get_io_files };
+      qw{ get_exom_target_bed_file get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -214,13 +214,7 @@ sub analysis_gatk_baserecalibration {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
+    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );
@@ -699,7 +693,7 @@ sub analysis_gatk_baserecalibration_rio {
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
-      qw{ get_exom_target_bed_file get_file_suffix get_merged_infile_prefix get_io_files};
+      qw{ get_exom_target_bed_file get_merged_infile_prefix get_io_files};
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -758,13 +752,7 @@ sub analysis_gatk_baserecalibration_rio {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
+    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );

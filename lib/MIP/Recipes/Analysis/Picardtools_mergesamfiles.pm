@@ -164,7 +164,7 @@ sub analysis_picardtools_mergesamfiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Cluster qw{ check_max_core_number };
-    use MIP::Get::File qw{ get_file_suffix get_io_files };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
@@ -215,13 +215,7 @@ sub analysis_picardtools_mergesamfiles {
       );
 
     ## Assign suffix
-    my $outfile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
+    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
 
     ## Extract lanes
     my $lanes_id = join $EMPTY_STRING,
@@ -646,7 +640,7 @@ sub analysis_picardtools_mergesamfiles_rio {
 
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Delete::File qw{ delete_files };
-    use MIP::Get::File qw{ get_file_suffix get_io_files };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
@@ -697,13 +691,7 @@ sub analysis_picardtools_mergesamfiles_rio {
       );
 
     ## Assign suffix
-    my $outfile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
+    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
 
     # Extract lanes
     my $lanes_id = join $EMPTY_STRING,

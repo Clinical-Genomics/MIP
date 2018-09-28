@@ -153,7 +153,7 @@ sub analysis_markduplicates {
 
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Get::File
-      qw{ get_file_suffix get_merged_infile_prefix get_io_files };
+      qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
@@ -212,13 +212,7 @@ sub analysis_markduplicates {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
+    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );
@@ -643,7 +637,7 @@ sub analysis_markduplicates_rio {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Delete::File qw{ delete_contig_files };
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File qw{ get_merged_infile_prefix };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
@@ -701,13 +695,7 @@ sub analysis_markduplicates_rio {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
+    my $outfile_suffix = $parameter_href->{$program_name}{outfile_suffix};
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );

@@ -160,7 +160,6 @@ sub analysis_delly_call {
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
 
     ### PREPROCESSING:
 
@@ -239,15 +238,6 @@ sub analysis_delly_call {
             process_time                    => $time,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
-        }
-    );
-
-    set_file_suffix(
-        {
-            file_suffix    => $outfile_suffix,
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
         }
     );
 

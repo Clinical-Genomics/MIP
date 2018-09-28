@@ -169,7 +169,6 @@ sub analysis_cnvnator {
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
 
     ### PREPROCESSING:
 
@@ -248,16 +247,6 @@ sub analysis_cnvnator {
             process_time                    => $time,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
-        }
-    );
-
-    ## Set file suffix for next module within jobid chain
-    set_file_suffix(
-        {
-            file_suffix    => $outfile_suffix,
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
         }
     );
 
