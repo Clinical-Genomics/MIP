@@ -127,6 +127,7 @@ This will generate a batch script called "mip.sh" in your working directory.
   The batch script will attempt to install the MIP dependencies in a conda environment called MIP. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:
   * MIP's base environment (named MIP in the example above)
   * MIP_cnvnator
+  * MIP_delly
   * MIP_freebayes
   * MIP_peddy
   * MIP_py3
@@ -179,10 +180,18 @@ $ perl t/mip_analyse_rare_disease.test
      - source
      - activate
      - MIP_cnvnator
-	freebayes:
-	 - source
-	 - activate
-	 - MIP_freebayes
+    delly_call:
+     - source
+     - activate
+     - MIP_delly
+    delly_reformat:
+     - source
+     - activate
+     - MIP_delly
+    freebayes:
+     - source
+     - activate
+     - MIP_freebayes
     multiqc:
      - source
      - activate
@@ -271,8 +280,6 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 MIP will place any generated datafiles in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each program is written in the program/info directory prior to alignment and in the aligner/info directory post alignment.
 
 [Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_config.yaml
-[CPAN]: https://www.cpan.org/
-[GATK]:https://software.broadinstitute.org/gatk/
 [Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/aggregated_master.txt
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
