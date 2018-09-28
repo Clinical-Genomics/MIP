@@ -691,7 +691,7 @@ expansionhunter:
   outfile_suffix: ".vcf"
   program_name_path:
    - ExpansionHunter
-  program_type: structural_variant_callers
+  program_type: repeats_variant_callers
   type: program
 expansionhunter_repeat_specs_dir:
   associated_program:
