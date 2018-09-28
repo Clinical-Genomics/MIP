@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln };
@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK    => q{*};
+Readonly my $ASTERISK   => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -135,7 +135,8 @@ sub analysis_star_aln {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_read_group };
+    use MIP::Get::Parameter
+      qw{ get_module_parameters get_program_attributes get_read_group };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Alignment::Picardtools
@@ -145,7 +146,6 @@ sub analysis_star_aln {
       qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info };
-    use MIP::Set::File qw{ set_file_suffix };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## PREPROCESSING:
@@ -157,8 +157,8 @@ sub analysis_star_aln {
     ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
-            id             => $sample_id,
             file_info_href => $file_info_href,
+            id             => $sample_id,
             parameter_href => $parameter_href,
             program_name   => $program_name,
             stream         => q{in},
@@ -170,7 +170,13 @@ sub analysis_star_aln {
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
     my @temp_infile_paths    = @{ $io{temp}{file_paths} };
     my $program_mode         = $active_parameter_href->{$program_name};
-    my $job_id_chain         = $parameter_href->{$program_name}{chain};
+    my $job_id_chain         = get_program_attributes(
+        {
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+        }
+    );
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -207,17 +213,6 @@ sub analysis_star_aln {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ### Assign suffix
-    ## Set file suffix for next module within jobid chain
-    set_file_suffix(
-        {
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
-
     # Too avoid adjusting infile_index in submitting to jobs
     my $paired_end_tracker = 0;
 
@@ -238,11 +233,6 @@ sub analysis_star_aln {
         my $sequence_run_mode =
           $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
           {sequence_run_type};
-
-        # Collect interleaved info
-        my $interleaved_fastq_file =
-          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {interleaved};
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ( $file_name, $program_info_path ) = setup_script(

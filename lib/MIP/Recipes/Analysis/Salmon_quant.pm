@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_salmon_quant };
@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK    => q{*};
+Readonly my $ASTERISK   => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -134,29 +134,46 @@ sub analysis_salmon_quant {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Salmon qw{ salmon_quant };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
-    use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_processing_metafile_to_sample_info };
-    use MIP::Set::File qw{ set_file_suffix };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
+
+    ### PREPROCESSING
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program mode
-    my $program_mode = $active_parameter_href->{$program_name};
-
-    ## Unpack parameter
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            file_info_href => $file_info_href,
+            id             => $sample_id,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my @infile_paths      = @{ $io{in}{file_paths} };
+    my @temp_infile_paths = @{ $io{temp}{file_paths} };
+    my $program_mode      = $active_parameter_href->{$program_name};
     my $referencefile_dir_path =
         $active_parameter_href->{salmon_quant_reference_genome}
       . $file_info_href->{salmon_quant_reference_genome}[0];
-
+    my $job_id_chain = get_program_attributes(
+        {
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+        }
+    );
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -165,33 +182,31 @@ sub analysis_salmon_quant {
         }
       );
 
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id       => $job_id_chain,
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                file_name_prefixes_ref =>
+                  \@{ $infile_lane_prefix_href->{$sample_id} },
+                outdata_dir    => $active_parameter_href->{outdata_dir},
+                parameter_href => $parameter_href,
+                program_name   => $program_name,
+                temp_directory => $temp_directory,
+            }
+        )
+    );
+    my $outdir_path                = $io{out}{dir_path};
+    my @outfile_name_prefixes      = @{ $io{out}{file_name_prefixes} };
+    my @outfile_paths              = @{ $io{out}{file_paths} };
+    my @temp_outfile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
+    my @temp_outfile_paths         = @{ $io{temp}{file_paths} };
+
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
-
-    ## Get infiles
-    my @infiles = @{ $file_info_href->{$sample_id}{mip_infiles} };
-
-    ## Directories
-    my $insample_directory = $file_info_href->{$sample_id}{mip_infiles_dir};
-    my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
-        $program_name );
-
-    ## Assign file_tags
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
-
-    ### Assign suffix
-    ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
-        {
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{sailfish_quantification_file_suffix},
-        }
-    );
 
     # Too avoid adjusting infile_index in submitting to jobs
     my $paired_end_tracker = 0;
@@ -202,21 +217,16 @@ sub analysis_salmon_quant {
         each @{ $infile_lane_prefix_href->{$sample_id} } )
     {
 
-        ## Assign file tags
-        my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
-        my $file_path_prefix_out = $file_path_prefix . $outfile_tag;
-        my $outfile_path_prefix =
-          catfile( $outsample_directory, $infile_prefix . $outfile_tag );
+        ## Assign file features
+        my $file_path           = $temp_outfile_paths[$infile_index];
+        my $file_path_prefix    = $temp_outfile_path_prefixes[$infile_index];
+        my $outfile_name_prefix = $outfile_name_prefixes[$infile_index];
+        my $outfile_path        = $outfile_paths[$infile_index];
 
         # Collect paired-end or single-end sequence run mode
         my $sequence_run_mode =
           $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
           {sequence_run_type};
-
-        # Collect interleaved info
-        my $interleaved_fastq_file =
-          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {interleaved};
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ( $file_name, $program_info_path ) = setup_script(
@@ -235,16 +245,16 @@ sub analysis_salmon_quant {
             }
         );
 
+        ### SHELL
+
         ## Copies file to temporary directory.
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
 
         # Read 1
-        my $insample_dir_fastqc_path_read_one =
-          catfile( $insample_directory, $infiles[$paired_end_tracker] );
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $insample_dir_fastqc_path_read_one,
+                infile_path  => $infile_paths[$paired_end_tracker],
                 outfile_path => $temp_directory,
             }
         );
@@ -252,15 +262,11 @@ sub analysis_salmon_quant {
         # If second read direction is present
         if ( $sequence_run_mode eq q{paired-end} ) {
 
-            my $insample_dir_fastqc_path_read_two =
-              catfile( $insample_directory,
-                $infiles[ $paired_end_tracker + 1 ] );
-
             # Read 2
             migrate_file(
                 {
                     FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $insample_dir_fastqc_path_read_two,
+                    infile_path  => $infile_paths[ $paired_end_tracker + 1 ],
                     outfile_path => $temp_directory,
                 }
             );
@@ -271,18 +277,15 @@ sub analysis_salmon_quant {
         say {$FILEHANDLE} q{## Quantifying transcripts using } . $program_name;
 
         ### Get parameters
-
         ## Infile(s)
-        my @fastq_files =
-          ( catfile( $temp_directory, $infiles[$paired_end_tracker] ) );
+        my @fastq_files = $temp_infile_paths[$paired_end_tracker];
 
         # If second read direction is present
         if ( $sequence_run_mode eq q{paired-end} ) {
 
             # Increment to collect correct read 2 from %infile
-            $paired_end_tracker = $paired_end_tracker + 1;
-            push @fastq_files,
-              catfile( $temp_directory, $infiles[$paired_end_tracker] );
+            $paired_end_tracker++;
+            push @fastq_files, $temp_infile_paths[$paired_end_tracker];
         }
 
         # If second read direction is present
@@ -292,7 +295,7 @@ sub analysis_salmon_quant {
                 {
                     FILEHANDLE        => $FILEHANDLE,
                     index_path        => $referencefile_dir_path,
-                    outfile_path      => $file_path_prefix_out,
+                    outfile_path      => $file_path_prefix,
                     read_1_fastq_path => $fastq_files[0],
                 },
             );
@@ -303,7 +306,7 @@ sub analysis_salmon_quant {
                 {
                     FILEHANDLE        => $FILEHANDLE,
                     index_path        => $referencefile_dir_path,
-                    outfile_path      => $file_path_prefix_out,
+                    outfile_path      => $file_path_prefix,
                     read_1_fastq_path => $fastq_files[0],
                     read_2_fastq_path => $fastq_files[1],
                 },
@@ -319,8 +322,8 @@ sub analysis_salmon_quant {
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => catfile( $file_path_prefix_out, $ASTERISK ),
-                outfile_path => $outsample_directory,
+                infile_path  => $file_path_prefix . $ASTERISK,
+                outfile_path => $outdir_path,
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -330,13 +333,11 @@ sub analysis_salmon_quant {
 
         if ( $program_mode == 1 ) {
 
-            my $program_outfile_path =
-              $outfile_path_prefix . $UNDERSCORE . q{sf};
-
             ## Collect QC metadata info for later use
             add_program_outfile_to_sample_info(
                 {
-                    path             => $program_outfile_path,
+                    outfile          => $outfile_name_prefix,
+                    path             => $outfile_path,
                     program_name     => $program_name,
                     sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,

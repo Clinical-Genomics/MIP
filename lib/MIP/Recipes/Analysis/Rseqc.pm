@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rseqc };
@@ -144,7 +144,7 @@ sub analysis_rseqc {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
@@ -160,8 +160,8 @@ sub analysis_rseqc {
     ## Unpack parameters
     my %io = get_io_files(
         {
-            id             => $sample_id,
             file_info_href => $file_info_href,
+            id             => $sample_id,
             parameter_href => $parameter_href,
             program_name   => $program_name,
             stream         => q{in},
@@ -173,8 +173,14 @@ sub analysis_rseqc {
     my $infile_suffix        = $io{in}{file_suffix};
     my $infile_path          = $infile_path_prefix . $infile_suffix;
     my $program_mode         = $active_parameter_href->{$program_name};
-    my $job_id_chain         = $parameter_href->{$program_name}{chain};
     my $bed_file_path        = $active_parameter_href->{rseqc_transcripts_file};
+    my $job_id_chain         = get_program_attributes(
+        {
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+        }
+    );
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
