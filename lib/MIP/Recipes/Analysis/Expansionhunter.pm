@@ -29,9 +29,10 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK => q{*};
-Readonly my $DOT      => q{.};
-Readonly my $NEWLINE  => qq{\n};
+Readonly my $ASTERISK   => q{*};
+Readonly my $DOT        => q{.};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $UNDERSCORE => q{_};
 
 sub analysis_expansionhunter {
 
@@ -46,7 +47,6 @@ sub analysis_expansionhunter {
 ##          : $program_name            => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and family hash {REF}
-##          : $sample_id               => Sample id
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
@@ -58,7 +58,6 @@ sub analysis_expansionhunter {
     my $job_id_href;
     my $parameter_href;
     my $program_name;
-    my $sample_id;
     my $sample_info_href;
 
     ## Default(s)
@@ -118,13 +117,6 @@ sub analysis_expansionhunter {
             store       => \$reference_dir,
             strict_type => 1,
         },
-        sample_id => {
-            default     => 1,
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -146,9 +138,11 @@ sub analysis_expansionhunter {
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Variantcalling::Expansionhunter qw{ expansionhunter };
+    use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -158,25 +152,6 @@ sub analysis_expansionhunter {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-    ## Get the io infiles per chain and id
-    my %io = get_io_files(
-        {
-            id             => $sample_id,
-            file_info_href => $file_info_href,
-            parameter_href => $parameter_href,
-            program_name   => $program_name,
-            stream         => q{in},
-            temp_directory => $temp_directory,
-        }
-    );
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path_prefix = $io{in}{file_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path =
-      $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
-
     my $human_genome_reference =
       $arg_href->{active_parameter_href}{human_genome_reference};
     my $job_id_chain = get_program_attributes(
@@ -198,25 +173,26 @@ sub analysis_expansionhunter {
       );
 
     ## Set and get the io files per chain, id and stream
-    %io = (
-        %io,
-        parse_io_outfiles(
-            {
-                chain_id               => $job_id_chain,
-                id                     => $sample_id,
-                file_info_href         => $file_info_href,
-                file_name_prefixes_ref => [$infile_name_prefix],
-                outdata_dir            => $active_parameter_href->{outdata_dir},
-                parameter_href         => $parameter_href,
-                program_name           => $program_name,
-                temp_directory         => $temp_directory,
-            }
-        )
+    my %io = parse_io_outfiles(
+        {
+            chain_id               => $job_id_chain,
+            id                     => $family_id,
+            file_info_href         => $file_info_href,
+            file_name_prefixes_ref => [$family_id],
+            outdata_dir            => $active_parameter_href->{outdata_dir},
+            parameter_href         => $parameter_href,
+            program_name           => $program_name,
+            temp_directory         => $temp_directory,
+        }
     );
 
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
-    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
+    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix      = $io{out}{file_path_prefix};
+    my $outfile_suffix           = $io{out}{file_suffix};
+    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
+    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $temp_outfile_suffix      = $io{temp}{file_suffix};
+    my $temp_outfile_path = $temp_outfile_path_prefix . $temp_outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -227,7 +203,7 @@ sub analysis_expansionhunter {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $sample_id,
+            directory_id                    => $family_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -241,41 +217,123 @@ sub analysis_expansionhunter {
 
     ### SHELL:
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
+    my %exphun_sample_file_info;
+    my $process_batches_count = 1;
 
-    ## Rename the bam file index file so that Expansion Hunter can find it
-    say {$FILEHANDLE} q{## Rename index file};
-    gnu_mv(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_infile_path_prefix . q{.bai},
-            outfile_path => $temp_infile_path_prefix . $infile_suffix . q{.bai},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+    ## Collect infiles for all sample_ids to enable migration to temporary directory
+  SAMPLE_ID:
+    while ( my ( $sample_id_index, $sample_id ) =
+        each @{ $active_parameter_href->{sample_ids} } )
+    {
+
+        ## Get the io infiles per chain and id
+        my %sample_io = get_io_files(
+            {
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                parameter_href => $parameter_href,
+                program_name   => $program_name,
+                stream         => q{in},
+                temp_directory => $temp_directory,
+            }
+        );
+        my $infile_path_prefix = $sample_io{in}{file_path_prefix};
+        my $infile_suffix      = $sample_io{in}{file_suffix};
+        my $infile_path =
+          $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
+        my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
+        my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+
+        $exphun_sample_file_info{$sample_id}{in}  = $temp_infile_path;
+        $exphun_sample_file_info{$sample_id}{out} = $temp_infile_path_prefix;
+
+        $process_batches_count = print_wait(
+            {
+                FILEHANDLE            => $FILEHANDLE,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                process_counter       => $sample_id_index,
+            }
+        );
+
+        ## Copy file(s) to temporary directory
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
+        migrate_file(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $infile_path,
+                outfile_path => $temp_directory,
+            }
+        );
+        say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+        ## Rename the bam file index file so that Expansion Hunter can find it
+        say {$FILEHANDLE} q{## Rename index file};
+        gnu_mv(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $temp_infile_path_prefix . q{.bai},
+                outfile_path => $temp_infile_path_prefix
+                  . $infile_suffix . q{.bai},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+
+    }
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Run Expansion Hunter
     say {$FILEHANDLE} q{## Run ExpansionHunter};
-    my $sample_sex = $sample_info_href->{sample}{$sample_id}{sex};
-    expansionhunter(
+
+    # Restart counter
+    $process_batches_count = 1;
+
+    ## Expansion hunter calling per sample id
+  SAMPLE_ID:
+    while ( my ( $sample_id_index, $sample_id ) =
+        each @{ $active_parameter_href->{sample_ids} } )
+    {
+
+        $process_batches_count = print_wait(
+            {
+                FILEHANDLE            => $FILEHANDLE,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                process_counter       => $sample_id_index,
+            }
+        );
+
+        my $sample_sex = $sample_info_href->{sample}{$sample_id}{sex};
+        expansionhunter(
+            {
+                FILEHANDLE        => $FILEHANDLE,
+                infile_path       => $exphun_sample_file_info{$sample_id}{in},
+                json_outfile_path => $exphun_sample_file_info{$sample_id}{out}
+                  . $DOT . q{json},
+                log_outfile_path => $exphun_sample_file_info{$sample_id}{out}
+                  . $DOT . q{log},
+                reference_genome_path => $human_genome_reference,
+                repeat_specs_dir_path => $repeat_specs_dir_path,
+                sex                   => $sample_sex,
+                vcf_outfile_path => $exphun_sample_file_info{$sample_id}{out}
+                  . $outfile_suffix,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+
+    ## Get parameters
+    ## Tiddit sample outfiles needs to be lexiographically sorted for svdb merge
+    my @svdb_temp_infile_paths =
+      map { $exphun_sample_file_info{$_}{out} . $outfile_suffix }
+      @{ $active_parameter_href->{sample_ids} };
+
+    svdb_merge(
         {
-            FILEHANDLE            => $FILEHANDLE,
-            infile_path           => $temp_infile_path,
-            json_outfile_path     => $outfile_path_prefix . $DOT . q{json},
-            log_outfile_path      => $outfile_path_prefix . $DOT . q{log},
-            reference_genome_path => $human_genome_reference,
-            repeat_specs_dir_path => $repeat_specs_dir_path,
-            sex                   => $sample_sex,
-            vcf_outfile_path      => $outfile_path,
+            FILEHANDLE       => $FILEHANDLE,
+            infile_paths_ref => \@svdb_temp_infile_paths,
+            notag            => 1,
+            stdoutfile_path  => $outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -292,15 +350,15 @@ sub analysis_expansionhunter {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        slurm_submit_job_sample_id_dependency_add_to_family(
             {
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 path                    => $job_id_chain,
-                sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
+                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
+                sbatch_file_name => $file_path,
             }
         );
     }

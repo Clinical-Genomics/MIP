@@ -138,9 +138,9 @@ sub analysis_tiddit {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
-    use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Tiddit qw{ tiddit_sv };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -228,6 +228,7 @@ sub analysis_tiddit {
     my $process_batches_count = 1;
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
+  SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
@@ -278,7 +279,8 @@ sub analysis_tiddit {
     # Restart counter
     $process_batches_count = 1;
 
-    ## Collect infiles for all sample_ids
+    ## Tiddit sv calling per sample id
+  SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {

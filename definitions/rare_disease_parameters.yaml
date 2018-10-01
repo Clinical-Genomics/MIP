@@ -681,7 +681,7 @@ delly_types:
    - INS
   type: program_argument
 expansionhunter:
-  analysis_mode: sample
+  analysis_mode: family
   associated_program:
    - mip
   data_type: SCALAR
