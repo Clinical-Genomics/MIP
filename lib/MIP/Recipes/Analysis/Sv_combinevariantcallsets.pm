@@ -31,7 +31,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK    => q{*};
+Readonly my $ASTERISK   => q{*};
 Readonly my $COLON      => q{:};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
@@ -165,13 +165,13 @@ sub analysis_sv_combinevariantcallsets {
     my @structural_variant_callers;
 
     ## Only process active callers
-    foreach my $structural_variant_caller (@{
-      $parameter_href->{dynamic_parameter}{structural_variant_callers}
-    }) {
-      if($active_parameter_href->{$structural_variant_caller}) {
+    foreach my $structural_variant_caller (
+        @{ $parameter_href->{dynamic_parameter}{structural_variant_callers} } )
+    {
+        if ( $active_parameter_href->{$structural_variant_caller} ) {
 
-	push @structural_variant_callers, $structural_variant_caller;
-      }
+            push @structural_variant_callers, $structural_variant_caller;
+        }
     }
 
     my ( $core_number, $time, @source_environment_cmds ) =
@@ -239,7 +239,7 @@ sub analysis_sv_combinevariantcallsets {
             active_parameter_href          => $active_parameter_href,
             FILEHANDLE                     => $FILEHANDLE,
             file_info_href                 => $file_info_href,
-            file_path_href          => \%file_path,
+            file_path_href                 => \%file_path,
             parallel_chains_ref            => \@parallel_chains,
             parameter_href                 => $parameter_href,
             structural_variant_callers_ref => \@structural_variant_callers,
@@ -251,7 +251,7 @@ sub analysis_sv_combinevariantcallsets {
         {
             active_parameter_href          => $active_parameter_href,
             FILEHANDLE                     => $FILEHANDLE,
-            file_path_href          => \%file_path,
+            file_path_href                 => \%file_path,
             outfile_suffix                 => $outfile_suffix,
             parameter_href                 => $parameter_href,
             program_info_path              => $program_info_path,
@@ -265,8 +265,8 @@ sub analysis_sv_combinevariantcallsets {
             active_parameter_href          => $active_parameter_href,
             FILEHANDLE                     => $FILEHANDLE,
             file_info_href                 => $file_info_href,
-            file_path_href          => \%file_path,
-	 outfile_suffix                 => $outfile_suffix,
+            file_path_href                 => \%file_path,
+            outfile_suffix                 => $outfile_suffix,
             parallel_chains_ref            => \@parallel_chains,
             parameter_href                 => $parameter_href,
             structural_variant_callers_ref => \@structural_variant_callers,
@@ -279,27 +279,28 @@ sub analysis_sv_combinevariantcallsets {
     ## Get parameters
     my @svdb_infile_paths;
   STRUCTURAL_CALLER:
-    foreach my $structural_variant_caller ( @structural_variant_callers )
-    {
+    foreach my $structural_variant_caller (@structural_variant_callers) {
 
-	  ## Only use first part of name
-            my ($variant_caller_prio_tag) = split "_", $structural_variant_caller;
-            push @svdb_infile_paths,
-              catfile( $temp_directory,
-                    $family_id
-                  . $UNDERSCORE
-                  . $structural_variant_caller
-                  . $outfile_suffix
-                  . $COLON
-                  . $variant_caller_prio_tag );
+        ## Only use first part of name
+        my ($variant_caller_prio_tag) = split /_/sxm,
+          $structural_variant_caller;
+        push @svdb_infile_paths,
+          catfile( $temp_directory,
+                $family_id
+              . $UNDERSCORE
+              . $structural_variant_caller
+              . $outfile_suffix
+              . $COLON
+              . $variant_caller_prio_tag );
     }
 
     svdb_merge(
         {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@svdb_infile_paths,
-            stdoutfile_path  => $temp_outfile_path,
-            priority => $active_parameter_href->{sv_svdb_merge_prioritize},
+            priority   => $active_parameter_href->{sv_svdb_merge_prioritize},
+            same_order => 1,
+            stdoutfile_path => $temp_outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -318,7 +319,9 @@ sub analysis_sv_combinevariantcallsets {
             {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $temp_outfile_path,
-                outfile_path => $temp_outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                outfile_path => $temp_outfile_path_prefix
+                  . $alt_file_tag
+                  . $outfile_suffix,
                 smart_decomposition => 1,
             }
         );
@@ -330,8 +333,10 @@ sub analysis_sv_combinevariantcallsets {
         ## Reformat variant calling file and index
         bcftools_view_and_index_vcf(
             {
-                FILEHANDLE          => $FILEHANDLE,
-                infile_path         => $temp_outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $temp_outfile_path_prefix
+                  . $alt_file_tag
+                  . $outfile_suffix,
                 outfile_path_prefix => $outfile_path_prefix,
                 output_type         => q{b},
             }
@@ -342,8 +347,10 @@ sub analysis_sv_combinevariantcallsets {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $temp_outfile_path_prefix
+              . $alt_file_tag
+              . $outfile_suffix,
             outfile_path => $outfile_path,
         }
     );
@@ -355,7 +362,7 @@ sub analysis_sv_combinevariantcallsets {
 
         add_program_outfile_to_sample_info(
             {
-                path => $outfile_path,
+                path             => $outfile_path,
                 program_name     => q{svdb},
                 sample_info_href => $sample_info_href,
             }
@@ -495,7 +502,7 @@ sub _migrate_joint_callers_file {
             store       => \$file_path_href,
             strict_type => 1,
         },
-outfile_suffix => {
+        outfile_suffix => {
             defined     => 1,
             required    => 1,
             store       => \$outfile_suffix,
@@ -534,7 +541,7 @@ outfile_suffix => {
     use MIP::Get::File qw{ get_io_files };
 
     my $joint_caller = q{manta | delly_reformat | tiddit};
-    my $stream = q{out};
+    my $stream       = q{out};
 
   STRUCTURAL_CALLER:
     foreach my $structural_variant_caller ( @{$structural_variant_callers_ref} )
@@ -545,23 +552,23 @@ outfile_suffix => {
 
         ## Expect vcf. Special case: manta, delly, tiddit are processed by joint calling and per family
 
-	## Get the io infiles per chain and id
-            my %sample_io = get_io_files(
-                {
-                    id             => $family_id,
-                    file_info_href => $file_info_href,
-                    parameter_href => $parameter_href,
-                    program_name   => $structural_variant_caller,
-                    stream         => $stream,
-                    temp_directory => $temp_directory,
-                }
-            );
-            my $infile_path_prefix = $sample_io{$stream}{file_path_prefix};
-            my $infile_suffix      = $sample_io{$stream}{file_suffix};
-            my $infile_path =
-              $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-            my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
-            my $temp_infile_path = $temp_infile_path_prefix . $infile_suffix;
+        ## Get the io infiles per chain and id
+        my %sample_io = get_io_files(
+            {
+                id             => $family_id,
+                file_info_href => $file_info_href,
+                parameter_href => $parameter_href,
+                program_name   => $structural_variant_caller,
+                stream         => $stream,
+                temp_directory => $temp_directory,
+            }
+        );
+        my $infile_path_prefix = $sample_io{$stream}{file_path_prefix};
+        my $infile_suffix      = $sample_io{$stream}{file_suffix};
+        my $infile_path =
+          $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
+        my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
+        my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
 
         _add_to_parallel_chain(
             {
@@ -571,24 +578,23 @@ outfile_suffix => {
             }
         );
 
-	my $decompose_outfile_path = catfile(
-                        $temp_directory,
-                        $family_id
-                          . $UNDERSCORE
-                          . $structural_variant_caller
-                          . $outfile_suffix
-                    );
-	## Store merged outfile per caller
-	push @{$file_path_href->{$structural_variant_caller}}, $decompose_outfile_path;
+        my $decompose_outfile_path = catfile( $temp_directory,
+                $family_id
+              . $UNDERSCORE
+              . $structural_variant_caller
+              . $outfile_suffix );
+        ## Store merged outfile per caller
+        push @{ $file_path_href->{$structural_variant_caller} },
+          $decompose_outfile_path;
         if ( $active_parameter_href->{sv_vt_decompose} ) {
 
             ## Split multiallelic variants
             say {$FILEHANDLE} q{## Split multiallelic variants};
             vt_decompose(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => $infile_path,
-                    outfile_path => $decompose_outfile_path,
+                    FILEHANDLE          => $FILEHANDLE,
+                    infile_path         => $infile_path,
+                    outfile_path        => $decompose_outfile_path,
                     smart_decomposition => 1,
                 }
             );
@@ -681,7 +687,7 @@ sub _migrate_and_preprocess_single_callers_file {
     use MIP::Get::File qw{ get_io_files };
 
     my $joint_caller = q{manta | delly_reformat | tiddit};
-    my $stream = q{out};
+    my $stream       = q{out};
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -696,7 +702,7 @@ sub _migrate_and_preprocess_single_callers_file {
 
             ## Expect vcf. Special case: manta, delly and tiddit are processed by joint calling and per family
 
-	    ## Get the io infiles per chain and id
+            ## Get the io infiles per chain and id
             my %sample_io = get_io_files(
                 {
                     id             => $sample_id,
@@ -712,9 +718,10 @@ sub _migrate_and_preprocess_single_callers_file {
             my $infile_path =
               $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
             my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
-	    my $temp_infile_path = $temp_infile_path_prefix . $infile_suffix;
+            my $temp_infile_path = $temp_infile_path_prefix . $infile_suffix;
 
-	    push @{$file_path_href->{$structural_variant_caller}}, $temp_infile_path . $DOT . q{gz};
+            push @{ $file_path_href->{$structural_variant_caller} },
+              $temp_infile_path . $DOT . q{gz};
 
             _add_to_parallel_chain(
                 {
@@ -728,8 +735,8 @@ sub _migrate_and_preprocess_single_callers_file {
             say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
             migrate_file(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => $infile_path,
+                    FILEHANDLE   => $FILEHANDLE,
+                    infile_path  => $infile_path,
                     outfile_path => $temp_directory
                 }
             );
@@ -739,10 +746,10 @@ sub _migrate_and_preprocess_single_callers_file {
             ## Reformat variant calling file and index
             bcftools_view_and_index_vcf(
                 {
-                    infile_path => $temp_infile_path,
+                    infile_path         => $temp_infile_path,
                     outfile_path_prefix => $temp_infile_path_prefix,
-                    output_type => q{z},
-                    FILEHANDLE  => $FILEHANDLE,
+                    output_type         => q{z},
+                    FILEHANDLE          => $FILEHANDLE,
                 }
             );
         }
@@ -792,7 +799,7 @@ sub _merge_or_reformat_single_callers_file {
             store       => \$family_id,
             strict_type => 1,
         },
-        FILEHANDLE            => { required => 1, store => \$FILEHANDLE, },
+        FILEHANDLE     => { required => 1, store => \$FILEHANDLE, },
         file_path_href => {
             default     => {},
             defined     => 1,
@@ -847,16 +854,16 @@ sub _merge_or_reformat_single_callers_file {
         ## Expect vcf. Special case: joint calling and per family
 
         ## Assemble file paths by adding file ending
-        my @merge_infile_paths = @{$file_path_href->{$structural_variant_caller}};
-	my $merge_outfile_path = catfile(
-                        $temp_directory,
-                        $family_id
-                          . $UNDERSCORE
-                          . $structural_variant_caller
-                          . $outfile_suffix
-                    );
-	## Store merged outfile per caller
-	push @{$file_path_href->{$structural_variant_caller}}, $merge_outfile_path;
+        my @merge_infile_paths =
+          @{ $file_path_href->{$structural_variant_caller} };
+        my $merge_outfile_path = catfile( $temp_directory,
+                $family_id
+              . $UNDERSCORE
+              . $structural_variant_caller
+              . $outfile_suffix );
+        ## Store merged outfile per caller
+        push @{ $file_path_href->{$structural_variant_caller} },
+          $merge_outfile_path;
 
         if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
@@ -869,8 +876,8 @@ q{## Merge all structural variant caller's vcf files per sample_id};
                     FILEHANDLE       => $FILEHANDLE,
                     infile_paths_ref => \@merge_infile_paths,
                     outfile_path     => $merge_outfile_path,
-                    output_type     => q{v},
-                    stderrfile_path => $program_info_path
+                    output_type      => q{v},
+                    stderrfile_path  => $program_info_path
                       . $UNDERSCORE
                       . $structural_variant_caller
                       . $UNDERSCORE
@@ -887,9 +894,9 @@ q{## Reformat all structural variant caller's vcf files per sample_id};
 
             bcftools_view(
                 {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $merge_infile_paths[0],    # Can be only one
-                    outfile_path => $merge_outfile_path,
+                    FILEHANDLE      => $FILEHANDLE,
+                    infile_path     => $merge_infile_paths[0], # Can be only one
+                    outfile_path    => $merge_outfile_path,
                     output_type     => q{v},
                     stderrfile_path => $program_info_path
                       . $UNDERSCORE

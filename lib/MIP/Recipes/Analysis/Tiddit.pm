@@ -44,7 +44,6 @@ sub analysis_tiddit {
 ##          : $file_info_href          => The file info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner directory used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -63,7 +62,6 @@ sub analysis_tiddit {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $reference_dir;
     my $temp_directory;
 
@@ -99,11 +97,6 @@ sub analysis_tiddit {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {
@@ -319,7 +312,8 @@ sub analysis_tiddit {
     ## Get parameters
     ## Tiddit sample outfiles needs to be lexiographically sorted for svdb merge
     my @svdb_temp_infile_paths =
-      map { $tiddit_sample_file_info{$_}{out} . $outfile_suffix } @{ $active_parameter_href->{sample_ids} };
+      map { $tiddit_sample_file_info{$_}{out} . $outfile_suffix }
+      @{ $active_parameter_href->{sample_ids} };
 
     svdb_merge(
         {
