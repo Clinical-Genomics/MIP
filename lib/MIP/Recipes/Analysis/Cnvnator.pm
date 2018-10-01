@@ -13,6 +13,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw{ first_value };
 use Readonly;
 
 BEGIN {
@@ -163,7 +164,7 @@ sub analysis_cnvnator {
     use MIP::Program::Alignment::Samtools
       qw{ samtools_create_chromosome_files };
     use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_annotate bcftools_concat };
+      qw{ bcftools_annotate bcftools_concat bcftools_rename_vcf_samples };
     use MIP::Program::Variantcalling::Cnvnator
       qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -438,13 +439,6 @@ sub analysis_cnvnator {
         ## Name intermediary files
         my $cnvnator_outfile_path =
           $temp_outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
-        my $fixed_vcffile_path =
-            $temp_outfile_path_prefix
-          . $UNDERSCORE
-          . $contig
-          . $UNDERSCORE
-          . q{fixed}
-          . $outfile_suffix;
         my $fixed_header_vcffile_path =
             $temp_outfile_path_prefix
           . $UNDERSCORE
@@ -456,23 +450,13 @@ sub analysis_cnvnator {
         ## Save infiles for bcftools annotate
         push @concat_infile_paths, $fixed_header_vcffile_path;
 
-        ## Change the sample name in the VCF header to the sample ID
-        _rename_sample_in_header(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $cnvnator_outfile_path,
-                outfile_path => $fixed_vcffile_path,
-                sample_id    => $sample_id,
-            }
-        );
-
         ## Add contigs to header
         bcftools_annotate(
             {
                 FILEHANDLE => $FILEHANDLE,
                 headerfile_path =>
                   catfile( $temp_directory, q{contig_header.txt} ),
-                infile_path  => $fixed_vcffile_path,
+                infile_path  => $cnvnator_outfile_path,
                 outfile_path => $fixed_header_vcffile_path,
                 output_type  => q{v},
             }
@@ -485,23 +469,29 @@ sub analysis_cnvnator {
         {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@concat_infile_paths,
-            outfile_path     => $temp_outfile_path,
-            output_type      => q{v},
-            rm_dups          => 0,
+            outfile_path     => $temp_outfile_path_prefix
+              . $UNDERSCORE
+              . q{concat.vcf},
+            output_type => q{v},
+            rm_dups     => 0,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
+    say {$FILEHANDLE} q{## Adding sample id instead of file prefix};
+    my $rename_sample = first_value { $sample_id eq $_ }
+    @{ $active_parameter_href->{sample_ids} };
+    bcftools_rename_vcf_samples(
         {
-            infile_path  => $temp_outfile_path . $ASTERISK,
-            outfile_path => $outdir_path_prefix,
-            FILEHANDLE   => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
+            index      => 0,
+            infile => $temp_outfile_path_prefix . $UNDERSCORE . q{concat.vcf},
+            outfile_path_prefix => $outfile_path_prefix,
+            output_type         => q{v},
+            temp_directory      => $temp_directory,
+            sample_ids_ref      => [$rename_sample],
         }
     );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $FILEHANDLE;
 
@@ -581,77 +571,6 @@ sub _add_contigs_to_vcfheader {
       . $SPACE
       . catfile( $temp_directory, q{contig_header.txt} ),
       $NEWLINE;
-
-    return;
-}
-
-sub _rename_sample_in_header {
-
-## Function : Rename the sample in the chromosome header
-## Arguments: $FILEHANDLE          => Filehandle to write to
-##          : $infile_path         => Outfile path prefix
-##          : $outfile_path        => Outfile suffix
-##          : $sample_id           => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $infile_path;
-    my $outfile_path;
-    my $sample_id;
-
-    my $tmpl = {
-        FILEHANDLE => {
-            defined  => 1,
-            required => 1,
-            store    => \$FILEHANDLE,
-        },
-        infile_path => {
-            defined  => 1,
-            required => 1,
-            store    => \$infile_path,
-        },
-        outfile_path => {
-            defined  => 1,
-            required => 1,
-            store    => \$outfile_path,
-        },
-        sample_id => {
-            defined  => 1,
-            required => 1,
-            store    => \$sample_id,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $regexp;
-
-    ## Execute perl
-    $regexp = q?perl -nae '?;
-
-    ## Chomp line
-    $regexp .= q?chomp; ?;
-
-    ## Print VCF headers starting with '##'
-    $regexp .= q?if( $_=~/^##/ ) {print $_, "\n"} ?;
-
-    ## Capture line staring with '#CHROM', split on tab and capture in array
-    $regexp .= q?elsif( $_=~/^#CHROM/ ) {my @a = split("\t", $_); ?;
-
-    ## Remove last element and print
-    $regexp .= q?pop(@a); print join("\t", @a) ."\t ?;
-
-    ## Append Sample ID
-    $regexp .= $sample_id . q?", "\n"} ?;
-
-    ## Print the records
-    $regexp .= q?else {print $_, "\n"}'?;
-
-    print {$FILEHANDLE} $regexp . $SPACE;
-    print {$FILEHANDLE} $infile_path . $SPACE;
-    say   {$FILEHANDLE} q{>} . $SPACE . $outfile_path;
 
     return;
 }

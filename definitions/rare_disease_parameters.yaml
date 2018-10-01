@@ -171,7 +171,7 @@ module_core_number:
     delly_reformat: 16
     endvariantannotationblock: 1
     evaluation: 1
-    expansionhunter: 1
+    expansionhunter: 0
     fastqc: 0
     freebayes: 16
     frequency_filter: 16
@@ -688,7 +688,7 @@ expansionhunter:
   default: 1
   file_tag: _exphun
   outdir_name: expansionhunter
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".vcf.gz"
   program_name_path:
    - ExpansionHunter
   program_type: repeats_variant_callers

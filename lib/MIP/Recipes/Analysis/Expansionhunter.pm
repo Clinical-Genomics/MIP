@@ -30,6 +30,7 @@ BEGIN {
 
 ## Constants
 Readonly my $ASTERISK   => q{*};
+Readonly my $AMPERSAND  => q{&};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -133,6 +134,7 @@ sub analysis_expansionhunter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
@@ -141,8 +143,11 @@ sub analysis_expansionhunter {
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+    use MIP::Program::Variantcalling::Bcftools
+      qw{ bcftools_rename_vcf_samples bcftools_view };
     use MIP::Program::Variantcalling::Expansionhunter qw{ expansionhunter };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
+    use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -152,6 +157,9 @@ sub analysis_expansionhunter {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
+    my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};
+    my $modifier_core_number =
+      scalar( @{ $active_parameter_href->{sample_ids} } );
     my $human_genome_reference =
       $arg_href->{active_parameter_href}{human_genome_reference};
     my $job_id_chain = get_program_attributes(
@@ -188,15 +196,24 @@ sub analysis_expansionhunter {
 
     my $outdir_path_prefix       = $io{out}{dir_path_prefix};
     my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
+    my $outfile_suffix           = $io{out}{file_constant_suffix};
     my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
     my $temp_outfile_suffix      = $io{temp}{file_suffix};
     my $temp_outfile_path = $temp_outfile_path_prefix . $temp_outfile_suffix;
+    my $temp_file_suffix  = $DOT . q{vcf};
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
+
+    $core_number = get_core_number(
+        {
+            max_cores_per_node   => $max_cores_per_node,
+            modifier_core_number => $modifier_core_number,
+            module_core_number   => $core_number,
+        }
+    );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -265,22 +282,25 @@ sub analysis_expansionhunter {
                 outfile_path => $temp_directory,
             }
         );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
+    }
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-        ## Rename the bam file index file so that Expansion Hunter can find it
-        say {$FILEHANDLE} q{## Rename index file};
+    ## Rename the bam file index file so that Expansion Hunter can find it
+    say {$FILEHANDLE} q{## Rename index file};
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
         gnu_mv(
             {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $temp_infile_path_prefix . q{.bai},
-                outfile_path => $temp_infile_path_prefix
-                  . $infile_suffix . q{.bai},
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $exphun_sample_file_info{$sample_id}{out}
+                  . q{.bai},
+                outfile_path => $exphun_sample_file_info{$sample_id}{in}
+                  . q{.bai},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
-
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Run Expansion Hunter
     say {$FILEHANDLE} q{## Run ExpansionHunter};
@@ -316,27 +336,64 @@ sub analysis_expansionhunter {
                 repeat_specs_dir_path => $repeat_specs_dir_path,
                 sex                   => $sample_sex,
                 vcf_outfile_path => $exphun_sample_file_info{$sample_id}{out}
-                  . $outfile_suffix,
+                  . $temp_file_suffix,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$FILEHANDLE} $AMPERSAND, $NEWLINE;
     }
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Get parameters
-    ## Tiddit sample outfiles needs to be lexiographically sorted for svdb merge
+    ## Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
     my @svdb_temp_infile_paths =
-      map { $exphun_sample_file_info{$_}{out} . $outfile_suffix }
+      map { $exphun_sample_file_info{$_}{out} . $temp_file_suffix }
       @{ $active_parameter_href->{sample_ids} };
+    my $svdb_temp_outfile_path =
+        $temp_outfile_path_prefix
+      . $UNDERSCORE
+      . q{svdbmerge}
+      . $temp_file_suffix;
 
     svdb_merge(
         {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@svdb_temp_infile_paths,
             notag            => 1,
-            stdoutfile_path  => $outfile_path,
+            stdoutfile_path  => $svdb_temp_outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
+
+    ## Split multiallelic variants
+    say {$FILEHANDLE} q{## Split multiallelic variants};
+    my $vt_temp_outfile_path =
+        $temp_outfile_path_prefix
+      . $UNDERSCORE
+      . q{svdbmerg_vt}
+      . $temp_file_suffix;
+    vt_decompose(
+        {
+            FILEHANDLE          => $FILEHANDLE,
+            infile_path         => $svdb_temp_outfile_path,
+            outfile_path        => $vt_temp_outfile_path,
+            smart_decomposition => 1,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    say {$FILEHANDLE} q{## Adding sample id instead of file prefix};
+    bcftools_rename_vcf_samples(
+        {
+            FILEHANDLE          => $FILEHANDLE,
+            index               => 1,
+            index_type          => q{csi},
+            infile              => $vt_temp_outfile_path,
+            outfile_path_prefix => $outfile_path_prefix,
+            output_type         => q{z},
+            temp_directory      => $temp_directory,
+            sample_ids_ref      => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
 
     close $FILEHANDLE;
 
