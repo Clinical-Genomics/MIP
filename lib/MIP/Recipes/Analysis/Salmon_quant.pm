@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_salmon_quant };
@@ -336,7 +336,7 @@ sub analysis_salmon_quant {
             ## Collect QC metadata info for later use
             add_program_outfile_to_sample_info(
                 {
-                    outfile          => $outfile_name_prefix,
+                    infile           => $outfile_name_prefix,
                     path             => $outfile_path,
                     program_name     => $program_name,
                     sample_id        => $sample_id,

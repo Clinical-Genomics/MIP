@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -76,8 +76,10 @@ my $FILEHANDLE = IO::Handle->new();
 my $file_content;
 
 ## Given a sample id and infiles
-my @infiles = qw{ file_1.fastq file_2.fastq file_x_1.fastq file_x_2.fastq };
-my $insample_directory = catdir(qw{ a test dir });
+my @infile_paths = (
+    catfile(qw{ a dir file_1.fastq }),   catfile(qw{ a dir file_2.fastq }),
+    catfile(qw{ a dir file_x_1.fastq }), catfile(qw{ a dir file_x_2.fastq }),
+);
 my $sample_id          = q{sample_1};
 my $samples_file_path  = catfile( $test_dir, q{sample_file} );
 my %infile_lane_prefix = ( $sample_id => [qw{ file file_x }], );
@@ -104,9 +106,8 @@ open $FILEHANDLE, q{>}, \$file_content
 create_star_fusion_sample_file(
     {
         FILEHANDLE              => $FILEHANDLE,
-        infiles_ref             => \@infiles,
+        infile_paths_ref        => \@infile_paths,
         infile_lane_prefix_href => \%infile_lane_prefix,
-        insample_directory      => $insample_directory,
         samples_file_path       => $samples_file_path,
         sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
@@ -125,8 +126,8 @@ is( $returned_sample_id, $sample_id, q{Found sample_id in line} );
 
 is( $returned_samples_file_path, $samples_file_path,
     q{Found sample path in line} );
-my $second_pair = $infiles[$INDEX_READ_1_SECOND_PAIR] . q{\S+}
-  . $infiles[$INDEX_READ_2_SECOND_PAIR];
+my $second_pair = $infile_paths[$INDEX_READ_1_SECOND_PAIR] . q{\S+}
+  . $infile_paths[$INDEX_READ_2_SECOND_PAIR];
 my ($returned_second_pair) = $file_content =~ /($second_pair)/msx;
 
 ok( $returned_second_pair, q{Found second pair} );
