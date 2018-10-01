@@ -164,7 +164,7 @@ sub analysis_cnvnator {
     use MIP::Program::Alignment::Samtools
       qw{ samtools_create_chromosome_files };
     use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_annotate bcftools_concat bcftools_rename_vcf_samples };
+      qw{ bcftools_annotate bcftools_concat bcftools_create_reheader_samples_file bcftools_rename_vcf_samples };
     use MIP::Program::Variantcalling::Cnvnator
       qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -433,12 +433,31 @@ sub analysis_cnvnator {
     ## Store infiles for bcftools concat
     my @concat_infile_paths;
 
+    say {$FILEHANDLE} q{## Adding sample id instead of file prefix};
+    my $rename_sample = first_value { $sample_id eq $_ }
+    @{ $active_parameter_href->{sample_ids} };
+
+    bcftools_create_reheader_samples_file(
+        {
+            FILEHANDLE     => $FILEHANDLE,
+            sample_ids_ref => [$rename_sample],
+            temp_directory => $temp_directory,
+        }
+    );
+
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs} } ) {
 
         ## Name intermediary files
         my $cnvnator_outfile_path =
           $temp_outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
+        my $fixed_vcffile_path =
+            $temp_outfile_path_prefix
+          . $UNDERSCORE
+          . $contig
+          . $UNDERSCORE
+          . q{fixed}
+          . $outfile_suffix;
         my $fixed_header_vcffile_path =
             $temp_outfile_path_prefix
           . $UNDERSCORE
@@ -450,13 +469,26 @@ sub analysis_cnvnator {
         ## Save infiles for bcftools annotate
         push @concat_infile_paths, $fixed_header_vcffile_path;
 
+        bcftools_rename_vcf_samples(
+            {
+                create_sample_file  => 0,
+                FILEHANDLE          => $FILEHANDLE,
+                index               => 0,
+                infile              => $cnvnator_outfile_path,
+                outfile_path_prefix => $fixed_vcffile_path,
+                output_type         => q{v},
+                temp_directory      => $temp_directory,
+                sample_ids_ref      => [$rename_sample],
+            }
+        );
+
         ## Add contigs to header
         bcftools_annotate(
             {
                 FILEHANDLE => $FILEHANDLE,
                 headerfile_path =>
                   catfile( $temp_directory, q{contig_header.txt} ),
-                infile_path  => $cnvnator_outfile_path,
+                infile_path  => $fixed_vcffile_path,
                 outfile_path => $fixed_header_vcffile_path,
                 output_type  => q{v},
             }
@@ -469,29 +501,12 @@ sub analysis_cnvnator {
         {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@concat_infile_paths,
-            outfile_path     => $temp_outfile_path_prefix
-              . $UNDERSCORE
-              . q{concat.vcf},
-            output_type => q{v},
-            rm_dups     => 0,
+            outfile_path     => $outfile_path,
+            output_type      => q{v},
+            rm_dups          => 0,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    say {$FILEHANDLE} q{## Adding sample id instead of file prefix};
-    my $rename_sample = first_value { $sample_id eq $_ }
-    @{ $active_parameter_href->{sample_ids} };
-    bcftools_rename_vcf_samples(
-        {
-            FILEHANDLE => $FILEHANDLE,
-            index      => 0,
-            infile => $temp_outfile_path_prefix . $UNDERSCORE . q{concat.vcf},
-            outfile_path_prefix => $outfile_path_prefix,
-            output_type         => q{v},
-            temp_directory      => $temp_directory,
-            sample_ids_ref      => [$rename_sample],
-        }
-    );
 
     close $FILEHANDLE;
 
