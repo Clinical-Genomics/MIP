@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ create_star_fusion_sample_file };
@@ -29,7 +29,6 @@ BEGIN {
 
 ## Constants
 Readonly my $NEWLINE => q{\n};
-Readonly my $SPACE   => q{ };
 Readonly my $TAB     => q{\t};
 
 sub create_star_fusion_sample_file {
@@ -37,20 +36,18 @@ sub create_star_fusion_sample_file {
 ## Function : Create the samples file for STAR-fusion.
 ## Returns  :
 ## Arguments: $FILEHANDLE              => Filehandle to write to
-##          : $infiles_ref             => Infiles for sample {REF}
+##          : $infile_paths_ref        => Infile paths for sample {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => Directory for fastq files
 ##          : $sample_id               => Sample id
-##          : $samples_file_path       => The family file path
+##          : $samples_file_path       => Path to STAR-Fuison sample file
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $infiles_ref;
+    my $infile_paths_ref;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $sample_id;
     my $samples_file_path;
     my $sample_info_href;
@@ -61,11 +58,11 @@ sub create_star_fusion_sample_file {
             required => 1,
             store    => \$FILEHANDLE,
         },
-        infiles_ref => {
+        infile_paths_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$infiles_ref,
+            store       => \$infile_paths_ref,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -73,12 +70,6 @@ sub create_star_fusion_sample_file {
             defined     => 1,
             required    => 1,
             store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        insample_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$insample_directory,
             strict_type => 1,
         },
         sample_id => {
@@ -128,26 +119,19 @@ sub create_star_fusion_sample_file {
           $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
           {sequence_run_type};
 
-        my $insample_dir_fastqc_path_read_one =
-          catfile( $insample_directory, $infiles_ref->[$paired_end_tracker] );
-
         ## Add read one to file index array
         push @{ $sample_line{$infile_index} },
-          $insample_dir_fastqc_path_read_one;
+          $infile_paths_ref->[$paired_end_tracker];
 
         # If second read direction is present
         if ( $sequence_run_mode eq q{paired-end} ) {
 
-            # Increment to collect correct read 2 from %infile
-            $paired_end_tracker = $paired_end_tracker + 1;
-            my $insample_dir_fastqc_path_read_two =
-              catfile( $insample_directory,
-                $infiles_ref->[$paired_end_tracker] );
+            # Increment to collect correct read 2 from infiles
+            $paired_end_tracker++;
 
             ## Add read two file index array
             push @{ $sample_line{$infile_index} },
-              $insample_dir_fastqc_path_read_two;
-
+              $infile_paths_ref->[$paired_end_tracker];
         }
 
         ## Increment paired end tracker
@@ -155,7 +139,6 @@ sub create_star_fusion_sample_file {
 
         ## Add tab to each element and add as string to array
         push @strings, join $TAB, @{ $sample_line{$infile_index} };
-
     }
 
     ## Add newline to each string (line)
