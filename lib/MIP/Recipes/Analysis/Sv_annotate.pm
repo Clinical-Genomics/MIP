@@ -217,6 +217,7 @@ sub analysis_sv_annotate {
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 program_name           => $program_name,
+                temp_directory         => $temp_directory,
             }
         )
     );

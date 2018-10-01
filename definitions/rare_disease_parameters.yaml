@@ -777,7 +777,7 @@ sv_annotate:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: ann_
+  file_tag: _ann
   outfile_suffix: ".vcf"
   program_name_path:
    - bcftools
@@ -908,7 +908,8 @@ sv_varianteffectpredictor:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: vep_
+  file_tag: _vep
+  outfile_suffix: ".vcf"
   program_name_path:
    - vep
   type: program
