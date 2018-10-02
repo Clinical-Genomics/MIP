@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -207,9 +207,9 @@ sub analysis_gatk_splitncigarreads {
                 chain_id         => $job_id_chain,
                 id               => $sample_id,
                 file_info_href   => $file_info_href,
-                outdata_dir      => $active_parameter_href->{outdata_dir},
                 file_name_prefix => $infile_name_prefix,
                 iterators_ref    => $file_info_href->{contigs_size_ordered},
+                outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 program_name     => $program_name,
                 temp_directory   => $temp_directory,
@@ -218,7 +218,7 @@ sub analysis_gatk_splitncigarreads {
     );
     my $outfile_name_prefix      = $io{out}{file_name_prefix};
     my $outfile_suffix           = $io{out}{file_suffix};
-    my %outfile_path             = %{ $io{out}{file_path_href} };
+    my @outfile_paths            = @{ $io{out}{file_paths} };
     my $outdir_path              = $io{out}{dir_path};
     my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
@@ -333,7 +333,7 @@ sub analysis_gatk_splitncigarreads {
 
     if ( $program_mode == 1 ) {
 
-        my $first_outfile_path = $outfile_path{q{1}};
+        my $first_outfile_path = $outfile_paths[0];
 
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
