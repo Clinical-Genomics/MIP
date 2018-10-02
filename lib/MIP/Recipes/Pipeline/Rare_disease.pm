@@ -190,14 +190,12 @@ sub pipeline_rare_disease {
       qw{ analysis_gatk_variantevalall };
     use MIP::Recipes::Analysis::Gatk_variantevalexome
       qw{ analysis_gatk_variantevalexome };
-    use MIP::Recipes::Analysis::Gatk_variantrecalibration
-      qw{ analysis_gatk_variantrecalibration_wgs analysis_gatk_variantrecalibration_wes };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
     use MIP::Recipes::Analysis::Markduplicates
       qw{ analysis_markduplicates analysis_markduplicates_rio };
     use MIP::Recipes::Analysis::Mip_vcfparser
-      qw{ analysis_mip_vcfparser analysis_mip_vcfparser_rio analysis_vcfparser_sv_wes analysis_vcfparser_sv_wgs };
+      qw{ analysis_mip_vcfparser analysis_mip_vcfparser_rio };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Peddy qw{ analysis_peddy };
     use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
@@ -235,10 +233,10 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Variant_integrity
       qw{ analysis_variant_integrity };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
-    use MIP::Recipes::Analysis::Vep
-      qw{ analysis_vep analysis_vep_rio analysis_vep_sv_wes analysis_vep_sv_wgs };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep analysis_vep_rio };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt analysis_vt_rio };
     use MIP::Recipes::Build::Rare_disease qw{build_rare_disease_meta_files};
+    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type };
 
     ### Pipeline specific checks
     check_rare_disease(
@@ -421,33 +419,12 @@ sub pipeline_rare_disease {
         }
     );
 
-    ## Special case for gatk_variantrecalibration recipe
-    _update_gatk_variantrecalibration_ar(
+    ## Update which recipe to use depending on consensus analysis type
+    set_recipe_on_analysis_type(
         {
-            active_parameter_href => $active_parameter_href,
-            analysis_recipe_href  => \%analysis_recipe,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-        }
-    );
-
-    ## Special case for vep_sv
-    _update_vep_sv_ar(
-        {
-            active_parameter_href => $active_parameter_href,
-            analysis_recipe_href  => \%analysis_recipe,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-        }
-    );
-
-    ## Special case for vcfparser_sv
-    _update_vcfparser_sv_ar(
-        {
-            active_parameter_href => $active_parameter_href,
-            analysis_recipe_href  => \%analysis_recipe,
-            log                   => $log,
-            parameter_href        => $parameter_href,
+            analysis_recipe_href => \%analysis_recipe,
+            consensus_analysis_type =>
+              $parameter_href->{dynamic_parameter}{consensus_analysis_type},
         }
     );
 
@@ -801,201 +778,6 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             return;
         }
         $analysis_recipe_href->{rankvariant} = \&analysis_rankvariant;
-    }
-    return;
-}
-
-sub _update_gatk_variantrecalibration_ar {
-
-## Function : Update which gatk_variantrecalibration recipe to use
-## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $log                     => Log object to write to
-##          : $parameter_href          => Parameter hash {REF}
-##          : $analysis_recipe_href    => Analysis recipe hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_href;
-    my $analysis_recipe_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-
-    if ( $consensus_analysis_type eq q{wes} ) {
-
-        $analysis_recipe_href->{gatk_variantrecalibration} =
-          \&analysis_gatk_variantrecalibration_wes;
-    }
-    else {
-
-        ## WGS and WES/WGS
-        $analysis_recipe_href->{gatk_variantrecalibration} =
-          \&analysis_gatk_variantrecalibration_wgs;
-    }
-    return;
-}
-
-sub _update_vep_sv_ar {
-
-## Function : Update which vep recipe to use
-## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $log                     => Log object to write to
-##          : $parameter_href          => Parameter hash {REF}
-##          : $analysis_recipe_href    => Analysis recipe hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_href;
-    my $analysis_recipe_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-
-    ## WES
-    if ( $consensus_analysis_type eq q{wes} ) {
-
-        $analysis_recipe_href->{sv_varianteffectpredictor} =
-          \&analysis_vep_sv_wes;
-    }
-    else {
-
-        ## WGS and mixed
-        $analysis_recipe_href->{sv_varianteffectpredictor} =
-          \&analysis_vep_sv_wgs;
-    }
-    return;
-}
-
-sub _update_vcfparser_sv_ar {
-
-## Function : Update which vcfparser recipe to use
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object to write to
-##          : $parameter_href        => Parameter hash {REF}
-##          : $analysis_recipe_href  => Analysis recipe hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_href;
-    my $analysis_recipe_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-
-    ## WES
-    if ( $consensus_analysis_type eq q{wes} ) {
-
-        $analysis_recipe_href->{sv_vcfparser} = \&analysis_vcfparser_sv_wes;
-    }
-    else {
-
-        ## WGS and mixed
-        $analysis_recipe_href->{sv_vcfparser} = \&analysis_vcfparser_sv_wgs;
     }
     return;
 }
