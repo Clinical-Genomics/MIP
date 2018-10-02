@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -378,7 +378,7 @@ sub analysis_gatk_baserecalibration {
         }
 
         my $base_quality_score_recalibration_file =
-          $temp_outfile_path{$contig} . $DOT . q{grp};
+          $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
@@ -441,10 +441,10 @@ sub analysis_gatk_baserecalibration {
             @intervals = ($contig);
         }
 
+        my $base_quality_score_recalibration_file =
+          $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-        my $base_quality_score_recalibration_file =
-          $temp_outfile_path{$contig} . $DOT . q{grp};
         gatk_applybqsr(
             {
                 base_quality_score_recalibration_file =>
@@ -546,7 +546,7 @@ sub analysis_gatk_baserecalibration {
             {
                 infile           => $outfile_name_prefix,
                 path             => $gathered_outfile_path,
-                program_name     => q{gatk_baserecalibration},
+                program_name     => $program_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
@@ -885,7 +885,7 @@ sub analysis_gatk_baserecalibration_rio {
         }
 
         my $base_quality_score_recalibration_file =
-          $temp_outfile_path{$contig} . $DOT . q{grp};
+          $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
@@ -948,10 +948,10 @@ sub analysis_gatk_baserecalibration_rio {
             @intervals = ($contig);
         }
 
+        my $base_quality_score_recalibration_file =
+          $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-        my $base_quality_score_recalibration_file =
-          $temp_outfile_path{$contig} . $DOT . q{grp};
         gatk_applybqsr(
             {
                 base_quality_score_recalibration_file =>
