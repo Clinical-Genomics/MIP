@@ -451,15 +451,21 @@ sub parse_io_outfiles {
         ## Default paths with iterators
         if ( @{$iterators_ref} and $file_name_prefix ) {
 
+            ## Localize as we will mutate elements
+            my @iterators = @{$iterators_ref};
+            foreach my $iterator (@iterators) {
+
+                ## Add "." if not empty string
+                if ( $iterator ne $EMPTY_STR ) {
+
+                    $iterator = $DOT . $iterator;
+                }
+            }
             @file_paths =
               map {
                 catfile( $directory,
-                        $file_name_prefix
-                      . $outfile_tag
-                      . $DOT
-                      . $_
-                      . $outfile_suffix )
-              } @{$iterators_ref};
+                    $file_name_prefix . $outfile_tag . $_ . $outfile_suffix )
+              } @iterators;
         }
         ## Default paths without iterators
         else {

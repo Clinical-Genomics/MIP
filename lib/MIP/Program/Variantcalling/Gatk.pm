@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -51,6 +51,7 @@ BEGIN {
 
 ## Constants
 Readonly my $AMPERSAND    => q{&};
+Readonly my $DOT          => q{.};
 Readonly my $DOUBLE_QOUTE => q{"};
 Readonly my $EMPTY_STR    => q{};
 Readonly my $NEWLINE      => qq{\n};
@@ -1647,7 +1648,7 @@ sub gatk_concatenate_variants {
             strict_type => 1,
         },
         outfile_suffix => {
-            allow       => [qw{ .vcf }],
+            allow       => [qw{ .vcf .selected.vcf }],
             default     => q{.vcf},
             store       => \$outfile_suffix,
             strict_type => 1,
@@ -1678,7 +1679,7 @@ sub gatk_concatenate_variants {
 
     ## Assemble infile paths
     my @infile_paths =
-      map { $infile_prefix . $_ . $infile_postfix } @{$elements_ref};
+      map { $infile_prefix . $DOT . $_ . $infile_postfix } @{$elements_ref};
 
     gatk_gathervcfscloud(
         {

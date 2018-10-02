@@ -36,6 +36,7 @@ sub htslib_bgzip {
 ## Function : Perl wrapper for writing bgzip recipe to $FILEHANDLE or return commands array. Based on htslib 1.3.1.
 ## Returns  : @commands
 ## Arguments: $decompress             => Decompress file
+##          : $force                  => Force
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $stderrfile_path        => Stderrfile path
@@ -54,6 +55,7 @@ sub htslib_bgzip {
 
     ## Default(s)
     my $decompress;
+    my $force;
     my $write_to_stdout;
 
     my $tmpl = {
@@ -62,6 +64,12 @@ sub htslib_bgzip {
             allow       => [ 0, 1 ],
             strict_type => 1,
             store       => \$decompress
+        },
+        force => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$force
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
@@ -96,6 +104,10 @@ sub htslib_bgzip {
     if ($decompress) {
 
         push @commands, q{--decompress};
+    }
+    if ($force) {
+
+        push @commands, q{--force};
     }
 
     if ($write_to_stdout) {
@@ -156,7 +168,6 @@ sub htslib_tabix {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-
 
     my $tmpl = {
         FILEHANDLE => {
