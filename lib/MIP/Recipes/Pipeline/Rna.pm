@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rna };
@@ -154,7 +154,7 @@ sub pipeline_rna {
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
     use MIP::Recipes::Analysis::Gatk_haplotypecaller
-      qw{ analysis_gatk_haplotypecaller_rna };
+      qw{ analysis_gatk_haplotypecaller };
     use MIP::Recipes::Analysis::Gatk_splitncigarreads
       qw{ analysis_gatk_splitncigarreads };
     use MIP::Recipes::Analysis::Gatk_variantfiltration
@@ -207,7 +207,7 @@ sub pipeline_rna {
         fastqc                    => \&analysis_fastqc,
         gatk_asereadcounter       => \&analysis_gatk_asereadcounter,
         gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
-        gatk_haplotypecaller      => \&analysis_gatk_haplotypecaller_rna,
+        gatk_haplotypecaller      => \&analysis_gatk_haplotypecaller,
         gatk_splitncigarreads     => \&analysis_gatk_splitncigarreads,
         gatk_variantfiltration    => \&analysis_gatk_variantfiltration,
         markduplicates            => \&analysis_markduplicates,
