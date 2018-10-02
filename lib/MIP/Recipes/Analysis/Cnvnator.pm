@@ -155,16 +155,17 @@ sub analysis_cnvnator {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files};
+    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Samtools
       qw{ samtools_create_chromosome_files };
     use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_annotate bcftools_concat bcftools_rename_vcf_samples };
+      qw{ bcftools_annotate bcftools_concat bcftools_create_reheader_samples_file bcftools_rename_vcf_samples };
     use MIP::Program::Variantcalling::Cnvnator
       qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -259,6 +260,22 @@ sub analysis_cnvnator {
 
     ### SHELL:
 
+    ### Update contigs
+    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+    # Skip contig MT as it is not applicable in this analysis
+    my @size_ordered_contigs = delete_contig_elements(
+        {
+            elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
+            remove_contigs_ref => [qw{ MT M }],
+        }
+    );
+    my @contigs = delete_contig_elements(
+        {
+            elements_ref       => \@{ $file_info_href->{contigs} },
+            remove_contigs_ref => [qw{ MT M }],
+        }
+    );
+
     ## Add contigs to vcfheader
     _add_contigs_to_vcfheader(
         {
@@ -275,7 +292,7 @@ sub analysis_cnvnator {
             FILEHANDLE         => $FILEHANDLE,
             infile_path        => $human_genome_reference,
             max_process_number => $core_number,
-            regions_ref        => $file_info_href->{contigs},
+            regions_ref        => \@size_ordered_contigs,
             suffix             => $DOT . q{fa},
             temp_directory     => $temp_directory,
         }
@@ -288,7 +305,7 @@ sub analysis_cnvnator {
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+            contigs_ref        => \@size_ordered_contigs,
             file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
@@ -316,7 +333,7 @@ sub analysis_cnvnator {
     );
 
   CONTIG:
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+    foreach my $contig (@size_ordered_contigs) {
 
         my $stdbasefile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
 
@@ -433,12 +450,30 @@ sub analysis_cnvnator {
     ## Store infiles for bcftools concat
     my @concat_infile_paths;
 
+    say {$FILEHANDLE} q{## Adding sample id instead of file prefix};
+    my $rename_sample = first_value { $sample_id eq $_ }
+    @{ $active_parameter_href->{sample_ids} };
+
+    bcftools_create_reheader_samples_file(
+        {
+            FILEHANDLE     => $FILEHANDLE,
+            sample_ids_ref => [$rename_sample],
+            temp_directory => $temp_directory,
+        }
+    );
+
   CONTIG:
-    foreach my $contig ( @{ $file_info_href->{contigs} } ) {
+    foreach my $contig (@contigs) {
 
         ## Name intermediary files
         my $cnvnator_outfile_path =
           $temp_outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
+        my $fixed_vcffile_path_prefix =
+            $temp_outfile_path_prefix
+          . $UNDERSCORE
+          . $contig
+          . $UNDERSCORE
+          . q{fixed};
         my $fixed_header_vcffile_path =
             $temp_outfile_path_prefix
           . $UNDERSCORE
@@ -450,13 +485,26 @@ sub analysis_cnvnator {
         ## Save infiles for bcftools annotate
         push @concat_infile_paths, $fixed_header_vcffile_path;
 
+        bcftools_rename_vcf_samples(
+            {
+                create_sample_file  => 0,
+                FILEHANDLE          => $FILEHANDLE,
+                index               => 0,
+                infile              => $cnvnator_outfile_path,
+                outfile_path_prefix => $fixed_vcffile_path_prefix,
+                output_type         => q{v},
+                temp_directory      => $temp_directory,
+                sample_ids_ref      => [$rename_sample],
+            }
+        );
+
         ## Add contigs to header
         bcftools_annotate(
             {
                 FILEHANDLE => $FILEHANDLE,
                 headerfile_path =>
                   catfile( $temp_directory, q{contig_header.txt} ),
-                infile_path  => $cnvnator_outfile_path,
+                infile_path  => $fixed_vcffile_path_prefix . $outfile_suffix,
                 outfile_path => $fixed_header_vcffile_path,
                 output_type  => q{v},
             }
@@ -469,29 +517,12 @@ sub analysis_cnvnator {
         {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@concat_infile_paths,
-            outfile_path     => $temp_outfile_path_prefix
-              . $UNDERSCORE
-              . q{concat.vcf},
-            output_type => q{v},
-            rm_dups     => 0,
+            outfile_path     => $outfile_path,
+            output_type      => q{v},
+            rm_dups          => 0,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    say {$FILEHANDLE} q{## Adding sample id instead of file prefix};
-    my $rename_sample = first_value { $sample_id eq $_ }
-    @{ $active_parameter_href->{sample_ids} };
-    bcftools_rename_vcf_samples(
-        {
-            FILEHANDLE => $FILEHANDLE,
-            index      => 0,
-            infile => $temp_outfile_path_prefix . $UNDERSCORE . q{concat.vcf},
-            outfile_path_prefix => $outfile_path_prefix,
-            output_type         => q{v},
-            temp_directory      => $temp_directory,
-            sample_ids_ref      => [$rename_sample],
-        }
-    );
 
     close $FILEHANDLE;
 

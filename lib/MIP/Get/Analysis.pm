@@ -27,17 +27,18 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ get_dependency_tree get_dependency_tree_chain get_dependency_tree_order get_overall_analysis_type print_program };
+      qw{ get_dependency_tree get_dependency_tree_chain get_dependency_tree_order get_overall_analysis_type get_vcf_parser_analysis_suffix print_program };
 
 }
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE     => q{ };
+Readonly my $EMPTY_STR => q{};
+Readonly my $NEWLINE   => qq{\n};
 
 sub get_dependency_tree {
 
@@ -443,6 +444,47 @@ sub get_overall_analysis_type {
 
     # No consensus, then it must be mixed
     return q{mixed};
+}
+
+sub get_vcf_parser_analysis_suffix {
+
+## Function : Get the vcf parser analysis suffix
+## Returns  : @analysis_suffixes
+## Arguments: $vcfparser_outfile_count => Number of user supplied vcf parser outfiles
+
+    my ($arg_href) = @_;
+
+## Flatten argument(s)
+    my $vcfparser_outfile_count;
+
+    my $tmpl = {
+        vcfparser_outfile_count => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfparser_outfile_count,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    Readonly my $VCFPARSER_OUTFILE_COUNT => $vcfparser_outfile_count - 1;
+
+    my @analysis_suffixes;
+
+    ## Determined by vcfparser output
+    # Set research (="") and selected file suffix
+    for my $vcfparser_outfile_counter ( 0 .. $VCFPARSER_OUTFILE_COUNT ) {
+
+        if ( $vcfparser_outfile_counter == 1 ) {
+
+            ## Select file variants
+            push @analysis_suffixes, q{selected};
+            next;
+        }
+        push @analysis_suffixes, $EMPTY_STR;
+    }
+    return @analysis_suffixes;
 }
 
 sub print_program {

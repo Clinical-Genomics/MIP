@@ -27,11 +27,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.010;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ bcftools_annotate bcftools_call bcftools_concat bcftools_filter bcftools_index bcftools_merge bcftools_mpileup bcftools_norm bcftools_reheader bcftools_rename_vcf_samples bcftools_roh bcftools_stats bcftools_view bcftools_view_and_index_vcf};
+      qw{ bcftools_annotate bcftools_call bcftools_concat bcftools_create_reheader_samples_file bcftools_filter bcftools_index bcftools_merge bcftools_mpileup bcftools_norm bcftools_reheader bcftools_rename_vcf_samples bcftools_roh bcftools_stats bcftools_view bcftools_view_and_index_vcf};
 
 }
 
@@ -1243,7 +1243,8 @@ sub bcftools_rename_vcf_samples {
 
 ## Function : Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
 ## Returns  :
-## Arguments: $FILEHANDLE          => Filehandle to write to
+## Arguments: $create_sample_file  => Create sample file for bcftools reheader
+##          : $FILEHANDLE          => Filehandle to write to
 ##          : $index               => Generate index of reformated file
 ##          : $index_type          => Type of index
 ##          : $infile              => Vcf infile to rename samples for
@@ -1255,6 +1256,7 @@ sub bcftools_rename_vcf_samples {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $create_sample_file;
     my $FILEHANDLE;
     my $infile;
     my $outfile_path_prefix;
@@ -1267,6 +1269,12 @@ sub bcftools_rename_vcf_samples {
     my $output_type;
 
     my $tmpl = {
+        create_sample_file => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$create_sample_file,
+            strict_type => 1,
+        },
         FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
         index      => {
             allow       => [ undef, 0, 1 ],
@@ -1307,27 +1315,16 @@ sub bcftools_rename_vcf_samples {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw{ gnu_printf };
+    if ($create_sample_file) {
 
-    ## Create new sample names file
-    say {$FILEHANDLE} q{## Create new sample(s) names file};
-
-    ## Get parameters
-    my $format_string = $DOUBLE_QUOTE;
-  SAMPLE_ID:
-    foreach my $sample_id ( @{$sample_ids_ref} ) {
-
-        $format_string .= $sample_id . q{\n};
+        bcftools_create_reheader_samples_file(
+            {
+                FILEHANDLE     => $FILEHANDLE,
+                sample_ids_ref => $sample_ids_ref,
+                temp_directory => $temp_directory,
+            }
+        );
     }
-    $format_string .= $DOUBLE_QUOTE;
-    gnu_printf(
-        {
-            FILEHANDLE      => $FILEHANDLE,
-            format_string   => $format_string,
-            stdoutfile_path => catfile( $temp_directory, q{sample_name.txt} ),
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
 
     ## Rename samples in VCF
     say {$FILEHANDLE} q{## Rename sample(s) names in VCF file};
@@ -1352,6 +1349,64 @@ sub bcftools_rename_vcf_samples {
         }
     );
 
+    return;
+}
+
+sub bcftools_create_reheader_samples_file {
+
+## Function : Create reheader samples file.
+## Returns  :
+## Arguments: $FILEHANDLE          => Filehandle to write to
+##          : $sample_ids_ref      => Samples to rename in the same order as in the vcf {REF}
+##          : $temp_directory      => Temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $sample_ids_ref;
+    my $temp_directory;
+
+    my $tmpl = {
+        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+        temp_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Gnu::Coreutils qw{ gnu_printf };
+
+    ## Create new sample names file
+    say {$FILEHANDLE} q{## Create new sample(s) names file};
+
+    ## Get parameters
+    my $format_string = $DOUBLE_QUOTE;
+  SAMPLE_ID:
+    foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+        $format_string .= $sample_id . q{\n};
+    }
+    $format_string .= $DOUBLE_QUOTE;
+    gnu_printf(
+        {
+            FILEHANDLE      => $FILEHANDLE,
+            format_string   => $format_string,
+            stdoutfile_path => catfile( $temp_directory, q{sample_name.txt} ),
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
     return;
 }
 
