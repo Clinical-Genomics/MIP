@@ -2581,7 +2581,6 @@ sub analysis_rankvariant_sv_unaffected {
         )
     );
 
-    my $outdir_path_prefix = $io{out}{dir_path_prefix};
     my @outfile_suffixes   = @{ $io{out}{file_suffixes} };
     my @outfile_paths      = @{ $io{out}{file_paths} };
 
