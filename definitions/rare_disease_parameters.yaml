@@ -1057,15 +1057,10 @@ sv_reformat:
   data_type: SCALAR
   default: 1
   file_tag: ""
+  outfile_suffix: ".vcf"
   program_name_path:
    - grep
   type: program
-sv_rankvariant_binary_file:
-  associated_program:
-   - sv_reformat
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 sv_reformat_remove_genes_file:
   associated_program:
    - sv_reformat

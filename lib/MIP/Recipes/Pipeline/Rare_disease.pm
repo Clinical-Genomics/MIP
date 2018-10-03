@@ -221,7 +221,7 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Split_fastq_file
       qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
-    use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
+    use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
     use MIP::Recipes::Analysis::Snpeff
       qw{ analysis_snpeff analysis_snpeff_rio };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets
@@ -315,7 +315,7 @@ sub pipeline_rare_disease {
         sv_annotate               => \&analysis_sv_annotate,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
         sv_rankvariant => undef,                    # Depends on sample features
-        sv_reformat    => \&analysis_sv_reformat,
+        sv_reformat    => \&analysis_reformat_sv,
         sv_varianteffectpredictor => undef,         # Depends on analysis type
         sv_vcfparser              => undef,         # Depends on analysis type
         tiddit                 => \&analysis_tiddit,
