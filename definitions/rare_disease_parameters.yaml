@@ -1014,7 +1014,8 @@ sv_rankvariant:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: ranked_
+  file_tag: _ranked
+  outfile_suffix: ".vcf"
   type: program
 sv_genmod_annotate_regions:
   associated_program:
