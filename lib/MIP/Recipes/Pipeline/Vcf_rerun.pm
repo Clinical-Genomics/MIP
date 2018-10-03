@@ -149,6 +149,7 @@ sub pipeline_vcf_rerun {
     use MIP::Check::Pipeline qw{ check_vcf_rerun };
 
     ## Recipes
+    use MIP::Log::MIP_log4perl qw{ log_display_program_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus
       qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Endvariantannotationblock
@@ -160,7 +161,7 @@ sub pipeline_vcf_rerun {
     use MIP::Recipes::Analysis::Prepareforvariantannotationblock
       qw{ analysis_prepareforvariantannotationblock analysis_prepareforvariantannotationblock_rio };
     use MIP::Recipes::Analysis::Rankvariant
-      qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
+      qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
     use MIP::Recipes::Analysis::Rhocall
       qw{ analysis_rhocall_annotate analysis_rhocall_annotate_rio };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
@@ -233,28 +234,6 @@ sub pipeline_vcf_rerun {
         vt                 => \&analysis_vt,
     );
 
-    ## Program names for the log
-    my %program_name = (
-        analysisrunstatus                => q{Analysis run status},
-        endvariantannotationblock        => q{Endvariantannotationblock},
-        frequency_filter                 => q{Frequency filter},
-        prepareforvariantannotationblock => q{Prepareforvariantannotationblock},
-        rankvariant                      => q{Rankvariant},
-        rhocall                          => q{Rhocall},
-        sacct                            => q{Sacct},
-        snpeff                           => q{Snpeff},
-        sv_annotate                      => q{SV annotate},
-        sv_varianteffectpredictor        => q{SV varianteffectpredictor},
-        sv_vcfparser                     => q{SV vcfparser},
-        sv_rankvariant                   => q{SV rankvariant},
-        sv_reformat                      => q{SV reformat},
-        sv_vcf_rerun_reformat            => q{SV vcf rerun reformat},
-        varianteffectpredictor           => q{Varianteffectpredictor},
-        vcfparser                        => q{Vcfparser},
-        vcf_rerun_reformat               => q{Vcf rerun reformat},
-        vt                               => q{Vt},
-    );
-
     ### Special case for '--rio' capable analysis recipes
     ## Define rio blocks programs and order
     my $is_variantannotationblock_done;
@@ -308,7 +287,13 @@ sub pipeline_vcf_rerun {
         {
             ## rio enabled and variantannotation block analysis recipe
 
-            $log->info(q{[Variantannotationblock]});
+            ## For displaying
+            log_display_program_for_user(
+                {
+                    log     => $log,
+                    program => q{variantannotationblock},
+                }
+            );
 
             analysis_variantannotationblock(
                 {
@@ -322,7 +307,6 @@ sub pipeline_vcf_rerun {
                     order_programs_ref => \@order_varann_programs,
                     parameter_href     => $parameter_href,
                     program_name       => q{variantannotationblock},
-                    program_name_href  => \%program_name,
                     sample_info_href   => $sample_info_href,
                     varann_ar_href     => \%varann_ar,
                 }
@@ -333,8 +317,13 @@ sub pipeline_vcf_rerun {
         }
         else {
 
-            $log->info(
-                $OPEN_BRACKET . $program_name{$program} . $CLOSE_BRACKET );
+            ## For displaying
+            log_display_program_for_user(
+                {
+                    log     => $log,
+                    program => $program,
+                }
+            );
 
             ## Sample mode
             if ( $parameter_href->{$program}{analysis_mode} eq q{sample} ) {
@@ -515,7 +504,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
         );
 
         $analysis_recipe_href->{sv_rankvariant} =
-          \&analysis_sv_rankvariant_unaffected;
+          \&analysis_rankvariant_sv_unaffected;
 
         ## Rio recipe
         if ( $active_parameter_href->{reduce_io} ) {
@@ -529,7 +518,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
     }
     else {
 
-        $analysis_recipe_href->{sv_rankvariant} = \&analysis_sv_rankvariant;
+        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv;
 
         ## Rio recipe
         if ( $active_parameter_href->{reduce_io} ) {

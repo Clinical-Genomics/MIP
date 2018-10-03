@@ -1390,11 +1390,6 @@ sub analysis_vcfparser_sv_wgs {
 
     my $xargs_file_path_prefix;
 
-    ## Filehandles
-    # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
-
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
             vcfparser_outfile_count =>
@@ -1427,6 +1422,11 @@ sub analysis_vcfparser_sv_wgs {
     my $outfile_suffix           = $io{out}{file_suffix};
     my @outfile_suffixes         = @{ $io{out}{file_suffixes} };
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+
+    ## Filehandles
+    # Create anonymous filehandle
+    my $FILEHANDLE      = IO::Handle->new();
+    my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(

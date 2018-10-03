@@ -147,6 +147,7 @@ sub pipeline_rna {
     use MIP::Check::Pipeline qw{ check_rna };
 
     ## Recipes
+    use MIP::Log::MIP_log4perl qw{ log_display_program_for_user };
     use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Gatk_asereadcounter
@@ -220,25 +221,6 @@ sub pipeline_rna {
         star_fusion               => \&analysis_star_fusion,
     );
 
-    ## Program names for the log
-    my %program_name = (
-        bootstrapann              => q{BootstrapAnn},
-        fastqc                    => q{FastQC},
-        gatk_asereadcounter       => q{GATK ASEReadCounter},
-        gatk_baserecalibration    => q{GATK BaseRecalibrator/ApplyBQSR},
-        gatk_haplotypecaller      => q{GATK Haplotypecaller},
-        gatk_splitncigarreads     => q{GATK SplitNCigarReads},
-        gatk_variantfiltration    => q{GATK VariantFiltration},
-        multiqc                   => q{Multiqc},
-        markduplicates            => q{Markduplicates},
-        picardtools_mergesamfiles => q{Picardtools MergeSamFiles},
-        rseqc                     => q{Rseqc},
-        sacct                     => q{Sacct},
-        salmon_quant              => q{Salmon Quant},
-        star_aln                  => q{STAR},
-        star_fusion               => q{STAR-Fusion},
-    );
-
   PROGRAM:
     foreach my $program ( @{$order_programs_ref} ) {
 
@@ -248,7 +230,13 @@ sub pipeline_rna {
         ## Skip program if not part of dispatch table (such as gzip fastq)
         next PROGRAM if ( not $analysis_recipe{$program} );
 
-        $log->info( $OPEN_BRACKET . $program_name{$program} . $CLOSE_BRACKET );
+        ## For displaying
+        log_display_program_for_user(
+            {
+                log     => $log,
+                program => $program,
+            }
+        );
 
         ## Sample mode
         if ( $parameter_href->{$program}{analysis_mode} eq q{sample} ) {

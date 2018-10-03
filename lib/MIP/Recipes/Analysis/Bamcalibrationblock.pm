@@ -48,7 +48,6 @@ sub analysis_bamcalibrationblock {
 ##          : $order_programs_ref      => Order of programs
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
-##          : $program_name_href       => Program name hash for log messages {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 
@@ -64,7 +63,6 @@ sub analysis_bamcalibrationblock {
     my $order_programs_ref;
     my $parameter_href;
     my $program_name;
-    my $program_name_href;
     my $sample_info_href;
 
     ## Default(s)
@@ -131,13 +129,6 @@ sub analysis_bamcalibrationblock {
             store       => \$program_name,
             strict_type => 1,
         },
-        program_name_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$program_name_href,
-            strict_type => 1,
-        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -154,6 +145,7 @@ sub analysis_bamcalibrationblock {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Log::MIP_log4perl qw{ log_display_program_for_user };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -172,10 +164,14 @@ sub analysis_bamcalibrationblock {
         ## Only for active programs
         next PROGRAM if ( not $active_parameter_href->{$program} );
 
-        $log->info( $TAB
-              . $OPEN_BRACKET
-              . $program_name_href->{$program}
-              . $CLOSE_BRACKET );
+        ## For displaying
+        log_display_program_for_user(
+            {
+                indent_level => 1,
+                log          => $log,
+                program      => $program,
+            }
+        );
     }
 
   SAMPLE_ID:

@@ -22,17 +22,17 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
+      qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
 
 }
 
 ## Constants
 Readonly my $AMPERSAND  => q{&};
-Readonly my $ASTERISK    => q{*};
+Readonly my $ASTERISK   => q{*};
 Readonly my $DASH       => q{-};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
@@ -2001,18 +2001,16 @@ sub analysis_rankvariant_unaffected {
     return;
 }
 
-sub analysis_sv_rankvariant {
+sub analysis_rankvariant_sv {
 
 ## Function : Annotate and score SV variants depending on mendelian inheritance, frequency and phenotype etc.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $call_type               => Variant call type
 ##          : $family_id               => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $reference_dir_ref       => MIP reference directory {REF}
@@ -2031,10 +2029,8 @@ sub analysis_sv_rankvariant {
     my $sample_info_href;
 
     ## Default(s)
-    my $call_type;
     my $family_id;
     my $reference_dir_ref;
-    my $outaligner_dir;
     my $temp_directory;
 
     my $tmpl = {
@@ -2043,11 +2039,6 @@ sub analysis_sv_rankvariant {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        call_type => {
-            default     => q{SV},
-            store       => \$call_type,
             strict_type => 1,
         },
         family_id => {
@@ -2074,11 +2065,6 @@ sub analysis_sv_rankvariant {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {
@@ -2115,9 +2101,10 @@ sub analysis_sv_rankvariant {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_files };
+    use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Genmod
@@ -2126,20 +2113,36 @@ sub analysis_sv_rankvariant {
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ## Constant
-    Readonly my $VCFPARSER_OUTFILE_COUNT =>
-      $active_parameter_href->{vcfparser_outfile_count} - 1;
+    ### PREPROCESSING:
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
-
     ## Unpack parameters
+    my %io = get_io_files(
+        {
+            id             => $family_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my @infile_paths       = @{ $io{in}{file_paths} };
+
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -2148,6 +2151,38 @@ sub analysis_sv_rankvariant {
         }
       );
 
+    my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
+        {
+            vcfparser_outfile_count =>
+              $active_parameter_href->{sv_vcfparser_outfile_count},
+        }
+    );
+
+    ## Set and get the io files per chain, id and stream
+    my @set_outfile_name_prefixes =
+      map { $infile_name_prefix . $_ } @vcfparser_analysis_types;
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id         => $job_id_chain,
+                id               => $family_id,
+                file_info_href   => $file_info_href,
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref    => \@vcfparser_analysis_types,
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                program_name     => $program_name,
+                temp_directory   => $temp_directory,
+            }
+        )
+    );
+
+    my $outdir_path_prefix = $io{out}{dir_path_prefix};
+    my @outfile_suffixes   = @{ $io{out}{file_suffixes} };
+    my @outfile_paths      = @{ $io{out}{file_paths} };
+
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
@@ -2155,8 +2190,8 @@ sub analysis_sv_rankvariant {
     ## Limit number of cores requested to the maximum number of cores available per node
     my $genmod_core_number = check_max_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
             core_number_requested => $core_number,
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
         }
     );
 
@@ -2170,93 +2205,54 @@ sub analysis_sv_rankvariant {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => catfile($outaligner_dir),
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
 
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-    my $outfamily_file_directory =
-      catfile( $active_parameter_href->{outdata_dir}, $family_id );
+    ### SHELL:
 
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$family_id}{sv_vcfparser}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$family_id}{$program_name}{file_tag};
+    my $fam_file_path =
+      catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
 
-    ## Files
-    my $infile_prefix  = $family_id . $infile_tag . $call_type;
-    my $outfile_prefix = $family_id . $outfile_tag . $call_type;
-
-    ## Paths
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ## Assign suffix
-    my $file_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            jobid_chain    => $job_id_chain,
-        }
-    );
-
-    my $family_file =
-      catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
-
-    ## Create .fam file to be used in variant calling analyses
+    ## Create .fam file
     create_fam_file(
         {
             active_parameter_href => $active_parameter_href,
-            fam_file_path         => $family_file,
+            fam_file_path         => $fam_file_path,
             FILEHANDLE            => $FILEHANDLE,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
         }
     );
 
-    ## Set analysis types and infiles
-    my @vcfparser_analysis_types = ( $EMPTY_STR, q{.selected} );
-    splice @vcfparser_analysis_types, $VCFPARSER_OUTFILE_COUNT + 1;
-    my @vcfparser_infiles =
-      map { $infile_prefix . $_ . $file_suffix } @vcfparser_analysis_types;
-
-    ## Copy file(s) to temporary directory
-    migrate_files(
-        {
-            core_number  => scalar @vcfparser_infiles,
-            FILEHANDLE   => $FILEHANDLE,
-            infiles_ref  => \@vcfparser_infiles,
-            indirectory  => $infamily_directory,
-            outfile_path => $temp_directory,
-        }
-    );
+    say {$FILEHANDLE} q{## Genmod};
 
     ## Get parameters
-    my $genmod_file_ending_stub    = $infile_prefix;
-    my $genmod_outfile_path_prefix = $outfile_path_prefix;
+    my $use_vep;
+    ## Use VEP annotations in compound models
+    if ( $active_parameter_href->{sv_varianteffectpredictor}
+        and not $active_parameter_href->{sv_genmod_annotate_regions} )
+    {
 
-  ANALYSIS_TYPE:
-    foreach my $vcfparser_analysis_type (@vcfparser_analysis_types) {
+        $use_vep = 1;
+    }
 
-        ## InFile
-        my $genmod_indata = catfile( $temp_directory,
-                $genmod_file_ending_stub
-              . $vcfparser_analysis_type
-              . $file_suffix );
+  INFILE:
+    while ( my ( $infile_index, $infile_path ) = each @infile_paths ) {
 
-        # OutFile
+        ## Alias
+        # For pipe
+        my $genmod_indata = $infile_path;
+
+        # Outfile
         my $genmod_outfile_path =
           catfile( dirname( devnull() ), q{stdout} );
 
-        ## Annotate
-        my $genmod_module = q{_annotate};
+        ## Genmod annotate
+        my $genmod_module = $UNDERSCORE . q{annotate};
         genmod_annotate(
             {
                 annotate_region =>
@@ -2266,7 +2262,6 @@ sub analysis_sv_rankvariant {
                 outfile_path    => $genmod_outfile_path,
                 stderrfile_path => $program_info_path
                   . $genmod_module
-                  . $vcfparser_analysis_type
                   . $DOT
                   . q{stderr.txt},
                 temp_directory_path => $temp_directory,
@@ -2281,21 +2276,13 @@ sub analysis_sv_rankvariant {
         # Preparation for next module
         $genmod_indata = $DASH;
 
-        ## Genmod Models
+        ## Genmod models
         $genmod_module .= $UNDERSCORE . q{models};
 
-        my $use_vep;
-        ## Use VEP annotations in compound models
-        if ( $active_parameter_href->{sv_varianteffectpredictor}
-            and not $active_parameter_href->{sv_genmod_annotate_regions} )
-        {
-
-            $use_vep = 1;
-        }
         genmod_models(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                family_file => $family_file,
+                family_file => $fam_file_path,
                 family_type =>
                   $active_parameter_href->{sv_genmod_models_family_type},
                 infile_path  => $genmod_indata,
@@ -2304,7 +2291,7 @@ sub analysis_sv_rankvariant {
                   ->{sv_genmod_models_reduced_penetrance_file},
                 stderrfile_path => $program_info_path
                   . $genmod_module
-                  . $vcfparser_analysis_type
+                  . $outfile_suffixes[$infile_index]
                   . $DOT
                   . q{stderr.txt},
                 temp_directory_path => $temp_directory,
@@ -2319,12 +2306,12 @@ sub analysis_sv_rankvariant {
         # Pipe
         print {$FILEHANDLE} $PIPE . $SPACE;
 
-        ## Genmod Score
+        ## Genmod score
         $genmod_module .= $UNDERSCORE . q{score};
         genmod_score(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                family_file => $family_file,
+                family_file => $fam_file_path,
                 family_type =>
                   $active_parameter_href->{sv_genmod_models_family_type},
                 infile_path  => $genmod_indata,
@@ -2334,7 +2321,7 @@ sub analysis_sv_rankvariant {
                 rank_result     => 1,
                 stderrfile_path => $program_info_path
                   . $genmod_module
-                  . $vcfparser_analysis_type
+                  . $outfile_suffixes[$infile_index]
                   . $DOT
                   . q{stderr.txt},
                 verbosity => q{v},
@@ -2344,18 +2331,16 @@ sub analysis_sv_rankvariant {
         # Pipe
         print {$FILEHANDLE} $PIPE . $SPACE;
 
-        ## Genmod Compound
+        ## Genmod compound
         $genmod_module .= $UNDERSCORE . q{compound};
         genmod_compound(
             {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $genmod_indata,
-                outfile_path => $genmod_outfile_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix,
+                FILEHANDLE      => $FILEHANDLE,
+                infile_path     => $genmod_indata,
+                outfile_path    => $outfile_paths[$infile_index],
                 stderrfile_path => $program_info_path
                   . $genmod_module
-                  . $vcfparser_analysis_type
+                  . $outfile_suffixes[$infile_index]
                   . $DOT
                   . q{stderr.txt},
                 temp_directory_path => $temp_directory,
@@ -2365,36 +2350,31 @@ sub analysis_sv_rankvariant {
         );
 
         say {$FILEHANDLE} $AMPERSAND . $NEWLINE;
+
+        if ( $program_mode == 1 ) {
+
+            add_program_outfile_to_sample_info(
+                {
+                    path             => $outfile_paths[$infile_index],
+                    program_name     => q{sv_genmod},
+                    sample_info_href => $sample_info_href,
+                }
+            );
+        }
     }
     say {$FILEHANDLE} q{wait} . $NEWLINE;
-
-    ## Copy file(s) to back to directory
-    my @genmod_outfiles = map { $outfile_prefix . $_ . $file_suffix . $ASTERISK }
-      @vcfparser_analysis_types;
-    migrate_files(
-        {
-            core_number  => scalar @genmod_outfiles,
-            FILEHANDLE   => $FILEHANDLE,
-            infiles_ref  => \@genmod_outfiles,
-            indirectory  => $temp_directory,
-            outfile_path => $outfamily_directory,
-        }
-    );
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
     if ( $program_mode == 1 ) {
 
-        ## Add to Sample_info
+        ## Add to sample_info
         if ( defined $active_parameter_href->{sv_rank_model_file} ) {
 
-            my $sv_rank_model_version;
-            if ( $active_parameter_href->{sv_rank_model_file} =~
-                m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
-            {
+            my ($sv_rank_model_version) =
+              $active_parameter_href->{sv_rank_model_file} =~
+              m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
-                $sv_rank_model_version = $1;
-            }
             add_program_metafile_to_sample_info(
                 {
                     file =>
@@ -2407,20 +2387,6 @@ sub analysis_sv_rankvariant {
                 }
             );
         }
-
-        my $qc_sv_genmod_outfile =
-            $family_id
-          . $outfile_tag
-          . $call_type
-          . $vcfparser_analysis_types[$VCFPARSER_OUTFILE_COUNT]
-          . $file_suffix;
-        add_program_outfile_to_sample_info(
-            {
-                path => catfile( $outfamily_directory, $qc_sv_genmod_outfile ),
-                program_name     => q{sv_genmod},
-                sample_info_href => $sample_info_href,
-            }
-        );
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -2437,18 +2403,16 @@ sub analysis_sv_rankvariant {
     return;
 }
 
-sub analysis_sv_rankvariant_unaffected {
+sub analysis_rankvariant_sv_unaffected {
 
-## Function : Annotate variants.
+## Function : Annotate variants using genmod anotate only.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $call_type               => Variant call type
 ##          : $family_id               => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $reference_dir_ref       => MIP reference directory {REF}
@@ -2467,10 +2431,8 @@ sub analysis_sv_rankvariant_unaffected {
     my $sample_info_href;
 
     ## Default(s)
-    my $call_type;
     my $family_id;
     my $reference_dir_ref;
-    my $outaligner_dir;
     my $temp_directory;
 
     my $tmpl = {
@@ -2481,8 +2443,6 @@ sub analysis_sv_rankvariant_unaffected {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{SV}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
@@ -2507,11 +2467,6 @@ sub analysis_sv_rankvariant_unaffected {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {
@@ -2548,31 +2503,48 @@ sub analysis_sv_rankvariant_unaffected {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_files };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
-    use MIP::Program::Variantcalling::Genmod
-      qw{ genmod_annotate genmod_compound genmod_models genmod_score };
+    use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ## Constant
-    Readonly my $VCFPARSER_OUTFILE_COUNT =>
-      $active_parameter_href->{vcfparser_outfile_count} - 1;
+    ### PREPROCESSING:
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
-
     ## Unpack parameters
+    my %io = get_io_files(
+        {
+            id             => $family_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+
+    my $indir_path_prefix  = $io{in}{dir_path_prefix};
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my @infile_paths       = @{ $io{in}{file_paths} };
+
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -2581,6 +2553,38 @@ sub analysis_sv_rankvariant_unaffected {
         }
       );
 
+    my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
+        {
+            vcfparser_outfile_count =>
+              $active_parameter_href->{sv_vcfparser_outfile_count},
+        }
+    );
+
+    ## Set and get the io files per chain, id and stream
+    my @set_outfile_name_prefixes =
+      map { $infile_name_prefix . $_ } @vcfparser_analysis_types;
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id         => $job_id_chain,
+                id               => $family_id,
+                file_info_href   => $file_info_href,
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref    => \@vcfparser_analysis_types,
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                program_name     => $program_name,
+                temp_directory   => $temp_directory,
+            }
+        )
+    );
+
+    my $outdir_path_prefix = $io{out}{dir_path_prefix};
+    my @outfile_suffixes   = @{ $io{out}{file_suffixes} };
+    my @outfile_paths      = @{ $io{out}{file_paths} };
+
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
@@ -2588,8 +2592,8 @@ sub analysis_sv_rankvariant_unaffected {
     ## Limit number of cores requested to the maximum number of cores available per node
     my $genmod_core_number = check_max_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
             core_number_requested => $core_number,
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
         }
     );
 
@@ -2603,90 +2607,20 @@ sub analysis_sv_rankvariant_unaffected {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => catfile($outaligner_dir),
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
 
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-    my $outfamily_file_directory =
-      catfile( $active_parameter_href->{outdata_dir}, $family_id );
+    ### SHELL:
 
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$family_id}{sv_vcfparser}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$family_id}{$program_name}{file_tag};
-
-    ## Files
-    my $infile_prefix  = $family_id . $infile_tag . $call_type;
-    my $outfile_prefix = $family_id . $outfile_tag . $call_type;
-
-    ## Paths
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ## Assign suffix
-    my $file_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            jobid_chain    => $job_id_chain,
-        }
-    );
-
-    my $family_file =
-      catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
-
-    ## Create .fam file to be used in variant calling analyses
-    create_fam_file(
-        {
-            active_parameter_href => $active_parameter_href,
-            fam_file_path         => $family_file,
-            FILEHANDLE            => $FILEHANDLE,
-            parameter_href        => $parameter_href,
-            sample_info_href      => $sample_info_href,
-        }
-    );
-
-    ## Set analysis types and infiles
-    my @vcfparser_analysis_types = ( $EMPTY_STR, q{.selected} );
-    splice @vcfparser_analysis_types, $VCFPARSER_OUTFILE_COUNT + 1;
-    my @vcfparser_infiles =
-      map { $infile_prefix . $_ . $file_suffix } @vcfparser_analysis_types;
-
-    ## Copy file(s) to temporary directory
-    migrate_files(
-        {
-            core_number  => scalar @vcfparser_infiles,
-            FILEHANDLE   => $FILEHANDLE,
-            infiles_ref  => \@vcfparser_infiles,
-            indirectory  => $infamily_directory,
-            outfile_path => $temp_directory,
-        }
-    );
-
+    say {$FILEHANDLE} q{## Genmod};
     ## Get parameters
-    my $genmod_file_ending_stub    = $infile_prefix;
-    my $genmod_outfile_path_prefix = $outfile_path_prefix;
 
-  ANALYSIS_TYPE:
-    foreach my $vcfparser_analysis_type (@vcfparser_analysis_types) {
-
-        ## InFile
-        my $genmod_indata = catfile( $temp_directory,
-                $genmod_file_ending_stub
-              . $vcfparser_analysis_type
-              . $file_suffix );
-
-        ## OutFile
-        my $genmod_outfile_path =
-          $genmod_outfile_path_prefix . $vcfparser_analysis_type . $file_suffix;
+  INFILE:
+    while ( my ( $infile_index, $infile_path ) = each @infile_paths ) {
 
         ## Annotate
         my $genmod_module = q{_annotate};
@@ -2695,11 +2629,11 @@ sub analysis_sv_rankvariant_unaffected {
                 annotate_region =>
                   $active_parameter_href->{sv_genmod_annotate_regions},
                 FILEHANDLE      => $FILEHANDLE,
-                infile_path     => $genmod_indata,
-                outfile_path    => $genmod_outfile_path,
+                infile_path     => $infile_path,
+                outfile_path    => $outfile_paths[$infile_index],
                 stderrfile_path => $program_info_path
                   . $genmod_module
-                  . $vcfparser_analysis_type
+                  . $outfile_suffixes[$infile_index]
                   . $DOT
                   . q{stderr.txt},
                 temp_directory_path => $temp_directory,
@@ -2708,21 +2642,19 @@ sub analysis_sv_rankvariant_unaffected {
         );
 
         say {$FILEHANDLE} $AMPERSAND . $NEWLINE;
+
+        if ( $program_mode == 1 ) {
+
+            add_program_outfile_to_sample_info(
+                {
+                    path             => $outfile_paths[$infile_index],
+                    program_name     => q{sv_genmod},
+                    sample_info_href => $sample_info_href,
+                }
+            );
+        }
     }
     say {$FILEHANDLE} q{wait} . $NEWLINE;
-
-    ## Copy file(s) to back to directory
-    my @genmod_outfiles = map { $outfile_prefix . $_ . $file_suffix . $ASTERISK }
-      @vcfparser_analysis_types;
-    migrate_files(
-        {
-            core_number  => scalar @genmod_outfiles,
-            FILEHANDLE   => $FILEHANDLE,
-            infiles_ref  => \@genmod_outfiles,
-            indirectory  => $temp_directory,
-            outfile_path => $outfamily_directory,
-        }
-    );
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
@@ -2731,13 +2663,10 @@ sub analysis_sv_rankvariant_unaffected {
         ## Add to Sample_info
         if ( defined $active_parameter_href->{sv_rank_model_file} ) {
 
-            my $sv_rank_model_version;
-            if ( $active_parameter_href->{sv_rank_model_file} =~
-                m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
-            {
+            my ($sv_rank_model_version) =
+              $active_parameter_href->{sv_rank_model_file} =~
+              m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
-                $sv_rank_model_version = $1;
-            }
             add_program_metafile_to_sample_info(
                 {
                     file =>
@@ -2751,19 +2680,6 @@ sub analysis_sv_rankvariant_unaffected {
             );
 
         }
-        my $qc_sv_genmod_outfile =
-            $family_id
-          . $outfile_tag
-          . $call_type
-          . $vcfparser_analysis_types[$VCFPARSER_OUTFILE_COUNT]
-          . $file_suffix;
-        add_program_outfile_to_sample_info(
-            {
-                path => catfile( $outfamily_directory, $qc_sv_genmod_outfile ),
-                program_name     => q{sv_genmod},
-                sample_info_href => $sample_info_href,
-            }
-        );
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {

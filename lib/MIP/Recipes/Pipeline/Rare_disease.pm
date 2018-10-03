@@ -31,9 +31,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $CLOSE_BRACKET => q{]};
-Readonly my $OPEN_BRACKET  => q{[};
-Readonly my $SPACE         => q{ };
+Readonly my $SPACE => q{ };
 
 sub pipeline_rare_disease {
 
@@ -158,6 +156,7 @@ sub pipeline_rare_disease {
     use MIP::Check::Pipeline qw{ check_rare_disease };
 
     ## Recipes
+    use MIP::Log::MIP_log4perl qw{ log_display_program_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus
       qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Bamcalibrationblock
@@ -211,7 +210,7 @@ sub pipeline_rare_disease {
       qw{ analysis_prepareforvariantannotationblock analysis_prepareforvariantannotationblock_rio };
     use MIP::Recipes::Analysis::Qccollect qw{ analysis_qccollect };
     use MIP::Recipes::Analysis::Rankvariant
-      qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
+      qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
     use MIP::Recipes::Analysis::Rhocall
       qw{ analysis_rhocall_annotate analysis_rhocall_annotate_rio };
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
@@ -327,63 +326,6 @@ sub pipeline_rare_disease {
         vt                     => \&analysis_vt,
     );
 
-    ## Program names for the log
-    my %program_name = (
-        analysisrunstatus            => q{Analysis run status},
-        bcftools_mpileup             => q{Bcftools mpileup},
-        bwa_mem                      => q{BWA mem},
-        chanjo_sexcheck              => q{Chanjo sexcheck},
-        cnvnator                     => q{CNVnator},
-        delly_call                   => q{Delly call},
-        delly_reformat               => q{Delly reformat},
-        endvariantannotationblock    => q{Endvariantannotationblock},
-        expansionhunter              => q{ExpansionHunter},
-        evaluation                   => q{Evaluation},
-        fastqc                       => q{FastQC},
-        freebayes                    => q{Freebayes},
-        frequency_filter             => q{Frequency filter},
-        gatk_baserecalibration       => q{GATK BaseRecalibrator/ApplyBQSR},
-        gatk_gathervcfs              => q{GATK GatherVcfs},
-        gatk_combinevariantcallsets  => q{GATK combinevariantcallsets},
-        gatk_genotypegvcfs           => q{GATK GenotypeGVCFs},
-        gatk_haplotypecaller         => q{GATK Haplotypecaller},
-        gatk_variantevalall          => q{GATK variantevalall},
-        gatk_variantevalexome        => q{GATK variantevalexome},
-        gatk_variantrecalibration    => q{GATK VariantRecalibrator/ApplyVQSR},
-        gzip_fastq                   => q{Gzip for fastq files},
-        manta                        => q{Manta},
-        markduplicates               => q{Markduplicates},
-        multiqc                      => q{Multiqc},
-        peddy                        => q{Peddy},
-        picardtools_collecthsmetrics => q{Picardtools collecthsmetrics},
-        picardtools_collectmultiplemetrics =>
-          q{Picardtools collectmultiplemetrics},
-        picardtools_mergesamfiles        => q{Picardtools MergeSamFiles},
-        plink                            => q{Plink},
-        prepareforvariantannotationblock => q{Prepareforvariantannotationblock},
-        qccollect                        => q{Qccollect},
-        rankvariant                      => q{Rankvariant},
-        rhocall                          => q{Rhocall},
-        rtg_vcfeval                      => q{Rtg evaluation},
-        sacct                            => q{Sacct},
-        sambamba_depth                   => q{Sambamba depth},
-        samtools_subsample_mt            => q{Samtools subsample MT},
-        snpeff                           => q{Snpeff},
-        split_fastq_file                 => q{Split fastq files in batches},
-        sv_annotate                      => q{SV annotate},
-        sv_combinevariantcallsets        => q{SV combinevariantcallsets},
-        sv_varianteffectpredictor        => q{SV varianteffectpredictor},
-        sv_vcfparser                     => q{SV vcfparser},
-        sv_rankvariant                   => q{SV rankvariant},
-        sv_reformat                      => q{SV reformat},
-        tiddit                           => q{Tiddit},
-        varianteffectpredictor           => q{Varianteffectpredictor},
-        variant_integrity                => q{Variant_integrity},
-        vcfparser                        => q{Vcfparser},
-        vcf2cytosure                     => q{Vcf2cytosure},
-        vt                               => q{Vt},
-    );
-
     ### Special case for '--rio' capable analysis recipes
     ## Define rio blocks programs and order
     my $is_bamcalibrationblock_done;
@@ -455,7 +397,13 @@ sub pipeline_rare_disease {
             and any { $_ eq $program } @order_bamcal_programs )
         {
 
-            $log->info(q{[Bamcalibrationblock]});
+            ## For displaying
+            log_display_program_for_user(
+                {
+                    log     => $log,
+                    program => q{bamcalibrationblock},
+                }
+            );
 
             analysis_bamcalibrationblock(
                 {
@@ -468,7 +416,6 @@ sub pipeline_rare_disease {
                     order_programs_ref      => \@order_bamcal_programs,
                     parameter_href          => $parameter_href,
                     program_name            => q{bamcalibrationblock},
-                    program_name_href       => \%program_name,
                     sample_info_href        => $sample_info_href,
                 }
             );
@@ -480,8 +427,13 @@ sub pipeline_rare_disease {
             and any { $_ eq $program } @order_varann_programs )
         {
             ## rio enabled and variantannotation block analysis recipe
-
-            $log->info(q{[Variantannotationblock]});
+            ## For displaying
+            log_display_program_for_user(
+                {
+                    log     => $log,
+                    program => q{variantannotationblock},
+                }
+            );
 
             analysis_variantannotationblock(
                 {
@@ -495,7 +447,6 @@ sub pipeline_rare_disease {
                     order_programs_ref => \@order_varann_programs,
                     parameter_href     => $parameter_href,
                     program_name       => q{variantannotationblock},
-                    program_name_href  => \%program_name,
                     sample_info_href   => $sample_info_href,
                     varann_ar_href     => \%varann_ar,
                 }
@@ -506,9 +457,13 @@ sub pipeline_rare_disease {
         }
         else {
 
-            $log->info(
-                $OPEN_BRACKET . $program_name{$program} . $CLOSE_BRACKET );
-
+            ## For displaying
+            log_display_program_for_user(
+                {
+                    log     => $log,
+                    program => $program,
+                }
+            );
             ## Sample mode
             if ( $parameter_href->{$program}{analysis_mode} eq q{sample} ) {
 
@@ -755,7 +710,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
         );
 
         $analysis_recipe_href->{sv_rankvariant} =
-          \&analysis_sv_rankvariant_unaffected;
+          \&analysis_rankvariant_sv_unaffected;
 
         ## Rio recipe
         if ( $active_parameter_href->{reduce_io} ) {
@@ -769,7 +724,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
     }
     else {
 
-        $analysis_recipe_href->{sv_rankvariant} = \&analysis_sv_rankvariant;
+        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv;
 
         ## Rio recipe
         if ( $active_parameter_href->{reduce_io} ) {
