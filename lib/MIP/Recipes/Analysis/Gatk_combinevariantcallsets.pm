@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK    => q{*};
+Readonly my $ASTERISK   => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
@@ -40,12 +40,10 @@ sub analysis_gatk_combinevariantcallsets {
 ## Function : GATK CombineVariants to combine all variants call from different callers.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $call_type               => Variant call type
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -63,9 +61,7 @@ sub analysis_gatk_combinevariantcallsets {
     my $sample_info_href;
 
     ## Default(s)
-    my $call_type;
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
 
     my $tmpl = {
@@ -76,8 +72,6 @@ sub analysis_gatk_combinevariantcallsets {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
@@ -102,11 +96,6 @@ sub analysis_gatk_combinevariantcallsets {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {
@@ -138,10 +127,11 @@ sub analysis_gatk_combinevariantcallsets {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter
+      qw{ get_module_parameters get_program_parameters get_program_attributes };
     use MIP::Language::Java qw{ java_core };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Bcftools
@@ -150,25 +140,40 @@ sub analysis_gatk_combinevariantcallsets {
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_processing_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
+
+    ### PREPROCESSING:
 
     ## Stores callers that have been executed
     my @variant_callers;
 
-    ## Stores the parallel chains that jobIds should be inherited from
+    ## Only process active callers
+    foreach my $variant_caller (
+        @{ $parameter_href->{dynamic_parameter}{variant_callers} } )
+    {
+        if ( $active_parameter_href->{$variant_caller} ) {
+
+            push @variant_callers, $variant_caller;
+        }
+    }
+
+    ## Stores the parallel chains that job ids should be inherited from
     my @parallel_chains;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program mode
-    my $program_mode = $active_parameter_href->{$program_name};
-
-    ## Alias
-    my $job_id_chain       = $parameter_href->{$program_name}{chain};
-    my $referencefile_path = $active_parameter_href->{human_genome_reference};
+    ## Unpack parameters
     my $gatk_jar =
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
+    my $program_mode       = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -176,6 +181,24 @@ sub analysis_gatk_combinevariantcallsets {
             program_name          => $program_name,
         }
       );
+
+    ## Set and get the io files per chain, id and stream
+    my %io = parse_io_outfiles(
+        {
+            chain_id               => $job_id_chain,
+            id                     => $family_id,
+            file_info_href         => $file_info_href,
+            file_name_prefixes_ref => [$family_id],
+            outdata_dir            => $active_parameter_href->{outdata_dir},
+            parameter_href         => $parameter_href,
+            program_name           => $program_name,
+            temp_directory         => $temp_directory,
+        }
+    );
+
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -185,127 +208,71 @@ sub analysis_gatk_combinevariantcallsets {
     my ($file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            call_type                       => $call_type,
             core_number                     => $core_number,
             directory_id                    => $family_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => catfile($outaligner_dir),
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
 
-    ## Assign directories
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
+    ### SHELL:
 
-    # Used downstream
-    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
-
-    ## Assign file_tags
-    my $outfile_tag =
-      $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
-
-    ## Will be set downstream
-    my @infile_tags_and_paths;
-
-    ## Files
-    my $outfile_prefix = $family_id . $outfile_tag . $call_type;
-
-    ## Paths
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ### Assign suffix
-    ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
-        }
-    );
+    ## Collect infiles for all sample_ids for joint calling program
+    # Paths for variant callers to be merged
+    my %file_path;
+    my $stream = q{out};
 
     ## Collect file info and migrate files
   VARIANT_CALLER:
-    foreach my $variant_caller (
-        @{ $parameter_href->{dynamic_parameter}{variant_callers} } )
-    {
+    foreach my $variant_caller (@variant_callers) {
 
-        next VARIANT_CALLER
-          if ( not $active_parameter_href->{$variant_caller} );
-
-        ### Expect vcf
-        ## Assign directories
-        my $program_outdirectory_name =
-          $parameter_href->{$variant_caller}{outdir_name};
-        my $infamily_directory = catfile( $active_parameter_href->{outdata_dir},
-            $family_id, $outaligner_dir, $program_outdirectory_name );
-
-        ## Assign file_tags
-        my $infile_tag =
-          $file_info_href->{$family_id}{$variant_caller}{file_tag};
-        my $infile_prefix = $family_id . $infile_tag . $call_type;
-
-        ## Assign suffix
-        my $infile_suffix = get_file_suffix(
+        ## Get the io infiles per chain and id
+        my %sample_io = get_io_files(
             {
+                id             => $family_id,
+                file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
                 program_name   => $variant_caller,
-                suffix_key     => q{outfile_suffix},
+                stream         => $stream,
+                temp_directory => $temp_directory,
             }
         );
+        my $infile_path_prefix = $sample_io{$stream}{file_path_prefix};
+        my $infile_suffix      = $sample_io{$stream}{file_suffix};
+        my $infile_path        = $infile_path_prefix . $infile_suffix;
 
+        ## Only use first part of name
+        my ($variant_caller_prio_tag) = split /_/sxm, $variant_caller;
         ## Collect both tag and path in the same string
-        my $path = catfile( $temp_directory, $infile_prefix . $infile_suffix );
-        push @infile_tags_and_paths,
-          $program_outdirectory_name . $SPACE . $path;
+        $file_path{$variant_caller} =
+          $variant_caller_prio_tag . $SPACE . $infile_path;
 
-        ## To prioritize downstream - 1. gatk 2. samtools etc.
-        ## Determined by order_parameters order
-        unshift @variant_callers, $program_outdirectory_name;
-
-        ## Do not add MAIN chains
-        if ( not $parameter_href->{$variant_caller}{chain} eq q{MAIN} ) {
-
-            push @parallel_chains, $parameter_href->{$variant_caller}{chain};
-        }
-
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => catfile(
-                    $infamily_directory,
-                    $infile_prefix . $infile_suffix . $ASTERISK
-                ),
-                outfile_path => $temp_directory
-            }
-        );
+        push @parallel_chains, $parameter_href->{$variant_caller}{chain};
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## GATK CombineVariants
     say {$FILEHANDLE} q{## GATK CombineVariants};
 
+    my @combine_infile_paths = map { $file_path{$_} } @variant_callers;
     gatk_combinevariants(
         {
             exclude_nonvariants   => 1,
             FILEHANDLE            => $FILEHANDLE,
             genotype_merge_option => $active_parameter_href
               ->{gatk_combinevariants_genotype_merge_option},
-            infile_paths_ref => \@infile_tags_and_paths,
+            infile_paths_ref => \@combine_infile_paths,
             java_jar         => $gatk_jar,
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             logging_level     => $active_parameter_href->{gatk_logging_level},
             memory_allocation => q{Xmx2g},
-            outfile_path      => $outfile_path_prefix . $outfile_suffix,
+            outfile_path      => $outfile_path,
             prioritize_caller =>
               $active_parameter_href->{gatk_combinevariants_prioritize_caller},
             referencefile_path => $referencefile_path,
@@ -320,44 +287,21 @@ sub analysis_gatk_combinevariantcallsets {
         bcftools_view_and_index_vcf(
             {
                 FILEHANDLE          => $FILEHANDLE,
-                infile_path         => $outfile_path_prefix . $outfile_suffix,
+                infile_path         => $outfile_path,
                 outfile_path_prefix => $outfile_path_prefix,
                 output_type         => q{b},
             }
         );
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $outfile_path_prefix . $DOT . q{bcf} . $ASTERISK,
-                outfile_path => $outfamily_directory,
-            }
-        );
     }
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path_prefix . $outfile_suffix,
-            outfile_path => $outfamily_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $FILEHANDLE;
 
     if ( $program_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        my $program_outfile_path =
-          catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
         add_program_outfile_to_sample_info(
             {
-                path             => $program_outfile_path,
+                path             => $outfile_path,
                 program_name     => $program_name,
                 sample_info_href => $sample_info_href,
             }
@@ -368,7 +312,7 @@ sub analysis_gatk_combinevariantcallsets {
         add_processing_metafile_to_sample_info(
             {
                 metafile_tag     => $most_complete_format_key,
-                path             => $program_outfile_path,
+                path             => $outfile_path,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -378,12 +322,11 @@ sub analysis_gatk_combinevariantcallsets {
             my $bcf_suffix = $DOT . q{bcf};
             my $most_complete_bcf_key =
               q{most_complete} . $UNDERSCORE . substr $bcf_suffix, 1;
-            my $program_bcf_file_path =
-              catfile( $outfamily_directory, $outfile_prefix . $bcf_suffix );
+            my $bcf_file_path = $outfile_path_prefix . $bcf_suffix;
             add_processing_metafile_to_sample_info(
                 {
                     metafile_tag     => $most_complete_bcf_key,
-                    path             => $program_bcf_file_path,
+                    path             => $bcf_file_path,
                     sample_info_href => $sample_info_href,
                 }
             );

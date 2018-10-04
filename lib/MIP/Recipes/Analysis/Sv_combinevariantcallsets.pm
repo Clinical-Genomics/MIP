@@ -138,7 +138,8 @@ sub analysis_sv_combinevariantcallsets {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_parameters };
+    use MIP::Get::Parameter
+      qw{ get_module_parameters get_program_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
@@ -160,7 +161,14 @@ sub analysis_sv_combinevariantcallsets {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
+
     my $program_mode = $active_parameter_href->{$program_name};
     my @structural_variant_callers;
 
