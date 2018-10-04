@@ -1212,7 +1212,7 @@ gatk_variantrecalibration:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: vrecal_
+  file_tag: _vrecal
   program_name_path:
    - bcftools
    - gatk
