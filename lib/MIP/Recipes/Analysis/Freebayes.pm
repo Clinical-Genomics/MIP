@@ -138,7 +138,7 @@ sub analysis_freebayes_calling {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
@@ -286,7 +286,7 @@ sub analysis_freebayes_calling {
 
         my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig;
 
-        ## Assemble file paths by adding file ending
+        ## Assemble contig file paths for freebayes
         my @freebayes_file_paths =
           map { $freebayes_temp_infile_path{$_}{$contig} }
           @{ $active_parameter_href->{sample_ids} };

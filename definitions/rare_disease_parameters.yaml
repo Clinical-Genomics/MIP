@@ -1076,7 +1076,7 @@ bcftools_mpileup:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: _mpileup_
+  file_tag: _mpileup
   outdir_name: bcftools
   program_name_path:
    - bcftools
