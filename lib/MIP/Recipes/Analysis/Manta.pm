@@ -42,7 +42,6 @@ sub analysis_manta {
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $referencefile_path      => Path to reference file
@@ -62,7 +61,6 @@ sub analysis_manta {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $referencefile_path;
     my $temp_directory;
 
@@ -98,11 +96,6 @@ sub analysis_manta {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {

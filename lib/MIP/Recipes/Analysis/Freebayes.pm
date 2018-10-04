@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_freebayes_calling };
@@ -41,12 +41,10 @@ sub analysis_freebayes_calling {
 ## Function : Call snv/small indels using freebayes
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $call_type               => Call type
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -54,13 +52,6 @@ sub analysis_freebayes_calling {
 ##          : $xargs_file_counter      => Xargs file counter
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $call_type;
-    my $family_id;
-    my $outaligner_dir;
-    my $temp_directory;
-    my $xargs_file_counter;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -71,6 +62,11 @@ sub analysis_freebayes_calling {
     my $program_name;
     my $sample_info_href;
 
+    ## Default(s)
+    my $family_id;
+    my $temp_directory;
+    my $xargs_file_counter;
+
     my $tmpl = {
         active_parameter_href => {
             default     => {},
@@ -79,8 +75,6 @@ sub analysis_freebayes_calling {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
@@ -105,11 +99,6 @@ sub analysis_freebayes_calling {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {
@@ -147,29 +136,36 @@ sub analysis_freebayes_calling {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
+      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Bcftools
-      qw(bcftools_filter bcftools_norm bcftools_view);
-    use MIP::Program::Variantcalling::Freebayes qw(freebayes_calling);
+      qw{ bcftools_filter bcftools_norm bcftools_view };
+    use MIP::Program::Variantcalling::Freebayes qw{ freebayes_calling };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Perl qw{ replace_iupac };
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Set::File qw{set_file_suffix};
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
+
+    ### PREPROCESSING:
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program name
-    my $program_mode = $active_parameter_href->{$program_name};
-
     ## Unpack parameters
-    my $job_id_chain       = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
+    my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
@@ -178,11 +174,26 @@ sub analysis_freebayes_calling {
             program_name          => $program_name,
         }
       );
-
-    ## Alias
-    my $program_outdirectory_name =
-      $parameter_href->{$program_name}{outdir_name};
     my $xargs_file_path_prefix;
+
+    ## Set and get the io files per chain, id and stream
+    my %io = parse_io_outfiles(
+        {
+            chain_id               => $job_id_chain,
+            id                     => $family_id,
+            file_info_href         => $file_info_href,
+            file_name_prefixes_ref => [$family_id],
+            outdata_dir            => $active_parameter_href->{outdata_dir},
+            parameter_href         => $parameter_href,
+            program_name           => $program_name,
+            temp_directory         => $temp_directory,
+        }
+    );
+
+    my $outfile_path_prefix      = $io{out}{file_path_prefix};
+    my $outfile_suffix           = $io{out}{file_suffix};
+    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
+    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -192,82 +203,49 @@ sub analysis_freebayes_calling {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $family_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            program_directory =>
-              catfile( $outaligner_dir, $program_outdirectory_name ),
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
 
-    ## Assign directories
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir, $program_outdirectory_name, );
-    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
+    ### SHELL:
 
-    ## Assign file_tags
-    my $outfile_tag =
-      $file_info_href->{$family_id}{$program_name}{file_tag};
+    ## Collect infiles for all sample_ids to enable migration to temporary directory
+    my %freebayes_temp_infile_path;
+    while ( my ( $sample_id_index, $sample_id ) =
+        each @{ $active_parameter_href->{sample_ids} } )
+    {
 
-    ## Files
-    my $outfile_prefix = $family_id . $outfile_tag . $call_type;
-
-    ## Paths
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ## Assign suffix from baserecalibration jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{gatk_baserecalibration}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
-
-    ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
-        {
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-
-    my %file_path_prefix;
-
-  SAMPLE:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        ## Assign directories
-        my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-            $sample_id, $outaligner_dir );
-
-        ## Add merged infile name prefix after merging all BAM files per sample_id
-        my $merged_infile_prefix = get_merged_infile_prefix(
+        ## Get the io infiles per chain and id
+        my %sample_io = get_io_files(
             {
+                id             => $sample_id,
                 file_info_href => $file_info_href,
-                sample_id      => $sample_id,
+                parameter_href => $parameter_href,
+                program_name   => $program_name,
+                stream         => q{in},
+                temp_directory => $temp_directory,
             }
         );
+        my $indir_path_prefix       = $sample_io{in}{dir_path_prefix};
+        my $infile_name_prefix      = $sample_io{in}{file_name_prefix};
+        my $infile_name             = $sample_io{in}{file_name};
+        my $infile_suffix           = $sample_io{in}{file_suffix};
+        my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
+        my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
 
-        ## Assign file_tags
-        my $infile_tag =
-          $file_info_href->{$sample_id}{gatk_baserecalibration}{file_tag};
-
-        ## Files
-        my $infile_prefix = $merged_infile_prefix . $infile_tag;
-
-        ## Paths
-        $file_path_prefix{$sample_id} =
-          catfile( $temp_directory, $infile_prefix );
+        ## Store temp infile path for each sample_id
+        $freebayes_temp_infile_path{$sample_id} =
+          $sample_io{temp}{file_path_href};
 
         ## Copy file(s) to temporary directory
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -278,8 +256,8 @@ sub analysis_freebayes_calling {
                 file_ending => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
                 file_path   => $file_path,
                 FILEHANDLE  => $FILEHANDLE,
-                infile      => $infile_prefix,
-                indirectory => $insample_directory,
+                infile      => $infile_name_prefix,
+                indirectory => $indir_path_prefix,
                 program_info_path  => $program_info_path,
                 temp_directory     => $temp_directory,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -303,15 +281,14 @@ sub analysis_freebayes_calling {
         }
     );
 
-    ## Split per contig
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig;
 
         ## Assemble file paths by adding file ending
-        my @file_paths =
-          map { $file_path_prefix{$_} . $UNDERSCORE . $contig . $infile_suffix }
+        my @freebayes_file_paths =
+          map { $freebayes_temp_infile_path{$_}{$contig} }
           @{ $active_parameter_href->{sample_ids} };
 
         freebayes_calling(
@@ -319,7 +296,7 @@ sub analysis_freebayes_calling {
                 apply_standard_filter      => 1,
                 calculate_genotype_quality => 1,
                 FILEHANDLE                 => $XARGSFILEHANDLE,
-                infile_paths_ref           => \@file_paths,
+                infile_paths_ref           => \@freebayes_file_paths,
                 referencefile_path         => $referencefile_path,
                 stderrfile_path => $stderrfile_path . $DOT . q{stderr.txt},
             }
@@ -354,14 +331,13 @@ sub analysis_freebayes_calling {
         print {$XARGSFILEHANDLE} $PIPE . $SPACE;
 
         ## BcfTools norm, Left-align and normalize indels, split multiallelics
+        my $norm_temp_outfile_path =
+          $temp_outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
         bcftools_norm(
             {
-                FILEHANDLE   => $XARGSFILEHANDLE,
-                multiallelic => q{-},
-                outfile_path => $outfile_path_prefix
-                  . $UNDERSCORE
-                  . $contig
-                  . $outfile_suffix,
+                FILEHANDLE      => $XARGSFILEHANDLE,
+                multiallelic    => q{-},
+                outfile_path    => $norm_temp_outfile_path,
                 output_type     => q{v},
                 reference_path  => $referencefile_path,
                 stderrfile_path => $stderrfile_path
@@ -390,18 +366,16 @@ sub analysis_freebayes_calling {
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig;
-
+        my $view_temp_infile_path =
+          $temp_outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
+        my $view_temp_outfile_path_prefix =
+          $temp_outfile_path_prefix . $UNDERSCORE . q{ordered};
         bcftools_view(
             {
-                FILEHANDLE  => $XARGSFILEHANDLE,
-                infile_path => $outfile_path_prefix
-                  . $UNDERSCORE
-                  . $contig
-                  . $outfile_suffix,
-                outfile_path => $outfile_path_prefix
-                  . $UNDERSCORE
-                  . q{ordered}
-                  . $UNDERSCORE
+                FILEHANDLE   => $XARGSFILEHANDLE,
+                infile_path  => $view_temp_infile_path,
+                outfile_path => $view_temp_outfile_path_prefix
+                  . $DOT
                   . $contig
                   . $outfile_suffix,
                 output_type     => q{v},
@@ -416,31 +390,19 @@ sub analysis_freebayes_calling {
 
     ## GatherVCFs
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
+    my $concat_temp_infile_path_prefix =
+      $temp_outfile_path_prefix . $UNDERSCORE . q{ordered};
     gatk_concatenate_variants(
         {
             active_parameter_href => $active_parameter_href,
             elements_ref          => \@{ $file_info_href->{contigs} },
             FILEHANDLE            => $FILEHANDLE,
             infile_postfix        => $outfile_suffix,
-            infile_prefix         => $outfile_path_prefix
-              . $UNDERSCORE
-              . q{ordered}
-              . $UNDERSCORE,
-            outfile_path_prefix => $outfile_path_prefix,
-            outfile_suffix      => $outfile_suffix,
+            infile_prefix         => $concat_temp_infile_path_prefix,
+            outfile_path_prefix   => $outfile_path_prefix,
+            outfile_suffix        => $outfile_suffix,
         }
     );
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path_prefix . $outfile_suffix . $ASTERISK,
-            outfile_path => $outfamily_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
     close $XARGSFILEHANDLE
@@ -450,9 +412,7 @@ sub analysis_freebayes_calling {
 
         add_program_outfile_to_sample_info(
             {
-                path => catfile(
-                    $outfamily_directory, $outfile_prefix . $outfile_suffix
-                ),
+                path             => $outfile_path,
                 program_name     => q{freebayes},
                 sample_info_href => $sample_info_href,
             }

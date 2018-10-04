@@ -1096,7 +1096,7 @@ freebayes:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: _freebayes_
+  file_tag: _freebayes
   program_name_path:
    - freebayes
    - bcftools
