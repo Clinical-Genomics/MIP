@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -85,12 +85,12 @@ my %expected_output = (
         2 => [ catfile(qw{ a dir 2_bed_file.bed.interval_list }) ],
     },
     wgs => {
-        1 => 1,
-        2 => 2,
+        1 => [1],
+        2 => [2],
     },
     wts => {
-        1 => 1,
-        2 => 2,
+        1 => [1],
+        2 => [2],
     },
 );
 
