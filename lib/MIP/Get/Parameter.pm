@@ -894,7 +894,7 @@ sub get_gatk_intervals {
     }
     else {
         ## Key-value pairs are identical for WGS/WTS
-        %gatk_intervals = map { $_ => ($_) } @{$contigs_ref};
+        %gatk_intervals = map { $_ => [$_] } @{$contigs_ref};
     }
 
     return %gatk_intervals;
