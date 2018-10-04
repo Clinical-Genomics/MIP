@@ -18,7 +18,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -582,13 +582,25 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
+        q{gatk_haplotypecaller_emit_ref_confidence} => (
+            cmd_aliases   => [qw{ ghcerc }],
+            cmd_flag      => q{gatk_haplotype_emit_ref_conf},
+            cmd_tags      => [q{Default: NONE}],
+            documentation => q{VCF to produce},
+            is            => q{rw},
+            isa => ArrayRef [ enum( [qw{ NONE BP_RESOLUTION GVCF }] ), ],
+        )
+    );
+
+    option(
         q{gatk_haplotypecaller_pcr_indel_model} => (
             cmd_aliases   => [qw{ ghcpim }],
             cmd_flag      => q{gatk_haplotype_pcr_ind_mod},
-            cmd_tags      => [q{Default: None; Set to "0" to disable}],
+            cmd_tags      => [q{Default: CONSERVATIVE; Set to "0" to disable}],
             documentation => q{PCR indel model to use},
             is            => q{rw},
-            isa           => Bool,
+            isa           => ArrayRef [
+                enum( [ 0, qw{ AGGRESSIVE CONSERVATIVE HOSTILE NONE } ] ), ],
         )
     );
 

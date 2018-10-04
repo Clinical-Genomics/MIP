@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -153,10 +153,9 @@ sub analysis_gatk_baserecalibration {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Cluster qw{ check_max_core_number };
-    use MIP::File::Interval qw{ generate_contig_interval_file };
-    use MIP::Get::File
-      qw{ get_exom_target_bed_file get_merged_infile_prefix get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
+    use MIP::Get::Parameter
+      qw{ get_gatk_intervals get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
@@ -275,38 +274,23 @@ sub analysis_gatk_baserecalibration {
         }
     );
 
-    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
-    my $exome_target_bed_file = get_exom_target_bed_file(
+    ### SHELL:
+
+    ## Generate gatk intervals. Chromosomes for WGS/WTS and paths to contig_bed_files for WES
+    my %gatk_intervals = get_gatk_intervals(
         {
+            analysis_type      => $analysis_type,
+            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+            FILEHANDLE         => $FILEHANDLE,
+            max_cores_per_node => $core_number,
+            outdirectory       => $temp_directory,
+            reference_dir      => $active_parameter_href->{reference_dir},
             exome_target_bed_href => $active_parameter_href->{exome_target_bed},
             file_ending           => $file_info_href->{exome_target_bed}[0],
             log                   => $log,
             sample_id             => $sample_id,
         }
     );
-
-    ### SHELL:
-
-    ## Exome analysis
-    if ( $analysis_type eq q{wes} ) {
-
-        ## Generate contig specific interval_list
-        generate_contig_interval_file(
-            {
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                exome_target_bed_file => $exome_target_bed_file,
-                FILEHANDLE            => $FILEHANDLE,
-                file_ending           => $DOT . q{intervals},
-                max_cores_per_node    => $core_number,
-                outdirectory          => $temp_directory,
-                reference_dir => $active_parameter_href->{reference_dir},
-            }
-        );
-
-        ## Add required GATK ending and reroute to only filename
-        $exome_target_bed_file =
-          basename($exome_target_bed_file) . $DOT . q{intervals};
-    }
 
     ## Copy file(s) to temporary directory
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -357,26 +341,6 @@ sub analysis_gatk_baserecalibration {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        ## Get parameters
-        # Exome analysis
-        my @intervals;
-        if ( $analysis_type eq q{wes} ) {
-
-            ## Limit to targets kit target file
-            @intervals = (
-                catfile(
-                    $temp_directory,
-                    $contig . $UNDERSCORE . $exome_target_bed_file
-                )
-            );
-        }
-        else {
-            ## wgs
-
-            ## Per contig
-            @intervals = ($contig);
-        }
-
         my $base_quality_score_recalibration_file =
           $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
         my $stderrfile_path =
@@ -385,7 +349,7 @@ sub analysis_gatk_baserecalibration {
             {
                 FILEHANDLE    => $XARGSFILEHANDLE,
                 infile_path   => $temp_infile_path{$contig},
-                intervals_ref => \@intervals,
+                intervals_ref => $gatk_intervals{$contig},
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
                 memory_allocation => q{Xmx6g},
@@ -421,26 +385,6 @@ sub analysis_gatk_baserecalibration {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        ## Get parameters
-        # Exome  analysis
-        my @intervals;
-        if ( $analysis_type eq q{wes} ) {
-
-            ## Limit to targets kit target file
-            @intervals = (
-                catfile(
-                    $temp_directory,
-                    $contig . $UNDERSCORE . $exome_target_bed_file
-                )
-            );
-        }
-        else {
-            ## wgs
-
-            ## Per contig
-            @intervals = ($contig);
-        }
-
         my $base_quality_score_recalibration_file =
           $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
         my $stderrfile_path =
@@ -451,7 +395,7 @@ sub analysis_gatk_baserecalibration {
                   $base_quality_score_recalibration_file,
                 FILEHANDLE    => $XARGSFILEHANDLE,
                 infile_path   => $temp_infile_path{$contig},
-                intervals_ref => \@intervals,
+                intervals_ref => $gatk_intervals{$contig},
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
                 memory_allocation => q{Xmx6g},
@@ -699,7 +643,8 @@ sub analysis_gatk_baserecalibration_rio {
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
       qw{ get_exom_target_bed_file get_merged_infile_prefix get_io_files};
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter
+      qw{ get_gatk_intervals get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
@@ -800,38 +745,23 @@ sub analysis_gatk_baserecalibration_rio {
     # Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();
 
-    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
-    my $exome_target_bed_file = get_exom_target_bed_file(
+    ### SHELL:
+
+    ## Generate gatk intervals. Chromosomes for WGS/WTS and paths to contig_bed_files for WES
+    my %gatk_intervals = get_gatk_intervals(
         {
+            analysis_type      => $analysis_type,
+            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+            FILEHANDLE         => $FILEHANDLE,
+            max_cores_per_node => $core_number,
+            outdirectory       => $temp_directory,
+            reference_dir      => $active_parameter_href->{reference_dir},
             exome_target_bed_href => $active_parameter_href->{exome_target_bed},
             file_ending           => $file_info_href->{exome_target_bed}[0],
             log                   => $log,
             sample_id             => $sample_id,
         }
     );
-
-    ### SHELL:
-
-    ## Exome analysis
-    if ( $analysis_type eq q{wes} ) {
-
-        ## Generate contig specific interval_list
-        generate_contig_interval_file(
-            {
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                exome_target_bed_file => $exome_target_bed_file,
-                FILEHANDLE            => $FILEHANDLE,
-                file_ending           => $DOT . q{intervals},
-                max_cores_per_node    => $core_number,
-                outdirectory          => $temp_directory,
-                reference_dir => $active_parameter_href->{reference_dir},
-            }
-        );
-
-        ## Add required GATK ending and reroute to only filename
-        $exome_target_bed_file =
-          basename($exome_target_bed_file) . $DOT . q{intervals};
-    }
 
     ## Division by X according to the java heap
     Readonly my $JAVA_MEMORY_ALLOCATION => 6;
@@ -864,26 +794,6 @@ sub analysis_gatk_baserecalibration_rio {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        ## Get parameters
-        # Exome analysis
-        my @intervals;
-        if ( $analysis_type eq q{wes} ) {
-
-            ## Limit to targets kit target file
-            @intervals = (
-                catfile(
-                    $temp_directory,
-                    $contig . $UNDERSCORE . $exome_target_bed_file
-                )
-            );
-        }
-        else {
-            ## wgs
-
-            ## Per contig
-            @intervals = ($contig);
-        }
-
         my $base_quality_score_recalibration_file =
           $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
         my $stderrfile_path =
@@ -892,7 +802,7 @@ sub analysis_gatk_baserecalibration_rio {
             {
                 FILEHANDLE    => $XARGSFILEHANDLE,
                 infile_path   => $temp_infile_path{$contig},
-                intervals_ref => \@intervals,
+                intervals_ref => $gatk_intervals{$contig},
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
                 memory_allocation => q{Xmx6g},
@@ -928,26 +838,6 @@ sub analysis_gatk_baserecalibration_rio {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        ## Get parameters
-        # Exome  analysis
-        my @intervals;
-        if ( $analysis_type eq q{wes} ) {
-
-            ## Limit to targets kit target file
-            @intervals = (
-                catfile(
-                    $temp_directory,
-                    $contig . $UNDERSCORE . $exome_target_bed_file
-                )
-            );
-        }
-        else {
-            ## wgs
-
-            ## Per contig
-            @intervals = ($contig);
-        }
-
         my $base_quality_score_recalibration_file =
           $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
         my $stderrfile_path =
@@ -958,7 +848,7 @@ sub analysis_gatk_baserecalibration_rio {
                   $base_quality_score_recalibration_file,
                 FILEHANDLE    => $XARGSFILEHANDLE,
                 infile_path   => $temp_infile_path{$contig},
-                intervals_ref => \@intervals,
+                intervals_ref => $gatk_intervals{$contig},
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
                 memory_allocation => q{Xmx6g},

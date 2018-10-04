@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -141,8 +141,7 @@ sub run {
         # BWA human genome reference file endings
         bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
 
-        exome_target_bed =>
-          [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
+        exome_target_bed => [qw{ .interval_list .pad100.interval_list }],
 
         # Human genome meta files
         human_genome_reference_file_endings => [qw{ .dict .fai }],
@@ -1302,6 +1301,17 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
+        q{gatk_haplotypecaller_emit_ref_confidence} => (
+            cmd_aliases   => [qw{ ghcerc }],
+            cmd_flag      => q{gatk_haplotype_emit_ref_conf},
+            cmd_tags      => [q{Default: GVCF}],
+            documentation => q{VCF to produce},
+            is            => q{rw},
+            isa => ArrayRef [ enum( [qw{ NONE BP_RESOLUTION GVCF }] ), ],
+        )
+    );
+
+    option(
         q{gatk_haplotypecaller_no_soft_clipped_bases} => (
             cmd_aliases => [qw{ ghcscb }],
             cmd_flag    => q{gatk_haplotype_no_soft_cb},
@@ -1316,10 +1326,11 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
         q{gatk_haplotypecaller_pcr_indel_model} => (
             cmd_aliases   => [qw{ ghcpim }],
             cmd_flag      => q{gatk_haplotype_pcr_ind_mod},
-            cmd_tags      => [q{Default: None; Set to "0" to disable}],
+            cmd_tags      => [q{Default: NONE; Set to "0" to disable}],
             documentation => q{PCR indel model to use},
             is            => q{rw},
-            isa           => Bool,
+            isa           => ArrayRef [
+                enum( [ 0, qw{ AGGRESSIVE CONSERVATIVE HOSTILE NONE } ] ), ],
         )
     );
 

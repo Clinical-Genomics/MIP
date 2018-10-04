@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -150,9 +150,9 @@ sub analysis_gatk_haplotypecaller {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Pedigree qw{ create_fam_file };
-    use MIP::File::Interval qw{ generate_contig_interval_file };
-    use MIP::Get::File qw{ get_exom_target_bed_file get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter
+      qw{ get_gatk_intervals get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
@@ -160,6 +160,7 @@ sub analysis_gatk_haplotypecaller {
     use MIP::Program::Alignment::Gatk qw{ gatk_haplotypecaller };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
 
     ## Constants
     Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
@@ -244,19 +245,6 @@ sub analysis_gatk_haplotypecaller {
     my $outfile_suffix      = $io{out}{file_suffix};
     my %temp_outfile_path   = %{ $io{temp}{file_path_href} };
 
-    ## For wes
-    my $file_ending_pad_interval_list = $file_info_href->{exome_target_bed}[2];
-    my $exome_target_bed_file         = get_exom_target_bed_file(
-        {
-            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
-            file_ending           => $file_ending_pad_interval_list,
-            log                   => $log,
-            sample_id             => $sample_id,
-        }
-    );
-
-    ### SHELL:
-
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE      = IO::Handle->new();
@@ -279,6 +267,8 @@ sub analysis_gatk_haplotypecaller {
         }
     );
 
+    ### SHELL:
+
     # For ".fam" file
     my $outfamily_file_directory =
       catdir( $active_parameter_href->{outdata_dir}, $family_id );
@@ -296,26 +286,29 @@ sub analysis_gatk_haplotypecaller {
         }
     );
 
-    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
+    ## Generate gatk intervals. Chromosomes for WGS/WTS and paths to contig_bed_files for WES
+    my %gatk_intervals = get_gatk_intervals(
+        {
+            analysis_type      => $analysis_type,
+            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+            FILEHANDLE         => $FILEHANDLE,
+            max_cores_per_node => $core_number,
+            outdirectory       => $temp_directory,
+            reference_dir      => $active_parameter_href->{reference_dir},
+            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
+            file_ending           => $file_info_href->{exome_target_bed}[1],
+            log                   => $log,
+            sample_id             => $sample_id,
+        }
+    );
 
-    ## Exome analysis
-    if ( $analysis_type eq q{wes} ) {
-
-        ## Generate contig specific interval_list
-        generate_contig_interval_file(
-            {
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                exome_target_bed_file => $exome_target_bed_file,
-                FILEHANDLE            => $FILEHANDLE,
-                max_cores_per_node    => $core_number,
-                outdirectory          => $temp_directory,
-                reference_dir => $active_parameter_href->{reference_dir},
-            }
-        );
-
-        ## Reroute to only filename
-        $exome_target_bed_file = basename($exome_target_bed_file);
-    }
+    ## Set the PCR indel model for haplotypecaller
+    my $pcr_indel_model = _set_pcr_indel_model(
+        {
+            analysis_type         => $analysis_type,
+            active_parameter_href => $active_parameter_href,
+        }
+    );
 
     ## Copy file(s) to temporary directory
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -353,41 +346,6 @@ sub analysis_gatk_haplotypecaller {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        ## Get parameters
-        my $emit_ref_confidence = q{GVCF};
-        my @intervals;
-        my $pcr_indel_model;
-        ## Exome analysis
-        if ( $analysis_type eq q{wes} ) {
-
-            ## Limit to targets kit target file
-            @intervals = (
-                catfile(
-                    $temp_directory,
-                    $contig . $UNDERSCORE . $exome_target_bed_file
-                )
-            );
-        }
-        else {
-            ## wgs
-
-            ## Per contig
-            @intervals = ($contig);
-
-            if (
-                $active_parameter_href->{gatk_haplotypecaller_pcr_indel_model} )
-            {
-
-                ## Assume that we run pcr-free sequencing (true for Rapid WGS and X-ten)
-                $pcr_indel_model =
-                  $active_parameter_href
-                  ->{gatk_haplotypecaller_pcr_indel_model};
-            }
-        }
-        if ( $analysis_type eq q{wts} ) {
-            $emit_ref_confidence = q{NONE};
-        }
-
         ## GATK Haplotypecaller
         my $stderrfile_path => $xargs_file_path_prefix . $DOT . $contig . $DOT
           . q{stderr.txt};
@@ -400,10 +358,11 @@ sub analysis_gatk_haplotypecaller {
                   $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 dont_use_soft_clipped_bases => $active_parameter_href
                   ->{gatk_haplotypecaller_no_soft_clipped_bases},
-                emit_ref_confidence => $emit_ref_confidence,
-                FILEHANDLE          => $XARGSFILEHANDLE,
-                infile_path         => $temp_infile_path{$contig},
-                intervals_ref       => \@intervals,
+                emit_ref_confidence => $active_parameter_href
+                  ->{gatk_haplotypecaller_emit_ref_confidence},
+                FILEHANDLE    => $XARGSFILEHANDLE,
+                infile_path   => $temp_infile_path{$contig},
+                intervals_ref => $gatk_intervals{$contig},
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
                 memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
@@ -469,6 +428,48 @@ sub analysis_gatk_haplotypecaller {
         );
     }
     return;
+}
+
+sub _set_pcr_indel_model {
+
+## Function : Set the pcr indel model for GATK HaplotypeCaller
+## Returns  : $pcr_indel_model
+## Argumetns: active_parameter_href  => Active parameter hash {REF}
+##          : $analysis_type         => Analysis type
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $analysis_type;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_type,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $pcr_indel_model;
+
+    ## Leave $pcr_indel_model as undef for WES
+    if ( not $analysis_type eq q{wes} ) {
+        $pcr_indel_model =
+          $active_parameter_href->{gatk_haplotypecaller_pcr_indel_model};
+    }
+
+    return $pcr_indel_model;
 }
 
 1;

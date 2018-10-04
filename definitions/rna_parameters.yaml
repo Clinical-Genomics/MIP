@@ -483,6 +483,12 @@ gatk_haplotypecaller_annotation:
 #RMSMappingQuality;  #Root Mean Square of the mapping quality of reads across all samples
 #ReadPosRankSumTest;  #Rank Sum Test for relative positioning of REF versus ALT alleles within reads
 #StrandOddsRatio ;  #Strand bias estimated by the Symmetric Odds Ratio test
+gatk_haplotypecaller_emit_ref_confidence:
+  associated_program:
+   - gatk_haplotypecaller
+  data_type: SCALAR
+  default: "NONE"
+  type: program_argument
 gatk_haplotypecaller_no_soft_clipped_bases:
   associated_program:
    - gatk_haplotypecaller
@@ -493,7 +499,7 @@ gatk_haplotypecaller_pcr_indel_model:
   associated_program:
    - gatk_haplotypecaller
   data_type: SCALAR
-  default: CONSERVATIVE
+  default: "CONSERVATIVE"
   type: program_argument
 gatk_haplotypecaller_snp_known_set:
   associated_program:

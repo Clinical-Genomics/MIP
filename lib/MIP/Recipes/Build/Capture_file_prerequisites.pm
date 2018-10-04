@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_capture_file_prerequisites };
@@ -35,7 +35,7 @@ Readonly my $UNDERSCORE => q{_};
 
 sub build_capture_file_prerequisites {
 
-## Function : Creates the target "infiles_list" "padded.infile_list" and interval_list files.
+## Function : Creates the target "interval_list" and  "padded.interval_list" files.
 ## Returns  :
 ## Arguments: $active_parameter_href       => Active parameters for this analysis hash {REF}
 ##          : $family_id                   => Family ID
@@ -167,10 +167,9 @@ sub build_capture_file_prerequisites {
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Alias
-    my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $infile_list_suffix = $parameter_build_suffixes_ref->[0];
-    my $padded_infile_list_suffix   = $parameter_build_suffixes_ref->[1];
-    my $padded_interval_list_suffix = $parameter_build_suffixes_ref->[2];
+    my $referencefile_path   = $active_parameter_href->{human_genome_reference};
+    my $interval_list_suffix = $parameter_build_suffixes_ref->[0];
+    my $padded_interval_list_suffix = $parameter_build_suffixes_ref->[1];
 
     ## No supplied FILEHANDLE i.e. create new sbatch script
     if ( not defined $FILEHANDLE ) {
@@ -254,18 +253,18 @@ sub build_capture_file_prerequisites {
             }
         );
 
-        say {$FILEHANDLE} q{## Create} . $infile_list_suffix;
+        say {$FILEHANDLE} q{## Create} . $interval_list_suffix;
 
         my @infile_paths_ref =
           (     $exome_target_bed_file_random
               . $DOT
               . q{dict_body_col_5.interval_list} );
-        my $infile_list_outfile_path =
+        my $interval_list_outfile_path =
             $exome_target_bed_file_random
           . $DOT
           . q{dict_body_col_5}
           . $UNDERSCORE
-          . $infile_list_suffix;
+          . $interval_list_suffix;
         picardtools_intervallisttools(
             {
                 FILEHANDLE       => $FILEHANDLE,
@@ -277,20 +276,20 @@ sub build_capture_file_prerequisites {
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
                 memory_allocation  => q{Xmx2g},
-                outfile_path       => $infile_list_outfile_path,
+                outfile_path       => $interval_list_outfile_path,
                 referencefile_path => $referencefile_path,
                 temp_directory     => $temp_directory,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        my $intended_file_path = $exome_target_bed_file . $infile_list_suffix;
+        my $intended_file_path = $exome_target_bed_file . $interval_list_suffix;
         my $temporary_file_path =
             $exome_target_bed_file_random
           . $DOT
           . q{dict_body_col_5}
           . $UNDERSCORE
-          . $infile_list_suffix;
+          . $interval_list_suffix;
 
         ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
         check_exist_and_move_file(
@@ -301,13 +300,13 @@ sub build_capture_file_prerequisites {
             }
         );
 
-        say {$FILEHANDLE} q{#Create} . $padded_infile_list_suffix;
+        say {$FILEHANDLE} q{#Create} . $padded_interval_list_suffix;
 
-        my $padded_infile_list_outfile_path =
+        my $padded_interval_list_outfile_path =
             $exome_target_bed_file_random
           . $DOT
           . q{dict_body_col_5}
-          . $padded_infile_list_suffix;
+          . $padded_interval_list_suffix;
         picardtools_intervallisttools(
             {
                 FILEHANDLE       => $FILEHANDLE,
@@ -319,7 +318,7 @@ sub build_capture_file_prerequisites {
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
                 memory_allocation  => q{Xmx2g},
-                outfile_path       => $padded_infile_list_outfile_path,
+                outfile_path       => $padded_interval_list_outfile_path,
                 padding            => $NR_OF_BASES_PADDING,
                 referencefile_path => $referencefile_path,
                 temp_directory     => $active_parameter_href->{temp_directory},
@@ -328,12 +327,12 @@ sub build_capture_file_prerequisites {
         say {$FILEHANDLE} $NEWLINE;
 
         $intended_file_path =
-          $exome_target_bed_file . $padded_infile_list_suffix;
+          $exome_target_bed_file . $padded_interval_list_suffix;
         $temporary_file_path =
             $exome_target_bed_file_random
           . $DOT
           . q{dict_body_col_5}
-          . $padded_infile_list_suffix;
+          . $padded_interval_list_suffix;
 
         ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
         check_exist_and_move_file(
@@ -343,23 +342,6 @@ sub build_capture_file_prerequisites {
                 temporary_file_path => $temporary_file_path,
             }
         );
-
-        say {$FILEHANDLE} q{#Create }
-          . $padded_interval_list_suffix
-          . q{ by softlinking};
-
-        gnu_ln(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                force      => 1,
-                link_path  => $exome_target_bed_file
-                  . $padded_interval_list_suffix,
-                symbolic    => 1,
-                target_path => $exome_target_bed_file
-                  . $padded_infile_list_suffix,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
 
         ## Remove temporary files
         say {$FILEHANDLE} q{#Remove temporary files};
