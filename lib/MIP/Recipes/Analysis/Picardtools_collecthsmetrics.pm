@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_collecthsmetrics };
@@ -209,8 +209,8 @@ sub analysis_picardtools_collecthsmetrics {
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
 
     ## Alias exome_target_bed endings
-    my $infile_list_ending        = $file_info_href->{exome_target_bed}[0];
-    my $padded_infile_list_ending = $file_info_href->{exome_target_bed}[1];
+    my $interval_list_ending        = $file_info_href->{exome_target_bed}[0];
+    my $padded_interval_list_ending = $file_info_href->{exome_target_bed}[1];
 
     ## Filehandles
     # Create anonymous filehandle
@@ -261,7 +261,7 @@ sub analysis_picardtools_collecthsmetrics {
     picardtools_collecthsmetrics(
         {
             bait_interval_file_paths_ref =>
-              [ $exome_target_bed_file . $padded_infile_list_ending ],
+              [ $exome_target_bed_file . $padded_interval_list_ending ],
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $temp_infile_path,
             java_jar    => catfile(
@@ -275,7 +275,7 @@ sub analysis_picardtools_collecthsmetrics {
             referencefile_path =>
               $active_parameter_href->{human_genome_reference},
             target_interval_file_paths_ref =>
-              [ $exome_target_bed_file . $infile_list_ending ],
+              [ $exome_target_bed_file . $interval_list_ending ],
             temp_directory => $temp_directory,
         }
     );

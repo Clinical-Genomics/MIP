@@ -6,8 +6,7 @@ bwa_build_reference:
   - .pac
   - .sa
 exome_target_bed:
-  - .infile_list
-  - .pad100.infile_list
+  - .interval_list
   - .pad100.interval_list
 fusion_filter_reference_genome:
   - _fusion_filter_genome_dir

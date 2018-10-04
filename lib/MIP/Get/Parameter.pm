@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -27,6 +27,7 @@ BEGIN {
       get_capture_kit
       get_conda_path
       get_dynamic_conda_path
+      get_gatk_intervals
       get_module_parameters
       get_program_attributes
       get_program_parameters
@@ -780,6 +781,123 @@ sub get_read_group {
     $rg{lb} = $sample_id;
 
     return %rg;
+}
+
+sub get_gatk_intervals {
+
+## Function : Generate and return interval hash
+## Returns  : %gatk_intervals
+## Argumetns: $analysis_type         => Analysis type
+##          : $contigs_ref           => Contigs to split in file
+##          : $exome_target_bed_href => Exome target bed files lnked to sample ids
+##          : $file_ending           => File ending to add {Optional}
+##          : $FILEHANDLE            => Filehandle to write to
+##          : $log                   => Log
+##          : $max_cores_per_node    => Maximum core per node
+##          : $outdirectory          => Outdirectory
+##          : $reference_dir         => MIP reference directory
+##          : $sample_id             => Sample_id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_type;
+    my $contigs_ref;
+    my $exome_target_bed_href;
+    my $file_ending;
+    my $FILEHANDLE;
+    my $log;
+    my $outdirectory;
+    my $reference_dir;
+    my $sample_id;
+
+    ## Default(s)
+    my $max_cores_per_node;
+
+    my $tmpl = {
+        analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_type,
+            strict_type => 1,
+        },
+        contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$contigs_ref,
+            strict_type => 1,
+        },
+        exome_target_bed_href => {
+            default     => {},
+            store       => \$exome_target_bed_href,
+            strict_type => 1,
+        },
+        file_ending => {
+            store       => \$file_ending,
+            strict_type => 1,
+        },
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        log        => {
+            store => \$log,
+        },
+        max_cores_per_node => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => 1,
+            store       => \$max_cores_per_node,
+            strict_type => 1,
+        },
+        outdirectory => {
+            store       => \$outdirectory,
+            strict_type => 1,
+        },
+        reference_dir => {
+            store       => \$reference_dir,
+            strict_type => 1,
+        },
+        sample_id => {
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::File qw{ get_exom_target_bed_file };
+    use MIP::File::Interval qw{ generate_contig_interval_file };
+
+    ## Store gatk interval
+    my %gatk_intervals;
+
+    if ( $analysis_type eq q{wes} ) {
+
+        my $exome_target_bed_file = get_exom_target_bed_file(
+            {
+                exome_target_bed_href => $exome_target_bed_href,
+                file_ending           => $file_ending,
+                log                   => $log,
+                sample_id             => $sample_id,
+            }
+        );
+
+        ## Generate contig specific interval_list and return hash with paths
+        %gatk_intervals = generate_contig_interval_file(
+            {
+                contigs_ref           => $contigs_ref,
+                exome_target_bed_file => $exome_target_bed_file,
+                FILEHANDLE            => $FILEHANDLE,
+                max_cores_per_node    => $max_cores_per_node,
+                outdirectory          => $outdirectory,
+                reference_dir         => $reference_dir,
+            }
+        );
+    }
+    else {
+        ## Key-value pairs are identical for WGS/WTS
+        %gatk_intervals = map { $_ => ($_) } @{$contigs_ref};
+    }
+
+    return %gatk_intervals;
 }
 
 1;

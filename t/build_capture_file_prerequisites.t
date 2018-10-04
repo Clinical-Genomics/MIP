@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -106,9 +106,8 @@ my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
 
 my %sample_info;
 
-my $infile_list_suffix          = $file_info{exome_target_bed}[0];
-my $padded_infile_list_suffix   = $file_info{exome_target_bed}[1];
-my $padded_interval_list_suffix = $file_info{exome_target_bed}[2];
+my $interval_list_suffix        = $file_info{exome_target_bed}[0];
+my $padded_interval_list_suffix = $file_info{exome_target_bed}[1];
 
 trap {
     build_capture_file_prerequisites(
