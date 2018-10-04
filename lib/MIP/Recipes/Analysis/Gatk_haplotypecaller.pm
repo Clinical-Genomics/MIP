@@ -26,11 +26,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_gatk_haplotypecaller analysis_gatk_haplotypecaller_rna };
+    our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
 
 }
 
@@ -158,7 +157,9 @@ sub analysis_gatk_haplotypecaller {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Gatk qw{ gatk_haplotypecaller };
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_gathervcfscloud };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Set::File qw{ set_io_files };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
 
@@ -239,10 +240,9 @@ sub analysis_gatk_haplotypecaller {
             }
         )
     );
-    my @outfile_paths       = @{ $io{out}{file_paths} };
-    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_suffix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
     my %temp_outfile_path   = %{ $io{temp}{file_path_href} };
 
     ## Filehandles
@@ -381,34 +381,48 @@ sub analysis_gatk_haplotypecaller {
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
-    ## Copies file from temporary directory. Per contig
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
+    ## Concatenate contig VCFs
+    my $concat_vcf_path = $outfile_path_prefix . $outfile_suffix;
+
+    ## GATK GatherVcfsCloud
+    my @contig_vcf_paths;
+    foreach my $contig ( @{ $file_info_href->{contigs} } ) {
+        push @contig_vcf_paths, $temp_outfile_path{$contig};
+    }
+    gatk_gathervcfscloud(
         {
-            core_number        => $core_number,
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            FILEHANDLE         => $FILEHANDLE,
-            file_ending        => $outfile_suffix . $ASTERISK,
-            file_path          => $file_path,
-            outdirectory       => $outdir_path_prefix,
-            outfile            => $outfile_name_prefix,
-            program_info_path  => $program_info_path,
-            temp_directory     => $temp_directory,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
+            FILEHANDLE           => $FILEHANDLE,
+            ignore_safety_checks => 0,
+            infile_paths_ref     => \@contig_vcf_paths,
+            memory_allocation    => q{Xmx4G},
+            outfile_path         => $concat_vcf_path,
+            temp_directory       => $temp_directory,
+            verbosity => $active_parameter_href->{gatk_logging_level},
         }
     );
+    say {$FILEHANDLE} $NEWLINE;
+
     close $FILEHANDLE;
     close $XARGSFILEHANDLE;
 
+    ## Set input files for next module
+    set_io_files(
+        {
+            chain_id       => $job_id_chain,
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            file_paths_ref => [$concat_vcf_path],
+            program_name   => $program_name,
+            stream         => q{out},
+        }
+    );
+
     if ( $program_mode == 1 ) {
 
-        my $first_outfile_path = $outfile_paths[0];
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                infile           => $outfile_name_prefix,
-                path             => $first_outfile_path,
+                path             => $concat_vcf_path,
                 program_name     => $program_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
