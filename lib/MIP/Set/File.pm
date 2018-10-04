@@ -639,6 +639,7 @@ sub _set_io_files_constant {
 
     my %constant_map = (
         file_name_prefixes => q{file_name_prefix},
+        file_paths         => q{file_path},
         file_path_prefixes => q{file_path_prefix},
         file_suffixes      => q{file_constant_suffix},
     );
