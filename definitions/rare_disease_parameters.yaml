@@ -1176,7 +1176,7 @@ gatk_genotypegvcfs:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: _gent_
+  file_tag: _gent
   outfile_suffix: ".vcf"
   program_name_path:
    - gatk

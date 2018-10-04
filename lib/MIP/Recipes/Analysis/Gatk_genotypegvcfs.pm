@@ -29,7 +29,6 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK   => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -129,7 +128,6 @@ sub analysis_gatk_genotypegvcfs {
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_step_in_parallel_to_family };
@@ -153,7 +151,7 @@ sub analysis_gatk_genotypegvcfs {
             program_name   => $program_name,
         }
     );
-    my $program_mode = $active_parameter_href->{$program_name};
+    my $program_mode          = $active_parameter_href->{$program_name};
     my $sbatch_script_tracker = 0;
 
     ## Gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
@@ -165,25 +163,22 @@ sub analysis_gatk_genotypegvcfs {
         }
       );
 
-        ## Set and get the io files per chain, id and stream
+    ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
-            {
-                chain_id         => $job_id_chain,
-                id               => $family_id,
-                file_info_href   => $file_info_href,
-                file_name_prefix => $family_id,
-                iterators_ref    => $file_info_href->{contigs_size_ordered},
-                outdata_dir      => $active_parameter_href->{outdata_dir},
-                parameter_href   => $parameter_href,
-                program_name     => $program_name,
-                temp_directory   => $temp_directory,
-            }
+        {
+            chain_id         => $job_id_chain,
+            id               => $family_id,
+            file_info_href   => $file_info_href,
+            file_name_prefix => $family_id,
+            iterators_ref    => $file_info_href->{contigs_size_ordered},
+            outdata_dir      => $active_parameter_href->{outdata_dir},
+            parameter_href   => $parameter_href,
+            program_name     => $program_name,
+            temp_directory   => $temp_directory,
+        }
     );
-    my @outfile_paths       = @{ $io{out}{file_paths} };
-    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix = $io{out}{file_name_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
-    my %outfile_path   = %{ $io{out}{file_path_href} };
+    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
+    my %outfile_path             = %{ $io{out}{file_path_href} };
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
 
     ## Filehandles
@@ -196,6 +191,7 @@ sub analysis_gatk_genotypegvcfs {
     create_fam_file(
         {
             active_parameter_href => $active_parameter_href,
+            execution_mode        => q{system},
             fam_file_path         => $fam_file_path,
             FILEHANDLE            => $FILEHANDLE,
             parameter_href        => $parameter_href,
@@ -209,71 +205,40 @@ sub analysis_gatk_genotypegvcfs {
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ($file_path) = setup_script(
             {
-                active_parameter_href => $active_parameter_href,
-                core_number           => $core_number,
-                directory_id          => $family_id,
-                FILEHANDLE            => $FILEHANDLE,
-                job_id_href           => $job_id_href,
-                log                   => $log,
-                process_time          => $time,
-                program_directory     => $program_name,
-                program_name          => $program_name,
-                sleep                 => 1,
+                active_parameter_href           => $active_parameter_href,
+                core_number                     => $core_number,
+                directory_id                    => $family_id,
+                FILEHANDLE                      => $FILEHANDLE,
+                job_id_href                     => $job_id_href,
+                log                             => $log,
+                process_time                    => $time,
+                program_directory               => $program_name,
+                program_name                    => $program_name,
+                sleep                           => 1,
                 source_environment_commands_ref => \@source_environment_cmds,
                 temp_directory                  => $temp_directory,
             }
         );
 
-        ## Collect infiles for all sample_ids to enable migration to temporary directory
-	my @genotype_temp_infile_paths;
-	my $process_batches_count = 1;
-    while ( my ( $sample_id_index, $sample_id ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+        ## Collect infiles for all sample_ids
+        my @genotype_infile_paths;
+        while ( my ( $sample_id_index, $sample_id ) =
+            each @{ $active_parameter_href->{sample_ids} } )
+        {
 
-        $process_batches_count = print_wait(
-            {
-                FILEHANDLE            => $FILEHANDLE,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                process_counter       => $sample_id_index,
-            }
-        );
-
-	       ## Get the io infiles per chain and id
-        my %sample_io = get_io_files(
-            {
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                parameter_href => $parameter_href,
-                program_name   => $program_name,
-                stream         => q{in},
-                temp_directory => $temp_directory,
-            }
-        );
-        my $infile_path_prefix = $sample_io{in}{file_path_prefix};
-        my $infile_suffix      = $sample_io{in}{file_suffix};
-        my $infile_path =
-          $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-        my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
-        my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
-
-        ## Store temp infile path for each sample_id
-        push @genotype_temp_infile_paths, $temp_infile_path;
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-
-            migrate_file(
+            ## Get the io infiles per chain and id
+            my %sample_io = get_io_files(
                 {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $infile_path,
-                    outfile_path => $temp_directory,
+                    id             => $sample_id,
+                    file_info_href => $file_info_href,
+                    parameter_href => $parameter_href,
+                    program_name   => $program_name,
+                    stream         => q{in},
+                    temp_directory => $temp_directory,
                 }
             );
-            say {$FILEHANDLE} q{wait} . $NEWLINE;
-
-      }
+            push @genotype_infile_paths, $sample_io{in}{file_path};
+        }
 
         ## GATK GenomicsDBImport
         say {$FILEHANDLE} q{## GATK GenomicsDBImport};
@@ -281,7 +246,7 @@ sub analysis_gatk_genotypegvcfs {
         ## Files to import into GenomicsDB
         if ( $consensus_analysis_type eq q{wes} ) {
 
-            push @genotype_temp_infile_paths,
+            push @genotype_infile_paths,
               $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf};
         }
 
@@ -289,7 +254,7 @@ sub analysis_gatk_genotypegvcfs {
             {
                 FILEHANDLE       => $FILEHANDLE,
                 intervals_ref    => [$contig],
-                infile_paths_ref => \@genotype_temp_infile_paths,
+                infile_paths_ref => \@genotype_infile_paths,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
                 verbosity => $active_parameter_href->{gatk_logging_level},
