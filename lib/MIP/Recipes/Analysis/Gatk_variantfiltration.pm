@@ -146,7 +146,7 @@ sub analysis_gatk_variantfiltration {
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
 
     ## Constants
-    Readonly my $JAVA_MEMORY_ALLOCATION => 8;
+    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
 
     ### PREPROCESSING
 
@@ -188,17 +188,6 @@ sub analysis_gatk_variantfiltration {
         }
       );
 
-    # Division by X according to the java heap
-    $core_number = floor(
-        $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
-        {
-            core_number_requested => $core_number,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-        }
-    );
-
     ## Outpaths
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -225,15 +214,14 @@ sub analysis_gatk_variantfiltration {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            program_directory =>
-              catfile( $active_parameter_href->{outaligner_dir}, q{gatk} ),
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
