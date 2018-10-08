@@ -94,7 +94,7 @@ my %specific_argument = (
     },
     temp_directory => {
         input           => catdir(qw{ a dir }),
-        expected_output => q{-TMP_DIR } . catdir(qw{ a dir }),
+        expected_output => q{--tmp-dir } . catdir(qw{ a dir }),
     },
 );
 
