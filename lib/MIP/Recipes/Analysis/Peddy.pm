@@ -203,7 +203,7 @@ sub analysis_peddy {
 
     my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my @outfile_paths       = @{ $io{out}{file_paths} };
+    my %outfile_path        = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -230,21 +230,19 @@ sub analysis_peddy {
       splitpath($program_info_path);
 
     # To enable submission to &sample_info_qc later
-    my $stderr_file = $program_info_file . $DOT . q{stderr.txt};
-
-    # To enable submission to &sample_info_qc later
-    my $stdout_file = $program_info_file . $DOT . q{stdout.txt};
+    my $stderr_file_path =
+      catfile( $directory, $program_info_file . $DOT . q{stderr.txt} );
 
     ### SHELL:
 
-    my $family_file =
+    my $family_file_path =
       catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
             active_parameter_href => $active_parameter_href,
-            fam_file_path         => $family_file,
+            fam_file_path         => $family_file_path,
             FILEHANDLE            => $FILEHANDLE,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -269,7 +267,7 @@ sub analysis_peddy {
     ## Peddy
     peddy(
         {
-            family_file_path    => $family_file,
+            family_file_path    => $family_file_path,
             FILEHANDLE          => $FILEHANDLE,
             infile_path         => $infile_path_prefix . $suffix,
             outfile_prefix_path => $outfile_path_prefix,
@@ -282,12 +280,12 @@ sub analysis_peddy {
     if ( $program_mode == 1 ) {
 
       PEDDY_OUTPUT_FILES:
-        foreach my $outfile_path (@outfile_paths) {
+        while ( my ( $outfile_tag, $outfile_path ) = each %outfile_path ) {
 
             ## Collect QC metadata info for later use
             add_program_metafile_to_sample_info(
                 {
-                    metafile_tag     => $outfile_path_prefix,
+                    metafile_tag     => $outfile_tag,
                     path             => $outfile_path,
                     program_name     => $program_name,
                     sample_info_href => $sample_info_href,
@@ -299,7 +297,7 @@ sub analysis_peddy {
         add_program_metafile_to_sample_info(
             {
                 metafile_tag     => q{stderr},
-                path             => catfile( $directory, $stderr_file ),
+                path             => $stderr_file_path,
                 program_name     => $program_name,
                 sample_info_href => $sample_info_href,
             }
