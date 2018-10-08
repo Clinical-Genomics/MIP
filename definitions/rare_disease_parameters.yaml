@@ -1686,7 +1686,7 @@ peddy:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
+  file_tag: ""
   program_name_path:
    - peddy
   type: program
