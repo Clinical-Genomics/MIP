@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bootstrapann };
@@ -34,7 +34,7 @@ BEGIN {
 
 ## Constants
 Readonly my $ASTERISK => q{*};
-Readonly my $NEWLINE => qq{\n};
+Readonly my $NEWLINE  => qq{\n};
 
 sub analysis_bootstrapann {
 
@@ -139,28 +139,63 @@ sub analysis_bootstrapann {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Variantcalling::BootstrapAnn qw{ bootstrapann };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
 
-    ## Constants
+    ### PREPROCESSING
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $ase_infile_name          = ${ $io{in}{file_names} }[0];
+    my @ase_infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
+    my $ase_infile_path          = ${ $io{in}{file_paths} }[0];
 
-    ## Alias
-    my $analysis_type = \$active_parameter_href->{analysis_type}{$sample_id};
-    my $job_id_chain  = $parameter_href->{$program_name}{chain};
+    ## Get bam infile from GATK BaseRecalibration
+    my %variant_io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => q{gatk_variantfiltration},
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $variant_infile_path_prefix = $variant_io{out}{file_path_prefix};
+    my $variant_suffix             = $variant_io{out}{file_suffix};
+    my $variant_infile_path = $variant_infile_path_prefix . $variant_suffix;
+
+    my $job_id_chain = get_program_attributes(
+        {
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+        }
+    );
+    my $program_mode       = $active_parameter_href->{$program_name};
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
+
+    ## Get module parameters
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -169,165 +204,70 @@ sub analysis_bootstrapann {
         }
       );
 
+    ## Outpaths
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => \@ase_infile_name_prefixes,
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                program_name           => $program_name,
+                temp_directory         => $temp_directory,
+            }
+        )
+    );
+    my $outfile_path = ${ $io{out}{file_paths} }[0];
+
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            program_directory =>
-              catfile( $active_parameter_href->{outaligner_dir}, q{gatk} ),
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
 
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
-        {
-            core_number_requested => $core_number,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-        }
-    );
-
-    ## Used downstream
-    $parameter_href->{$program_name}{$sample_id}{indirectory} =
-      $outsample_directory;
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
-    );
-
-    ## Assign file_tags
-    my $ase_infile_tag =
-      $file_info_href->{$sample_id}{gatk_asereadcounter}{file_tag};
-    my $vcf_infile_tag =
-      $file_info_href->{$sample_id}{gatk_variantfiltration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
-
-    ## Files
-    my $ase_infile_prefix = $merged_infile_prefix . $ase_infile_tag;
-    my $vcf_infile_prefix = $merged_infile_prefix . $vcf_infile_tag;
-    my $outfile_prefix    = $merged_infile_prefix . $outfile_tag;
-
-    ## Paths
-    my $ase_infile_path_prefix = catfile( $temp_directory, $ase_infile_prefix );
-    my $vcf_infile_path_prefix = catfile( $temp_directory, $vcf_infile_prefix );
-    my $outfile_path_prefix    = catfile( $temp_directory, $outfile_prefix );
-
-    ## Assign suffix
-    my $ase_infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{gatk_asereadcounter}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{ase_file_suffix},
-        }
-    );
-
-    my $vcf_infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{gatk_variantfiltration}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-
-    ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
-        {
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $insample_directory, $ase_infile_prefix . $ase_infile_suffix
-            ),
-            outfile_path => $temp_directory,
-        }
-    );
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $insample_directory,
-                $vcf_infile_prefix
-                  . substr( $vcf_infile_suffix, 0, 2 )
-                  . $ASTERISK
-            ),
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
+    ### SHELL
 
     ## BootstrapAnn
     say {$FILEHANDLE} q{## BootstrapAnn};
-
-    ## Set file paths
-    my $ase_infile_path = $ase_infile_path_prefix . $ase_infile_suffix;
-    my $vcf_infile_path = $vcf_infile_path_prefix . $vcf_infile_suffix;
-    my $outfile_path    = $outfile_path_prefix . $outfile_suffix;
-
     bootstrapann(
         {
             ase_file_path   => $ase_infile_path,
             FILEHANDLE      => $FILEHANDLE,
             stdoutfile_path => $outfile_path,
-            vcf_infile_path => $vcf_infile_path,
+            vcf_infile_path => $variant_infile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path,
-            outfile_path => $outsample_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait};
     close $FILEHANDLE;
 
     if ( $program_mode == 1 ) {
 
-        my $program_outfile_path =
-          catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
-
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                infile           => $ase_infile_prefix,
-                path             => $program_outfile_path,
-                program_name     => q{bootstrapann},
+                infile           => $ase_infile_name,
+                path             => $outfile_path,
+                program_name     => $program_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gatk_base gatk_common_options gatk_java_options };
@@ -408,7 +408,7 @@ sub gatk_common_options {
 
     ## Add path to temporary directory
     if ($temp_directory) {
-        push @{$commands_ref}, q{-TMP_DIR} . $SPACE . $temp_directory;
+        push @{$commands_ref}, q{--tmp-dir} . $SPACE . $temp_directory;
     }
 
     ## Add verbosity level

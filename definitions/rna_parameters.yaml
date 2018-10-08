@@ -559,7 +559,7 @@ bootstrapann:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _bootstr
   outfile_suffix: ".vcf"
   program_name_path:
