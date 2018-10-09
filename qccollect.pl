@@ -75,7 +75,7 @@ my %qc_header;
 ## Save data in each outfile
 my %qc_program_data;
 
-my $qccollect_version = q{2.0.7};
+my $qccollect_version = q{2.0.8};
 
 ###User Options
 GetOptions(
@@ -989,8 +989,8 @@ sub define_evaluate_metric {
           = $sample_info_href->{sample}{$sample_id}{expected_coverage};
     }
 
-    $evaluate_metric{variant_integrity_mendel}{fraction_of_errors}{gt} = 0.06;
-    $evaluate_metric{variant_integrity_father}{fraction_of_common_variants}{lt}
+    $evaluate_metric{mendel}{fraction_of_errors}{gt} = 0.06;
+    $evaluate_metric{father}{fraction_of_common_variants}{lt}
       = 0.55;
 
     return;
@@ -2010,16 +2010,16 @@ q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {prin
 q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\s/_/g;print $ret;last;}' ?
       ;    #Collect Plink2 version
 
-    $regexp{variant_integrity_mendel}{fraction_of_errors} =
+    $regexp{mendel}{fraction_of_errors} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
 
-    $regexp{variant_integrity_mendel}{mendelian_errors} =
+    $regexp{mendel}{mendelian_errors} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
 
-    $regexp{variant_integrity_father}{fraction_of_common_variants} =
+    $regexp{father}{fraction_of_common_variants} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
 
-    $regexp{variant_integrity_father}{common_variants} =
+    $regexp{father}{common_variants} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
 
     $regexp{tiddit}{version} =

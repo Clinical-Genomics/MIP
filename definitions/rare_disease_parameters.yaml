@@ -1689,6 +1689,7 @@ peddy:
   file_tag: ""
   program_name_path:
    - peddy
+   - bcftools
   type: program
 plink:
   analysis_mode: family
@@ -1699,6 +1700,7 @@ plink:
   file_tag: nofile_tag
   program_name_path:
    - plink2
+   - bcftools
   type: program
 variant_integrity:
   analysis_mode: family
@@ -1706,7 +1708,7 @@ variant_integrity:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
+  file_tag: _integrity
   program_name_path:
    - variant_integrity
   type: program
