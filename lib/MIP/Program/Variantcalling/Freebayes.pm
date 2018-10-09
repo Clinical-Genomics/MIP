@@ -87,7 +87,7 @@ sub freebayes_calling {
         },
         use_best_n_alleles => {
             allow       => qr/ ^\d+$ /sxm,
-            default     => 7,
+            default     => 4,
             store       => \$use_best_n_alleles,
             strict_type => 1,
         },
