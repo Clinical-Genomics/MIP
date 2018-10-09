@@ -205,10 +205,12 @@ sub analysis_vt_core {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
-    use MIP::Program::Variantcalling::Allele_frequency qw{ calculate_af max_af };
+    use MIP::Program::Variantcalling::Allele_frequency
+      qw{ calculate_af max_af };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_view bcftools_index };
-    use MIP::Program::Variantcalling::Vt qw{ vt_decompose vt_normalize vt_uniq };
+    use MIP::Program::Variantcalling::Vt
+      qw{ vt_decompose vt_normalize vt_uniq };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -575,10 +577,12 @@ sub analysis_vt_core_rio {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
-    use MIP::Program::Variantcalling::Allele_frequency qw{ calculate_af max_af };
+    use MIP::Program::Variantcalling::Allele_frequency
+      qw{ calculate_af max_af };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_view bcftools_index };
-    use MIP::Program::Variantcalling::Vt qw{ vt_decompose vt_normalize vt_uniq };
+    use MIP::Program::Variantcalling::Vt
+      qw{ vt_decompose vt_normalize vt_uniq };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -643,7 +647,6 @@ sub analysis_vt_core_rio {
                 FILEHANDLE             => $FILEHANDLE,
                 infile_path            => q{-},
                 smart_decomposition    => 1,
-                stderrfile_path        => $stderrfile_path,
                 stderrfile_path_append => $stderrfile_path,
             }
         );
@@ -659,7 +662,6 @@ sub analysis_vt_core_rio {
                 infile_path                    => q{-},
                 no_fail_inconsistent_reference => 1,
                 referencefile_path             => $human_genome_reference,
-                stderrfile_path                => $stderrfile_path,
                 stderrfile_path_append         => $stderrfile_path,
             }
         );
@@ -673,7 +675,6 @@ sub analysis_vt_core_rio {
             {
                 FILEHANDLE             => $FILEHANDLE,
                 infile_path            => q{-},
-                stderrfile_path        => $stderrfile_path,
                 stderrfile_path_append => $stderrfile_path,
             }
         );

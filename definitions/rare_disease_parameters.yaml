@@ -1373,7 +1373,7 @@ vt:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: vt_
+  file_tag: _vt
   program_name_path:
    - vt
    - sed
