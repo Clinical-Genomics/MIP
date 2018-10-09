@@ -1718,7 +1718,7 @@ rtg_vcfeval:
    - mip
   data_type: SCALAR
   default: 0
-  file_tag: nofile_tag
+  file_tag: _rtgvcfeval
   program_name_path:
    - bcftools
   type: program
