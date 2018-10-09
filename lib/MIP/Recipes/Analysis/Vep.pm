@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -46,13 +46,11 @@ sub analysis_vep {
 ## Function : Varianteffectpredictor performs effect predictions and annotation of variants.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $call_type               => The variant call type
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $program_info_path       => Program info path
@@ -74,9 +72,7 @@ sub analysis_vep {
     my $sample_info_href;
 
     ## Default(s)
-    my $call_type;
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -88,8 +84,6 @@ sub analysis_vep {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
@@ -115,11 +109,6 @@ sub analysis_vep {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {
@@ -160,17 +149,17 @@ sub analysis_vep {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number };
-    use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Script::Setup_script qw{ setup_script };
+
+    ### PREPROCESSING:
 
     ## Constants
     Readonly my $VEP_FORK_NUMBER => 4;
@@ -178,11 +167,31 @@ sub analysis_vep {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program mode
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $family_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my %infile_path        = %{ $io{in}{file_path_href} };
+    my $infile_suffix      = $io{in}{file_suffix};
 
-    ## Alias
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
+    my $job_id_chain         = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -191,6 +200,28 @@ sub analysis_vep {
         }
       );
     my $xargs_file_path_prefix;
+
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id         => $job_id_chain,
+                id               => $family_id,
+                file_info_href   => $file_info_href,
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref    => \@contigs_size_ordered,
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                program_name     => $program_name,
+                temp_directory   => $temp_directory,
+            }
+        )
+    );
+
+    my %outfile_path   = %{ $io{out}{file_path_href} };
+    my @outfile_paths  = @{ $io{out}{file_paths} };
+    my $outfile_suffix = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -214,14 +245,13 @@ sub analysis_vep {
     ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            call_type                       => $call_type,
             core_number                     => $core_number,
             directory_id                    => $family_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $outaligner_dir,
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
@@ -229,61 +259,7 @@ sub analysis_vep {
     );
     my $stderr_path = $program_info_path . $DOT . q{stderr.txt};
 
-    # Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
-
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-
-    ## Used downstream
-    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$family_id}{frequency_filter}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$family_id}{$program_name}{file_tag};
-    my $infile_prefix       = $family_id . $infile_tag . $call_type;
-    my $outfile_prefix      = $family_id . $outfile_tag . $call_type;
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ### Assign suffix
-    ## Return the current infile vcf compression suffix for this jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-    my $outfile_suffix = set_file_suffix(
-        {
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
-            indirectory        => $infamily_directory,
-            infile             => $infile_prefix,
-            program_info_path  => $program_info_path,
-            temp_directory     => $temp_directory,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
+    ### SHELL:
 
     ## Varianteffectpredictor
     say {$FILEHANDLE} q{## Varianteffectpredictor};
@@ -307,41 +283,42 @@ sub analysis_vep {
         }
     );
 
-  CONTIG:
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+    ## Get parameters
+    # VEP plugins
+    my @plugins;
+  PLUGIN:
+    foreach my $plugin ( @{ $active_parameter_href->{vep_plugins} } ) {
 
-        ## Get parameters
+        if ( $plugin eq q{LoF} ) {
+
+            my $lof_parameter = q{,human_ancestor_fa:}
+              . catfile( $active_parameter_href->{vep_directory_cache},
+                q{Plugins}, q{human_ancestor.fa,filter_position:0.05} );
+            push @plugins, $plugin . $lof_parameter;
+        }
+        elsif ( $plugin eq q{MaxEntScan} ) {
+
+            my $max_ent_scan_parameter = q{,}
+              . catfile( $active_parameter_href->{vep_directory_cache},
+                qw{ Plugins fordownload } );
+            push @plugins, $plugin . $max_ent_scan_parameter;
+        }
+        else {
+
+            push @plugins, $plugin;
+        }
+    }
+
+  CONTIG:
+    foreach my $contig (@contigs_size_ordered) {
+
+        ## Get contig specific parameters
         my $distance = $ANNOTATION_DISTANCE;
 
         # Special case for mitochondrial contig annotation
         if ( $contig =~ / MT|M /xsm ) {
 
             $distance = $ANNOTATION_DISTANCE_MT;
-        }
-
-        # VEP plugins
-        my @plugins;
-      PLUGIN:
-        foreach my $plugin ( @{ $active_parameter_href->{vep_plugins} } ) {
-
-            if ( $plugin eq q{LoF} ) {
-
-                my $lof_parameter = q{,human_ancestor_fa:}
-                  . catfile( $active_parameter_href->{vep_directory_cache},
-                    q{Plugins}, q{human_ancestor.fa,filter_position:0.05} );
-                push @plugins, $plugin . $lof_parameter;
-            }
-            elsif ( $plugin eq q{MaxEntScan} ) {
-
-                my $max_ent_scan_parameter = q{,}
-                  . catfile( $active_parameter_href->{vep_directory_cache},
-                    qw{ Plugins fordownload } );
-                push @plugins, $plugin . $max_ent_scan_parameter;
-            }
-            else {
-
-                push @plugins, $plugin;
-            }
         }
 
         ## VEP features
@@ -360,10 +337,6 @@ sub analysis_vep {
             }
         }
 
-        my $infile_path =
-          $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
-        my $outfile_path =
-          $outfile_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $stdoutfile_path =
@@ -377,10 +350,10 @@ sub analysis_vep {
                 distance       => $distance,
                 FILEHANDLE     => $XARGSFILEHANDLE,
                 fork           => $VEP_FORK_NUMBER,
-                infile_format  => substr( $outfile_suffix, 1 ),
-                infile_path    => $infile_path,
+                infile_format  => substr( $infile_suffix, 1 ),
+                infile_path    => $infile_path{$contig},
                 outfile_format => substr( $outfile_suffix, 1 ),
-                outfile_path   => $outfile_path,
+                outfile_path   => $outfile_path{$contig},
                 plugins_dir_path =>
                   $active_parameter_href->{vep_plugins_dir_path},
                 plugins_ref => \@plugins,
@@ -395,50 +368,15 @@ sub analysis_vep {
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
-    ## QC Data File(s)
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_path_prefix
-              . $UNDERSCORE
-              . $ASTERISK
-              . $infile_suffix
-              . $UNDERSCORE . q{s}
-              . $ASTERISK,
-            outfile_path => $outfamily_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-    close $XARGSFILEHANDLE;
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_path_prefix
-              . $UNDERSCORE
-              . $ASTERISK
-              . $infile_suffix
-              . $ASTERISK,
-            outfile_path => $outfamily_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-    close $FILEHANDLE;
+    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $XARGSFILEHANDLE
+      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
     if ( $program_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile_path = catfile( $outfamily_directory,
-                $outfile_prefix
-              . $UNDERSCORE
-              . $file_info_href->{contigs_size_ordered}[0]
-              . $infile_suffix
-              . $UNDERSCORE
-              . q{summary.html} );
+        my $qc_vep_summary_outfile_path =
+          $outfile_paths[0] . $UNDERSCORE . q{summary.html};
         add_program_metafile_to_sample_info(
             {
                 metafile_tag     => q{summary},
@@ -450,21 +388,16 @@ sub analysis_vep {
         add_program_metafile_to_sample_info(
             {
                 metafile_tag     => q{stderrfile},
-                path             => catfile( $directory, $stderr_file ),
+                path             => $stderr_path,
                 program_name     => $program_name,
                 sample_info_href => $sample_info_href,
             }
         );
 
         ## Collect QC metadata info for later use
-        my $qc_vep_outfile_path = catfile( $outfamily_directory,
-                $outfile_prefix
-              . $UNDERSCORE
-              . $file_info_href->{contigs_size_ordered}[0]
-              . $infile_suffix );
         add_program_outfile_to_sample_info(
             {
-                path             => $qc_vep_outfile_path,
+                path             => $outfile_paths[0],
                 program_name     => $program_name,
                 sample_info_href => $sample_info_href,
             }
