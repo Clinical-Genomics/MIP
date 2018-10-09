@@ -1411,7 +1411,7 @@ frequency_filter:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: frqf_
+  file_tag: _frqf
   outfile_suffix: ".vcf"
   program_name_path:
    - genmod

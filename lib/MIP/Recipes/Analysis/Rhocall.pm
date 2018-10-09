@@ -155,9 +155,9 @@ sub analysis_rhocall_annotate {
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_roh };
     use MIP::Program::Variantcalling::Rhocall qw{ rhocall_annotate };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
 
     ### PREPROCESSING:
 
