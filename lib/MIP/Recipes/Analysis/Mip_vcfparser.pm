@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -45,13 +45,11 @@ sub analysis_mip_vcfparser {
 ## Function : Vcfparser performs parsing of varianteffectpredictor annotated variants
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $call_type               => Variant call type
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
@@ -73,9 +71,7 @@ sub analysis_mip_vcfparser {
     my $sample_info_href;
 
     ## Default(s)
-    my $call_type;
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -87,8 +83,6 @@ sub analysis_mip_vcfparser {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
@@ -114,11 +108,6 @@ sub analysis_mip_vcfparser {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {
@@ -159,28 +148,46 @@ sub analysis_mip_vcfparser {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number };
-    use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
     use MIP::QC::Record qw{ add_gene_panel add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
 
-    Readonly my $VCFPARSER_OUTFILE_COUNT =>
-      $active_parameter_href->{vcfparser_outfile_count} - 1;
+    ### PREPROCESSING:
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program mode
-    my $program_mode = $active_parameter_href->{$program_name};
-
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $family_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my %infile_path        = %{ $io{in}{file_path_href} };
+
+    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
+    my $job_id_chain         = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -188,6 +195,45 @@ sub analysis_mip_vcfparser {
             program_name          => $program_name,
         }
       );
+
+    my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
+        {
+            vcfparser_outfile_count =>
+              $active_parameter_href->{sv_vcfparser_outfile_count},
+        }
+    );
+
+    ## Add "research" suffixes
+    my @set_outfile_name_suffixes = ( keys %infile_path );
+
+  SUFFIX:
+    foreach my $infile_suffix ( keys %infile_path ) {
+
+        ## Add "selected" suffixes
+        push @set_outfile_name_suffixes,
+          $infile_suffix . $UNDERSCORE . $vcfparser_analysis_types[1];
+    }
+
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id         => $job_id_chain,
+                id               => $family_id,
+                file_info_href   => $file_info_href,
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref    => \@set_outfile_name_suffixes,
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                program_name     => $program_name,
+                temp_directory   => $temp_directory,
+            }
+        )
+    );
+
+    my %outfile_path  = %{ $io{out}{file_path_href} };
+    my @outfile_paths = @{ $io{out}{file_paths} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -197,9 +243,9 @@ sub analysis_mip_vcfparser {
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
         {
-            module_core_number   => $core_number,
-            modifier_core_number => scalar @{ $file_info_href->{contigs} },
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            modifier_core_number => scalar @{ $file_info_href->{contigs} },
+            module_core_number   => $core_number,
         }
     );
 
@@ -207,73 +253,16 @@ sub analysis_mip_vcfparser {
     ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            call_type                       => $call_type,
             core_number                     => $core_number,
             directory_id                    => $family_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $outaligner_dir,
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
-        }
-    );
-
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-    my $outfamily_directory = $infamily_directory;
-
-    # Used downstream
-    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
-
-    ## Tags
-    my $infile_tag =
-      $file_info_href->{$family_id}{varianteffectpredictor}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$family_id}{$program_name}{file_tag};
-
-    ## Files
-    my $infile_prefix  = $family_id . $infile_tag . $call_type;
-    my $outfile_prefix = $family_id . $outfile_tag . $call_type;
-
-    ## Paths
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ### Assign suffix
-    ## Return the current infile vcf compression suffix for this jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            jobid_chain    => $job_id_chain,
-        }
-    );
-    my $outfile_suffix = set_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
-            indirectory        => $infamily_directory,
-            infile             => $infile_prefix,
-            program_info_path  => $program_info_path,
-            temp_directory     => $temp_directory,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
         }
     );
 
@@ -295,7 +284,7 @@ sub analysis_mip_vcfparser {
     );
 
   CONTIG:
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+    foreach my $contig (@contigs_size_ordered) {
 
         ## Get parameters
         my $padding;
@@ -305,6 +294,8 @@ sub analysis_mip_vcfparser {
             $padding = $MITO_PADDING;
         }
 
+        my $vcfparser_xargs_file_path_prefix =
+          $xargs_file_path_prefix . $DOT . $contig;
         my @select_feature_annotation_columns;
         my $select_file;
         my $select_file_matching_column;
@@ -338,25 +329,18 @@ sub analysis_mip_vcfparser {
                       @{ $active_parameter_href
                           ->{vcfparser_select_feature_annotation_columns} };
                 }
-                $select_outfile =
-                    $outfile_path_prefix
-                  . $UNDERSCORE
-                  . $contig
-                  . $DOT
-                  . q{selected}
-                  . $infile_suffix;
+                my $select_outfile_suffix_key =
+                  $contig . $UNDERSCORE . $vcfparser_analysis_types[1];
+                $select_outfile = $outfile_path{$select_outfile_suffix_key};
             }
         }
 
         mip_vcfparser(
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
-                infile_path => $file_path_prefix
-                  . $UNDERSCORE
-                  . $contig
-                  . $infile_suffix,
-                padding   => $padding,
-                parse_vep => $active_parameter_href->{varianteffectpredictor},
+                infile_path => $infile_path{$contig},
+                padding     => $padding,
+                parse_vep   => $active_parameter_href->{varianteffectpredictor},
                 range_feature_annotation_columns_ref => \@{
                     $active_parameter_href
                       ->{vcfparser_range_feature_annotation_columns}
@@ -368,42 +352,16 @@ sub analysis_mip_vcfparser {
                 select_feature_file_path       => $select_file,
                 select_feature_matching_column => $select_file_matching_column,
                 select_outfile                 => $select_outfile,
-                stderrfile_path                => $xargs_file_path_prefix
+                stderrfile_path => $vcfparser_xargs_file_path_prefix
                   . $DOT
-                  . $contig
-                  . $DOT
-                  . q{stderr.txt}
-                  . $SPACE,
-                stdoutfile_path => $outfile_path_prefix
-                  . $UNDERSCORE
-                  . $contig
-                  . $infile_suffix,
+                  . q{stderr.txt},
+                stdoutfile_path => $outfile_path{$contig},
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
-    ## QC Data File(s)
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_path_prefix
-              . $UNDERSCORE
-              . $file_info_href->{contigs_size_ordered}[0]
-              . $infile_suffix,
-            outfile_path => $outfamily_directory,
-
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
     if ( $program_mode == 1 ) {
-
-        ## Clear old vcfparser entry if present
-        if ( defined $sample_info_href->{$program_name} ) {
-
-            delete( $sample_info_href->{$program_name} );
-        }
 
         my %gene_panels = (
             range_file  => q{vcfparser_range_feature_file},
@@ -427,61 +385,21 @@ sub analysis_mip_vcfparser {
         }
 
         ## Collect QC metadata info for later use
-        my $qc_vcfparser_outfile =
-            $outfile_prefix
-          . $UNDERSCORE
-          . $file_info_href->{contigs_size_ordered}[0]
-          . $infile_suffix;
         add_program_outfile_to_sample_info(
             {
-                path => catfile( $outfamily_directory, $qc_vcfparser_outfile ),
+                path             => $outfile_paths[0],
                 program_name     => $program_name,
                 sample_info_href => $sample_info_href,
             }
         );
     }
+
+    close $FILEHANDLE or $log->logcroak(q{Could not close $FILEHANDLE});
     close $XARGSFILEHANDLE
       or $log->logcroak(q{Could not close $XARGSFILEHANDLE});
 
-    my $vcfparser_analysis_type = $EMPTY_STR;
-    my @vcfparser_contigs_ref   = \@{ $file_info_href->{contigs_size_ordered} };
-
-    ## Determined by vcfparser output
-  VCFPARSER_OUTFILE:
-    for my $vcfparser_outfile_counter ( 0 .. $VCFPARSER_OUTFILE_COUNT ) {
-
-        if ( $vcfparser_outfile_counter == 1 ) {
-
-            # SelectFile variants
-            $vcfparser_analysis_type = $DOT . q{selected};
-            @vcfparser_contigs_ref =
-              \@{ $file_info_href->{sorted_select_file_contigs} };
-        }
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file(s) from temporary directory};
-        ($xargs_file_counter) = xargs_migrate_contig_files(
-            {
-                contigs_ref => @vcfparser_contigs_ref,
-                core_number => $core_number,
-                FILEHANDLE  => $FILEHANDLE,
-                file_ending => $vcfparser_analysis_type
-                  . $infile_suffix
-                  . $ASTERISK,
-                file_path          => $file_path,
-                outdirectory       => $outfamily_directory,
-                outfile            => $outfile_prefix,
-                program_info_path  => $program_info_path,
-                temp_directory     => $temp_directory,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                xargs_file_counter => $xargs_file_counter,
-            }
-        );
-    }
-
-    close $FILEHANDLE or $log->logcroak(q{Could not close $FILEHANDLE});
-
     if ( $program_mode == 1 ) {
+
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
                 family_id               => $family_id,

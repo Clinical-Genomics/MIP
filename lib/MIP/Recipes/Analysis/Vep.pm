@@ -151,6 +151,7 @@ sub analysis_vep {
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };

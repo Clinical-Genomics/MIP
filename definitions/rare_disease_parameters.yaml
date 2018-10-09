@@ -1555,7 +1555,7 @@ vcfparser:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: parsed_
+  file_tag: _parsed
   outfile_suffix: ".vcf"
   type: program
 vcfparser_outfile_count:
