@@ -228,6 +228,8 @@ sub analysis_rtg_vcfeval {
         }
     );
 
+    ### SHELL:
+
     say {$FILEHANDLE} q{## Adding sample name to baseline calls};
     bcftools_rename_vcf_samples(
         {

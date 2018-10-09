@@ -1448,7 +1448,7 @@ gatk_variantevalall:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
+  file_tag: _evalall
   outfile_suffix: ".varianteval"
   type: program
 gatk_variantevalexome:

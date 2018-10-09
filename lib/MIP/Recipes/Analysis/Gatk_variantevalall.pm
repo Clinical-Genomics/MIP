@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantevalall };
@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK    => q{*};
+Readonly my $ASTERISK   => q{*};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
 
@@ -61,7 +61,6 @@ sub analysis_gatk_variantevalall {
     my $sample_info_href;
 
     ## Default(s)
-    my $call_type;
     my $family_id;
     my $temp_directory;
 
@@ -73,8 +72,6 @@ sub analysis_gatk_variantevalall {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
@@ -136,29 +133,49 @@ sub analysis_gatk_variantevalall {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Language::Java qw{ java_core };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_varianteval gatk_selectvariants };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
+
+    ### PREPROCESSING:
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program mode
-    my $program_mode = $active_parameter_href->{$program_name};
-
     ## Unpack parameters
-    my $job_id_chain       = $parameter_href->{$program_name}{chain};
-    my $referencefile_path = $active_parameter_href->{human_genome_reference};
+## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $family_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path        = $io{in}{file_path};
+    my $infile_suffix      = $io{in}{file_suffix};
+
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
     my $gatk_jar =
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
+    my $program_mode       = $active_parameter_href->{$program_name};
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -167,6 +184,28 @@ sub analysis_gatk_variantevalall {
         }
       );
 
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id         => $job_id_chain,
+                id               => $sample_id,
+                file_info_href   => $file_info_href,
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref    => [$sample_id],
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                program_name     => $program_name,
+                temp_directory   => $temp_directory,
+            }
+        )
+    );
+
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_path        = $io{out}{file_path};
+    my $outfile_suffix      = $io{out}{file_suffix};
+
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
@@ -174,102 +213,37 @@ sub analysis_gatk_variantevalall {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_path) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            call_type             => $call_type,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            program_directory     => catfile(
-                $active_parameter_href->{outaligner_dir}, $program_name
-            ),
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
 
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $active_parameter_href->{outaligner_dir} );
-
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $active_parameter_href->{outaligner_dir} );
-
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir},    $sample_id,
-        $active_parameter_href->{outaligner_dir}, $program_name
-    );
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
-
-    ## Files
-    my $infile_prefix  = $family_id . $infile_tag . $call_type;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Paths
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ### Assign suffix
-    ## Return the current infile vcf compression suffix for this jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain =>
-              $parameter_href->{gatk_combinevariantcallsets}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-    my $outfile_suffix = set_file_suffix(
-        {
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_eval_file_suffix},
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERISK
-            ),
-            outfile_path => $temp_directory
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    ### SHELL:
 
     ### Select sample id from family id vcf file
 
     ## GATK SelectVariants
     say {$FILEHANDLE} q{## GATK SelectVariants};
 
+    my $select_outfile_path =
+      $outfile_path_prefix . $UNDERSCORE . q{select} . $infile_suffix;
     gatk_selectvariants(
         {
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $file_path_prefix . $infile_suffix,
+            infile_path => $infile_path,
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            memory_allocation => q{Xmx2g},
-            outfile_path => $outfile_path_prefix . $call_type . $infile_suffix,
+            memory_allocation  => q{Xmx2g},
+            outfile_path       => $select_outfile_path,
             referencefile_path => $referencefile_path,
             sample_names_ref   => [$sample_id],
             temp_directory     => $temp_directory,
@@ -281,41 +255,24 @@ sub analysis_gatk_variantevalall {
     ## GATK varianteval
     say {$FILEHANDLE} q{## GATK varianteval};
 
-    my @infile_paths_ref = (
-        catfile(
-            $temp_directory,
-            $merged_infile_prefix . $infile_tag . $call_type . $infile_suffix
-        )
-    );
     gatk_varianteval(
         {
             FILEHANDLE      => $FILEHANDLE,
             dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
             indel_gold_standard_file_path =>
               $active_parameter_href->{gatk_varianteval_gold},
-            infile_paths_ref => \@infile_paths_ref,
+            infile_paths_ref => [$select_outfile_path],
             java_jar         => $gatk_jar,
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            logging_level     => $active_parameter_href->{gatk_logging_level},
-            memory_allocation => q{Xmx2g},
-            outfile_path => $outfile_path_prefix . $call_type . $outfile_suffix,
+            logging_level      => $active_parameter_href->{gatk_logging_level},
+            memory_allocation  => q{Xmx2g},
+            outfile_path       => $outfile_path,
             temp_directory     => $temp_directory,
             referencefile_path => $referencefile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            infile_path  => $outfile_path_prefix . $call_type . $outfile_suffix,
-            outfile_path => $outsample_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
@@ -324,11 +281,8 @@ sub analysis_gatk_variantevalall {
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                infile => $merged_infile_prefix,
-                path   => catfile(
-                    $outsample_directory,
-                    $outfile_prefix . $call_type . $outfile_suffix
-                ),
+                infile           => $outfile_path_prefix,
+                path             => $outfile_path,
                 program_name     => q{variantevalall},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
