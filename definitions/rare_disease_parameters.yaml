@@ -1352,7 +1352,7 @@ rhocall:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: rhocall_
+  file_tag: _rhocall
   program_name_path:
    - rhocall
    - bcftools

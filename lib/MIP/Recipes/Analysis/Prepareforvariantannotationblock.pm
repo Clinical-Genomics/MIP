@@ -250,6 +250,8 @@ sub analysis_prepareforvariantannotationblock {
         }
     );
 
+    ### SHELL:
+
     ## Compress or decompress original file or stream to outfile (if supplied)
     my $bgzip_outfile_path = $infile_path . $DOT . q{gz};
     htslib_bgzip(
