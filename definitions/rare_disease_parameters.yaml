@@ -1736,7 +1736,8 @@ evaluation:
    - mip
   data_type: SCALAR
   default: 0
-  file_tag: nofile_tag
+  file_tag: _genotypeconc
+  outfile_suffix: ".vcf"
   program_name_path:
    - gzip
    - bcftools
