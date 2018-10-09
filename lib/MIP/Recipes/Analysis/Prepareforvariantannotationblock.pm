@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -30,7 +30,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK     => q{*};
+Readonly my $ASTERISK    => q{*};
 Readonly my $DOT         => q{.};
 Readonly my $EMPTY_STR   => q{};
 Readonly my $NEWLINE     => qq{\n};
@@ -41,16 +41,14 @@ Readonly my $UNDERSCORE  => q{_};
 
 sub analysis_prepareforvariantannotationblock {
 
-## Function : Copy files for variantannotationblock to enable restart and skip of modules within block
+## Function : Split into contigs for variantannotationblock
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $call_type               => Variant call type
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
@@ -74,9 +72,7 @@ sub analysis_prepareforvariantannotationblock {
     my $stderr_path;
 
     ## Default(s)
-    my $call_type;
     my $family_id;
-    my $outaligner_dir;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -88,8 +84,6 @@ sub analysis_prepareforvariantannotationblock {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
@@ -115,11 +109,6 @@ sub analysis_prepareforvariantannotationblock {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {
@@ -161,26 +150,46 @@ sub analysis_prepareforvariantannotationblock {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number };
-    use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Set::File qw{ set_file_suffix };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program mode
-    my $program_mode = $active_parameter_href->{$program_name};
+    ### PREPROCESSING:
 
     ## Unpack parameters
+## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $family_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path        = $io{in}{file_path};
+
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my @contigs      = @{ $file_info_href->{contigs_size_ordered} };
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -189,6 +198,26 @@ sub analysis_prepareforvariantannotationblock {
         }
       );
     my $xargs_file_path_prefix;
+
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id         => $job_id_chain,
+                id               => $family_id,
+                file_info_href   => $file_info_href,
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref    => \@contigs,
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                program_name     => $program_name,
+                temp_directory   => $temp_directory,
+            }
+        )
+    );
+
+    my %outfile_path = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -208,86 +237,26 @@ sub analysis_prepareforvariantannotationblock {
     ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            call_type                       => $call_type,
             core_number                     => $core_number,
             FILEHANDLE                      => $FILEHANDLE,
             directory_id                    => $family_id,
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => catfile($outaligner_dir),
+            program_directory               => $program_name,
             program_name                    => $program_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
-    $stderr_path = $program_info_path . $DOT . q{stderr.txt};
-
-    ## Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
-
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-
-    ## Used downstream in removal of files
-    $parameter_href->{$program_name}{indirectory} = $outfamily_directory;
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$family_id}{gatk_combinevariantcallsets}{file_tag};
-
-    ## Special case for vrn pipeline
-    if ( $consensus_analysis_type eq q{vrn} ) {
-
-        $infile_tag =
-          $file_info_href->{$family_id}{vcf_rerun_reformat}{file_tag};
-    }
-
-    ## Files
-    my $infile_prefix = $family_id . $infile_tag . $call_type;
-
-    ## Paths
-    my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-    my $outfile_suffix = set_file_suffix(
-        {
-            job_id_chain   => $job_id_chain,
-            file_suffix    => $parameter_href->{$program_name}{outfile_suffix},
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERISK
-            ),
-            outfile_path => $temp_directory
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Compress or decompress original file or stream to outfile (if supplied)
+    my $bgzip_outfile_path = $infile_path . $DOT . q{gz};
     htslib_bgzip(
         {
             FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $file_path_prefix . $infile_suffix,
-            stdoutfile_path => $file_path_prefix . $outfile_suffix,
+            infile_path     => $infile_path,
+            stdoutfile_path => $bgzip_outfile_path,
             write_to_stdout => 1,
         }
     );
@@ -298,7 +267,7 @@ sub analysis_prepareforvariantannotationblock {
         {
             FILEHANDLE  => $FILEHANDLE,
             force       => 1,
-            infile_path => $file_path_prefix . $outfile_suffix,
+            infile_path => $bgzip_outfile_path,
             preset      => q{vcf},
         }
     );
@@ -317,12 +286,12 @@ sub analysis_prepareforvariantannotationblock {
 
     ## Split vcf into contigs
   CONTIG:
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+    foreach my $contig (@contigs) {
 
         htslib_tabix(
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
-                infile_path => $file_path_prefix . $outfile_suffix,
+                infile_path => $bgzip_outfile_path,
                 regions_ref => [$contig],
                 with_header => 1,
             }
@@ -333,10 +302,7 @@ sub analysis_prepareforvariantannotationblock {
         htslib_bgzip(
             {
                 FILEHANDLE      => $XARGSFILEHANDLE,
-                stdoutfile_path => $file_path_prefix
-                  . $UNDERSCORE
-                  . $contig
-                  . $outfile_suffix,
+                stdoutfile_path => $outfile_path{$contig},
                 write_to_stdout => 1,
             }
         );
@@ -347,30 +313,12 @@ sub analysis_prepareforvariantannotationblock {
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
                 force       => 1,
-                infile_path => $file_path_prefix
-                  . $UNDERSCORE
-                  . $contig
-                  . $outfile_suffix,
-                preset => q{vcf},
+                infile_path => $outfile_path{$contig},
+                preset      => q{vcf},
             }
         );
         print {$XARGSFILEHANDLE} $NEWLINE;
     }
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $file_path_prefix
-              . $UNDERSCORE
-              . $ASTERISK
-              . $infile_suffix
-              . $ASTERISK,
-            outfile_path => $outfamily_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
     close $XARGSFILEHANDLE
@@ -602,7 +550,8 @@ sub analysis_prepareforvariantannotationblock_rio {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERISK
+                $infamily_directory,
+                $infile_prefix . $infile_suffix . $ASTERISK
             ),
             outfile_path => $temp_directory
         }
