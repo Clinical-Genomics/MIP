@@ -163,7 +163,7 @@ sub analysis_snpeff {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $family_id,

@@ -24,7 +24,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -474,7 +474,7 @@ sub set_io_files {
         push @{ $io_program_href->{$stream}{file_suffixes} }, $suffix;
     }
 
-    if ( scalar @{ $io_program_href->{$stream}{file_suffixes} } > 1 ) {
+    if ( scalar @{ $io_program_href->{$stream}{file_suffixes} } ) {
 
         _set_io_files_hash(
             {

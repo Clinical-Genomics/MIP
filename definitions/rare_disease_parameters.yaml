@@ -1774,7 +1774,7 @@ rankvariant:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: ranked_
+  file_tag: _ranked
   outfile_suffix: ".vcf"
   program_name_path:
    - genmod

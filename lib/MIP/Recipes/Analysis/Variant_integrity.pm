@@ -200,7 +200,7 @@ sub analysis_variant_integrity {
   MODE:
     while ( my ( $mode, $program_href ) = each %var_int_outfiles ) {
 
-      Var_INT_PROGRAM:
+      VAR_INT_PROGRAM:
         while ( my ( $file_name_prefix, $file_suffix ) = each %{$program_href} )
         {
 
@@ -216,6 +216,14 @@ sub analysis_variant_integrity {
         }
     }
 
+    ## Check if we ahve something to analyse
+    if ( not scalar @var_int_outfiles ) {
+
+        $log->warn(
+q{Not a trio nor a father in analysis - skipping 'variant_integrity'}
+        );
+        return;
+    }
     ## Set and get the io files per chain, id and stream
     %io = (
         %io,
