@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1508,10 +1508,19 @@ sub analysis_vcfparser_sv_wgs {
 
   ANALYSIS_SUFFIXES:
     foreach my $analysis_suffix (@outfile_suffixes) {
+
+        my @concat_contigs = @contigs;
+
+        ## Update contigs list using select file contigs
+        if ( $analysis_suffix eq q{.selected.vcf} ) {
+
+            @concat_contigs =
+              @{ $file_info_href->{sorted_select_file_contigs} };
+        }
         gatk_concatenate_variants(
             {
                 active_parameter_href => $active_parameter_href,
-                elements_ref          => \@contigs,
+                elements_ref          => \@concat_contigs,
                 continue              => 1,
                 FILEHANDLE            => $FILEHANDLE,
                 infile_postfix        => $analysis_suffix,
