@@ -14,6 +14,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw{ any };
 use Readonly;
 
 BEGIN {
@@ -206,12 +207,18 @@ sub analysis_mip_vcfparser {
     ## Add "research" suffixes
     my @set_outfile_name_suffixes = ( keys %infile_path );
 
+    ## Add "select" suffixes
+    my @select_file_contigs =
+      @{ $file_info_href->{sorted_select_file_contigs} };
   SUFFIX:
     foreach my $infile_suffix ( keys %infile_path ) {
 
-        ## Add "selected" suffixes
-        push @set_outfile_name_suffixes,
-          $infile_suffix . $UNDERSCORE . $vcfparser_analysis_types[1];
+        if ( any { $_ eq $infile_suffix } @select_file_contigs ) {
+
+            ## Add "selected" suffixes
+            push @set_outfile_name_suffixes,
+              $infile_suffix . $UNDERSCORE . $vcfparser_analysis_types[1];
+        }
     }
 
     ## Set and get the io files per chain, id and stream
@@ -265,6 +272,8 @@ sub analysis_mip_vcfparser {
             temp_directory                  => $temp_directory,
         }
     );
+
+    ### SHELL:
 
     ## vcfparser
     say {$FILEHANDLE} q{## vcfparser};

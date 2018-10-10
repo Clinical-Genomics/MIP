@@ -1612,7 +1612,7 @@ snpeff:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: snpeff_
+  file_tag: _snpeff
   outfile_suffix: ".vcf"
   type: program
 snpeff_ann:
