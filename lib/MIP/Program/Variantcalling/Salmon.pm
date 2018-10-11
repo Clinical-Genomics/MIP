@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ salmon_index salmon_quant };
@@ -119,6 +119,7 @@ sub salmon_quant {
 ## Function  : Perl wrapper for Salmon quant, version 0.9.1.
 ## Returns   : @commands
 ## Arguments : $FILEHANDLE             => Filehandle to write to
+##           : $gc_bias                => Correct for GC-bias
 ##           : $index_path             => Path to the index folder
 ##           : $lib                    => Library visit the salmon website for more  info
 ##           : $outfile_path           => The path of the  output directory
@@ -133,6 +134,7 @@ sub salmon_quant {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
+    my $gc_bias;
     my $index_path;
     my $outfile_path;
     my $read_1_fastq_path;
@@ -148,6 +150,10 @@ sub salmon_quant {
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
+        },
+        gc_bias => {
+            store       => \$gc_bias,
+            strict_type => 1,
         },
         index_path => {
             defined     => 1,
@@ -200,6 +206,10 @@ sub salmon_quant {
 
     ## Stores commands depending on input parameters
     my @commands = q{salmon quant};
+
+    if ($gc_bias) {
+        push @commands, q{--gcBias};
+    }
 
     push @commands, q{--index} . $SPACE . $index_path;
 
