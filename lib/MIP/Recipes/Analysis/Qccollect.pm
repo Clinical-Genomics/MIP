@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_qccollect };
@@ -41,7 +41,6 @@ sub analysis_qccollect {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $infile_path             => Infile path
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -60,7 +59,6 @@ sub analysis_qccollect {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
 
     my $tmpl = {
         active_parameter_href => {
@@ -116,11 +114,6 @@ sub analysis_qccollect {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
         program_name => {
             defined     => 1,
             required    => 1,
@@ -131,22 +124,29 @@ sub analysis_qccollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
     use MIP::Program::Qc::Qccollect qw{ qccollect };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program mode
-    my $program_mode = $active_parameter_href->{$program_name};
-
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -154,6 +154,21 @@ sub analysis_qccollect {
             program_name          => $program_name,
         }
       );
+
+    my %io = parse_io_outfiles(
+        {
+            chain_id               => $job_id_chain,
+            id                     => $family_id,
+            file_info_href         => $file_info_href,
+            file_name_prefixes_ref => [$family_id],
+            outdata_dir            => $active_parameter_href->{outdata_dir},
+            parameter_href         => $parameter_href,
+            program_name           => $program_name,
+        }
+    );
+
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_path        = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -175,15 +190,7 @@ sub analysis_qccollect {
         }
     );
 
-    ## Assign directories
-    my $outfamily_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $family_id );
-
-    ## Paths
-    my $outfile_path = catfile( $outfamily_directory,
-        $family_id . $UNDERSCORE . q{qc_metrics.yaml} );
-    my $log_file_path = catfile( $outfamily_directory,
-        $family_id . $UNDERSCORE . q{qccollect.log} );
+    my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{qccollect.log};
 
     qccollect(
         {
@@ -202,15 +209,11 @@ sub analysis_qccollect {
 
     if ( $program_mode == 1 ) {
 
-        ## Collect QC metadata info for later use
-        my $qc_metric_outfile = $family_id . $UNDERSCORE . q{qc_metrics.yaml};
-        my $path = catfile( $outfamily_directory, $qc_metric_outfile );
-
         add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{qccollect},
-                path             => $path,
+                path             => $outfile_path,
             }
         );
 

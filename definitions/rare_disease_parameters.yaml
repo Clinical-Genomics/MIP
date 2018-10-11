@@ -1861,7 +1861,8 @@ qccollect:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
+  file_tag: _qc_metrics
+  outfile_suffix: ".yaml"
   type: program
 qccollect_regexp_file:
   associated_program:

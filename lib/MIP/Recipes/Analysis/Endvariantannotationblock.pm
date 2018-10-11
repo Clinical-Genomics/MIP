@@ -257,6 +257,8 @@ sub analysis_endvariantannotationblock {
         }
     );
 
+    ### SHELL:
+
   ANALYSIS_SUFFIXES:
     while ( my ( $analysis_suffix_index, $analysis_suffix ) =
         each @outfile_suffixes )
