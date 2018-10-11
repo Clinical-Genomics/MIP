@@ -163,6 +163,8 @@ sub analysis_rankvariant {
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    ### PREPROCESSING:
+
     ## Constant
     Readonly my $CORE_NUMBER_REQUESTED =>
       $active_parameter_href->{max_cores_per_node};
@@ -184,9 +186,9 @@ sub analysis_rankvariant {
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
+
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-
     my $job_id_chain = get_program_attributes(
         {
             parameter_href => $parameter_href,
