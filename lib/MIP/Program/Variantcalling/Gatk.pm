@@ -19,8 +19,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Language::Java qw{ java_core };
-use MIP::Program::Base::Gatk
-  qw{ gatk_base gatk_common_options gatk_java_options };
+use MIP::Program::Base::Gatk qw{ gatk_base gatk_common_options gatk_java_options };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -29,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -40,6 +39,7 @@ BEGIN {
       gatk_gathervcfscloud
       gatk_genomicsdbimport
       gatk_genotypegvcfs
+      gatk_indexfeaturefile
       gatk_leftalignandtrimvariants
       gatk_selectvariants
       gatk_varianteval
@@ -233,7 +233,9 @@ sub gatk_selectvariants {
 ##          : $outfile_path                          => Outfile path
 ##          : $pedigree                              => Pedigree files for samples
 ##          : $referencefile_path                    => Reference sequence file
+##          : $restrict_alleles_to                   => Restrict allele output
 ##          : $sample_names_ref                      => Include genotypes from this sample {REF}
+##          : $select_type_to_include_ref            => Select which variants to include {REF}
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $verbosity                             => Set the minimum level of logging
@@ -249,7 +251,9 @@ sub gatk_selectvariants {
     my $outfile_path;
     my $pedigree;
     my $referencefile_path;
+    my $restrict_alleles_to;
     my $sample_names_ref;
+    my $select_type_to_include_ref;
     my $stderrfile_path;
     my $temp_directory;
     my $xargs_mode;
@@ -298,6 +302,11 @@ sub gatk_selectvariants {
             store       => \$pedigree,
             strict_type => 1,
         },
+        restrict_alleles_to => {
+            allow       => [qw{ ALL BIALLELIC MULTIALLELIC }],
+            store       => \$restrict_alleles_to,
+            strict_type => 1,
+        },
         referencefile_path => {
             defined     => 1,
             store       => \$referencefile_path,
@@ -307,6 +316,12 @@ sub gatk_selectvariants {
             default     => [],
             defined     => 1,
             store       => \$sample_names_ref,
+            strict_type => 1,
+        },
+        select_type_to_include_ref => {
+            default     => [],
+            defined     => 1,
+            store       => \$select_type_to_include_ref,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -371,11 +386,26 @@ sub gatk_selectvariants {
         push @commands, q{--exclude-non-variants};
     }
 
+    ## Restrict allele output
+    if ($restrict_alleles_to) {
+        push @commands, q{--restrict-alleles-to} . $SPACE . $restrict_alleles_to;
+    }
+
     ## Sample names to include
     if ( @{$sample_names_ref} ) {
         push @commands,
           q{--sample-name} . $SPACE . join $SPACE . q{--sample-name} . $SPACE,
           @{$sample_names_ref};
+    }
+
+    ## Select variant types to include
+    if ( @{$select_type_to_include_ref} ) {
+        push @commands,
+            q{--select-type-to-include}
+          . $SPACE
+          . join $SPACE
+          . q{--select-type-to-include}
+          . $SPACE, @{$select_type_to_include_ref};
     }
 
     ## Output
@@ -827,8 +857,7 @@ sub gatk_applyvqsr {
 
     ## Add truth sensitivity level
     if ($ts_filter_level) {
-        push @commands,
-          q{--truth-sensitivity-filter-level} . $SPACE . $ts_filter_level;
+        push @commands, q{--truth-sensitivity-filter-level} . $SPACE . $ts_filter_level;
     }
 
     ## Add outfile
@@ -1000,8 +1029,7 @@ sub gatk_calculategenotypeposteriors {
 
     ## Add supporting data
     if ($supporting_callset_file_path) {
-        push @commands,
-          q{--supporting-callsets} . $SPACE . $supporting_callset_file_path;
+        push @commands, q{--supporting-callsets} . $SPACE . $supporting_callset_file_path;
     }
 
     ## Output
@@ -1073,7 +1101,7 @@ sub gatk_combinevariants {
     my $exclude_nonvariants;
 
     my $tmpl = {
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
+        memory_allocation    => { strict_type => 1, store => \$memory_allocation },
         java_use_large_pages => {
             default     => 0,
             allow       => [ 0, 1 ],
@@ -1082,8 +1110,7 @@ sub gatk_combinevariants {
         },
         temp_directory => { strict_type => 1, store => \$temp_directory },
         java_jar       => { strict_type => 1, store => \$java_jar },
-        intervals_ref =>
-          { default => [], strict_type => 1, store => \$intervals_ref },
+        intervals_ref    => { default => [], strict_type => 1, store => \$intervals_ref },
         infile_paths_ref => {
             required    => 1,
             defined     => 1,
@@ -1103,10 +1130,10 @@ sub gatk_combinevariants {
             strict_type => 1,
             store       => \$referencefile_path
         },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        FILEHANDLE        => { store       => \$FILEHANDLE },
-        pedigree          => { strict_type => 1, store => \$pedigree },
-        prioritize_caller => { strict_type => 1, store => \$prioritize_caller },
+        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
+        FILEHANDLE             => { store       => \$FILEHANDLE },
+        pedigree               => { strict_type => 1, store => \$pedigree },
+        prioritize_caller      => { strict_type => 1, store => \$prioritize_caller },
         downsample_to_coverage => {
             allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
@@ -1137,9 +1164,8 @@ sub gatk_combinevariants {
             store       => \$exclude_nonvariants
         },
         genotype_merge_option => {
-            default => q{PRIORITIZE},
-            allow =>
-              [ undef, qw{ UNIQUIFY PRIORITIZE UNSORTED REQUIRE_UNIQUE } ],
+            default     => q{PRIORITIZE},
+            allow       => [ undef, qw{ UNIQUIFY PRIORITIZE UNSORTED REQUIRE_UNIQUE } ],
             strict_type => 1,
             store       => \$genotype_merge_option
         },
@@ -1184,8 +1210,7 @@ sub gatk_combinevariants {
 
     if ($genotype_merge_option) {
 
-        push @commands,
-          q{--genotypemergeoption} . $SPACE . $genotype_merge_option;
+        push @commands, q{--genotypemergeoption} . $SPACE . $genotype_merge_option;
     }
 
     if ($prioritize_caller) {
@@ -1196,9 +1221,7 @@ sub gatk_combinevariants {
     ## Infile
     if ( @{$infile_paths_ref} ) {
 
-        push @commands,
-          q{--variant:} . join $SPACE . q{--variant:},
-          @{$infile_paths_ref};
+        push @commands, q{--variant:} . join $SPACE . q{--variant:}, @{$infile_paths_ref};
 
     }
 
@@ -1273,7 +1296,7 @@ sub gatk_varianteval {
     my $pedigree_validation_type;
 
     my $tmpl = {
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
+        memory_allocation    => { strict_type => 1, store => \$memory_allocation },
         java_use_large_pages => {
             default     => 0,
             allow       => [ 0, 1 ],
@@ -1282,8 +1305,7 @@ sub gatk_varianteval {
         },
         temp_directory => { strict_type => 1, store => \$temp_directory },
         java_jar       => { strict_type => 1, store => \$java_jar },
-        intervals_ref =>
-          { default => [], strict_type => 1, store => \$intervals_ref },
+        intervals_ref    => { default => [], strict_type => 1, store => \$intervals_ref },
         infile_paths_ref => {
             required    => 1,
             defined     => 1,
@@ -1373,8 +1395,7 @@ sub gatk_varianteval {
 
     if ($indel_gold_standard_file_path) {
 
-        push @commands,
-          q{--goldStandard} . $SPACE . $indel_gold_standard_file_path;
+        push @commands, q{--goldStandard} . $SPACE . $indel_gold_standard_file_path;
     }
 
     ## Infile
@@ -1410,159 +1431,144 @@ sub gatk_varianteval {
 
 sub gatk_leftalignandtrimvariants {
 
-## Function : Perl wrapper for writing GATK leftalignandtrimvariants recipe to $FILEHANDLE. Based on GATK 3.7.0.
+## Function : Perl wrapper for writing GATK LeftAlignAndTrimVariants recipe to $FILEHANDLE. Based on GATK 4.0.0.
 ## Returns  : @commands
-## Arguments: $memory_allocation                     => Memory allocation to run Gatk
-##          : $java_use_large_pages                  => Use java large pages
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $java_jar                              => Java jar
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
+##          : $FILEHANDLE                            => Sbatch filehandle to write to
 ##          : $infile_path                           => Infile path
+##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages                  => Use java large pages
+##          : $memory_allocation                     => Memory allocation to run Gatk
 ##          : $outfile_path                          => Outfile path
 ##          : $referencefile_path                    => Reference sequence file
-##          : $stderrfile_path                       => Stderrfile path
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $pedigree                              => Pedigree files for samples
-##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
-##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
-##          : $logging_level                         => Set the minimum level of logging
-##          : $pedigree_validation_type              => Validation strictness for pedigree
 ##          : $split_multiallelics                   => Split multiallelic records and left-align individual alleles
+##          : $stderrfile_path                       => Stderrfile path
+##          : $temp_directory                        => Redirect tmp files to java temp
+##          : $verbosity                             => Set the minimum level of logging
+##          : $xargs_mode                            => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $memory_allocation;
-    my $java_use_large_pages;
-    my $temp_directory;
-    my $java_jar;
-    my $intervals_ref;
+    my $FILEHANDLE;
     my $infile_path;
+    my $intervals_ref;
+    my $memory_allocation;
     my $outfile_path;
     my $referencefile_path;
     my $stderrfile_path;
-    my $FILEHANDLE;
-    my $pedigree;
-    my $downsample_to_coverage;
+    my $temp_directory;
 
     ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $pedigree_validation_type;
+    my $java_use_large_pages;
     my $split_multiallelics;
+    my $verbosity;
+    my $xargs_mode;
 
     my $tmpl = {
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        java_use_large_pages => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$java_use_large_pages
-        },
-        temp_directory => { strict_type => 1, store => \$temp_directory },
-        java_jar       => { strict_type => 1, store => \$java_jar },
-        intervals_ref =>
-          { default => [], strict_type => 1, store => \$intervals_ref },
+        FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
+        },
+        java_use_large_pages => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => {
+            store       => \$memory_allocation,
+            strict_type => 1,
+        },
+        temp_directory => {
+            strict_type => 1,
+            store       => \$temp_directory,
+        },
+        intervals_ref => {
+            default     => [],
+            store       => \$intervals_ref,
+            strict_type => 1,
         },
         outfile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
             strict_type => 1,
-            store       => \$outfile_path
         },
         referencefile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$referencefile_path,
             strict_type => 1,
-            store       => \$referencefile_path
-        },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        FILEHANDLE => { store       => \$FILEHANDLE },
-        pedigree   => { strict_type => 1, store => \$pedigree },
-        downsample_to_coverage => {
-            allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
-            store       => \$downsample_to_coverage
-        },
-        gatk_disable_auto_index_and_file_lock => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$gatk_disable_auto_index_and_file_lock
-        },
-        logging_level => {
-            default     => q{INFO},
-            allow       => [qw{ INFO ERROR FATAL }],
-            strict_type => 1,
-            store       => \$logging_level
-        },
-        pedigree_validation_type => {
-            default     => q{SILENT},
-            allow       => [qw{ STRICT SILENT }],
-            strict_type => 1,
-            store       => \$pedigree_validation_type
         },
         split_multiallelics => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$split_multiallelics,
             strict_type => 1,
-            store       => \$split_multiallelics
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        verbosity => {
+            allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$verbosity,
+            strict_type => 1,
+        },
+        xargs_mode => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$xargs_mode,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands;
+    ## GATK LeftAlignAndTrimVariants
 
-    if ($java_jar) {    # Write java core commands to filehandle.
-        @commands = java_core(
-            {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
-                java_jar             => $java_jar,
-            }
-        );
-    }
+    # Stores commands depending on input parameters
+    my @commands = qw{ gatk };
 
-    ### Gatk base args
-    @commands = gatk_base(
+    ## Add java options
+    gatk_java_options(
         {
-            commands_ref             => \@commands,
-            analysis_type            => q{LeftAlignAndTrimVariants},
-            logging_level            => $logging_level,
-            intervals_ref            => $intervals_ref,
-            referencefile_path       => $referencefile_path,
-            pedigree                 => $pedigree,
-            pedigree_validation_type => $pedigree_validation_type,
-            downsample_to_coverage   => $downsample_to_coverage,
-            gatk_disable_auto_index_and_file_lock =>
-              $gatk_disable_auto_index_and_file_lock,
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+            xargs_mode           => $xargs_mode,
         }
     );
 
-    ## Tool-specific options
+    ## Add tool command
+    push @commands, q{LeftAlignAndTrimVariants};
+
+    ## Add infile
+    push @commands, q{--variant} . $SPACE . $infile_path;
+
+    ## Add common options
+    gatk_common_options(
+        {
+            commands_ref       => \@commands,
+            intervals_ref      => $intervals_ref,
+            referencefile_path => $referencefile_path,
+            temp_directory     => $temp_directory,
+            verbosity          => $verbosity,
+        }
+    );
+
+    ## Split Multiallelic
     if ($split_multiallelics) {
-
-        push @commands, q{--splitMultiallelics};
-    }
-
-    ## Infile
-    if ($infile_path) {
-
-        push @commands, q{--variant} . $SPACE . $infile_path;
-
+        push @commands, q{--split-multi-allelics};
     }
 
     ## Output
     if ($outfile_path) {
-
-        push @commands, q{--out} . $SPACE . $outfile_path;
+        push @commands, q{--output} . $SPACE . $outfile_path;
     }
 
     push @commands,
@@ -1683,14 +1689,13 @@ sub gatk_concatenate_variants {
 
     gatk_gathervcfscloud(
         {
-            FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => \@infile_paths,
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation => q{Xmx4g},
-            outfile_path      => $outfile_path,
-            temp_directory    => $active_parameter_href->{temp_directory},
-            verbosity         => $active_parameter_href->{gatk_logging_level},
+            FILEHANDLE           => $FILEHANDLE,
+            infile_paths_ref     => \@infile_paths,
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx4g},
+            outfile_path         => $outfile_path,
+            temp_directory       => $active_parameter_href->{temp_directory},
+            verbosity            => $active_parameter_href->{gatk_logging_level},
         }
     );
 
@@ -1864,8 +1869,7 @@ sub gatk_variantfiltration {
 
     ## Add window size
     if ($cluster_window_size) {
-        push @commands,
-          q{--cluster-window-size} . $SPACE . $cluster_window_size;
+        push @commands, q{--cluster-window-size} . $SPACE . $cluster_window_size;
     }
 
     ## Add filters
@@ -2036,8 +2040,7 @@ sub gatk_genomicsdbimport {
     );
 
     ## Output
-    push @commands,
-      q{--genomicsdb-workspace-path} . $SPACE . $genomicsdb_workspace_path;
+    push @commands, q{--genomicsdb-workspace-path} . $SPACE . $genomicsdb_workspace_path;
 
     push @commands,
       unix_standard_streams(
@@ -2189,4 +2192,125 @@ sub gatk_gathervcfscloud {
 
     return @commands;
 }
+
+sub gatk_indexfeaturefile {
+
+## Function : Perl wrapper for writing GATK IndexFeatureFile recipe to $FILEHANDLE. Based on GATK 4.0.10.
+## Returns  : @commands
+## Arguments: $FILEHANDLE                            => Sbatch filehandle to write to
+##          : $infile_path                           => Path to feature file
+##          : $java_use_large_pages                  => Use java large pages
+##          : $memory_allocation                     => Memory allocation to run Gatk
+##          : $outfile_path                          => Path to index
+##          : $stderrfile_path                       => Stderrfile path
+##          : $temp_directory                        => Redirect tmp files to java temp
+##          : $verbosity                             => Set the minimum level of logging
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $memory_allocation;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $temp_directory;
+
+    ## Default(s)
+    my $java_use_large_pages;
+    my $verbosity;
+
+    my $tmpl = {
+        FILEHANDLE  => { store => \$FILEHANDLE, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        java_use_large_pages => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => {
+            store       => \$memory_allocation,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        verbosity => {
+            allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$verbosity,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## GATK GatherVcfsCloud
+
+    # Stores commands depending on input parameters
+    my @commands = qw{ gatk };
+
+    ## Add java options
+    gatk_java_options(
+        {
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+        }
+    );
+
+    ## Add tool command
+    push @commands, q{IndexFeatureFile};
+
+    ## Add infile
+    push @commands, q{--feature-file} . $SPACE . $infile_path;
+
+    ## Add common options
+    gatk_common_options(
+        {
+            commands_ref   => \@commands,
+            temp_directory => $temp_directory,
+            verbosity      => $verbosity,
+        }
+    );
+
+    ## Add output path
+    if ($outfile_path) {
+        push @commands, q{--output} . $SPACE . $outfile_path;
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
+    return @commands;
+}
+
 1;
