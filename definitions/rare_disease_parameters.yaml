@@ -1457,7 +1457,7 @@ gatk_variantevalexome:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
+  file_tag: _evalexome
   outfile_suffix: ".varianteval"
   program_name_path:
    - bedtools
