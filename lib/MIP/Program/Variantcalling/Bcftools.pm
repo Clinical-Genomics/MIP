@@ -27,12 +27,26 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.010;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ bcftools_annotate bcftools_call bcftools_concat bcftools_create_reheader_samples_file bcftools_filter bcftools_index bcftools_merge bcftools_mpileup bcftools_norm bcftools_reheader bcftools_rename_vcf_samples bcftools_roh bcftools_stats bcftools_view bcftools_view_and_index_vcf};
-
+    our @EXPORT_OK = qw{
+      bcftools_annotate
+      bcftools_call
+      bcftools_concat
+      bcftools_create_reheader_samples_file
+      bcftools_filter
+      bcftools_index
+      bcftools_merge
+      bcftools_mpileup
+      bcftools_norm
+      bcftools_reheader
+      bcftools_rename_vcf_samples
+      bcftools_roh
+      bcftools_stats
+      bcftools_view
+      bcftools_view_and_index_vcf
+    };
 }
 
 ## Constants
@@ -90,17 +104,15 @@ sub bcftools_annotate {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
+        regions_ref    => { default => [], store => \$regions_ref, strict_type => 1, },
         remove_ids_ref => {
             default     => [],
             defined     => 1,
             store       => \$remove_ids_ref,
             strict_type => 1,
         },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -238,11 +250,9 @@ sub bcftools_call {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -284,8 +294,7 @@ sub bcftools_call {
 
     if ( @{$form_fields_ref} ) {
 
-        push @commands, q{--format-fields} . $SPACE . join $COMMA,
-          @{$form_fields_ref};
+        push @commands, q{--format-fields} . $SPACE . join $COMMA, @{$form_fields_ref};
     }
 
     if ($variants_only) {
@@ -376,17 +385,15 @@ sub bcftools_concat {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        rm_dups => {
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        rm_dups     => {
             allow       => [qw{ 0 snps indels both all none }],
             default     => q{all},
             store       => \$rm_dups,
             strict_type => 1,
         },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -687,11 +694,9 @@ sub bcftools_index {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -795,11 +800,9 @@ sub bcftools_merge {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -936,11 +939,9 @@ sub bcftools_mpileup {
             store       => \$referencefile_path,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -978,8 +979,7 @@ sub bcftools_mpileup {
 
     if ( @{$output_tags_ref} ) {
 
-        push @commands, q{--annotate} . $SPACE . join $COMMA,
-          @{$output_tags_ref};
+        push @commands, q{--annotate} . $SPACE . join $COMMA, @{$output_tags_ref};
     }
 
     # Reference sequence file
@@ -1077,11 +1077,9 @@ sub bcftools_norm {
             store       => \$reference_path,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -1112,8 +1110,7 @@ sub bcftools_norm {
     ## Options
     if ($multiallelic) {
 
-        push @commands,
-          q{--multiallelics} . $SPACE . $multiallelic . $multiallelic_type;
+        push @commands, q{--multiallelics} . $SPACE . $multiallelic . $multiallelic_type;
     }
 
     if ($reference_path) {
@@ -1174,14 +1171,12 @@ sub bcftools_reheader {
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE   => { store => \$FILEHANDLE, },
-        infile_path  => { store => \$infile_path, strict_type => 1, },
-        outfile_path => { store => \$outfile_path, strict_type => 1, },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        FILEHANDLE   => { store   => \$FILEHANDLE, },
+        infile_path  => { store   => \$infile_path, strict_type => 1, },
+        outfile_path => { store   => \$outfile_path, strict_type => 1, },
+        regions_ref  => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -1288,11 +1283,9 @@ sub bcftools_rename_vcf_samples {
             store       => \$index_type,
             strict_type => 1,
         },
-        infile =>
-          { defined => 1, required => 1, store => \$infile, strict_type => 1, },
-        outfile_path_prefix =>
-          { strict_type => 1, store => \$outfile_path_prefix, },
-        output_type => {
+        infile => { defined => 1, required => 1, store => \$infile, strict_type => 1, },
+        outfile_path_prefix => { strict_type => 1, store => \$outfile_path_prefix, },
+        output_type         => {
             allow       => [qw{ b u z v }],
             default     => q{v},
             store       => \$output_type,
@@ -1368,7 +1361,7 @@ sub bcftools_create_reheader_samples_file {
     my $temp_directory;
 
     my $tmpl = {
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
         sample_ids_ref => {
             default     => [],
             defined     => 1,
@@ -1461,11 +1454,9 @@ sub bcftools_roh {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -1582,11 +1573,9 @@ sub bcftools_stats {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -1645,8 +1634,11 @@ sub bcftools_view {
 ##          : $exclude_types_ref      => Exclude comma-separated list of variant types: snps,indels,mnps,other
 ##          : $exclude                => Exclude sites for which the expression is true
 ##          : $FILEHANDLE             => Filehandle to write to
+##          : $genotype               => Genotype to include (hom|het|miss). Prefix with "^" for exclude
 ##          : $include                => Include only sites for which the expression is true
 ##          : $infile_path            => Infile path to read from
+##          : $max_alleles            => Max alleles listed in REF and ALT columns
+##          : $min_alleles            => Min alleles listed in REF and ALT columns
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $regions_ref            => Regions to process {REF}
@@ -1655,6 +1647,7 @@ sub bcftools_view {
 ##          : $stderrfile_path        => Stderr file path to write to
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile file path to write to
+##          : $types                  => Comma separated variant types to include (snps|indels|mnps|other), based on based on REF,ALT
 
     my ($arg_href) = @_;
 
@@ -1663,8 +1656,11 @@ sub bcftools_view {
     my $exclude_types_ref;
     my $exclude;
     my $FILEHANDLE;
+    my $genotype;
     my $include;
     my $infile_path;
+    my $max_alleles;
+    my $min_alleles;
     my $outfile_path;
     my $regions_ref;
     my $samples_file_path;
@@ -1672,6 +1668,7 @@ sub bcftools_view {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $types;
 
     ## Default(s)
     my $output_type;
@@ -1682,9 +1679,23 @@ sub bcftools_view {
           { default => [], store => \$apply_filters_ref, strict_type => 1, },
         exclude_types_ref =>
           { default => [], store => \$exclude_types_ref, strict_type => 1, },
-        exclude      => { store => \$exclude,      strict_type => 1, },
-        include      => { store => \$include,      strict_type => 1, },
-        infile_path  => { store => \$infile_path,  strict_type => 1, },
+        exclude  => { store => \$exclude, strict_type => 1, },
+        genotype => {
+            store       => \$genotype,
+            strict_type => 1,
+        },
+        include     => { store => \$include,     strict_type => 1, },
+        infile_path => { store => \$infile_path, strict_type => 1, },
+        max_alleles => {
+            allow       => [ undef, qr/ ^\d+$ /xms ],
+            store       => \$max_alleles,
+            strict_type => 1,
+        },
+        min_alleles => {
+            allow       => [ undef, qr/ ^\d+$ /xms ],
+            store       => \$min_alleles,
+            strict_type => 1,
+        },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
         output_type  => {
             allow       => [qw{ b u z v}],
@@ -1692,11 +1703,9 @@ sub bcftools_view {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -1705,12 +1714,16 @@ sub bcftools_view {
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        types           => {
+            store       => \$types,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = qw{ bcftools view };
+    my @commands = q{bcftools view};
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -1726,14 +1739,12 @@ sub bcftools_view {
     ## Options
     if ( @{$apply_filters_ref} ) {
 
-        push @commands, q{--apply-filters} . $SPACE . join $COMMA,
-          @{$apply_filters_ref};
+        push @commands, q{--apply-filters} . $SPACE . join $COMMA, @{$apply_filters_ref};
     }
 
     if ( @{$exclude_types_ref} ) {
 
-        push @commands, q{--exclude-types} . $SPACE . join $COMMA,
-          @{$exclude_types_ref};
+        push @commands, q{--exclude-types} . $SPACE . join $COMMA, @{$exclude_types_ref};
     }
 
     if ($exclude) {
@@ -1741,15 +1752,36 @@ sub bcftools_view {
         push @commands, q{--exclude} . $SPACE . $exclude;
     }
 
+    if ($genotype) {
+
+        push @commands, q{--genotype} . $SPACE . $genotype;
+    }
+
     if ($include) {
 
         push @commands, q{--include} . $SPACE . $include;
+    }
+
+    if ($max_alleles) {
+
+        push @commands, q{--max-alleles} . $SPACE . $max_alleles;
+    }
+
+    if ($min_alleles) {
+
+        push @commands, q{--min-alleles} . $SPACE . $min_alleles;
     }
 
     if ($outfile_path) {
 
         push @commands, q{--output-file} . $SPACE . $outfile_path;
     }
+
+    if ($types) {
+
+        push @commands, q{--types} . $SPACE . $types;
+    }
+
     ## Infile
     if ($infile_path) {
 
@@ -1774,7 +1806,6 @@ sub bcftools_view {
     );
 
     return @commands;
-
 }
 
 sub bcftools_view_and_index_vcf {
@@ -1820,9 +1851,8 @@ sub bcftools_view_and_index_vcf {
             store       => \$index_type,
             strict_type => 1,
         },
-        outfile_path_prefix =>
-          { store => \$outfile_path_prefix, strict_type => 1, },
-        output_type => {
+        outfile_path_prefix => { store => \$outfile_path_prefix, strict_type => 1, },
+        output_type         => {
             allow       => [qw{ b u z v }],
             default     => q{v},
             store       => \$output_type,
@@ -1842,8 +1872,7 @@ sub bcftools_view_and_index_vcf {
 
     if ( defined $outfile_path_prefix ) {
 
-        $outfile_path =
-          $outfile_path_prefix . $output_type_ending{$output_type};
+        $outfile_path = $outfile_path_prefix . $output_type_ending{$output_type};
     }
 
     bcftools_view(

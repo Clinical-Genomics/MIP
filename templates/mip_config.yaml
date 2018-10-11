@@ -202,7 +202,6 @@ sv_combinevariantcallsets_bcf_file: 1
 sv_genmod_annotate_regions: 1
 sv_genmod_filter: 1
 sv_genmod_models_family_type: cmms
-sv_rankvariant_binary_file: 1
 sv_svdb_merge_prioritize: manta,delly,cnvnator,tiddit
 sv_svdb_query: 1
 sv_vcfanno: 1

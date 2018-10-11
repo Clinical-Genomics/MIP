@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_asereadcounter };
@@ -143,11 +143,14 @@ sub analysis_gatk_asereadcounter {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Gatk qw{ gatk_asereadcounter };
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_indexfeaturefile };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
 
     ## Constants
-    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+    Readonly my $ALLELES                => 2;
+    Readonly my $JAVA_MEMORY_ALLOCATION => 14;
 
     ### PREPROCESSING
 
@@ -166,12 +169,15 @@ sub analysis_gatk_asereadcounter {
             temp_directory => $temp_directory,
         }
     );
-    my $variant_infile_name          = ${ $io{in}{file_names} }[0];
-    my @variant_infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my $variant_infile_path          = ${ $io{in}{file_paths} }[0];
+    my $variant_infile_name           = ${ $io{in}{file_names} }[0];
+    my $variant_infile_name_prefix    = $io{in}{file_name_prefix};
+    my $variant_infile_path           = ${ $io{in}{file_paths} }[0];
+    my $variant_suffix                = $io{in}{file_suffix};
+    my $temp_variant_file_path_prefix = $io{temp}{file_path_prefix};
+    my $temp_variant_file_path        = $temp_variant_file_path_prefix . $variant_suffix;
 
     ## Get bam infile from GATK BaseRecalibration
-    my %bam_io = get_io_files(
+    my %alignment_io = get_io_files(
         {
             id             => $sample_id,
             file_info_href => $file_info_href,
@@ -181,11 +187,11 @@ sub analysis_gatk_asereadcounter {
             temp_directory => $temp_directory,
         }
     );
-    my $bam_infile_path_prefix      = $bam_io{out}{file_path_prefix};
-    my $bam_suffix                  = $bam_io{out}{file_suffix};
-    my $bam_infile_path             = $bam_infile_path_prefix . $bam_suffix;
-    my $temp_bam_infile_path_prefix = $bam_io{temp}{file_path_prefix};
-    my $temp_bam_infile_path = $temp_bam_infile_path_prefix . $bam_suffix;
+    my $alignment_file_path_prefix      = $alignment_io{out}{file_path_prefix};
+    my $alignment_suffix                = $alignment_io{out}{file_suffix};
+    my $alignment_file_path             = $alignment_file_path_prefix . $alignment_suffix;
+    my $temp_alignment_file_path_prefix = $alignment_io{temp}{file_path_prefix};
+    my $temp_alignment_file_path = $temp_alignment_file_path_prefix . $alignment_suffix;
 
     my $job_id_chain = get_program_attributes(
         {
@@ -198,13 +204,12 @@ sub analysis_gatk_asereadcounter {
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
 
     ## Get module parameters
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Outpaths
     ## Set and get the io files per chain, id and stream
@@ -215,7 +220,7 @@ sub analysis_gatk_asereadcounter {
                 chain_id               => $job_id_chain,
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref => \@variant_infile_name_prefixes,
+                file_name_prefixes_ref => [$variant_infile_name_prefix],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 program_name           => $program_name,
@@ -224,6 +229,7 @@ sub analysis_gatk_asereadcounter {
         )
     );
     my $outfile_path = ${ $io{out}{file_paths} }[0];
+    my $outdir_path  = $io{out}{dir_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -253,30 +259,52 @@ sub analysis_gatk_asereadcounter {
     migrate_file(
         {
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $bam_infile_path_prefix
-              . substr( $bam_suffix, 0, 2 )
+            infile_path => $alignment_file_path_prefix
+              . substr( $alignment_suffix, 0, 2 )
               . $ASTERISK,
             outfile_path => $temp_directory,
         }
     );
     say {$FILEHANDLE} q{wait} . $NEWLINE;
 
-    ## GATK ASEReadCounter
-    say {$FILEHANDLE} q{## GATK ASEReadCounter};
+    ## Restrict analysis to biallelic, heterogenous SNPs
+    say {$FILEHANDLE} q{## Bcftools view};
+    bcftools_view(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            genotype     => q{het},
+            infile_path  => $variant_infile_path,
+            max_alleles  => $ALLELES,
+            min_alleles  => $ALLELES,
+            outfile_path => $temp_variant_file_path,
+            types        => q{snps},
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
-    gatk_asereadcounter(
+    ## Index VCF
+    say {$FILEHANDLE} q{## GATK IndexFeatureFile};
+    gatk_indexfeaturefile(
         {
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $temp_bam_infile_path,
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            outfile_path      => $outfile_path,
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            variant_infile_path => $variant_infile_path,
-            verbosity           => $active_parameter_href->{gatk_logging_level},
-            temp_directory      => $temp_directory,
+            infile_path => $temp_variant_file_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## GATK ASEReadCounter
+    say {$FILEHANDLE} q{## GATK ASEReadCounter};
+    gatk_asereadcounter(
+        {
+            FILEHANDLE           => $FILEHANDLE,
+            infile_path          => $temp_alignment_file_path,
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            outfile_path         => $outfile_path,
+            referencefile_path   => $active_parameter_href->{human_genome_reference},
+            variant_infile_path  => $temp_variant_file_path,
+            verbosity            => $active_parameter_href->{gatk_logging_level},
+            temp_directory       => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
