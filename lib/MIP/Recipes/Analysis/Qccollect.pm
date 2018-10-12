@@ -124,7 +124,6 @@ sub analysis_qccollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
@@ -189,6 +188,8 @@ sub analysis_qccollect {
             source_environment_commands_ref => \@source_environment_cmds,
         }
     );
+
+    ### SHELL:
 
     my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{qccollect.log};
 

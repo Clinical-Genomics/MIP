@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_multiqc };
@@ -116,21 +116,28 @@ sub analysis_multiqc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
     use MIP::Program::Qc::Multiqc qw{ multiqc };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record qw{ add_program_metafile_to_sample_info };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program mode
+    ## Unpack parameters
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
     my $program_mode = $active_parameter_href->{$program_name};
-
-    ## Alias
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -159,9 +166,9 @@ sub analysis_multiqc {
         }
     );
 
-    ## Assign directories
-    my $program_outdirectory_name =
-      $parameter_href->{$program_name}{outdir_name};
+    ### SHELL:
+
+    say {$FILEHANDLE} q{## Multiqc};
 
     ## Always analyse case
     my @report_ids = ($family_id);
@@ -173,18 +180,19 @@ sub analysis_multiqc {
         push @report_ids, @{ $active_parameter_href->{sample_ids} };
     }
 
+    my $indir_path = $active_parameter_href->{outdata_dir};
+
   REPORT_ID:
     foreach my $report_id (@report_ids) {
 
         ## Assign directories
-        my $indirectory  = catdir( $active_parameter_href->{outdata_dir} );
-        my $outdirectory = catdir( $active_parameter_href->{outdata_dir},
-            $report_id, $program_outdirectory_name );
+        my $outdir_path = catdir( $active_parameter_href->{outdata_dir},
+            $report_id, $program_name );
 
         ## Analyse sample id only for this report
         if ( $report_id ne $family_id ) {
 
-            $indirectory =
+            $indir_path =
               catdir( $active_parameter_href->{outdata_dir}, $report_id );
         }
 
@@ -192,8 +200,8 @@ sub analysis_multiqc {
             {
                 FILEHANDLE  => $FILEHANDLE,
                 force       => 1,
-                indir_path  => $indirectory,
-                outdir_path => $outdirectory,
+                indir_path  => $indir_path,
+                outdir_path => $outdir_path,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -204,15 +212,13 @@ sub analysis_multiqc {
             add_program_metafile_to_sample_info(
                 {
                     metafile_tag => $report_id,
-                    path => catfile( $outdirectory, q{multiqc_report.html} ),
+                    path => catfile( $outdir_path, q{multiqc_report.html} ),
                     program_name     => q{multiqc},
                     sample_info_href => $sample_info_href,
                 }
             );
         }
-
     }
-
     close $FILEHANDLE;
 
     if ( $program_mode == 1 ) {

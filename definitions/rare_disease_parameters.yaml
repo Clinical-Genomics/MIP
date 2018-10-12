@@ -1891,8 +1891,7 @@ multiqc:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
-  outdir_name: multiqc
+  file_tag: _multiqc
   program_name_path:
    - multiqc
   type: program
