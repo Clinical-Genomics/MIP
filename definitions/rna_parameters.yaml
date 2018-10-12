@@ -96,7 +96,7 @@ module_core_number:
   default:
     bootstrapann: 1
     fastqc: 0
-    gatk_asereadcounter: 1
+    gatk_asereadcounter: 2
     gatk_baserecalibration: 16
     gatk_haplotypecaller: 16
     gatk_splitncigarreads: 16

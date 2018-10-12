@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantfiltration };
@@ -180,13 +180,12 @@ sub analysis_gatk_variantfiltration {
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
 
     ## Get module parameters
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Outpaths
     ## Set and get the io files per chain, id and stream
@@ -234,22 +233,18 @@ sub analysis_gatk_variantfiltration {
     say {$FILEHANDLE} q{## GATK VariantFiltration};
     gatk_variantfiltration(
         {
-            cluster_size =>
-              $active_parameter_href->{gatk_variantfiltration_cluster_size},
-            cluster_window_size => $active_parameter_href
-              ->{gatk_variantfiltration_cluster_window_size},
-            FILEHANDLE => $FILEHANDLE,
-            filter_href =>
-              $active_parameter_href->{gatk_variantfiltration_filter},
+            cluster_size => $active_parameter_href->{gatk_variantfiltration_cluster_size},
+            cluster_window_size =>
+              $active_parameter_href->{gatk_variantfiltration_cluster_window_size},
+            FILEHANDLE  => $FILEHANDLE,
+            filter_href => $active_parameter_href->{gatk_variantfiltration_filter},
             infile_path => $infile_path,
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            outfile_path      => $outfile_path,
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            temp_directory => $temp_directory,
-            verbosity      => $active_parameter_href->{gatk_logging_level},
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            outfile_path         => $outfile_path,
+            referencefile_path   => $referencefile_path,
+            temp_directory       => $temp_directory,
+            verbosity            => $active_parameter_href->{gatk_logging_level},
         }
     );
     say {$FILEHANDLE} $NEWLINE;

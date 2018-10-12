@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_salmon_quant };
@@ -174,27 +174,25 @@ sub analysis_salmon_quant {
             program_name   => $program_name,
         }
     );
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                file_name_prefixes_ref =>
-                  \@{ $infile_lane_prefix_href->{$sample_id} },
-                outdata_dir    => $active_parameter_href->{outdata_dir},
-                parameter_href => $parameter_href,
-                program_name   => $program_name,
-                temp_directory => $temp_directory,
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => \@{ $infile_lane_prefix_href->{$sample_id} },
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                program_name           => $program_name,
+                temp_directory         => $temp_directory,
             }
         )
     );
@@ -294,6 +292,7 @@ sub analysis_salmon_quant {
             salmon_quant(
                 {
                     FILEHANDLE        => $FILEHANDLE,
+                    gc_bias           => 1,
                     index_path        => $referencefile_dir_path,
                     outfile_path      => $file_path_prefix,
                     read_1_fastq_path => $fastq_files[0],
@@ -305,6 +304,7 @@ sub analysis_salmon_quant {
             salmon_quant(
                 {
                     FILEHANDLE        => $FILEHANDLE,
+                    gc_bias           => 1,
                     index_path        => $referencefile_dir_path,
                     outfile_path      => $file_path_prefix,
                     read_1_fastq_path => $fastq_files[0],
