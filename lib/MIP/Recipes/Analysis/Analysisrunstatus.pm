@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_analysisrunstatus };
@@ -169,8 +169,8 @@ sub analysis_analysisrunstatus {
     ## Collects all programs file path(s) created by MIP located in %sample_info
     get_path_entries(
         {
-            sample_info_href => $sample_info_href,
             paths_ref        => \@paths,
+            sample_info_href => $sample_info_href,
         }
     );
 
@@ -198,10 +198,12 @@ sub analysis_analysisrunstatus {
     }
 
     my %files_to_check = (
-        q{WARNING Unable to fork} => $variant_effect_predictor_file,
+        q{FAIL}                   => $qccollect_file,
         q{pedigree warning:}      => $peddy_file,
-        q{FAIL}                   => $qccollect_file
+        q{WARNING Unable to fork} => $variant_effect_predictor_file,
     );
+
+  CHECK_FILE:
     while ( my ( $file_string_to_match, $file ) = each %files_to_check ) {
 
         _check_string_within_file(
@@ -215,8 +217,8 @@ sub analysis_analysisrunstatus {
 
     ## Test integrity of vcf data keys in header and body
     my %vcf_file = (
-        vcf_file    => [qw{ clinical research }],
         sv_vcf_file => [qw{ clinical research }],
+        vcf_file    => [qw{ clinical research }],
     );
 
     _check_vcf_header_and_keys(
@@ -257,25 +259,25 @@ sub _eval_status_flag {
 
 ## Function : Eval status flag
 ## Returns  :
-## Arguments: $sample_info_file => Sample info file for the analysis
-##          : $FILEHANDLE => Filehandle to write to
+## Arguments: $FILEHANDLE       => Filehandle to write to
+##          : $sample_info_file => Sample info file for the analysis
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_info_file;
     my $FILEHANDLE;
+    my $sample_info_file;
 
     my $tmpl = {
-        sample_info_file => {
-            defined  => 1,
-            required => 1,
-            store    => \$sample_info_file,
-        },
         FILEHANDLE => {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
+        },
+        sample_info_file => {
+            defined  => 1,
+            required => 1,
+            store    => \$sample_info_file,
         },
     };
 
@@ -376,27 +378,27 @@ sub _check_string_within_file {
 
 ## Function : Test presence of string within file
 ## Returns  :
-## Arguments: $FILEHANDLE      => Filehandle to write to
-##          : $file            => Files to check
+## Arguments: $file            => Files to check
+##          : $FILEHANDLE      => Filehandle to write to
 ##          : $string_to_match => String to match within file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
     my $file;
+    my $FILEHANDLE;
     my $string_to_match;
 
     my $tmpl = {
-        FILEHANDLE => {
-            defined  => 1,
-            required => 1,
-            store    => \$FILEHANDLE,
-        },
         file => {
             required    => 1,
             store       => \$file,
             strict_type => 1,
+        },
+        FILEHANDLE => {
+            defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
         },
         string_to_match => {
             defined     => 1,
