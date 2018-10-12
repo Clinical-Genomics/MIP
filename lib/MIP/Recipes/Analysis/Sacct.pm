@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sacct };
@@ -117,20 +117,26 @@ sub analysis_sacct {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Workloadmanager::Slurm qw{ slurm_sacct };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program mode
-    my $program_mode = $active_parameter_href->{$program_name};
-
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) =
       get_module_parameters(
         {
@@ -157,6 +163,8 @@ sub analysis_sacct {
             program_name          => $program_name,
         }
     );
+
+### SHELL:
 
     slurm_sacct(
         {
