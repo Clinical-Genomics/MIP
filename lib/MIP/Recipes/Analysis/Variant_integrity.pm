@@ -135,7 +135,7 @@ sub analysis_variant_integrity {
       qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
     use MIP::Program::Variantcalling::Variant_integrity
       qw{ variant_integrity_mendel variant_integrity_father };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info};
+    use MIP::QC::Record qw{ add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
