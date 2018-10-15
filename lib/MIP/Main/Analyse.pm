@@ -2,9 +2,7 @@ package MIP::Main::Analyse;
 
 #### Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
 
-#### Copyright 2011 Henrik Stranneheim
-
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
@@ -65,7 +63,7 @@ use MIP::Update::Programs qw{ update_program_mode_with_dry_run_all };
 ## Recipes
 use MIP::Recipes::Pipeline::Rd_dna qw{ pipeline_rd_dna };
 use MIP::Recipes::Pipeline::Rna qw{ pipeline_rna };
-use MIP::Recipes::Pipeline::Vcf_rerun qw{ pipeline_vcf_rerun };
+use MIP::Recipes::Pipeline::Rd_dna_vcf_rerun qw{ pipeline_rd_dna_vcf_rerun };
 
 BEGIN {
 
@@ -610,7 +608,7 @@ sub mip_analyse {
     if ( $consensus_analysis_type eq q{vrn} ) {
 
         $initiation_file =
-          catfile( $Bin, qw{ definitions vcf_rerun_initiation_map.yaml } );
+          catfile( $Bin, qw{ definitions rd_dna_vcf_rerun_initiation_map.yaml } );
     }
     parse_start_with_program(
         {
@@ -734,7 +732,7 @@ sub mip_analyse {
         $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
 
         ## Pipeline recipe for rna data
-        pipeline_vcf_rerun(
+        pipeline_rd_dna_vcf_rerun(
             {
                 active_parameter_href   => \%active_parameter,
                 broadcasts_ref          => \@broadcasts,

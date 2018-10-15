@@ -1,4 +1,4 @@
-package MIP::Cli::Mip::Analyse::Vcf_rerun;
+package MIP::Cli::Mip::Analyse::Rd_dna_vcf_rerun;
 
 use Carp;
 use File::Spec::Functions qw{ catfile };
@@ -23,12 +23,12 @@ our $VERSION = 1.01;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
-command_short_description(q{Vcf rerun analysis});
+command_short_description(q{Rare disease DNA vcf rerun analysis});
 
 command_long_description(
-    q{Vcf rerun analysis on wes, wgs or mixed sequence data});
+    q{Rare disease DNA vcf rerun analysis on wes, wgs or mixed sequence data});
 
-command_usage(q{mip <analyse> <vcf_rerun> <family_id> --config <config_file> });
+command_usage(q{mip <analyse> <rd_dna_vcf_rerun> <family_id> --config <config_file> });
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -52,7 +52,7 @@ sub run {
     my @definition_files = (
         catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
         catfile( $Bin, qw{ definitions analyse_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions vcf_rerun_parameters.yaml } ),
+        catfile( $Bin, qw{ definitions rd_dna_vcf_rerun_parameters.yaml } ),
     );
 
     ## Non mandatory parameter definition keys to check
@@ -98,7 +98,7 @@ sub run {
     my %dependency_tree = load_yaml(
         {
             yaml_file =>
-              catfile( $Bin, qw{ definitions vcf_rerun_initiation_map.yaml } ),
+              catfile( $Bin, qw{ definitions rd_dna_vcf_rerun_initiation_map.yaml } ),
         }
     );
 

@@ -1,4 +1,4 @@
-package MIP::Recipes::Pipeline::Vcf_rerun;
+package MIP::Recipes::Pipeline::Rd_dna_vcf_rerun;
 
 use Carp;
 use charnames qw{ :full :short };
@@ -27,7 +27,7 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_vcf_rerun };
+    our @EXPORT_OK = qw{ pipeline_rd_dna_vcf_rerun };
 }
 
 ## Constants
@@ -35,7 +35,7 @@ Readonly my $CLOSE_BRACKET => q{]};
 Readonly my $OPEN_BRACKET  => q{[};
 Readonly my $SPACE         => q{ };
 
-sub pipeline_vcf_rerun {
+sub pipeline_rd_dna_vcf_rerun {
 
 ## Function : Pipeline recipe for wes and or wgs data analysis.
 ## Returns  :
@@ -146,7 +146,7 @@ sub pipeline_vcf_rerun {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Pipeline qw{ check_vcf_rerun };
+    use MIP::Check::Pipeline qw{ check_rd_dna_vcf_rerun };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_program_for_user };
@@ -176,11 +176,11 @@ sub pipeline_vcf_rerun {
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
-    use MIP::Recipes::Build::Vcf_rerun qw{build_vcf_rerun_meta_files};
+    use MIP::Recipes::Build::Rd_dna_vcf_rerun qw{build_rd_dna_vcf_rerun_meta_files};
     use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
 
     ### Pipeline specific checks
-    check_vcf_rerun(
+    check_rd_dna_vcf_rerun(
         {
             active_parameter_href   => $active_parameter_href,
             broadcasts_ref          => $broadcasts_ref,
@@ -196,7 +196,7 @@ sub pipeline_vcf_rerun {
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
-    build_vcf_rerun_meta_files(
+    build_rd_dna_vcf_rerun_meta_files(
         {
             active_parameter_href   => $active_parameter_href,
             file_info_href          => $file_info_href,

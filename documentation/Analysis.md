@@ -24,7 +24,7 @@ When not supplying the ``-rio`` flag MIP will copy in and out files from HDS and
 
 ## Start reannotation and reranking from vcf files
 ```Bash
-$ mip analyse vcf_rerun --config GRCh37_config_vcf_rerun-v1.0-.yaml --vcf_rerun_file vcf_BOTH.bcf --sv_vcf_rerun_file vcf_SV.bcf
+$ mip analyse rd_dna_vcf_rerun --config GRCh37_config_rd_dna_vcf_rerun-v1.0-.yaml --vcf_rerun_file vcf_BOTH.bcf --sv_vcf_rerun_file vcf_SV.bcf
 ```
 
 ### Excluding a program from the analysis

@@ -5,21 +5,21 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [7.0.0]
 - Modify parsing of pedigree to allow new RNA DE keys Fix https://github.com/Clinical-Genomics/MIP/issues/554
 - Two-step model for reruns. Fix https://github.com/Clinical-Genomics/MIP/issues/546
-- Add input SV vcf for vcf_rerun to qc_sample_info. Fix https://github.com/Clinical-Genomics/MIP/issues/548
+- Add input SV vcf for rd_dna_vcf_rerun to qc_sample_info. Fix https://github.com/Clinical-Genomics/MIP/issues/548
 - Add Expansion Hunter Fix https://github.com/Clinical-Genomics/MIP/issues/442
 - One case one Multiqc report Fix https://github.com/Clinical-Genomics/MIP/issues/515
 - Added exclude contig option. Fix https://github.com/Clinical-Genomics/MIP/issues/509.
 
 **New Pipeline**
 - rna
-- vcf_rerun
+- rd_dna_vcf_rerun
 
 
 **New recipes**
 *Rd_dna*
 - sv_annotate
 
-*vcf_rerun*
+*rd_dna_vcf_rerun*
 - sv_vcf_rerun_reformat
 - vcf_rerun_reformat
 

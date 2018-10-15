@@ -9,12 +9,12 @@ $ mip
 This will show the usage, global parameters and all available commands and subcommands.
 There is currently two main commands:
 - Installation
-  - rare_disease
+  - rd_dna
   - rna
 - Analyse
-  - rare_disease
+  - rd_dna
   - rna
-  - vcf_rerun
+  - rd_dna_vcf_rerun
 There are three levels of parameters:
 - Global
 - Commands
