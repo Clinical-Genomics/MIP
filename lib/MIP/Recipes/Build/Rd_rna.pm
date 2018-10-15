@@ -1,4 +1,4 @@
-package MIP::Recipes::Build::Rna;
+package MIP::Recipes::Build::Rd_rna;
 
 use Carp;
 use charnames qw{ :full :short };
@@ -22,7 +22,7 @@ BEGIN {
     our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ build_rna_meta_files };
+    our @EXPORT_OK = qw{ build_rd_rna_meta_files };
 }
 
 ## Constants
@@ -30,9 +30,9 @@ Readonly my $SPACE     => q{ };
 Readonly my $EMPTY_STR => q{};
 Readonly my $TAB       => qq{\t};
 
-sub build_rna_meta_files {
+sub build_rd_rna_meta_files {
 
-## Function : Pipeline build recipes for rna data analysis.
+## Function : Pipeline build recipes for rare disease RNA data analysis.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}

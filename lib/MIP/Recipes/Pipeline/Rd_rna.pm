@@ -1,4 +1,4 @@
-package MIP::Recipes::Pipeline::Rna;
+package MIP::Recipes::Pipeline::Rd_rna;
 
 use Carp;
 use charnames qw{ :full :short };
@@ -24,7 +24,7 @@ BEGIN {
     our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_rna };
+    our @EXPORT_OK = qw{ pipeline_rd_rna };
 }
 
 ## Constants
@@ -32,9 +32,9 @@ Readonly my $CLOSE_BRACKET => q{]};
 Readonly my $OPEN_BRACKET  => q{[};
 Readonly my $SPACE         => q{ };
 
-sub pipeline_rna {
+sub pipeline_rd_rna {
 
-## Function : Pipeline recipe for rna data analysis.
+## Function : Pipeline recipe for rare disease rna data analysis.
 ## Returns  :
 
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
@@ -144,7 +144,7 @@ sub pipeline_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Pipeline qw{ check_rna };
+    use MIP::Check::Pipeline qw{ check_rd_rna };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_program_for_user };
@@ -170,10 +170,10 @@ sub pipeline_rna {
     use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
     use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
-    use MIP::Recipes::Build::Rna qw{build_rna_meta_files};
+    use MIP::Recipes::Build::Rd_rna qw{build_rd_rna_meta_files};
 
     ### Pipeline specific checks
-    check_rna(
+    check_rd_rna(
         {
             active_parameter_href           => $active_parameter_href,
             broadcasts_ref                  => $broadcasts_ref,
@@ -190,7 +190,7 @@ sub pipeline_rna {
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
-    build_rna_meta_files(
+    build_rd_rna_meta_files(
         {
             active_parameter_href   => $active_parameter_href,
             file_info_href          => $file_info_href,

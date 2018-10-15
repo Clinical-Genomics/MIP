@@ -62,7 +62,7 @@ use MIP::Update::Programs qw{ update_program_mode_with_dry_run_all };
 
 ## Recipes
 use MIP::Recipes::Pipeline::Rd_dna qw{ pipeline_rd_dna };
-use MIP::Recipes::Pipeline::Rna qw{ pipeline_rna };
+use MIP::Recipes::Pipeline::Rd_rna qw{ pipeline_rd_rna };
 use MIP::Recipes::Pipeline::Rd_dna_vcf_rerun qw{ pipeline_rd_dna_vcf_rerun };
 
 BEGIN {
@@ -597,11 +597,11 @@ sub mip_analyse {
     my $initiation_file =
       catfile( $Bin, qw{ definitions rd_dna_initiation_map.yaml } );
 
-    # For RNA pipeline
+    # For Rd RNA pipeline
     if ( $consensus_analysis_type eq q{wts} ) {
 
         $initiation_file =
-          catfile( $Bin, qw{ definitions rna_initiation_map.yaml } );
+          catfile( $Bin, qw{ definitions rd_rna_initiation_map.yaml } );
     }
 
     # For Vcf rerun pipeline
@@ -702,13 +702,13 @@ sub mip_analyse {
         }
     );
 
-### RNA
+### Rd RNA
     if ( $consensus_analysis_type eq q{wts} ) {
 
         $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
 
         ## Pipeline recipe for rna data
-        pipeline_rna(
+        pipeline_rd_rna(
             {
                 active_parameter_href           => \%active_parameter,
                 broadcasts_ref                  => \@broadcasts,
@@ -731,7 +731,7 @@ sub mip_analyse {
 
         $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
 
-        ## Pipeline recipe for rna data
+        ## Pipeline recipe for DNA vcf rerun data
         pipeline_rd_dna_vcf_rerun(
             {
                 active_parameter_href   => \%active_parameter,
@@ -757,7 +757,7 @@ sub mip_analyse {
 
         $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
 
-        ## Pipeline recipe for rna data
+        ## Pipeline recipe for DNA data
         pipeline_rd_dna(
             {
                 active_parameter_href           => \%active_parameter,

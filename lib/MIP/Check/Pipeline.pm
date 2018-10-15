@@ -23,7 +23,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_rd_dna check_rna check_rd_dna_vcf_rerun };
+    our @EXPORT_OK = qw{ check_rd_dna check_rd_rna check_rd_dna_vcf_rerun };
 }
 
 ## Constants
@@ -375,9 +375,9 @@ sub check_rd_dna {
     return;
 }
 
-sub check_rna {
+sub check_rd_rna {
 
-## Function : Rna pipeline specific checks and parsing
+## Function : Rare disease RNA pipeline specific checks and parsing
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href                  => File info hash {REF}

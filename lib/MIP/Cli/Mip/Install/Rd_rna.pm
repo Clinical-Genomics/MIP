@@ -1,4 +1,4 @@
-package MIP::Cli::Mip::Install::Rna;
+package MIP::Cli::Mip::Install::Rd_rna;
 
 use 5.026;
 use Carp;
@@ -34,9 +34,9 @@ extends(qw{ MIP::Cli::Mip::Install });
 
 command_short_description(q{Generate mip.sh for installation});
 command_long_description(
-q{Generates an installation script (mip.sh), which is used for installation of the RNA flavor of the Mutation Identification Pipeline (MIP).}
+q{Generates an installation script (mip.sh), which is used for installation of the rare disease RNA flavor of the Mutation Identification Pipeline (MIP).}
 );
-command_usage(q{mip <install> <rare_disease> [options]});
+command_usage(q{mip <install> <rd_rna> [options]});
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -123,7 +123,7 @@ sub _build_usage {
             isa     => Str,
             default => catfile(
                 dirname($Bin),
-                qw{ MIP definitions install_rna_parameters.yaml }
+                qw{ MIP definitions install_rd_rna_parameters.yaml }
             ),
         )
     );

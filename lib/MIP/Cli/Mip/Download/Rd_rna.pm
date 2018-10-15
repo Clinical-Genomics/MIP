@@ -32,9 +32,9 @@ extends(qw{ MIP::Cli::Mip::Download });
 
 command_short_description(q{Generate mip.sh for download of references});
 command_long_description(
-q{Generates a download script (download_reference.sh), which is used for downloading reference(s) for the rna flavor of the Mutation Identification Pipeline (MIP).}
+q{Generates a download script (download_reference.sh), which is used for downloading reference(s) for the rare disease RNA flavor of the Mutation Identification Pipeline (MIP).}
 );
-command_usage(q{mip <download> <rna> [options]});
+command_usage(q{mip <download> <rd_rna> [options]});
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -89,7 +89,7 @@ sub _build_usage {
             isa     => Str,
             default => catfile(
                 dirname($Bin),
-                qw{ MIP definitions download_rna_parameters.yaml }
+                qw{ MIP definitions download_rd_rna_parameters.yaml }
             ),
         )
     );
