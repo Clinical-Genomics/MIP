@@ -120,7 +120,7 @@ sv_vcf_rerun_reformat:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: _vrn_
+  file_tag: _vrn
   outfile_suffix: ".vcf"
   program_name_path:
    - bcftools

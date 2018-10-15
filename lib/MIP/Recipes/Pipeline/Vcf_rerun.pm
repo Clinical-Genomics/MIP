@@ -172,7 +172,7 @@ sub pipeline_vcf_rerun {
     use MIP::Recipes::Analysis::Variantannotationblock
       qw{ analysis_variantannotationblock };
     use MIP::Recipes::Analysis::Vcf_rerun_reformat
-      qw{ analysis_sv_vcf_rerun_reformat analysis_vcf_rerun_reformat };
+      qw{ analysis_vcf_rerun_reformat_sv analysis_vcf_rerun_reformat };
     use MIP::Recipes::Analysis::Vep
       qw{ analysis_vep analysis_vep_rio analysis_vep_sv_wes analysis_vep_sv_wgs };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt analysis_vt_rio };
@@ -225,7 +225,7 @@ sub pipeline_vcf_rerun {
         sv_annotate => \&analysis_sv_annotate,
         sv_rankvariant => undef,                    # Depends on sample features
         sv_reformat    => \&analysis_reformat_sv,
-        sv_vcf_rerun_reformat => \&analysis_sv_vcf_rerun_reformat,
+        sv_vcf_rerun_reformat => \&analysis_vcf_rerun_reformat_sv,
         sv_varianteffectpredictor => undef,          # Depends on analysis type,
         sv_vcfparser              => undef,          # Depends on analysis type
         varianteffectpredictor    => \&analysis_vep,
