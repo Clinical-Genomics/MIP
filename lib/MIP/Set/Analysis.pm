@@ -20,10 +20,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ set_recipe_on_analysis_type };
+    our @EXPORT_OK = qw{ set_recipe_on_analysis_type set_rankvariants_ar };
 }
 
 ## Constants
@@ -100,6 +100,79 @@ sub set_recipe_on_analysis_type {
             # Set recipe
             $analysis_recipe_href->{$program_name} = $recipe_wgs_cref;
         }
+    }
+    return;
+}
+
+sub set_rankvariants_ar {
+
+## Function : Update which rankvariants recipe to use
+## Returns  :
+## Arguments: $sample_ids_ref   => Active parameters for this analysis hash {REF}
+##          : $analysis_recipe_href    => Analysis recipe hash {REF}
+##          : $log                     => Log object to write to
+##          : $parameter_href          => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_ids_ref;
+    my $analysis_recipe_href;
+    my $log;
+    my $parameter_href;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Rankvariant
+      qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
+
+    if ( defined $parameter_href->{dynamic_parameter}{unaffected}
+        && @{ $parameter_href->{dynamic_parameter}{unaffected} } eq
+        @{$sample_ids_ref} )
+    {
+
+        $log->warn(
+q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
+        );
+
+        $analysis_recipe_href->{sv_rankvariant} =
+          \&analysis_rankvariant_sv_unaffected;
+        $analysis_recipe_href->{rankvariant} =
+          \&analysis_rankvariant_unaffected;
+    }
+    else {
+
+        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv;
+        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant;
     }
     return;
 }

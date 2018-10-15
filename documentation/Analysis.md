@@ -12,26 +12,13 @@ You can modify all parameters to MIP in order of precedence using:
 $ mip analyse rare_disease --fam 0 --config GRCh37_config_-v1.4-.yaml --rio
 ```
 
-``--rio`` means that two blocks will be performed at the nodes without transfer of files between HDS and SLURM nodes within the block. These two blocks are:
+``--rio`` means that one block will be performed at the nodes without transfer of files between HDS and SLURM nodes within the block. These block is:
 
 *bamcalibrationblock*
 
 - picardtool_mergesamfiles
 - markduplicates
 - gatk_baserecalibrator/gatk_applybqsr
-
-
-*variantannotationblock*
-
-- prepareforvariantannotationblock
-- rhocall
-- vt
-- frequency_filter
-- varianteffectpredictor
-- vcfparser
-- snpeff/snpsift
-- rankvariants
-- endvariantannotationblock
 
 When not supplying the ``-rio`` flag MIP will copy in and out files from HDS and SLURM nodes between each module. Thus increasing the network traffic.
 
