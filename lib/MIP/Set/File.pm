@@ -28,7 +28,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_absolute_path set_file_compression_features set_file_prefix_tag set_file_suffix set_infiles set_io_files set_merged_infile_prefix };
+      qw{ set_absolute_path set_file_compression_features set_file_prefix_tag set_infiles set_io_files set_merged_infile_prefix };
 }
 
 ## Constants
@@ -270,58 +270,6 @@ sub _inherit_chain_main {
           $temp_file_ending_href->{MAIN}{$id};
     }
     return;
-}
-
-sub set_file_suffix {
-
-## Function : Set the current file suffix for this job id chain
-## Returns  : $file_suffix
-## Arguments: $file_suffix    => File suffix
-##          : $job_id_chain   => Job id chain for program
-##          : $parameter_href => Holds all parameters
-##          : $suffix_key     => Suffix key
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_suffix;
-    my $job_id_chain;
-    my $parameter_href;
-    my $suffix_key;
-
-    my $tmpl = {
-        file_suffix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_suffix,
-            strict_type => 1,
-        },
-        job_id_chain => {
-            defined     => 1,
-            required    => 1,
-            store       => \$job_id_chain,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        suffix_key => {
-            defined     => 1,
-            required    => 1,
-            store       => \$suffix_key,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    $parameter_href->{$suffix_key}{$job_id_chain} = $file_suffix;
-
-    return $file_suffix;
 }
 
 sub set_infiles {
