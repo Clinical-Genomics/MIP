@@ -133,7 +133,7 @@ sub analysis_recipe {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File qw{ get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
     use MIP::Processmanagement::Slurm_processes
@@ -184,23 +184,6 @@ sub analysis_recipe {
 
     my $infile_prefix  = $merged_infile_prefix . $infile_tag;
     my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Get infile_suffix from baserecalibration jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain =>
-              $parameter_href->{UPPSTREAM_DEPENDENCY_PROGRAM}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
-    my $outfile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            program_name   => $program_name,
-            suffix_key     => q{outfile_suffix},
-        }
-    );
 
     ## Files
     my $infile_name  = $infile_prefix . $infile_suffix;

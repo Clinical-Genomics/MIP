@@ -29,7 +29,6 @@ BEGIN {
       get_exom_target_bed_file
       get_fastq_file_header_info
       get_files
-      get_file_suffix
       get_io_files
       get_matching_values_key
       get_merged_infile_prefix
@@ -282,83 +281,6 @@ sub get_files {
     }
 
     return @files;
-}
-
-sub get_file_suffix {
-
-## Function : Return the current file suffix for this jobid chain or program
-## Returns  : $file_suffix
-## Arguments: $job_id_chain   => Job id chain for program
-##          : $parameter_href => Holds all parameters
-##          : $program_name   => Program name
-##          : $suffix_key     => Suffix key
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $job_id_chain;
-    my $parameter_href;
-    my $program_name;
-    my $suffix_key;
-
-    my $tmpl = {
-        jobid_chain    => { strict_type => 1, store => \$job_id_chain },
-        program_name   => { strict_type => 1, store => \$program_name },
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        suffix_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$suffix_key
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $file_suffix;
-
-    ## Jobid chain specific suffix
-    if ( defined $job_id_chain ) {
-
-        $file_suffix = $parameter_href->{$suffix_key}{$job_id_chain};
-    }
-    elsif ( defined $program_name ) {
-        ## Program  specific
-
-        $file_suffix = $parameter_href->{$program_name}{$suffix_key};
-    }
-
-    ## If suffix was found
-    if ( defined $file_suffix && $file_suffix ) {
-
-        return $file_suffix;
-    }
-    else {
-        ## Broadcast no suffix was found
-        if ( defined $job_id_chain ) {
-
-            $log->fatal(
-                q{Could not get requested infile_suffix for jobid_chain:}
-                  . $job_id_chain );
-        }
-        elsif ( defined $program_name ) {
-
-            $log->fatal(
-                q{Could not get requested infile_suffix for program:}
-                  . $program_name );
-        }
-        exit 1;
-    }
-    return;
 }
 
 sub get_io_files {

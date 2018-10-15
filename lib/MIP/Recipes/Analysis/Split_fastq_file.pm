@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_split_fastq_file };
@@ -30,7 +30,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK    => q{*};
+Readonly my $ASTERISK   => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
 Readonly my $NEWLINE    => qq{\n};
@@ -139,12 +139,14 @@ sub analysis_split_fastq_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_mkdir gnu_mv gnu_rm gnu_split };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Program::Compression::Pigz qw{ pigz };
     use MIP::Script::Setup_script qw{ setup_script };
+
+    ### PREPROCESSING:
 
     ## Constants
     Readonly my $FASTQC_SEQUENCE_LINE_BLOCK => 4;
@@ -153,11 +155,32 @@ sub analysis_split_fastq_file {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
+        }
+    );
+    my $indir_path_prefix         = $io{in}{dir_path_prefix};
+    my @infile_names              = @{ $io{in}{file_names} };
+    my @infile_paths              = @{ $io{in}{file_paths} };
+    my $infile_suffix             = $io{in}{file_constant_suffix};
+    my @temp_infile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
 
-    ## Alias
-    my @infiles      = @{ $file_info_href->{$sample_id}{mip_infiles} };
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = get_program_attributes(
+        {
+            parameter_href => $parameter_href,
+            program_name   => $program_name,
+            attribute      => q{chain},
+        }
+    );
+    my $program_mode = $active_parameter_href->{$program_name};
     my $sequence_read_batch =
       $active_parameter_href->{split_fastq_file_read_batch};
     my ( $core_number, $time, @source_environment_cmds ) =
@@ -172,12 +195,8 @@ sub analysis_split_fastq_file {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Assign directories
-    my $insample_directory  = $file_info_href->{$sample_id}{mip_infiles_dir};
-    my $outsample_directory = $file_info_href->{$sample_id}{mip_infiles_dir};
-
   INFILE:
-    foreach my $fastq_file (@infiles) {
+    while ( my ( $infile_index, $infile_path ) = each @infile_paths ) {
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ($file_name) = setup_script(
@@ -189,24 +208,10 @@ sub analysis_split_fastq_file {
                 job_id_href                     => $job_id_href,
                 log                             => $log,
                 process_time                    => $time,
-                program_directory               => lc($program_name),
+                program_directory               => $program_name,
                 program_name                    => $program_name,
                 source_environment_commands_ref => \@source_environment_cmds,
                 temp_directory                  => $temp_directory,
-            }
-        );
-
-        ## Assign file_tags
-        my $infile_path = catfile( $insample_directory, $fastq_file );
-        my $file_path   = catfile( $temp_directory,     $fastq_file );
-
-        ## Assign suffix
-        my $infile_suffix  = $parameter_href->{$program_name}{infile_suffix};
-        my $outfile_suffix = get_file_suffix(
-            {
-                parameter_href => $parameter_href,
-                program_name   => $program_name,
-                suffix_key     => q{outfile_suffix},
             }
         );
 
@@ -216,7 +221,7 @@ sub analysis_split_fastq_file {
 
         ## Detect fastq file info for later rebuild of filename
         if (
-            $fastq_file =~ qr{
+            $infile_path =~ qr{
 	      (\d+)_ # Lane
 	      (\d+)_ # Date
 	      ([^_]+)_ # Flowcell
@@ -237,30 +242,15 @@ sub analysis_split_fastq_file {
                 direction => $6,
             );
         }
-        ## Removes ".file_ending" in filename.FILENDING(.gz)
-        my $file_prefix = fileparse(
-            $fastq_file, qr{$infile_suffix # Uncompressed file
-				   | # or
-				     $infile_suffix[.]gz # Compressed file
-				  }sxm
-        ) . $UNDERSCORE . q{splitted} . $UNDERSCORE;
 
-        ## Copies file to temporary directory.
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $infile_path,
-                outfile_path => $temp_directory,
-            }
-        );
-        say {$FILEHANDLE} q{wait} . $NEWLINE;
+        ### SHELL:
 
         ## Decompress file and split
         pigz(
             {
                 decompress  => 1,
                 FILEHANDLE  => $FILEHANDLE,
-                infile_path => $file_path,
+                infile_path => $infile_path,
                 processes   => $core_number,
                 stdout      => 1,
             }
@@ -273,27 +263,28 @@ sub analysis_split_fastq_file {
                 infile_path => q{-},
                 lines => ( $sequence_read_batch * $FASTQC_SEQUENCE_LINE_BLOCK ),
                 numeric_suffixes => 1,
-                prefix           => catfile( $temp_directory, $file_prefix ),
-                suffix_length    => $SUFFIX_LENGTH,
+                prefix           => $temp_infile_path_prefixes[$infile_index]
+                  . $UNDERSCORE
+                  . q{splitted}
+                  . $UNDERSCORE,
+                suffix_length => $SUFFIX_LENGTH,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        ## Remove original files
-        gnu_rm(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                force       => 1,
-                infile_path => $file_path,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
+        my $splitted_suffix               = q{fastq};
+        my $splitted_flowcell_name_prefix = catfile( $indir_path_prefix,
+                $fastq_file_info{lane}
+              . $UNDERSCORE
+              . $fastq_file_info{date}
+              . $UNDERSCORE
+              . $fastq_file_info{flowcell} );
 
         _list_all_splitted_files(
             {
                 fastq_file_info_href => \%fastq_file_info,
                 FILEHANDLE           => $FILEHANDLE,
-                infile_suffix        => $infile_suffix,
+                infile_suffix        => $DOT . $splitted_suffix,
                 temp_directory       => $temp_directory,
             }
         );
@@ -302,9 +293,11 @@ sub analysis_split_fastq_file {
         ## Compress file again
         pigz(
             {
-                FILEHANDLE => $FILEHANDLE,
-                infile_path =>
-                  catfile( $temp_directory, $ASTERISK . $infile_suffix ),
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $splitted_flowcell_name_prefix
+                  . q{*-SP*}
+                  . $DOT
+                  . $splitted_suffix,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -312,10 +305,11 @@ sub analysis_split_fastq_file {
         ## Copies files from temporary folder to source
         gnu_cp(
             {
-                FILEHANDLE => $FILEHANDLE,
-                infile_path =>
-                  catfile( $temp_directory, q{*-SP*} . $outfile_suffix ),
-                outfile_path => $outsample_directory,
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $splitted_flowcell_name_prefix
+                  . q{*-SP*}
+                  . $infile_suffix,
+                outfile_path => $indir_path_prefix,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -324,7 +318,7 @@ sub analysis_split_fastq_file {
             {
                 FILEHANDLE => $FILEHANDLE,
                 indirectory_path =>
-                  catfile( $insample_directory, q{original_fastq_files}, ),
+                  catfile( $indir_path_prefix, q{original_fastq_files}, ),
                 parents => 1,
             }
         );
@@ -338,8 +332,8 @@ sub analysis_split_fastq_file {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $infile_path,
                 outfile_path => catfile(
-                    $insample_directory, q{original_fastq_files},
-                    $fastq_file
+                    $indir_path_prefix, q{original_fastq_files},
+                    $infile_names[$infile_index]
                 ),
             }
         );
