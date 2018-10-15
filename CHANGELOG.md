@@ -16,7 +16,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 **New recipes**
-*Rare_disease*
+*Rd_dna*
 - sv_annotate
 
 *vcf_rerun*

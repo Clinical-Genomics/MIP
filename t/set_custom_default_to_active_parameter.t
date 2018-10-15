@@ -87,11 +87,11 @@ my %active_parameter = (
     sample_ids => [qw{ sample_1 }],
 );
 
-## Mip analyse rare_disease parameters
+## Mip analyse rd_dna parameters
 ## The order of files in @definition_files should follow commands inheritance
 my @definition_files = (
     catfile( dirname($Bin), qw{ definitions analyse_parameters.yaml } ),
-    catfile( dirname($Bin), qw{ definitions rare_disease_parameters.yaml } ),
+    catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml } ),
 );
 
 my %parameter;

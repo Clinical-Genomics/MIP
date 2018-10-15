@@ -1,4 +1,4 @@
-package MIP::Recipes::Pipeline::Rare_disease;
+package MIP::Recipes::Pipeline::Rd_dna;
 
 use Carp;
 use charnames qw{ :full :short };
@@ -27,13 +27,13 @@ BEGIN {
     our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_rare_disease };
+    our @EXPORT_OK = qw{ pipeline_rd_dna };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
 
-sub pipeline_rare_disease {
+sub pipeline_rd_dna {
 
 ## Function : Pipeline recipe for wes and or wgs data analysis.
 ## Returns  :
@@ -153,7 +153,7 @@ sub pipeline_rare_disease {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Pipeline qw{ check_rare_disease };
+    use MIP::Check::Pipeline qw{ check_rd_dna };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_program_for_user };
@@ -232,11 +232,11 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
-    use MIP::Recipes::Build::Rare_disease qw{build_rare_disease_meta_files};
+    use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
     use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
 
     ### Pipeline specific checks
-    check_rare_disease(
+    check_rd_dna(
         {
             active_parameter_href           => $active_parameter_href,
             broadcasts_ref                  => $broadcasts_ref,
@@ -253,7 +253,7 @@ sub pipeline_rare_disease {
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
-    build_rare_disease_meta_files(
+    build_rd_dna_meta_files(
         {
             active_parameter_href   => $active_parameter_href,
             file_info_href          => $file_info_href,

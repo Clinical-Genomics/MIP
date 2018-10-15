@@ -129,7 +129,7 @@ my %active_parameter = (
 my %parameter = load_yaml(
     {
         yaml_file => catfile(
-            dirname($Bin), qw{ definitions rare_disease_parameters.yaml}
+            dirname($Bin), qw{ definitions rd_dna_parameters.yaml}
         ),
     }
 );

@@ -63,7 +63,7 @@ use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Programs qw{ update_program_mode_with_dry_run_all };
 
 ## Recipes
-use MIP::Recipes::Pipeline::Rare_disease qw{ pipeline_rare_disease };
+use MIP::Recipes::Pipeline::Rd_dna qw{ pipeline_rd_dna };
 use MIP::Recipes::Pipeline::Rna qw{ pipeline_rna };
 use MIP::Recipes::Pipeline::Vcf_rerun qw{ pipeline_vcf_rerun };
 
@@ -597,7 +597,7 @@ sub mip_analyse {
 
 ## Get initiation program, downstream dependencies and update program modes for start_with_program parameter depending on pipeline
     my $initiation_file =
-      catfile( $Bin, qw{ definitions rare_disease_initiation_map.yaml } );
+      catfile( $Bin, qw{ definitions rd_dna_initiation_map.yaml } );
 
     # For RNA pipeline
     if ( $consensus_analysis_type eq q{wts} ) {
@@ -760,7 +760,7 @@ sub mip_analyse {
         $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
 
         ## Pipeline recipe for rna data
-        pipeline_rare_disease(
+        pipeline_rd_dna(
             {
                 active_parameter_href           => \%active_parameter,
                 broadcasts_ref                  => \@broadcasts,

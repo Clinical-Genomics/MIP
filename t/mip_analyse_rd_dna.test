@@ -83,7 +83,7 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 my $cmds_ref = [
     q{perl},
     $mip_path,
-    qw{ analyse rare_disease 643594-miptest },
+    qw{ analyse rd_dna 643594-miptest },
     q{--config},
     $config_file,
     q{--conda_path},

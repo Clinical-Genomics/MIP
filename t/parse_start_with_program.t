@@ -67,7 +67,7 @@ my $log = test_log();
 my %active_parameter;
 my %parameter = ( bwa_mem => { default => 0, }, );
 my $initiation_file =
-  catfile( dirname($Bin), qw{ definitions rare_disease_initiation_map.yaml } );
+  catfile( dirname($Bin), qw{ definitions rd_dna_initiation_map.yaml } );
 
 my $return = parse_start_with_program(
     {

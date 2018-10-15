@@ -1,6 +1,6 @@
-package MIP::Cli::Mip::Install::Rare_disease;
+package MIP::Cli::Mip::Install::Rd_dna;
 
-use 5.022;
+use 5.026;
 use Carp;
 use Cwd qw{ abs_path };
 use File::Basename qw{ dirname };
@@ -34,9 +34,9 @@ extends(qw{ MIP::Cli::Mip::Install });
 
 command_short_description(q{Generate mip.sh for installation});
 command_long_description(
-q{Generates an installation script (mip.sh), which is used for installation of the Mutation Identification Pipeline (MIP) for rare diseases.}
+q{Generates an installation script (mip.sh), which is used for installation of the Mutation Identification Pipeline (MIP) for rare diseases DNA.}
 );
-command_usage(q{mip <install> <rare_disease> [options]});
+command_usage(q{mip <install> <rd_dna> [options]});
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -142,7 +142,7 @@ sub _build_usage {
             isa     => Str,
             default => catfile(
                 dirname($Bin),
-                qw{ MIP definitions install_rare_disease_parameters.yaml }
+                qw{ MIP definitions install_rd_dna_parameters.yaml }
             ),
         )
     );

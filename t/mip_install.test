@@ -139,7 +139,7 @@ ok( can_run(q{conda}), q{Checking can run of conda binary} );
 
 ## Pipeline installations to test
 my %install_file = (
-    rare_disease => q{Rare_disease.pm},
+    rd_dna => q{Rd_dna.pm},
     rna          => q{Rna.pm},
 );
 

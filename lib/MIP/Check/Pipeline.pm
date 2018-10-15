@@ -23,15 +23,15 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_rare_disease check_rna check_vcf_rerun };
+    our @EXPORT_OK = qw{ check_rd_dna check_rna check_vcf_rerun };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
 
-sub check_rare_disease {
+sub check_rd_dna {
 
-## Function : Rare disease pipeline specific checks and parsing
+## Function : Rare disease DNA pipeline specific checks and parsing
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href                  => File info hash {REF}

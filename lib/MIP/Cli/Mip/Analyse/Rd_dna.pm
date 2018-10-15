@@ -1,4 +1,4 @@
-package MIP::Cli::Mip::Analyse::Rare_disease;
+package MIP::Cli::Mip::Analyse::Rd_dna;
 
 use Carp;
 use File::Spec::Functions qw{ catfile };
@@ -23,13 +23,13 @@ our $VERSION = 1.05;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
-command_short_description(q{Rare disease analysis});
+command_short_description(q{Rare disease DNA analysis});
 
 command_long_description(
-    q{Rare disease analysis on wes, wgs or mixed sequence data});
+    q{Rare disease DNA analysis on wes, wgs or mixed sequence data});
 
 command_usage(
-    q{mip <analyse> <rare_disease> <family_id> --config <config_file> });
+    q{mip <analyse> <rd_dna> <family_id> --config <config_file> });
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -48,12 +48,12 @@ sub run {
     use MIP::Get::Analysis
       qw{ get_dependency_tree_chain get_dependency_tree_order print_program };
 
-    ## Mip analyse rare_disease parameters
+    ## Mip analyse rd_dna parameters
     ## CLI commands inheritance
     my @definition_files = (
         catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
         catfile( $Bin, qw{ definitions analyse_parameters.yaml } ),
-        catfile( $Bin, qw{ definitions rare_disease_parameters.yaml } ),
+        catfile( $Bin, qw{ definitions rd_dna_parameters.yaml } ),
     );
 
     ## Non mandatory parameter definition keys to check
@@ -65,7 +65,7 @@ sub run {
       catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
 
     ## %parameter holds all defined parameters for MIP
-    ## mip analyse rare_disease parameters
+    ## mip analyse rd_dna parameters
     my %parameter;
     foreach my $definition_file (@definition_files) {
 
@@ -99,7 +99,7 @@ sub run {
     my %dependency_tree = load_yaml(
         {
             yaml_file => catfile(
-                $Bin, qw{ definitions rare_disease_initiation_map.yaml }
+                $Bin, qw{ definitions rd_dna_initiation_map.yaml }
             ),
         }
     );
