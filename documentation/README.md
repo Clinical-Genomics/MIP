@@ -26,7 +26,7 @@ MIP has been in use in the clinical production at the Clinical Genomics facility
 ## Example Usage
 
 ```Bash
-$ mip analyse rare_disease --family_id [family_id] --bwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [family_id_pedigree.yaml]
+$ mip analyse rd_dna --family_id [family_id] --bwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [family_id_pedigree.yaml]
 ```
 
 ## Features
@@ -119,7 +119,7 @@ $ perl t/mip_install.test
 
 ##### 4.Create the install instructions for MIP
 ```Bash
-$ perl mip install rare_disease --installations full --environment_name emip=MIP
+$ perl mip install rd_dna --installations full --environment_name emip=MIP
 ```
 This will generate a batch script called "mip.sh" in your working directory.
 
@@ -135,8 +135,8 @@ This will generate a batch script called "mip.sh" in your working directory.
 
 It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.
 
-  - For a full list of available options and parameters, run: ``$ perl mip install rare_disease --help``
-  - For a full list of parameter defaults, run: ``$ perl mip install rare_disease --ppd``
+  - For a full list of available options and parameters, run: ``$ perl mip install rd_dna --help``
+  - For a full list of parameter defaults, run: ``$ perl mip install rd_dna --ppd``
 
 ##### 5.Run the bash script
 
@@ -154,7 +154,7 @@ Make sure to activate your conda environment if that option was used above.
 
 ```Bash
 $ prove t -r
-$ perl t/mip_analyse_rare_disease.test
+$ perl t/mip_analyse_rd_dna.test
 ```
 
 ###### When setting up your analysis config file
@@ -249,7 +249,7 @@ You can always supply `perl mip.pl --help` to list all available parameters and 
 
 Example usage:
 ```Bash
-$ mip analyse rare_disease -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
+$ mip analyse rd_dna -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
 ```
 
 This will analyse family 3 using 3 individuals from that family and begin the analysis with programs after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.

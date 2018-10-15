@@ -124,7 +124,7 @@ sub install_mip_scripts {
         utility_scripts =>
           [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
         t => [
-            qw{ mip_install.test mip_analyse_rare_disease.test mip_core.t mip_analysis.test }
+            qw{ mip_install.test mip_analyse_rd_dna.test mip_core.t mip_analysis.test }
         ],
         templates => [qw{ mip_config.yaml }],
     );
