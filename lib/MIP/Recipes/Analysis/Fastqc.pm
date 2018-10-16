@@ -252,7 +252,7 @@ sub analysis_fastqc {
     gnu_mkdir(
         {
             FILEHANDLE       => $FILEHANDLE,
-            indirectory_path => $outdir_path_prefix,
+            indirectory_path => $outsample_directory,
             parents          => 1,
         }
     );
@@ -278,7 +278,7 @@ sub analysis_fastqc {
                 extract           => 1,
                 FILEHANDLE        => $FILEHANDLE,
                 infile_path       => $infile_path,
-                outdirectory_path => $outdir_path_prefix,
+                outdirectory_path => $outsample_directory,
             }
         );
         say {$FILEHANDLE} q{&}, $NEWLINE;

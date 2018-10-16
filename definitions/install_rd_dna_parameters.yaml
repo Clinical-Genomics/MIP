@@ -17,8 +17,6 @@ emip:
   conda:
     bcftools: 1.6
     bedtools: 2.26.0
-    bwa: 0.7.15
-    bwakit: 0.7.12
     cmake: 3.3.1
     cramtools: 3.0.b47
     cutadapt: 1.14
@@ -106,11 +104,13 @@ edelly:
   shell:
 
 # Fastqc enviroanment spec
-efastqc:
+eperl_5.26:
   conda:
     fastqc: 0.11.8=0
+    bwa: 0.7.17=ha92aebf_3
+    bwakit: 0.7.15=1
     pip:
-    python: 2.7
+    python: 3.6
   pip:
   shell:
 
@@ -209,9 +209,9 @@ environment_name:
   emip: MIP_rare
   ecnvnator:
   edelly:
-  efastqc:
   efreebayes:
   epeddy:
+  eperl_5.26:
   epy3:
   etiddit:
   evep:
@@ -220,10 +220,10 @@ environment_name:
 installations:
   - ecnvnator
   - edelly
-  - efastqc
   - efreebayes
   - emip
   - epeddy
+  - eperl_5.26
   - epy3
   - evep
   - etiddit

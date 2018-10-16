@@ -126,15 +126,15 @@ sub _build_usage {
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip       => Optional [Str],
-                ecnvnator  => Optional [Str],
-                edelly     => Optional [Str],
-                efastqc    => Optional [Str],
-                efreebayes => Optional [Str],
-                epeddy     => Optional [Str],
-                epy3       => Optional [Str],
-                etiddit    => Optional [Str],
-                evep       => Optional [Str],
+                emip          => Optional [Str],
+                ecnvnator     => Optional [Str],
+                edelly        => Optional [Str],
+                efreebayes    => Optional [Str],
+                epeddy        => Optional [Str],
+                q{eperl_5.26} => Optional [Str],
+                epy3          => Optional [Str],
+                etiddit       => Optional [Str],
+                evep          => Optional [Str],
             ],
             required => 0,
         ),
@@ -164,7 +164,7 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ emip ecnvnator edelly efastqc efreebayes epeddy epy3 etiddit evep full }
+                        qw{ emip ecnvnator edelly efreebayes epeddy eperl_5.26 epy3 etiddit evep full }
                     ]
                 ),
             ],

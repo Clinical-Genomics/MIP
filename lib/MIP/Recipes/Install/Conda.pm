@@ -16,8 +16,8 @@ use Readonly;
 
 ## Constants
 Readonly my $BACKTICK   => q{`};
-Readonly my $DOT        => q{.};
 Readonly my $COLON      => q{:};
+Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $PIPE       => q{|};
 Readonly my $SPACE      => q{ };
@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.1.0;
+    our $VERSION = 1.1.1;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -707,10 +707,10 @@ sub _create_target_link_paths {
 ##           : Custom solutions for bwakit picard snpeff snpsift manta.
 ##           : Returns a hash ref consisting of the paths.
 ## Returns   : %target_link_paths
-## Arguments : $conda_packages_href => Hash with conda packages {REF}
-##           : $conda_env_path         => Path to conda environment
-##           : $custom_solutions_ref   => Array with programs that requires som fiddling {REF}
-##           : $FILEHANDLE             => Filehandle to write to
+## Arguments : $conda_packages_href  => Hash with conda packages {REF}
+##           : $conda_env_path       => Path to conda environment
+##           : $custom_solutions_ref => Array with programs that requires som fiddling {REF}
+##           : $FILEHANDLE           => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -756,7 +756,7 @@ sub _create_target_link_paths {
     my @conda_packages = keys %{$conda_packages_href};
 
     ## Skip if no program requires linking
-    return if not intersect( @{$custom_solutions_ref}, @conda_packages );
+    return if ( not intersect( @{$custom_solutions_ref}, @conda_packages ) );
 
     my %target_link_paths;
 
@@ -795,9 +795,16 @@ sub _create_target_link_paths {
         next PROGRAM if ( not $conda_packages_href->{$program} );
 
         ## Capture the full path including the conda patch in a variable
+
+        # Alias for translation
+        my $conda_version = $conda_packages_href->{$program};
+        ## Exchange for conda internal format when using full conda version
+        ## i.e. version=subpatch
+        $conda_version =~ tr/=/-/;
+
         print {$FILEHANDLE} $program_path_aliases{$program} . q{=} . $BACKTICK;
         my $search_path = catdir( $conda_env_path, q{share},
-            $program . q{-} . $conda_packages_href->{$program} . q{*} );
+            $program . q{-} . $conda_version . q{*} );
         gnu_find(
             {
                 action        => q{-prune},
