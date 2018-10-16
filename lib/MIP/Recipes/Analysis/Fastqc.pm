@@ -290,7 +290,7 @@ sub analysis_fastqc {
                 {
                     infile           => $outfile_name_prefixes[$index],
                     path             => $outfile_paths[$index],
-                    directory        => $outdir_path_prefix,
+                    outdirectory     => $outdir_path_prefix,
                     program_name     => $program_name,
                     sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,
