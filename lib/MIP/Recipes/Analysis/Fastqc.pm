@@ -179,7 +179,7 @@ sub analysis_fastqc {
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );
     my @outfile_paths =
-      map { catdir( $outsample_directory, $_, q{fastqc_data.txt} ) }
+      map { catdir( $outsample_directory, $_ . $UNDERSCORE . $program_name, q{fastqc_data.txt} ) }
       @infile_name_prefixes;
 
     ## Set and get the io files per chain, id and stream
