@@ -24,8 +24,7 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_endvariantannotationblock };
+    our @EXPORT_OK = qw{ analysis_endvariantannotationblock };
 
 }
 
@@ -265,6 +264,7 @@ sub analysis_endvariantannotationblock {
     {
 
         my @concat_contigs = @contigs;
+        my $infile_postfix = q{.vcf};
         my $metafile_tag   = q{research};
 
         ## Update contigs list using select file contigs
@@ -272,7 +272,8 @@ sub analysis_endvariantannotationblock {
 
             @concat_contigs =
               @{ $file_info_href->{sorted_select_file_contigs} };
-            $metafile_tag = q{clinical};
+            $infile_postfix = $UNDERSCORE . q{selected.vcf};
+            $metafile_tag   = q{clinical};
         }
 
         ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
@@ -282,7 +283,7 @@ sub analysis_endvariantannotationblock {
                 elements_ref          => \@concat_contigs,
                 FILEHANDLE            => $FILEHANDLE,
                 infile_prefix         => $infile_path_prefix,
-                infile_postfix        => $analysis_suffix,
+                infile_postfix        => $infile_postfix,
                 outfile_path_prefix   => $outfile_path_prefix,
                 outfile_suffix        => $analysis_suffix,
             }

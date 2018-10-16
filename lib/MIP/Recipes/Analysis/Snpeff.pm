@@ -283,7 +283,7 @@ sub analysis_snpeff {
         foreach my $contig ( keys %infile_path ) {
 
             my $ann_outfile_path =
-              $infile_path{$contig} . $DOT . $xargs_file_counter;
+              $outfile_path{$contig} . $DOT . $xargs_file_counter;
             snpeff_ann(
                 {
                     config_file_path => $snpeff_config_file_path,
@@ -371,7 +371,7 @@ sub analysis_snpeff {
                 ## Decrement to make last output file as input
                 my $annotation_infile_number = $xargs_file_counter - 1;
                 $annotate_infile_path =
-                  $infile_path{$contig} . $DOT . $annotation_infile_number;
+                  $outfile_path{$contig} . $DOT . $annotation_infile_number;
             }
             snpsift_annotate(
                 {
