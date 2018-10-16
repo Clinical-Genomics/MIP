@@ -118,7 +118,7 @@ my $is_ok          = trap {
 };
 
 ## Then exit and throw FATAL log message
-ok( $trap->exit, q{Exit if the key cannot be found} );
-like( $trap->stderr, qr/Could\s+not/xms, q{Throw error} );
+is( $trap->leaveby, q{die}, q{Exit if the key cannot be found} );
+like( $trap->die, qr/Could\s+not/xms, q{Throw error} );
 
 done_testing();

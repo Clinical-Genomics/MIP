@@ -106,9 +106,11 @@ edelly:
 # Fastqc enviroanment spec
 eperl_5.26:
   conda:
-    fastqc: 0.11.8=0
     bwa: 0.7.17=ha92aebf_3
     bwakit: 0.7.15=1
+    fastqc: 0.11.8=0
+    sambamba: 0.6.6
+    samtools: 1.6
     pip:
     python: 3.6
   pip:

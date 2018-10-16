@@ -350,12 +350,8 @@ sub get_install_parameter_attribute {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Make sure that the supplied key exists
-    if ( not exists $parameter_href->{$parameter_name} ) {
-
-        say {*STDERR}
-          qq{Could not find parameter_name key: '$parameter_name' in hash};
-        exit 1;
-    }
+    croak(qq{Could not find parameter_name key: '$parameter_name' in hash})
+      if ( not exists $parameter_href->{$parameter_name} );
 
     ## Hash attribute
     if ( ref $parameter_href->{$parameter_name} eq q{HASH} ) {
