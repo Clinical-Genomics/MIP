@@ -215,6 +215,8 @@ sub analysis_PROGRAM_NAME {
 
     ### SHELL:
 
+    say {$FILEHANDLE} q{## } . $program_name;
+
 ###############################
 ###RECIPE TOOL COMMANDS HERE###
 ###############################

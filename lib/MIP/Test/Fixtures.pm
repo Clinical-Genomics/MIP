@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -149,7 +149,7 @@ sub test_mip_hashes {
     my $tmpl = {
         mip_hash_name => {
             allow => [
-                qw{ active_parameter define_parameter file_info pedigree recipe_parameter }
+                qw{ active_parameter define_parameter file_info install_parameter pedigree recipe_parameter }
             ],
             defined     => 1,
             required    => 1,
@@ -179,6 +179,8 @@ sub test_mip_hashes {
           catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
         file_info =>
           catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
+        install_parameter =>
+          catfile( $Bin, qw{ data test_data install_rd_dna_parameters.yaml } ),
         recipe_parameter =>
           catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
         pedigree => catfile( $Bin, qw{ data test_data pedigree.yaml } ),

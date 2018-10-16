@@ -25,6 +25,7 @@ use Readonly;
 ## MIPs lib
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
+use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Script::Utils
   qw{ nest_hash print_parameter_defaults update_program_versions};
 
@@ -71,14 +72,19 @@ sub run {
             }
         );
     }
+    my @full_installation_envs = get_install_parameter_attribute(
+        {
+            parameter_href => \%parameter,
+            parameter_name => q{installations},
+        }
+    );
 
     ## Merge arrays and overwrite flat values in config YAML with command line
     @parameter{ keys %{$arg_href} } = values %{$arg_href};
 
     ## Add all environments to installation if full installation was selected
     if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
-        @{ $parameter{installations} } =
-          qw{ emip ecnvnator edelly efreebayes epeddy epy3 etiddit evep };
+        @{ $parameter{installations} } = @full_installation_envs;
     }
 
     ## Make sure that the cnvnator environment is installed last
@@ -123,6 +129,7 @@ sub _build_usage {
                 emip       => Optional [Str],
                 ecnvnator  => Optional [Str],
                 edelly     => Optional [Str],
+                efastqc    => Optional [Str],
                 efreebayes => Optional [Str],
                 epeddy     => Optional [Str],
                 epy3       => Optional [Str],
@@ -157,7 +164,7 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ emip ecnvnator edelly efreebayes epeddy epy3 etiddit evep full }
+                        qw{ emip ecnvnator edelly efastqc efreebayes epeddy epy3 etiddit evep full }
                     ]
                 ),
             ],

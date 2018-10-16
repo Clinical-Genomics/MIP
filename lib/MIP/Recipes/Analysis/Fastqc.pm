@@ -22,10 +22,10 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(analysis_fastqc);
+    our @EXPORT_OK = qw{ analysis_fastqc };
 
 }
 
@@ -129,8 +129,7 @@ sub analysis_fastqc {
     use MIP::Cluster qw{ update_core_number_to_seq_mode };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
-    use MIP::Gnu::Coreutils qw{ gnu_cp };
-    use MIP::IO::Files qw{ migrate_files };
+    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
@@ -156,11 +155,8 @@ sub analysis_fastqc {
             temp_directory => $temp_directory,
         }
     );
-    my $indir_path_prefix         = $io{in}{dir_path_prefix};
-    my @infile_names              = @{ $io{in}{file_names} };
-    my @infile_name_prefixes      = @{ $io{in}{file_name_prefixes} };
-    my @temp_infile_paths         = @{ $io{temp}{file_paths} };
-    my @temp_infile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
+    my @infile_paths         = @{ $io{in}{file_paths} };
+    my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
 
     my $job_id_chain = get_program_attributes(
         {
@@ -183,10 +179,8 @@ sub analysis_fastqc {
       catdir( $active_parameter_href->{outdata_dir}, $sample_id,
         $program_name );
     my @outfile_paths =
-      map {
-        catdir( $outsample_directory, $_ . $UNDERSCORE . $program_name,
-            q{fastqc_data.txt} )
-      } @infile_name_prefixes;
+      map { catdir( $outsample_directory, $_, q{fastqc_data.txt} ) }
+      @infile_name_prefixes;
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -204,7 +198,8 @@ sub analysis_fastqc {
         )
     );
 
-    my $outdir_path_prefix = $io{out}{dir_path_prefix};
+    my $outdir_path_prefix    = $io{out}{dir_path_prefix};
+    my @outfile_name_prefixes = @{ $io{out}{file_name_prefixes} };
     @outfile_paths = @{ $io{out}{file_paths} };
 
     ## Filehandles
@@ -245,6 +240,7 @@ sub analysis_fastqc {
             process_time                    => $time,
             program_directory               => $program_name,
             program_name                    => $program_name,
+            sleep                           => 1,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -252,22 +248,21 @@ sub analysis_fastqc {
 
     ### SHELL:
 
-    ## Copies files from source to destination
-    migrate_files(
+    say {$FILEHANDLE} q{## Create output dir};
+    gnu_mkdir(
         {
-            core_number  => $core_number,
-            FILEHANDLE   => $FILEHANDLE,
-            indirectory  => $indir_path_prefix,
-            infiles_ref  => \@infile_names,
-            outfile_path => $temp_directory,
+            FILEHANDLE       => $FILEHANDLE,
+            indirectory_path => $outdir_path_prefix,
+            parents          => 1,
         }
     );
+    say {$FILEHANDLE} $NEWLINE;
 
     say {$FILEHANDLE} q{## } . $program_name;
 
     my $process_batches_count = 1;
 
-    while ( my ( $index, $infile ) = each @infile_names ) {
+    while ( my ( $index, $infile_path ) = each @infile_paths ) {
 
         $process_batches_count = print_wait(
             {
@@ -282,8 +277,8 @@ sub analysis_fastqc {
             {
                 extract           => 1,
                 FILEHANDLE        => $FILEHANDLE,
-                infile_path       => $temp_infile_paths[$index],
-                outdirectory_path => $temp_directory,
+                infile_path       => $infile_path,
+                outdirectory_path => $outdir_path_prefix,
             }
         );
         say {$FILEHANDLE} q{&}, $NEWLINE;
@@ -293,41 +288,15 @@ sub analysis_fastqc {
 
             add_program_outfile_to_sample_info(
                 {
-                    infile           => $infile,
+                    infile           => $outfile_name_prefixes[$index],
                     path             => $outfile_paths[$index],
+                    directory        => $outdir_path_prefix,
                     program_name     => $program_name,
                     sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,
                 }
             );
         }
-    }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-    ## Copies files from temporary folder to source.
-    $process_batches_count = 1;
-    while ( my ( $index, $infile ) = each @infile_names ) {
-
-        $process_batches_count = print_wait(
-            {
-                FILEHANDLE            => $FILEHANDLE,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                process_counter       => $index,
-            }
-        );
-
-        gnu_cp(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $temp_infile_path_prefixes[$index]
-                  . $UNDERSCORE
-                  . $program_name,
-                outfile_path => $outdir_path_prefix,
-                recursive    => 1,
-            }
-        );
-        say {$FILEHANDLE} q{&}, $NEWLINE;
     }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
