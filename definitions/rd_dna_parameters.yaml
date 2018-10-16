@@ -236,7 +236,7 @@ module_time:
     gzip_fastq: 2
     manta: 10
     markduplicates: 20
-    multiqc: 1
+    multiqc: 5
     peddy: 1
     picardtools_collecthsmetrics: 10
     picardtools_collectmultiplemetrics: 10

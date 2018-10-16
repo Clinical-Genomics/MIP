@@ -28,6 +28,7 @@ BEGIN {
       get_conda_path
       get_dynamic_conda_path
       get_gatk_intervals
+      get_install_parameter_attribute
       get_module_parameters
       get_program_attributes
       get_program_parameters
@@ -317,6 +318,53 @@ sub get_dynamic_conda_path {
     pop @bin_path_dirs;
 
     return catdir(@bin_path_dirs);
+}
+
+sub get_install_parameter_attribute {
+
+## Function : Return parameter attribute from hash
+## Returns  :
+## Arguments: $parameter_href => Holds all parameters {REF}
+##          : $parameter_name => Name of key to return
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => {
+            store       => \$parameter_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Make sure that the supplied key exists
+    croak(qq{Could not find parameter_name key: '$parameter_name' in hash})
+      if ( not exists $parameter_href->{$parameter_name} );
+
+    ## Hash attribute
+    if ( ref $parameter_href->{$parameter_name} eq q{HASH} ) {
+
+        return %{ $parameter_href->{$parameter_name} };
+    }
+    ## ARRAY attribute
+    if ( ref $parameter_href->{$parameter_name} eq q{ARRAY} ) {
+
+        return @{ $parameter_href->{$parameter_name} };
+    }
+    ## Scalar attribute
+    return $parameter_href->{$parameter_name};
 }
 
 sub get_module_parameters {

@@ -8,6 +8,7 @@
     * [Parameters](documentation/Parameters.md)
     * [Code](documentation/Code.md)
       * [Best Practise](documentation/Code/Best_practise.md)
+      * [Adding an env](documentation/Code/Install/Adding_an_env.md)
     * [API](documentation/Api.md)
       * [Define Parameters](documentation/API/define_parameters.md)
       * [Download References](documentation/API/download_references.md)
