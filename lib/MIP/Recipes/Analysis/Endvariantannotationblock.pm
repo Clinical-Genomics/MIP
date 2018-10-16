@@ -270,8 +270,7 @@ sub analysis_endvariantannotationblock {
         ## Update contigs list using select file contigs
         if ( $analysis_suffix eq q{.selected.vcf} ) {
 
-            @concat_contigs =
-              @{ $file_info_href->{sorted_select_file_contigs} };
+            @concat_contigs = @{ $file_info_href->{select_file_contigs} };
             $infile_postfix = $UNDERSCORE . q{selected.vcf};
             $metafile_tag   = q{clinical};
         }
