@@ -46,7 +46,7 @@ Readonly my $AMPERSAND => q{&};
 
 sub samtools_view {
 
-## Function : Perl wrapper for writing samtools view recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
+## Function : Perl wrapper for writing samtools view recipe to $FILEHANDLE. Based on samtools 1.9 (using htslib 1.9).
 ## Returns  : "@commands"
 ##          : $auto_detect_input_format       => Ignored (input format is auto-detected)
 ##          : $exclude_reads_with_these_flags => Do not output alignments that match the bits set
@@ -229,7 +229,7 @@ sub samtools_view {
 
 sub samtools_index {
 
-## Function : Perl wrapper for writing samtools index recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
+## Function : Perl wrapper for writing samtools index recipe to $FILEHANDLE. Based on samtools 1.9 (using htslib 1.9).
 ## Returns  : @commands
 ##          : $bai_format             => Generate BAI-format index for BAM files
 ##          : $FILEHANDLE             => Sbatch filehandle to write to
@@ -411,7 +411,7 @@ sub samtools_stats {
 
 sub samtools_faidx {
 
-## Function : Perl wrapper for writing samtools faidx recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
+## Function : Perl wrapper for writing samtools faidx recipe to $FILEHANDLE. Based on samtools 1.9 (using htslib 1.9).
 ## Returns  : @commands
 ##          : $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
