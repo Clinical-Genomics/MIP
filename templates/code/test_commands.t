@@ -20,6 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -51,7 +52,6 @@ BEGIN {
 }
 
 use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
-use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $MIP::PATH::TO::MODULE::VERSION

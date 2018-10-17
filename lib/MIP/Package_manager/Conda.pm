@@ -341,7 +341,7 @@ sub conda_install {
 ##         : $env_name           => Name of environment to create
 ##         : $FILEHANDLE         => Filehandle to write to
 ##         : $no_confirmation    => Do not ask for confirmation
-##         : $no_update_deps     => Only update dependencies that are required for the package to function
+##         : $no_update_dep     => Only update dependencies that are required for the package to function
 ##         : $packages_ref       => Packages to be installed
 ##         : $quiet              => Do not display progress bar
 
@@ -352,7 +352,7 @@ sub conda_install {
     my $env_name;
     my $FILEHANDLE;
     my $no_confirmation;
-    my $no_update_deps;
+    my $no_update_dep;
     my $packages_ref;
     my $quiet;
 
@@ -389,10 +389,10 @@ sub conda_install {
             store       => \$no_confirmation,
             strict_type => 1,
         },
-        no_update_deps => {
-            allow       => [ 0, 1 ],
+        no_update_dep => {
+            allow       => [ undef, 0, 1 ],
             default     => 1,
-            store       => \$no_update_deps,
+            store       => \$no_update_dep,
             strict_type => 1,
         },
         packages_ref => {
@@ -415,6 +415,7 @@ sub conda_install {
     my @commands = q{conda install};
 
     if ($env_name) {
+
         push @commands, q{--name} . $SPACE . $env_name;
     }
 
@@ -425,14 +426,17 @@ sub conda_install {
     }
 
     if ($no_confirmation) {
+
         push @commands, q{--yes};
     }
 
-    if ($no_update_deps) {
+    if ($no_update_dep) {
+
         push @commands, q{--no-update-deps};
     }
 
     if ( @{$conda_channels_ref} ) {
+
         push @commands,
           q{--channel} . $SPACE . join $SPACE . q{--channel} . $SPACE,
           @{$conda_channels_ref};

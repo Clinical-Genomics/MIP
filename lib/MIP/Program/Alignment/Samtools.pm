@@ -22,7 +22,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Inherit from Exporter to export functions and variables
     use base qw{ Exporter };
@@ -34,7 +34,6 @@ BEGIN {
       samtools_faidx
       samtools_idxstats
       samtools_index
-      samtools_mpileup
       samtools_stats
       samtools_view };
 
@@ -47,7 +46,7 @@ Readonly my $AMPERSAND => q{&};
 
 sub samtools_view {
 
-## Function : Perl wrapper for writing samtools view recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
+## Function : Perl wrapper for writing samtools view recipe to $FILEHANDLE. Based on samtools 1.9 (using htslib 1.9).
 ## Returns  : "@commands"
 ##          : $auto_detect_input_format       => Ignored (input format is auto-detected)
 ##          : $exclude_reads_with_these_flags => Do not output alignments that match the bits set
@@ -90,7 +89,7 @@ sub samtools_view {
             strict_type => 1,
         },
         exclude_reads_with_these_flags => {
-            allow       => qr/^\d+$/,
+            allow       => qr{ \A\d+\z }xsm,
             store       => \$exclude_reads_with_these_flags,
             strict_type => 1,
         },
@@ -132,7 +131,7 @@ sub samtools_view {
             strict_type => 1,
         },
         thread_number => {
-            allow       => qr/^\d+$/,
+            allow       => qr{ \A\d+\z }xsm,
             store       => \$thread_number,
             strict_type => 1,
         },
@@ -230,40 +229,38 @@ sub samtools_view {
 
 sub samtools_index {
 
-## samtools_index
-
-## Function : Perl wrapper for writing samtools index recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
-## Returns  : "@commands"
+## Function : Perl wrapper for writing samtools index recipe to $FILEHANDLE. Based on samtools 1.9 (using htslib 1.9).
+## Returns  : @commands
+##          : $bai_format             => Generate BAI-format index for BAM files
+##          : $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $stderrfile_path        => Stderrfile path
-##          : $stdoutfile_path        => Stdoutfile path
-##          : $FILEHANDLE             => Sbatch filehandle to write to
-##          : $bai_format             => Generate BAI-format index for BAM files
 ##          : $stderrfile_path_append => Stderrfile path append
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infile_path;
-    my $stdoutfile_path;
-    my $stderrfile_path;
-    my $FILEHANDLE;
     my $bai_format;
+    my $FILEHANDLE;
+    my $infile_path;
+    my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdoutfile_path;
 
     my $tmpl = {
+        bai_format  => { store => \$bai_format, strict_type => 1, },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE => { store       => \$FILEHANDLE },
-        bai_format => { strict_type => 1, store => \$bai_format },
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -274,7 +271,7 @@ sub samtools_index {
     ## Options
     if ($bai_format) {
 
-        #Generate BAI-format index for BAM files
+        # Generate BAI-format index for BAM files
         push @commands, q{-b};
     }
 
@@ -294,8 +291,8 @@ sub samtools_index {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -303,50 +300,62 @@ sub samtools_index {
 
 sub samtools_stats {
 
-## samtools_stats
-
-## Function : Perl wrapper for writing samtools stats recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
-## Returns  : "@commands"
-##          : $regions_ref              => The regions to process {REF}
+## Function : Perl wrapper for writing samtools stats recipe to $FILEHANDLE. Based on samtools 1.9 (using htslib 1.9).
+## Returns  : @commands
+##          : $auto_detect_input_format => Ignored (input format is auto-detected)
+##          : $FILEHANDLE               => Sbatch filehandle to write to
 ##          : $infile_path              => Infile path
 ##          : $outfile_path             => Outfile path
+##          : $regions_ref              => Regions to process {REF}
+##          : $remove_overlap           => Remove overlaps of paired-end reads from coverage and base count computations
 ##          : $stderrfile_path          => Stderrfile path
-##          : $FILEHANDLE               => Sbatch filehandle to write to
-##          : $auto_detect_input_format => Ignored (input format is auto-detected)
 ##          : $stderrfile_path_append   => Stderrfile path append
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $auto_detect_input_format;
-
     ## Flatten argument(s)
-    my $regions_ref;
+    my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
+    my $regions_ref;
     my $stderrfile_path;
-    my $FILEHANDLE;
     my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $auto_detect_input_format;
+    my $remove_overlap;
 
     my $tmpl = {
-        regions_ref =>
-          { default => [], strict_type => 1, store => \$regions_ref },
-        infile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE               => { store => \$FILEHANDLE },
         auto_detect_input_format => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$auto_detect_input_format,
             strict_type => 1,
-            store       => \$auto_detect_input_format
+        },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path   => { store => \$outfile_path, strict_type => 1, },
+        remove_overlap => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$remove_overlap,
+            strict_type => 1,
+        },
+        regions_ref =>
+          { default => [], store => \$regions_ref, strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path,
         },
     };
 
@@ -360,18 +369,23 @@ sub samtools_stats {
         push @commands, q{-s};
     }
 
+    if ($remove_overlap) {
+
+        push @commands, q{--remove-overlaps};
+    }
+
     ## Infile
     push @commands, $infile_path;
 
     if ( @{$regions_ref} ) {
 
-        #Limit output to regions
+        # Limit output to regions
         push @commands, join $SPACE, @{$regions_ref};
     }
 
     if ($outfile_path) {
 
-        #Specify output filename
+        # Specify output filename
         push @commands, q{>} . $SPACE . $outfile_path;
     }
 
@@ -381,155 +395,15 @@ sub samtools_stats {
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
+            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    return @commands;
-}
-
-sub samtools_mpileup {
-
-## samtools_mpileup
-
-## Function : Perl wrapper for writing samtools mpileup recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
-## Returns  : "@commands"
-##          : $infile_paths_ref                 => Infile paths {REF}
-##          : $output_tags_ref                  => Optional tags to output {REF}
-##          : $outfile_path                     => Outfile path
-##          : $referencefile_path               => Reference sequence file
-##          : $stderrfile_path                  => Stderrfile path
-##          : $FILEHANDLE                       => Sbatch filehandle to write to
-##          : $region                           => The regions to process {REF}
-##          : $output_bcf                       => Generate genotype likelihoods in BCF format
-##          : $per_sample_increased_sensitivity => Apply -m and -F per-sample for increased sensitivity
-##          : $adjust_mq                        => Adjust mapping quality
-##          : $stderrfile_path_append           => Stderrfile path append
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $per_sample_increased_sensitivity;
-    my $adjust_mq;
-
-    ## Flatten argument(s)
-    my $infile_paths_ref;
-    my $output_tags_ref;
-    my $outfile_path;
-    my $referencefile_path;
-    my $stderrfile_path;
-    my $FILEHANDLE;
-    my $region;
-    my $output_bcf;
-    my $stderrfile_path_append;
-
-    my $tmpl = {
-        infile_paths_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$infile_paths_ref
-        },
-        output_tags_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$output_tags_ref
-        },
-        outfile_path       => { strict_type => 1, store => \$outfile_path },
-        referencefile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$referencefile_path
-        },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE => { store       => \$FILEHANDLE },
-        region     => { strict_type => 1, store => \$region },
-        output_bcf => { strict_type => 1, store => \$output_bcf },
-        per_sample_increased_sensitivity => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$per_sample_increased_sensitivity
-        },
-        adjust_mq => {
-            default     => 50,
-            allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
-            store       => \$adjust_mq
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Array @commands stores commands depending on input parameters
-    my @commands = qw{ samtools mpileup };
-
-    ## Options
-    push @commands, q{--adjust-MQ} . $SPACE . $adjust_mq;
-
-    if ($per_sample_increased_sensitivity) {
-
-        push @commands, q{--per-sample-mF};
-    }
-
-    if ( @{$output_tags_ref} ) {
-
-        push @commands, q{--output-tags} . $SPACE . join $COMMA,
-          @{$output_tags_ref};
-    }
-
-    if ($region) {
-
-        #Limit output to region
-        push @commands, q{--region} . $SPACE . $region;
-    }
-
-    if ($referencefile_path) {
-
-        #Reference sequence file
-        push @commands, q{--fasta-ref} . $SPACE . $referencefile_path;
-    }
-
-    if ($output_bcf) {
-
-        push @commands, q{--BCF};
-    }
-
-    if ($outfile_path) {
-
-        #Specify output filename
-        push @commands, q{--output} . $SPACE . $outfile_path;
-    }
-
-    ## Infile
-    push @commands, join $SPACE, @{$infile_paths_ref};
-
-    # Redirect stderr output to program specific stderr file
-    push @commands,
-      unix_standard_streams(
-        {
-            stderrfile_path        => $stderrfile_path,
-            stderrfile_path_append => $stderrfile_path_append,
-        }
-      );
-
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     return @commands;
@@ -537,41 +411,39 @@ sub samtools_mpileup {
 
 sub samtools_faidx {
 
-## samtools_faidx
-
-## Function : Perl wrapper for writing samtools faidx recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
-## Returns  : "@commands"
-##          : $regions_ref            => The regions to process {REF}
+## Function : Perl wrapper for writing samtools faidx recipe to $FILEHANDLE. Based on samtools 1.9 (using htslib 1.9).
+## Returns  : @commands
+##          : $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
+##          : $regions_ref            => The regions to process {REF}
 ##          : $stderrfile_path        => Stderrfile path
-##          : $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $stderrfile_path_append => Stderrfile path append
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $regions_ref;
+    my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
+    my $regions_ref;
     my $stderrfile_path;
-    my $FILEHANDLE;
     my $stderrfile_path_append;
 
     my $tmpl = {
-        regions_ref =>
-          { default => [], strict_type => 1, store => \$regions_ref },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        outfile_path => { store => \$outfile_path, strict_type => 1, },
+        regions_ref =>
+          { default => [], store => \$regions_ref, strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE => { store => \$FILEHANDLE },
+          { store => \$stderrfile_path_append, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -584,13 +456,13 @@ sub samtools_faidx {
 
     if ( @{$regions_ref} ) {
 
-        #Limit output to regions
+        # Limit output to regions
         push @commands, join $SPACE, @{$regions_ref};
     }
 
     if ($outfile_path) {
 
-        #Specify output filename
+        # Specify output filename
         push @commands, q{>} . $SPACE . $outfile_path;
     }
 
@@ -606,8 +478,8 @@ sub samtools_faidx {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -617,49 +489,49 @@ sub samtools_create_chromosome_files {
 
 ## Function : Perl wrapper for writing chromosome files used by other scripts. Writes to FILEHANDLE.
 ## Returns  :
-##          : $regions_ref        => The regions to process {REF}
-##          : $infile_path        => Infile path
-##          : temp_directory      => Temporary directory
-##          : $outfile_path       => Outfile path
-##          : $suffix             => suffix to append to outfile_path
-##          : $max_process_number => Max number of processeses
 ##          : $FILEHANDLE         => Sbatch filehandle to write to
+##          : $infile_path        => Infile path
+##          : $max_process_number => Max number of processeses
+##          : $outfile_path       => Outfile path
+##          : $regions_ref        => Regions to process {REF}
+##          : $suffix             => Suffix to append to outfile_path
+##          : $temp_directory     => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $regions_ref;
-    my $infile_path;
-    my $temp_directory;
-    my $suffix;
-    my $max_process_number;
     my $FILEHANDLE;
+    my $infile_path;
+    my $max_process_number;
+    my $regions_ref;
+    my $suffix;
+    my $temp_directory;
 
     my $tmpl = {
-        regions_ref => {
-            required    => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$regions_ref,
-        },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infile_path,
+            strict_type => 1,
         },
+        max_process_number => {
+            allow       => qr{ \A\d+\z }sxm,
+            store       => \$max_process_number,
+            strict_type => 1,
+        },
+        regions_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$regions_ref,
+            strict_type => 1,
+        },
+        suffix         => { store => \$suffix, strict_type => 1, },
         temp_directory => {
             required    => 1,
-            strict_type => 1,
             store       => \$temp_directory,
-        },
-        suffix             => { strict_type => 1, store => \$suffix, },
-        max_process_number => {
-            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
-            store       => \$max_process_number,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -669,23 +541,22 @@ sub samtools_create_chromosome_files {
     while ( my ( $contig_index, $contig ) = each @{$regions_ref} ) {
         $process_batches_count = print_wait(
             {
-                process_counter       => $contig_index,
+                FILEHANDLE            => $FILEHANDLE,
                 max_process_number    => $max_process_number,
                 process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
+                process_counter       => $contig_index,
             }
         );
 
         samtools_faidx(
             {
-                regions_ref  => [$contig],
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $infile_path,
                 outfile_path => catfile( $temp_directory, $contig . $suffix ),
-                FILEHANDLE   => $FILEHANDLE,
+                regions_ref  => [$contig],
             }
         );
         say {$FILEHANDLE} $SPACE . $AMPERSAND;
-
     }
     return;
 }
@@ -708,8 +579,6 @@ sub samtools_idxstats {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-
-    ## Default(s)
 
     my $tmpl = {
         FILEHANDLE => {
@@ -755,8 +624,8 @@ sub samtools_idxstats {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -798,7 +667,7 @@ sub samtools_depth {
             strict_type => 1,
         },
         max_depth_treshold => {
-            allow   => qr/^\d+$/xms,
+            allow   => qr{ \A\d+\z }xsm,
             defined => 1,
             store   => \$max_depth_treshold,
         },
@@ -841,8 +710,8 @@ sub samtools_depth {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }

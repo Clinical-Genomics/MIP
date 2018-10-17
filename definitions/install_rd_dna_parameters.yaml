@@ -33,7 +33,7 @@ emip:
     python: 2.7
     rtg-tools: 3.8.4
     sambamba: 0.6.6
-    samtools: 1.6
+    samtools: 1.9=h8ee4bcc_1
     snpeff: 4.3.1
     snpsift: 4.3.1
     svdb: 1.1.2
@@ -110,7 +110,7 @@ eperl_5.26:
     bwakit: 0.7.15=1
     fastqc: 0.11.8=0
     sambamba: 0.6.6
-    samtools: 1.6
+    samtools: 1.9=h8ee4bcc_1
     pip:
     python: 3.6
   pip:

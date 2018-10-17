@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem };
@@ -486,6 +486,7 @@ sub analysis_bwa_mem {
                     auto_detect_input_format => 1,
                     FILEHANDLE               => $FILEHANDLE,
                     infile_path              => $file_path,
+                    remove_overlap           => 1,
                 }
             );
             print {$FILEHANDLE} $PIPE . $SPACE;
