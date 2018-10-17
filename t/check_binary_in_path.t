@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -67,8 +67,8 @@ my %active_parameter =
   ( conda_path =>
       catdir( dirname($Bin), qw{ t data modules miniconda envs test_env bin } ),
   );
-my $binary       = q{bwa};
-my $program_name = q{bwa};
+my $binary       = q{samtools};
+my $program_name = q{samtools};
 
 my $is_ok = check_binary_in_path(
     {
