@@ -38,8 +38,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - vcf_rerun_reformat
 
 **Tools**
-- Delly "0.7.7" -> "0.7.8"
-- GATK "3.8" -> "4.0.10"
+- fastqc: 0.11.4 -> 0.11.8-0
+- bwa: 0.7.15 -> 0.7.1-ha92aebf_3
+- bwakit: 0.7.12 -> 0.7.15-1
+- samtools: 1.6 -> 1.9-h8ee4bcc_1
+- delly: 0.7.7 -> 0.7.8-h278814d_3
+- GATK: 3.8 -> 4.0.10.0-0
 
 
 ## [6.0.7]

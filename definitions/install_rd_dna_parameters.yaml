@@ -22,7 +22,7 @@ emip:
     cutadapt: 1.14
     cython:
     gatk: 3.8
-    gatk4: 4.0
+    gatk4: 4.0.10.0=0
     gcc: 4.8.5
     htslib: 1.6
     manta: 1.1.0
@@ -96,7 +96,7 @@ ecnvnator:
 edelly:
   conda:
     bcftools: 1.6
-    delly: 0.7.8
+    delly: 0.7.8=h278814d_3
     picard: 2.14.1
     pip:
     python: 2.7
