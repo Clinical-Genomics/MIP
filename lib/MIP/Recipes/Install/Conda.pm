@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -135,6 +135,7 @@ sub install_conda_packages {
 ## Returns   :
 ## Arguments : $conda_env                  => Name of conda environment
 ##           : $conda_env_path             => Path to conda environment (default: conda root)
+##           : $conda_no_update_dep        => Do not update dependencies
 ##           : $conda_packages_href        => Hash holding conda packages and their version numbers {REF}
 ##           : $conda_update               => Update Conda if defined
 ##           : $FILEHANDLE                 => Filehandle to write to
@@ -154,6 +155,9 @@ sub install_conda_packages {
     my $snpeff_genome_versions_ref;
     my $verbose;
 
+    ## Defaults
+    my $conda_no_update_dep;
+
     my $tmpl = {
         conda_env => {
             strict_type => 1,
@@ -163,6 +167,12 @@ sub install_conda_packages {
             defined     => 1,
             required    => 1,
             store       => \$conda_env_path,
+            strict_type => 1,
+        },
+        conda_no_update_dep => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$conda_no_update_dep,
             strict_type => 1,
         },
         conda_packages_href => {
@@ -274,6 +284,7 @@ q{Writing installation instructions for conda packages to environment: }
             conda_install(
                 {
                     conda_channels_ref => [qw{ bioconda conda-forge }],
+                    no_update_dep      => $conda_no_update_dep,
                     FILEHANDLE         => $FILEHANDLE,
                     env_name           => $conda_env,
                     packages_ref       => \@packages,

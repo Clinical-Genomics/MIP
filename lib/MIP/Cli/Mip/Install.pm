@@ -1,6 +1,6 @@
 package MIP::Cli::Mip::Install;
 
-use 5.018;
+use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
 use strict;
@@ -14,7 +14,7 @@ use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -58,6 +58,17 @@ sub _build_usage {
             cmd_aliases   => [qw{ cdu }],
             cmd_flag      => q{conda_update},
             documentation => q{Update conda},
+            is            => q{rw},
+            isa           => Bool,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{conda_no_update_dep} => (
+            cmd_aliases   => [qw{ cnud }],
+            cmd_flag      => q{conda_no_update_dep},
+            documentation => q{Do not update dependencies},
             is            => q{rw},
             isa           => Bool,
             required      => 0,
