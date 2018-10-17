@@ -89,7 +89,7 @@ sub samtools_view {
             strict_type => 1,
         },
         exclude_reads_with_these_flags => {
-            allow       => qr/\A\d+\z/xsm,
+            allow       => qr{ \A\d+\z }xsm,
             store       => \$exclude_reads_with_these_flags,
             strict_type => 1,
         },
@@ -131,7 +131,7 @@ sub samtools_view {
             strict_type => 1,
         },
         thread_number => {
-            allow       => qr/\A\d+\z/xsm,
+            allow       => qr{ \A\d+\z }xsm,
             store       => \$thread_number,
             strict_type => 1,
         },
@@ -516,7 +516,7 @@ sub samtools_create_chromosome_files {
             strict_type => 1,
         },
         max_process_number => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr{ \A\d+\z }sxm,
             store       => \$max_process_number,
             strict_type => 1,
         },
@@ -667,7 +667,7 @@ sub samtools_depth {
             strict_type => 1,
         },
         max_depth_treshold => {
-            allow   => qr/\A\d+\z/xsm,
+            allow   => qr{ \A\d+\z }xsm,
             defined => 1,
             store   => \$max_depth_treshold,
         },
