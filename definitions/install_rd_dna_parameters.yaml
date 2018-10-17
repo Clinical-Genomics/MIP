@@ -83,7 +83,7 @@ ecnvnator:
     gcc: 4.8.5
     pip:
     python: 2.7
-    samtools: 1.9=h8ee4bcc_1
+    samtools: 1.6
   pip:
   shell:
     cnvnator:
