@@ -1,5 +1,6 @@
-package MIP::Program::Variantcalling::BlobFish;
+package MIP::Program::Variantcalling::Blobfish;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,60 +24,57 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ blobfish_all_vs_all };
+    our @EXPORT_OK = qw{ blobfish_allvsall };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
 
-sub blobfish_all_vs_all {
+sub blobfish_allvsall {
 
-## Function : Perl wrapper for BlobFish --allvsall, version 0.1.0.
+## Function : Perl wrapper for BlobFish in allvsall mode (wrapper for DESeq2), based on version 0.0.2.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : $infile_paths_ref       => List of input salmon quant.sf files
-##          : $insamples_ref          => List of input sample ids, these should match the infile path list
-##          : $outdir_path            => Output directory path
+## Arguments: $conditions_ref         => Conditions for each indir path {REF}
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $indir_paths_ref        => Path to salmon output directories {REF}
+##          : $outdir_path            => Path to out directory
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $tx_to_gene_path        => Path to the transcripts to gene conversion file
+##          : $tx2gene_file_path      => Path to tx2gene file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $conditions_ref;
     my $FILEHANDLE;
-    my $infile_paths_ref;
-    my $insamples_ref;
+    my $indir_paths_ref;
     my $outdir_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-    my $tx_to_gene_path;
+    my $tx2gene_file_path;
 
     my $tmpl = {
+        conditions_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$conditions_ref,
+            strict_type => 1,
+        },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-        infile_paths_ref => {
+        indir_paths_ref => {
             default     => [],
-            defined     => 1,
             required    => 1,
-            store       => \$infile_paths_ref,
-            strict_type => 1,
-        },
-        insamples_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$insamples_ref,
+            store       => \$indir_paths_ref,
             strict_type => 1,
         },
         outdir_path => {
-            defined     => 1,
             required    => 1,
             store       => \$outdir_path,
             strict_type => 1,
@@ -93,24 +91,34 @@ sub blobfish_all_vs_all {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
-        tx_to_gene_path => {
+        tx2gene_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$tx_to_gene_path,
+            store       => \$tx2gene_file_path,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Each infile must have a condition
+    croak q{Each indirectory must be matched with a condition}
+      if ( scalar @{$indir_paths_ref} ne @{$conditions_ref} );
+
     ## Stores commands depending on input parameters
     my @commands = q{BlobFish.py --allvsall};
 
-    # Options
+    ## Add infile paths
+    push @commands, q{--paths} . $SPACE . join $SPACE, @{$indir_paths_ref};
+
+    ## Add conditions
+    push @commands, q{--conditions} . $SPACE . join $SPACE, @{$conditions_ref};
+
+    ## Transcript to gene file
+    push @commands, q{--tx} . $SPACE . $tx2gene_file_path;
+
+    ## Out path
     push @commands, q{--dir} . $SPACE . $outdir_path;
-    push @commands, q{--paths} . $SPACE . join $SPACE, @{$infile_paths_ref};
-    push @commands, q{--sample} . $SPACE . join $SPACE, @{$insamples_ref};
-    push @commands, q{--tx} . $SPACE . $tx_to_gene_path;
 
     push @commands,
       unix_standard_streams(
@@ -130,7 +138,6 @@ sub blobfish_all_vs_all {
         }
     );
     return @commands;
-
 }
 
 1;
