@@ -208,6 +208,7 @@ sub mip_install {
             {
                 conda_env      => $parameter{environment_name}{$installation},
                 conda_env_path => $parameter{$installation}{conda_prefix_path},
+                conda_no_update_dep => $parameter{conda_no_update_dep},
                 conda_packages_href => $parameter{$installation}{conda},
                 conda_update        => $parameter{conda_update},
                 FILEHANDLE          => $FILEHANDLE,

@@ -486,6 +486,7 @@ sub analysis_bwa_mem {
                     auto_detect_input_format => 1,
                     FILEHANDLE               => $FILEHANDLE,
                     infile_path              => $file_path,
+                    remove_overlap           => 1,
                 }
             );
             print {$FILEHANDLE} $PIPE . $SPACE;
