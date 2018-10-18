@@ -117,7 +117,7 @@ sub blobfish_allvsall {
     ## Transcript to gene file
     push @commands, q{--tx} . $SPACE . $tx2gene_file_path;
 
-    ## Out path
+    ## Outpath
     push @commands, q{--dir} . $SPACE . $outdir_path;
 
     push @commands,
