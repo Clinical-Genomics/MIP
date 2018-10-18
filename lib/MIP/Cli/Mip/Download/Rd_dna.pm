@@ -82,14 +82,12 @@ sub _build_usage {
 
     option(
         q{config_file} => (
-            cmd_aliases => [qw{ config c }],
-            documentation =>
-              q{File with configuration parameters in YAML format},
-            is      => q{rw},
-            isa     => Str,
-            default => catfile(
-                dirname($Bin),
-                qw{ MIP definitions download_rd_dna_parameters.yaml }
+            cmd_aliases   => [qw{ config c }],
+            documentation => q{File with configuration parameters in YAML format},
+            is            => q{rw},
+            isa           => Str,
+            default       => catfile(
+                dirname($Bin), qw{ MIP definitions download_rd_dna_parameters.yaml }
             ),
         )
     );
