@@ -26,7 +26,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Download qw{ mip_download };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = '0.2.0';
+our $VERSION = 1.01;
 
 extends(qw{ MIP::Cli::Mip::Download });
 

@@ -1,4 +1,4 @@
-package MIP::Cli::Mip::Download::Rna;
+package MIP::Cli::Mip::Download::Rd_rna;
 
 use 5.026;
 use Carp;
@@ -26,7 +26,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Download qw{ mip_download };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 extends(qw{ MIP::Cli::Mip::Download });
 
