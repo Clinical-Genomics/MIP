@@ -22,7 +22,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_fastqc };
@@ -290,7 +290,7 @@ sub analysis_fastqc {
                 {
                     infile           => $outfile_name_prefixes[$index],
                     path             => $outfile_paths[$index],
-                    outdirectory     => $outdir_path_prefix,
+                    outdirectory     => $outsample_directory,
                     program_name     => $program_name,
                     sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,
