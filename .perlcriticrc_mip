@@ -1,5 +1,9 @@
 ## Modifications to perl critic policies for MIP development
 
-## Increase the number of lines between open and close filhandle, default 9
+## Increase the number of lines between open and close filehandle, default 9
 [InputOutput::RequireBriefOpen]
 lines = 100
+
+[InputOutput::RequireCheckedSyscalls]
+functions = :builtins
+exclude_functions = print say
