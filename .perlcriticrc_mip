@@ -7,3 +7,7 @@ lines = 100
 [InputOutput::RequireCheckedSyscalls]
 functions = :builtins
 exclude_functions = print say
+
+## Perltidy has already been run with a diffrent slightlty modified rules
+[-CodeLayout::RequireTidyCode]
+
