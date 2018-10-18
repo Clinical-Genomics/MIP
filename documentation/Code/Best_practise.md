@@ -1,9 +1,26 @@
 # Perl Best Practices
 
-Following best practices is a good way to create maintainable and readable code and should always be encouraged. However, learning what these best practices are and when they apply in the context of your code can be hard to determine. Luckily, there are several tools to help guide you on your way. 
+Following best practices is a good way to create maintainable and readable code and should always be encouraged. However, learning what these best practices are and when they apply in the context of your code can be hard to determine. Luckily, there are several tools to help guide you on your way.
 
 ## Code standards
 All code that are present with MIP has to be processed by both [Perltidy] and [Perlcritic].
+
+### mip-check
+MIP supplies a bash script that runs Perlcritic and Perltidy on perl scripts. Perltidy modifies the files in place and the files are then analyzed by Perl critic with a level 1 severity with a few exceptions as specified in the .perlcriticrc_mip file.
+
+Which files to operate on are supplied on the command line. If no files are given the script uses `git status` to check for new and modified perl scripts and uses that as input.
+
+#### Examples
+```bash
+## Run mip-check on newly edited files
+bash mip-check
+
+## Run mip-check on two files at level 2 severity
+bash mip-check -s 2 somefile1.pl somefile2.pm
+
+## Run mip-check on all files in a directory
+bash mip-check lib/MIP/Check/*
+```
 
 ### Perl Critic
 
@@ -15,9 +32,9 @@ Perl critic allows different degrees of severity. Severity values are integers r
 
 ```
 perlcritic --severity 4 --verbose 11 my_perl_script.pl
-``` 
+```
 
-Perl critic also has [web interface] to instantly analyze your code. 
+Perl critic also has [web interface] to instantly analyze your code.
 
 
 ### Perl Tidy
