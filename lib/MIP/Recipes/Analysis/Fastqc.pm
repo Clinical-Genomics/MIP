@@ -22,7 +22,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_fastqc };
@@ -131,9 +131,7 @@ sub analysis_fastqc {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Processes qw{ print_wait };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Qc::Fastqc qw{ fastqc };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -166,21 +164,21 @@ sub analysis_fastqc {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Outpaths
     my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
-        $program_name );
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $program_name );
     my @outfile_paths =
-      map { catdir( $outsample_directory, $_ . $UNDERSCORE . $program_name, q{fastqc_data.txt} ) }
-      @infile_name_prefixes;
+      map {
+        catdir( $outsample_directory, $_ . $UNDERSCORE . $program_name,
+            q{fastqc_data.txt} )
+      } @infile_name_prefixes;
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -224,7 +222,7 @@ sub analysis_fastqc {
     $core_number = check_max_core_number(
         {
             core_number_requested => $core_number,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
         }
     );
 
@@ -304,11 +302,12 @@ sub analysis_fastqc {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_job_no_dependency_dead_end(
+        submit_recipe(
             {
-                job_id_href      => $job_id_href,
-                log              => $log,
-                sbatch_file_name => $file_name,
+                active_parameter_href => $active_parameter_href,
+                job_id_href           => $job_id_href,
+                log                   => $log,
+                recipe_file_name      => $file_name,
             }
         );
     }

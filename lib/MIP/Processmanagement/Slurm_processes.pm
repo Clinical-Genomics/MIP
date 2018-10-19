@@ -24,7 +24,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -40,6 +40,7 @@ BEGIN {
       slurm_submit_job_sample_id_dependency_step_in_parallel
       slurm_submit_job_sample_id_dependency_step_in_parallel_to_family
       submit_jobs_to_sbatch
+      submit_slurm_recipe
     };
 
 }
@@ -49,47 +50,163 @@ Readonly my $NEWLINE      => qq{\n};
 Readonly my $SINGLE_QUOTE => q{'};
 Readonly my $UNDERSCORE   => q{_};
 
-sub slurm_submit_job_no_dependency_dead_end {
+sub submit_slurm_recipe {
 
-##slurm_submit_job_no_dependency_dead_end
-
-##Function : Submit jobs that has no prior job dependencies and does not leave any dependencies using SLURM, except to PAN dependencies
-##Returns  : ""
-##Arguments: $job_id_href, $sbatch_file_name, $log
-##         : $job_id_href      => The info on job ids hash {REF}
-##         : $sbatch_file_name => Sbatch file name
-##         : $log              => Log
+## Function : Submit SLURM recipe
+## Returns  :
+## Arguments: $family_id               => Family id
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_dependency_type     => SLURM job dependency type
+##          : $job_id_chain            => Chain id
+##          : $job_id_href             => The info on job ids hash {REF}
+##          : $log                     => Log
+##          : $parallel_chains_ref     => Info on parallel chains array {REF}
+##          : $sample_id               => Sample id
+##          : $recipe_file_name        => Sbatch file name
+##          : $recipe_files_tracker    => Track the number of parallel processes (e.g. sbatch scripts for a module)
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $family_id;
+    my $infile_lane_prefix_href;
+    my $job_id_chain;
     my $job_id_href;
-    my $sbatch_file_name;
     my $log;
+    my $parallel_chains_ref;
+    my $sample_id;
+    my $recipe_file_name;
+    my $recipe_files_tracker;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        family_id => {
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$job_id_href
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        job_id_chain => { store => \$job_id_chain, strict_type => 1, },
+        job_id_href  => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
         log => {
-            required => 1,
             defined  => 1,
-            store    => \$log
+            required => 1,
+            store    => \$log,
         },
-        sbatch_file_name => {
-            required    => 1,
-            defined     => 1,
+        parallel_chains_ref => {
+            default     => [],
+            store       => \$parallel_chains_ref,
             strict_type => 1,
-            store       => \$sbatch_file_name
+        },
+        recipe_file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_file_name,
+            strict_type => 1,
+        },
+        sample_id => {
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        recipe_files_tracker => {
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
+            store       => \$recipe_files_tracker,
+            strict_type => 1,
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Processmanagement::Processes qw{add_job_id_dependency_tree};
+    ## Sample level and parallel
+    if ( $sample_id and defined $recipe_files_tracker ) {
+
+        slurm_submit_job_sample_id_dependency_step_in_parallel(
+            {
+                family_id               => $family_id,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
+                sbatch_file_name        => $recipe_file_name,
+                sbatch_script_tracker   => $recipe_files_tracker,
+            }
+        );
+        return;
+    }
+    if ($sample_id) {
+
+        slurm_submit_job_sample_id_dependency_add_to_sample(
+            {
+                family_id               => $family_id,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
+                sbatch_file_name        => $recipe_file_name,
+            }
+        );
+        return;
+    }
+    ## No upstream or downstream dependencies
+    slurm_submit_job_no_dependency_dead_end(
+        {
+            job_id_href      => $job_id_href,
+            log              => $log,
+            sbatch_file_name => $recipe_file_name,
+        }
+    );
+    return;
+}
+
+sub slurm_submit_job_no_dependency_dead_end {
+
+## Function : Submit jobs that has no prior job dependencies and does not leave any dependencies using SLURM, except to PAN dependencies
+## Returns  :
+## Arguments: $log              => Log object
+##          : $job_id_href      => The info on job ids hash {REF}
+##          : $sbatch_file_name => Sbatch file name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $job_id_href;
+    my $sbatch_file_name;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        sbatch_file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sbatch_file_name,
+            strict_type => 1,
+        },
+    };
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Processmanagement::Processes qw{ add_job_id_dependency_tree };
 
     # The job_id that is returned from submission
     my $job_id_returned;
@@ -164,9 +281,8 @@ sub slurm_submit_job_no_dependency_add_to_sample {
             strict_type => 1,
             store       => \$sample_id
         },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log => {
+        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
+        log  => {
             required => 1,
             defined  => 1,
             store    => \$log
@@ -178,7 +294,7 @@ sub slurm_submit_job_no_dependency_add_to_sample {
             store       => \$sbatch_file_name
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Processes
       qw{add_sample_job_id_to_sample_id_dependency_tree
@@ -273,9 +389,8 @@ sub slurm_submit_job_no_dependency_add_to_samples {
             strict_type => 1,
             store       => \$family_id
         },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log => {
+        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
+        log  => {
             required => 1,
             defined  => 1,
             store    => \$log
@@ -287,7 +402,7 @@ sub slurm_submit_job_no_dependency_add_to_samples {
             store       => \$sbatch_file_name
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Processes
       qw{add_sample_job_id_to_sample_id_dependency_tree add_job_id_dependency_tree};
@@ -398,9 +513,8 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
             strict_type => 1,
             store       => \$sample_id
         },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log => {
+        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
+        log  => {
             required => 1,
             defined  => 1,
             store    => \$log
@@ -418,7 +532,7 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
             store       => \$job_dependency_type
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Processes qw{add_job_id_dependency_tree
       add_pan_job_id_to_sample_id_dependency_tree
@@ -439,8 +553,7 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     ## Set keys
     my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
     my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-    my $pan_chain_key =
-      $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+    my $pan_chain_key       = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
     ## Always check and add any pan (i.e job_ids that affect all chains) dependency jobs
     add_pan_job_id_to_sample_id_dependency_tree(
@@ -602,9 +715,8 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
             strict_type => 1,
             store       => \$sample_id
         },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log => {
+        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
+        log  => {
             required => 1,
             defined  => 1,
             store    => \$log
@@ -622,7 +734,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
             store       => \$job_dependency_type
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Processes qw{add_job_id_dependency_tree
       add_pan_job_id_to_sample_id_dependency_tree
@@ -643,8 +755,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
     ## Set keys
     my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
     my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-    my $pan_chain_key =
-      $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+    my $pan_chain_key       = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
     ## Always check and add any pan (i.e job_ids that affect all chains) dependency jobs
     add_pan_job_id_to_sample_id_dependency_tree(
@@ -826,9 +937,8 @@ sub slurm_submit_job_sample_id_dependency_add_to_family {
             strict_type => 1,
             store       => \$family_id
         },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log => {
+        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
+        log  => {
             required => 1,
             defined  => 1,
             store    => \$log
@@ -846,7 +956,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_family {
             store       => \$job_dependency_type
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Processes qw{create_job_id_string_for_family_id
       clear_family_id_job_id_dependency_tree
@@ -880,13 +990,12 @@ sub slurm_submit_job_sample_id_dependency_add_to_family {
     );
 
     ## Check if last step submission was parallel
-    my $parallel_job_ids_string =
-      add_parallel_job_ids_to_job_id_dependency_string(
+    my $parallel_job_ids_string = add_parallel_job_ids_to_job_id_dependency_string(
         {
             job_id_href         => $job_id_href,
             family_id_chain_key => $family_id_chain_key,
         }
-      );
+    );
 
     ## If parellel job_ids existed add to current job_id_string
     if ($parallel_job_ids_string) {
@@ -1020,9 +1129,8 @@ sub slurm_submit_job_sample_id_dependency_family_dead_end {
             strict_type => 1,
             store       => \$family_id
         },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log => {
+        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
+        log  => {
             required => 1,
             defined  => 1,
             store    => \$log
@@ -1040,7 +1148,7 @@ sub slurm_submit_job_sample_id_dependency_family_dead_end {
             store       => \$job_dependency_type
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Processes qw{create_job_id_string_for_family_id
       clear_family_id_job_id_dependency_tree
@@ -1074,13 +1182,12 @@ sub slurm_submit_job_sample_id_dependency_family_dead_end {
     );
 
     ## Check if last family job submission was parallel
-    my $parallel_job_ids_string =
-      add_parallel_job_ids_to_job_id_dependency_string(
+    my $parallel_job_ids_string = add_parallel_job_ids_to_job_id_dependency_string(
         {
             job_id_href         => $job_id_href,
             family_id_chain_key => $family_id_chain_key,
         }
-      );
+    );
 
     ## If parellel job_ids existed add to current job_id_string
     if ($parallel_job_ids_string) {
@@ -1142,104 +1249,101 @@ sub slurm_submit_job_sample_id_dependency_family_dead_end {
 
 sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_family {
 
-##slurm_submit_job_sample_id_dependency_step_in_parallel_to_family
-
-##Function : Submit jobs that has sample_id dependencies and adds to family parallel dependencies using SLURM
-##Returns  : ""
-##Arguments: $job_id_href, $infile_lane_prefix_href, $sample_ids_ref, $parallel_chains_ref, $family_id, $path, $sbatch_file_name, $sbatch_script_tracker, $log, $job_dependency_type
-##         : $job_id_href             => The info on job ids hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $sample_ids_ref          => Sample ids {REF}
-##         : $parallel_chains_ref     => Info on parallel chains array {REF}
-##         : $family_id               => Family id
-##         : $path                    => Trunk or branch
-##         : $sbatch_file_name        => Sbatch file name
-##         : $sbatch_script_tracker   => Track the number of parallel processes (e.g. sbatch scripts for a module)
-##         : $log                     => Log
-##         : $job_dependency_type     => SLURM job dependency type
+## Function : Submit jobs that has sample_id dependencies and adds to family parallel dependencies using SLURM
+## Returns  :
+## Arguments: $family_id               => Family id
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_dependency_type     => SLURM job dependency type
+##          : $job_id_href             => The info on job ids hash {REF}
+##          : $log                     => Log
+##          : $parallel_chains_ref     => Info on parallel chains array {REF}
+##          : $path                    => Trunk or branch
+##          : $sample_ids_ref          => Sample ids {REF}
+##          : $sbatch_file_name        => Sbatch file name
+##          : $sbatch_script_tracker   => Track the number of parallel processes (e.g. sbatch scripts for a module)
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $family_id;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $log;
+    my $parallel_chains_ref;
+    my $path;
+    my $sample_ids_ref;
+    my $sbatch_file_name;
+    my $sbatch_script_tracker;
 
     ## Default(s)
     my $job_dependency_type;
 
-    ## Flatten argument(s)
-    my $job_id_href;
-    my $infile_lane_prefix_href;
-    my $sample_ids_ref;
-    my $parallel_chains_ref;
-    my $family_id;
-    my $path;
-    my $sbatch_file_name;
-    my $sbatch_script_tracker;
-    my $log;
-
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
+        family_id => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$job_id_href
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        sample_ids_ref => {
-            required    => 1,
             defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$sample_ids_ref
-        },
-        parallel_chains_ref => {
-            default     => [],
-            strict_type => 1,
-            store       => \$parallel_chains_ref
-        },
-        family_id => {
             required    => 1,
-            defined     => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$family_id
-        },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log => {
-            required => 1,
-            defined  => 1,
-            store    => \$log
-        },
-        sbatch_file_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sbatch_file_name
-        },
-        sbatch_script_tracker => {
-            required    => 1,
-            defined     => 1,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$sbatch_script_tracker
         },
         job_dependency_type => {
-            default     => q{afterok},
             allow       => [qw{afterany afterok}],
+            default     => q{afterok},
+            store       => \$job_dependency_type,
             strict_type => 1,
-            store       => \$job_dependency_type
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        parallel_chains_ref => {
+            default     => [],
+            store       => \$parallel_chains_ref,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+        sbatch_file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sbatch_file_name,
+            strict_type => 1,
+        },
+        sbatch_script_tracker => {
+            allow       => qr{ \A\d+\z }sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$sbatch_script_tracker,
+            strict_type => 1,
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Processmanagement::Processes qw{create_job_id_string_for_family_id
-      clear_family_id_job_id_dependency_tree
+    use MIP::Processmanagement::Processes qw{
       add_job_id_dependency_tree
       add_parallel_job_id_to_parallel_dependency_tree
+      clear_family_id_job_id_dependency_tree
+      create_job_id_string_for_family_id
       limit_job_id_string
     };
 
@@ -1379,9 +1483,8 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
             strict_type => 1,
             store       => \$sample_id
         },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log => {
+        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
+        log  => {
             required => 1,
             defined  => 1,
             store    => \$log
@@ -1406,7 +1509,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
             store       => \$job_dependency_type
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Processes qw{add_job_id_dependency_tree
       add_pan_job_id_to_sample_id_dependency_tree
@@ -1428,8 +1531,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
     ## Set keys
     my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
     my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-    my $pan_chain_key =
-      $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+    my $pan_chain_key       = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
     # Sample parallel chainkey
     my $sample_id_parallel_chain_key =
@@ -1596,9 +1698,8 @@ sub slurm_submit_job_family_id_dependency_dead_end {
             strict_type => 1,
             store       => \$sample_id
         },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log => {
+        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
+        log  => {
             required => 1,
             defined  => 1,
             store    => \$log
@@ -1616,7 +1717,7 @@ sub slurm_submit_job_family_id_dependency_dead_end {
             store       => \$job_dependency_type
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Processes
       qw{add_parallel_job_id_to_sample_id_dependency_tree
@@ -1705,9 +1806,8 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
             strict_type => 1,
             store       => \$job_id_href
         },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log => {
+        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
+        log  => {
             required => 1,
             defined  => 1,
             store    => \$log
@@ -1725,7 +1825,7 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
             store       => \$job_dependency_type
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Processes qw{add_to_job_id_dependency_string
       add_job_id_dependency_tree
@@ -1832,9 +1932,8 @@ sub submit_jobs_to_sbatch {
             required => 1,
             store    => \$log,
         },
-        job_dependency_type =>
-          { store => \$job_dependency_type, strict_type => 1, },
-        job_ids_string => { store => \$job_ids_string, strict_type => 1, },
+        job_dependency_type => { store => \$job_dependency_type, strict_type => 1, },
+        job_ids_string      => { store => \$job_ids_string,      strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1871,7 +1970,7 @@ sub submit_jobs_to_sbatch {
         $job_id = $1;
     }
     else {
-       # Catch errors since, proper sbatch submission should only return numbers
+        # Catch errors since, proper sbatch submission should only return numbers
 
         $log->fatal( @{$stderr_buf_ref} );
         $log->fatal( q{Aborting run} . $NEWLINE );
@@ -1909,10 +2008,9 @@ sub slurm_submission_info {
             store       => \$job_id_returned
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    $log->info( q{Sbatch script submitted, job id: } . $job_id_returned,
-        $NEWLINE );
+    $log->info( q{Sbatch script submitted, job id: } . $job_id_returned, $NEWLINE );
     $log->info(
         q{To check status of job, please run }
           . $SINGLE_QUOTE
