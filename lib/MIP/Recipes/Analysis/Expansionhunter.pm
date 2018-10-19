@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -136,7 +136,8 @@ sub analysis_expansionhunter {
 
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter
+      qw{ get_module_parameters get_program_attributes get_program_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -149,7 +150,8 @@ sub analysis_expansionhunter {
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Script::Setup_script
+      qw{ setup_script write_return_to_conda_environment write_source_environment_command };
 
     ### PREPROCESSING:
 
@@ -172,13 +174,12 @@ sub analysis_expansionhunter {
     my $program_mode = $active_parameter_href->{$program_name};
     my $repeat_specs_dir_path =
       $active_parameter_href->{expansionhunter_repeat_specs_dir};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
@@ -200,8 +201,8 @@ sub analysis_expansionhunter {
     my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
     my $temp_outfile_suffix      = $io{temp}{file_suffix};
-    my $temp_outfile_path = $temp_outfile_path_prefix . $temp_outfile_suffix;
-    my $temp_file_suffix  = $DOT . q{vcf};
+    my $temp_outfile_path        = $temp_outfile_path_prefix . $temp_outfile_suffix;
+    my $temp_file_suffix         = $DOT . q{vcf};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -292,11 +293,9 @@ sub analysis_expansionhunter {
 
         gnu_mv(
             {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $exphun_sample_file_info{$sample_id}{out}
-                  . q{.bai},
-                outfile_path => $exphun_sample_file_info{$sample_id}{in}
-                  . q{.bai},
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $exphun_sample_file_info{$sample_id}{out} . q{.bai},
+                outfile_path => $exphun_sample_file_info{$sample_id}{in} . q{.bai},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -335,7 +334,7 @@ sub analysis_expansionhunter {
                 reference_genome_path => $human_genome_reference,
                 repeat_specs_dir_path => $repeat_specs_dir_path,
                 sex                   => $sample_sex,
-                vcf_outfile_path => $exphun_sample_file_info{$sample_id}{out}
+                vcf_outfile_path      => $exphun_sample_file_info{$sample_id}{out}
                   . $temp_file_suffix,
             }
         );
@@ -349,10 +348,21 @@ sub analysis_expansionhunter {
       map { $exphun_sample_file_info{$_}{out} . $temp_file_suffix }
       @{ $active_parameter_href->{sample_ids} };
     my $svdb_temp_outfile_path =
-        $temp_outfile_path_prefix
-      . $UNDERSCORE
-      . q{svdbmerge}
-      . $temp_file_suffix;
+      $temp_outfile_path_prefix . $UNDERSCORE . q{svdbmerge} . $temp_file_suffix;
+
+    my @program_source_commands = get_program_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            program_name          => q{svdb},
+        }
+    );
+
+    write_source_environment_command(
+        {
+            FILEHANDLE                      => $FILEHANDLE,
+            source_environment_commands_ref => \@program_source_commands,
+        }
+    );
 
     svdb_merge(
         {
@@ -364,13 +374,18 @@ sub analysis_expansionhunter {
     );
     say {$FILEHANDLE} $NEWLINE;
 
+    write_return_to_conda_environment(
+        {
+            FILEHANDLE                           => $FILEHANDLE,
+            source_main_environment_commands_ref => \@source_environment_cmds,
+        }
+    );
+    print {$FILEHANDLE} $NEWLINE;
+
     ## Split multiallelic variants
     say {$FILEHANDLE} q{## Split multiallelic variants};
     my $vt_temp_outfile_path =
-        $temp_outfile_path_prefix
-      . $UNDERSCORE
-      . q{svdbmerg_vt}
-      . $temp_file_suffix;
+      $temp_outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt} . $temp_file_suffix;
     vt_decompose(
         {
             FILEHANDLE          => $FILEHANDLE,
@@ -414,8 +429,8 @@ sub analysis_expansionhunter {
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                sbatch_file_name        => $file_path,
             }
         );
     }
