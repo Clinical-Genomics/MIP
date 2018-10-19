@@ -27,7 +27,7 @@ emip:
     htslib: 1.6
     manta: 1.1.0
     numpy:
-    picard: 2.14.1
+    picard: 2.18.14=0
     pip:
     plink2: 1.90b3.35
     python: 2.7
@@ -97,7 +97,7 @@ edelly:
   conda:
     bcftools: 1.6
     delly: 0.7.8=h278814d_3
-    picard: 2.14.1
+    picard: 2.18.14=0
     pip:
     python: 2.7
   pip:
