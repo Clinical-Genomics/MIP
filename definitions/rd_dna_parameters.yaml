@@ -393,7 +393,7 @@ bwa_sambamba_sort_memory_limit:
   associated_program:
    - bwa_mem
   data_type: SCALAR
-  default: 32G
+  default: 64G
   type: program_argument
 ## BAMCalibrationBlock
 bamcalibrationblock:

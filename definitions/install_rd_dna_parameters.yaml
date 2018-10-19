@@ -32,7 +32,7 @@ emip:
     plink2: 1.90b3.35
     python: 2.7
     rtg-tools: 3.8.4
-    sambamba: 0.6.6
+    sambamba: 0.6.8=h682856c_0
     samtools: 1.9=h8ee4bcc_1
     snpeff: 4.3.1
     snpsift: 4.3.1
@@ -109,7 +109,7 @@ eperl_5.26:
     bwa: 0.7.17=ha92aebf_3
     bwakit: 0.7.15=1
     fastqc: 0.11.8=0
-    sambamba: 0.6.6
+    sambamba: 0.6.8=h682856c_0
     samtools: 1.9=h8ee4bcc_1
     pip:
     python: 3.6
@@ -143,7 +143,7 @@ epy3:
   conda:
     pip:
     python: 3.6
-    sambamba: 0.6.6
+    sambamba: 0.6.8=h682856c_0
   pip:
     chanjo: 4.2.0
     genmod: 3.7.2
