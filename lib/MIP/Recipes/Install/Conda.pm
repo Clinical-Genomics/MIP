@@ -253,8 +253,7 @@ sub install_conda_packages {
 
             ## Create conda environment and install packages
             $log->info(
-                q{Writing installation instructions for environment: }
-                  . $conda_env );
+                q{Writing installation instructions for environment: } . $conda_env );
             say {$FILEHANDLE} q{## Creating conda environment: }
               . $conda_env
               . q{ and install packages};
@@ -270,17 +269,13 @@ sub install_conda_packages {
         }
         else {
 
-            $log->warn( q{Conda environment: }
-                  . $conda_env
-                  . $SPACE
-                  . q{already exists} );
             $log->warn(
-                q{Will try to install packages into existing environment});
+                q{Conda environment: } . $conda_env . $SPACE . q{already exists} );
+            $log->warn(q{Will try to install packages into existing environment});
             $log->info(
-q{Writing installation instructions for conda packages to environment: }
+                q{Writing installation instructions for conda packages to environment: }
                   . $conda_env );
-            say {$FILEHANDLE}
-              q{## Installing conda packages into existing environment};
+            say {$FILEHANDLE} q{## Installing conda packages into existing environment};
             conda_install(
                 {
                     conda_channels_ref => [qw{ bioconda conda-forge }],
@@ -295,7 +290,7 @@ q{Writing installation instructions for conda packages to environment: }
     }
     else {
         $log->info(
-q{Writing instructions for installing and/or updating packages in conda root}
+            q{Writing instructions for installing and/or updating packages in conda root}
         );
         say {$FILEHANDLE}
           q{## Installing and/or updating python and packages in conda root};
@@ -310,7 +305,7 @@ q{Writing instructions for installing and/or updating packages in conda root}
     }
 
     ## Linking and custom solutions
-    my @custom_solutions = qw{ bwakit | gatk | manta | snpeff | snpsift };
+    my @custom_solutions = qw{ bwakit | gatk | manta | picard | snpeff | snpsift };
 
     ## Link conda packages
     # Creating target-link paths
@@ -363,10 +358,10 @@ q{Writing instructions for installing and/or updating packages in conda root}
         say {$FILEHANDLE} q{## Unset variables};
         my %program_path_aliases = (
             bwakit  => q{BWAKIT_PATH},
-            snpeff  => q{SNPEFF_PATH},
-            snpsift => q{SNPSIFT_PATH},
             manta   => q{MANTA_PATH},
             picard  => q{PICARD_PATH},
+            snpeff  => q{SNPEFF_PATH},
+            snpsift => q{SNPSIFT_PATH},
         );
 
       PROGRAM:
@@ -473,8 +468,7 @@ sub finish_conda_package_install {
     use File::Spec::Functions qw{ catdir catfile };
     use IPC::Cmd qw{ run };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod gnu_rm };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_source_activate conda_source_deactivate };
     use MIP::Program::Variantcalling::Snpeff qw{ snpeff_download };
     use MIP::Recipes::Install::Gatk qw{ gatk_download };
     use MIP::Recipes::Install::SnpEff qw{ check_mt_codon_table };
@@ -539,8 +533,7 @@ sub finish_conda_package_install {
       SNPEFF_GENOME_VERSION:
         foreach my $genome_version ( @{$snpeff_genome_versions_ref} ) {
 
-            my $share_dir =
-              catdir( $conda_env_path, q{share}, q{snpeff-} . $version );
+            my $share_dir = catdir( $conda_env_path, q{share}, q{snpeff-} . $version );
 
             check_mt_codon_table(
                 {
@@ -553,16 +546,14 @@ sub finish_conda_package_install {
                 }
             );
 
-            my $snpeff_genome_dir =
-              catdir( $share_dir, q{data}, $genome_version );
+            my $snpeff_genome_dir = catdir( $share_dir, q{data}, $genome_version );
             next SNPEFF_GENOME_VERSION if ( -d $snpeff_genome_dir );
 
             ## Write instructions to download snpeff database.
             ## This is done by install script to avoid race conditin when doing first analysis run in MIP
             say {$FILEHANDLE} q{## Downloading snpeff database};
-            my $jar_path = catfile( $conda_env_path, qw{ bin snpEff.jar} );
-            my $config_file_path =
-              catfile( $conda_env_path, qw{bin snpEff.config} );
+            my $jar_path         = catfile( $conda_env_path, qw{ bin snpEff.jar} );
+            my $config_file_path = catfile( $conda_env_path, qw{bin snpEff.config} );
 
             snpeff_download(
                 {
@@ -611,10 +602,7 @@ sub finish_conda_package_install {
 
         ## Hard coding here since GATK 4.0 will be open source.
         ## Then this step will be unnecessary
-        say {$FILEHANDLE} q{gatk3-register}
-          . $SPACE
-          . $gatk_tar_path
-          . $NEWLINE;
+        say {$FILEHANDLE} q{gatk3-register} . $SPACE . $gatk_tar_path . $NEWLINE;
 
         gnu_rm(
             {
@@ -702,8 +690,7 @@ sub _create_package_array {
                   . $SPACE
                   . $package_version;
             }
-            push @packages,
-              $package . $package_version_separator . $package_version;
+            push @packages, $package . $package_version_separator . $package_version;
         }
         else {
             push @packages, $package;
@@ -814,8 +801,8 @@ sub _create_target_link_paths {
         $conda_version =~ tr/=/-/;
 
         print {$FILEHANDLE} $program_path_aliases{$program} . q{=} . $BACKTICK;
-        my $search_path = catdir( $conda_env_path, q{share},
-            $program . q{-} . $conda_version . q{*} );
+        my $search_path =
+          catdir( $conda_env_path, q{share}, $program . q{-} . $conda_version . q{*} );
         gnu_find(
             {
                 action        => q{-prune},
@@ -908,8 +895,7 @@ sub get_conda_dir_path {
 
             $log->fatal( q{Could not find conda installation path.}
                   . $NEWLINE
-                  . q{Specify the path to conda using the --conda_dir_path flag}
-            );
+                  . q{Specify the path to conda using the --conda_dir_path flag} );
             exit 1;
         }
         ## Get the path to the conda base directory
@@ -977,8 +963,8 @@ sub _get_full_snpeff_version {
     my $version_index = first_index { m/$snpeff_version/xms } @snpeff_array;
 
     ## Concatenate the version and sub patch based on their indexes in the array
-    my $version = $snpeff_array[$version_index] . q{-}
-      . $snpeff_array[ $version_index + 1 ];
+    my $version =
+      $snpeff_array[$version_index] . q{-} . $snpeff_array[ $version_index + 1 ];
 
     ## Something went wrong
     if ( not $version ) {
