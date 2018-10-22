@@ -44,7 +44,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - delly: 0.7.7 -> 0.7.8-h278814d_3
 - fastqc: 0.11.4 -> 0.11.8-0
 - GATK: 3.8 -> 4.0.10.0-0
-- htslib: 1.6 -> 1.9=hc238db4_4
+- htslib: 1.6 -> 1.9-hc238db4_4
+- manta: 1.1.0 -> 1.4.0-py27_1
 - picardtools: 2.14.1 -> 2.18.14-0
 - sambamba: 0.6.6 -> 0.6.8-h682856c_0
 - samtools: 1.6 -> 1.9-h8ee4bcc_1

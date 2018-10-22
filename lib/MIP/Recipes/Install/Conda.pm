@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -799,6 +799,12 @@ sub _create_target_link_paths {
         ## Exchange for conda internal format when using full conda version
         ## i.e. version=subpatch
         $conda_version =~ tr/=/-/;
+
+        ## Special case for Manta
+	if ($program eq q{manta}) {
+
+	  $conda_version =~ s/py27_//g;
+	}
 
         print {$FILEHANDLE} $program_path_aliases{$program} . q{=} . $BACKTICK;
         my $search_path =
