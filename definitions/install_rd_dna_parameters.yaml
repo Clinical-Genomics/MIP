@@ -180,7 +180,7 @@ etiddit:
         gcc:
         numpy:
         python: 2.7
-      version: 2.2.5
+      version: 2.3.1
     vcf2cytosure:
       version: gitRepo
 
