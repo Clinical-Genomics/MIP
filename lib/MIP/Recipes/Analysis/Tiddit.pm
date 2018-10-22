@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Tiddit;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit };
@@ -37,7 +38,7 @@ Readonly my $AMPERSAND  => q{&};
 
 sub analysis_tiddit {
 
-## Function : Call structural variants using Tiddit 1.0.2
+## Function : Call structural variants using Tiddit
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
@@ -138,9 +139,7 @@ sub analysis_tiddit {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Processes qw{ print_wait };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Tiddit qw{ tiddit_sv };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -163,13 +162,12 @@ sub analysis_tiddit {
     my $modifier_core_number =
       scalar( @{ $active_parameter_href->{sample_ids} } );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
@@ -191,7 +189,7 @@ sub analysis_tiddit {
     my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
     my $temp_outfile_suffix      = $io{temp}{file_suffix};
-    my $temp_outfile_path = $temp_outfile_path_prefix . $temp_outfile_suffix;
+    my $temp_outfile_path        = $temp_outfile_path_prefix . $temp_outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -206,7 +204,7 @@ sub analysis_tiddit {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -299,12 +297,10 @@ sub analysis_tiddit {
             {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => $tiddit_sample_file_info{$sample_id}{in},
-                minimum_number_supporting_pairs => $active_parameter_href
-                  ->{tiddit_minimum_number_supporting_pairs},
-                outfile_path_prefix =>
-                  $tiddit_sample_file_info{$sample_id}{out},
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
+                minimum_number_supporting_pairs =>
+                  $active_parameter_href->{tiddit_minimum_number_supporting_pairs},
+                outfile_path_prefix => $tiddit_sample_file_info{$sample_id}{out},
+                referencefile_path  => $active_parameter_href->{human_genome_reference},
             }
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
@@ -350,15 +346,17 @@ sub analysis_tiddit {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

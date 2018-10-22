@@ -75,6 +75,7 @@ sub submit_recipe {
 ##          : $log                     => Log object
 ##          : $parallel_chains_ref     => Info on parallel chains array {REF}
 ##          : $sample_id               => Sample id
+##          : $sample_ids_ref          => Sample ids {REF}
 ##          : $recipe_file_path        => Recipe file path
 ##          : $recipe_files_tracker    => Track the number of parallel processes (e.g. recipe scripts for a module)
 ##          : $submission_profile      => Submission profile
@@ -90,6 +91,7 @@ sub submit_recipe {
     my $log;
     my $parallel_chains_ref;
     my $sample_id;
+    my $sample_ids_ref;
     my $recipe_file_path;
     my $recipe_files_tracker;
 
@@ -145,6 +147,11 @@ sub submit_recipe {
             store       => \$sample_id,
             strict_type => 1,
         },
+        sample_ids_ref => {
+            default     => [],
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
         submission_profile => {
             allow       => [qw{ slurm }],
             default     => q{slurm},
@@ -167,6 +174,7 @@ sub submit_recipe {
             log                     => $log,
             job_id_chain            => $job_id_chain,
             sample_id               => $sample_id,
+            sample_ids_ref          => $sample_ids_ref,
             recipe_file_path        => $recipe_file_path,
             recipe_files_tracker    => $recipe_files_tracker,
 
