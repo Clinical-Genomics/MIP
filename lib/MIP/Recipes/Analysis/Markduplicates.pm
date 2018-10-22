@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rio };
@@ -156,8 +156,7 @@ sub analysis_markduplicates {
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_flagstat sambamba_markdup };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
@@ -486,15 +485,17 @@ sub analysis_markduplicates {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        submit_recipe(
             {
+                active_parameter_href   => $active_parameter_href,
+                dependency_method       => q{sample_to_sample},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
+                recipe_file_name        => $file_path,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
             }
         );
     }

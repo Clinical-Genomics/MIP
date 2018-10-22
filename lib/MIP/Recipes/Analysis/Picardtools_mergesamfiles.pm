@@ -484,6 +484,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         submit_recipe(
             {
                 active_parameter_href   => $active_parameter_href,
+                dependency_method       => q{sample_to_sample},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,

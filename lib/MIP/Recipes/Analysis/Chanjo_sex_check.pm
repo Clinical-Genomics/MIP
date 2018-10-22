@@ -130,8 +130,7 @@ sub analysis_chanjo_sex_check {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_dead_end };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Chanjo qw{ chanjo_sex };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
@@ -167,13 +166,12 @@ sub analysis_chanjo_sex_check {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     %io = (
         %io,
@@ -195,8 +193,7 @@ sub analysis_chanjo_sex_check {
     my $outfile_suffix      = $io{out}{file_suffix};
     my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
 
-    my $log_file_path =
-      $outfile_path_prefix . $UNDERSCORE . q{chanjo_sexcheck.log};
+    my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{chanjo_sexcheck.log};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -233,10 +230,10 @@ sub analysis_chanjo_sex_check {
     }
     chanjo_sex(
         {
-            chr_prefix  => $chr_prefix,
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $infile_path,
-            log_level   => $active_parameter_href->{chanjo_sexcheck_log_level},
+            chr_prefix    => $chr_prefix,
+            FILEHANDLE    => $FILEHANDLE,
+            infile_path   => $infile_path,
+            log_level     => $active_parameter_href->{chanjo_sexcheck_log_level},
             log_file_path => $log_file_path,
             outfile_path  => $outfile_path,
         }
@@ -266,15 +263,18 @@ sub analysis_chanjo_sex_check {
                 sample_info_href => $sample_info_href,
             }
         );
-        slurm_submit_job_sample_id_dependency_dead_end(
+
+        submit_recipe(
             {
+                active_parameter_href   => $active_parameter_href,
+                dependency_method       => q{sample_to_island},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
+                job_id_chain            => $job_id_chain,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_name,
+                recipe_file_name        => $file_name,
             }
         );
     }

@@ -69,6 +69,7 @@ sub submit_recipe {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
+##          : $dependency_method       => Dependency method
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_chain            => Chain id
 ##          : $job_id_href             => The info on job ids hash {REF}
@@ -84,6 +85,7 @@ sub submit_recipe {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $family_id;
+    my $dependency_method;
     my $infile_lane_prefix_href;
     my $job_id_chain;
     my $job_id_href;
@@ -106,6 +108,12 @@ sub submit_recipe {
         },
         family_id => {
             store       => \$family_id,
+            strict_type => 1,
+        },
+        dependency_method => {
+            defined     => 1,
+            required    => 1,
+            store       => \$dependency_method,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -162,6 +170,7 @@ sub submit_recipe {
     $is_manager{$submission_profile}->(
         {
             family_id               => $family_id,
+            dependency_method       => $dependency_method,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
             log                     => $log,

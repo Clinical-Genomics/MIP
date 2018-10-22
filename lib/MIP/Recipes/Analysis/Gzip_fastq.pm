@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gzip_fastq };
@@ -130,8 +130,7 @@ sub analysis_gzip_fastq {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_add_to_sample };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Compression::Gzip qw{ gzip };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -166,18 +165,16 @@ sub analysis_gzip_fastq {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Outpaths
     my @outfile_paths =
-      map { catdir( $indir_path_prefix, $_ . $DOT . q{fastq.gz} ) }
-      @infile_name_prefixes;
+      map { catdir( $indir_path_prefix, $_ . $DOT . q{fastq.gz} ) } @infile_name_prefixes;
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -220,7 +217,7 @@ sub analysis_gzip_fastq {
     $core_number = check_max_core_number(
         {
             core_number_requested => $core_number,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
         }
     );
 
@@ -255,8 +252,8 @@ sub analysis_gzip_fastq {
         if ( $infile_suffixes[$infile_index] eq q{.fastq} ) {
 
             ## Using only $active_parameter{max_cores_per_node} cores
-            if ( $uncompressed_file_counter == $process_batches_count *
-                $active_parameter_href->{max_cores_per_node} )
+            if ( $uncompressed_file_counter ==
+                $process_batches_count * $active_parameter_href->{max_cores_per_node} )
             {
 
                 say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -279,14 +276,16 @@ sub analysis_gzip_fastq {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_job_no_dependency_add_to_sample(
+        submit_recipe(
             {
-                family_id        => $family_id,
-                job_id_href      => $job_id_href,
-                log              => $log,
-                path             => $job_id_chain,
-                sample_id        => $sample_id,
-                sbatch_file_name => $file_name
+                active_parameter_href => $active_parameter_href,
+                dependency_method     => q{island_to_sample},
+                family_id             => $family_id,
+                job_id_href           => $job_id_href,
+                log                   => $log,
+                job_id_chain          => $job_id_chain,
+                sample_id             => $sample_id,
+                recipe_file_name      => $file_name,
             }
         );
     }

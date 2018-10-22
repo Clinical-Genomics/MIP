@@ -38,6 +38,7 @@ sub analysis_fastqc {
 ## Function : Raw sequence quality analysis using FASTQC.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -60,6 +61,7 @@ sub analysis_fastqc {
     my $sample_info_href;
 
     ## Default(s)
+    my $family_id;
     my $temp_directory;
 
     my $tmpl = {
@@ -68,6 +70,11 @@ sub analysis_fastqc {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -304,10 +311,15 @@ sub analysis_fastqc {
 
         submit_recipe(
             {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                log                   => $log,
-                recipe_file_name      => $file_name,
+                active_parameter_href   => $active_parameter_href,
+                dependency_method       => q{sample_to_island},
+                family_id               => $family_id,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                job_id_chain            => $job_id_chain,
+                sample_id               => $sample_id,
+                recipe_file_name        => $file_name,
             }
         );
     }

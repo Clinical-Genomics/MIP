@@ -55,6 +55,7 @@ sub submit_slurm_recipe {
 ## Function : Submit SLURM recipe
 ## Returns  :
 ## Arguments: $family_id               => Family id
+##          : $dependency_method       => Dependency method
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_dependency_type     => SLURM job dependency type
 ##          : $job_id_chain            => Chain id
@@ -69,6 +70,7 @@ sub submit_slurm_recipe {
 
     ## Flatten argument(s)
     my $family_id;
+    my $dependency_method;
     my $infile_lane_prefix_href;
     my $job_id_chain;
     my $job_id_href;
@@ -81,6 +83,15 @@ sub submit_slurm_recipe {
     my $tmpl = {
         family_id => {
             store       => \$family_id,
+            strict_type => 1,
+        },
+        dependency_method => {
+            allow => [
+                qw{ island island_to_sample sample_to_island sample_to_sample sample_to_sample_parallel }
+            ],
+            defined     => 1,
+            required    => 1,
+            store       => \$dependency_method,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -126,8 +137,21 @@ sub submit_slurm_recipe {
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Sample level and parallel
-    if ( $sample_id and defined $recipe_files_tracker ) {
+    if ( $dependency_method eq q{sample_to_island} ) {
+
+        slurm_submit_job_sample_id_dependency_dead_end(
+            {
+                family_id               => $family_id,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
+                sbatch_file_name        => $recipe_file_name,
+            }
+        );
+    }
+    if ( $dependency_method eq q{sample_to_sample_parallel} ) {
 
         slurm_submit_job_sample_id_dependency_step_in_parallel(
             {
@@ -143,7 +167,7 @@ sub submit_slurm_recipe {
         );
         return;
     }
-    if ($sample_id) {
+    if ( $dependency_method eq q{sample_to_sample} ) {
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
@@ -158,14 +182,30 @@ sub submit_slurm_recipe {
         );
         return;
     }
-    ## No upstream or downstream dependencies
-    slurm_submit_job_no_dependency_dead_end(
-        {
-            job_id_href      => $job_id_href,
-            log              => $log,
-            sbatch_file_name => $recipe_file_name,
-        }
-    );
+    if ( $dependency_method eq q{island_to_sample} ) {
+
+        slurm_submit_job_no_dependency_add_to_sample(
+            {
+                family_id        => $family_id,
+                job_id_href      => $job_id_href,
+                log              => $log,
+                path             => $job_id_chain,
+                sample_id        => $sample_id,
+                sbatch_file_name => $recipe_file_name
+            }
+        );
+    }
+    if ( $dependency_method eq q{island} ) {
+
+        ## No upstream or downstream dependencies
+        slurm_submit_job_no_dependency_dead_end(
+            {
+                job_id_href      => $job_id_href,
+                log              => $log,
+                sbatch_file_name => $recipe_file_name,
+            }
+        );
+    }
     return;
 }
 
@@ -239,59 +279,56 @@ sub slurm_submit_job_no_dependency_dead_end {
 
 sub slurm_submit_job_no_dependency_add_to_sample {
 
-##slurm_submit_job_no_dependency_add_to_sample
-
-##Function : Submit jobs that has no prior job dependencies but leave sample dependencies using SLURM
-##Returns  : ""
-##Arguments: $job_id_href, $family_id, $sample_id, $path, $sbatch_file_name, $log
-##         : $job_id_href      => The info on job ids hash {REF}
-##         : $family_id        => Family id
-##         : $sample_id        => Sample id
-##         : $path             => Trunk or branch
-##         : $sbatch_file_name => Sbatch file name
-##         : $log              => Log
+## Function : Submit jobs that has no prior job dependencies but leave sample dependencies using SLURM
+## Returns  :
+## Arguments: $family_id        => Family id
+##          : $job_id_href      => The info on job ids hash {REF}
+##          : $log              => Log
+##          : $path             => Trunk or branch
+##          : $sample_id        => Sample id
+##          : $sbatch_file_name => Sbatch file name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $family_id;
-    my $sample_id;
-    my $path;
-    my $sbatch_file_name;
+    my $job_id_href;
     my $log;
+    my $path;
+    my $sample_id;
+    my $sbatch_file_name;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         family_id => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
-            store       => \$family_id
-        },
-        sample_id => {
             required    => 1,
-            defined     => 1,
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$sample_id
         },
-        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log  => {
-            required => 1,
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        log => {
             defined  => 1,
-            store    => \$log
+            required => 1,
+            store    => \$log,
+        },
+        path      => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
         },
         sbatch_file_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sbatch_file_name,
             strict_type => 1,
-            store       => \$sbatch_file_name
         },
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -304,7 +341,7 @@ sub slurm_submit_job_no_dependency_add_to_sample {
     my $job_id_returned;
 
     ## Set keys
-    my $family_id_chain_key => $family_id . $UNDERSCORE . $path;
+    my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
     my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 
     ## Initiate chain - No dependencies, initiate Trunk (Main or other)
@@ -460,24 +497,18 @@ sub slurm_submit_job_no_dependency_add_to_samples {
 
 sub slurm_submit_job_sample_id_dependency_dead_end {
 
-##slurm_submit_job_sample_id_dependency_dead_end
-
-##Function : Submit jobs that has sample_id dependencies and leave no dependencies using SLURM
-##Returns  : ""
-##Arguments: $job_id_href, $infile_lane_prefix_href, $family_id, $sample_id, $path, $sbatch_file_name, $log, $job_dependency_type
-##         : $job_id_href             => The info on job ids hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $family_id               => Family id
-##         : $sample_id               => Sample id
-##         : $path                    => Trunk or branch
-##         : $sbatch_file_name        => Sbatch file name
-##         : $log                     => Log
-##         : $job_dependency_type     => SLURM job dependency type
+## Function : Submit jobs that has sample_id dependencies and leave no dependencies using SLURM
+## Returns  :
+## Arguments: $family_id               => Family id
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => The info on job ids hash {REF}
+##          : $job_dependency_type     => SLURM job dependency type
+##          : $log                     => Log
+##          : $path                    => Trunk or branch
+##          : $sample_id               => Sample id
+##          : $sbatch_file_name        => Sbatch file name
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $job_dependency_type;
 
     ## Flatten argument(s)
     my $job_id_href;
@@ -488,48 +519,51 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     my $sbatch_file_name;
     my $log;
 
+    ## Default(s)
+    my $job_dependency_type;
+
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
+        family_id => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$job_id_href
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        family_id => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
-            store       => \$family_id
-        },
-        sample_id => {
-            strict_type => 1,
-            store       => \$sample_id
-        },
-        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log  => {
-            required => 1,
-            defined  => 1,
-            store    => \$log
-        },
-        sbatch_file_name => {
             required    => 1,
-            defined     => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$sbatch_file_name
         },
         job_dependency_type => {
-            default     => q{afterok},
             allow       => [qw{afterany afterok}],
+            default     => q{afterok},
+            store       => \$job_dependency_type,
             strict_type => 1,
-            store       => \$job_dependency_type
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        path      => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        sample_id => {
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sbatch_file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sbatch_file_name,
+            strict_type => 1,
         },
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -558,8 +592,8 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     ## Always check and add any pan (i.e job_ids that affect all chains) dependency jobs
     add_pan_job_id_to_sample_id_dependency_tree(
         {
-            job_id_href         => $job_id_href,
             family_id_chain_key => $family_id_chain_key,
+            job_id_href         => $job_id_href,
             sample_id_chain_key => $sample_id_chain_key,
         }
     );
@@ -567,12 +601,12 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     ## Always check and add any parallel (i.e job_ids that are processed in parallel witin path) dependency jobs
     add_parallel_job_id_to_sample_id_dependency_tree(
         {
+            family_id_chain_key     => $family_id_chain_key,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
-            family_id_chain_key     => $family_id_chain_key,
-            sample_id_chain_key     => $sample_id_chain_key,
-            sample_id               => $sample_id,
             path                    => $path,
+            sample_id               => $sample_id,
+            sample_id_chain_key     => $sample_id_chain_key,
         }
     );
 
@@ -580,12 +614,12 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     ## SLURM submission using dependencies
     $job_ids_string = create_job_id_string_for_sample_id(
         {
-            job_id_href         => $job_id_href,
             family_id           => $family_id,
-            sample_id           => $sample_id,
             family_id_chain_key => $family_id_chain_key,
-            sample_id_chain_key => $sample_id_chain_key,
+            job_id_href         => $job_id_href,
             path                => $path,
+            sample_id           => $sample_id,
+            sample_id_chain_key => $sample_id_chain_key,
         }
     );
 
@@ -594,34 +628,34 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
         {
             job_dependency_type => $job_dependency_type,
             job_ids_string      => $job_ids_string,
-            sbatch_file_name    => $sbatch_file_name,
             log                 => $log,
+            sbatch_file_name    => $sbatch_file_name,
         }
     );
 
     ## Clear latest family_id_sample_id chainkey
     clear_pan_job_id_dependency_tree(
         {
-            job_id_href         => $job_id_href,
             family_id_chain_key => $family_id_chain_key,
+            job_id_href         => $job_id_href,
             sample_id_chain_key => $sample_id_chain_key,
         }
     );
 
     clear_sample_id_parallel_job_id_dependency_tree(
         {
+            family_id_chain_key     => $family_id_chain_key,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
-            family_id_chain_key     => $family_id_chain_key,
-            sample_id               => $sample_id,
             path                    => $path,
+            sample_id               => $sample_id,
         }
     );
     ## Clear sample job_ids in the the sample_id chain
     clear_sample_id_job_id_dependency_tree(
         {
-            job_id_href         => $job_id_href,
             family_id_chain_key => $family_id_chain_key,
+            job_id_href         => $job_id_href,
             sample_id_chain_key => $sample_id_chain_key,
         }
     );
@@ -636,8 +670,8 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     ## Add job_id to jobs dependent on all jobs
     add_job_id_dependency_tree(
         {
-            job_id_href     => $job_id_href,
             chain_key       => q{ALL},
+            job_id_href     => $job_id_href,
             job_id_returned => $job_id_returned,
         }
     );
@@ -652,8 +686,8 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     ## Add PAN job_id_returned to hash for sacct processing downstream
     add_job_id_dependency_tree(
         {
-            job_id_href     => $job_id_href,
             chain_key       => q{PAN},
+            job_id_href     => $job_id_href,
             job_id_returned => $job_id_returned,
         }
     );
