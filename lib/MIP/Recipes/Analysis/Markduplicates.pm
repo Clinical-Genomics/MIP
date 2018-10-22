@@ -39,15 +39,13 @@ Readonly my $UNDERSCORE => q{_};
 sub analysis_markduplicates {
 
 ## Function : Mark duplicated reads using Picardtools markduplicates or Sambamba markduplicates in files generated from alignment (sorted, merged).
-## Returns  : |$xargs_file_counter
+## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -59,12 +57,10 @@ sub analysis_markduplicates {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $file_path;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
     my $program_name;
-    my $program_info_path;
     my $sample_id;
     my $sample_info_href;
 
@@ -93,7 +89,6 @@ sub analysis_markduplicates {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        file_path               => { store => \$file_path, strict_type => 1, },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -115,8 +110,7 @@ sub analysis_markduplicates {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path => { store => \$program_info_path, strict_type => 1, },
-        program_name      => {
+        program_name => {
             defined     => 1,
             required    => 1,
             store       => \$program_name,
@@ -255,7 +249,7 @@ sub analysis_markduplicates {
     my $markduplicates_program;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -281,7 +275,7 @@ sub analysis_markduplicates {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             indirectory        => $indir_path_prefix,
             infile             => $infile_name_prefix,
             program_info_path  => $program_info_path,
@@ -304,7 +298,7 @@ sub analysis_markduplicates {
             {
                 core_number   => $core_number,
                 FILEHANDLE    => $FILEHANDLE,
-                file_path     => $file_path,
+                file_path     => $recipe_file_path,
                 first_command => q{java},
                 java_jar =>
                   catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
@@ -362,7 +356,7 @@ sub analysis_markduplicates {
             {
                 core_number        => $core_number,
                 FILEHANDLE         => $FILEHANDLE,
-                file_path          => $file_path,
+                file_path          => $recipe_file_path,
                 program_info_path  => $program_info_path,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
@@ -445,7 +439,7 @@ sub analysis_markduplicates {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
             outdirectory       => $outdir_path_prefix,
             outfile            => $outfile_name_prefix,
@@ -487,15 +481,15 @@ sub analysis_markduplicates {
 
         submit_recipe(
             {
-                active_parameter_href   => $active_parameter_href,
                 dependency_method       => q{sample_to_sample},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                recipe_file_name        => $file_path,
+                recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

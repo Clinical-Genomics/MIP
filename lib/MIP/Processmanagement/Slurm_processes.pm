@@ -63,7 +63,7 @@ sub submit_slurm_recipe {
 ##          : $log                     => Log
 ##          : $parallel_chains_ref     => Info on parallel chains array {REF}
 ##          : $sample_id               => Sample id
-##          : $recipe_file_name        => Sbatch file name
+##          : $recipe_file_path        => Sbatch file path
 ##          : $recipe_files_tracker    => Track the number of parallel processes (e.g. sbatch scripts for a module)
 
     my ($arg_href) = @_;
@@ -77,7 +77,7 @@ sub submit_slurm_recipe {
     my $log;
     my $parallel_chains_ref;
     my $sample_id;
-    my $recipe_file_name;
+    my $recipe_file_path;
     my $recipe_files_tracker;
 
     my $tmpl = {
@@ -119,10 +119,10 @@ sub submit_slurm_recipe {
             store       => \$parallel_chains_ref,
             strict_type => 1,
         },
-        recipe_file_name => {
+        recipe_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$recipe_file_name,
+            store       => \$recipe_file_path,
             strict_type => 1,
         },
         sample_id => {
@@ -147,7 +147,7 @@ sub submit_slurm_recipe {
                 log                     => $log,
                 path                    => $job_id_chain,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $recipe_file_name,
+                sbatch_file_name        => $recipe_file_path,
             }
         );
     }
@@ -161,7 +161,7 @@ sub submit_slurm_recipe {
                 log                     => $log,
                 path                    => $job_id_chain,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $recipe_file_name,
+                sbatch_file_name        => $recipe_file_path,
                 sbatch_script_tracker   => $recipe_files_tracker,
             }
         );
@@ -177,7 +177,7 @@ sub submit_slurm_recipe {
                 log                     => $log,
                 path                    => $job_id_chain,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $recipe_file_name,
+                sbatch_file_name        => $recipe_file_path,
             }
         );
         return;
@@ -191,7 +191,7 @@ sub submit_slurm_recipe {
                 log              => $log,
                 path             => $job_id_chain,
                 sample_id        => $sample_id,
-                sbatch_file_name => $recipe_file_name
+                sbatch_file_name => $recipe_file_path
             }
         );
     }
@@ -202,7 +202,7 @@ sub submit_slurm_recipe {
             {
                 job_id_href      => $job_id_href,
                 log              => $log,
-                sbatch_file_name => $recipe_file_name,
+                sbatch_file_name => $recipe_file_path,
             }
         );
     }

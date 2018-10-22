@@ -259,7 +259,7 @@ sub analysis_bwa_mem {
           $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}{interleaved};
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $file_name, $program_info_path ) = setup_script(
+        my ( $recipe_file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $core_number,
@@ -609,16 +609,16 @@ sub analysis_bwa_mem {
 
             submit_recipe(
                 {
-                    active_parameter_href   => $active_parameter_href,
                     dependency_method       => q{sample_to_sample_parallel},
                     family_id               => $family_id,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_chain            => $job_id_chain,
                     job_id_href             => $job_id_href,
                     log                     => $log,
-                    recipe_file_name        => $file_name,
+                    recipe_file_path        => $recipe_file_path,
                     recipe_files_tracker    => $infile_index,
                     sample_id               => $sample_id,
+                    submission_profile => $active_parameter_href->{submission_profile},
                 }
             );
         }

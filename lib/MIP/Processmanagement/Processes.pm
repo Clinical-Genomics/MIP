@@ -67,8 +67,7 @@ sub submit_recipe {
 
 ## Function : Submit recipe depending on submission profile
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+## Arguments: $family_id               => Family id
 ##          : $dependency_method       => Dependency method
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_chain            => Chain id
@@ -76,14 +75,13 @@ sub submit_recipe {
 ##          : $log                     => Log object
 ##          : $parallel_chains_ref     => Info on parallel chains array {REF}
 ##          : $sample_id               => Sample id
-##          : $recipe_file_name        => Recipe file name
+##          : $recipe_file_path        => Recipe file path
 ##          : $recipe_files_tracker    => Track the number of parallel processes (e.g. recipe scripts for a module)
 ##          : $submission_profile      => Submission profile
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
     my $family_id;
     my $dependency_method;
     my $infile_lane_prefix_href;
@@ -92,20 +90,13 @@ sub submit_recipe {
     my $log;
     my $parallel_chains_ref;
     my $sample_id;
-    my $recipe_file_name;
+    my $recipe_file_path;
     my $recipe_files_tracker;
 
     ## Default(s)
     my $submission_profile;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
         family_id => {
             store       => \$family_id,
             strict_type => 1,
@@ -139,10 +130,10 @@ sub submit_recipe {
             store       => \$parallel_chains_ref,
             strict_type => 1,
         },
-        recipe_file_name => {
+        recipe_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$recipe_file_name,
+            store       => \$recipe_file_path,
             strict_type => 1,
         },
         recipe_files_tracker => {
@@ -156,7 +147,7 @@ sub submit_recipe {
         },
         submission_profile => {
             allow       => [qw{ slurm }],
-            default     => $arg_href->{active_parameter_href}{submission_profile},
+            default     => q{slurm},
             store       => \$submission_profile,
             strict_type => 1,
         },
@@ -176,7 +167,7 @@ sub submit_recipe {
             log                     => $log,
             job_id_chain            => $job_id_chain,
             sample_id               => $sample_id,
-            recipe_file_name        => $recipe_file_name,
+            recipe_file_path        => $recipe_file_path,
             recipe_files_tracker    => $recipe_files_tracker,
 
         }
