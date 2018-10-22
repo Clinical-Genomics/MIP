@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_salmon_quant_prerequisites };
@@ -92,8 +92,7 @@ sub build_salmon_quant_prerequisites {
             strict_type => 1,
         },
         human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
+            default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$human_genome_reference,
             strict_type => 1,
         },
@@ -162,8 +161,7 @@ sub build_salmon_quant_prerequisites {
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
-    use MIP::Program::Utility::Fusion_filter
-      qw{ fusion_filter_gtf_file_to_feature_seqs };
+    use MIP::Program::Utility::Fusion_filter qw{ fusion_filter_gtf_file_to_feature_seqs };
     use MIP::Program::Variantcalling::Salmon qw{ salmon_index };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
@@ -172,22 +170,20 @@ sub build_salmon_quant_prerequisites {
 
     ## Constants
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
-    Readonly my $NUMBER_OF_CORES =>
-      $active_parameter_href->{max_cores_per_node};
-    Readonly my $PROCESSING_TIME => 5;
+    Readonly my $NUMBER_OF_CORES   => $active_parameter_href->{max_cores_per_node};
+    Readonly my $PROCESSING_TIME   => 5;
 
     ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## FILEHANDLES
     # Create anonymous filehandle
@@ -271,9 +267,8 @@ sub build_salmon_quant_prerequisites {
         ## Build cDNA sequence file
         fusion_filter_gtf_file_to_feature_seqs(
             {
-                FILEHANDLE => $FILEHANDLE,
-                gtf_path =>
-                  $active_parameter_href->{salmon_quant_transcripts_file},
+                FILEHANDLE         => $FILEHANDLE,
+                gtf_path           => $active_parameter_href->{transcripts_file},
                 referencefile_path => $human_genome_reference,
                 seq_type           => q{cDNA},
                 stdoutfile_path =>
@@ -284,17 +279,15 @@ sub build_salmon_quant_prerequisites {
 
         write_return_to_conda_environment(
             {
-                FILEHANDLE => $FILEHANDLE,
-                source_main_environment_commands_ref =>
-                  \@source_environment_cmds,
+                FILEHANDLE                           => $FILEHANDLE,
+                source_main_environment_commands_ref => \@source_environment_cmds,
             }
         );
 
         ## Build SAlmon index file
         salmon_index(
             {
-                fasta_path =>
-                  catfile( $salmon_quant_directory_tmp, q{cDNA_seqs.fa} ),
+                fasta_path   => catfile( $salmon_quant_directory_tmp, q{cDNA_seqs.fa} ),
                 FILEHANDLE   => $FILEHANDLE,
                 outfile_path => $salmon_quant_directory_tmp,
             }
