@@ -48,7 +48,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - picardtools: 2.14.1 -> 2.18.14-0
 - sambamba: 0.6.6 -> 0.6.8-h682856c_0
 - samtools: 1.6 -> 1.9-h8ee4bcc_1
-
+- tiddit: 2.2.5 -> 2.3.1
 
 ## [6.0.7]
 - Increased ploidy when calling variants in the mitochondria. Fix https://github.com/Clinical-Genomics/MIP/issues/507
