@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Multiqc;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_multiqc };
@@ -118,8 +119,7 @@ sub analysis_multiqc {
 
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Qc::Multiqc qw{ multiqc };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record qw{ add_program_metafile_to_sample_info };
@@ -138,20 +138,19 @@ sub analysis_multiqc {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -186,14 +185,13 @@ sub analysis_multiqc {
     foreach my $report_id (@report_ids) {
 
         ## Assign directories
-        my $outdir_path = catdir( $active_parameter_href->{outdata_dir},
-            $report_id, $program_name );
+        my $outdir_path =
+          catdir( $active_parameter_href->{outdata_dir}, $report_id, $program_name );
 
         ## Analyse sample id only for this report
         if ( $report_id ne $family_id ) {
 
-            $indir_path =
-              catdir( $active_parameter_href->{outdata_dir}, $report_id );
+            $indir_path = catdir( $active_parameter_href->{outdata_dir}, $report_id );
         }
 
         multiqc(
@@ -211,8 +209,8 @@ sub analysis_multiqc {
             ## Collect QC metadata info for later use
             add_program_metafile_to_sample_info(
                 {
-                    metafile_tag => $report_id,
-                    path => catfile( $outdir_path, q{multiqc_report.html} ),
+                    metafile_tag     => $report_id,
+                    path             => catfile( $outdir_path, q{multiqc_report.html} ),
                     program_name     => q{multiqc},
                     sample_info_href => $sample_info_href,
                 }
@@ -223,12 +221,15 @@ sub analysis_multiqc {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_chain_job_ids_dependency_add_to_path(
+        submit_recipe(
             {
-                job_id_href      => $job_id_href,
-                log              => $log,
-                path             => $job_id_chain,
-                sbatch_file_name => $file_path,
+                dependency_method   => q{add_to_all},
+                job_dependency_type => q{afterok},
+                job_id_href         => $job_id_href,
+                log                 => $log,
+                job_id_chain        => $job_id_chain,
+                recipe_file_path    => $recipe_file_path,
+                submission_profile  => $active_parameter_href->{submission_profile},
             }
         );
     }

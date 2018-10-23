@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Sv_annotate;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -43,7 +44,7 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_sv_annotate {
 
-## Function : CombineVariants to combine all structural variants call from different callers.
+## Function : Annotate SV
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
@@ -146,12 +147,10 @@ sub analysis_sv_annotate {
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_view bcftools_annotate bcftools_view_and_index_vcf };
-    use MIP::Program::Variantcalling::Genmod
-      qw{ genmod_annotate genmod_filter };
+    use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate genmod_filter };
     use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_query };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
@@ -179,8 +178,7 @@ sub analysis_sv_annotate {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path =
-      $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
+    my $infile_path = $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
     my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
     my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
 
@@ -195,16 +193,13 @@ sub analysis_sv_annotate {
     );
     my $program_mode       = $active_parameter_href->{$program_name};
     my $sequence_dict_file = catfile( $reference_dir,
-            $file_info_href->{human_genome_reference_name_prefix}
-          . $DOT
-          . q{dict} );
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+        $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} );
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     %io = (
         %io,
@@ -229,14 +224,14 @@ sub analysis_sv_annotate {
     my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
     my $temp_outfile_suffix      = $io{temp}{file_suffix};
-    my $temp_outfile_path = $temp_outfile_path_prefix . $temp_outfile_suffix;
+    my $temp_outfile_path        = $temp_outfile_path_prefix . $temp_outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -332,9 +327,7 @@ sub analysis_sv_annotate {
                   . $infile_suffix
                   . $DOT
                   . $outfile_tracker,
-                outfile_path => $temp_infile_path_prefix
-                  . $alt_file_tag
-                  . $infile_suffix,
+                outfile_path => $temp_infile_path_prefix . $alt_file_tag . $infile_suffix,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -407,11 +400,10 @@ sub analysis_sv_annotate {
                 infile_path => $temp_outfile_path_prefix
                   . $alt_file_tag
                   . $outfile_suffix,
-                outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-                temp_directory_path => $temp_directory,
-                thousand_g_file_path =>
-                  $active_parameter_href->{sv_genmod_filter_1000g},
-                verbosity => q{v},
+                outfile_path         => catfile( dirname( devnull() ), q{stdout} ),
+                temp_directory_path  => $temp_directory,
+                thousand_g_file_path => $active_parameter_href->{sv_genmod_filter_1000g},
+                verbosity            => q{v},
             }
         );
         print {$FILEHANDLE} $PIPE . $SPACE;
@@ -426,8 +418,7 @@ sub analysis_sv_annotate {
                 outfile_path => $temp_outfile_path_prefix
                   . $alt_file_tag
                   . $outfile_suffix,
-                threshold =>
-                  $active_parameter_href->{sv_genmod_filter_threshold},
+                threshold => $active_parameter_href->{sv_genmod_filter_threshold},
                 verbosity => q{v},
             }
         );
@@ -435,9 +426,8 @@ sub analysis_sv_annotate {
 
         write_return_to_conda_environment(
             {
-                FILEHANDLE => $FILEHANDLE,
-                source_main_environment_commands_ref =>
-                  \@source_environment_cmds,
+                FILEHANDLE                           => $FILEHANDLE,
+                source_main_environment_commands_ref => \@source_environment_cmds,
             }
         );
         print {$FILEHANDLE} $NEWLINE;
@@ -454,9 +444,8 @@ sub analysis_sv_annotate {
                 infile_path => $temp_outfile_path_prefix
                   . $alt_file_tag
                   . $outfile_suffix,
-                luafile_path => $active_parameter_href->{sv_vcfanno_lua},
-                toml_configfile_path =>
-                  $active_parameter_href->{sv_vcfanno_config},
+                luafile_path         => $active_parameter_href->{sv_vcfanno_lua},
+                toml_configfile_path => $active_parameter_href->{sv_vcfanno_config},
             }
         );
         print {$FILEHANDLE} $PIPE . $SPACE;
@@ -485,8 +474,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             );
         }
 
-        say {$FILEHANDLE}
-          q{## Add header for 1000G annotation of structural variants};
+        say {$FILEHANDLE} q{## Add header for 1000G annotation of structural variants};
         bcftools_annotate(
             {
                 FILEHANDLE => $FILEHANDLE,
@@ -517,9 +505,8 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             {
                 active_parameter_href => $active_parameter_href,
                 FILEHANDLE            => $FILEHANDLE,
-                infile_paths_ref      => [
-                    $temp_outfile_path_prefix . $alt_file_tag . $outfile_suffix
-                ],
+                infile_paths_ref =>
+                  [ $temp_outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
                 outfile            => $temp_outfile_path,
                 sequence_dict_file => $sequence_dict_file,
             }
@@ -550,15 +537,17 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

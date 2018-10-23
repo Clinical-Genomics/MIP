@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Mip_vcfparser;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -52,7 +53,6 @@ sub analysis_mip_vcfparser {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -67,7 +67,6 @@ sub analysis_mip_vcfparser {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
     my $program_name;
     my $sample_info_href;
 
@@ -118,8 +117,6 @@ sub analysis_mip_vcfparser {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
         program_name => {
             defined     => 1,
             required    => 1,
@@ -139,7 +136,7 @@ sub analysis_mip_vcfparser {
             strict_type => 1,
         },
         xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             default     => 0,
             store       => \$xargs_file_counter,
             strict_type => 1,
@@ -153,8 +150,7 @@ sub analysis_mip_vcfparser {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
     use MIP::QC::Record qw{ add_gene_panel add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
@@ -189,13 +185,12 @@ sub analysis_mip_vcfparser {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
@@ -208,8 +203,7 @@ sub analysis_mip_vcfparser {
     my @set_outfile_name_suffixes = ( keys %infile_path );
 
     ## Add "select" suffixes
-    my @select_file_contigs =
-      @{ $file_info_href->{sorted_select_file_contigs} };
+    my @select_file_contigs = @{ $file_info_href->{sorted_select_file_contigs} };
   SUFFIX:
     foreach my $infile_suffix ( keys %infile_path ) {
 
@@ -250,14 +244,14 @@ sub analysis_mip_vcfparser {
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
             module_core_number   => $core_number,
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -285,7 +279,7 @@ sub analysis_mip_vcfparser {
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -303,8 +297,7 @@ sub analysis_mip_vcfparser {
             $padding = $MITO_PADDING;
         }
 
-        my $vcfparser_xargs_file_path_prefix =
-          $xargs_file_path_prefix . $DOT . $contig;
+        my $vcfparser_xargs_file_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
         my @select_feature_annotation_columns;
         my $select_file;
         my $select_file_matching_column;
@@ -323,16 +316,16 @@ sub analysis_mip_vcfparser {
               )
             {
                 # List of genes to analyse separately
-                $select_file =
-                  catfile( $active_parameter_href->{vcfparser_select_file} );
+                $select_file = catfile( $active_parameter_href->{vcfparser_select_file} );
 
                 # Column of HGNC Symbol in SelectFile (-sf)
-                $select_file_matching_column = $active_parameter_href
-                  ->{vcfparser_select_file_matching_column};
+                $select_file_matching_column =
+                  $active_parameter_href->{vcfparser_select_file_matching_column};
 
                 if (
-                    exists $active_parameter_href
-                    ->{vcfparser_select_feature_annotation_columns} )
+                    exists
+                    $active_parameter_href->{vcfparser_select_feature_annotation_columns}
+                  )
                 {
                     @select_feature_annotation_columns =
                       @{ $active_parameter_href
@@ -351,8 +344,7 @@ sub analysis_mip_vcfparser {
                 padding     => $padding,
                 parse_vep   => $active_parameter_href->{varianteffectpredictor},
                 range_feature_annotation_columns_ref => \@{
-                    $active_parameter_href
-                      ->{vcfparser_range_feature_annotation_columns}
+                    $active_parameter_href->{vcfparser_range_feature_annotation_columns}
                 },
                 range_feature_file_path =>
                   $active_parameter_href->{vcfparser_range_feature_file},
@@ -361,7 +353,7 @@ sub analysis_mip_vcfparser {
                 select_feature_file_path       => $select_file,
                 select_feature_matching_column => $select_file_matching_column,
                 select_outfile                 => $select_outfile,
-                stderrfile_path => $vcfparser_xargs_file_path_prefix
+                stderrfile_path                => $vcfparser_xargs_file_path_prefix
                   . $DOT
                   . q{stderr.txt},
                 stdoutfile_path => $outfile_path{$contig},
@@ -409,15 +401,17 @@ sub analysis_mip_vcfparser {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -516,7 +510,7 @@ sub analysis_vcfparser_sv_wes {
             strict_type => 1,
         },
         xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             default     => 0,
             store       => \$xargs_file_counter,
             strict_type => 1,
@@ -529,14 +523,11 @@ sub analysis_vcfparser_sv_wes {
     use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
-    use MIP::QC::Record
-      qw{ add_most_complete_vcf add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_most_complete_vcf add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
 
@@ -563,10 +554,7 @@ sub analysis_vcfparser_sv_wes {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path =
-      $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -578,13 +566,12 @@ sub analysis_vcfparser_sv_wes {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     my $xargs_file_path_prefix;
 
@@ -595,7 +582,7 @@ sub analysis_vcfparser_sv_wes {
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => 1,
             module_core_number =>
               $active_parameter_href->{module_core_number}{$program_name},
@@ -633,7 +620,7 @@ sub analysis_vcfparser_sv_wes {
     my @outfile_suffixes    = @{ $io{out}{file_suffixes} };
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -651,17 +638,6 @@ sub analysis_vcfparser_sv_wes {
 
     ### SHELL:
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
     ## vcfparser
     say {$FILEHANDLE} q{## vcfparser};
 
@@ -672,21 +648,20 @@ sub analysis_vcfparser_sv_wes {
     if ( $active_parameter_href->{sv_vcfparser_select_file} ) {
 
         ## List of genes to analyse separately
-        $select_file =
-          catfile( $active_parameter_href->{sv_vcfparser_select_file} );
+        $select_file = catfile( $active_parameter_href->{sv_vcfparser_select_file} );
 
         ## Column of HGNC Symbol in select file ("-sf")
         $select_file_matching_column =
           $active_parameter_href->{sv_vcfparser_select_file_matching_column};
 
         if (
-            exists $active_parameter_href
-            ->{sv_vcfparser_select_feature_annotation_columns} )
+            exists
+            $active_parameter_href->{sv_vcfparser_select_feature_annotation_columns} )
         {
 
             @select_feature_annotation_columns =
-              @{ $active_parameter_href
-                  ->{sv_vcfparser_select_feature_annotation_columns} };
+              @{ $active_parameter_href->{sv_vcfparser_select_feature_annotation_columns}
+              };
         }
 
         ## Select outfile
@@ -696,19 +671,17 @@ sub analysis_vcfparser_sv_wes {
     mip_vcfparser(
         {
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $temp_infile_path,
+            infile_path => $infile_path,
             parse_vep   => $active_parameter_href->{sv_varianteffectpredictor},
             per_gene    => $active_parameter_href->{sv_vcfparser_per_gene},
-            range_feature_annotation_columns_ref => \@{
-                $active_parameter_href
-                  ->{sv_vcfparser_range_feature_annotation_columns}
-            },
+            range_feature_annotation_columns_ref =>
+              \@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns}
+              },
             range_feature_file_path =>
               $active_parameter_href->{sv_vcfparser_range_feature_file},
-            select_feature_annotation_columns_ref =>
-              \@select_feature_annotation_columns,
-            stderrfile_path => $file_path . $DOT . q{stderr.txt},
-            stdoutfile_path => $outfile_path_prefix . $outfile_suffixes[0],
+            select_feature_annotation_columns_ref => \@select_feature_annotation_columns,
+            stderrfile_path                => $recipe_file_path . $DOT . q{stderr.txt},
+            stdoutfile_path                => $outfile_path_prefix . $outfile_suffixes[0],
             select_feature_file_path       => $select_file,
             select_feature_matching_column => $select_file_matching_column,
             select_outfile                 => $select_outfile,
@@ -742,22 +715,24 @@ sub analysis_vcfparser_sv_wes {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    family_id => $arg_href->{active_parameter_href}{family_id},
+                    family_id        => $arg_href->{active_parameter_href}{family_id},
                     program_name     => $program_name,
                     sample_info_href => $sample_info_href,
                 }
             );
         }
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -856,7 +831,7 @@ sub analysis_vcfparser_sv_wgs {
             strict_type => 1,
         },
         xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             default     => 0,
             store       => \$xargs_file_counter,
             strict_type => 1,
@@ -869,14 +844,11 @@ sub analysis_vcfparser_sv_wgs {
     use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
-    use MIP::QC::Record
-      qw{ add_most_complete_vcf add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_most_complete_vcf add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
 
@@ -902,7 +874,7 @@ sub analysis_vcfparser_sv_wgs {
 
     my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %temp_infile_path   = %{ $io{temp}{file_path_href} };
+    my %infile_path        = %{ $io{in}{file_path_href} };
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -914,13 +886,12 @@ sub analysis_vcfparser_sv_wgs {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     my $xargs_file_path_prefix;
 
@@ -951,11 +922,10 @@ sub analysis_vcfparser_sv_wgs {
         )
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my @outfile_suffixes         = @{ $io{out}{file_suffixes} };
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my @outfile_suffixes    = @{ $io{out}{file_suffixes} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -963,7 +933,7 @@ sub analysis_vcfparser_sv_wgs {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -981,23 +951,6 @@ sub analysis_vcfparser_sv_wgs {
 
     my @contigs = @{ $file_info_href->{contigs} };
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@contigs,
-            core_number        => $core_number,
-            indirectory        => $indir_path_prefix,
-            infile             => $infile_name_prefix,
-            FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
-            temp_directory     => $temp_directory,
-        }
-    );
-
     ## vcfparser
     say {$FILEHANDLE} q{## vcfparser};
 
@@ -1006,7 +959,7 @@ sub analysis_vcfparser_sv_wgs {
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -1023,10 +976,9 @@ sub analysis_vcfparser_sv_wgs {
             $padding = $MT_PADDING;
         }
 
-        my $vcfparser_temp_outfile_path =
-          $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
-        my $vcfparser_xargs_file_path_prefix =
-          $xargs_file_path_prefix . $DOT . $contig;
+        my $vcfparser_outfile_path =
+          $outfile_path_prefix . $DOT . $contig . $outfile_suffix;
+        my $vcfparser_xargs_file_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
         my @select_feature_annotation_columns;
         my $select_file;
         my $select_file_matching_column;
@@ -1049,8 +1001,8 @@ sub analysis_vcfparser_sv_wgs {
                   catfile( $active_parameter_href->{sv_vcfparser_select_file} );
 
                 ## Column of HGNC Symbol in select file ("-sf")
-                $select_file_matching_column = $active_parameter_href
-                  ->{sv_vcfparser_select_file_matching_column};
+                $select_file_matching_column =
+                  $active_parameter_href->{sv_vcfparser_select_file_matching_column};
 
                 if (
                     exists $active_parameter_href
@@ -1064,21 +1016,17 @@ sub analysis_vcfparser_sv_wgs {
 
                 ## Select outfile
                 $select_outfile =
-                    $temp_outfile_path_prefix
-                  . $DOT
-                  . $contig
-                  . $outfile_suffixes[1];
+                  $outfile_path_prefix . $DOT . $contig . $outfile_suffixes[1];
             }
         }
 
         mip_vcfparser(
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
-                infile_path => $temp_infile_path{$contig},
+                infile_path => $infile_path{$contig},
                 padding     => $padding,
-                parse_vep =>
-                  $active_parameter_href->{sv_varianteffectpredictor},
-                per_gene => $active_parameter_href->{sv_vcfparser_per_gene},
+                parse_vep   => $active_parameter_href->{sv_varianteffectpredictor},
+                per_gene    => $active_parameter_href->{sv_vcfparser_per_gene},
                 range_feature_annotation_columns_ref => \@{
                     $active_parameter_href
                       ->{sv_vcfparser_range_feature_annotation_columns}
@@ -1090,7 +1038,7 @@ sub analysis_vcfparser_sv_wgs {
                 stderrfile_path => $vcfparser_xargs_file_path_prefix
                   . $DOT
                   . q{stderr.txt},
-                stdoutfile_path                => $vcfparser_temp_outfile_path,
+                stdoutfile_path                => $vcfparser_outfile_path,
                 select_feature_file_path       => $select_file,
                 select_feature_matching_column => $select_file_matching_column,
                 select_outfile                 => $select_outfile,
@@ -1098,20 +1046,6 @@ sub analysis_vcfparser_sv_wgs {
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
-
-    ## QC Data File(s)
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $temp_outfile_path_prefix
-              . $DOT
-              . $contigs[0]
-              . $outfile_suffix
-              . $ASTERISK,
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
   ANALYSIS_SUFFIXES:
     foreach my $analysis_suffix (@outfile_suffixes) {
@@ -1121,8 +1055,7 @@ sub analysis_vcfparser_sv_wgs {
         ## Update contigs list using select file contigs
         if ( $analysis_suffix eq q{.selected.vcf} ) {
 
-            @concat_contigs =
-              @{ $file_info_href->{sorted_select_file_contigs} };
+            @concat_contigs = @{ $file_info_href->{sorted_select_file_contigs} };
         }
         gatk_concatenate_variants(
             {
@@ -1131,7 +1064,7 @@ sub analysis_vcfparser_sv_wgs {
                 continue              => 1,
                 FILEHANDLE            => $FILEHANDLE,
                 infile_postfix        => $analysis_suffix,
-                infile_prefix         => $temp_outfile_path_prefix,
+                infile_prefix         => $outfile_path_prefix,
                 outfile_path_prefix   => $outfile_path_prefix,
                 outfile_suffix        => $analysis_suffix,
             }
@@ -1170,22 +1103,24 @@ sub analysis_vcfparser_sv_wgs {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    family_id => $arg_href->{active_parameter_href}{family_id},
+                    family_id        => $arg_href->{active_parameter_href}{family_id},
                     program_name     => $program_name,
                     sample_info_href => $sample_info_href,
                 }
             );
         }
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

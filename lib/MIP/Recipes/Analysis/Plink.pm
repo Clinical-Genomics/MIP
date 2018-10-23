@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Plink;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_plink };
@@ -133,10 +134,8 @@ sub analysis_plink {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
-    use MIP::Program::Variantcalling::Bcftools
-      qw(bcftools_view bcftools_annotate);
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_view bcftools_annotate);
     use MIP::Program::Variantcalling::Plink
       qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
     use MIP::Program::Variantcalling::Vt qw(vt_uniq);
@@ -159,7 +158,7 @@ sub analysis_plink {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $family_id,
@@ -179,9 +178,8 @@ sub analysis_plink {
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $human_genome_reference_version =
       $file_info_href->{human_genome_reference_version};
-    my $human_genome_reference_source =
-      $file_info_href->{human_genome_reference_source};
-    my $job_id_chain = get_program_attributes(
+    my $human_genome_reference_source = $file_info_href->{human_genome_reference_source};
+    my $job_id_chain                  = get_program_attributes(
         {
             parameter_href => $parameter_href,
             program_name   => $program_name,
@@ -190,13 +188,12 @@ sub analysis_plink {
     );
     my $program_mode = $active_parameter_href->{$program_name};
     my @sample_ids   = @{ $active_parameter_href->{sample_ids} };
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set outfiles depending on sample data
     my %plink_outfiles = (
@@ -212,16 +209,15 @@ sub analysis_plink {
     while ( my ( $mode, $program_href ) = each %plink_outfiles ) {
 
       PLINK_PROGRAM:
-        while ( my ( $file_name_prefix, $file_suffix ) = each %{$program_href} )
-        {
+        while ( my ( $file_name_prefix, $file_suffix ) = each %{$program_href} ) {
 
             if ( scalar @sample_ids > 1 and $mode eq q{multiple_samples} ) {
 
                 push @plink_outfiles, $file_name_prefix . $DOT . $file_suffix;
                 next;
             }
-            if ( $active_parameter_href->{found_other_count} ne
-                scalar @sample_ids and $mode eq q{check_for_sex} )
+            if (    $active_parameter_href->{found_other_count} ne scalar @sample_ids
+                and $mode eq q{check_for_sex} )
             {
                 push @plink_outfiles, $file_name_prefix . $DOT . $file_suffix;
             }
@@ -255,7 +251,7 @@ sub analysis_plink {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -271,19 +267,16 @@ sub analysis_plink {
     );
 
     # Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $program_info_file ) =
-      splitpath($program_info_path);
+    my ( $volume, $directory, $program_info_file ) = splitpath($program_info_path);
 
     # To enable submission to %sample_info_qc later
-    my $stdout_file_path =
-      catfile( $directory, $program_info_file . q{.stdout.txt} );
+    my $stdout_file_path = catfile( $directory, $program_info_file . q{.stdout.txt} );
 
     ### SHELL:
 
     my $plink_outfile_prefix =
       catfile( $outdir_path_prefix, $family_id . $UNDERSCORE . q{data} );
-    my $family_file_path =
-      catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
+    my $family_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
@@ -326,10 +319,7 @@ sub analysis_plink {
 
     ## Drops duplicate variants that appear later in the the VCF file
     my $uniq_outfile_path =
-        $infile_path_prefix
-      . $UNDERSCORE
-      . q{no_indels_ann_uniq}
-      . $infile_suffix;
+      $infile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq} . $infile_suffix;
     vt_uniq(
         {
             FILEHANDLE   => $FILEHANDLE,
@@ -395,9 +385,9 @@ sub analysis_plink {
         say {$FILEHANDLE} q{## Calculate inbreeding coefficients per family};
         plink_calculate_inbreeding(
             {
-                binary_fileset_prefix => $binary_fileset_prefix,
-                extract_file => $binary_fileset_prefix . $DOT . q{prune.in},
-                FILEHANDLE   => $FILEHANDLE,
+                binary_fileset_prefix   => $binary_fileset_prefix,
+                extract_file            => $binary_fileset_prefix . $DOT . q{prune.in},
+                FILEHANDLE              => $FILEHANDLE,
                 inbreeding_coefficients => 1,
                 het                     => 1,
                 outfile_prefix          => $inbreeding_outfile_prefix,
@@ -443,11 +433,9 @@ sub analysis_plink {
                 FILEHANDLE            => $FILEHANDLE,
                 no_fail               => 1,
                 make_bed              => 1,
-                outfile_prefix        => $plink_outfile_prefix
-                  . $UNDERSCORE
-                  . q{unsplit},
-                regions_ref => [ $CHR_X_NUMBER, $CHR_Y_NUMBER ],
-                split_x     => $genome_build,
+                outfile_prefix        => $plink_outfile_prefix . $UNDERSCORE . q{unsplit},
+                regions_ref           => [ $CHR_X_NUMBER, $CHR_Y_NUMBER ],
+                split_x               => $genome_build,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -467,8 +455,7 @@ sub analysis_plink {
             $read_freqfile_path = $binary_fileset_prefix . $DOT . q{frqx};
         }
 
-        my $sex_check_outfile_prefix =
-          catfile( $outdir_path_prefix, $family_id );
+        my $sex_check_outfile_prefix = catfile( $outdir_path_prefix, $family_id );
 
         plink_sex_check(
             {
@@ -511,18 +498,19 @@ sub analysis_plink {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_family_dead_end(
+        submit_recipe(
             {
+                dependency_method       => q{family_to_island},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
-
     }
     return;
 }

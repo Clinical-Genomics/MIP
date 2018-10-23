@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Rhocall;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,11 +22,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_rhocall_annotate };
+    our @EXPORT_OK = qw{ analysis_rhocall_annotate };
 
 }
 
@@ -48,10 +48,8 @@ sub analysis_rhocall_annotate {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
-##          : $stderr_path             => The stderr path of the block script
 ##          : $temp_directory          => Temporary directory {REF}
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -64,10 +62,8 @@ sub analysis_rhocall_annotate {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
     my $program_name;
     my $sample_info_href;
-    my $stderr_path;
 
     ## Default(s)
     my $family_id;
@@ -116,8 +112,6 @@ sub analysis_rhocall_annotate {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
         program_name => {
             defined     => 1,
             required    => 1,
@@ -131,7 +125,6 @@ sub analysis_rhocall_annotate {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        stderr_path    => { store => \$stderr_path, strict_type => 1, },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             store       => \$temp_directory,
@@ -151,8 +144,7 @@ sub analysis_rhocall_annotate {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_roh };
     use MIP::Program::Variantcalling::Rhocall qw{ rhocall_annotate };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -190,13 +182,12 @@ sub analysis_rhocall_annotate {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -230,12 +221,12 @@ sub analysis_rhocall_annotate {
         {
             module_core_number   => $core_number,
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -262,7 +253,7 @@ sub analysis_rhocall_annotate {
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -285,19 +276,16 @@ sub analysis_rhocall_annotate {
             push @sample_ids, $active_parameter_href->{sample_ids}[0];
         }
 
-        my $roh_outfile_path =
-          $outfile_path_prefix . $DOT . $contig . $DOT . q{roh};
+        my $roh_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{roh};
         bcftools_roh(
             {
-                af_file_path =>
-                  $active_parameter_href->{rhocall_frequency_file},
+                af_file_path => $active_parameter_href->{rhocall_frequency_file},
                 FILEHANDLE   => $XARGSFILEHANDLE,
                 infile_path  => $infile_path{$contig},
                 outfile_path => $roh_outfile_path,
 
                 samples_ref => \@sample_ids,
-                skip_indels =>
-                  1,    # Skip indels as their genotypes are enriched for errors
+                skip_indels => 1, # Skip indels as their genotypes are enriched for errors
             }
         );
         print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -329,16 +317,17 @@ sub analysis_rhocall_annotate {
                 sample_info_href => $sample_info_href,
             }
         );
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

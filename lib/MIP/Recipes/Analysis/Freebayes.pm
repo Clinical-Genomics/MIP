@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Freebayes;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_freebayes_calling };
@@ -127,7 +128,7 @@ sub analysis_freebayes_calling {
             strict_type => 1,
         },
         xargs_file_counter => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr{ \A\d+\z }sxm,
             default     => 0,
             store       => \$xargs_file_counter,
             strict_type => 1,
@@ -140,8 +141,7 @@ sub analysis_freebayes_calling {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_filter bcftools_norm bcftools_view };
     use MIP::Program::Variantcalling::Freebayes qw{ freebayes_calling };
@@ -166,13 +166,12 @@ sub analysis_freebayes_calling {
     );
     my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
     my $xargs_file_path_prefix;
 
     ## Set and get the io files per chain, id and stream
@@ -200,7 +199,7 @@ sub analysis_freebayes_calling {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -250,13 +249,13 @@ sub analysis_freebayes_calling {
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                core_number => $core_number,
-                file_ending => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-                file_path   => $file_path,
-                FILEHANDLE  => $FILEHANDLE,
-                infile      => $infile_name_prefix,
-                indirectory => $indir_path_prefix,
+                contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+                core_number        => $core_number,
+                file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
+                file_path          => $recipe_file_path,
+                FILEHANDLE         => $FILEHANDLE,
+                infile             => $infile_name_prefix,
+                indirectory        => $indir_path_prefix,
                 program_info_path  => $program_info_path,
                 temp_directory     => $temp_directory,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -272,7 +271,7 @@ sub analysis_freebayes_calling {
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -297,7 +296,7 @@ sub analysis_freebayes_calling {
                 FILEHANDLE                 => $XARGSFILEHANDLE,
                 infile_paths_ref           => \@freebayes_file_paths,
                 referencefile_path         => $referencefile_path,
-                stderrfile_path => $stderrfile_path . $DOT . q{stderr.txt},
+                stderrfile_path            => $stderrfile_path . $DOT . q{stderr.txt},
             }
         );
         print {$XARGSFILEHANDLE} $PIPE . $SPACE;
@@ -309,9 +308,7 @@ sub analysis_freebayes_calling {
                 indel_gap       => 10,
                 snp_gap         => 3,
                 soft_filter     => q{LowQual},
-                stderrfile_path => $stderrfile_path
-                  . $UNDERSCORE
-                  . q{filter.stderr.txt},
+                stderrfile_path => $stderrfile_path . $UNDERSCORE . q{filter.stderr.txt},
             }
         );
 
@@ -339,9 +336,7 @@ sub analysis_freebayes_calling {
                 outfile_path    => $norm_temp_outfile_path,
                 output_type     => q{v},
                 reference_path  => $referencefile_path,
-                stderrfile_path => $stderrfile_path
-                  . $UNDERSCORE
-                  . q{norm.stderr.txt},
+                stderrfile_path => $stderrfile_path . $UNDERSCORE . q{norm.stderr.txt},
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -354,7 +349,7 @@ sub analysis_freebayes_calling {
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -379,9 +374,7 @@ sub analysis_freebayes_calling {
                   . $outfile_suffix,
                 output_type     => q{v},
                 samples_ref     => $active_parameter_href->{sample_ids},
-                stderrfile_path => $stderrfile_path
-                  . $UNDERSCORE
-                  . q{ordered.stderr.txt},
+                stderrfile_path => $stderrfile_path . $UNDERSCORE . q{ordered.stderr.txt},
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -417,15 +410,17 @@ sub analysis_freebayes_calling {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

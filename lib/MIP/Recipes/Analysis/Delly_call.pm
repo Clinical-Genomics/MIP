@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Delly_call;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,10 +23,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_delly_call analysis_delly_call_old };
+    our @EXPORT_OK = qw{ analysis_delly_call };
 
 }
 
@@ -153,11 +154,9 @@ sub analysis_delly_call {
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Delly qw{ delly_call };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -178,14 +177,10 @@ sub analysis_delly_call {
             temp_directory => $temp_directory,
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path =
-      $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $job_id_chain = get_program_attributes(
         {
@@ -195,13 +190,12 @@ sub analysis_delly_call {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     %io = (
         %io,
@@ -219,19 +213,14 @@ sub analysis_delly_call {
         )
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_outfile_path        = $temp_outfile_path_prefix . $outfile_suffix;
+    my $outfile_path = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandles
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             directory_id                    => $sample_id,
@@ -248,61 +237,38 @@ sub analysis_delly_call {
     );
 
     ### SHELL:
-
-    ## Required for processing complete file (TRA)
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
     ## Delly
     say {$FILEHANDLE} q{## Delly call};
 
     delly_call(
         {
-            exclude_file_path => $active_parameter_href->{delly_exclude_file},
-            FILEHANDLE        => $FILEHANDLE,
-            no_small_indel    => 1,
-            infile_path       => $temp_infile_path,
-            outfile_path      => $temp_outfile_path,
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            stderrfile_path => $file_path . $DOT . q{stderr.txt},
-            stdoutfile_path => $file_path . $DOT . q{stdout.txt},
+            exclude_file_path  => $active_parameter_href->{delly_exclude_file},
+            FILEHANDLE         => $FILEHANDLE,
+            no_small_indel     => 1,
+            infile_path        => $infile_path,
+            outfile_path       => $outfile_path,
+            referencefile_path => $active_parameter_href->{human_genome_reference},
+            stderrfile_path    => $recipe_file_path . $DOT . q{stderr.txt},
+            stdoutfile_path    => $recipe_file_path . $DOT . q{stdout.txt},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_outfile_path . $ASTERISK,
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_sample},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

@@ -522,7 +522,7 @@ sub analysis_cnvnator {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_island},
+                dependency_method       => q{sample_to_sample},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,

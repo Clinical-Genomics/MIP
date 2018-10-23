@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Variant_integrity;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_variant_integrity };
@@ -131,8 +132,7 @@ sub analysis_variant_integrity {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Variant_integrity
       qw{ variant_integrity_mendel variant_integrity_father };
     use MIP::QC::Record qw{ add_program_metafile_to_sample_info };
@@ -168,13 +168,12 @@ sub analysis_variant_integrity {
     my $program_mode = $active_parameter_href->{$program_name};
     my @sample_ids   = @{ $active_parameter_href->{sample_ids} };
     my $is_trio      = $parameter_href->{dynamic_parameter}{trio};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set outfiles depending on sample data
     my %var_int_outfiles = (
@@ -201,8 +200,7 @@ sub analysis_variant_integrity {
     while ( my ( $mode, $program_href ) = each %var_int_outfiles ) {
 
       VAR_INT_PROGRAM:
-        while ( my ( $file_name_prefix, $file_suffix ) = each %{$program_href} )
-        {
+        while ( my ( $file_name_prefix, $file_suffix ) = each %{$program_href} ) {
 
             if ( $is_trio and $mode eq q{trio} ) {
 
@@ -219,9 +217,7 @@ sub analysis_variant_integrity {
     ## Check if we ahve something to analyse
     if ( not scalar @var_int_outfiles ) {
 
-        $log->warn(
-q{Not a trio nor a father in analysis - skipping 'variant_integrity'}
-        );
+        $log->warn(q{Not a trio nor a father in analysis - skipping 'variant_integrity'});
         return;
     }
     ## Set and get the io files per chain, id and stream
@@ -250,7 +246,7 @@ q{Not a trio nor a father in analysis - skipping 'variant_integrity'}
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -265,8 +261,7 @@ q{Not a trio nor a father in analysis - skipping 'variant_integrity'}
         }
     );
 
-    my $family_file_path =
-      catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
+    my $family_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
@@ -285,9 +280,8 @@ q{Not a trio nor a father in analysis - skipping 'variant_integrity'}
 
         variant_integrity_mendel(
             {
-                family_file => $family_file_path,
-                family_type =>
-                  $active_parameter_href->{genmod_models_family_type},
+                family_file  => $family_file_path,
+                family_type  => $active_parameter_href->{genmod_models_family_type},
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $infile_path,
                 outfile_path => $outfile_path{mendel},
@@ -301,9 +295,8 @@ q{Not a trio nor a father in analysis - skipping 'variant_integrity'}
 
         variant_integrity_father(
             {
-                family_file => $family_file_path,
-                family_type =>
-                  $active_parameter_href->{genmod_models_family_type},
+                family_file  => $family_file_path,
+                family_type  => $active_parameter_href->{genmod_models_family_type},
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $infile_path,
                 outfile_path => $outfile_path{father},
@@ -329,15 +322,17 @@ q{Not a trio nor a father in analysis - skipping 'variant_integrity'}
             );
         }
 
-        slurm_submit_job_sample_id_dependency_family_dead_end(
+        submit_recipe(
             {
+                dependency_method       => q{family_to_island},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Gatk_variantevalall;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantevalall };
@@ -137,10 +138,8 @@ sub analysis_gatk_variantevalall {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
-    use MIP::Program::Variantcalling::Gatk
-      qw{ gatk_varianteval gatk_selectvariants };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_varianteval gatk_selectvariants };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -176,13 +175,12 @@ sub analysis_gatk_variantevalall {
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
     my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -211,7 +209,7 @@ sub analysis_gatk_variantevalall {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -238,16 +236,15 @@ sub analysis_gatk_variantevalall {
       $outfile_path_prefix . $UNDERSCORE . q{select} . $infile_suffix;
     gatk_selectvariants(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $infile_path,
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation  => q{Xmx2g},
-            outfile_path       => $select_outfile_path,
-            referencefile_path => $referencefile_path,
-            sample_names_ref   => [$sample_id],
-            temp_directory     => $temp_directory,
-            verbosity          => $active_parameter_href->{gatk_logging_level},
+            FILEHANDLE           => $FILEHANDLE,
+            infile_path          => $infile_path,
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx2g},
+            outfile_path         => $select_outfile_path,
+            referencefile_path   => $referencefile_path,
+            sample_names_ref     => [$sample_id],
+            temp_directory       => $temp_directory,
+            verbosity            => $active_parameter_href->{gatk_logging_level},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -261,15 +258,14 @@ sub analysis_gatk_variantevalall {
             dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
             indel_gold_standard_file_path =>
               $active_parameter_href->{gatk_varianteval_gold},
-            infile_paths_ref => [$select_outfile_path],
-            java_jar         => $gatk_jar,
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            logging_level      => $active_parameter_href->{gatk_logging_level},
-            memory_allocation  => q{Xmx2g},
-            outfile_path       => $outfile_path,
-            temp_directory     => $temp_directory,
-            referencefile_path => $referencefile_path,
+            infile_paths_ref     => [$select_outfile_path],
+            java_jar             => $gatk_jar,
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            logging_level        => $active_parameter_href->{gatk_logging_level},
+            memory_allocation    => q{Xmx2g},
+            outfile_path         => $outfile_path,
+            temp_directory       => $temp_directory,
+            referencefile_path   => $referencefile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -288,16 +284,17 @@ sub analysis_gatk_variantevalall {
                 sample_info_href => $sample_info_href,
             }
         );
-
-        slurm_submit_job_sample_id_dependency_family_dead_end(
+        submit_recipe(
             {
+                dependency_method       => q{family_to_island},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

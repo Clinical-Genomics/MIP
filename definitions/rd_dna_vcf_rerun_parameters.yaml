@@ -138,7 +138,7 @@ sv_annotate:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: ann_
+  file_tag: _ann
   outfile_suffix: ".vcf"
   program_name_path:
    - bcftools
@@ -225,7 +225,7 @@ sv_varianteffectpredictor:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: vep_
+  file_tag: _vep
   outfile_suffix: ".vcf"
   program_name_path:
    - vep
@@ -269,7 +269,7 @@ sv_vcfparser:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: parsed_
+  file_tag: _parsed
   type: program
 sv_vcfparser_range_feature_annotation_columns:
   associated_program:
@@ -330,7 +330,7 @@ sv_rankvariant:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: ranked_
+  file_tag: _ranked
   type: program
 sv_genmod_annotate_regions:
   associated_program:
@@ -372,6 +372,7 @@ sv_reformat:
   data_type: SCALAR
   default: 1
   file_tag: ""
+  outfile_suffix: ".vcf"
   program_name_path:
    - grep
   type: program
@@ -395,7 +396,7 @@ vcf_rerun_reformat:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: _vrn_
+  file_tag: _vrn
   outfile_suffix: ".vcf"
   program_name_path:
    - bcftools
@@ -413,7 +414,7 @@ prepareforvariantannotationblock:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
+  file_tag: ""
   outfile_suffix: ".vcf.gz"
   type: program
 ##rhocall
@@ -423,7 +424,7 @@ rhocall:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: rhocall_
+  file_tag: _rhocall
   program_name_path:
    - rhocall
    - bcftools
@@ -444,7 +445,7 @@ vt:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: vt_
+  file_tag: _vt
   program_name_path:
    - vt
    - sed
@@ -482,7 +483,7 @@ frequency_filter:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: frqf_
+  file_tag: _frqf
   outfile_suffix: ".vcf"
   program_name_path:
    - genmod
@@ -520,7 +521,7 @@ varianteffectpredictor:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: vep_
+  file_tag: _vep
   outfile_suffix: ".vcf"
   program_name_path:
    - vep
@@ -588,7 +589,7 @@ vcfparser:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: parsed_
+  file_tag: _parsed
   outfile_suffix: ".vcf"
   type: program
 vcfparser_outfile_count:
@@ -645,7 +646,7 @@ snpeff:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: snpeff_
+  file_tag: _snpeff
   outfile_suffix: ".vcf"
   type: program
 snpeff_ann:
@@ -719,7 +720,7 @@ rankvariant:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: ranked_
+  file_tag: _ranked
   outfile_suffix: ".vcf"
   program_name_path:
    - genmod
@@ -779,7 +780,7 @@ endvariantannotationblock:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
+  file_tag: ""
   outfile_suffix: ".vcf"
   program_name_path:
    - grep

@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Rankvariant;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -48,11 +49,9 @@ sub analysis_rankvariant {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -63,11 +62,9 @@ sub analysis_rankvariant {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $file_path;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
     my $program_name;
     my $sample_info_href;
 
@@ -96,7 +93,6 @@ sub analysis_rankvariant {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        file_path               => { store => \$file_path, strict_type => 1, },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -118,8 +114,6 @@ sub analysis_rankvariant {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
         program_name => {
             defined     => 1,
             required    => 1,
@@ -139,7 +133,7 @@ sub analysis_rankvariant {
             strict_type => 1,
         },
         xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             default     => 0,
             store       => \$xargs_file_counter,
             strict_type => 1,
@@ -154,8 +148,7 @@ sub analysis_rankvariant {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Genmod
       qw{ genmod_annotate genmod_compound genmod_models genmod_score };
     use MIP::QC::Record
@@ -166,8 +159,7 @@ sub analysis_rankvariant {
     ### PREPROCESSING:
 
     ## Constant
-    Readonly my $CORE_NUMBER_REQUESTED =>
-      $active_parameter_href->{max_cores_per_node};
+    Readonly my $CORE_NUMBER_REQUESTED => $active_parameter_href->{max_cores_per_node};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -198,13 +190,12 @@ sub analysis_rankvariant {
     );
     my $program_mode = $active_parameter_href->{$program_name};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -236,7 +227,7 @@ sub analysis_rankvariant {
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar keys %infile_path,
             module_core_number   => $core_number,
         }
@@ -247,12 +238,12 @@ sub analysis_rankvariant {
     my $genmod_core_number = check_max_core_number(
         {
             core_number_requested => $CORE_NUMBER_REQUESTED,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -270,8 +261,7 @@ sub analysis_rankvariant {
 
     ### SHELL:
 
-    my $family_file_path =
-      catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
+    my $family_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
@@ -292,7 +282,7 @@ sub analysis_rankvariant {
         {
             core_number        => $genmod_core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -326,8 +316,7 @@ sub analysis_rankvariant {
         my $genmod_outfile_path =
           catfile( dirname( devnull() ), q{stdout} );
 
-        my $stderrfile_path_prefix =
-          $xargs_file_path_prefix . $DOT . $contig_index;
+        my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig_index;
 
         ## Genmod Annotate
         $genmod_module = $UNDERSCORE . q{annotate};
@@ -337,16 +326,14 @@ sub analysis_rankvariant {
 
         genmod_annotate(
             {
-                annotate_region =>
-                  $active_parameter_href->{genmod_annotate_regions},
+                annotate_region => $active_parameter_href->{genmod_annotate_regions},
                 cadd_file_paths_ref =>
                   \@{ $active_parameter_href->{genmod_annotate_cadd_files} },
-                FILEHANDLE   => $XARGSFILEHANDLE,
-                infile_path  => $genmod_indata,
-                outfile_path => $genmod_outfile_path,
-                spidex_file_path =>
-                  $active_parameter_href->{genmod_annotate_spidex_file},
-                stderrfile_path     => $annotate_stderrfile_path,
+                FILEHANDLE       => $XARGSFILEHANDLE,
+                infile_path      => $genmod_indata,
+                outfile_path     => $genmod_outfile_path,
+                spidex_file_path => $active_parameter_href->{genmod_annotate_spidex_file},
+                stderrfile_path  => $annotate_stderrfile_path,
                 temp_directory_path => $temp_directory,
                 verbosity           => q{v},
             }
@@ -365,21 +352,19 @@ sub analysis_rankvariant {
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
         genmod_models(
             {
-                FILEHANDLE  => $XARGSFILEHANDLE,
-                family_file => $family_file_path,
-                family_type =>
-                  $active_parameter_href->{genmod_models_family_type},
+                FILEHANDLE   => $XARGSFILEHANDLE,
+                family_file  => $family_file_path,
+                family_type  => $active_parameter_href->{genmod_models_family_type},
                 infile_path  => $genmod_indata,
                 outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-                reduced_penetrance_file_path => $active_parameter_href
-                  ->{genmod_models_reduced_penetrance_file},
+                reduced_penetrance_file_path =>
+                  $active_parameter_href->{genmod_models_reduced_penetrance_file},
                 stderrfile_path     => $models_stderrfile_path,
                 temp_directory_path => $temp_directory,
                 thread_number       => 4,
                 vep                 => $use_vep,
                 verbosity           => q{v},
-                whole_gene =>
-                  $active_parameter_href->{genmod_models_whole_gene},
+                whole_gene          => $active_parameter_href->{genmod_models_whole_gene},
             }
         );
         ## Pipe
@@ -392,17 +377,15 @@ sub analysis_rankvariant {
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
         genmod_score(
             {
-                family_file => $family_file_path,
-                family_type =>
-                  $active_parameter_href->{genmod_models_family_type},
+                family_file  => $family_file_path,
+                family_type  => $active_parameter_href->{genmod_models_family_type},
                 FILEHANDLE   => $XARGSFILEHANDLE,
                 infile_path  => $genmod_indata,
                 outfile_path => catfile( dirname( devnull() ), q{stdout} ),
                 rank_result  => 1,
-                rank_model_file_path =>
-                  $active_parameter_href->{rank_model_file},
-                stderrfile_path => $score_stderrfile_path,
-                verbosity       => q{v},
+                rank_model_file_path => $active_parameter_href->{rank_model_file},
+                stderrfile_path      => $score_stderrfile_path,
+                verbosity            => q{v},
             }
         );
         ## Pipe
@@ -450,8 +433,7 @@ sub analysis_rankvariant {
 
             add_program_metafile_to_sample_info(
                 {
-                    file =>
-                      basename( $active_parameter_href->{rank_model_file} ),
+                    file         => basename( $active_parameter_href->{rank_model_file} ),
                     metafile_tag => q{rank_model},
                     path         => $active_parameter_href->{rank_model_file},
                     program_name => q{genmod},
@@ -460,15 +442,17 @@ sub analysis_rankvariant {
                 }
             );
         }
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -482,11 +466,9 @@ sub analysis_rankvariant_unaffected {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -497,11 +479,9 @@ sub analysis_rankvariant_unaffected {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $file_path;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
     my $program_name;
     my $sample_info_href;
 
@@ -530,7 +510,6 @@ sub analysis_rankvariant_unaffected {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        file_path               => { store => \$file_path, strict_type => 1, },
         infile_lane_prefix_href => {
             default     => {},
             defined     => 1,
@@ -552,8 +531,6 @@ sub analysis_rankvariant_unaffected {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
         program_name => {
             defined     => 1,
             required    => 1,
@@ -573,7 +550,7 @@ sub analysis_rankvariant_unaffected {
             strict_type => 1,
         },
         xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             default     => 0,
             store       => \$xargs_file_counter,
             strict_type => 1,
@@ -588,8 +565,7 @@ sub analysis_rankvariant_unaffected {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Genmod
       qw{ genmod_annotate genmod_compound genmod_models genmod_score };
     use MIP::QC::Record
@@ -600,8 +576,7 @@ sub analysis_rankvariant_unaffected {
     ### PREPROCESSING:
 
     ## Constant
-    Readonly my $CORE_NUMBER_REQUESTED =>
-      $active_parameter_href->{max_cores_per_node};
+    Readonly my $CORE_NUMBER_REQUESTED => $active_parameter_href->{max_cores_per_node};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -632,13 +607,12 @@ sub analysis_rankvariant_unaffected {
     );
     my $program_mode = $active_parameter_href->{$program_name};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -670,7 +644,7 @@ sub analysis_rankvariant_unaffected {
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar keys %infile_path,
             module_core_number   => $core_number,
         }
@@ -681,12 +655,12 @@ sub analysis_rankvariant_unaffected {
     my $genmod_core_number = check_max_core_number(
         {
             core_number_requested => $CORE_NUMBER_REQUESTED,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -704,8 +678,7 @@ sub analysis_rankvariant_unaffected {
 
     ### SHELL:
 
-    my $family_file_path =
-      catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
+    my $family_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
@@ -726,7 +699,7 @@ sub analysis_rankvariant_unaffected {
         {
             core_number        => $genmod_core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -752,23 +725,20 @@ sub analysis_rankvariant_unaffected {
         ## Genmod Annotate
         $genmod_module = $UNDERSCORE . q{annotate};
 
-        my $stderrfile_path_prefix =
-          $xargs_file_path_prefix . $DOT . $contig_index;
+        my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig_index;
         my $annotate_stderrfile_path =
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
 
         genmod_annotate(
             {
-                annotate_region =>
-                  $active_parameter_href->{genmod_annotate_regions},
+                annotate_region => $active_parameter_href->{genmod_annotate_regions},
                 cadd_file_paths_ref =>
                   \@{ $active_parameter_href->{genmod_annotate_cadd_files} },
-                FILEHANDLE   => $XARGSFILEHANDLE,
-                infile_path  => $genmod_indata,
-                outfile_path => $genmod_outfile_path,
-                spidex_file_path =>
-                  $active_parameter_href->{genmod_annotate_spidex_file},
-                stderrfile_path     => $annotate_stderrfile_path,
+                FILEHANDLE       => $XARGSFILEHANDLE,
+                infile_path      => $genmod_indata,
+                outfile_path     => $genmod_outfile_path,
+                spidex_file_path => $active_parameter_href->{genmod_annotate_spidex_file},
+                stderrfile_path  => $annotate_stderrfile_path,
                 temp_directory_path => $temp_directory,
                 verbosity           => q{v},
             }
@@ -799,8 +769,7 @@ sub analysis_rankvariant_unaffected {
 
             add_program_metafile_to_sample_info(
                 {
-                    file =>
-                      basename( $active_parameter_href->{rank_model_file} ),
+                    file         => basename( $active_parameter_href->{rank_model_file} ),
                     metafile_tag => q{rank_model},
                     path         => $active_parameter_href->{rank_model_file},
                     program_name => q{genmod},
@@ -809,15 +778,17 @@ sub analysis_rankvariant_unaffected {
                 }
             );
         }
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -928,8 +899,7 @@ sub analysis_rankvariant_sv {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Genmod
       qw{ genmod_annotate genmod_compound genmod_models genmod_score };
     use MIP::QC::Record
@@ -966,13 +936,12 @@ sub analysis_rankvariant_sv {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
@@ -1014,12 +983,12 @@ sub analysis_rankvariant_sv {
     my $genmod_core_number = check_max_core_number(
         {
             core_number_requested => $core_number,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -1037,8 +1006,7 @@ sub analysis_rankvariant_sv {
 
     ### SHELL:
 
-    my $fam_file_path =
-      catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
+    my $fam_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
 
     ## Create .fam file
     create_fam_file(
@@ -1078,8 +1046,7 @@ sub analysis_rankvariant_sv {
         my $genmod_module = $UNDERSCORE . q{annotate};
         genmod_annotate(
             {
-                annotate_region =>
-                  $active_parameter_href->{sv_genmod_annotate_regions},
+                annotate_region => $active_parameter_href->{sv_genmod_annotate_regions},
                 FILEHANDLE      => $FILEHANDLE,
                 infile_path     => $genmod_indata,
                 outfile_path    => $genmod_outfile_path,
@@ -1104,14 +1071,13 @@ sub analysis_rankvariant_sv {
 
         genmod_models(
             {
-                FILEHANDLE  => $FILEHANDLE,
-                family_file => $fam_file_path,
-                family_type =>
-                  $active_parameter_href->{sv_genmod_models_family_type},
+                FILEHANDLE   => $FILEHANDLE,
+                family_file  => $fam_file_path,
+                family_type  => $active_parameter_href->{sv_genmod_models_family_type},
                 infile_path  => $genmod_indata,
                 outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-                reduced_penetrance_file_path => $active_parameter_href
-                  ->{sv_genmod_models_reduced_penetrance_file},
+                reduced_penetrance_file_path =>
+                  $active_parameter_href->{sv_genmod_models_reduced_penetrance_file},
                 stderrfile_path => $program_info_path
                   . $genmod_module
                   . $outfile_suffixes[$infile_index]
@@ -1121,8 +1087,7 @@ sub analysis_rankvariant_sv {
                 thread_number       => 4,
                 vep                 => $use_vep,
                 verbosity           => q{v},
-                whole_gene =>
-                  $active_parameter_href->{sv_genmod_models_whole_gene},
+                whole_gene => $active_parameter_href->{sv_genmod_models_whole_gene},
             }
         );
 
@@ -1133,16 +1098,14 @@ sub analysis_rankvariant_sv {
         $genmod_module .= $UNDERSCORE . q{score};
         genmod_score(
             {
-                FILEHANDLE  => $FILEHANDLE,
-                family_file => $fam_file_path,
-                family_type =>
-                  $active_parameter_href->{sv_genmod_models_family_type},
+                FILEHANDLE   => $FILEHANDLE,
+                family_file  => $fam_file_path,
+                family_type  => $active_parameter_href->{sv_genmod_models_family_type},
                 infile_path  => $genmod_indata,
                 outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-                rank_model_file_path =>
-                  $active_parameter_href->{sv_rank_model_file},
-                rank_result     => 1,
-                stderrfile_path => $program_info_path
+                rank_model_file_path => $active_parameter_href->{sv_rank_model_file},
+                rank_result          => 1,
+                stderrfile_path      => $program_info_path
                   . $genmod_module
                   . $outfile_suffixes[$infile_index]
                   . $DOT
@@ -1200,10 +1163,9 @@ sub analysis_rankvariant_sv {
 
             add_program_metafile_to_sample_info(
                 {
-                    file =>
-                      basename( $active_parameter_href->{sv_rank_model_file} ),
-                    metafile_tag => q{sv_rank_model},
-                    path => $active_parameter_href->{sv_rank_model_file},
+                    file => basename( $active_parameter_href->{sv_rank_model_file} ),
+                    metafile_tag     => q{sv_rank_model},
+                    path             => $active_parameter_href->{sv_rank_model_file},
                     program_name     => q{sv_genmod},
                     sample_info_href => $sample_info_href,
                     version          => $sv_rank_model_version,
@@ -1211,15 +1173,17 @@ sub analysis_rankvariant_sv {
             );
         }
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -1330,8 +1294,7 @@ sub analysis_rankvariant_sv_unaffected {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
@@ -1368,13 +1331,12 @@ sub analysis_rankvariant_sv_unaffected {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
@@ -1415,12 +1377,12 @@ sub analysis_rankvariant_sv_unaffected {
     my $genmod_core_number = check_max_core_number(
         {
             core_number_requested => $core_number,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -1448,8 +1410,7 @@ sub analysis_rankvariant_sv_unaffected {
         my $genmod_module = q{_annotate};
         genmod_annotate(
             {
-                annotate_region =>
-                  $active_parameter_href->{sv_genmod_annotate_regions},
+                annotate_region => $active_parameter_href->{sv_genmod_annotate_regions},
                 FILEHANDLE      => $FILEHANDLE,
                 infile_path     => $infile_path,
                 outfile_path    => $outfile_paths[$infile_index],
@@ -1491,10 +1452,9 @@ sub analysis_rankvariant_sv_unaffected {
 
             add_program_metafile_to_sample_info(
                 {
-                    file =>
-                      basename( $active_parameter_href->{sv_rank_model_file} ),
-                    metafile_tag => q{sv_rank_model},
-                    path => $active_parameter_href->{sv_rank_model_file},
+                    file => basename( $active_parameter_href->{sv_rank_model_file} ),
+                    metafile_tag     => q{sv_rank_model},
+                    path             => $active_parameter_href->{sv_rank_model_file},
                     program_name     => q{sv_genmod},
                     sample_info_href => $sample_info_href,
                     version          => $sv_rank_model_version,
@@ -1503,15 +1463,17 @@ sub analysis_rankvariant_sv_unaffected {
 
         }
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

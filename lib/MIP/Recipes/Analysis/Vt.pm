@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Vt;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt };
@@ -52,9 +53,7 @@ sub analysis_vt {
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
-##          : $program_info_path       => The program info path
 ##          : $sample_info_href        => Info on samples and family hash {REF}
-##          : $stderr_path             => The stderr path of the block script
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -68,9 +67,7 @@ sub analysis_vt {
     my $job_id_href;
     my $parameter_href;
     my $program_name;
-    my $program_info_path;
     my $sample_info_href;
-    my $stderr_path;
 
     ## Default(s)
     my $family_id;
@@ -119,8 +116,6 @@ sub analysis_vt {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
         program_name => {
             defined     => 1,
             required    => 1,
@@ -134,7 +129,6 @@ sub analysis_vt {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        stderr_path    => { store => \$stderr_path, strict_type => 1, },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             store       => \$temp_directory,
@@ -155,8 +149,7 @@ sub analysis_vt {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core_rio};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
@@ -191,13 +184,12 @@ sub analysis_vt {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -231,12 +223,12 @@ sub analysis_vt {
         {
             module_core_number   => $core_number,
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -251,7 +243,7 @@ sub analysis_vt {
             temp_directory                  => $temp_directory,
         }
     );
-    $stderr_path = $program_info_path . $DOT . q{stderr.txt};
+    my $stderr_path = $program_info_path . $DOT . q{stderr.txt};
 
     # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
@@ -268,7 +260,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -282,17 +274,17 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
         ## vt - Split multi allelic records into single records and normalize
         analysis_vt_core_rio(
             {
-                active_parameter_href => $active_parameter_href,
-                cmd_break             => $SEMICOLON,
-                contig                => $contig,
-                decompose             => $active_parameter_href->{vt_decompose},
-                FILEHANDLE            => $XARGSFILEHANDLE,
-                gnu_sed               => 1,
-                infile_path           => $infile_path{$contig},
-                instream              => 0,
-                normalize             => $active_parameter_href->{vt_normalize},
-                outfile_path          => $outfile_path{$contig},
-                uniq                  => $active_parameter_href->{vt_uniq},
+                active_parameter_href  => $active_parameter_href,
+                cmd_break              => $SEMICOLON,
+                contig                 => $contig,
+                decompose              => $active_parameter_href->{vt_decompose},
+                FILEHANDLE             => $XARGSFILEHANDLE,
+                gnu_sed                => 1,
+                infile_path            => $infile_path{$contig},
+                instream               => 0,
+                normalize              => $active_parameter_href->{vt_normalize},
+                outfile_path           => $outfile_path{$contig},
+                uniq                   => $active_parameter_href->{vt_uniq},
                 xargs_file_path_prefix => $xargs_file_path_prefix,
             }
         );
@@ -325,11 +317,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
             my $alt_file_tag = $UNDERSCORE . q{nostar};
 
             my $removed_outfile_path =
-                $outfile_path_prefix
-              . $alt_file_tag
-              . $DOT
-              . $contig
-              . $outfile_suffix;
+              $outfile_path_prefix . $alt_file_tag . $DOT . $contig . $outfile_suffix;
             _remove_decomposed_asterisk_entries(
                 {
                     contig                 => $contig,
@@ -359,15 +347,17 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

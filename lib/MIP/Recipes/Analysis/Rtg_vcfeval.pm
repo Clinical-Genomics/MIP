@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Rtg_vcfeval;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -140,8 +141,7 @@ sub analysis_rtg_vcfeval {
     use MIP::Program::Qc::Rtg qw{ rtg_vcfeval };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_rename_vcf_samples bcftools_view_and_index_vcf };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -154,7 +154,7 @@ sub analysis_rtg_vcfeval {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $family_id,
@@ -177,13 +177,12 @@ sub analysis_rtg_vcfeval {
     );
     my $nist_id      = $active_parameter_href->{nist_id};
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -213,7 +212,7 @@ sub analysis_rtg_vcfeval {
     my $nist_file_path = catfile( $temp_directory, q{nist} );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -236,7 +235,7 @@ sub analysis_rtg_vcfeval {
             FILEHANDLE => $FILEHANDLE,
             index      => 1,
             index_type => q{tbi},
-            infile => $active_parameter_href->{nist_high_confidence_call_set},
+            infile     => $active_parameter_href->{nist_high_confidence_call_set},
             outfile_path_prefix => $nist_file_path . $UNDERSCORE . q{refrm},
             output_type         => q{z},
             temp_directory      => $temp_directory,
@@ -271,10 +270,8 @@ sub analysis_rtg_vcfeval {
     say {$FILEHANDLE} q{## Rtg vcfeval};
     rtg_vcfeval(
         {
-            baselinefile_path => $nist_file_path
-              . $UNDERSCORE
-              . q{refrm.vcf.gz},
-            callfile_path => $outfile_path_prefix . $DOT . q{vcf.gz},
+            baselinefile_path => $nist_file_path . $UNDERSCORE . q{refrm.vcf.gz},
+            callfile_path     => $outfile_path_prefix . $DOT . q{vcf.gz},
             eval_region_file_path =>
               $active_parameter_href->{nist_high_confidence_call_set_bed},
             FILEHANDLE           => $FILEHANDLE,
@@ -301,15 +298,17 @@ sub analysis_rtg_vcfeval {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_family_dead_end(
+        submit_recipe(
             {
+                dependency_method       => q{family_to_island},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

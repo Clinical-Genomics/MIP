@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Frequency_filter;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,11 +23,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_frequency_filter };
+    our @EXPORT_OK = qw{ analysis_frequency_filter };
 
 }
 
@@ -51,10 +51,8 @@ sub analysis_frequency_filter {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
-##          : $stderr_path             => The stderr path of the block script
 ##          : $temp_directory          => Temporary directory {REF}
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -67,10 +65,8 @@ sub analysis_frequency_filter {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
     my $program_name;
     my $sample_info_href;
-    my $stderr_path;
 
     ## Default(s)
     my $family_id;
@@ -119,8 +115,6 @@ sub analysis_frequency_filter {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
         program_name => {
             defined     => 1,
             required    => 1,
@@ -134,7 +128,6 @@ sub analysis_frequency_filter {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        stderr_path    => { store => \$stderr_path, strict_type => 1, },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             store       => \$temp_directory,
@@ -154,10 +147,8 @@ sub analysis_frequency_filter {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
-    use MIP::Program::Variantcalling::Genmod
-      qw{ genmod_annotate genmod_filter };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate genmod_filter };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -191,13 +182,12 @@ sub analysis_frequency_filter {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -228,14 +218,14 @@ sub analysis_frequency_filter {
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
             module_core_number   => $core_number,
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -262,7 +252,7 @@ sub analysis_frequency_filter {
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -277,12 +267,11 @@ sub analysis_frequency_filter {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         genmod_annotate(
             {
-                FILEHANDLE  => $XARGSFILEHANDLE,
-                infile_path => $infile_path{$contig},
-                max_af =>
-                  $active_parameter_href->{frequency_genmod_filter_max_af},
-                outfile_path    => catfile( dirname( devnull() ), q{stdout} ),
-                stderrfile_path => $stderrfile_path,
+                FILEHANDLE   => $XARGSFILEHANDLE,
+                infile_path  => $infile_path{$contig},
+                max_af       => $active_parameter_href->{frequency_genmod_filter_max_af},
+                outfile_path => catfile( dirname( devnull() ), q{stdout} ),
+                stderrfile_path     => $stderrfile_path,
                 temp_directory_path => $temp_directory,
                 thousand_g_file_path =>
                   $active_parameter_href->{frequency_genmod_filter_1000g},
@@ -297,8 +286,7 @@ sub analysis_frequency_filter {
                 infile_path            => $DASH,
                 outfile_path           => $outfile_path{$contig},
                 stderrfile_path_append => $stderrfile_path,
-                threshold =>
-                  $active_parameter_href->{frequency_genmod_filter_threshold},
+                threshold => $active_parameter_href->{frequency_genmod_filter_threshold},
                 verbosity => q{v},
             }
         );
@@ -319,16 +307,17 @@ sub analysis_frequency_filter {
                 sample_info_href => $sample_info_href,
             }
         );
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
-                job_id_href             => $job_id_href,
+                dependency_method       => q{sample_to_family},
+                family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
