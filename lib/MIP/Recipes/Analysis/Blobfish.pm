@@ -210,32 +210,15 @@ sub analysis_blobfish {
     ### SHELL
 
     say {$FILEHANDLE} q{## Generate tx2gene file};
-    ## Print header and initiate hash
-    my $tx2gene_generator =
-      q?perl -nae 'BEGIN {print q{TXNAME,GENEID} . qq{\n}; %txgene;}?;
-    ## When the file has been processed; print hash
-    $tx2gene_generator .=
-      q? END {foreach $tx (keys %txgene){print $tx . q{,} . $txgene{$tx} .qq{\n}; } }?;
-    ## Skip headers
-    $tx2gene_generator .= q? if ($_ =~/^#/){next;}?;
-    ## Check for keywords in attribute field
-    $tx2gene_generator .= q? if (($F[8] =~ /gene_id/) and ($F[10] =~ /transcript_id/))?;
-    ## Capture gene, transcript id and remove [;"] from the names
-    $tx2gene_generator .=
-      q? {$gene = $F[9]; $gene =~ tr/[;"]//d; $tx = $F[11]; $tx =~tr/[;"]//d;?;
-    ## Store in hash
-    $tx2gene_generator .= q? $txgene{$tx} = $gene;} else{next;}'?;
-
-    my $gtf_file = $active_parameter_href->{transcripts_file};
-
+    my $gtf_file_path = $active_parameter_href->{transcripts_file};
     my $tx2gene_file_path = catfile( $outdir_path, q{tx2gene.txt} );
-
-    say {$FILEHANDLE} $tx2gene_generator
-      . $SPACE
-      . $gtf_file
-      . $SPACE . q{>}
-      . $SPACE
-      . $tx2gene_file_path;
+    _generate_tx2gene_file(
+        {
+            FILEHANDLE        => $FILEHANDLE,
+            gtf_file_path     => $gtf_file_path,
+            tx2gene_file_path => $tx2gene_file_path,
+        }
+    );
 
     say {$FILEHANDLE} q{## BlobFish};
     blobfish_allvsall(
@@ -273,6 +256,68 @@ sub analysis_blobfish {
             }
         );
     }
+    return;
+}
+
+sub _generate_tx2gene_file {
+
+## Function : Generate tx2gene file for Blobfish
+## Returns  :
+## Arguments: $FILEHANDLE       => Filehandle
+##          : $gtf_file_path    => Path to annotation file
+##          : tx2gene_file_path => Outfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $gtf_file_path;
+    my $tx2gene_file_path;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+        gtf_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$gtf_file_path,
+            strict_type => 1,
+        },
+        tx2gene_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$tx2gene_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Print header and initiate hash
+    my $tx2gene_generator =
+      q?perl -nae 'BEGIN {print q{TXNAME,GENEID} . qq{\n}; %txgene;}?;
+    ## When the file has been processed; print hash
+    $tx2gene_generator .=
+      q? END {foreach $tx (keys %txgene){print $tx . q{,} . $txgene{$tx} .qq{\n}; } }?;
+    ## Skip headers
+    $tx2gene_generator .= q? if ($_ =~/^#/){next;}?;
+    ## Check for keywords in attribute field
+    $tx2gene_generator .= q? if (($F[8] =~ /gene_id/) and ($F[10] =~ /transcript_id/))?;
+    ## Capture gene, transcript id and remove [;"] from the names
+    $tx2gene_generator .=
+      q? {$gene = $F[9]; $gene =~ tr/[;"]//d; $tx = $F[11]; $tx =~tr/[;"]//d;?;
+    ## Store in hash
+    $tx2gene_generator .= q? $txgene{$tx} = $gene;} else{next;}'?;
+
+    say {$FILEHANDLE} $tx2gene_generator
+      . $SPACE
+      . $gtf_file_path
+      . $SPACE . q{>}
+      . $SPACE
+      . $tx2gene_file_path;
+
     return;
 }
 
