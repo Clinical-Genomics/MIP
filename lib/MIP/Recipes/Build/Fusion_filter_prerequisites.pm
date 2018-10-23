@@ -92,8 +92,7 @@ sub build_fusion_filter_prerequisites {
             strict_type => 1,
         },
         human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
+            default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$human_genome_reference,
             strict_type => 1,
         },
@@ -173,24 +172,22 @@ sub build_fusion_filter_prerequisites {
     Readonly my $EXPECT_VALUE      => 1e-3;
     Readonly my $MAX_TARGET_SEQS   => 1000;
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
-    Readonly my $NUMBER_OF_CORES =>
-      $active_parameter_href->{max_cores_per_node};
-    Readonly my $PROCESSING_TIME => 30;
-    Readonly my $TABULAR         => 6;
-    Readonly my $WORD_SIZE       => 11;
+    Readonly my $NUMBER_OF_CORES   => $active_parameter_href->{max_cores_per_node};
+    Readonly my $PROCESSING_TIME   => 30;
+    Readonly my $TABULAR           => 6;
+    Readonly my $WORD_SIZE         => 11;
 
     ## Set program mode
     my $program_mode = $active_parameter_href->{$program_name};
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## FILEHANDLES
     # Create anonymous filehandle
@@ -259,9 +256,8 @@ sub build_fusion_filter_prerequisites {
         ## Build cDNA sequence file
         fusion_filter_gtf_file_to_feature_seqs(
             {
-                FILEHANDLE => $FILEHANDLE,
-                gtf_path =>
-                  $active_parameter_href->{fusion_filter_transcripts_file},
+                FILEHANDLE         => $FILEHANDLE,
+                gtf_path           => $active_parameter_href->{transcript_annotation},
                 referencefile_path => $human_genome_reference,
                 seq_type           => q{cDNA},
                 stdoutfile_path =>
@@ -284,18 +280,16 @@ sub build_fusion_filter_prerequisites {
         ## Create blast pairs
         blast_blastn(
             {
-                evalue => $EXPECT_VALUE,
-                database_name =>
-                  catfile( $fusion_filter_directory_tmp, q{cDNA_seqs.fa} ),
-                FILEHANDLE      => $FILEHANDLE,
-                lcase_masking   => 1,
+                evalue        => $EXPECT_VALUE,
+                database_name => catfile( $fusion_filter_directory_tmp, q{cDNA_seqs.fa} ),
+                FILEHANDLE    => $FILEHANDLE,
+                lcase_masking => 1,
                 max_target_seqs => $MAX_TARGET_SEQS,
                 output_format   => $TABULAR,
                 query_file_path =>
                   catfile( $fusion_filter_directory_tmp, q{cDNA_seqs.fa} ),
-                stdoutfile_path => catfile(
-                    $fusion_filter_directory_tmp, q{blast_pairs.outfmt6}
-                ),
+                stdoutfile_path =>
+                  catfile( $fusion_filter_directory_tmp, q{blast_pairs.outfmt6} ),
                 thread_number => $NUMBER_OF_CORES,
                 word_size     => $WORD_SIZE,
             }
@@ -305,12 +299,10 @@ sub build_fusion_filter_prerequisites {
         ## Build genome lib
         fusion_filter_prep_genome_lib(
             {
-                blast_pairs_file_path => catfile(
-                    $fusion_filter_directory_tmp, q{blast_pairs.outfmt6}
-                ),
-                FILEHANDLE => $FILEHANDLE,
-                gtf_path =>
-                  $active_parameter_href->{fusion_filter_transcripts_file},
+                blast_pairs_file_path =>
+                  catfile( $fusion_filter_directory_tmp, q{blast_pairs.outfmt6} ),
+                FILEHANDLE         => $FILEHANDLE,
+                gtf_path           => $active_parameter_href->{transcript_annotation},
                 output_dir_path    => catfile($fusion_filter_directory_tmp),
                 referencefile_path => $human_genome_reference,
                 thread_number      => $NUMBER_OF_CORES,
@@ -322,8 +314,7 @@ sub build_fusion_filter_prerequisites {
         foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
 
             my $intended_file_path =
-                $active_parameter_href->{fusion_filter_reference_genome}
-              . $suffix;
+              $active_parameter_href->{fusion_filter_reference_genome} . $suffix;
 
             ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
             check_exist_and_move_file(

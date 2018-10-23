@@ -18,7 +18,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -439,16 +439,6 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{star_aln_transcripts_file} => (
-            cmd_aliases   => [qw{ statf }],
-            cmd_tags      => [q{Star transcripts file: Format: GTF}],
-            documentation => q{Input for star to build genome indexes},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{align_intron_max} => (
             cmd_aliases   => [qw{ stn_aim }],
             cmd_tags      => [q{Default: 100,000}],
@@ -515,17 +505,6 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
             documentation => q{Detect fusion transcripts with star fusion},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{fusion_filter_transcripts_file} => (
-            cmd_aliases => [qw{ stftf }],
-            cmd_tags    => [q{Fusion filter transcripts file: Format: GTF}],
-            documentation =>
-              q{Input for fusion-filter to build genome/transcriptome indexes},
-            is  => q{rw},
-            isa => Str,
         )
     );
 
@@ -836,13 +815,12 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
     );
 
     option(
-        q{transcripts_file} => (
-            cmd_aliases => [qw{ ttf }],
-            cmd_tags    => [q{Transcripts file: Format: GTF}],
-            documentation =>
-q{Input for blobfish and salmon quant to build genome/transcriptome indexes},
-            is  => q{rw},
-            isa => Str,
+        q{transcript_annotation} => (
+            cmd_aliases   => [qw{ ttf }],
+            cmd_tags      => [q{Transcripts file: Format: GTF}],
+            documentation => q{Transcript file for the rd_rna pipeline},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
