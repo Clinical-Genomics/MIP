@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -45,11 +45,9 @@ sub analysis_gatk_baserecalibration {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
-##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -61,11 +59,9 @@ sub analysis_gatk_baserecalibration {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $file_path;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
     my $program_name;
     my $sample_info_href;
     my $sample_id;
@@ -95,7 +91,6 @@ sub analysis_gatk_baserecalibration {
             strict_type => 1,
             store       => \$file_info_href,
         },
-        file_path               => { strict_type => 1, store => \$file_path },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
@@ -117,8 +112,7 @@ sub analysis_gatk_baserecalibration {
             strict_type => 1,
             store       => \$parameter_href,
         },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => {
+        program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
@@ -158,10 +152,8 @@ sub analysis_gatk_baserecalibration {
       qw{ get_gatk_intervals get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::Program::Alignment::Gatk
-      qw{ gatk_baserecalibrator gatk_applybqsr };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Alignment::Gatk qw{ gatk_baserecalibrator gatk_applybqsr };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info };
@@ -199,15 +191,14 @@ sub analysis_gatk_baserecalibration {
     my $job_id_chain       = $prg_atr{chain};
     my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
+    my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
@@ -221,8 +212,7 @@ sub analysis_gatk_baserecalibration {
     ## Assign suffix
     my $outfile_suffix = $prg_atr{outfile_suffix};
     my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
-        $program_name );
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $program_name );
     my $outfile_tag =
       $file_info_href->{$sample_id}{$program_name}{file_tag};
     my @outfile_paths =
@@ -258,7 +248,7 @@ sub analysis_gatk_baserecalibration {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -279,12 +269,12 @@ sub analysis_gatk_baserecalibration {
     ## Generate gatk intervals. Chromosomes for WGS/WTS and paths to contig_bed_files for WES
     my %gatk_intervals = get_gatk_intervals(
         {
-            analysis_type      => $analysis_type,
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            FILEHANDLE         => $FILEHANDLE,
-            max_cores_per_node => $core_number,
-            outdirectory       => $temp_directory,
-            reference_dir      => $active_parameter_href->{reference_dir},
+            analysis_type         => $analysis_type,
+            contigs_ref           => \@{ $file_info_href->{contigs_size_ordered} },
+            FILEHANDLE            => $FILEHANDLE,
+            max_cores_per_node    => $core_number,
+            outdirectory          => $temp_directory,
+            reference_dir         => $active_parameter_href->{reference_dir},
             exome_target_bed_href => $active_parameter_href->{exome_target_bed},
             file_ending           => $file_info_href->{exome_target_bed}[0],
             log                   => $log,
@@ -302,7 +292,7 @@ sub analysis_gatk_baserecalibration {
             infile             => $infile_name_prefix,
             FILEHANDLE         => $FILEHANDLE,
             file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -312,14 +302,14 @@ sub analysis_gatk_baserecalibration {
 
     ## Division by X according to the java heap
     Readonly my $JAVA_MEMORY_ALLOCATION => 6;
-    $core_number = floor(
-        $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
+    $core_number =
+      floor( $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
 
     ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             core_number_requested => $core_number,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
         }
     );
 
@@ -331,7 +321,7 @@ sub analysis_gatk_baserecalibration {
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -347,21 +337,19 @@ sub analysis_gatk_baserecalibration {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
             {
-                FILEHANDLE    => $XARGSFILEHANDLE,
-                infile_path   => $temp_infile_path{$contig},
-                intervals_ref => $gatk_intervals{$contig},
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                memory_allocation => q{Xmx6g},
-                known_sites_ref   => \@{
-                    $active_parameter_href->{gatk_baserecalibration_known_sites}
-                },
+                FILEHANDLE           => $XARGSFILEHANDLE,
+                infile_path          => $temp_infile_path{$contig},
+                intervals_ref        => $gatk_intervals{$contig},
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx6g},
+                known_sites_ref =>
+                  \@{ $active_parameter_href->{gatk_baserecalibration_known_sites} },
                 outfile_path       => $base_quality_score_recalibration_file,
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
-                verbosity  => $active_parameter_href->{gatk_logging_level},
-                xargs_mode => 1,
+                verbosity          => $active_parameter_href->{gatk_logging_level},
+                xargs_mode         => 1,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -375,7 +363,7 @@ sub analysis_gatk_baserecalibration {
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -393,17 +381,14 @@ sub analysis_gatk_baserecalibration {
             {
                 base_quality_score_recalibration_file =>
                   $base_quality_score_recalibration_file,
-                FILEHANDLE    => $XARGSFILEHANDLE,
-                infile_path   => $temp_infile_path{$contig},
-                intervals_ref => $gatk_intervals{$contig},
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                memory_allocation => q{Xmx6g},
-                verbosity => $active_parameter_href->{gatk_logging_level},
-                read_filters_ref => \@{
-                    $active_parameter_href
-                      ->{gatk_baserecalibration_read_filters}
-                },
+                FILEHANDLE           => $XARGSFILEHANDLE,
+                infile_path          => $temp_infile_path{$contig},
+                intervals_ref        => $gatk_intervals{$contig},
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx6g},
+                verbosity            => $active_parameter_href->{gatk_logging_level},
+                read_filters_ref =>
+                  \@{ $active_parameter_href->{gatk_baserecalibration_read_filters} },
                 referencefile_path         => $referencefile_path,
                 static_quantized_quals_ref => \@{
                     $active_parameter_href
@@ -427,7 +412,7 @@ sub analysis_gatk_baserecalibration {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             outdirectory       => $outdir_path_prefix,
             outfile            => $outfile_name_prefix,
             program_info_path  => $program_info_path,
@@ -449,16 +434,13 @@ sub analysis_gatk_baserecalibration {
             create_index     => q{true},
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@gather_infile_paths,
-            java_jar         => catfile(
-                $active_parameter_href->{picardtools_path},
-                q{picard.jar}
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation  => q{Xmx4g},
-            outfile_path       => $temp_outfile_path_prefix . $outfile_suffix,
-            referencefile_path => $referencefile_path,
-            temp_directory     => $temp_directory,
+            java_jar =>
+              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx4g},
+            outfile_path         => $temp_outfile_path_prefix . $outfile_suffix,
+            referencefile_path   => $referencefile_path,
+            temp_directory       => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -482,8 +464,7 @@ sub analysis_gatk_baserecalibration {
     if ( $program_mode == 1 ) {
 
         my $gathered_outfile_path =
-          catfile( $outdir_path_prefix,
-            $outfile_name_prefix . $outfile_suffix );
+          catfile( $outdir_path_prefix, $outfile_name_prefix . $outfile_suffix );
 
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
@@ -506,15 +487,17 @@ sub analysis_gatk_baserecalibration {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_sample},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -649,8 +632,7 @@ sub analysis_gatk_baserecalibration_rio {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::Program::Alignment::Gatk
-      qw{ gatk_baserecalibrator gatk_applybqsr };
+    use MIP::Program::Alignment::Gatk qw{ gatk_baserecalibrator gatk_applybqsr };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
@@ -688,15 +670,14 @@ sub analysis_gatk_baserecalibration_rio {
     my $job_id_chain       = $prg_atr{chain};
     my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
+    my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
@@ -710,8 +691,7 @@ sub analysis_gatk_baserecalibration_rio {
     ## Assign suffix
     my $outfile_suffix = $prg_atr{outfile_suffix};
     my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
-        $program_name );
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $program_name );
     my $outfile_tag =
       $file_info_href->{$sample_id}{$program_name}{file_tag};
     my @outfile_paths =
@@ -750,12 +730,12 @@ sub analysis_gatk_baserecalibration_rio {
     ## Generate gatk intervals. Chromosomes for WGS/WTS and paths to contig_bed_files for WES
     my %gatk_intervals = get_gatk_intervals(
         {
-            analysis_type      => $analysis_type,
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            FILEHANDLE         => $FILEHANDLE,
-            max_cores_per_node => $core_number,
-            outdirectory       => $temp_directory,
-            reference_dir      => $active_parameter_href->{reference_dir},
+            analysis_type         => $analysis_type,
+            contigs_ref           => \@{ $file_info_href->{contigs_size_ordered} },
+            FILEHANDLE            => $FILEHANDLE,
+            max_cores_per_node    => $core_number,
+            outdirectory          => $temp_directory,
+            reference_dir         => $active_parameter_href->{reference_dir},
             exome_target_bed_href => $active_parameter_href->{exome_target_bed},
             file_ending           => $file_info_href->{exome_target_bed}[0],
             log                   => $log,
@@ -765,14 +745,14 @@ sub analysis_gatk_baserecalibration_rio {
 
     ## Division by X according to the java heap
     Readonly my $JAVA_MEMORY_ALLOCATION => 6;
-    $core_number = floor(
-        $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
+    $core_number =
+      floor( $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
 
     ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             core_number_requested => $core_number,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
         }
     );
 
@@ -800,17 +780,15 @@ sub analysis_gatk_baserecalibration_rio {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
             {
-                FILEHANDLE    => $XARGSFILEHANDLE,
-                infile_path   => $temp_infile_path{$contig},
-                intervals_ref => $gatk_intervals{$contig},
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                memory_allocation => q{Xmx6g},
-                known_sites_ref   => \@{
-                    $active_parameter_href->{gatk_baserecalibration_known_sites}
-                },
-                verbosity    => $active_parameter_href->{gatk_logging_level},
-                outfile_path => $base_quality_score_recalibration_file,
+                FILEHANDLE           => $XARGSFILEHANDLE,
+                infile_path          => $temp_infile_path{$contig},
+                intervals_ref        => $gatk_intervals{$contig},
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx6g},
+                known_sites_ref =>
+                  \@{ $active_parameter_href->{gatk_baserecalibration_known_sites} },
+                verbosity          => $active_parameter_href->{gatk_logging_level},
+                outfile_path       => $base_quality_score_recalibration_file,
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
@@ -846,17 +824,14 @@ sub analysis_gatk_baserecalibration_rio {
             {
                 base_quality_score_recalibration_file =>
                   $base_quality_score_recalibration_file,
-                FILEHANDLE    => $XARGSFILEHANDLE,
-                infile_path   => $temp_infile_path{$contig},
-                intervals_ref => $gatk_intervals{$contig},
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                memory_allocation => q{Xmx6g},
-                verbosity => $active_parameter_href->{gatk_logging_level},
-                read_filters_ref => \@{
-                    $active_parameter_href
-                      ->{gatk_baserecalibration_read_filters}
-                },
+                FILEHANDLE           => $XARGSFILEHANDLE,
+                infile_path          => $temp_infile_path{$contig},
+                intervals_ref        => $gatk_intervals{$contig},
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx6g},
+                verbosity            => $active_parameter_href->{gatk_logging_level},
+                read_filters_ref =>
+                  \@{ $active_parameter_href->{gatk_baserecalibration_read_filters} },
                 static_quantized_quals_ref => \@{
                     $active_parameter_href
                       ->{gatk_baserecalibration_static_quantized_quals}
@@ -913,16 +888,13 @@ sub analysis_gatk_baserecalibration_rio {
             create_index     => q{true},
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@gather_infile_paths,
-            java_jar         => catfile(
-                $active_parameter_href->{picardtools_path},
-                q{picard.jar}
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation  => q{Xmx4g},
-            outfile_path       => $temp_outfile_path_prefix . $outfile_suffix,
-            referencefile_path => $referencefile_path,
-            temp_directory     => $temp_directory,
+            java_jar =>
+              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx4g},
+            outfile_path         => $temp_outfile_path_prefix . $outfile_suffix,
+            referencefile_path   => $referencefile_path,
+            temp_directory       => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -946,8 +918,7 @@ sub analysis_gatk_baserecalibration_rio {
     if ( $program_mode == 1 ) {
 
         my $gathered_outfile_path =
-          catfile( $outdir_path_prefix,
-            $outfile_name_prefix . $outfile_suffix );
+          catfile( $outdir_path_prefix, $outfile_name_prefix . $outfile_suffix );
 
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
@@ -970,15 +941,17 @@ sub analysis_gatk_baserecalibration_rio {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_sample},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
+                recipe_file_path        => $file_path,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

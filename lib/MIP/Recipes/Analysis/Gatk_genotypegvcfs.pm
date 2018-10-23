@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Gatk_genotypegvcfs;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -129,8 +130,7 @@ sub analysis_gatk_genotypegvcfs {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_step_in_parallel_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_genomicsdbimport  gatk_genotypegvcfs };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -151,17 +151,16 @@ sub analysis_gatk_genotypegvcfs {
             program_name   => $program_name,
         }
     );
-    my $program_mode          = $active_parameter_href->{$program_name};
-    my $sbatch_script_tracker = 0;
+    my $program_mode         = $active_parameter_href->{$program_name};
+    my $recipe_files_tracker = 0;
 
     ## Gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
@@ -186,8 +185,7 @@ sub analysis_gatk_genotypegvcfs {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Create .fam file to be used in variant calling analyses
-    my $fam_file_path =
-      catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
+    my $fam_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
     create_fam_file(
         {
             active_parameter_href => $active_parameter_href,
@@ -203,7 +201,7 @@ sub analysis_gatk_genotypegvcfs {
     foreach my $contig ( @{ $file_info_href->{contigs} } ) {
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_path) = setup_script(
+        my ($recipe_file_path) = setup_script(
             {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $core_number,
@@ -252,18 +250,16 @@ sub analysis_gatk_genotypegvcfs {
 
         gatk_genomicsdbimport(
             {
-                FILEHANDLE       => $FILEHANDLE,
-                intervals_ref    => [$contig],
-                infile_paths_ref => \@genotype_infile_paths,
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                verbosity => $active_parameter_href->{gatk_logging_level},
+                FILEHANDLE           => $FILEHANDLE,
+                intervals_ref        => [$contig],
+                infile_paths_ref     => \@genotype_infile_paths,
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                verbosity            => $active_parameter_href->{gatk_logging_level},
                 genomicsdb_workspace_path => $temp_outfile_path_prefix
                   . $UNDERSCORE . q{DB},
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                temp_directory    => $temp_directory,
-                memory_allocation => q{Xmx8g},
+                referencefile_path => $active_parameter_href->{human_genome_reference},
+                temp_directory     => $temp_directory,
+                memory_allocation  => q{Xmx8g},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -280,15 +276,13 @@ sub analysis_gatk_genotypegvcfs {
                 infile_path   => q{gendb://}
                   . $temp_outfile_path_prefix
                   . $UNDERSCORE . q{DB},
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                memory_allocation => q{Xmx8g},
-                outfile_path      => $outfile_path{$contig},
-                pedigree          => $fam_file_path,
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                temp_directory => $temp_directory,
-                verbosity      => $active_parameter_href->{gatk_logging_level},
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx8g},
+                outfile_path         => $outfile_path{$contig},
+                pedigree             => $fam_file_path,
+                referencefile_path   => $active_parameter_href->{human_genome_reference},
+                temp_directory       => $temp_directory,
+                verbosity            => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -297,21 +291,22 @@ sub analysis_gatk_genotypegvcfs {
 
         if ( $program_mode == 1 ) {
 
-            slurm_submit_job_sample_id_dependency_step_in_parallel_to_family(
+            submit_recipe(
                 {
+                    dependency_method       => q{sample_to_family_parallel},
                     family_id               => $family_id,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
                     log                     => $log,
-                    path                    => $job_id_chain,
-                    sample_ids_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    sbatch_file_name      => $file_path,
-                    sbatch_script_tracker => $sbatch_script_tracker,
+                    job_id_chain            => $job_id_chain,
+                    recipe_file_path        => $recipe_file_path,
+                    recipe_files_tracker    => $recipe_files_tracker,
+                    sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                    submission_profile => $active_parameter_href->{submission_profile},
                 }
             );
         }
-        $sbatch_script_tracker++;    # Tracks nr of sbatch scripts
+        $recipe_files_tracker++;    # Tracks nr of recipe scripts
     }
     return;
 }

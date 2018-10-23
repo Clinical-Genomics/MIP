@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Gatk_combinevariantcallsets;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -132,10 +133,8 @@ sub analysis_gatk_combinevariantcallsets {
       qw{ get_module_parameters get_program_parameters get_program_attributes };
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
-    use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_view_and_index_vcf };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_combinevariants };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_processing_metafile_to_sample_info };
@@ -147,8 +146,9 @@ sub analysis_gatk_combinevariantcallsets {
     my @variant_callers;
 
     ## Only process active callers
-    foreach my $variant_caller (
-        @{ $parameter_href->{dynamic_parameter}{variant_callers} } )
+  CALLER:
+    foreach
+      my $variant_caller ( @{ $parameter_href->{dynamic_parameter}{variant_callers} } )
     {
         if ( $active_parameter_href->{$variant_caller} ) {
 
@@ -174,13 +174,12 @@ sub analysis_gatk_combinevariantcallsets {
     );
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $program_mode       = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
@@ -205,7 +204,7 @@ sub analysis_gatk_combinevariantcallsets {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -250,8 +249,7 @@ sub analysis_gatk_combinevariantcallsets {
         ## Only use first part of name
         my ($variant_caller_prio_tag) = split /_/sxm, $variant_caller;
         ## Collect both tag and path in the same string
-        $file_path{$variant_caller} =
-          $variant_caller_prio_tag . $SPACE . $infile_path;
+        $file_path{$variant_caller} = $variant_caller_prio_tag . $SPACE . $infile_path;
 
         push @parallel_chains, $parameter_href->{$variant_caller}{chain};
     }
@@ -262,17 +260,16 @@ sub analysis_gatk_combinevariantcallsets {
     my @combine_infile_paths = map { $file_path{$_} } @variant_callers;
     gatk_combinevariants(
         {
-            exclude_nonvariants   => 1,
-            FILEHANDLE            => $FILEHANDLE,
-            genotype_merge_option => $active_parameter_href
-              ->{gatk_combinevariants_genotype_merge_option},
-            infile_paths_ref => \@combine_infile_paths,
-            java_jar         => $gatk_jar,
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            logging_level     => $active_parameter_href->{gatk_logging_level},
-            memory_allocation => q{Xmx2g},
-            outfile_path      => $outfile_path,
+            exclude_nonvariants => 1,
+            FILEHANDLE          => $FILEHANDLE,
+            genotype_merge_option =>
+              $active_parameter_href->{gatk_combinevariants_genotype_merge_option},
+            infile_paths_ref     => \@combine_infile_paths,
+            java_jar             => $gatk_jar,
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            logging_level        => $active_parameter_href->{gatk_logging_level},
+            memory_allocation    => q{Xmx2g},
+            outfile_path         => $outfile_path,
             prioritize_caller =>
               $active_parameter_href->{gatk_combinevariants_prioritize_caller},
             referencefile_path => $referencefile_path,
@@ -332,16 +329,18 @@ sub analysis_gatk_combinevariantcallsets {
             );
         }
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
+                job_id_chain            => $job_id_chain,
                 parallel_chains_ref     => \@parallel_chains,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

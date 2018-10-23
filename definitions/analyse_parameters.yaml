@@ -153,6 +153,12 @@ start_with_program:
   data_type: SCALAR
   mandatory: no
   type: mip
+submission_profile:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: slurm
+  type: mip
 supported_capture_kit:
   associated_program:
    - mip

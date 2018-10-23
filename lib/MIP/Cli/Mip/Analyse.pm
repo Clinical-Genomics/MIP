@@ -1,6 +1,6 @@
 package MIP::Cli::Mip::Analyse;
 
-use 5.018;
+use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
@@ -15,7 +15,7 @@ use MooseX::App::Command;
 use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
-our $VERSION = 0.03;
+our $VERSION = 1.04;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -73,23 +73,21 @@ sub _build_usage {
 
     option(
         q{config_file} => (
-            cmd_aliases => [qw{ config c }],
-            documentation =>
-              q{File with configuration parameters in YAML format},
-            is       => q{rw},
-            isa      => Str,
-            required => 1,
+            cmd_aliases   => [qw{ config c }],
+            documentation => q{File with configuration parameters in YAML format},
+            is            => q{rw},
+            isa           => Str,
+            required      => 1,
         )
     );
 
     option(
         q{config_file_analysis} => (
-            cmd_aliases => [qw{ cfa }],
-            cmd_tags    => [q{YAML}],
-            documentation =>
-              q{Write YAML configuration file the analysis parameters},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ cfa }],
+            cmd_tags      => [q{YAML}],
+            documentation => q{Write YAML configuration file the analysis parameters},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -304,12 +302,11 @@ sub _build_usage {
 
     option(
         q{source_main_environment_commands} => (
-            cmd_aliases => [qw{ sen }],
-            cmd_flag    => q{src_main_env},
-            documentation =>
-              q{Source main environment command in sbatch scripts},
-            is  => q{rw},
-            isa => ArrayRef,
+            cmd_aliases   => [qw{ sen }],
+            cmd_flag      => q{src_main_env},
+            documentation => q{Source main environment command in sbatch scripts},
+            is            => q{rw},
+            isa           => ArrayRef,
         )
     );
 
@@ -323,13 +320,21 @@ sub _build_usage {
     );
 
     option(
+        q{submission_profile} => (
+            cmd_aliases   => [qw{ sbp }],
+            documentation => q{Submission profile},
+            is            => q{rw},
+            isa           => enum( [qw{ slurm }] ),
+        )
+    );
+
+    option(
         q{supported_capture_kit} => (
-            cmd_aliases => [qw{ sck }],
-            cmd_tags    => [q{acronym=file.bed}],
-            documentation =>
-              q{Set the capture kit acronym shortcut in pedigree file},
-            is  => q{rw},
-            isa => HashRef,
+            cmd_aliases   => [qw{ sck }],
+            cmd_tags      => [q{acronym=file.bed}],
+            documentation => q{Set the capture kit acronym shortcut in pedigree file},
+            is            => q{rw},
+            isa           => HashRef,
         )
     );
 

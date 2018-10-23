@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_split_fastq_file };
@@ -143,6 +143,7 @@ sub analysis_split_fastq_file {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_mkdir gnu_mv gnu_rm gnu_split };
     use MIP::IO::Files qw{ migrate_file };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Compression::Pigz qw{ pigz };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -180,16 +181,14 @@ sub analysis_split_fastq_file {
             attribute      => q{chain},
         }
     );
-    my $program_mode = $active_parameter_href->{$program_name};
-    my $sequence_read_batch =
-      $active_parameter_href->{split_fastq_file_read_batch};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my $program_mode        = $active_parameter_href->{$program_name};
+    my $sequence_read_batch = $active_parameter_href->{split_fastq_file_read_batch};
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -199,7 +198,7 @@ sub analysis_split_fastq_file {
     while ( my ( $infile_index, $infile_path ) = each @infile_paths ) {
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = setup_script(
+        my ($recipe_file_path) = setup_script(
             {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $core_number,
@@ -261,7 +260,7 @@ sub analysis_split_fastq_file {
             {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => q{-},
-                lines => ( $sequence_read_batch * $FASTQC_SEQUENCE_LINE_BLOCK ),
+                lines       => ( $sequence_read_batch * $FASTQC_SEQUENCE_LINE_BLOCK ),
                 numeric_suffixes => 1,
                 prefix           => $temp_infile_path_prefixes[$infile_index]
                   . $UNDERSCORE
@@ -306,9 +305,7 @@ sub analysis_split_fastq_file {
         gnu_cp(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                infile_path => $splitted_flowcell_name_prefix
-                  . q{*-SP*}
-                  . $infile_suffix,
+                infile_path => $splitted_flowcell_name_prefix . q{*-SP*} . $infile_suffix,
                 outfile_path => $indir_path_prefix,
             }
         );
@@ -341,14 +338,17 @@ sub analysis_split_fastq_file {
 
         if ( $program_mode == 1 ) {
 
-            slurm_submit_job_no_dependency_add_to_sample(
+            submit_recipe(
                 {
-                    family_id        => $family_id,
-                    job_id_href      => $job_id_href,
-                    log              => $log,
-                    path             => $job_id_chain,
-                    sample_id        => $sample_id,
-                    sbatch_file_name => $file_name
+                    dependency_method       => q{sample_to_island},
+                    family_id               => $family_id,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    log                     => $log,
+                    job_id_chain            => $job_id_chain,
+                    recipe_file_path        => $recipe_file_path,
+                    sample_id               => $sample_id,
+                    submission_profile => $active_parameter_href->{submission_profile},
                 }
             );
         }
@@ -403,8 +403,7 @@ sub _list_all_splitted_files {
 
     ## Double quote incoming variables in string
     my $temp_directory_quoted =
-      quote_bash_variable(
-        { string_with_variable_to_quote => $temp_directory, } );
+      quote_bash_variable( { string_with_variable_to_quote => $temp_directory, } );
 
     ## Find all splitted files
     say {$FILEHANDLE} q{splitted_files=(}
@@ -413,18 +412,15 @@ sub _list_all_splitted_files {
 
     ## Iterate through array using a counter
     say {$FILEHANDLE}
-q?for ((file_counter=0; file_counter<${#splitted_files[@]}; file_counter++)); do ?;
+      q?for ((file_counter=0; file_counter<${#splitted_files[@]}; file_counter++)); do ?;
 
     ## Rename each element of array to include splitted suffix in flowcell id
     print {$FILEHANDLE} $TAB . q?mv "${splitted_files[$file_counter]}" ?;
     print {$FILEHANDLE} catfile( $temp_directory_quoted, $EMPTY_STR );
     print {$FILEHANDLE} $fastq_file_info_href->{lane} . $UNDERSCORE;
     print {$FILEHANDLE} $fastq_file_info_href->{date} . $UNDERSCORE;
-    print {$FILEHANDLE} $fastq_file_info_href->{flowcell}
-      . q?-SP"$file_counter"?;
-    print {$FILEHANDLE} $UNDERSCORE
-      . $fastq_file_info_href->{sample_id}
-      . $UNDERSCORE;
+    print {$FILEHANDLE} $fastq_file_info_href->{flowcell} . q?-SP"$file_counter"?;
+    print {$FILEHANDLE} $UNDERSCORE . $fastq_file_info_href->{sample_id} . $UNDERSCORE;
     print {$FILEHANDLE} $fastq_file_info_href->{index} . $UNDERSCORE;
     print {$FILEHANDLE} $fastq_file_info_href->{direction} . $infile_suffix;
     say   {$FILEHANDLE} $NEWLINE;

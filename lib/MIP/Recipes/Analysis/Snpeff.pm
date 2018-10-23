@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Snpeff;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_snpeff };
@@ -48,7 +49,6 @@ sub analysis_snpeff {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -62,7 +62,6 @@ sub analysis_snpeff {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
     my $program_name;
     my $sample_info_href;
 
@@ -113,8 +112,6 @@ sub analysis_snpeff {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
         program_name => {
             defined     => 1,
             required    => 1,
@@ -147,12 +144,10 @@ sub analysis_snpeff {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
     use MIP::Program::Variantcalling::Snpeff qw{ snpeff_ann };
-    use MIP::Program::Variantcalling::Snpsift
-      qw{ snpsift_annotate snpsift_dbnsfp };
+    use MIP::Program::Variantcalling::Snpsift qw{ snpsift_annotate snpsift_dbnsfp };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -186,13 +181,12 @@ sub analysis_snpeff {
     my $program_mode = $active_parameter_href->{$program_name};
     my %snpsift_annotation_outinfo_key =
       %{ $active_parameter_href->{snpsift_annotation_outinfo_key} };
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -223,14 +217,14 @@ sub analysis_snpeff {
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
             module_core_number   => $core_number,
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -255,8 +249,7 @@ sub analysis_snpeff {
     my $xargs_file_path_prefix;
     my $snpeff_config_file_path =
       catfile( $active_parameter_href->{snpeff_path}, q{snpEff.config} );
-    my $java_snpeff_jar =
-      catfile( $active_parameter_href->{snpeff_path}, q{snpEff.jar} );
+    my $java_snpeff_jar = catfile( $active_parameter_href->{snpeff_path}, q{snpEff.jar} );
 
     # Annotate using snpeff
     if ( $active_parameter_href->{snpeff_ann} ) {
@@ -264,26 +257,24 @@ sub analysis_snpeff {
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                core_number   => $core_number,
-                first_command => q{java},
-                FILEHANDLE    => $FILEHANDLE,
-                file_path     => $file_path,
-                java_jar      => $java_snpeff_jar,
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                memory_allocation  => q{Xmx4g -XX:-UseConcMarkSweepGC},
-                program_info_path  => $program_info_path,
-                temp_directory     => $temp_directory,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                xargs_file_counter => $xargs_file_counter,
+                core_number          => $core_number,
+                first_command        => q{java},
+                FILEHANDLE           => $FILEHANDLE,
+                file_path            => $recipe_file_path,
+                java_jar             => $java_snpeff_jar,
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx4g -XX:-UseConcMarkSweepGC},
+                program_info_path    => $program_info_path,
+                temp_directory       => $temp_directory,
+                XARGSFILEHANDLE      => $XARGSFILEHANDLE,
+                xargs_file_counter   => $xargs_file_counter,
             }
         );
 
       CONTIG:
         foreach my $contig ( keys %infile_path ) {
 
-            my $ann_outfile_path =
-              $outfile_path{$contig} . $DOT . $xargs_file_counter;
+            my $ann_outfile_path = $outfile_path{$contig} . $DOT . $xargs_file_counter;
             snpeff_ann(
                 {
                     config_file_path => $snpeff_config_file_path,
@@ -317,19 +308,16 @@ sub analysis_snpeff {
             {
                 core_number   => $core_number,
                 FILEHANDLE    => $FILEHANDLE,
-                file_path     => $file_path,
+                file_path     => $recipe_file_path,
                 first_command => q{java},
-                java_jar      => catfile(
-                    $active_parameter_href->{snpeff_path},
-                    q{SnpSift.jar}
-                ),
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                memory_allocation  => q{Xmx2g -XX:-UseConcMarkSweepGC},
-                program_info_path  => $program_info_path,
-                temp_directory     => $temp_directory,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                xargs_file_counter => $xargs_file_counter,
+                java_jar =>
+                  catfile( $active_parameter_href->{snpeff_path}, q{SnpSift.jar} ),
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx2g -XX:-UseConcMarkSweepGC},
+                program_info_path    => $program_info_path,
+                temp_directory       => $temp_directory,
+                XARGSFILEHANDLE      => $XARGSFILEHANDLE,
+                xargs_file_counter   => $xargs_file_counter,
             }
         );
 
@@ -345,8 +333,7 @@ sub analysis_snpeff {
               )
             {
 
-                $name_prefix =
-                  $snpsift_annotation_outinfo_key{$annotation_file};
+                $name_prefix = $snpsift_annotation_outinfo_key{$annotation_file};
             }
 
             # Database
@@ -408,19 +395,16 @@ sub analysis_snpeff {
             {
                 core_number       => $core_number,
                 FILEHANDLE        => $FILEHANDLE,
-                file_path         => $file_path,
+                file_path         => $recipe_file_path,
                 first_command     => q{java},
                 memory_allocation => q{Xmx2g -XX:-UseConcMarkSweepGC},
-                java_jar          => catfile(
-                    $active_parameter_href->{snpeff_path},
-                    q{SnpSift.jar}
-                ),
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                program_info_path  => $program_info_path,
-                temp_directory     => $temp_directory,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                xargs_file_counter => $xargs_file_counter,
+                java_jar =>
+                  catfile( $active_parameter_href->{snpeff_path}, q{SnpSift.jar} ),
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                program_info_path    => $program_info_path,
+                temp_directory       => $temp_directory,
+                XARGSFILEHANDLE      => $XARGSFILEHANDLE,
+                xargs_file_counter   => $xargs_file_counter,
             }
         );
 
@@ -430,18 +414,15 @@ sub analysis_snpeff {
       CONTIG:
         foreach my $contig ( keys %infile_path ) {
 
-            my $dbnsfp_outfile_path =
-              $outfile_path{$contig} . $DOT . $xargs_file_counter;
+            my $dbnsfp_outfile_path = $outfile_path{$contig} . $DOT . $xargs_file_counter;
             snpsift_dbnsfp(
                 {
                     annotate_fields_ref =>
-                      \@{ $active_parameter_href->{snpsift_dbnsfp_annotations}
-                      },
+                      \@{ $active_parameter_href->{snpsift_dbnsfp_annotations} },
                     config_file_path => $snpeff_config_file_path,
-                    database_path =>
-                      $active_parameter_href->{snpsift_dbnsfp_file},
-                    FILEHANDLE  => $XARGSFILEHANDLE,
-                    infile_path => $outfile_path{$contig}
+                    database_path    => $active_parameter_href->{snpsift_dbnsfp_file},
+                    FILEHANDLE       => $XARGSFILEHANDLE,
+                    infile_path      => $outfile_path{$contig}
                       . $DOT
                       . $annotation_infile_number,
                     stderrfile_path => $xargs_file_path_prefix
@@ -459,15 +440,14 @@ sub analysis_snpeff {
     }
 
     ## Add INFO headers and FIX_INFO for annotations using vcfparser
-    say {$FILEHANDLE}
-      q{## Add INFO headers and FIX_INFO for annotations using vcfparser};
+    say {$FILEHANDLE} q{## Add INFO headers and FIX_INFO for annotations using vcfparser};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -483,9 +463,7 @@ sub analysis_snpeff {
         mip_vcfparser(
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
-                infile_path => $outfile_path{$contig}
-                  . $DOT
-                  . $annotation_infile_number,
+                infile_path => $outfile_path{$contig} . $DOT . $annotation_infile_number,
                 stderrfile_path => $xargs_file_path_prefix
                   . $DOT
                   . $contig
@@ -507,16 +485,17 @@ sub analysis_snpeff {
                 sample_info_href => $sample_info_href,
             }
         );
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

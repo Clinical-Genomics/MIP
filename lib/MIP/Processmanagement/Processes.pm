@@ -1,5 +1,6 @@
 package MIP::Processmanagement::Processes;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use FindBin qw{$Bin};    # Find directory of script
@@ -17,7 +18,7 @@ use autodie;
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
+use lib catdir( dirname($Bin), q{lib} );
 use MIP::Unix::Standard_streams qw{unix_standard_streams};
 use MIP::Unix::Write_to_file qw{unix_write_to_file};
 
@@ -26,7 +27,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -51,10 +52,12 @@ BEGIN {
       clear_family_id_job_id_dependency_tree
       clear_all_job_ids_within_chain_key_dependency_tree
       limit_job_id_string
-      print_wait};
+      print_wait
+      submit_recipe
+    };
 }
 
-##Constants
+## Constants
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
 Readonly my $EMPTY_STR  => q{};
@@ -62,41 +65,38 @@ Readonly my $COLON      => q{:};
 
 sub add_to_job_id_dependency_string {
 
-##add_to_job_id_dependency_string
-
-##Function : Adds all previous job_ids per family_chain_key and chain_key to job_ids dependency string, which is used to set the dependency in SLURM.
-##Returns  : "$job_ids"
-##Arguments: $job_id_href, $family_id_chain_key, $chain_key
-##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $family_id_chain_key => Family ID chain hash key
-##         : $chain_key           => The current chain hash key
+## Function : Adds all previous job_ids per family_chain_key and chain_key to job_ids dependency string, which is used to set the dependency in SLURM.
+## Returns  : "$job_ids"
+## Arguments: $chain_key           => The current chain hash key
+##          : $job_id_href         => Info on jobIds hash {REF}
+##          : $family_id_chain_key => Family ID chain hash key
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
-    my $family_id_chain_key;
     my $chain_key;
+    my $family_id_chain_key;
+    my $job_id_href;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
+        chain_key => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$chain_key,
             strict_type => 1,
-            store       => \$job_id_href
         },
         family_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$family_id_chain_key,
             strict_type => 1,
-            store       => \$family_id_chain_key
         },
-        chain_key => {
-            required    => 1,
+        job_id_href => {
+            default     => {},
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$chain_key
         },
     };
 
@@ -148,64 +148,61 @@ sub add_to_job_id_dependency_string {
 
 sub add_sample_ids_job_ids_to_job_id_dependency_string {
 
-##add_sample_ids_job_ids_to_job_id_dependency_string
-
-##Function : Create job id string from sample_ids job id chain and path for SLURM submission using dependencies
-##Returns  : "$job_ids_string"
-##Arguments: $job_id_href, $infile_lane_prefix_href, $sample_ids_ref, $family_id, $family_id_chain_key, $path
-##         : $job_id_href             => The info on job ids hash {REF}
-##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
-##         : $sample_ids_ref          => Sample ids {REF}
-##         : $family_id               => Family id
-##         : $family_id_chain_key     => Family ID chain hash key
-##         : $path                    => Trunk or branch
+## Function : Create job id string from sample_ids job id chain and path for SLURM submission using dependencies
+## Returns  : $job_ids_string
+## Arguments: $family_id               => Family id
+##          : $family_id_chain_key     => Family ID chain hash key
+##          : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
+##          : $job_id_href             => The info on job ids hash {REF}
+##          : $path                    => Trunk or branch
+##          : $sample_ids_ref          => Sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
-    my $infile_lane_prefix_href;
-    my $sample_ids_ref;
-    my $family_id_chain_key;
     my $family_id;
+    my $family_id_chain_key;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
     my $path;
+    my $sample_ids_ref;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        sample_ids_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$sample_ids_ref
-        },
         family_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
         family_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$family_id_chain_key,
             strict_type => 1,
-            store       => \$family_id_chain_key
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
         path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
+          { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -305,7 +302,7 @@ sub add_parallel_job_ids_to_job_id_dependency_string {
         {
 
             ## Check if chain_key actually is a parallel
-            if ( $chain_key =~ /parallel/ ) {
+            if ( $chain_key =~ /parallel/sxm ) {
 
                 ## Add to job_id string
                 $job_ids_string .= add_to_job_id_dependency_string(
@@ -606,7 +603,7 @@ sub add_parallel_job_id_to_family_id_dependency_tree {
         sbatch_script_tracker => {
             required    => 1,
             defined     => 1,
-            allow       => qr/^\d+$/,
+            allow       => qr{ \A\d+\z }sxm,
             strict_type => 1,
             store       => \$sbatch_script_tracker
         },
@@ -694,7 +691,7 @@ sub add_parallel_job_id_to_parallel_dependency_tree {
         sbatch_script_tracker => {
             required    => 1,
             defined     => 1,
-            allow       => qr/^\d+$/,
+            allow       => qr{ \A\d+\z }sxm,
             strict_type => 1,
             store       => \$sbatch_script_tracker
         },
@@ -1146,7 +1143,7 @@ sub create_job_id_string_for_sample_id {
             strict_type => 1,
         },
         sbatch_script_tracker => {
-            allow       => qr/^\d+$/,
+            allow       => qr{ \A\d+\z }sxm,
             defined     => 1,
             store       => \$sbatch_script_tracker,
             strict_type => 1,
@@ -1828,6 +1825,134 @@ sub print_wait {
         $process_batches_count = $process_batches_count + 1;
     }
     return $process_batches_count;
+}
+
+sub submit_recipe {
+
+## Function : Submit recipe depending on submission profile
+## Returns  :
+## Arguments: $family_id               => Family id
+##          : $dependency_method       => Dependency method
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_chain            => Chain id
+##          : $job_id_href             => The info on job ids hash {REF}
+##          : $job_dependency_type     => Job dependency type
+##          : $log                     => Log object
+##          : $parallel_chains_ref     => Info on parallel chains array {REF}
+##          : $sample_id               => Sample id
+##          : $sample_ids_ref          => Sample ids {REF}
+##          : $recipe_file_path        => Recipe file path
+##          : $recipe_files_tracker    => Track the number of parallel processes (e.g. recipe scripts for a module)
+##          : $submission_profile      => Submission profile
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $family_id;
+    my $dependency_method;
+    my $infile_lane_prefix_href;
+    my $job_id_chain;
+    my $job_id_href;
+    my $job_dependency_type;
+    my $log;
+    my $parallel_chains_ref;
+    my $sample_id;
+    my $sample_ids_ref;
+    my $recipe_file_path;
+    my $recipe_files_tracker;
+
+    ## Default(s)
+    my $submission_profile;
+
+    my $tmpl = {
+        family_id => {
+            store       => \$family_id,
+            strict_type => 1,
+        },
+        dependency_method => {
+            defined     => 1,
+            required    => 1,
+            store       => \$dependency_method,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        job_id_chain => { store => \$job_id_chain, strict_type => 1, },
+        job_id_href  => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        job_dependency_type => {
+            store       => \$job_dependency_type,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parallel_chains_ref => {
+            default     => [],
+            store       => \$parallel_chains_ref,
+            strict_type => 1,
+        },
+        recipe_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_file_path,
+            strict_type => 1,
+        },
+        recipe_files_tracker => {
+            allow       => qr{ \A\d+\z }sxm,
+            store       => \$recipe_files_tracker,
+            strict_type => 1,
+        },
+        sample_id => {
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+        submission_profile => {
+            allow       => [qw{ slurm }],
+            default     => q{slurm},
+            store       => \$submission_profile,
+            strict_type => 1,
+        },
+    };
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Processmanagement::Slurm_processes qw{ submit_slurm_recipe };
+
+    my %is_manager = ( slurm => \&submit_slurm_recipe, );
+
+    $is_manager{$submission_profile}->(
+        {
+            family_id               => $family_id,
+            dependency_method       => $dependency_method,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_dependency_type     => $job_dependency_type,
+            job_id_chain            => $job_id_chain,
+            job_id_href             => $job_id_href,
+            log                     => $log,
+            parallel_chains_ref     => $parallel_chains_ref,
+            sample_id               => $sample_id,
+            sample_ids_ref          => $sample_ids_ref,
+            recipe_file_path        => $recipe_file_path,
+            recipe_files_tracker    => $recipe_files_tracker,
+
+        }
+    );
+    return;
 }
 
 1;

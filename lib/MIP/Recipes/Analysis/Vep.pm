@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Vep;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,11 +24,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_vep analysis_vep_sv_wes analysis_vep_sv_wgs };
+    our @EXPORT_OK = qw{ analysis_vep analysis_vep_sv_wes analysis_vep_sv_wgs };
 
 }
 
@@ -53,7 +53,6 @@ sub analysis_vep {
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
-##          : $program_info_path       => Program info path
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
@@ -68,7 +67,6 @@ sub analysis_vep {
     my $job_id_href;
     my $parameter_href;
     my $program_name;
-    my $program_info_path;
     my $sample_info_href;
 
     ## Default(s)
@@ -124,8 +122,6 @@ sub analysis_vep {
             store       => \$program_name,
             strict_type => 1,
         },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -139,7 +135,7 @@ sub analysis_vep {
             strict_type => 1,
         },
         xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             default     => 0,
             store       => \$xargs_file_counter,
             strict_type => 1,
@@ -152,8 +148,7 @@ sub analysis_vep {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
@@ -193,13 +188,12 @@ sub analysis_vep {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
     my $xargs_file_path_prefix;
 
     ## Set and get the io files per chain, id and stream
@@ -232,7 +226,7 @@ sub analysis_vep {
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
             module_core_number =>
               $active_parameter_href->{module_core_number}{$program_name},
@@ -243,7 +237,7 @@ sub analysis_vep {
     $core_number = floor( $core_number / $VEP_FORK_NUMBER );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -269,15 +263,14 @@ sub analysis_vep {
       . $file_info_href->{human_genome_reference_version};
 
     ## Get genome source and version to be compatible with VEP
-    $assembly_version =
-      _get_assembly_name( { assembly_version => $assembly_version } );
+    $assembly_version = _get_assembly_name( { assembly_version => $assembly_version } );
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -325,8 +318,7 @@ sub analysis_vep {
         ## VEP features
         my @vep_features_ref;
       FEATURE:
-        foreach my $vep_feature ( @{ $active_parameter_href->{vep_features} } )
-        {
+        foreach my $vep_feature ( @{ $active_parameter_href->{vep_features} } ) {
 
             # Add VEP features to the output.
             push @vep_features_ref, $vep_feature;
@@ -344,22 +336,19 @@ sub analysis_vep {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stdout.txt};
         variant_effect_predictor(
             {
-                assembly    => $assembly_version,
-                buffer_size => 20_000,
-                cache_directory =>
-                  $active_parameter_href->{vep_directory_cache},
-                distance       => $distance,
-                FILEHANDLE     => $XARGSFILEHANDLE,
-                fork           => $VEP_FORK_NUMBER,
-                infile_format  => substr( $infile_suffix, 1 ),
-                infile_path    => $infile_path{$contig},
-                outfile_format => substr( $outfile_suffix, 1 ),
-                outfile_path   => $outfile_path{$contig},
-                plugins_dir_path =>
-                  $active_parameter_href->{vep_plugins_dir_path},
-                plugins_ref => \@plugins,
-                reference_path =>
-                  $active_parameter_href->{human_genome_reference},
+                assembly         => $assembly_version,
+                buffer_size      => 20_000,
+                cache_directory  => $active_parameter_href->{vep_directory_cache},
+                distance         => $distance,
+                FILEHANDLE       => $XARGSFILEHANDLE,
+                fork             => $VEP_FORK_NUMBER,
+                infile_format    => substr( $infile_suffix, 1 ),
+                infile_path      => $infile_path{$contig},
+                outfile_format   => substr( $outfile_suffix, 1 ),
+                outfile_path     => $outfile_path{$contig},
+                plugins_dir_path => $active_parameter_href->{vep_plugins_dir_path},
+                plugins_ref      => \@plugins,
+                reference_path   => $active_parameter_href->{human_genome_reference},
                 regions_ref      => [$contig],
                 stderrfile_path  => $stderrfile_path,
                 stdoutfile_path  => $stdoutfile_path,
@@ -404,15 +393,17 @@ sub analysis_vep {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                log                     => $log,
                 job_id_href             => $job_id_href,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                log                     => $log,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -512,7 +503,7 @@ sub analysis_vep_sv_wes {
             strict_type => 1,
         },
         xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             default     => 0,
             store       => \$xargs_file_counter,
             strict_type => 1,
@@ -524,10 +515,8 @@ sub analysis_vep_sv_wes {
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record
@@ -557,9 +546,7 @@ sub analysis_vep_sv_wes {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path =
-      $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -571,13 +558,12 @@ sub analysis_vep_sv_wes {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
     my $xargs_file_path_prefix;
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -608,7 +594,7 @@ sub analysis_vep_sv_wes {
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => 1,
             module_core_number =>
               $active_parameter_href->{module_core_number}{$program_name},
@@ -616,7 +602,7 @@ sub analysis_vep_sv_wes {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -638,23 +624,12 @@ sub analysis_vep_sv_wes {
 
     ### SHELL:
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $temp_directory
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
     ## Reformat SV with no length as these will fail in the annotation with VEP
     _reformat_sv_with_no_length(
         {
             FILEHANDLE         => $FILEHANDLE,
             file_suffix        => $infile_suffix,
-            infile_path_prefix => $temp_infile_path_prefix,
+            infile_path_prefix => $infile_path_prefix,
         }
     );
 
@@ -665,8 +640,7 @@ sub analysis_vep_sv_wes {
       . $file_info_href->{human_genome_reference_version};
 
     ## Get genome source and version to be compatible with VEP
-    $assembly_version =
-      _get_assembly_name( { assembly_version => $assembly_version, } );
+    $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
 
     ## VEP plugins
     my @plugins;
@@ -700,12 +674,9 @@ sub analysis_vep_sv_wes {
     }
 
     my $vep_infile_path =
-        $temp_infile_path_prefix
-      . $UNDERSCORE
-      . q{fixedsvlength}
-      . $infile_suffix;
-    my $stderrfile_path = $file_path . $DOT . q{stderr.txt};
-    my $stdoutfile_path = $file_path . $DOT . q{stdout.txt};
+      $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $infile_suffix;
+    my $stderrfile_path = $recipe_file_path . $DOT . q{stderr.txt};
+    my $stdoutfile_path = $recipe_file_path . $DOT . q{stdout.txt};
     variant_effect_predictor(
         {
             assembly         => $assembly_version,
@@ -719,9 +690,9 @@ sub analysis_vep_sv_wes {
             outfile_path     => $outfile_path,
             plugins_dir_path => $active_parameter_href->{vep_plugins_dir_path},
             plugins_ref      => \@plugins,
-            reference_path  => $active_parameter_href->{human_genome_reference},
-            stderrfile_path => $stderrfile_path,
-            stdoutfile_path => $stdoutfile_path,
+            reference_path   => $active_parameter_href->{human_genome_reference},
+            stderrfile_path  => $stderrfile_path,
+            stdoutfile_path  => $stdoutfile_path,
             vep_features_ref => \@vep_features_ref,
         }
     );
@@ -732,8 +703,7 @@ sub analysis_vep_sv_wes {
     if ( $program_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile =
-          $outfile_path_prefix . $DOT . q{vcf_summary.html};
+        my $qc_vep_summary_outfile = $outfile_path_prefix . $DOT . q{vcf_summary.html};
         add_program_metafile_to_sample_info(
             {
                 directory        => $outdir_path_prefix,
@@ -752,16 +722,17 @@ sub analysis_vep_sv_wes {
                 sample_info_href => $sample_info_href,
             }
         );
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                log                     => $log,
                 job_id_href             => $job_id_href,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                log                     => $log,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -780,7 +751,6 @@ sub analysis_vep_sv_wgs {
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
-##          : $program_info_path       => The program info path
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
@@ -861,7 +831,7 @@ sub analysis_vep_sv_wgs {
             strict_type => 1,
         },
         xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             default     => 0,
             store       => \$xargs_file_counter,
             strict_type => 1,
@@ -873,15 +843,13 @@ sub analysis_vep_sv_wgs {
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
@@ -907,10 +875,7 @@ sub analysis_vep_sv_wgs {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path =
-      $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $contigs_ref = \@{ $file_info_href->{contigs} };
     my $consensus_analysis_type =
@@ -923,13 +888,12 @@ sub analysis_vep_sv_wgs {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
     my $xargs_file_path_prefix;
 
     ## Set and get the io files per chain, id and stream
@@ -963,16 +927,15 @@ sub analysis_vep_sv_wgs {
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            modifier_core_number =>
-              scalar @{ $file_info_href->{contigs_size_ordered} },
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
+            modifier_core_number => scalar @{ $file_info_href->{contigs_size_ordered} },
             module_core_number =>
               $active_parameter_href->{module_core_number}{$program_name},
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -993,24 +956,12 @@ sub analysis_vep_sv_wgs {
     my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
 
     ### SHELL:
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $temp_directory
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
     ## Reformat SV with no length as these will fail in the annotation with VEP
     _reformat_sv_with_no_length(
         {
             FILEHANDLE         => $FILEHANDLE,
             file_suffix        => $infile_suffix,
-            infile_path_prefix => $temp_infile_path_prefix,
+            infile_path_prefix => $infile_path_prefix,
         }
     );
 
@@ -1021,14 +972,10 @@ sub analysis_vep_sv_wgs {
       . $file_info_href->{human_genome_reference_version};
 
     ## Get genome source and version to be compatible with VEP
-    $assembly_version =
-      _get_assembly_name( { assembly_version => $assembly_version, } );
+    $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
 
     my $vep_infile_path =
-        $temp_infile_path_prefix
-      . $UNDERSCORE
-      . q{fixedsvlength}
-      . $infile_suffix;
+      $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $infile_suffix;
 
     ## VEP plugins
     my @plugins;
@@ -1056,7 +1003,7 @@ sub analysis_vep_sv_wgs {
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -1077,8 +1024,7 @@ sub analysis_vep_sv_wgs {
 
         my $mt_name;
         my @regions;
-        my $vep_xargs_file_path_prefix =
-          $xargs_file_path_prefix . $DOT . $contig;
+        my $vep_xargs_file_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
         push @regions, $contig;
 
         ## The MT needs to be analyzed together with another contig to guarantee that SV:s are found.
@@ -1096,9 +1042,7 @@ sub analysis_vep_sv_wgs {
         my @vep_features_ref;
 
       FEATURE:
-        foreach
-          my $vep_feature ( @{ $active_parameter_href->{sv_vep_features} } )
-        {
+        foreach my $vep_feature ( @{ $active_parameter_href->{sv_vep_features} } ) {
 
             # Add VEP features to the output.
             push @vep_features_ref, $vep_feature;
@@ -1110,29 +1054,24 @@ sub analysis_vep_sv_wgs {
             }
         }
 
-        my $stderrfile_path =
-          $vep_xargs_file_path_prefix . $DOT . q{stderr.txt};
-        my $stdoutfile_path =
-          $vep_xargs_file_path_prefix . $DOT . q{stdout.txt};
+        my $stderrfile_path = $vep_xargs_file_path_prefix . $DOT . q{stderr.txt};
+        my $stdoutfile_path = $vep_xargs_file_path_prefix . $DOT . q{stdout.txt};
         variant_effect_predictor(
             {
-                assembly    => $assembly_version,
-                buffer_size => 100,
-                cache_directory =>
-                  $active_parameter_href->{vep_directory_cache},
-                distance       => $distance,
-                FILEHANDLE     => $XARGSFILEHANDLE,
-                fork           => $VEP_FORK_NUMBER,
-                infile_format  => substr( $infile_suffix, 1 ),
-                infile_path    => $vep_infile_path,
-                outfile_format => substr( $outfile_suffix, 1 ),
-                outfile_path   => $outfile_path{$contig},
-                plugins_dir_path =>
-                  $active_parameter_href->{vep_plugins_dir_path},
-                plugins_ref => \@plugins,
-                regions_ref => \@regions,
-                reference_path =>
-                  $active_parameter_href->{human_genome_reference},
+                assembly         => $assembly_version,
+                buffer_size      => 100,
+                cache_directory  => $active_parameter_href->{vep_directory_cache},
+                distance         => $distance,
+                FILEHANDLE       => $XARGSFILEHANDLE,
+                fork             => $VEP_FORK_NUMBER,
+                infile_format    => substr( $infile_suffix, 1 ),
+                infile_path      => $vep_infile_path,
+                outfile_format   => substr( $outfile_suffix, 1 ),
+                outfile_path     => $outfile_path{$contig},
+                plugins_dir_path => $active_parameter_href->{vep_plugins_dir_path},
+                plugins_ref      => \@plugins,
+                regions_ref      => \@regions,
+                reference_path   => $active_parameter_href->{human_genome_reference},
                 stderrfile_path  => $stderrfile_path,
                 stdoutfile_path  => $stdoutfile_path,
                 vep_features_ref => \@vep_features_ref,
@@ -1161,8 +1100,7 @@ sub analysis_vep_sv_wgs {
     if ( $program_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile =
-          $outfile_paths[0] . $DOT . q{vcf_summary.html};
+        my $qc_vep_summary_outfile = $outfile_paths[0] . $DOT . q{vcf_summary.html};
         add_program_metafile_to_sample_info(
             {
                 directory        => $outdir_path_prefix,
@@ -1181,16 +1119,17 @@ sub analysis_vep_sv_wgs {
                 sample_info_href => $sample_info_href,
             }
         );
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                log                     => $log,
                 job_id_href             => $job_id_href,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                log                     => $log,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -1273,8 +1212,7 @@ sub _reformat_sv_with_no_length {
     $perl_fix_sv_nolengths .= q?perl -nae '?;
 
     # Initate variables
-    $perl_fix_sv_nolengths .=
-      q?my %info; my $start; my $end; my $alt; my @data; ?;
+    $perl_fix_sv_nolengths .= q?my %info; my $start; my $end; my $alt; my @data; ?;
 
     # Split line
     $perl_fix_sv_nolengths .= q?@data=split("\t", $_); ?;
@@ -1290,10 +1228,9 @@ sub _reformat_sv_with_no_length {
 q?foreach my $bit (split /\;/, $data[7]) { my ($key, $value) = split /\=/, $bit; $info{$key} = $value; } ?;
 
     # Add $end position
-    $perl_fix_sv_nolengths .=
-      q?if(defined($info{END})) { $end = $info{END}; } ?;
+    $perl_fix_sv_nolengths .= q?if(defined($info{END})) { $end = $info{END}; } ?;
 
-# If SV, strip SV type entry and check if no length, then do not print variant else print
+ # If SV, strip SV type entry and check if no length, then do not print variant else print
     $perl_fix_sv_nolengths .=
 q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $end && $alt=~ /del/i) {} else {print $_} } ?;
 
@@ -1358,8 +1295,7 @@ sub _subset_vcf {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip };
-    use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_index bcftools_view };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_index bcftools_view };
 
     ## Prepare for bcftools_view
     htslib_bgzip(

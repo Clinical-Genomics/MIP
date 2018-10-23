@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Delly_reformat;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_delly_reformat };
@@ -45,7 +46,6 @@ sub analysis_delly_reformat {
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $reference_dir           => MIP reference directory
@@ -66,7 +66,6 @@ sub analysis_delly_reformat {
 
     ## Default(s)
     my $family_id;
-    my $outaligner_dir;
     my $reference_dir;
     my $temp_directory;
     my $xargs_file_counter;
@@ -103,11 +102,6 @@ sub analysis_delly_reformat {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {
@@ -160,9 +154,7 @@ sub analysis_delly_reformat {
       qw{ bcftools_merge bcftools_index bcftools_view };
     use MIP::Program::Variantcalling::Delly qw{ delly_call delly_merge };
     use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
-    use MIP::Processmanagement::Processes qw{ print_wait };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -185,13 +177,12 @@ sub analysis_delly_reformat {
     );
     my $program_mode       = $active_parameter_href->{$program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
@@ -213,7 +204,7 @@ sub analysis_delly_reformat {
     my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
     my $temp_outfile_suffix      = $io{temp}{file_suffix};
-    my $temp_outfile_path = $temp_outfile_path_prefix . $temp_outfile_suffix;
+    my $temp_outfile_path        = $temp_outfile_path_prefix . $temp_outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandles
@@ -221,7 +212,7 @@ sub analysis_delly_reformat {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -270,7 +261,7 @@ sub analysis_delly_reformat {
             my $infile_path =
               $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
             my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
-            my $temp_infile_path = $temp_infile_path_prefix . $infile_suffix;
+            my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
 
             $delly_sample_file_info{$sample_id}{in}{$infile_suffix} =
               $temp_infile_path;
@@ -308,8 +299,7 @@ sub analysis_delly_reformat {
         ### Delly merge
         say {$FILEHANDLE} q{## delly merge} . $NEWLINE;
 
-        say {$FILEHANDLE}
-          q{## Fix locale bug using old centosOS and Boost library};
+        say {$FILEHANDLE} q{## Fix locale bug using old centosOS and Boost library};
         say {$FILEHANDLE} q?LC_ALL="C"; export LC_ALL ?, $NEWLINE . $NEWLINE;
 
         ## Get parameters
@@ -325,12 +315,12 @@ sub analysis_delly_reformat {
                   . $UNDERSCORE
                   . q{merged}
                   . $DOT . q{bcf},
-                stderrfile_path => $file_path
+                stderrfile_path => $recipe_file_path
                   . $UNDERSCORE
                   . q{merged}
                   . $DOT
                   . q{stderr.txt},
-                stdoutfile_path => $file_path
+                stdoutfile_path => $recipe_file_path
                   . $UNDERSCORE
                   . q{merged}
                   . $DOT
@@ -350,7 +340,7 @@ sub analysis_delly_reformat {
             {
                 core_number        => $core_number,
                 FILEHANDLE         => $FILEHANDLE,
-                file_path          => $file_path,
+                file_path          => $recipe_file_path,
                 program_info_path  => $program_info_path,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
@@ -374,8 +364,7 @@ sub analysis_delly_reformat {
             push @delly_genotype_temp_outfile_paths, $bcf_sample_outfile_path;
             delly_call(
                 {
-                    exclude_file_path =>
-                      $active_parameter_href->{delly_exclude_file},
+                    exclude_file_path => $active_parameter_href->{delly_exclude_file},
                     FILEHANDLE        => $XARGSFILEHANDLE,
                     genotypefile_path => $temp_outfile_path_prefix
                       . $UNDERSCORE
@@ -414,12 +403,8 @@ sub analysis_delly_reformat {
                   . q{to_sort}
                   . $outfile_suffix,
                 output_type     => q{v},
-                stderrfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . q{stderr.txt},
-                stdoutfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . q{stdout.txt},
+                stderrfile_path => $xargs_file_path_prefix . $DOT . q{stderr.txt},
+                stdoutfile_path => $xargs_file_path_prefix . $DOT . q{stdout.txt},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -449,26 +434,18 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
     say {$FILEHANDLE} q{## Picard SortVcf};
     picardtools_sortvcf(
         {
-            FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => [
-                    $temp_outfile_path_prefix
-                  . $UNDERSCORE
-                  . q{to_sort}
-                  . $outfile_suffix
-            ],
-            java_jar => catfile(
-                $active_parameter_href->{picardtools_path},
-                q{picard.jar}
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation   => q{Xmx2g},
-            outfile_path        => $temp_outfile_path_prefix . $DOT . q{vcf},
-            referencefile_path  => $referencefile_path,
-            sequence_dictionary => catfile(
+            FILEHANDLE => $FILEHANDLE,
+            infile_paths_ref =>
+              [ $temp_outfile_path_prefix . $UNDERSCORE . q{to_sort} . $outfile_suffix ],
+            java_jar =>
+              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx2g},
+            outfile_path         => $temp_outfile_path_prefix . $DOT . q{vcf},
+            referencefile_path   => $referencefile_path,
+            sequence_dictionary  => catfile(
                 $reference_dir,
-                $file_info_href->{human_genome_reference_name_prefix}
-                  . $DOT . q{dict}
+                $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict}
             ),
             temp_directory => $temp_directory,
         }
@@ -498,15 +475,17 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

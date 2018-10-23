@@ -22,7 +22,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_fastqc };
@@ -38,6 +38,7 @@ sub analysis_fastqc {
 ## Function : Raw sequence quality analysis using FASTQC.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -60,6 +61,7 @@ sub analysis_fastqc {
     my $sample_info_href;
 
     ## Default(s)
+    my $family_id;
     my $temp_directory;
 
     my $tmpl = {
@@ -68,6 +70,11 @@ sub analysis_fastqc {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -131,9 +138,7 @@ sub analysis_fastqc {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Processes qw{ print_wait };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Qc::Fastqc qw{ fastqc };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -166,21 +171,21 @@ sub analysis_fastqc {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Outpaths
     my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id,
-        $program_name );
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $program_name );
     my @outfile_paths =
-      map { catdir( $outsample_directory, $_ . $UNDERSCORE . $program_name, q{fastqc_data.txt} ) }
-      @infile_name_prefixes;
+      map {
+        catdir( $outsample_directory, $_ . $UNDERSCORE . $program_name,
+            q{fastqc_data.txt} )
+      } @infile_name_prefixes;
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -224,12 +229,12 @@ sub analysis_fastqc {
     $core_number = check_max_core_number(
         {
             core_number_requested => $core_number,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -304,11 +309,17 @@ sub analysis_fastqc {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_job_no_dependency_dead_end(
+        submit_recipe(
             {
-                job_id_href      => $job_id_href,
-                log              => $log,
-                sbatch_file_name => $file_name,
+                dependency_method       => q{sample_to_island},
+                family_id               => $family_id,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_id               => $sample_id,
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

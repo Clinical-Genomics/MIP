@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Analysisrunstatus;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_analysisrunstatus };
@@ -122,8 +123,7 @@ sub analysis_analysisrunstatus {
 
     use MIP::Get::File qw{ get_path_entries };
     use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
@@ -134,20 +134,19 @@ sub analysis_analysisrunstatus {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             core_number           => $core_number,
@@ -223,11 +222,10 @@ sub analysis_analysisrunstatus {
 
     _check_vcf_header_and_keys(
         {
-            analysis_config_file =>
-              $active_parameter_href->{config_file_analysis},
-            FILEHANDLE       => $FILEHANDLE,
-            sample_info_href => $sample_info_href,
-            vcf_file_href    => \%vcf_file,
+            analysis_config_file => $active_parameter_href->{config_file_analysis},
+            FILEHANDLE           => $FILEHANDLE,
+            sample_info_href     => $sample_info_href,
+            vcf_file_href        => \%vcf_file,
         }
     );
 
@@ -243,12 +241,15 @@ sub analysis_analysisrunstatus {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_chain_job_ids_dependency_add_to_path(
+        submit_recipe(
             {
-                job_id_href      => $job_id_href,
-                log              => $log,
-                path             => $job_id_chain,
-                sbatch_file_name => $file_path,
+                dependency_method   => q{add_to_all},
+                job_dependency_type => q{afterok},
+                job_id_href         => $job_id_href,
+                log                 => $log,
+                job_id_chain        => $job_id_chain,
+                recipe_file_path    => $recipe_file_path,
+                submission_profile  => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -293,8 +294,7 @@ sub _eval_status_flag {
     print {$FILEHANDLE} q?if($_=~/analysisrunstatus\:/) { ?;
 
     ## All ok - set runstatus mode to finished
-    say {$FILEHANDLE} q?s/not_finished/finished/g }' ?
-      . $sample_info_file . q? ?;
+    say {$FILEHANDLE} q?s/not_finished/finished/g }' ? . $sample_info_file . q? ?;
 
     ## Found discrepancies - exit
     say {$FILEHANDLE} q?else?;
@@ -511,8 +511,7 @@ sub _check_vcf_header_and_keys {
             print {$FILEHANDLE} q?"test ? . $mode . $SPACE . $file . q?" => [ ?;
 
             ## Infile
-            print {$FILEHANDLE} q?"?
-              . $sample_info_href->{$file}{$mode}{path} . q?", ?;
+            print {$FILEHANDLE} q?"? . $sample_info_href->{$file}{$mode}{path} . q?", ?;
 
             ##ConfigFile
             print {$FILEHANDLE} q?"? . $analysis_config_file . q?", ?;

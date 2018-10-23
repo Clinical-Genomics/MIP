@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Manta;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_manta };
@@ -112,8 +113,7 @@ sub analysis_manta {
             strict_type => 1,
         },
         referencefile_path => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
+            default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$referencefile_path,
             strict_type => 1,
         },
@@ -137,9 +137,7 @@ sub analysis_manta {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Processes qw{ print_wait };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Compression::Gzip qw{ gzip };
     use MIP::Program::Variantcalling::Manta qw{ manta_config manta_workflow };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -161,13 +159,12 @@ sub analysis_manta {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
@@ -189,14 +186,14 @@ sub analysis_manta {
     my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
     my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
     my $temp_outfile_suffix      = $io{temp}{file_suffix};
-    my $temp_outfile_path = $temp_outfile_path_prefix . $temp_outfile_suffix;
+    my $temp_outfile_path        = $temp_outfile_path_prefix . $temp_outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -330,16 +327,17 @@ sub analysis_manta {
                 sample_info_href => $sample_info_href,
             }
         );
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

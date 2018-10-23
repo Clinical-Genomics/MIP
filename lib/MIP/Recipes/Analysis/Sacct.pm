@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Sacct;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sacct };
@@ -118,8 +119,7 @@ sub analysis_sacct {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Workloadmanager::Slurm qw{ slurm_sacct };
 
@@ -137,20 +137,19 @@ sub analysis_sacct {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             core_number           => $core_number,
@@ -168,10 +167,9 @@ sub analysis_sacct {
 
     slurm_sacct(
         {
-            fields_format_ref =>
-              \@{ $active_parameter_href->{sacct_format_fields} },
-            FILEHANDLE  => $FILEHANDLE,
-            job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
+            fields_format_ref => \@{ $active_parameter_href->{sacct_format_fields} },
+            FILEHANDLE        => $FILEHANDLE,
+            job_ids_ref       => \@{ $job_id_href->{PAN}{PAN} },
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -180,13 +178,15 @@ sub analysis_sacct {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_chain_job_ids_dependency_add_to_path(
+        submit_recipe(
             {
-                job_dependency_type => q{afterany},
+                dependency_method   => q{add_to_all},
                 job_id_href         => $job_id_href,
+                job_dependency_type => q{afterany},
                 log                 => $log,
-                path                => $job_id_chain,
-                sbatch_file_name    => $file_path,
+                job_id_chain        => $job_id_chain,
+                recipe_file_path    => $recipe_file_path,
+                submission_profile  => $active_parameter_href->{submission_profile},
             }
         );
     }

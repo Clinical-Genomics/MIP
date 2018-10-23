@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Bcftools_mpileup;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_mpileup };
@@ -39,7 +40,7 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_bcftools_mpileup {
 
-## Function : Bcftools_mpileup
+## Function : Call snv and indels using Bcftools mpileup
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
@@ -142,8 +143,7 @@ sub analysis_bcftools_mpileup {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_call bcftools_filter bcftools_mpileup bcftools_norm };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
@@ -170,13 +170,12 @@ sub analysis_bcftools_mpileup {
     );
     my $program_mode   = $active_parameter_href->{$program_name};
     my $reference_path = $active_parameter_href->{human_genome_reference};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     my $xargs_file_path_prefix;
 
@@ -205,7 +204,7 @@ sub analysis_bcftools_mpileup {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -222,8 +221,7 @@ sub analysis_bcftools_mpileup {
     );
 
     ## Create .fam file to be used in variant calling analyses
-    my $fam_file_path =
-      catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
+    my $fam_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
     create_fam_file(
         {
             active_parameter_href => $active_parameter_href,
@@ -269,13 +267,13 @@ sub analysis_bcftools_mpileup {
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                core_number => $core_number,
-                file_ending => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-                file_path   => $file_path,
-                FILEHANDLE  => $FILEHANDLE,
-                infile      => $infile_name_prefix,
-                indirectory => $indir_path_prefix,
+                contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+                core_number        => $core_number,
+                file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
+                file_path          => $recipe_file_path,
+                FILEHANDLE         => $FILEHANDLE,
+                infile             => $infile_name_prefix,
+                indirectory        => $indir_path_prefix,
                 program_info_path  => $program_info_path,
                 temp_directory     => $temp_directory,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
@@ -292,7 +290,7 @@ sub analysis_bcftools_mpileup {
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -320,9 +318,7 @@ sub analysis_bcftools_mpileup {
                 per_sample_increased_sensitivity => 1,
                 referencefile_path               => $reference_path,
                 regions_ref                      => [$contig],
-                stderrfile_path                  => $stderrfile_path_prefix
-                  . $DOT
-                  . q{stderr.txt},
+                stderrfile_path => $stderrfile_path_prefix . $DOT . q{stderr.txt},
             }
         );
 
@@ -335,8 +331,7 @@ sub analysis_bcftools_mpileup {
         if ( $parameter_href->{dynamic_parameter}{trio} ) {
 
             $samples_file =
-              catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} )
-              . $SPACE;
+              catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} ) . $SPACE;
             $constrain = q{trio};
         }
 
@@ -453,15 +448,17 @@ sub analysis_bcftools_mpileup {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
-                job_id_href             => $job_id_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

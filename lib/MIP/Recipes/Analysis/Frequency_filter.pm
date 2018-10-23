@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Frequency_filter;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -50,10 +51,8 @@ sub analysis_frequency_filter {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
-##          : $stderr_path             => The stderr path of the block script
 ##          : $temp_directory          => Temporary directory {REF}
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -66,10 +65,8 @@ sub analysis_frequency_filter {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
     my $program_name;
     my $sample_info_href;
-    my $stderr_path;
 
     ## Default(s)
     my $family_id;
@@ -118,8 +115,7 @@ sub analysis_frequency_filter {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path => { store => \$program_info_path, strict_type => 1, },
-        program_name      => {
+        program_name => {
             defined     => 1,
             required    => 1,
             store       => \$program_name,
@@ -132,7 +128,6 @@ sub analysis_frequency_filter {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        stderr_path    => { store => \$stderr_path, strict_type => 1, },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             store       => \$temp_directory,
@@ -152,8 +147,7 @@ sub analysis_frequency_filter {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate genmod_filter };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
@@ -231,7 +225,7 @@ sub analysis_frequency_filter {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -258,7 +252,7 @@ sub analysis_frequency_filter {
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -313,16 +307,17 @@ sub analysis_frequency_filter {
                 sample_info_href => $sample_info_href,
             }
         );
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
-                path                    => $job_id_chain,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
                 log                     => $log,
-                sbatch_file_name        => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

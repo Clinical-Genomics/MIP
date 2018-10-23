@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem };
@@ -144,8 +144,7 @@ sub analysis_bwa_mem {
       qw{ get_module_parameters get_program_attributes get_read_group };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Bwa qw{ bwa_mem run_bwamem };
     use MIP::Program::Alignment::Samtools qw{ samtools_stats samtools_view };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
@@ -188,27 +187,25 @@ sub analysis_bwa_mem {
         }
     );
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                file_name_prefixes_ref =>
-                  \@{ $infile_lane_prefix_href->{$sample_id} },
-                outdata_dir    => $active_parameter_href->{outdata_dir},
-                parameter_href => $parameter_href,
-                program_name   => $program_name,
-                temp_directory => $temp_directory,
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => \@{ $infile_lane_prefix_href->{$sample_id} },
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                program_name           => $program_name,
+                temp_directory         => $temp_directory,
             }
         )
     );
@@ -259,11 +256,10 @@ sub analysis_bwa_mem {
 
         # Collect interleaved info
         my $interleaved_fastq_file =
-          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {interleaved};
+          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}{interleaved};
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $file_name, $program_info_path ) = setup_script(
+        my ( $recipe_file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $core_number,
@@ -374,10 +370,9 @@ sub analysis_bwa_mem {
                     infile_path             => $fastq_file_path,
                     interleaved_fastq_file  => $interleaved_fastq_file,
                     mark_split_as_secondary => 1,
-                    read_group_header =>
-                      join( $EMPTY_STR, @read_group_headers ),
-                    second_infile_path => $second_fastq_file_path,
-                    thread_number      => $core_number,
+                    read_group_header       => join( $EMPTY_STR, @read_group_headers ),
+                    second_infile_path      => $second_fastq_file_path,
+                    thread_number           => $core_number,
                 }
             );
 
@@ -406,15 +401,14 @@ sub analysis_bwa_mem {
 
             run_bwamem(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
-                    hla_typing  => $active_parameter_href->{bwa_mem_hla},
-                    infile_path => $fastq_file_path,
-                    idxbase     => $referencefile_path,
+                    FILEHANDLE           => $FILEHANDLE,
+                    hla_typing           => $active_parameter_href->{bwa_mem_hla},
+                    infile_path          => $fastq_file_path,
+                    idxbase              => $referencefile_path,
                     outfiles_prefix_path => $file_path_prefix,
-                    read_group_header =>
-                      join( $EMPTY_STR, @read_group_headers ),
-                    second_infile_path => $second_fastq_file_path,
-                    thread_number      => $core_number,
+                    read_group_header    => join( $EMPTY_STR, @read_group_headers ),
+                    second_infile_path   => $second_fastq_file_path,
+                    thread_number        => $core_number,
                 }
             );
             print {$FILEHANDLE} $PIPE . $SPACE;
@@ -422,8 +416,7 @@ sub analysis_bwa_mem {
             say   {$FILEHANDLE} $NEWLINE;
 
             ## Set sambamba sort input; Sort directly from run-bwakit
-            $sambamba_sort_infile =
-              $file_path_prefix . $DOT . q{aln} . $outfile_suffix;
+            $sambamba_sort_infile = $file_path_prefix . $DOT . q{aln} . $outfile_suffix;
         }
         ## Increment paired end tracker
         $paired_end_tracker++;
@@ -431,12 +424,11 @@ sub analysis_bwa_mem {
         ## Sort the output from bwa mem|run-bwamem
         sambamba_sort(
             {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $sambamba_sort_infile,
-                memory_limit =>
-                  $active_parameter_href->{bwa_sambamba_sort_memory_limit},
-                outfile_path   => $file_path,
-                show_progress  => 1,
+                FILEHANDLE    => $FILEHANDLE,
+                infile_path   => $sambamba_sort_infile,
+                memory_limit  => $active_parameter_href->{bwa_sambamba_sort_memory_limit},
+                outfile_path  => $file_path,
+                show_progress => 1,
                 temp_directory => $temp_directory,
             }
         );
@@ -615,16 +607,18 @@ sub analysis_bwa_mem {
                 );
             }
 
-            slurm_submit_job_sample_id_dependency_step_in_parallel(
+            submit_recipe(
                 {
+                    dependency_method       => q{sample_to_sample_parallel},
                     family_id               => $family_id,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_chain            => $job_id_chain,
                     job_id_href             => $job_id_href,
                     log                     => $log,
-                    path                    => $job_id_chain,
+                    recipe_file_path        => $recipe_file_path,
+                    recipe_files_tracker    => $infile_index,
                     sample_id               => $sample_id,
-                    sbatch_file_name        => $file_name,
-                    sbatch_script_tracker   => $infile_index
+                    submission_profile => $active_parameter_href->{submission_profile},
                 }
             );
         }
@@ -667,9 +661,7 @@ sub _select_bwamem_binary {
 
     if ( $human_genome_reference_source eq q{GRCh} ) {
 
-        if ( $human_genome_reference_version >
-            $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS )
-        {
+        if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS ) {
 
             return q{run-bwamem};
         }
@@ -682,9 +674,7 @@ sub _select_bwamem_binary {
     else {
         # hgXX build
 
-        if ( $human_genome_reference_version >
-            $GENOME_BUILD_VERSION_HG_PRIOR_ALTS )
-        {
+        if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_HG_PRIOR_ALTS ) {
 
             return q{run-bwamem};
         }
@@ -754,8 +744,7 @@ sub _add_percentage_mapped_reads_from_samtools {
     print {$FILEHANDLE} q?my $percentage = ($map / $raw ) * 100; ?;
 
     # Write calculation to stdout
-    print {$FILEHANDLE}
-      q?print qq{percentage mapped reads:\t} . $percentage . qq{\n}?;
+    print {$FILEHANDLE} q?print qq{percentage mapped reads:\t} . $percentage . qq{\n}?;
 
     # End elsif
     print {$FILEHANDLE} q?} ?;

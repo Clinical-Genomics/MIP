@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Endvariantannotationblock;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_endvariantannotationblock };
@@ -46,7 +47,6 @@ sub analysis_endvariantannotationblock {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -62,7 +62,6 @@ sub analysis_endvariantannotationblock {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
     my $program_name;
     my $sample_info_href;
 
@@ -114,8 +113,6 @@ sub analysis_endvariantannotationblock {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
         program_name => {
             defined     => 1,
             required    => 1,
@@ -154,12 +151,10 @@ sub analysis_endvariantannotationblock {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-    use MIP::QC::Record
-      qw{ add_most_complete_vcf add_program_metafile_to_sample_info };
+    use MIP::QC::Record qw{ add_most_complete_vcf add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -193,13 +188,12 @@ sub analysis_endvariantannotationblock {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
@@ -240,7 +234,7 @@ sub analysis_endvariantannotationblock {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -259,9 +253,7 @@ sub analysis_endvariantannotationblock {
     ### SHELL:
 
   ANALYSIS_SUFFIXES:
-    while ( my ( $analysis_suffix_index, $analysis_suffix ) =
-        each @outfile_suffixes )
-    {
+    while ( my ( $analysis_suffix_index, $analysis_suffix ) = each @outfile_suffixes ) {
 
         my @concat_contigs = @contigs;
         my $infile_postfix = q{.vcf};
@@ -289,15 +281,10 @@ sub analysis_endvariantannotationblock {
         );
 
         ## Remove variants in hgnc_id list from vcf
-        if ( $active_parameter_href
-            ->{endvariantannotationblock_remove_genes_file} )
-        {
+        if ( $active_parameter_href->{endvariantannotationblock_remove_genes_file} ) {
 
             my $grep_outfile_path =
-                $outfile_path_prefix
-              . $UNDERSCORE
-              . q{filtered}
-              . $analysis_suffix;
+              $outfile_path_prefix . $UNDERSCORE . q{filtered} . $analysis_suffix;
             ## Removes contig_names from contigs array if no male or other found
             gnu_grep(
                 {
@@ -315,8 +302,7 @@ sub analysis_endvariantannotationblock {
 
             ## Save filtered file
             $sample_info_href->{program}{$program_name}
-              {reformat_remove_genes_file}{$metafile_tag}{path} =
-              $grep_outfile_path;
+              {reformat_remove_genes_file}{$metafile_tag}{path} = $grep_outfile_path;
         }
 
         if ( $active_parameter_href->{rankvariant_binary_file} ) {
@@ -350,10 +336,10 @@ sub analysis_endvariantannotationblock {
         ## Adds the most complete vcf file to sample_info
         add_most_complete_vcf(
             {
-                active_parameter_href => $active_parameter_href,
-                path                  => $outfile_paths[$analysis_suffix_index],
-                program_name          => $program_name,
-                sample_info_href      => $sample_info_href,
+                active_parameter_href     => $active_parameter_href,
+                path                      => $outfile_paths[$analysis_suffix_index],
+                program_name              => $program_name,
+                sample_info_href          => $sample_info_href,
                 vcfparser_outfile_counter => $analysis_suffix_index,
             }
         );
@@ -381,15 +367,17 @@ sub analysis_endvariantannotationblock {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

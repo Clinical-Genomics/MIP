@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cnvnator };
@@ -160,10 +160,8 @@ sub analysis_cnvnator {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::Program::Alignment::Samtools
-      qw{ samtools_create_chromosome_files };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Alignment::Samtools qw{ samtools_create_chromosome_files };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_annotate bcftools_concat bcftools_create_reheader_samples_file bcftools_rename_vcf_samples };
     use MIP::Program::Variantcalling::Cnvnator
@@ -194,9 +192,8 @@ sub analysis_cnvnator {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %temp_infile_path   = %{ $io{temp}{file_path_href} };
 
-    my $human_genome_reference =
-      $active_parameter_href->{human_genome_reference};
-    my $job_id_chain = get_program_attributes(
+    my $human_genome_reference = $active_parameter_href->{human_genome_reference};
+    my $job_id_chain           = get_program_attributes(
         {
             parameter_href => $parameter_href,
             program_name   => $program_name,
@@ -204,13 +201,12 @@ sub analysis_cnvnator {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
     my $xargs_file_path_prefix;
 
     %io = (
@@ -242,7 +238,7 @@ sub analysis_cnvnator {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -306,7 +302,7 @@ sub analysis_cnvnator {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             contigs_ref        => \@size_ordered_contigs,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -325,7 +321,7 @@ sub analysis_cnvnator {
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -349,22 +345,18 @@ sub analysis_cnvnator {
                 outfile_path     => $root_file,
                 regions_ref      => [$contig],
                 unique           => 1,
-                stdoutfile_path  => $stdbasefile_path_prefix
-                  . $DOT
-                  . q{stdout.txt},
-                stderrfile_path => $stdbasefile_path_prefix
-                  . $DOT
-                  . q{stderr.txt},
-                FILEHANDLE => $XARGSFILEHANDLE,
+                stdoutfile_path  => $stdbasefile_path_prefix . $DOT . q{stdout.txt},
+                stderrfile_path  => $stdbasefile_path_prefix . $DOT . q{stderr.txt},
+                FILEHANDLE       => $XARGSFILEHANDLE,
             }
         );
         print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
 
         cnvnator_histogram(
             {
-                infile_path  => $root_file,
-                regions_ref  => [$contig],
-                cnv_bin_size => $active_parameter_href->{cnv_bin_size},
+                infile_path             => $root_file,
+                regions_ref             => [$contig],
+                cnv_bin_size            => $active_parameter_href->{cnv_bin_size},
                 referencedirectory_path => $temp_directory,
                 FILEHANDLE              => $XARGSFILEHANDLE,
                 stdoutfile_path         => $stdbasefile_path_prefix
@@ -429,11 +421,8 @@ sub analysis_cnvnator {
 
         cnvnator_convert_to_vcf(
             {
-                infile_path => $temp_outfile_path_prefix_contig
-                  . $DOT
-                  . q{cnvnator},
-                stdoutfile_path => $temp_outfile_path_prefix_contig
-                  . $outfile_suffix,
+                infile_path     => $temp_outfile_path_prefix_contig . $DOT . q{cnvnator},
+                stdoutfile_path => $temp_outfile_path_prefix_contig . $outfile_suffix,
                 stderrfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{convert_to_vcf.stderr.txt},
@@ -469,11 +458,7 @@ sub analysis_cnvnator {
         my $cnvnator_outfile_path =
           $temp_outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
         my $fixed_vcffile_path_prefix =
-            $temp_outfile_path_prefix
-          . $UNDERSCORE
-          . $contig
-          . $UNDERSCORE
-          . q{fixed};
+          $temp_outfile_path_prefix . $UNDERSCORE . $contig . $UNDERSCORE . q{fixed};
         my $fixed_header_vcffile_path =
             $temp_outfile_path_prefix
           . $UNDERSCORE
@@ -501,12 +486,11 @@ sub analysis_cnvnator {
         ## Add contigs to header
         bcftools_annotate(
             {
-                FILEHANDLE => $FILEHANDLE,
-                headerfile_path =>
-                  catfile( $temp_directory, q{contig_header.txt} ),
-                infile_path  => $fixed_vcffile_path_prefix . $outfile_suffix,
-                outfile_path => $fixed_header_vcffile_path,
-                output_type  => q{v},
+                FILEHANDLE      => $FILEHANDLE,
+                headerfile_path => catfile( $temp_directory, q{contig_header.txt} ),
+                infile_path     => $fixed_vcffile_path_prefix . $outfile_suffix,
+                outfile_path    => $fixed_header_vcffile_path,
+                output_type     => q{v},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -536,15 +520,17 @@ sub analysis_cnvnator {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_sample},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
@@ -598,9 +584,7 @@ sub _add_contigs_to_vcfheader {
     # Reference fai file
     print {$FILEHANDLE} $human_genome_reference . $DOT . q{fai} . $SPACE;
 
-    say {$FILEHANDLE} q{>}
-      . $SPACE
-      . catfile( $temp_directory, q{contig_header.txt} ),
+    say {$FILEHANDLE} q{>} . $SPACE . catfile( $temp_directory, q{contig_header.txt} ),
       $NEWLINE;
 
     return;

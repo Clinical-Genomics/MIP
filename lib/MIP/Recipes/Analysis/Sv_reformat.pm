@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Sv_reformat;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_reformat_sv };
@@ -37,7 +38,7 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_reformat_sv {
 
-## Function : Concatenate and sort contig files. Optionally remove variants from genelist
+## Function : Concatenate and sort contig files. Optionally remove variants from genelist.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
@@ -140,13 +141,10 @@ sub analysis_reformat_sv {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
-    use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_view_and_index_vcf };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
-    use MIP::QC::Record
-      qw{ add_most_complete_vcf add_program_metafile_to_sample_info };
+    use MIP::QC::Record qw{ add_most_complete_vcf add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -179,13 +177,12 @@ sub analysis_reformat_sv {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
@@ -226,7 +223,7 @@ sub analysis_reformat_sv {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -259,9 +256,7 @@ sub analysis_reformat_sv {
 
         ## Get parameters for sort
         my $sequence_dict_file = catfile( $reference_dir,
-                $file_info_href->{human_genome_reference_name_prefix}
-              . $DOT
-              . q{dict} );
+            $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} );
 
         ## Sort variants in vcf format
         sort_vcf(
@@ -281,8 +276,7 @@ sub analysis_reformat_sv {
             my $filter_metafile_tag = q{sv_reformat_remove_genes_file_research};
             ## Update metafile_tag depending on select or research
             if ( $infile_index == 1 ) {
-                $filter_metafile_tag =
-                  q{sv_reformat_remove_genes_file_clinical};
+                $filter_metafile_tag = q{sv_reformat_remove_genes_file_clinical};
             }
 
             my $filter_file_path = catfile( $reference_dir,
@@ -334,10 +328,10 @@ sub analysis_reformat_sv {
             add_most_complete_vcf(
                 {
                     active_parameter_href => $active_parameter_href,
-                    path => $outfile_paths[$infile_index] . $DOT . q{gz},
-                    program_name     => $program_name,
-                    sample_info_href => $sample_info_href,
-                    vcf_file_key     => q{sv}
+                    path                  => $outfile_paths[$infile_index] . $DOT . q{gz},
+                    program_name          => $program_name,
+                    sample_info_href      => $sample_info_href,
+                    vcf_file_key          => q{sv}
                       . $UNDERSCORE
                       . substr( $outfile_suffixes[0], 1 )
                       . $UNDERSCORE . q{file},
@@ -348,8 +342,8 @@ sub analysis_reformat_sv {
             # Save clinical candidate list path
             add_program_metafile_to_sample_info(
                 {
-                    metafile_tag => $metafile_tag,
-                    path => $outfile_paths[$infile_index] . $DOT . q{gz},
+                    metafile_tag     => $metafile_tag,
+                    path             => $outfile_paths[$infile_index] . $DOT . q{gz},
                     program_name     => $program_name,
                     sample_info_href => $sample_info_href,
                 }
@@ -362,15 +356,17 @@ sub analysis_reformat_sv {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_family},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

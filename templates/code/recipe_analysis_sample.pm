@@ -129,8 +129,7 @@ sub analysis_PROGRAM_NAME {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -165,13 +164,12 @@ sub analysis_PROGRAM_NAME {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     %io = (
         %io,
@@ -198,7 +196,7 @@ sub analysis_PROGRAM_NAME {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -248,16 +246,18 @@ sub analysis_PROGRAM_NAME {
             }
         );
 
-        ## MODIY THE CHOICE OF SUB ACCORDING TO HOW YOU WANT SLURM TO PROCESSES IT AND DOWNSTREAM DEPENDENCIES
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        ## MODIY THE "dependency_metod" TO HOW YOU WANT SLURM TO PROCESSES UPSTREAM AND DOWNSTREAM DEPENDENCIES
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_island},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

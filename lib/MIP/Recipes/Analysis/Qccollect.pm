@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Qccollect;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_qccollect };
@@ -88,8 +89,7 @@ sub analysis_qccollect {
             strict_type => 1,
         },
         infile_path => {
-            default =>
-              $arg_href->{active_parameter_href}{qccollect_sampleinfo_file},
+            default     => $arg_href->{active_parameter_href}{qccollect_sampleinfo_file},
             store       => \$infile_path,
             strict_type => 1,
         },
@@ -126,8 +126,7 @@ sub analysis_qccollect {
 
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Qc::Qccollect qw{ qccollect };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -146,13 +145,12 @@ sub analysis_qccollect {
         }
     );
     my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     my %io = parse_io_outfiles(
         {
@@ -174,7 +172,7 @@ sub analysis_qccollect {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -199,9 +197,8 @@ sub analysis_qccollect {
             outfile_path     => $outfile_path,
             log_file_path    => $log_file_path,
             regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
-            skip_evaluation =>
-              $active_parameter_href->{qccollect_skip_evaluation},
-            FILEHANDLE => $FILEHANDLE,
+            skip_evaluation  => $active_parameter_href->{qccollect_skip_evaluation},
+            FILEHANDLE       => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -218,12 +215,15 @@ sub analysis_qccollect {
             }
         );
 
-        slurm_submit_chain_job_ids_dependency_add_to_path(
+        submit_recipe(
             {
-                job_id_href      => $job_id_href,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
+                dependency_method   => q{add_to_all},
+                job_dependency_type => q{afterok},
+                job_id_href         => $job_id_href,
+                log                 => $log,
+                job_id_chain        => $job_id_chain,
+                recipe_file_path    => $recipe_file_path,
+                submission_profile  => $active_parameter_href->{submission_profile},
             }
         );
     }
