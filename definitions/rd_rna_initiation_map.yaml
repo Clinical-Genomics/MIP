@@ -4,8 +4,9 @@ CHAIN_ALL:
 # Parallel chains (branch)
    - CHAIN_FASTQ:
       - fastqc
-   - CHAIN_SALMON:
+   - CHAIN_DE:
       - salmon_quant
+      - blobfish
    - CHAIN_FUSION:
       - star_fusion
    - CHAIN_MAIN:

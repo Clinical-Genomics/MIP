@@ -20,6 +20,15 @@ reference:
     - 138
     - gold_standard_dbsnp
     - 146
+  transcript_annotation:
+    - 29
+transcript_annotation:
+  grch37:
+    29:
+      file: gencode.v29lift37.annotation.gtf.gz
+      outfile: GRCh37_gencode_annotation_-v29-.gtf.gz
+      outfile_decompress: gzip
+      url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/
 CTAT_resource_lib:
   grch37:
     feb092018:

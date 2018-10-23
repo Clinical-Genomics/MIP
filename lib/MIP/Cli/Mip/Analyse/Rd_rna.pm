@@ -18,7 +18,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -73,8 +73,7 @@ sub run {
                     define_parameters_path => $definition_file,
                     non_mandatory_parameter_keys_path =>
                       $non_mandatory_parameter_keys_path,
-                    mandatory_parameter_keys_path =>
-                      $mandatory_parameter_keys_path,
+                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
                 }
             ),
         );
@@ -87,7 +86,7 @@ sub run {
             {
                 define_parameters_files_ref => \@definition_files,
                 parameter_href              => \%parameter,
-                print_program_mode => $active_parameter{print_program_mode},
+                print_program_mode          => $active_parameter{print_program_mode},
             }
         );
         exit;
@@ -95,8 +94,7 @@ sub run {
 
     my %dependency_tree = load_yaml(
         {
-            yaml_file =>
-              catfile( $Bin, qw{ definitions rd_rna_initiation_map.yaml } ),
+            yaml_file => catfile( $Bin, qw{ definitions rd_rna_initiation_map.yaml } ),
         }
     );
 
@@ -112,8 +110,7 @@ sub run {
     get_dependency_tree_order(
         {
             dependency_tree_href => \%dependency_tree,
-            programs_ref =>
-              \@{ $parameter{dynamic_parameter}{order_programs_ref} },
+            programs_ref => \@{ $parameter{dynamic_parameter}{order_programs_ref} },
         }
     );
 
@@ -134,7 +131,7 @@ sub run {
     ## File info hash
     my %file_info = (
 
-        fusion_filter_reference_genome => [qw{ _fusion_filter_genome_dir }],
+        fusion_filter_reference_genome      => [qw{ _fusion_filter_genome_dir }],
         human_genome_reference_file_endings => [qw{ .dict .fai }],
         salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
@@ -159,7 +156,17 @@ sub _build_usage {
 ## Arguments:
 
     option(
-        q{pbootstrapann} => (
+        q{blobfish} => (
+            cmd_aliases   => [qw{ blb }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Run BlobFish on salmon quant files},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{bootstrapann} => (
             cmd_aliases   => [qw{ ba }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Run BootstrapAnn on ASE file},
@@ -180,12 +187,11 @@ sub _build_usage {
 
     option(
         q{gatk_disable_auto_index_and_file_lock} => (
-            cmd_aliases => [qw{ gdai }],
-            cmd_flag    => q{gatk_dis_auto_ind_fl},
-            documentation =>
-              q{Disable auto index creation and locking when reading rods},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ gdai }],
+            cmd_flag      => q{gatk_dis_auto_ind_fl},
+            documentation => q{Disable auto index creation and locking when reading rods},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -279,12 +285,11 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{split_fastq_file} => (
-            cmd_aliases => [qw{ sfq }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-              q{Split fastq files in batches of X reads and exits},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_aliases   => [qw{ sfq }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Split fastq files in batches of X reads and exits},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -376,10 +381,9 @@ q{Default: ReadGroupCovariate, ContextCovariate, CycleCovariate, QualityScoreCov
             cmd_tags    => [
 q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
             ],
-            documentation =>
-              q{GATK BaseReCalibration known SNV and INDEL sites},
-            is  => q{rw},
-            isa => ArrayRef [Str],
+            documentation => q{GATK BaseReCalibration known SNV and INDEL sites},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
         )
     );
 
@@ -425,33 +429,12 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{salmon_quant_transcripts_file} => (
-            cmd_aliases => [qw{ sqttf }],
-            cmd_tags    => [q{Salmon quant transcripts file: Format: GTF}],
-            documentation =>
-              q{Input for salmon quant to build genome/transcriptome indexes},
-            is  => q{rw},
-            isa => Str,
-        )
-    );
-
-    option(
         q{star_aln} => (
             cmd_aliases   => [qw{ stn }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Align reads using Star aln},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{star_aln_transcripts_file} => (
-            cmd_aliases   => [qw{ statf }],
-            cmd_tags      => [q{Star transcripts file: Format: GTF}],
-            documentation => q{Input for star to build genome indexes},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 
@@ -477,12 +460,11 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
 
     option(
         q{align_sjdb_overhang_min} => (
-            cmd_aliases => [qw{ stn_asom }],
-            cmd_tags    => [q{Default: 10}],
-            documentation =>
-              q{Minimum overhang (i.e. block size) for spliced alignments},
-            is  => q{rw},
-            isa => Int,
+            cmd_aliases   => [qw{ stn_asom }],
+            cmd_tags      => [q{Default: 10}],
+            documentation => q{Minimum overhang (i.e. block size) for spliced alignments},
+            is            => q{rw},
+            isa           => Int,
         )
     );
 
@@ -527,17 +509,6 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{fusion_filter_transcripts_file} => (
-            cmd_aliases => [qw{ stftf }],
-            cmd_tags    => [q{Fusion filter transcripts file: Format: GTF}],
-            documentation =>
-              q{Input for fusion-filter to build genome/transcriptome indexes},
-            is  => q{rw},
-            isa => Str,
-        )
-    );
-
-    option(
         q{rseq} => (
             cmd_aliases   => [qw{ rseq }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -549,12 +520,11 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
 
     option(
         q{rseqc_transcripts_file} => (
-            cmd_aliases => [qw{ rseqctf }],
-            cmd_tags    => [q{Rseqc transcripts file: Format: GTF}],
-            documentation =>
-              q{Input for rseqc to build transcript bed format file},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ rseqctf }],
+            cmd_tags      => [q{Rseqc transcripts file: Format: GTF}],
+            documentation => q{Input for rseqc to build transcript bed format file},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -588,7 +558,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             cmd_tags      => [q{Default: NONE}],
             documentation => q{VCF to produce},
             is            => q{rw},
-            isa => ArrayRef [ enum( [qw{ NONE BP_RESOLUTION GVCF }] ), ],
+            isa           => ArrayRef [ enum( [qw{ NONE BP_RESOLUTION GVCF }] ), ],
         )
     );
 
@@ -599,20 +569,19 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             cmd_tags      => [q{Default: CONSERVATIVE; Set to "0" to disable}],
             documentation => q{PCR indel model to use},
             is            => q{rw},
-            isa           => ArrayRef [
-                enum( [ 0, qw{ AGGRESSIVE CONSERVATIVE HOSTILE NONE } ] ), ],
+            isa =>
+              ArrayRef [ enum( [ 0, qw{ AGGRESSIVE CONSERVATIVE HOSTILE NONE } ] ), ],
         )
     );
 
     option(
         q{gatk_haplotypecaller_snp_known_set} => (
-            cmd_aliases => [qw{ ghckse }],
-            cmd_flag    => q{gatk_haplotype_snp_ks},
-            cmd_tags    => [q{Default: GRCh37_dbsnp_-138-.vcf}],
-            documentation =>
-              q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ ghckse }],
+            cmd_flag      => q{gatk_haplotype_snp_ks},
+            cmd_tags      => [q{Default: GRCh37_dbsnp_-138-.vcf}],
+            documentation => q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -649,13 +618,12 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{markduplicates_sambamba_markdup_hash_table_size} => (
-            cmd_aliases => [qw{ mdshts }],
-            cmd_flag    => q{sba_mdup_hts},
-            cmd_tags    => [q{Default: 262144}],
-            documentation =>
-              q{Sambamba size of hash table for finding read pairs},
-            is  => q{rw},
-            isa => Int,
+            cmd_aliases   => [qw{ mdshts }],
+            cmd_flag      => q{sba_mdup_hts},
+            cmd_tags      => [q{Default: 262144}],
+            documentation => q{Sambamba size of hash table for finding read pairs},
+            is            => q{rw},
+            isa           => Int,
         )
     );
 
@@ -718,12 +686,11 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_haplotypecaller_no_soft_clipped_bases} => (
-            cmd_aliases => [qw{ ghcscb }],
-            cmd_flag    => q{gatk_haplotype_no_soft_cb},
-            documentation =>
-              q{Do not include soft clipped bases in the variant calling},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ ghcscb }],
+            cmd_flag      => q{gatk_haplotype_no_soft_cb},
+            documentation => q{Do not include soft clipped bases in the variant calling},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -740,13 +707,12 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_haplotypecaller_snp_known_set} => (
-            cmd_aliases => [qw{ ghckse }],
-            cmd_flag    => q{gatk_haplotype_snp_ks},
-            cmd_tags    => [q{Default: GRCh37_dbsnp_-138-.vcf}],
-            documentation =>
-              q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ ghckse }],
+            cmd_flag      => q{gatk_haplotype_snp_ks},
+            cmd_tags      => [q{Default: GRCh37_dbsnp_-138-.vcf}],
+            documentation => q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -776,7 +742,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             cmd_flag    => q{gatk_variantfiltration_cluster_size},
             cmd_tags    => [q{Default: 3}],
             documentation =>
-q{GATK VariantFiltration, the number of SNPs which make up a cluster},
+              q{GATK VariantFiltration, the number of SNPs which make up a cluster},
             is  => q{rw},
             isa => Int,
         )
@@ -810,7 +776,7 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
             cmd_aliases => [qw{ mqc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
-q{Create aggregate bioinformatics analysis report across many samples},
+              q{Create aggregate bioinformatics analysis report across many samples},
             is  => q{rw},
             isa => enum( [ 0, 1, 2 ] ),
         )
@@ -847,6 +813,17 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             isa           => ArrayRef [Str],
         )
     );
+
+    option(
+        q{transcript_annotation} => (
+            cmd_aliases   => [qw{ ttf }],
+            cmd_tags      => [q{Transcripts file: Format: GTF}],
+            documentation => q{Transcript file for the rd_rna pipeline},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
     return;
 }
 

@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rd_rna };
@@ -148,14 +148,13 @@ sub pipeline_rd_rna {
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_program_for_user };
+    use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
     use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
-    use MIP::Recipes::Analysis::Gatk_asereadcounter
-      qw{ analysis_gatk_asereadcounter };
+    use MIP::Recipes::Analysis::Gatk_asereadcounter qw{ analysis_gatk_asereadcounter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
-    use MIP::Recipes::Analysis::Gatk_haplotypecaller
-      qw{ analysis_gatk_haplotypecaller };
+    use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
     use MIP::Recipes::Analysis::Gatk_splitncigarreads
       qw{ analysis_gatk_splitncigarreads };
     use MIP::Recipes::Analysis::Gatk_variantfiltration
@@ -204,6 +203,7 @@ sub pipeline_rd_rna {
 
     ## Dispatch table
     my %analysis_recipe = (
+        blobfish                  => \&analysis_blobfish,
         bootstrapann              => \&analysis_bootstrapann,
         fastqc                    => \&analysis_fastqc,
         gatk_asereadcounter       => \&analysis_gatk_asereadcounter,
@@ -242,8 +242,7 @@ sub pipeline_rd_rna {
         if ( $parameter_href->{$program}{analysis_mode} eq q{sample} ) {
 
           SAMPLE:
-            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-            {
+            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
                 $analysis_recipe{$program}->(
                     {
