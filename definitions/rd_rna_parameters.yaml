@@ -29,6 +29,15 @@ human_genome_reference_file_endings:
   mandatory: no
   reference: reference_dir
   type: path
+transcripts_file:
+  associated_program:
+   - blobfish
+   - salmon_quant
+  data_type: SCALAR
+  default: GRCh37_transcripts_-v1_0-.GTF
+  exists_check: file
+  reference: reference_dir
+  type: path
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 gatk_bundle_download_version:
   associated_program:
@@ -72,6 +81,7 @@ module_time:
    - mip
   data_type: HASH
   default:
+    blobfish: 1
     bootstrapann: 3
     fastqc: 1
     gatk_asereadcounter: 2
@@ -94,6 +104,7 @@ module_core_number:
    - mip
   data_type: HASH
   default:
+    blobfish: 1
     bootstrapann: 1
     fastqc: 0
     gatk_asereadcounter: 2
@@ -171,7 +182,7 @@ salmon_quant:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: _salmon
+  file_tag: nofile_tag
   outfile_suffix: ".sf"
   outdir_name: salmon
   program_name_path:
@@ -192,14 +203,18 @@ salmon_quant_reference_genome:
   mandatory: no
   reference: reference_dir
   type: path
-salmon_quant_transcripts_file:
+## Blobfish
+blobfish:
+  analysis_mode: family
   associated_program:
-   - salmon_quant
+   - mip
   data_type: SCALAR
-  default: GRCh37_transcripts_-v1_0-.GTF
-  exists_check: file
-  reference: reference_dir
-  type: path
+  default: 1
+  file_tag: nofile_tag
+  outdir_name: blobfish
+  program_name_path:
+   - BlobFish.py
+  type: program
 ## Star Aln
 star_aln:
   analysis_mode: sample

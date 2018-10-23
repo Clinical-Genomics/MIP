@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -45,15 +45,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Build::Salmon_quant_prerequisites} => [qw{ build_salmon_quant_prerequisites }],
-        q{MIP::Test::Fixtures} =>
-          [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Recipes::Build::Salmon_quant_prerequisites} =>
+          [qw{ build_salmon_quant_prerequisites }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Build::Salmon_quant_prerequisites qw{ build_salmon_quant_prerequisites };
+use MIP::Recipes::Build::Salmon_quant_prerequisites
+  qw{ build_salmon_quant_prerequisites };
 
 diag(   q{Test build_salmon_quant_prerequisites from Salmon_quant_prerequisites.pm v}
       . $MIP::Recipes::Build::Salmon_quant_prerequisites::VERSION
@@ -89,7 +90,7 @@ my %sample_info;
 
 ## Special case
 $active_parameter{salmon_quant_reference_genome} = q{human_genome.fastq};
-$active_parameter{salmon_quant_transcripts_file} = q{GRCH37_transcripts.gtf};
+$active_parameter{transcripts_file}              = q{GRCH37_transcripts.gtf};
 
 trap {
     build_salmon_quant_prerequisites(
@@ -100,16 +101,17 @@ trap {
             job_id_href             => \%job_id,
             log                     => $log,
             parameter_href          => \%parameter,
-parameter_build_suffixes_ref =>
+            parameter_build_suffixes_ref =>
               \@{ $file_info{salmon_quant_reference_genome} },
-            program_name            => $program_name,
-            sample_info_href        => \%sample_info,
+            program_name     => $program_name,
+            sample_info_href => \%sample_info,
         }
       )
 };
 
 ## Then broadcast info log message
-my $log_msg = q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+Salmon\s+files};
+my $log_msg =
+  q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+Salmon\s+files};
 like( $trap->stderr, qr/$log_msg/msx, q{Broadcast Salmon log message} );
 
 done_testing();
