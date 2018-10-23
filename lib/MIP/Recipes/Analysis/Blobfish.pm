@@ -210,7 +210,7 @@ sub analysis_blobfish {
     ### SHELL
 
     say {$FILEHANDLE} q{## Generate tx2gene file};
-    my $gtf_file_path = $active_parameter_href->{transcripts_file};
+    my $gtf_file_path = $active_parameter_href->{transcript_annotation};
     my $tx2gene_file_path = catfile( $outdir_path, q{tx2gene.txt} );
     _generate_tx2gene_file(
         {

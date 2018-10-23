@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_salmon_quant_prerequisites };
@@ -268,7 +268,7 @@ sub build_salmon_quant_prerequisites {
         fusion_filter_gtf_file_to_feature_seqs(
             {
                 FILEHANDLE         => $FILEHANDLE,
-                gtf_path           => $active_parameter_href->{transcripts_file},
+                gtf_path           => $active_parameter_href->{transcript_annotation},
                 referencefile_path => $human_genome_reference,
                 seq_type           => q{cDNA},
                 stdoutfile_path =>

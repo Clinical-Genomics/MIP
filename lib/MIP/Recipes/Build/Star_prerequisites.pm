@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_star_prerequisites };
@@ -92,8 +92,7 @@ sub build_star_prerequisites {
             strict_type => 1,
         },
         human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
+            default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$human_genome_reference,
             strict_type => 1,
         },
@@ -168,8 +167,7 @@ sub build_star_prerequisites {
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
-    Readonly my $NUMBER_OF_CORES =>
-      $active_parameter_href->{max_cores_per_node};
+    Readonly my $NUMBER_OF_CORES   => $active_parameter_href->{max_cores_per_node};
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
     Readonly my $PROCESSING_TIME   => 3;
     Readonly my $READ_LENGTH       => 150;
@@ -179,13 +177,12 @@ sub build_star_prerequisites {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## FILEHANDLES
     # Create anonymous filehandle
@@ -256,8 +253,8 @@ sub build_star_prerequisites {
                 FILEHANDLE      => $FILEHANDLE,
                 fasta_path      => $human_genome_reference,
                 genome_dir_path => $star_directory_tmp,
-                gtf_path => $active_parameter_href->{star_aln_transcripts_file},
-                read_length => $READ_LENGTH,
+                gtf_path        => $active_parameter_href->{transcript_annotation},
+                read_length     => $READ_LENGTH,
             }
         );
         say {$FILEHANDLE} $NEWLINE;

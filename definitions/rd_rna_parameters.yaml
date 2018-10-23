@@ -29,12 +29,14 @@ human_genome_reference_file_endings:
   mandatory: no
   reference: reference_dir
   type: path
-transcripts_file:
+transcript_annotation:
   associated_program:
    - blobfish
    - salmon_quant
+   - star_aln
+   - star_fusion
   data_type: SCALAR
-  default: GRCh37_transcripts_-v1_0-.GTF
+  default: GRCh37_gencode_annotation_-v29-.gtf
   exists_check: file
   reference: reference_dir
   type: path
@@ -97,7 +99,7 @@ module_time:
     sacct: 1
     salmon_quant: 5
     star_aln: 5
-    star_fusion: 10
+    star_fusion: 4
   type: mip
 module_core_number:
   associated_program:
@@ -268,14 +270,6 @@ star_aln_reference_genome:
   mandatory: no
   reference: reference_dir
   type: path
-star_aln_transcripts_file:
-  associated_program:
-   - star_aln
-  data_type: SCALAR
-  default: GRCh37_transcripts_-v1_0-.GTF
-  exists_check: file
-  reference: reference_dir
-  type: path
 two_pass_mode:
   associated_program:
    - star_aln
@@ -314,14 +308,6 @@ fusion_filter_reference_genome:
   data_type: SCALAR
   exists_check: directory
   mandatory: no
-  reference: reference_dir
-  type: path
-fusion_filter_transcripts_file:
-  associated_program:
-   - star_fusion
-  data_type: SCALAR
-  default: GRCh37_transcripts_-v1_0-.GTF
-  exists_check: file
   reference: reference_dir
   type: path
 ## Merge bam files
