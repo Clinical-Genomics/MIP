@@ -114,23 +114,28 @@ efastqc:
   pip:
   shell:
 
-# Freebayes environment spec
-efreebayes:
-  conda:
-    bcftools: 1.6
-    freebayes: 1.1.0
-    gatk: 3.8
-    gatk4: 4.0
-    pip:
-    python: 2.7
-  pip:
-  shell:
 
 # Peddy environment spec
 epeddy:
   conda:
     bcftools: 1.6
     peddy: 0.3.1
+    pip:
+    python: 2.7
+  pip:
+  shell:
+
+# Perl environment spec
+eperl_5.26:
+  conda:
+    bcftools: 1.9=h4da6232_0
+    bwa: 0.7.17=ha92aebf_3
+    bwakit: 0.7.15=1
+    fastqc: 0.11.8=0
+    freebayes: 1.2.0=py27h82df9c4_3
+    gatk4: 4.0.10.0=0
+    sambamba: 0.6.8=h682856c_0
+    samtools: 1.9=h8ee4bcc_1
     pip:
     python: 2.7
   pip:
@@ -210,8 +215,8 @@ environment_name:
   ecnvnator:
   edelly:
   efastqc:
-  efreebayes:
   epeddy:
+  eperl_5.26
   epy3:
   etiddit:
   evep:
@@ -221,9 +226,9 @@ installations:
   - ecnvnator
   - edelly
   - efastqc
-  - efreebayes
   - emip
   - epeddy
+  - eperl_5.26
   - epy3
   - evep
   - etiddit

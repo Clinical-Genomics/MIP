@@ -26,8 +26,7 @@ use Readonly;
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
-use MIP::Script::Utils
-  qw{ nest_hash print_parameter_defaults update_program_versions};
+use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions};
 
 our $VERSION = 1.00;
 
@@ -62,8 +61,7 @@ sub run {
         ## Set default for vep cache dir
         if ( $parameter{shell}{vep} ) {
             $parameter{shell}{vep}{vep_cache_dir} = catdir( qw{ PATH TO CONDA },
-                q{ensembl-tools-release-} . $parameter{shell}{vep}{version},
-                q{cache} );
+                q{ensembl-tools-release-} . $parameter{shell}{vep}{version}, q{cache} );
         }
 
         print_parameter_defaults(
@@ -129,7 +127,6 @@ sub _build_usage {
                 emip          => Optional [Str],
                 ecnvnator     => Optional [Str],
                 edelly        => Optional [Str],
-                efreebayes    => Optional [Str],
                 epeddy        => Optional [Str],
                 q{eperl_5.26} => Optional [Str],
                 epy3          => Optional [Str],
@@ -142,14 +139,12 @@ sub _build_usage {
 
     option(
         q{config_file} => (
-            cmd_aliases => [qw{ config c }],
-            documentation =>
-              q{File with configuration parameters in YAML format},
-            is      => q{rw},
-            isa     => Str,
-            default => catfile(
-                dirname($Bin),
-                qw{ MIP definitions install_rd_dna_parameters.yaml }
+            cmd_aliases   => [qw{ config c }],
+            documentation => q{File with configuration parameters in YAML format},
+            is            => q{rw},
+            isa           => Str,
+            default       => catfile(
+                dirname($Bin), qw{ MIP definitions install_rd_dna_parameters.yaml }
             ),
         )
     );
@@ -164,7 +159,7 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ emip ecnvnator edelly efreebayes epeddy eperl_5.26 epy3 etiddit evep full }
+                        qw{ emip ecnvnator edelly epeddy eperl_5.26 epy3 etiddit evep full }
                     ]
                 ),
             ],
@@ -229,10 +224,9 @@ sub _build_usage {
 
     option(
         q{shell:cnvnator:cnvnator_root_binary} => (
-            cmd_aliases => [qw{ cnvnr }],
-            cmd_flag    => q{cnvnator_root_binary},
-            cmd_tags =>
-              [q{Default: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz}],
+            cmd_aliases   => [qw{ cnvnr }],
+            cmd_flag      => q{cnvnator_root_binary},
+            cmd_tags      => [q{Default: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz}],
             documentation => q{Set the cnvnator root binary},
             is            => q{rw},
             isa           => Str,
@@ -288,14 +282,12 @@ sub _build_usage {
     );
     option(
         q{shell_install} => (
-            cmd_aliases => [qw{ si }],
-            cmd_flag    => q{shell_install},
-            documentation =>
-              q{Install supplied programs via shell instead of via conda},
-            is  => q{rw},
-            isa => ArrayRef [
-                enum( [qw{ bedtools picard plink2 sambamba snpeff vt }] ),
-            ],
+            cmd_aliases   => [qw{ si }],
+            cmd_flag      => q{shell_install},
+            documentation => q{Install supplied programs via shell instead of via conda},
+            is            => q{rw},
+            isa =>
+              ArrayRef [ enum( [qw{ bedtools picard plink2 sambamba snpeff vt }] ), ],
             required => 0,
         ),
     );
@@ -364,7 +356,7 @@ sub _build_usage {
             cmd_aliases => [qw{ vepc }],
             cmd_flag    => q{vep_cache_dir},
             cmd_tags    => [
-q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}
+                q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}
             ],
             documentation => q{Specify the cache directory to use},
             is            => q{rw},

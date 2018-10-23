@@ -203,7 +203,6 @@ environment_name:
   emip: MIP_rare
   ecnvnator:
   edelly:
-  efreebayes:
   epeddy:
   eperl_5.26:
   epy3:
@@ -214,7 +213,6 @@ environment_name:
 installations:
   - ecnvnator
   - edelly
-  - efreebayes
   - emip
   - epeddy
   - eperl_5.26
