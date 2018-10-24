@@ -73,7 +73,6 @@ my $test_dir = File::Temp->newdir();
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
 
-my $call_type         = q{both};
 my $directory_id      = q{family_1};
 my $temp_dir          = catfile($test_dir);
 my $test_program_name = q{bwa_mem};
@@ -88,8 +87,10 @@ my %active_parameter = (
     outdata_dir                     => catfile( $test_dir, q{test_data_dir} ),
     outscript_dir                   => catfile( $test_dir, q{test_script_dir} ),
     project_id                      => q{wamdu},
+			sacct_format_fields => [qw{ jobid }],
     slurm_quality_of_service        => q{low},
     source_environment_commands_ref => [qw{ source activate test }],
+			submission_profile => q{slurm},
     temp_directory                  => $temp_dir,
 );
 my %job_id;
@@ -97,7 +98,6 @@ my %job_id;
 my ($file_path) = setup_script(
     {
         active_parameter_href => \%active_parameter,
-        call_type             => $call_type,
         directory_id          => $directory_id,
         email_types_ref       => [qw{ FAIL }],
         FILEHANDLE            => $FILEHANDLE,
@@ -117,14 +117,12 @@ my $file_name_prefix =
     $test_program_name
   . $UNDERSCORE
   . $directory_id
-  . $UNDERSCORE
-  . $call_type
   . $DOT;
 my $file_path_prefix = catfile( $program_script_directory_path,
     q{dry_run} . $UNDERSCORE . $file_name_prefix );
 my $file_name_suffix   = $DOT . q{sh};
 my $expected_file_path = $file_path_prefix . q{0} . $file_name_suffix;
-is( $file_path, $expected_file_path, q{Genereted file path} );
+is( $file_path, $expected_file_path, q{Generated file path} );
 
 close $FILEHANDLE;
 
