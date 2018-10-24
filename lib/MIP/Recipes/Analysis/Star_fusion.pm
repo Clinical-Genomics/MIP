@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -139,8 +139,7 @@ sub analysis_star_fusion {
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -174,19 +173,17 @@ sub analysis_star_fusion {
             program_name   => $program_name,
         }
     );
-    my $outdir_path = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $program_name );
-    my $outsample_name =
-      $STAR_FUSION_PREFIX . $program_attribute{outfile_suffix};
-    my @file_paths = catfile( $outdir_path, $outsample_name );
-    my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my $outdir_path =
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $program_name );
+    my $outsample_name = $STAR_FUSION_PREFIX . $program_attribute{outfile_suffix};
+    my @file_paths     = catfile( $outdir_path, $outsample_name );
+    my $program_mode   = $active_parameter_href->{$program_name};
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     %io = (
         %io,
@@ -207,7 +204,7 @@ sub analysis_star_fusion {
     my $FILEHANDLE = IO::Handle->new();
 
 # Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -233,7 +230,7 @@ sub analysis_star_fusion {
             outfile_path => $temp_directory,
         }
     );
-    say $FILEHANDLE $NEWLINE;
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Star-fusion
     say {$FILEHANDLE} q{## Performing fusion transcript detections using }
@@ -255,9 +252,8 @@ sub analysis_star_fusion {
 
     star_fusion(
         {
-            FILEHANDLE => $FILEHANDLE,
-            genome_lib_dir_path =>
-              $active_parameter_href->{star_fusion_genome_lib_dir},
+            FILEHANDLE            => $FILEHANDLE,
+            genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
             output_directory_path => $temp_directory,
             samples_file_path     => $sample_files_path,
         }
@@ -288,15 +284,17 @@ sub analysis_star_fusion {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_sample},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $program_attribute{chain},
+                job_id_chain            => $program_attribute{chain},
+                recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path,
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }

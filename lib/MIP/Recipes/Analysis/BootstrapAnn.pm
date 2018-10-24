@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::BootstrapAnn;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -25,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bootstrapann };
@@ -44,10 +45,7 @@ sub analysis_bootstrapann {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
@@ -143,8 +141,7 @@ sub analysis_bootstrapann {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::BootstrapAnn qw{ bootstrapann };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -183,7 +180,7 @@ sub analysis_bootstrapann {
     );
     my $variant_infile_path_prefix = $variant_io{out}{file_path_prefix};
     my $variant_suffix             = $variant_io{out}{file_suffix};
-    my $variant_infile_path = $variant_infile_path_prefix . $variant_suffix;
+    my $variant_infile_path        = $variant_infile_path_prefix . $variant_suffix;
 
     my $job_id_chain = get_program_attributes(
         {
@@ -196,13 +193,12 @@ sub analysis_bootstrapann {
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
 
     ## Get module parameters
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Outpaths
     ## Set and get the io files per chain, id and stream
@@ -228,7 +224,7 @@ sub analysis_bootstrapann {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -273,15 +269,17 @@ sub analysis_bootstrapann {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_sample},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
