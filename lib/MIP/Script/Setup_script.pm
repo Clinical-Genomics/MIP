@@ -1,5 +1,6 @@
 package MIP::Script::Setup_script;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -39,10 +40,9 @@ Readonly my $UNDERSCORE => q{_};
 
 sub setup_script {
 
-## Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
+## Function : Creates program directories (info & program data & program script), program script filenames and writes sbatch header.
 ## Returns  : $file_path, $file_info_path . $file_name_version
 ## Arguments: $active_parameter_href           => The active parameters for this analysis hash {REF}
-##          : $call_type                       => SNV,INDEL or BOTH
 ##          : $core_number                     => Number of cores to allocate {Optional}
 ##          : $directory_id                    => $samplID|$family_id
 ##          : $email_types_ref                 => Email type
@@ -65,15 +65,8 @@ sub setup_script {
 
     my ($arg_href) = @_;
 
-    if ( defined $arg_href->{call_type} ) {
-
-        $arg_href->{call_type} = $UNDERSCORE . $arg_href->{call_type};
-    }
-    $arg_href->{call_type} //= $EMPTY_STR;
-
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $call_type;
     my $directory_id;
     my $FILEHANDLE;
     my $job_id_href;
@@ -106,9 +99,8 @@ sub setup_script {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type   => { store => \$call_type, strict_type => 1, },
         core_number => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             default     => 1,
             store       => \$core_number,
             strict_type => 1,
@@ -124,14 +116,13 @@ sub setup_script {
                 sub {
                     check_allowed_array_values(
                         {
-                            allowed_values_ref =>
-                              [qw{ NONE BEGIN END FAIL REQUEUE ALL }],
-                            values_ref => $arg_href->{email_types_ref},
+                            allowed_values_ref => [qw{ NONE BEGIN END FAIL REQUEUE ALL }],
+                            values_ref         => $arg_href->{email_types_ref},
                         }
                     );
                 }
             ],
-            default     => \@{$arg_href->{active_parameter_href}{email_types}},
+            default     => \@{ $arg_href->{active_parameter_href}{email_types} },
             store       => \$email_types_ref,
             strict_type => 1,
         },
@@ -149,7 +140,7 @@ sub setup_script {
             store       => \$job_id_href,
             strict_type => 1,
         },
-		log => { defined => 1, required => 1, store => \$log, },
+        log         => { defined => 1, required => 1, store => \$log, },
         outdata_dir => {
             default     => $arg_href->{active_parameter_href}{outdata_dir},
             store       => \$outdata_dir,
@@ -161,7 +152,7 @@ sub setup_script {
             strict_type => 1,
         },
         process_time => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             default     => 1,
             store       => \$process_time,
             strict_type => 1,
@@ -191,9 +182,9 @@ sub setup_script {
             strict_type => 1,
         },
         set_pipefail => {
-            allow => [ 0, 1 ],
-            default => $arg_href->{active_parameter_href}{bash_set_pipefail},
-            store   => \$set_pipefail,
+            allow       => [ 0, 1 ],
+            default     => $arg_href->{active_parameter_href}{bash_set_pipefail},
+            store       => \$set_pipefail,
             strict_type => 1,
         },
         sleep => {
@@ -203,9 +194,8 @@ sub setup_script {
             strict_type => 1,
         },
         slurm_quality_of_service => {
-            allow => [qw{ low high normal }],
-            default =>
-              $arg_href->{active_parameter_href}{slurm_quality_of_service},
+            allow       => [qw{ low high normal }],
+            default     => $arg_href->{active_parameter_href}{slurm_quality_of_service},
             store       => \$slurm_quality_of_service,
             strict_type => 1,
         },
@@ -233,13 +223,16 @@ sub setup_script {
     ## Constants
     Readonly my $MAX_SECONDS_TO_SLEEP => 240;
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Unpack parameters
+    my $program_mode       = $active_parameter_href->{$program_name};
+    my $submission_profile = $active_parameter_href->{submission_profile};
 
-    ### Sbatch script names and directory creation
+    my %submission_method = ( slurm => q{sbatch}, );
+    my $script_type = $submission_method{$submission_profile};
+
+    ### Script names and directory creation
     ## File
-    my $file_name_prefix =
-      $program_name . $UNDERSCORE . $directory_id . $call_type . $DOT;
+    my $file_name_prefix = $program_name . $UNDERSCORE . $directory_id . $DOT;
     my $file_name_version;
     my $file_name_suffix = $DOT . q{sh};
 
@@ -249,8 +242,7 @@ sub setup_script {
     ## Directory paths
     my $program_data_directory_path =
       catdir( $outdata_dir, $directory_id, $program_directory );
-    my $program_info_directory_path =
-      catdir( $program_data_directory_path, q{info} );
+    my $program_info_directory_path = catdir( $program_data_directory_path, q{info} );
     my $program_script_directory_path =
       catdir( $outscript_dir, $directory_id, $program_directory );
 
@@ -259,10 +251,8 @@ sub setup_script {
         $program_script_directory_path );
 
     ## File paths
-    my $file_path_prefix =
-      catfile( $program_script_directory_path, $file_name_prefix );
-    my $file_info_path =
-      catfile( $program_info_directory_path, $file_name_prefix );
+    my $file_path_prefix = catfile( $program_script_directory_path, $file_name_prefix );
+    my $file_info_path   = catfile( $program_info_directory_path,   $file_name_prefix );
     my $dry_run_file_path_prefix = catfile( $program_script_directory_path,
         q{dry_run} . $UNDERSCORE . $file_name_prefix );
     my $dry_run_file_info_path =
@@ -287,12 +277,16 @@ sub setup_script {
     );
 
     ### Info and Log
-    $log->info( q{Creating sbatch script for }
+    $log->info( q{Creating }
+          . $script_type
+          . q{ script for }
           . $program_name
           . q{ and writing script file(s) to: }
           . $file_path
           . $NEWLINE );
-    $log->info( q{Sbatch script }
+    $log->info(
+            ucfirst $script_type
+          . q{ script }
           . $program_name
           . q{ data files will be written to: }
           . $program_data_directory_path
@@ -300,15 +294,14 @@ sub setup_script {
 
     ## Script file
     open $FILEHANDLE, q{>}, $file_path
-      or $log->logdie(
-        q{Cannot write to '} . $file_path . q{' :} . $OS_ERROR . $NEWLINE );
+      or
+      $log->logdie( q{Cannot write to '} . $file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
     # Build bash shebang line
     build_shebang(
         {
-            bash_bin_path =>
-              catfile( dirname( dirname( devnull() ) ), qw{ bin bash } ),
-            FILEHANDLE         => $FILEHANDLE,
+            bash_bin_path => catfile( dirname( dirname( devnull() ) ), qw{ bin bash } ),
+            FILEHANDLE    => $FILEHANDLE,
             invoke_login_shell => 1,
         }
     );
@@ -325,27 +318,31 @@ sub setup_script {
 
     ### Sbatch header
     ## Get parameters
-    my $job_name = $program_name . $UNDERSCORE . $directory_id . $call_type;
-    my $stderrfile_path =
-      $file_info_path . $file_name_version . $DOT . q{stderr.txt};
-    my $stdoutfile_path =
-      $file_info_path . $file_name_version . $DOT . q{stdout.txt};
+    my $job_name        = $program_name . $UNDERSCORE . $directory_id;
+    my $stderrfile_path = $file_info_path . $file_name_version . $DOT . q{stderr.txt};
+    my $stdoutfile_path = $file_info_path . $file_name_version . $DOT . q{stdout.txt};
 
-    my @sbatch_headers = slurm_build_sbatch_header(
-        {
-            core_number              => $core_number,
-            email                    => $active_parameter_href->{email},
-            email_types_ref          => $email_types_ref,
-            FILEHANDLE               => $FILEHANDLE,
-            job_name                 => $job_name,
-            process_time             => $process_time . q{:00:00},
-            project_id               => $active_parameter_href->{project_id},
-            slurm_quality_of_service => $slurm_quality_of_service,
-            stderrfile_path          => $stderrfile_path,
-            stdoutfile_path          => $stdoutfile_path,
-        }
-    );
+    ## SLURM specific headers and parameters
+    my @sbatch_headers;
+    my @sacct_format_fields;
+    if ( $submission_profile eq q{slurm} ) {
 
+        @sacct_format_fields = @{ $active_parameter_href->{sacct_format_fields} };
+        @sbatch_headers      = slurm_build_sbatch_header(
+            {
+                core_number              => $core_number,
+                email                    => $active_parameter_href->{email},
+                email_types_ref          => $email_types_ref,
+                FILEHANDLE               => $FILEHANDLE,
+                job_name                 => $job_name,
+                process_time             => $process_time . q{:00:00},
+                project_id               => $active_parameter_href->{project_id},
+                slurm_quality_of_service => $slurm_quality_of_service,
+                stderrfile_path          => $stderrfile_path,
+                stdoutfile_path          => $stdoutfile_path,
+            }
+        );
+    }
     say {$FILEHANDLE} q{readonly PROGNAME=$(basename "$0")}, $NEWLINE;
 
     gnu_echo(
@@ -373,9 +370,8 @@ sub setup_script {
 
         write_source_environment_command(
             {
-                FILEHANDLE => $FILEHANDLE,
-                source_environment_commands_ref =>
-                  $source_environment_commands_ref,
+                FILEHANDLE                      => $FILEHANDLE,
+                source_environment_commands_ref => $source_environment_commands_ref,
             }
         );
     }
@@ -387,8 +383,7 @@ sub setup_script {
 
         ## Double quote incoming variables in string
         my $temp_directory_quoted =
-          quote_bash_variable(
-            { string_with_variable_to_quote => $temp_directory, } );
+          quote_bash_variable( { string_with_variable_to_quote => $temp_directory, } );
 
         # Assign batch variable
         say {$FILEHANDLE} q{readonly TEMP_DIRECTORY=} . $temp_directory_quoted;
@@ -407,16 +402,14 @@ sub setup_script {
 
         create_housekeeping_function(
             {
-                FILEHANDLE    => $FILEHANDLE,
-                job_ids_ref   => \@{ $job_id_href->{PAN}{PAN} },
-                log_file_path => $active_parameter_href->{log_file},
-                remove_dir    => $temp_directory_bash,
-                sacct_format_fields_ref =>
-                  \@{ $active_parameter_href->{sacct_format_fields} },
-                trap_function_call => q{$(finish }
-                  . $temp_directory_bash . q{)},
-                trap_function_name => q{finish},
-                trap_signals_ref   => [qw{ EXIT TERM INT }],
+                FILEHANDLE              => $FILEHANDLE,
+                job_ids_ref             => \@{ $job_id_href->{PAN}{PAN} },
+                log_file_path           => $active_parameter_href->{log_file},
+                remove_dir              => $temp_directory_bash,
+                sacct_format_fields_ref => \@sacct_format_fields,
+                trap_function_call      => q{$(finish } . $temp_directory_bash . q{)},
+                trap_function_name      => q{finish},
+                trap_signals_ref        => [qw{ EXIT TERM INT }],
             }
         );
     }
@@ -435,14 +428,13 @@ sub setup_script {
         ## Create error handling function and trap
         create_error_trap_function(
             {
-                FILEHANDLE    => $FILEHANDLE,
-                job_ids_ref   => \@{ $job_id_href->{PAN}{PAN} },
-                log_file_path => $active_parameter_href->{log_file},
-                sacct_format_fields_ref =>
-                  \@{ $active_parameter_href->{sacct_format_fields} },
-                trap_signals_ref   => [qw{ ERR }],
-                trap_function_call => q{$(error "$previous_command" "$?")},
-                trap_function_name => q{error},
+                FILEHANDLE              => $FILEHANDLE,
+                job_ids_ref             => \@{ $job_id_href->{PAN}{PAN} },
+                log_file_path           => $active_parameter_href->{log_file},
+                sacct_format_fields_ref => \@sacct_format_fields,
+                trap_signals_ref        => [qw{ ERR }],
+                trap_function_call      => q{$(error "$previous_command" "$?")},
+                trap_function_name      => q{error},
             }
         );
     }
@@ -465,7 +457,7 @@ sub write_return_to_conda_environment {
     my $source_main_environment_commands_ref;
 
     my $tmpl = {
-        FILEHANDLE => { required => 1, store => \$FILEHANDLE, },
+        FILEHANDLE                           => { required => 1, store => \$FILEHANDLE, },
         source_main_environment_commands_ref => {
             default     => [],
             defined     => 1,
@@ -520,7 +512,7 @@ sub write_source_environment_command {
     my $source_environment_commands_ref;
 
     my $tmpl = {
-        FILEHANDLE => { required => 1, store => \$FILEHANDLE, },
+        FILEHANDLE                      => { required => 1, store => \$FILEHANDLE, },
         source_environment_commands_ref => {
             default     => [],
             store       => \$source_environment_commands_ref,
