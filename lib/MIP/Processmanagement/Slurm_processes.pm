@@ -25,7 +25,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1824,7 +1824,7 @@ sub submit_jobs_to_sbatch {
 
     # Just submitted job_id
     if (   $stdout_buf_ref->[0]
-        && $stdout_buf_ref->[0] =~ /Submitted batch job (\d+)/ )
+        && $stdout_buf_ref->[0] =~ /Submitted\s+batch\s+job\s+(\d+)/sxm )
     {
 
         $job_id = $1;
@@ -1924,7 +1924,7 @@ sub submit_slurm_recipe {
     my $tmpl = {
         dependency_method => {
             allow => [
-                qw{ add_to_all family_to_island island island_to_sample sample_to_family sample_to_family_parallel sample_to_island sample_to_sample sample_to_sample_parallel }
+                qw{ add_to_all family_to_island island island_to_sample island_to_samples sample_to_family sample_to_family_parallel sample_to_island sample_to_sample sample_to_sample_parallel }
             ],
             defined     => 1,
             required    => 1,
@@ -2018,6 +2018,18 @@ sub submit_slurm_recipe {
         );
         return;
     }
+    if ( $dependency_method eq q{island} ) {
+
+        ## No upstream or downstream dependencies
+        slurm_submit_job_no_dependency_dead_end(
+            {
+                job_id_href      => $job_id_href,
+                log              => $log,
+                sbatch_file_name => $recipe_file_path,
+            }
+        );
+        return;
+    }
     if ( $dependency_method eq q{island_to_sample} ) {
 
         slurm_submit_job_no_dependency_add_to_sample(
@@ -2032,13 +2044,15 @@ sub submit_slurm_recipe {
         );
         return;
     }
-    if ( $dependency_method eq q{island} ) {
+    if ( $dependency_method eq q{island_to_samples} ) {
 
-        ## No upstream or downstream dependencies
-        slurm_submit_job_no_dependency_dead_end(
+        slurm_submit_job_no_dependency_add_to_samples(
             {
+                family_id        => $family_id,
                 job_id_href      => $job_id_href,
                 log              => $log,
+                path             => $job_id_chain,
+                sample_ids_ref   => $sample_ids_ref,
                 sbatch_file_name => $recipe_file_path,
             }
         );

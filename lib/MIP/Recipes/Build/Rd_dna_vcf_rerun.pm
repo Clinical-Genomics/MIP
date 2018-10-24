@@ -1,5 +1,6 @@
 package MIP::Recipes::Build::Rd_dna_vcf_rerun;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -19,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rd_dna_vcf_rerun_meta_files };
@@ -108,8 +109,8 @@ sub build_rd_dna_vcf_rerun_meta_files {
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
 
-    my %build_recipe = ( human_genome_reference_file_endings =>
-          \&build_human_genome_prerequisites, );
+    my %build_recipe =
+      ( human_genome_reference_file_endings => \&build_human_genome_prerequisites, );
 
   BUILD_RECIPE:
     foreach my $parameter_build_name ( keys %build_recipe ) {
@@ -122,8 +123,7 @@ sub build_rd_dna_vcf_rerun_meta_files {
             next PROGRAM if ( not $active_parameter_href->{$program} );
 
             next BUILD_RECIPE
-              if (
-                not $parameter_href->{$parameter_build_name}{build_file} == 1 );
+              if ( not $parameter_href->{$parameter_build_name}{build_file} == 1 );
 
             $build_recipe{$parameter_build_name}->(
                 {

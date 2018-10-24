@@ -1,5 +1,6 @@
 package MIP::Recipes::Build::Rd_dna;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -19,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rd_dna_meta_files };
@@ -116,11 +117,10 @@ sub build_rd_dna_meta_files {
     use MIP::Recipes::Build::Rtg_prerequisites qw{ build_rtg_prerequisites };
 
     my %build_recipe = (
-        bwa_build_reference => \&build_bwa_prerequisites,
-        exome_target_bed    => \&build_capture_file_prerequisites,
-        human_genome_reference_file_endings =>
-          \&build_human_genome_prerequisites,
-        rtg_vcfeval_reference_genome => \&build_rtg_prerequisites,
+        bwa_build_reference                 => \&build_bwa_prerequisites,
+        exome_target_bed                    => \&build_capture_file_prerequisites,
+        human_genome_reference_file_endings => \&build_human_genome_prerequisites,
+        rtg_vcfeval_reference_genome        => \&build_rtg_prerequisites,
     );
 
   BUILD_RECIPE:
@@ -134,8 +134,7 @@ sub build_rd_dna_meta_files {
             next PROGRAM if ( not $active_parameter_href->{$program} );
 
             next BUILD_RECIPE
-              if (
-                not $parameter_href->{$parameter_build_name}{build_file} == 1 );
+              if ( not $parameter_href->{$parameter_build_name}{build_file} == 1 );
 
             $build_recipe{$parameter_build_name}->(
                 {
@@ -171,8 +170,7 @@ sub build_rd_dna_meta_files {
                 log                   => $log,
                 parameter_href        => $parameter_href,
                 vt_references_ref =>
-                  \@{ $active_parameter_href->{decompose_normalize_references}
-                  },
+                  \@{ $active_parameter_href->{decompose_normalize_references} },
             }
         );
 

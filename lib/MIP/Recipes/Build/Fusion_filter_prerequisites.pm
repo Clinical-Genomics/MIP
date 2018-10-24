@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_fusion_filter_prerequisites };
@@ -159,8 +159,7 @@ sub build_fusion_filter_prerequisites {
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Blast qw{ blast_blastn blast_makeblastdb };
     use MIP::Program::Utility::Fusion_filter
       qw{ fusion_filter_gtf_file_to_feature_seqs fusion_filter_prep_genome_lib };
@@ -177,11 +176,9 @@ sub build_fusion_filter_prerequisites {
     Readonly my $TABULAR           => 6;
     Readonly my $WORD_SIZE         => 11;
 
-    ## Set program mode
-    my $program_mode = $active_parameter_href->{$program_name};
-
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $program_mode = $active_parameter_href->{$program_name};
     my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
@@ -197,17 +194,17 @@ sub build_fusion_filter_prerequisites {
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            FILEHANDLE                      => $FILEHANDLE,
-            directory_id                    => $family_id,
             core_number                     => $NUMBER_OF_CORES,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            program_directory               => $outaligner_dir,
-            process_time                    => $PROCESSING_TIME,
+            program_directory               => $program_name,
             program_name                    => $program_name,
+            process_time                    => $PROCESSING_TIME,
             source_environment_commands_ref => \@source_environment_cmds,
         }
     );
@@ -334,14 +331,16 @@ sub build_fusion_filter_prerequisites {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_job_no_dependency_add_to_samples(
+        submit_recipe(
             {
-                job_id_href      => $job_id_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                sbatch_file_name => $file_path,
-                log              => $log,
+                dependency_method  => q{island_to_samples},
+                family_id          => $family_id,
+                job_id_href        => $job_id_href,
+                log                => $log,
+                job_id_chain       => $job_id_chain,
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

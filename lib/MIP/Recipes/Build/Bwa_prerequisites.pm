@@ -1,5 +1,6 @@
 package MIP::Recipes::Build::Bwa_prerequisites;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_bwa_prerequisites };
@@ -47,7 +48,6 @@ sub build_bwa_prerequisites {
 ##          : $parameter_build_suffixes_ref => The bwa reference associated file endings {REF}
 ##          : $parameter_href               => Parameter hash {REF}
 ##          : $program_name                 => Program name
-##          : $outaligner_dir               => Outaligner_dir used in the analysis
 ##          : $sample_info_href             => Info on samples and family hash {REF}
 ##          : $temp_directory               => Temporary directory
 
@@ -67,7 +67,6 @@ sub build_bwa_prerequisites {
     ## Default(s)
     my $family_id;
     my $human_genome_reference;
-    my $outaligner_dir;
     my $temp_directory;
 
     my $tmpl = {
@@ -91,8 +90,7 @@ sub build_bwa_prerequisites {
             strict_type => 1,
         },
         human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
+            default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$human_genome_reference,
             strict_type => 1,
         },
@@ -135,11 +133,6 @@ sub build_bwa_prerequisites {
             store       => \$program_name,
             strict_type => 1,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -157,8 +150,7 @@ sub build_bwa_prerequisites {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Shell qw{ check_exist_and_move_file };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Bwa qw{ bwa_index };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
@@ -168,11 +160,9 @@ sub build_bwa_prerequisites {
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
     Readonly my $PROCESSING_TIME   => 3;
 
-    ## Set program mode
-    my $program_mode = $active_parameter_href->{$program_name};
-
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $program_mode = $active_parameter_href->{$program_name};
 
     ## FILEHANDLES
     # Create anonymous filehandle
@@ -182,14 +172,14 @@ sub build_bwa_prerequisites {
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             directory_id          => $family_id,
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
             log                   => $log,
-            program_directory     => $outaligner_dir,
+            program_directory     => $program_name,
             program_name          => $program_name,
             process_time          => $PROCESSING_TIME,
         }
@@ -258,14 +248,16 @@ sub build_bwa_prerequisites {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_job_no_dependency_add_to_samples(
+        submit_recipe(
             {
-                family_id        => $family_id,
-                job_id_href      => $job_id_href,
-                log              => $log,
-                path             => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                dependency_method  => q{island_to_samples},
+                family_id          => $family_id,
+                job_id_href        => $job_id_href,
+                log                => $log,
+                job_id_chain       => $job_id_chain,
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }

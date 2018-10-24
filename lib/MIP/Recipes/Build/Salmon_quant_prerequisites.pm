@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_salmon_quant_prerequisites };
@@ -45,7 +45,6 @@ sub build_salmon_quant_prerequisites {
 ##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                  => Job id hash {REF}
 ##          : $log                          => Log object
-##          : $outaligner_dir               => Outaligner_dir used in the analysis
 ##          : $parameter_href               => Parameter hash {REF}
 ##          : $program_name                 => Program name
 ##          : $parameter_build_suffixes_ref => The rtg reference associated directory suffixes {REF}
@@ -68,7 +67,6 @@ sub build_salmon_quant_prerequisites {
     ## Default(s)
     my $family_id;
     my $human_genome_reference;
-    my $outaligner_dir;
     my $temp_directory;
 
     my $tmpl = {
@@ -115,11 +113,6 @@ sub build_salmon_quant_prerequisites {
             required => 1,
             store    => \$log,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -159,8 +152,7 @@ sub build_salmon_quant_prerequisites {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Utility::Fusion_filter qw{ fusion_filter_gtf_file_to_feature_seqs };
     use MIP::Program::Variantcalling::Salmon qw{ salmon_index };
     use MIP::Recipes::Build::Human_genome_prerequisites
@@ -193,17 +185,17 @@ sub build_salmon_quant_prerequisites {
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            FILEHANDLE                      => $FILEHANDLE,
-            directory_id                    => $family_id,
             core_number                     => $NUMBER_OF_CORES,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            program_directory               => $outaligner_dir,
-            process_time                    => $PROCESSING_TIME,
+            program_directory               => $program_name,
             program_name                    => $program_name,
+            process_time                    => $PROCESSING_TIME,
             source_environment_commands_ref => \@source_environment_cmds,
         }
     );
@@ -318,14 +310,16 @@ sub build_salmon_quant_prerequisites {
 
     if ( $program_mode == 1 ) {
 
-        slurm_submit_job_no_dependency_add_to_samples(
+        submit_recipe(
             {
-                job_id_href      => $job_id_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                sbatch_file_name => $file_path,
-                log              => $log,
+                dependency_method  => q{island_to_samples},
+                family_id          => $family_id,
+                job_id_href        => $job_id_href,
+                log                => $log,
+                job_id_chain       => $job_id_chain,
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
