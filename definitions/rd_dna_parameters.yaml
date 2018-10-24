@@ -1304,7 +1304,7 @@ gatk_combinevariantcallsets:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: _comb
+  file_tag: _gatkcomb
   outfile_suffix: ".vcf"
   type: program
 gatk_combinevariantcallsets_bcf_file:

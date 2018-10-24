@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_peddy };
@@ -255,7 +255,7 @@ sub analysis_peddy {
             infile_path         => $infile_path,
             index               => 1,
             index_type          => q{tbi},
-            outfile_path_prefix => $infile_path_prefix,
+            outfile_path_prefix => $outfile_path_prefix,
             output_type         => q{z},
         }
     );
@@ -265,7 +265,7 @@ sub analysis_peddy {
         {
             family_file_path    => $family_file_path,
             FILEHANDLE          => $FILEHANDLE,
-            infile_path         => $infile_path_prefix . $suffix,
+            infile_path         => $outfile_path_prefix . $suffix,
             outfile_prefix_path => $outfile_path_prefix,
         }
     );
