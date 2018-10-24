@@ -179,7 +179,7 @@ etiddit:
 evep:
   conda:
     bcftools: 1.9=h4da6232_0
-    htslib: 1.9-hc238db4_4
+    htslib: 1.9=hc238db4_4
     pip:
     python: 2.7
   pip:
@@ -196,7 +196,7 @@ evep:
       vep_plugins:
         - LoFtool
         - MaxEntScan
-      version: 93
+      version: 94
 
 # Specify environment names
 environment_name:
