@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Star_aln;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln };
@@ -139,11 +140,9 @@ sub analysis_star_aln {
       qw{ get_module_parameters get_program_attributes get_read_group };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Alignment::Picardtools
-      qw{ picardtools_addorreplacereadgroups };
+    use MIP::Program::Alignment::Picardtools qw{ picardtools_addorreplacereadgroups };
     use MIP::Program::Alignment::Star qw{ star_aln };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -177,27 +176,25 @@ sub analysis_star_aln {
             program_name   => $program_name,
         }
     );
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                file_name_prefixes_ref =>
-                  \@{ $infile_lane_prefix_href->{$sample_id} },
-                outdata_dir    => $active_parameter_href->{outdata_dir},
-                parameter_href => $parameter_href,
-                program_name   => $program_name,
-                temp_directory => $temp_directory,
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => \@{ $infile_lane_prefix_href->{$sample_id} },
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                program_name           => $program_name,
+                temp_directory         => $temp_directory,
             }
         )
     );
@@ -235,7 +232,7 @@ sub analysis_star_aln {
           {sequence_run_type};
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $file_name, $program_info_path ) = setup_script(
+        my ( $recipe_file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $core_number,
@@ -300,17 +297,16 @@ sub analysis_star_aln {
 
         star_aln(
             {
-                FILEHANDLE       => $FILEHANDLE,
-                align_intron_max => $active_parameter_href->{align_intron_max},
-                align_mates_gap_max =>
-                  $active_parameter_href->{align_mates_gap_max},
+                FILEHANDLE          => $FILEHANDLE,
+                align_intron_max    => $active_parameter_href->{align_intron_max},
+                align_mates_gap_max => $active_parameter_href->{align_mates_gap_max},
                 align_sjdb_overhang_min =>
                   $active_parameter_href->{align_sjdb_overhang_min},
                 chim_junction_overhang_min =>
                   $active_parameter_href->{chim_junction_overhang_min},
-                chim_segment_min => $active_parameter_href->{chim_segment_min},
-                genome_dir_path  => $referencefile_dir_path,
-                infile_paths_ref => \@fastq_files,
+                chim_segment_min    => $active_parameter_href->{chim_segment_min},
+                genome_dir_path     => $referencefile_dir_path,
+                infile_paths_ref    => \@fastq_files,
                 outfile_name_prefix => $file_path_prefix . $DOT,
                 thread_number       => $core_number,
                 two_pass_mode       => $active_parameter_href->{two_pass_mode},
@@ -338,12 +334,9 @@ sub analysis_star_aln {
                   . $DOT
                   . q{Aligned.sortedByCoord.out}
                   . $outfile_suffix,
-                java_jar => catfile(
-                    $active_parameter_href->{picardtools_path},
-                    q{picard.jar}
-                ),
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
+                java_jar =>
+                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_use_large_pages    => $active_parameter_href->{java_use_large_pages},
                 memory_allocation       => q{Xmx1g},
                 outfile_path            => $file_path,
                 readgroup_id            => $read_group{id},
@@ -407,16 +400,18 @@ sub analysis_star_aln {
                 }
             );
 
-            slurm_submit_job_sample_id_dependency_step_in_parallel(
+            submit_recipe(
                 {
+                    dependency_method       => q{sample_to_sample_parallel},
                     family_id               => $family_id,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
                     log                     => $log,
-                    path                    => $job_id_chain,
+                    job_id_chain            => $job_id_chain,
+                    recipe_file_path        => $recipe_file_path,
+                    recipe_files_tracker    => $infile_index,
                     sample_id               => $sample_id,
-                    sbatch_file_name        => $file_name,
-                    sbatch_script_tracker   => $infile_index,
+                    submission_profile => $active_parameter_href->{submission_profile},
                 }
             );
         }

@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Gatk_splitncigarreads;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -47,7 +48,6 @@ sub analysis_gatk_splitncigarreads {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -63,7 +63,6 @@ sub analysis_gatk_splitncigarreads {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
     my $program_name;
     my $sample_info_href;
     my $sample_id;
@@ -115,8 +114,6 @@ sub analysis_gatk_splitncigarreads {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
         program_name => {
             defined     => 1,
             required    => 1,
@@ -156,13 +153,12 @@ sub analysis_gatk_splitncigarreads {
     use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Gatk qw{ gatk_splitncigarreads };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_processing_metafile_to_sample_info };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING
 
@@ -191,13 +187,12 @@ sub analysis_gatk_splitncigarreads {
             program_name   => $program_name,
         }
     );
-    my ( $core_number, $time, @source_environment_cmds ) =
-      get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
             program_name          => $program_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -230,7 +225,7 @@ sub analysis_gatk_splitncigarreads {
     my $FILEHANDLE      = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    my ( $recipe_file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -262,15 +257,14 @@ sub analysis_gatk_splitncigarreads {
     ## Division by X according to the java heap
     Readonly my $JAVA_MEMORY_ALLOCATION => 12;
     Readonly my $MEMORY_SPLIT           => 1.25;
-    my $node_ram_split =
-      $active_parameter_href->{node_ram_memory} / $MEMORY_SPLIT;
+    my $node_ram_split = $active_parameter_href->{node_ram_memory} / $MEMORY_SPLIT;
     $core_number = floor( $node_ram_split / $JAVA_MEMORY_ALLOCATION );
 
     ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             core_number_requested => $core_number,
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
         }
     );
 
@@ -282,7 +276,7 @@ sub analysis_gatk_splitncigarreads {
         {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            file_path          => $file_path,
+            file_path          => $recipe_file_path,
             program_info_path  => $program_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -301,18 +295,16 @@ sub analysis_gatk_splitncigarreads {
 
         gatk_splitncigarreads(
             {
-                FILEHANDLE  => $XARGSFILEHANDLE,
-                infile_path => $infile_path,
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                memory_allocation => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                outfile_path      => $outfile_path,
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                stderrfile_path => $stderrfile_path,
-                temp_directory  => $temp_directory,
-                verbosity       => $active_parameter_href->{gatk_logging_level},
-                xargs_mode      => 1,
+                FILEHANDLE           => $XARGSFILEHANDLE,
+                infile_path          => $infile_path,
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                outfile_path         => $outfile_path,
+                referencefile_path   => $active_parameter_href->{human_genome_reference},
+                stderrfile_path      => $stderrfile_path,
+                temp_directory       => $temp_directory,
+                verbosity            => $active_parameter_href->{gatk_logging_level},
+                xargs_mode           => 1,
             }
         );
         print {$XARGSFILEHANDLE} $NEWLINE;
@@ -357,15 +349,17 @@ sub analysis_gatk_splitncigarreads {
             }
         );
 
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        submit_recipe(
             {
+                dependency_method       => q{sample_to_sample},
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
