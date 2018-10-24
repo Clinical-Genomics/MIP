@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Salmon_quant;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_salmon_quant };
@@ -139,8 +140,7 @@ sub analysis_salmon_quant {
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Salmon qw{ salmon_quant };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -227,7 +227,7 @@ sub analysis_salmon_quant {
           {sequence_run_type};
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $file_name, $program_info_path ) = setup_script(
+        my ( $recipe_file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $core_number,
@@ -344,16 +344,18 @@ sub analysis_salmon_quant {
                 }
             );
 
-            slurm_submit_job_sample_id_dependency_step_in_parallel(
+            submit_recipe(
                 {
+                    dependency_method       => q{sample_to_sample_parallel},
                     family_id               => $family_id,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
                     log                     => $log,
-                    path                    => $job_id_chain,
+                    job_id_chain            => $job_id_chain,
+                    recipe_file_path        => $recipe_file_path,
+                    recipe_files_tracker    => $infile_index,
                     sample_id               => $sample_id,
-                    sbatch_file_name        => $file_name,
-                    sbatch_script_tracker   => $infile_index
+                    submission_profile => $active_parameter_href->{submission_profile},
                 }
             );
         }
