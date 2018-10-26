@@ -120,7 +120,7 @@ sub set_file_prefix_tag {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $current_chain         => Name of current chain
-##          : $family_id             => Family id {REF}
+##          : $case_id             => Family id {REF}
 ##          : $file_tag              => File tag to set
 ##          : $file_info_href        => Info on files hash {REF}
 ##          : $id                    => To change id for
@@ -333,7 +333,7 @@ sub set_io_files {
 ## Function : Set the io files per chain and stream
 ## Returns  : io
 ## Arguments: $chain_id       => Chain of recipe
-##          : $id             => Id (sample or family)
+##          : $id             => Id (sample or case)
 ##          : $file_info_href => File info hash {REF}
 ##          : $file_paths_ref => File paths {REF}
 ##          : $recipe_name    => Recipe name
@@ -531,7 +531,7 @@ sub _set_io_files_constant {
 ## Function : Set the io files per chain and stream for constant features
 ## Returns  : io
 ## Arguments: $chain_id       => Chain of recipe
-##          : $id             => Id (sample or family)
+##          : $id             => Id (sample or case)
 ##          : $file_info_href => File info hash {REF}
 ##          : $stream         => Stream (in or out or temp)
 
@@ -614,7 +614,7 @@ sub _set_io_files_hash {
 ## Function : Set the io hash files per chain, id, recipe and stream
 ## Returns  : io
 ## Arguments: $chain_id       => Chain of recipe
-##          : $id             => Id (sample or family)
+##          : $id             => Id (sample or case)
 ##          : $file_info_href => File info hash {REF}
 ##          : $file_paths_ref => File paths {REF}
 ##          : $recipe_name    => Recipe name

@@ -8,7 +8,7 @@ email_types:
   - FAIL
 exome_target_bed:
   GRCh37_agilent_sureselect_targets_cre_-v1-.bed: 'sample-1,sample-2'
-family_id: family_1
+case_id: case_1
 human_genome_reference: human_genome.fasta
 java_use_large_pages: 1
 max_cores_per_node: 16

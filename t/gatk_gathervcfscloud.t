@@ -75,41 +75,37 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_paths_ref => {
-        inputs_ref => [
-            catfile(qw{ path to family_chr1.vcf }),
-            catfile(qw{ path to family_chr2.vcf })
-        ],
+        inputs_ref =>
+          [ catfile(qw{ path to case_chr1.vcf }), catfile(qw{ path to case_chr2.vcf }) ],
         expected_output => q{--input}
           . $SPACE
-          . catfile(qw{ path to family_chr1.vcf})
+          . catfile(qw{ path to case_chr1.vcf})
           . $SPACE
           . q{--input}
           . $SPACE
-          . catfile(qw{ path to family_chr2.vcf}),
+          . catfile(qw{ path to case_chr2.vcf}),
     },
     outfile_path => {
-        input           => catfile(qw{ path to family.vcf }),
-        expected_output => q{--output } . catfile(qw{ path to family.vcf }),
+        input           => catfile(qw{ path to case.vcf }),
+        expected_output => q{--output } . catfile(qw{ path to case.vcf }),
     },
 );
 
 my %specific_argument = (
     infile_paths_ref => {
-        inputs_ref => [
-            catfile(qw{ path to family_chr1.vcf }),
-            catfile(qw{ path to family_chr2.vcf })
-        ],
+        inputs_ref =>
+          [ catfile(qw{ path to case_chr1.vcf }), catfile(qw{ path to case_chr2.vcf }) ],
         expected_output => q{--input}
           . $SPACE
-          . catfile(qw{ path to family_chr1.vcf})
+          . catfile(qw{ path to case_chr1.vcf})
           . $SPACE
           . q{--input}
           . $SPACE
-          . catfile(qw{ path to family_chr2.vcf}),
+          . catfile(qw{ path to case_chr2.vcf}),
     },
     outfile_path => {
-        input           => catfile(qw{ path to family.vcf }),
-        expected_output => q{--output } . catfile(qw{ path to family.vcf }),
+        input           => catfile(qw{ path to case.vcf }),
+        expected_output => q{--output } . catfile(qw{ path to case.vcf }),
     },
     ignore_safety_checks => {
         input           => 1,

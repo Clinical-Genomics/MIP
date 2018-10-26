@@ -41,7 +41,7 @@ sub build_rd_rna_meta_files {
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $log                     => Log object to write to
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 

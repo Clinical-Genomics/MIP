@@ -45,13 +45,13 @@ sub analysis_vcf2cytosure {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $bin_size                => Bin size
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
@@ -67,7 +67,7 @@ sub analysis_vcf2cytosure {
 
     ## Default(s)
     my $bin_size;
-    my $family_id;
+    my $case_id;
     my $temp_directory;
 
     my $tmpl = {
@@ -83,9 +83,9 @@ sub analysis_vcf2cytosure {
             strict_type => 1,
             store       => \$bin_size
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -176,10 +176,10 @@ sub analysis_vcf2cytosure {
     my %io = parse_io_outfiles(
         {
             chain_id         => $job_id_chain,
-            id               => $family_id,
+            id               => $case_id,
             file_info_href   => $file_info_href,
             outdata_dir      => $active_parameter_href->{outdata_dir},
-            file_name_prefix => $family_id,
+            file_name_prefix => $case_id,
             iterators_ref    => $active_parameter_href->{sample_ids},
             parameter_href   => $parameter_href,
             recipe_name      => $recipe_name,
@@ -210,7 +210,7 @@ sub analysis_vcf2cytosure {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $family_id,
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -227,11 +227,11 @@ sub analysis_vcf2cytosure {
     ## Store file info from ".bam", ".tab" and ".vcf"
     my %vcf2cytosure_file_info;
 
-    ### Get family vcf from sv_anno
+    ### Get case vcf from sv_anno
     ## Get the io infiles per chain and id
-    my %family_io = get_io_files(
+    my %case_io = get_io_files(
         {
-            id             => $family_id,
+            id             => $case_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => q{sv_annotate},
@@ -239,12 +239,12 @@ sub analysis_vcf2cytosure {
             temp_directory => $temp_directory,
         }
     );
-    my $infile_path_prefix = $family_io{out}{file_path_prefix};
-    my $infile_suffix      = $family_io{out}{file_suffix};
+    my $infile_path_prefix = $case_io{out}{file_path_prefix};
+    my $infile_suffix      = $case_io{out}{file_suffix};
     my $infile_path = $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-    my $temp_infile_path_prefix = $family_io{temp}{file_path_prefix};
+    my $temp_infile_path_prefix = $case_io{temp}{file_path_prefix};
     my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
-    $vcf2cytosure_file_info{$family_id}{in}{$infile_suffix} =
+    $vcf2cytosure_file_info{$case_id}{in}{$infile_suffix} =
       $temp_infile_path;
 
     ## Copy file(s) to temporary directory
@@ -376,7 +376,7 @@ sub analysis_vcf2cytosure {
             {
                 exclude      => $active_parameter_href->{vcf2cytosure_exclude_filter},
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $vcf2cytosure_file_info{$family_id}{in}{q{.vcf}},
+                infile_path  => $vcf2cytosure_file_info{$case_id}{in}{q{.vcf}},
                 samples_ref  => [$sample_id],
                 outfile_path => $bcftools_temp_outfile_path,
             }
@@ -432,8 +432,8 @@ sub analysis_vcf2cytosure {
 
         submit_recipe(
             {
-                dependency_method       => q{family_to_island},
-                family_id               => $family_id,
+                dependency_method       => q{case_to_island},
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,

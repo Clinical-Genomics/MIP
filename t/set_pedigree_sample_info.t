@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -104,7 +100,7 @@ Readonly my $SAMPLE_3_INDEX   => 3;
 my %active_parameter;
 
 my %pedigree = (
-    family  => q{family_1},
+    case    => q{case_1},
     samples => [
         {
             analysis_type => q{wes},
@@ -181,16 +177,14 @@ foreach my $pedigree_sample_href ( @{ $pedigree{samples} } ) {
 
     foreach my $key ( keys %{$pedigree_sample_href} ) {
 
-        is(
-            $sample_info{sample}{$sample_id}{$key},
-            $pedigree_sample_href->{$key},
-            q{Set key: }
+        is( $sample_info{sample}{$sample_id}{$key}, $pedigree_sample_href->{$key},
+                q{Set key: }
               . $key
               . q{ to '}
               . $pedigree_sample_href->{$key}
               . q{' for '}
-              . $sample_id . q{'}
-        );
+              . $sample_id
+              . q{'} );
     }
 }
 
@@ -227,8 +221,7 @@ is( $sample_info{sample}{sample_3}{analysis_type}, undef,
       . $pedigree{samples}[$SAMPLE_3_INDEX]{analysis_type}
       . q{' for ' sample_3 '} );
 
-is( $active_parameter{sample_ids},
-    undef, q{Did not set sample_ids to active parameter} );
+is( $active_parameter{sample_ids}, undef, q{Did not set sample_ids to active parameter} );
 
 done_testing();
 

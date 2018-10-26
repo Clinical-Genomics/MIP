@@ -39,7 +39,7 @@ sub build_rtg_prerequisites {
 ## Function : Creates the Rtg prerequisites for the human genome
 ## Returns  :
 ## Arguments: $active_parameter_href        => Active parameters for this analysis hash {REF}
-##          : $family_id                    => Family id
+##          : $case_id                    => Family id
 ##          : $file_info_href               => File info hash {REF}
 ##          : $human_genome_reference       => Human genome reference
 ##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
@@ -48,7 +48,7 @@ sub build_rtg_prerequisites {
 ##          : $parameter_href               => Parameter hash {REF}
 ##          : $recipe_name                 => Program name
 ##          : $parameter_build_suffixes_ref => The rtg reference associated directory suffixes {REF}
-##          : $sample_info_href             => Info on samples and family hash {REF}
+##          : $sample_info_href             => Info on samples and case hash {REF}
 ##          : $temp_directory               => Temporary directory
 
     my ($arg_href) = @_;
@@ -65,7 +65,7 @@ sub build_rtg_prerequisites {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $human_genome_reference;
     my $temp_directory;
 
@@ -77,9 +77,9 @@ sub build_rtg_prerequisites {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -176,7 +176,7 @@ sub build_rtg_prerequisites {
         {
             active_parameter_href => $active_parameter_href,
             FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
+            directory_id          => $case_id,
             job_id_href           => $job_id_href,
             log                   => $log,
             recipe_directory      => $recipe_name,
@@ -252,7 +252,7 @@ sub build_rtg_prerequisites {
         submit_recipe(
             {
                 dependency_method  => q{island_to_samples},
-                family_id          => $family_id,
+                case_id            => $case_id,
                 job_id_href        => $job_id_href,
                 log                => $log,
                 job_id_chain       => $job_id_chain,

@@ -645,7 +645,7 @@ delly_call:
   outfile_suffix: ".bcf"
   type: recipe
 delly_reformat:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -680,7 +680,7 @@ delly_types:
    - INS
   type: recipe_argument
 expansionhunter:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -700,7 +700,7 @@ expansionhunter_repeat_specs_dir:
   type: path
   update_path: absolute_path
 manta:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -713,7 +713,7 @@ manta:
   recipe_type: structural_variant_callers
   type: recipe
 tiddit:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -740,7 +740,7 @@ tiddit_minimum_number_supporting_pairs:
   default: 6
   type: recipe_argument
 sv_combinevariantcallsets:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -771,7 +771,7 @@ sv_vt_decompose:
   default: 0
   type: recipe_argument
 sv_annotate:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -858,7 +858,7 @@ sv_vcfanno_lua:
   reference: reference_dir
   type: path
 vcf2cytosure:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
     - mip
   data_type: SCALAR
@@ -902,7 +902,7 @@ vcf2cytosure_var_size:
   default: 0
   type: recipe_argument
 sv_varianteffectpredictor:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -946,7 +946,7 @@ sv_vep_plugins:
    - LoFtool
   type: recipe_argument
 sv_vcfparser:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1008,7 +1008,7 @@ sv_vcfparser_vep_transcripts:
   default: 0
   type: recipe_argument
 sv_rankvariant:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1022,7 +1022,7 @@ sv_genmod_annotate_regions:
   data_type: SCALAR
   default: 0
   type: recipe_argument
-sv_genmod_models_family_type:
+sv_genmod_models_case_type:
   associated_recipe:
    - sv_rankvariant
   data_type: SCALAR
@@ -1050,7 +1050,7 @@ sv_rank_model_file:
   type: path
 ##Sv_reformat
 sv_reformat:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1070,7 +1070,7 @@ sv_reformat_remove_genes_file:
   type: path
 ##Bcftools
 bcftools_mpileup:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1090,7 +1090,7 @@ bcftools_mpileup_filter_variant:
   type: recipe_argument
 ##Freebayes
 freebayes:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1170,7 +1170,7 @@ gatk_haplotypecaller_snp_known_set:
   type: path
 ## GATK Genotype Calibration
 gatk_genotypegvcfs:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1188,7 +1188,7 @@ gatk_genotypegvcfs_ref_gvcf:
   reference: reference_dir
   type: path
 gatk_gathervcfs:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1206,7 +1206,7 @@ gatk_gathervcfs_bcf_file:
   default: 0
   type: recipe_argument
 gatk_variantrecalibration:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1299,7 +1299,7 @@ gatk_variantrecalibration_trust_all_polymorphic:
   default: 0
   type: recipe_argument
 gatk_combinevariantcallsets:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1327,7 +1327,7 @@ gatk_combinevariants_prioritize_caller:
   mandatory: no
   type: recipe_argument
 prepareforvariantannotationblock:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1337,7 +1337,7 @@ prepareforvariantannotationblock:
   type: recipe
 ##rhocall
 rhocall:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1358,7 +1358,7 @@ rhocall_frequency_file:
   type: path
 ##VT
 vt:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1396,7 +1396,7 @@ vt_uniq:
   default: 0
   type: recipe_argument
 frequency_filter:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1472,7 +1472,7 @@ gatk_varianteval_gold:
   type: path
 ## VEP
 varianteffectpredictor:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1540,7 +1540,7 @@ vep_plugins_dir_path:
   update_path: absolute_path
 ## VCFParser
 vcfparser:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1597,7 +1597,7 @@ vcfparser_vep_transcripts:
   type: recipe_argument
 ## SnpEFF
 snpeff:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1671,7 +1671,7 @@ snpeff_path:
   update_path: absolute_path
 ## Case_check
 peddy:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1682,7 +1682,7 @@ peddy:
    - bcftools
   type: recipe
 plink:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1693,7 +1693,7 @@ plink:
    - bcftools
   type: recipe
 variant_integrity:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1759,7 +1759,7 @@ nist_id:
   type: recipe_argument
 ## RankVariant
 rankvariant:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1791,7 +1791,7 @@ genmod_annotate_spidex_file:
   exists_check: file
   reference: reference_dir
   type: path
-genmod_models_family_type:
+genmod_models_case_type:
   associated_recipe:
    - rankvariant
    - variant_integrity
@@ -1820,7 +1820,7 @@ rank_model_file:
   type: path
 ##Endvariantannotationblock
 endvariantannotationblock:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1846,7 +1846,7 @@ endvariantannotationblock_remove_genes_file:
   type: path
 ## QCCollect
 qccollect:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1876,7 +1876,7 @@ qccollect_skip_evaluation:
   type: recipe_argument
 ## MultiQC
 multiqc:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1893,7 +1893,7 @@ multiqc_per_sample:
   type: recipe_argument
 ## AnalysisRunStatus
 analysisrunstatus:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -1902,7 +1902,7 @@ analysisrunstatus:
   type: recipe
 ## Sacct
 sacct:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR

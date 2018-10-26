@@ -509,7 +509,7 @@ sub get_program_version {
 ##          : $cmd                   => Command line call
 ##          : $parameter_name        => Parameter to add version from
 ##          : $regexp                => Regexp to use for getting version
-##          : $sample_info_href      => Info on samples and family hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 

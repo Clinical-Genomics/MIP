@@ -39,7 +39,7 @@ sub build_bwa_prerequisites {
 ## Function : Creates the Bwa prerequisites
 ## Returns  :
 ## Arguments: $active_parameter_href        => Active parameters for this analysis hash {REF}
-##          : $family_id                    => Family id
+##          : $case_id                    => Family id
 ##          : $file_info_href               => File info hash {REF}
 ##          : $human_genome_reference       => Human genome reference
 ##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
@@ -48,7 +48,7 @@ sub build_bwa_prerequisites {
 ##          : $parameter_build_suffixes_ref => The bwa reference associated file endings {REF}
 ##          : $parameter_href               => Parameter hash {REF}
 ##          : $recipe_name                 => Program name
-##          : $sample_info_href             => Info on samples and family hash {REF}
+##          : $sample_info_href             => Info on samples and case hash {REF}
 ##          : $temp_directory               => Temporary directory
 
     my ($arg_href) = @_;
@@ -65,7 +65,7 @@ sub build_bwa_prerequisites {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $human_genome_reference;
     my $temp_directory;
 
@@ -77,9 +77,9 @@ sub build_bwa_prerequisites {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -175,7 +175,7 @@ sub build_bwa_prerequisites {
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            directory_id          => $family_id,
+            directory_id          => $case_id,
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
             log                   => $log,
@@ -251,7 +251,7 @@ sub build_bwa_prerequisites {
         submit_recipe(
             {
                 dependency_method  => q{island_to_samples},
-                family_id          => $family_id,
+                case_id            => $case_id,
                 job_id_href        => $job_id_href,
                 log                => $log,
                 job_id_chain       => $job_id_chain,

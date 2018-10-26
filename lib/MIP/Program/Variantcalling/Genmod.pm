@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Genmod;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -114,12 +115,10 @@ sub genmod_annotate {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
-        spidex_file_path => { strict_type => 1, store => \$spidex_file_path, },
-        temp_directory_path =>
-          { strict_type => 1, store => \$temp_directory_path, },
-        thousand_g_file_path =>
-          { strict_type => 1, store => \$thousand_g_file_path, },
-        verbosity => {
+        spidex_file_path     => { strict_type => 1, store => \$spidex_file_path, },
+        temp_directory_path  => { strict_type => 1, store => \$temp_directory_path, },
+        thousand_g_file_path => { strict_type => 1, store => \$thousand_g_file_path, },
+        verbosity            => {
             allow       => qr/ ^\w+$ /sxm,
             strict_type => 1,
             store       => \$verbosity,
@@ -247,9 +246,8 @@ sub genmod_compound {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
-        temp_directory_path =>
-          { strict_type => 1, store => \$temp_directory_path },
-        thread_number => {
+        temp_directory_path => { strict_type => 1, store => \$temp_directory_path },
+        thread_number       => {
             default     => 0,
             allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
@@ -431,8 +429,8 @@ sub genmod_models {
 
 ## Function : Perl wrapper for writing Genmod models recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
-## Arguments: $family_file                  => Family file
-##          : $family_type                  => Setup of family file
+## Arguments: $case_file                    => Family file
+##          : $case_type                    => Setup of family file
 ##          : $FILEHANDLE                   => Filehandle to write to
 ##          : $infile_path                  => Infile path to read from
 ##          : $outfile_path                 => Outfile path to write to
@@ -449,8 +447,8 @@ sub genmod_models {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $family_file;
-    my $family_type;
+    my $case_file;
+    my $case_type;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
@@ -467,16 +465,16 @@ sub genmod_models {
     my $whole_gene;
 
     my $tmpl = {
-        family_file => {
+        case_file => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$family_file
+            store       => \$case_file
         },
-        family_type => {
+        case_type => {
             allow       => [qw{ped alt cmms mip }],
             strict_type => 1,
-            store       => \$family_type
+            store       => \$case_type
         },
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
@@ -500,9 +498,8 @@ sub genmod_models {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
-        temp_directory_path =>
-          { strict_type => 1, store => \$temp_directory_path },
-        thread_number => {
+        temp_directory_path => { strict_type => 1, store => \$temp_directory_path },
+        thread_number       => {
             default     => 1,
             allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
@@ -544,17 +541,16 @@ sub genmod_models {
         push @commands, q{--temp_dir} . $SPACE . $temp_directory_path;
     }
 
-    ## Family file
-    push @commands, q{--family_file} . $SPACE . $family_file;
+    ## Case file
+    push @commands, q{--family_file} . $SPACE . $case_file;
 
-    if ($family_type) {
+    if ($case_type) {
 
-        push @commands, q{--family_type} . $SPACE . $family_type;
+        push @commands, q{--family_type} . $SPACE . $case_type;
     }
     if ($reduced_penetrance_file_path) {
 
-        push @commands,
-          q{--reduced_penetrance} . $SPACE . $reduced_penetrance_file_path;
+        push @commands, q{--reduced_penetrance} . $SPACE . $reduced_penetrance_file_path;
     }
     if ($thread_number) {
 
@@ -601,8 +597,8 @@ sub genmod_score {
 
 ## Function : Perl wrapper for writing Genmod score recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
-## Arguments: $family_file             => Family file
-##          : $family_type             => Setup of family file
+## Arguments: $case_file               => Family file
+##          : $case_type               => Setup of family file
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $infile_path             => Infile path to read from
 ##          : $outfile_path            => Outfile path to write to
@@ -617,8 +613,8 @@ sub genmod_score {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $family_file;
-    my $family_type;
+    my $case_file;
+    my $case_type;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
@@ -633,16 +629,16 @@ sub genmod_score {
     my $verbosity;
 
     my $tmpl = {
-        family_file => {
+        case_file => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$family_file
+            store       => \$case_file
         },
-        family_type => {
+        case_type => {
             allow       => [qw{ ped alt cmms mip }],
             strict_type => 1,
-            store       => \$family_type
+            store       => \$case_type
         },
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
@@ -676,9 +672,8 @@ sub genmod_score {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
-        temp_directory_path =>
-          { strict_type => 1, store => \$temp_directory_path },
-        verbosity => {
+        temp_directory_path => { strict_type => 1, store => \$temp_directory_path },
+        verbosity           => {
             allow       => qr/ ^\w+$ /sxm,
             strict_type => 1,
             store       => \$verbosity
@@ -703,12 +698,12 @@ sub genmod_score {
         push @commands, q{--temp_dir} . $SPACE . $temp_directory_path;
     }
 
-    ## Family file
-    push @commands, q{--family_file} . $SPACE . $family_file;
+    ## Case file
+    push @commands, q{--family_file} . $SPACE . $case_file;
 
-    if ($family_type) {
+    if ($case_type) {
 
-        push @commands, q{--family_type} . $SPACE . $family_type;
+        push @commands, q{--family_type} . $SPACE . $case_type;
     }
     if ($rank_result) {
 

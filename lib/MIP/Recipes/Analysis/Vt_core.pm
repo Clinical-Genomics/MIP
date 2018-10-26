@@ -44,7 +44,7 @@ sub analysis_vt_core {
 ##          : $contig                  => The contig to extract {OPTIONAL, REF}
 ##          : $core_number             => The number of cores to allocate
 ##          : $decompose               => Vt program decompose for splitting multiallelic variants
-##          : $family_id               => The family ID
+##          : $case_id               => The case ID
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -69,7 +69,7 @@ sub analysis_vt_core {
     my $cmd_break;
     my $core_number;
     my $decompose;
-    my $family_id;
+    my $case_id;
     my $gnu_sed;
     my $human_genome_reference;
     my $instream;
@@ -124,10 +124,10 @@ sub analysis_vt_core {
             strict_type => 1,
             store       => \$decompose
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
             strict_type => 1,
-            store       => \$family_id
+            store       => \$case_id
         },
         FILEHANDLE => { store => \$FILEHANDLE },
         gnu_sed    => {
@@ -231,7 +231,7 @@ sub analysis_vt_core {
         {
             active_parameter_href => $active_parameter_href,
             core_number           => $core_number,
-            directory_id          => $family_id,
+            directory_id          => $case_id,
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
             log                   => $log,
@@ -397,7 +397,7 @@ sub analysis_vt_core {
 
         slurm_submit_job_no_dependency_add_to_samples(
             {
-                family_id        => $family_id,
+                case_id          => $case_id,
                 job_id_href      => $job_id_href,
                 log              => $log,
                 path             => $job_id_chain,
@@ -420,7 +420,7 @@ sub analysis_vt_core_rio {
 ##          : $contig                  => The contig to extract {OPTIONAL, REF}
 ##          : $core_number             => The number of cores to allocate
 ##          : $decompose               => Vt program decompose for splitting multiallelic variants
-##          : $family_id               => The family ID
+##          : $case_id               => The case ID
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $gnu_sed                 => Sed program for changing vcf #FORMAT field in variant vcfs
 ##          : $human_genome_reference  => Human genome reference
@@ -449,7 +449,7 @@ sub analysis_vt_core_rio {
     my $cmd_break;
     my $core_number;
     my $decompose;
-    my $family_id;
+    my $case_id;
     my $gnu_sed;
     my $human_genome_reference;
     my $instream;
@@ -494,10 +494,10 @@ sub analysis_vt_core_rio {
             strict_type => 1,
             store       => \$decompose
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
             strict_type => 1,
-            store       => \$family_id
+            store       => \$case_id
         },
         FILEHANDLE => { store => \$FILEHANDLE },
         gnu_sed    => {

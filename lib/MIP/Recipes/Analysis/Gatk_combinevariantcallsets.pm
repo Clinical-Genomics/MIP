@@ -41,13 +41,13 @@ sub analysis_gatk_combinevariantcallsets {
 ## Function : GATK CombineVariants to combine all variants call from different callers.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
@@ -62,7 +62,7 @@ sub analysis_gatk_combinevariantcallsets {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $temp_directory;
 
     my $tmpl = {
@@ -73,9 +73,9 @@ sub analysis_gatk_combinevariantcallsets {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -185,9 +185,9 @@ sub analysis_gatk_combinevariantcallsets {
     my %io = parse_io_outfiles(
         {
             chain_id               => $job_id_chain,
-            id                     => $family_id,
+            id                     => $case_id,
             file_info_href         => $file_info_href,
-            file_name_prefixes_ref => [$family_id],
+            file_name_prefixes_ref => [$case_id],
             outdata_dir            => $active_parameter_href->{outdata_dir},
             parameter_href         => $parameter_href,
             recipe_name            => $recipe_name,
@@ -208,7 +208,7 @@ sub analysis_gatk_combinevariantcallsets {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $family_id,
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -234,7 +234,7 @@ sub analysis_gatk_combinevariantcallsets {
         ## Get the io infiles per chain and id
         my %sample_io = get_io_files(
             {
-                id             => $family_id,
+                id             => $case_id,
                 file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
                 recipe_name    => $variant_caller,
@@ -331,8 +331,8 @@ sub analysis_gatk_combinevariantcallsets {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_family},
-                family_id               => $family_id,
+                dependency_method       => q{sample_to_case},
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,

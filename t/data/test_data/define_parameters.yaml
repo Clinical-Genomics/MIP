@@ -13,7 +13,7 @@ cluster_constant_path:
    - mip
   data_type: SCALAR
   type: path
-family_id:
+case_id:
   associated_recipe:
    - mip
   data_type: SCALAR

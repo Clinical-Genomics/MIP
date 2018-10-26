@@ -47,13 +47,13 @@ sub create_fam_file {
 ## Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using execution_mode=sbatch.
 ## Returns  :
 ## Arguments: $active_parameter_href => The ac:tive parameters for this analysis hash {REF}
+##          : $case_id               => Case_id
 ##          : $execution_mode        => Either system (direct) or via sbatch
-##          : $fam_file_path         => The family file path
-##          : $family_id_ref         => The family_id {REF}
+##          : $fam_file_path         => Case file path
 ##          : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
 ##          : $include_header        => Wether to include header ("1") or not ("0")
 ##          : $parameter_href        => Hash with paremters from yaml file {REF}
-##          : $sample_info_href      => Info on samples and family hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -65,8 +65,8 @@ sub create_fam_file {
     my $sample_info_href;
 
     ## Default(s)
+    my $case_id;
     my $execution_mode;
-    my $family_id_ref;
     my $include_header;
 
     my $tmpl = {
@@ -75,6 +75,11 @@ sub create_fam_file {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         execution_mode => {
@@ -87,11 +92,6 @@ sub create_fam_file {
             defined     => 1,
             required    => 1,
             store       => \$fam_file_path,
-            strict_type => 1,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id_ref,
             strict_type => 1,
         },
         FILEHANDLE => {
@@ -136,7 +136,7 @@ sub create_fam_file {
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-        my $sample_line = ${$family_id_ref};
+        my $sample_line = $case_id;
 
       HEADER:
         foreach my $header (@fam_headers) {
@@ -215,7 +215,7 @@ q{Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a }
         }
     }
 
-    ## Add newly created family file to qc_sample_info
+    ## Add newly created case file to qc_sample_info
     $sample_info_href->{pedigree_minimal} = $fam_file_path;
 
     return;
@@ -226,7 +226,7 @@ sub detect_founders {
 ## Function  : Detect number of founders (i.e. parents ) based on pedigree file
 ## Returns   : "scalar @founders"
 ## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
-##           : $sample_info_href      => Info on samples and family hash {REF}
+##           : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -294,7 +294,7 @@ sub detect_sample_id_gender {
 ## Function : Detect gender of the current analysis
 ## Returns  : "$found_male $found_female $found_other $found_other_count"
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $sample_info_href      => Info on samples and family hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -356,11 +356,11 @@ sub detect_sample_id_gender {
 
 sub detect_trio {
 
-## Function  : Detect family constellation based on pedigree file
+## Function  : Detect case constellation based on pedigree file
 ## Returns   : undef | 1
 ## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
 ##           : $log                   => Log
-##           : $sample_info_href      => Info on samples and family hash {REF}
+##           : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -430,7 +430,7 @@ sub gatk_pedigree_flag {
 
 ## Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 ## Returns  : %command
-## Arguments: $fam_file_path            => The family file path
+## Arguments: $fam_file_path            => The case file path
 ##          : $pedigree_validation_type => The pedigree validation strictness level
 
     my ($arg_href) = @_;
@@ -461,14 +461,14 @@ sub gatk_pedigree_flag {
     my $parent_counter;
     my $pq_parent_counter = _build_parent_child_counter_regexp(
         {
-            family_member => q{parent},
+            case_member => q{parent},
         }
     );
 
     my $child_counter;
     my $pq_child_counter = _build_parent_child_counter_regexp(
         {
-            family_member => q{child},
+            case_member => q{child},
         }
     );
 
@@ -492,13 +492,13 @@ sub gatk_pedigree_flag {
 
 sub parse_yaml_pedigree_file {
 
-## Function : Parse family info in YAML pedigree file. Check pedigree data for allowed entries and correct format. Add data to sample_info and active_parameter depending on user info.
+## Function : Parse case info in YAML pedigree file. Check pedigree data for allowed entries and correct format. Add data to sample_info and active_parameter depending on user info.
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $file_path             => Pedigree file path
 ##          : $parameter_href        => Parameter hash {REF}
 ##          : $pedigree_href         => Pedigree hash {REF}
-##          : $sample_info_href      => Info on samples and family hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -552,13 +552,13 @@ sub parse_yaml_pedigree_file {
       qw{ check_founder_id check_pedigree_mandatory_key check_pedigree_sample_allowed_values check_pedigree_vs_user_input_sample_ids };
     use MIP::Get::Parameter qw{ get_capture_kit get_user_supplied_info };
     use MIP::Set::Pedigree
-      qw{ set_active_parameter_pedigree_keys set_pedigree_capture_kit_info set_pedigree_family_info set_pedigree_phenotype_info set_pedigree_sample_info set_pedigree_sex_info };
+      qw{ set_active_parameter_pedigree_keys set_pedigree_capture_kit_info set_pedigree_case_info set_pedigree_phenotype_info set_pedigree_sample_info set_pedigree_sex_info };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Use to collect which sample_ids have used a certain capture_kit
-    my $family_id = $pedigree_href->{family};
+    my $case_id = $pedigree_href->{case};
 
     ## User supplied sample_ids via cmd or config
     my @user_input_sample_ids;
@@ -572,15 +572,15 @@ sub parse_yaml_pedigree_file {
         }
     );
 
-    ## Check that supplied cmd and YAML pedigree family_id match
-    if ( $pedigree_href->{family} ne $active_parameter_href->{family_id} ) {
+    ## Check that supplied cmd and YAML pedigree case_id match
+    if ( $pedigree_href->{case} ne $active_parameter_href->{case_id} ) {
 
         $log->fatal( q{Pedigree file: }
               . $file_path
-              . q{ for  pedigree family_id: '}
-              . $pedigree_href->{family}
-              . q{' and supplied family: '}
-              . $active_parameter_href->{family_id}
+              . q{ for  pedigree case_id: '}
+              . $pedigree_href->{case}
+              . q{' and supplied case: '}
+              . $active_parameter_href->{case_id}
               . q{' does not match} );
         exit 1;
     }
@@ -609,7 +609,7 @@ sub parse_yaml_pedigree_file {
         @user_input_sample_ids = @{ $active_parameter_href->{sample_ids} };
     }
 
-    set_pedigree_family_info(
+    set_pedigree_case_info(
         {
             pedigree_href    => $pedigree_href,
             sample_info_href => $sample_info_href,
@@ -697,7 +697,7 @@ sub reload_previous_pedigree_info {
 ## Returns  :
 ## Arguments: $log                   => Log object to write to
 ##          : $sample_info_file_path => Previuos sample info file
-##          : $sample_info_href      => Info on samples and family hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -755,18 +755,18 @@ sub _build_parent_child_counter_regexp {
 
 ## Function : Create regexp to count the number of parents / children
 ## Returns  : $regexp
-## Arguments: $family_member => Parent or child
+## Arguments: $case_member => Parent or child
 
     my ($arg_href) = @_;
 
     ## Flatten argument
-    my $family_member;
+    my $case_member;
 
     my $tmpl = {
-        family_member => {
+        case_member => {
             defined  => 1,
             required => 1,
-            store    => \$family_member,
+            store    => \$case_member,
         },
     };
 
@@ -776,15 +776,14 @@ sub _build_parent_child_counter_regexp {
     my $regexp = q?perl -ne '?;
 
     ## Add parent or child, according to which one needs to be counted
-    $regexp .= q?my $? . $family_member . $UNDERSCORE . q?counter=0; ?;
+    $regexp .= q?my $? . $case_member . $UNDERSCORE . q?counter=0; ?;
 
     ## Split line around tab if it's not a comment
     $regexp .=
 q?while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) ?;
 
     ## Increment the counter
-    $regexp .=
-      q?{ $? . $family_member . q?++} } } print $? . $family_member . q?; last;'?;
+    $regexp .= q?{ $? . $case_member . q?++} } } print $? . $case_member . q?; last;'?;
 
     return $regexp;
 }
@@ -794,7 +793,7 @@ sub _update_sample_info_hash {
 ## Function : Update sample_info with information from pedigree from previous run. Required e.g. if only updating single sample analysis chains from trio.
 ## Returns  : %{$previous_sample_info_href}
 ## Arguments: $previous_sample_info_href => Allowed parameters from pedigre file hash {REF}
-##          : $sample_info_href          => Info on samples and family hash {REF}
+##          : $sample_info_href          => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 

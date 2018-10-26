@@ -89,22 +89,22 @@ add_recipe_metafile_to_sample_info(
 
 ## Test
 is( exists $sample_info{recipe}{$test_recipe_name}{$metafile},
-    1, q{Created family level hash key} );
+    1, q{Created case level hash key} );
 
 is( $sample_info{recipe}{$test_recipe_name}{$metafile}{directory},
-    $directory, q{Assigned correct value to family level directory} );
+    $directory, q{Assigned correct value to case level directory} );
 
 is( $sample_info{recipe}{$test_recipe_name}{$metafile}{file},
-    $file, q{Assigned correct value to family level file} );
+    $file, q{Assigned correct value to case level file} );
 
 is( $sample_info{recipe}{$test_recipe_name}{$metafile}{path},
-    $path, q{Assigned correct value to family level path} );
+    $path, q{Assigned correct value to case level path} );
 
 is( $sample_info{recipe}{$test_recipe_name}{$metafile}{version},
-    $version, q{Assigned correct value to family level version} );
+    $version, q{Assigned correct value to case level version} );
 
 is( $sample_info{recipe}{$test_recipe_name}{$metafile}{processed_by},
-    $processed_by, q{Assigned correct value to family level processed_by} );
+    $processed_by, q{Assigned correct value to case level processed_by} );
 
 ## Sample level
 my $sample_id = q{test_sample_id};

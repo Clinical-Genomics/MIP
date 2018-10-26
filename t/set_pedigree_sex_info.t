@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -98,7 +94,7 @@ diag(   q{Test set_pedigree_sex_info from Pedigree.pm v}
       . $EXECUTABLE_NAME );
 
 my %pedigree = (
-    family  => q{family_1},
+    case    => q{case_1},
     samples => [
         {
             analysis_type => q{wes},

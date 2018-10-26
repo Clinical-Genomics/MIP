@@ -43,8 +43,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -91,16 +90,16 @@ diag(
 );
 
 ## Base arguments
-my $family_id           = q{family1};
+my $case_id             = q{case1};
 my $sample_id           = q{sample2};
 my $path                = q{MAIN};
-my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
+my $case_id_chain_key   = $case_id . $UNDERSCORE . $path;
 my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 my $infile_index        = 0;
 my $sample_id_parallel_chain_key =
   $sample_id . $UNDERSCORE . q{parallel} . $UNDERSCORE . $path . $infile_index;
 
-my $family_id_chain_key_other = $family_id . $UNDERSCORE . q{OTHER};
+my $case_id_chain_key_other = $case_id . $UNDERSCORE . q{OTHER};
 
 my @sample_ids = ( $sample_id, qw{sample4} );
 my @parallel_chains = qw{OTHER};
@@ -112,16 +111,16 @@ my %infile_lane_prefix = (
 );
 
 my %job_id = (
-    $family_id_chain_key => {
+    $case_id_chain_key => {
         $sample_id_chain_key          => [qw{job_id_1 job_id_2}],
         q{sample2_MAIN}               => [qw{job_id_3}],
         q{sample3_MAIN}               => [qw{job_id_4 job_id_5}],
         $sample_id_parallel_chain_key => [qw{job_id_10 job_id_11}],
-        $family_id_chain_key          => [qw{job_id_6}],
+        $case_id_chain_key            => [qw{job_id_6}],
     },
-    $family_id_chain_key_other => {
-        q{sample4_OTHER}           => [qw{job_id_12 job_id_13}],
-        $family_id_chain_key_other => [qw{job_id_14}],
+    $case_id_chain_key_other => {
+        q{sample4_OTHER}         => [qw{job_id_12 job_id_13}],
+        $case_id_chain_key_other => [qw{job_id_14}],
     },
 );
 
@@ -132,7 +131,7 @@ my $job_id_string = add_parallel_chains_job_ids_to_job_id_dependency_string(
         job_id_href         => \%job_id,
         sample_ids_ref      => \@sample_ids,
         parallel_chains_ref => \@parallel_chains,
-        family_id           => $family_id,
+        case_id             => $case_id,
     }
 );
 

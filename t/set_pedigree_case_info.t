@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -86,9 +82,9 @@ BEGIN {
     }
 }
 
-use MIP::Set::Pedigree qw{ set_pedigree_family_info };
+use MIP::Set::Pedigree qw{ set_pedigree_case_info };
 
-diag(   q{Test set_pedigree_family_info from Pedigree.pm v}
+diag(   q{Test set_pedigree_case_info from Pedigree.pm v}
       . $MIP::Set::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -98,16 +94,16 @@ diag(   q{Test set_pedigree_family_info from Pedigree.pm v}
       . $EXECUTABLE_NAME );
 
 my %sample_info;
-my %pedigree = ( family => q{family_1}, );
+my %pedigree = ( case => q{case_1}, );
 
-set_pedigree_family_info(
+set_pedigree_case_info(
     {
         pedigree_href    => \%pedigree,
         sample_info_href => \%sample_info,
     }
 );
 
-is( $sample_info{family}, q{family_1}, q{Got family key and value} );
+is( $sample_info{case}, q{case_1}, q{Got case key and value} );
 
 done_testing();
 

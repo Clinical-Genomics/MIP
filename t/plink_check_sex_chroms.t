@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -89,7 +85,7 @@ BEGIN {
 use MIP::Program::Variantcalling::Plink qw{ plink_check_sex_chroms };
 use MIP::Test::Commands qw{ test_function };
 
-diag( q{Test plink_check_sex_chroms from MIP::Program::Variantcalling::Plink v}
+diag(   q{Test plink_check_sex_chroms from MIP::Program::Variantcalling::Plink v}
       . $MIP::Program::Variantcalling::Plink::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -116,10 +112,10 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     regions_ref => {
         inputs_ref      => [qw{ 23 24 }],
@@ -130,10 +126,10 @@ my %required_argument = (
         expected_output => q{--split-x} . $SPACE . q{hg19},
     },
     binary_fileset_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--bfile}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
 );
 

@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -98,7 +94,7 @@ diag(   q{Test set_pedigree_phenotype_info from Pedigree.pm v}
       . $EXECUTABLE_NAME );
 
 my %pedigree = (
-    family  => q{family_1},
+    case    => q{case_1},
     samples => [
         {
             analysis_type => q{wes},
@@ -146,11 +142,9 @@ my @got_unaffected_samples = @{ $parameter{dynamic_parameter}{unaffected} };
 my @got_affected_samples   = @{ $parameter{dynamic_parameter}{affected} };
 my @got_unknown_samples    = @{ $parameter{dynamic_parameter}{unknown} };
 
-is( scalar @got_unaffected_samples,
-    1, q{Got all samples with unaffected phenotype} );
+is( scalar @got_unaffected_samples, 1, q{Got all samples with unaffected phenotype} );
 
-is( scalar @got_affected_samples,
-    1, q{Got all samples with affected phenotype} );
+is( scalar @got_affected_samples, 1, q{Got all samples with affected phenotype} );
 
 is( scalar @got_unknown_samples, 2, q{Got all samples with unknown phenotype} );
 
@@ -163,8 +157,7 @@ my $unknown_plink_phenotype =
 
 is( $affected_plink_phenotype, 2, q{Reformated to plink affected phenotype} );
 
-is( $unaffected_plink_phenotype, 1,
-    q{Reformated to plink unaffected phenotype} );
+is( $unaffected_plink_phenotype, 1, q{Reformated to plink unaffected phenotype} );
 
 is( $unknown_plink_phenotype, 0, q{Reformated to plink unknown phenotype} );
 

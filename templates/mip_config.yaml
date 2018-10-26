@@ -10,7 +10,7 @@ module_source_environment_command:
   bwa_mem:
    - source
    - activate
-   - mip_travis_perl_5.26
+   - mip_travis_eperl_5.26
   chanjo_sexcheck:
     - source
     - activate
@@ -26,11 +26,11 @@ module_source_environment_command:
   fastqc:
    - source
    - activate
-   - mip_travis_perl_5.26
+   - mip_travis_eperl_5.26
   freebayes:
     - source
     - activate
-    - mip_travis_freebayes
+    - mip_travis_eperl_5.26
   frequency_filter:
     - source
     - activate
@@ -90,15 +90,15 @@ program_source_environment_command:
    - activate
    - mip_travis_py3
 ## Input
-pedigree_file: cluster_constant_path!/family_id!/family_id!_pedigree.yaml
+pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
 reference_dir: cluster_constant_path!/references
-vcfparser_select_file: cluster_constant_path!/family_id!/aggregated_gene_panel_test.txt
-sv_vcfparser_select_file: cluster_constant_path!/family_id!/aggregated_gene_panel_test.txt
+vcfparser_select_file: cluster_constant_path!/case_id!/aggregated_gene_panel_test.txt
+sv_vcfparser_select_file: cluster_constant_path!/case_id!/aggregated_gene_panel_test.txt
 ## Output
-config_file_analysis: cluster_constant_path!/family_id!/analysis_constant_path!/family_id!_config.yaml
-outdata_dir: cluster_constant_path!/family_id!/analysis_constant_path!
-outscript_dir: cluster_constant_path!/family_id!/analysis_constant_path!/scripts
-sample_info_file: cluster_constant_path!/family_id!/analysis_constant_path!/family_id!_qc_sample_info.yaml
+config_file_analysis: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_config.yaml
+outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
+outscript_dir: cluster_constant_path!/case_id!/analysis_constant_path!/scripts
+sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 ## References
 gatk_genotypegvcfs_ref_gvcf: GRCh37_merged_reference_infiles_-2014-.gvcf
 genmod_annotate_cadd_files:
@@ -127,7 +127,7 @@ sv_vcfannotation_header_lines_file: vcfanno_headerLines_-v1.0-.txt
 sv_vcfanno_config: GRCh37_vcfanno_config_-v1.0-.toml
 sv_vcfanno_lua: vcfanno_custom_-v1.0-.lua
 qccollect_regexp_file: qc_regexp_-v1.15-.yaml
-qccollect_sampleinfo_file: cluster_constant_path!/family_id!/analysis_constant_path!/family_id!_qc_sample_info.yaml
+qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 ### Analysis
 ### Programs
 analysisrunstatus: 1
@@ -209,7 +209,7 @@ sv_bcftools_view_filter: 1
 sv_combinevariantcallsets_bcf_file: 1
 sv_genmod_annotate_regions: 1
 sv_genmod_filter: 1
-sv_genmod_models_family_type: cmms
+sv_genmod_models_case_type: cmms
 sv_svdb_merge_prioritize: manta,delly,cnvnator,tiddit
 sv_svdb_query: 1
 sv_vcfanno: 1

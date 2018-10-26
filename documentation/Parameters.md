@@ -11,7 +11,7 @@ There are 3 types of parameters:
 - "recipe_argument"
 - "path"
 
-The recipe parameter is also know as the analysis recipe switch. It turns on and off the recipe module. A feature of the analysis recipe switch is to decide if the recipe should analyse all samples or operate at the family level. The analysis mode is set as key "analysis_mode: [sample | family]" in the corresponding CLI command level YAML file in the definitions folder.
+The recipe parameter is also know as the analysis recipe switch. It turns on and off the recipe module. A feature of the analysis recipe switch is to decide if the recipe should analyse all samples or operate at the case level. The analysis mode is set as key "analysis_mode: [sample | case]" in the corresponding CLI command level YAML file in the definitions folder.
 
 You should also have the parameter as an option on the command line interface. This is done by adding the parameter to the corresponding CLI perl module in `lib/MIP/Cli`.
  - "mip" i.e. "perl mip -> lib/MIP/Cli/Mip.pm"
@@ -23,7 +23,7 @@ To decide when and where the analysis recipe will be executed you the name of th
 So far we have defined the features of the analysis recipe, added it to the CLI, and decided where and when to execute the recipe module. We also have to point to the actual code of the recipe. This is done by adding your analysis recipe name and the code reference pointing to the analysis recipe perl module to the analysis_recipe hash in the `lib/MIP/Recipe/Pipeline/[Pipeline]` perl module. 
 
 To add an analysis recipe switch follow these steps:
- - Add the parameter at the corresponding CLI command level YAML file in the `definition` folder in the MIP directory. Set the key `analysis_mode`to sample or family.
+ - Add the parameter at the corresponding CLI command level YAML file in the `definition` folder in the MIP directory. Set the key `analysis_mode`to sample or case.
  - Add the parameter to the corresponing CLI perl module in `lib/MIP/Cli` in MIPs lib directory.
  - Add the analysis recipe switch to the initiation map file in the `definition` folder in the MIP directory.
  - Add the parameter name to the `analysis_recipe` hash in the `lib/MIP/Recipes/Pipeline/[Pipeline]` perl module.

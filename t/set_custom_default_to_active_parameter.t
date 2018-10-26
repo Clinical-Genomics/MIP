@@ -46,9 +46,8 @@ BEGIN {
     my %perl_module = (
         q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
         q{MIP::Get::Parameter}     => [qw{ get_capture_kit }],
-        q{MIP::Set::Parameter} =>
-          [qw{ set_custom_default_to_active_parameter }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Set::Parameter}     => [qw{ set_custom_default_to_active_parameter }],
+        q{MIP::Test::Fixtures}     => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -71,11 +70,10 @@ diag(   q{Test set_custom_default_to_active_parameter from Parameter.pm v}
 my $log = test_log();
 
 my %active_parameter = (
-    cluster_constant_path => catfile(qw{ constant path }),
-    conda_path            => catdir( $Bin, qw{ data modules miniconda } ),
-    family_id             => 1,
-    human_genome_reference =>
-      catfile(qw{ a test GRCh37_human_genom_reference.fasta }),
+    cluster_constant_path  => catfile(qw{ constant path }),
+    conda_path             => catdir( $Bin, qw{ data modules miniconda } ),
+    case_id                => 1,
+    human_genome_reference => catfile(qw{ a test GRCh37_human_genom_reference.fasta }),
     module_source_environment_command => {
         gatk                   => [ qw{ source activate test_env }, ],
         varianteffectpredictor => [ qw{ source activate test_env }, ],
@@ -126,8 +124,7 @@ foreach my $parameter_name (@custom_default_parameters) {
 }
 
 ## Then the defaults should be set for each parameter given
-is( $active_parameter{analysis_type}{sample_1},
-    q{wgs}, q{Set analysis_type default} );
+is( $active_parameter{analysis_type}{sample_1}, q{wgs}, q{Set analysis_type default} );
 
 is(
     $active_parameter{bwa_build_reference},
@@ -157,8 +154,8 @@ foreach my $capture_kit ( keys %{ $active_parameter{exome_target_bed} } ) {
 
 my $sample_info_file = catfile(
     $active_parameter{outdata_dir},
-    $active_parameter{family_id},
-    $active_parameter{family_id} . $UNDERSCORE . q{qc_sample_info.yaml}
+    $active_parameter{case_id},
+    $active_parameter{case_id} . $UNDERSCORE . q{qc_sample_info.yaml}
 );
 
 is( $parameter{sample_info_file}{default},
@@ -169,12 +166,11 @@ is( $parameter{qccollect_sampleinfo_file}{default},
 
 my $path = catfile(
     $active_parameter{cluster_constant_path},
-    $active_parameter{family_id},
+    $active_parameter{case_id},
     $active_parameter{analysis_type}{sample_1},
     q{sample_1}, q{fastq}
 );
-is( $active_parameter{infile_dirs}{$path},
-    q{sample_1}, q{Set default infile_dirs} );
+is( $active_parameter{infile_dirs}{$path}, q{sample_1}, q{Set default infile_dirs} );
 
 ok( $active_parameter{expansionhunter_repeat_specs_dir},
     q{Set expansionhunter_repeat_specs_dir} );
@@ -183,8 +179,7 @@ ok( $active_parameter{expansionhunter_repeat_specs_dir},
 my %test_hash = (
     gatk_path        => catdir( $Bin, qw{ data modules GenomeAnalysisTK-3.7 } ),
     picardtools_path => catdir(
-        $active_parameter{conda_path},
-        qw{ envs test_env_1 share picard-2.14.1-0 }
+        $active_parameter{conda_path}, qw{ envs test_env_1 share picard-2.14.1-0 }
     ),
     snpeff_path => catdir( $active_parameter{conda_path}, qw{ share snpeff } ),
     vep_directory_path =>

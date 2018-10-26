@@ -26,7 +26,7 @@ MIP has been in use in the clinical production at the Clinical Genomics facility
 ## Example Usage
 
 ```Bash
-$ mip analyse rd_dna --family_id [family_id] --bwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [family_id_pedigree.yaml]
+$ mip analyse rd_dna --case_id [case_id] --bwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [case_id_pedigree.yaml]
 ```
 
 ## Features
@@ -252,7 +252,7 @@ Example usage:
 $ mip analyse rd_dna -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
 ```
 
-This will analyse family 3 using 3 individuals from that family and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
+This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
 
 #### Input
 
@@ -269,7 +269,7 @@ All references and template files should be placed directly in the reference dir
 
 #### Output
 
-Analyses done per individual is found in each sample_id directory and analyses done including all samples can be found in the family directory.
+Analyses done per individual is found in each sample_id directory and analyses done including all samples can be found in the case directory.
 
 ##### Sbatch Scripts
 

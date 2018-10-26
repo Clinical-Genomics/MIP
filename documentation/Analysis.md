@@ -51,7 +51,7 @@ When not supplying the ``--dra`` flag MIP will launch sbatch submission to slurm
 
 One can use ``--dra`` to generate sbatch scripts which then can be submitted manually by the user individually or sequentially using ``sbatch --dependency=[type]:[jobid]``. Note that this will not update qc_sampleInfo.yaml as this is done at MIP run time.
 
-### Rerun analysis using exactly the same parameters as last analysis run for family 0
+### Rerun analysis using exactly the same parameters as last analysis run for case 0
 
 ```Bash
 $ mip analyse rd_dna --config 0/analysis/0_config.yaml

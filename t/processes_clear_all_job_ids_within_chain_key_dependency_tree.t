@@ -44,8 +44,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -92,15 +91,15 @@ diag(
 );
 
 ## Base arguments
-my $family_id           = q{family1};
+my $case_id             = q{case1};
 my $sample_id           = q{sample1};
 my $path                = q{MAIN};
-my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
+my $case_id_chain_key   = $case_id . $UNDERSCORE . $path;
 my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 my $infile_index        = 0;
 my $sample_id_parallel_chain_key =
   $sample_id . $UNDERSCORE . q{parallel} . $UNDERSCORE . $path . $infile_index;
-my $pan_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+my $pan_chain_key = $case_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
 my %infile_lane_prefix = (
     sample1 => [qw{1_lane1 1_lane2}],
@@ -109,34 +108,34 @@ my %infile_lane_prefix = (
 );
 
 my %job_id = (
-    $family_id_chain_key => {
+    $case_id_chain_key => {
         q{sample1} . $UNDERSCORE . $path => [qw{job_id_1 job_id_2}],
         q{sample2} . $UNDERSCORE . $path => [qw{job_id_3}],
         q{sample3} . $UNDERSCORE . $path => [qw{job_id_4 job_id_5 job_id_8}],
         q{sample4} . $UNDERSCORE . $path => [undef],
         $sample_id_parallel_chain_key    => [qw{job_id_10 job_id_11}],
         $pan_chain_key                   => [qw{job_id_1 job_id_2}],
-        $family_id_chain_key             => [qw{job_id_6}],
+        $case_id_chain_key               => [qw{job_id_6}],
     },
 );
 
-### Clear all job id dependency for family_chain_key
+### Clear all job id dependency for case_chain_key
 
 clear_all_job_ids_within_chain_key_dependency_tree(
     {
-        job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
+        job_id_href       => \%job_id,
+        case_id_chain_key => $case_id_chain_key,
     }
 );
 
 my $result = 0;
-foreach my $key ( keys %{ $job_id{$family_id_chain_key} } ) {
+foreach my $key ( keys %{ $job_id{$case_id_chain_key} } ) {
 
-    $result = $result + scalar @{ $job_id{$family_id_chain_key}{$key} };
+    $result = $result + scalar @{ $job_id{$case_id_chain_key}{$key} };
 }
 
 my $expected_result = 0;
-is( $result, $expected_result, q{Cleared family chain_key job_ids} );
+is( $result, $expected_result, q{Cleared case chain_key job_ids} );
 
 done_testing();
 

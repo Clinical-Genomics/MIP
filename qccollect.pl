@@ -153,8 +153,8 @@ sample_qc(
     }
 );
 
-## Extracts all qcdata on family level using information in %sample_info_file and %regexp
-family_qc(
+## Extracts all qcdata on case level using information in %sample_info_file and %regexp
+case_qc(
     {
         sample_info_href    => \%sample_info,
         regexp_href         => \%regexp,
@@ -240,15 +240,15 @@ sub build_usage {
 END_USAGE
 }
 
-sub family_qc {
+sub case_qc {
 
-## Function : Extracts all qcdata on family level using information in %sample_info_file and %regexp
+## Function : Extracts all qcdata on case level using information in %sample_info_file and %regexp
 ## Returns  :
 ## Arguments: $qc_data_href         => QCData hash {REF}
 ##          : $qc_header_href       => Save header(s) in each outfile {REF}
 ##          : $qc_recipe_data_href  => Hash to save data in each outfile {REF}
 ##          : $regexp_href          => RegExp hash {REF}
-##          : $sample_info_href     => Info on samples and family hash {REF}
+##          : $sample_info_href     => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -361,7 +361,7 @@ sub sample_qc {
 
 ## Function : Collects all sample qc in files defined by sample_info_file and regular expressions defined by regexp.
 ## Returns  :
-## Arguments: $sample_info_href     => Info on samples and family hash {REF}
+## Arguments: $sample_info_href     => Info on samples and case hash {REF}
 ##          : $regexp_href          => RegExp hash {REF}
 ##          : $qc_data_href         => QCData hash {REF}
 ##          : $qc_header_href       => Save header(s) in each outfile {REF}
@@ -665,7 +665,7 @@ sub add_to_qc_data {
 ##           : $qc_recipe_data_href   => Hash to save data in each outfile {REF}
 ##           : $regexp_href           => RegExp hash {REF}
 ##           : $sample_id             => SampleID
-##           : $sample_info_href      => Info on samples and family hash {REF}
+##           : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -751,7 +751,7 @@ sub add_to_qc_data {
                 else {
                     ## Family level
 
-                    ## key-->value for familyID
+                    ## key-->value for caseID
                     $qc_data_href->{recipe}{$recipe}{$regexp_key} =
                       $qc_recipe_data_href->{$recipe}{$regexp_key}[0];
                 }
@@ -909,7 +909,7 @@ sub define_evaluate_metric {
 
 ## Function  : Sets recipes and recipe metrics and thresholds to be evaluated
 ## Returns   :
-## Arguments : $sample_info_href => Info on samples and family hash {REF}
+## Arguments : $sample_info_href => Info on samples and case hash {REF}
 ##           : $sample_id        => Sample ID
 
     my ($arg_href) = @_;
@@ -1038,7 +1038,7 @@ sub evaluate_qc_parameters {
                         q{Status:}
                       . $infile . q{:}
                       . $qc_data_href->{sample}{$sample_id}{$infile};
-                    ## Add to QC data at family level
+                    ## Add to QC data at case level
                     push @{ $qc_data_href->{evaluation}{$infile} }, $status;
                 }
                 next INFILE;
@@ -1194,9 +1194,9 @@ sub check_metric {
 
 sub relation_check {
 
-## Function : Uses the .mibs file produced by PLINK to test if family members are indeed related.
+## Function : Uses the .mibs file produced by PLINK to test if case members are indeed related.
 ## Returns  :
-## Arguments: $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $sample_info_href        => Info on samples and case hash {REF}
 ##          : $qc_data_href            => QCData hash {REF}
 ##          : $sample_orders_ref       => The sample order so that correct estimation can be connected to the correct sample_ids {REF}
 ##          : $relationship_values_ref => All relationship estimations {REF}
@@ -1242,8 +1242,8 @@ sub relation_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-#Stores family relations and pairwise comparisons family{$sample_id}{$sample_id}["column"] -> [pairwise]
-    my %family;
+#Stores case relations and pairwise comparisons case{$sample_id}{$sample_id}["column"] -> [pairwise]
+    my %case;
     my $sample_id_counter  = 0;
     my $incorrect_relation = 0;
     my @pairwise_comparisons;
@@ -1266,10 +1266,10 @@ sub relation_check {
         ## All columns in .mibs file
         for ( my $column = 0 ; $column < scalar(@$sample_orders_ref) ; $column++ ) {
 
-            ## Store sample_id, family membersID (including self) and each pairwise comparison. Uses array for to accomodate sibling info.
+            ## Store sample_id, case membersID (including self) and each pairwise comparison. Uses array for to accomodate sibling info.
             push(
                 @{
-                    $family{ $sample_orders_ref->[$sample_id_counter] }
+                    $case{ $sample_orders_ref->[$sample_id_counter] }
                       { $sample_orders_ref->[$column] }
                 },
                 $pairwise_comparisons[$column]
@@ -1277,15 +1277,15 @@ sub relation_check {
         }
         $sample_id_counter++;
     }
-    ## Father_id for the family
+    ## Father_id for the case
     my $father_id = "YYY";
 
-    ## Mother_id for the family
+    ## Mother_id for the case
     my $mother_id = "XXX";
 
     ## Collect father and mother id
   SAMPLE_ID:
-    for my $sample_id ( keys %family ) {    #For all sample_ids
+    for my $sample_id ( keys %case ) {    #For all sample_ids
 
         ## Currently only 1 father or Mother per pedigree is supported
 
@@ -1303,27 +1303,27 @@ sub relation_check {
     }
 
   SAMPLE_ID:
-    for my $sample_id ( keys %family ) {
+    for my $sample_id ( keys %case ) {
 
       MEMBER:
-        for my $members ( keys %{ $family{$sample_id} } ) {
-            ## For every relation within family (mother/father/child)
+        for my $members ( keys %{ $case{$sample_id} } ) {
+            ## For every relation within case (mother/father/child)
 
           RELATIVES:
             for (
                 my $members_count = 0 ;
-                $members_count < scalar( @{ $family{$sample_id}{$members} } ) ;
+                $members_count < scalar( @{ $case{$sample_id}{$members} } ) ;
                 $members_count++
               )
             {
                 ## Necessary for siblings
 
                 ## Should only hit self
-                if ( $family{$sample_id}{$members}[$members_count] == 1 ) {
+                if ( $case{$sample_id}{$members}[$members_count] == 1 ) {
 
                     if ( $sample_id eq $members ) {
 
-#print "Self: ".$sample_id,"\t", $members, "\t", $family{$sample_id}{$members}[$members_count], "\n";
+#print "Self: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
                     }
                     else {
 
@@ -1331,10 +1331,10 @@ sub relation_check {
                         $qc_data_href->{sample}{$sample_id}{relation_check} =
                           "FAIL: Duplicated sample?;";
 
-#print  "Incorrect should be self: ".$sample_id,"\t", $members, "\t", $family{$sample_id}{$members}[$members_count], "\n";
+#print  "Incorrect should be self: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
                     }
                 }
-                elsif ( $family{$sample_id}{$members}[$members_count] >= 0.70 )
+                elsif ( $case{$sample_id}{$members}[$members_count] >= 0.70 )
                 { #Should include parent to child and child to siblings unless inbreed parents
 
                     if (
@@ -1343,7 +1343,7 @@ sub relation_check {
                             && ( $members ne $mother_id ) )
                       )
                     {    #Correct
-                         #print "Parent-to-child or child-to-child: ".$sample_id,"\t", $members, "\t", $family{$sample_id}{$members}[$members_count], "\n";
+                         #print "Parent-to-child or child-to-child: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
                     }
                     else {
 
@@ -1351,23 +1351,23 @@ sub relation_check {
                         $qc_data_href->{sample}{$sample_id}{relation_check} =
                           "FAIL: Parents related?;";
 
-#print "Incorrect: ".$sample_id,"\t", $members, "\t", $family{$sample_id}{$members}[$members_count], "\n";
+#print "Incorrect: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
                     }
                 }
-                elsif ( $family{$sample_id}{$members}[$members_count] < 0.70 )
+                elsif ( $case{$sample_id}{$members}[$members_count] < 0.70 )
                 {        #Parents unless inbreed
 
                     if (   ( $sample_id eq $father_id )
                         && ( $members eq $mother_id ) )
                     {
 
-#print "Parents: ".$sample_id,"\t", $members, "\t", $family{$sample_id}{$members}[$members_count], "\n";
+#print "Parents: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
                     }
                     elsif (( $sample_id eq $mother_id )
                         && ( $members eq $father_id ) )
                     {
 
-#print "Parents: ".$sample_id,"\t", $members, "\t", $family{$sample_id}{$members}[$members_count], "\n";
+#print "Parents: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
                     }
                     else {
 
@@ -1375,7 +1375,7 @@ sub relation_check {
                         $qc_data_href->{sample}{$sample_id}{relation_check} =
                           "FAIL:" . $sample_id . " not related to " . $members . ";";
 
-#print "Incorrect: ".$sample_id,"\t", $members, "\t", $family{$sample_id}{$members}[$members_count], "\n";
+#print "Incorrect: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
                     }
                 }
             }
@@ -1396,7 +1396,7 @@ sub _chanjo_gender_check {
 ##          : $infile                 => Infile {REF}
 ##          : $qc_data_href           => QCData hash {REF}
 ##          : $sample_id              => Sample ID
-##          : $sample_info_href       => Info on samples and family hash {REF}
+##          : $sample_info_href       => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -1481,7 +1481,7 @@ sub plink_gender_check {
 
 ##Function : Checks that the gender predicted by Plink sexcheck is confirmed in the pedigee for the sample
 ##Returns  :
-##Arguments: $sample_info_href          => Info on samples and family hash {REF}
+##Arguments: $sample_info_href          => Info on samples and case hash {REF}
 ##         : $qc_data_href              => QCData hash {REF}
 ##         : $sample_id_ref             => SampleID {REF}
 ##         : $plink_sexcheck_gender_ref => Plink calculated gender {REF}

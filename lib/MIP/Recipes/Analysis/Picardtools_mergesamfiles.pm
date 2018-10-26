@@ -45,7 +45,7 @@ sub analysis_picardtools_mergesamfiles {
 ## Function : Merges all bam files using Picardtools mergesamfiles within each sampleid and files generated previously (option if provided with '-picardtools_mergesamfiles_previous_bams'). The merged files have to be sorted before attempting to merge.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -53,7 +53,7 @@ sub analysis_picardtools_mergesamfiles {
 ##          : $recipe_name            => Program name
 ##          : $referencefile_path      => Human genome reference file path
 ##          : $sample_id               => Sample id
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -70,7 +70,7 @@ sub analysis_picardtools_mergesamfiles {
     my $sample_id;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $referencefile_path;
     my $temp_directory;
     my $xargs_file_counter;
@@ -83,9 +83,9 @@ sub analysis_picardtools_mergesamfiles {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -478,7 +478,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         submit_recipe(
             {
                 dependency_method       => q{sample_to_sample},
-                family_id               => $family_id,
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
@@ -497,7 +497,7 @@ sub analysis_picardtools_mergesamfiles_rio {
 ## Function :  Merges all bam files using Picardtools mergesamfiles within each sampleid. The merged files have to be sorted before attempting to merge.
 ## Returns  : |$xargs_file_counter
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $file_path               => File path
@@ -507,7 +507,7 @@ sub analysis_picardtools_mergesamfiles_rio {
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $referencefile_path      => Human genome reference file path
 ##          : $sample_id               => Sample id
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $recipe_info_path       => Recipe info path
 ##          : $recipe_name            => Program name
 ##          : $temp_directory          => Temporary directory
@@ -529,7 +529,7 @@ sub analysis_picardtools_mergesamfiles_rio {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $outaligner_dir;
     my $referencefile_path;
     my $temp_directory;
@@ -543,9 +543,9 @@ sub analysis_picardtools_mergesamfiles_rio {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         FILEHANDLE     => { store => \$FILEHANDLE },

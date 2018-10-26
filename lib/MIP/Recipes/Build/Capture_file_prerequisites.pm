@@ -39,7 +39,7 @@ sub build_capture_file_prerequisites {
 ## Function : Creates the target "interval_list" and  "padded.interval_list" files.
 ## Returns  :
 ## Arguments: $active_parameter_href       => Active parameters for this analysis hash {REF}
-##          : $family_id                   => Family ID
+##          : $case_id                   => Family ID
 ##          : $FILEHANDLE                  => Filehandle to write to
 ##          : $file_info_href              => File info hash {REF}
 ##          : $infile_lane_prefix_href     => Infile(s) without the ".ending" {REF}
@@ -48,7 +48,7 @@ sub build_capture_file_prerequisites {
 ##          : $parameter_build_suffixes_ref => Exome target bed associated file endings
 ##          : $parameter_href              => Parameter hash {REF}
 ##          : $recipe_name                => Program name
-##          : $sample_info_href            => Info on samples and family hash {REF}
+##          : $sample_info_href            => Info on samples and case hash {REF}
 ##          : $temp_directory              => Temporary directory
 
     my ($arg_href) = @_;
@@ -66,7 +66,7 @@ sub build_capture_file_prerequisites {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $temp_directory;
 
     my $tmpl = {
@@ -77,9 +77,9 @@ sub build_capture_file_prerequisites {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         FILEHANDLE     => { store => \$FILEHANDLE, },
@@ -174,7 +174,7 @@ sub build_capture_file_prerequisites {
             {
                 active_parameter_href => $active_parameter_href,
                 FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $family_id,
+                directory_id          => $case_id,
                 job_id_href           => $job_id_href,
                 log                   => $log,
                 recipe_directory      => $recipe_name,
@@ -353,7 +353,7 @@ sub build_capture_file_prerequisites {
             submit_recipe(
                 {
                     dependency_method  => q{island_to_samples},
-                    family_id          => $family_id,
+                    case_id            => $case_id,
                     job_id_href        => $job_id_href,
                     log                => $log,
                     job_id_chain       => q{MAIN},

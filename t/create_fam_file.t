@@ -1,92 +1,71 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8};
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };    #Find directory of script
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
-use Getopt::Long;
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
-use File::Temp;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw{ help };
-use MIP::Log::MIP_log4perl qw{ initiate_logger };
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
-our $USAGE = build_usage( {} );
-
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.00;
 
-###User Options
-GetOptions(
-    q{h|help} => sub {
-        done_testing();
-        print {*STDOUT} $USAGE, "\n";
-        exit;
-    },    #Display help text
-    q{v|version} => sub {
-        done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
-        exit;
-    },    #Display version number
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
+
+## Constants
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
+Readonly my $TAB   => qq{\t};
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
-##Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = (
+        q{MIP::File::Format::Pedigree} => [qw{ create_fam_file }],
+        q{MIP::Test::Fixtures}         => [qw{ test_log test_standard_cli }],
+    );
 
-    $perl_module{'MIP::Script::Utils'} = [qw{help}];
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load } . $module;
-    }
-
-##Modules
-    my @modules = (q{MIP::File::Format::Pedigree});
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT qq{Cannot load $module};
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
-
-## Constants
-Readonly my $SPACE => q{ };
-Readonly my $TAB   => qq{\t};
 
 # Ignore the warning from putting '#' in qw{}
 no warnings qw{ qw };
 
-use MIP::File::Format::Pedigree qw(create_fam_file);
-use MIP::Test::Commands qw(test_function);
+use MIP::File::Format::Pedigree qw{ create_fam_file };
+use MIP::Test::Commands qw{ test_function };
 
-diag(
-qq{Test create_fam_file $MIP::File::Format::Pedigree::VERSION, Perl $PERL_VERSION, $EXECUTABLE_NAME}
-);
+diag(   q{Test create_fam_file from Pedigree.pm v}
+      . $MIP::File::Format::Pedigree::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Create test hashes
 my %sample_info_test_hash = (
@@ -114,11 +93,11 @@ my %sample_info_test_hash = (
         },
 
     },
-    family => '118',
+    case => '118',
 );
 
 my %active_parameter_test_hash = (
-    family_id  => q{118},
+    case_id    => q{118},
     sample_ids => [qw{ 118-1-2A 118-2-2U 118-2-1U }],
   ),
 
@@ -132,12 +111,7 @@ my $FILEHANDLE;
 my $test_log_path = catfile( $test_dir, q{test.log} );
 $active_parameter_test_hash{log_file} = $test_log_path;
 
-my $test_log = initiate_logger(
-    {
-        file_path => $active_parameter_test_hash{log_file},
-        log_name  => q{MIP},
-    }
-);
+my $test_log = test_log();
 
 my @execution_modes = qw{ system sbatch };
 for my $execution_mode (@execution_modes) {
@@ -186,12 +160,11 @@ for my $execution_mode (@execution_modes) {
     ok( -e $test_fam_file_path, q{fam file created} );
 
     # Check that headers are included
-    open my $fh, '<', $test_fam_file_path
+    open my $fh, q{<}, $test_fam_file_path
       or croak qq{Could not open $test_fam_file_path for reading};
     my $file_header = <$fh>;
     chomp $file_header;
-    my $expected_header =
-      qq{#family_id\tsample_id\tfather\tmother\tsex\tphenotype};
+    my $expected_header = qq{#family_id\tsample_id\tfather\tmother\tsex\tphenotype};
 
     is( $file_header, $expected_header, q{header included in fam} );
 
@@ -202,7 +175,7 @@ for my $execution_mode (@execution_modes) {
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_test_hash{sample_ids} } ) {
-        my $sample_line = $active_parameter_test_hash{family_id};
+        my $sample_line = $active_parameter_test_hash{case_id};
 
       HEADER:
         foreach my $header ( split $TAB, $expected_header ) {
@@ -220,10 +193,9 @@ for my $execution_mode (@execution_modes) {
     close $fh;
     chomp @pedigree_lines;
 
-    is( @pedigree_lines, @expected_pedigree_lines,
-        q{fam file has correct information} );
+    is( @pedigree_lines, @expected_pedigree_lines, q{fam file has correct information} );
 
-# If the fam file exists when running in sbatch mode no sbatch file will be created
+    # If the fam file exists when running in sbatch mode no sbatch file will be created
     unlink $test_fam_file_path
       or carp qq{Could not unlink $test_fam_file_path};
 }

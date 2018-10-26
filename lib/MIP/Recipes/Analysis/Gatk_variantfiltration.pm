@@ -42,14 +42,14 @@ sub analysis_gatk_variantfiltration {
 ## Function : Gatk variant filtration analysis for rna recipe
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
 ##          : $sample_id               => Sample id
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
@@ -65,7 +65,7 @@ sub analysis_gatk_variantfiltration {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $temp_directory;
 
     my $tmpl = {
@@ -76,9 +76,9 @@ sub analysis_gatk_variantfiltration {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id_ref => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id_ref => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -267,7 +267,7 @@ sub analysis_gatk_variantfiltration {
         submit_recipe(
             {
                 dependency_method       => q{sample_to_sample},
-                family_id               => $family_id,
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,

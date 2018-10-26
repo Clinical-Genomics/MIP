@@ -43,8 +43,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -83,57 +82,50 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes
-  qw{add_sample_job_id_to_family_id_dependency_tree};
+use MIP::Processmanagement::Processes qw{add_sample_job_id_to_case_id_dependency_tree};
 
 diag(
-"Test add_sample_job_id_to_family_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test add_sample_job_id_to_case_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
 my $sample_id           = q{sample3};
 my $path                = q{MAIN};
-my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
+my $case_id_chain_key   = q{case1} . $UNDERSCORE . $path;
 my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 
 my %job_id = (
-    $family_id_chain_key => {
+    $case_id_chain_key => {
         $sample_id_chain_key => [qw{job_id_1 job_id_2}],
         q{sample2_MAIN}      => [qw{job_id_3}],
         q{sample3_MAIN}      => [qw{job_id_4 job_id_5}],
-        $family_id_chain_key => [qw{job_id_6}],
+        $case_id_chain_key   => [qw{job_id_6}],
     },
 );
 
 ### pan jobs
 
-add_sample_job_id_to_family_id_dependency_tree(
+add_sample_job_id_to_case_id_dependency_tree(
     {
         job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
+        case_id_chain_key   => $case_id_chain_key,
         sample_id_chain_key => q{no_sample_chain},
     }
 );
 
-my $no_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$family_id_chain_key} };
+my $no_push_result = join $SPACE, @{ $job_id{$case_id_chain_key}{$case_id_chain_key} };
 is( $no_push_result, q{job_id_6}, q{No sample_id job_id} );
 
-add_sample_job_id_to_family_id_dependency_tree(
+add_sample_job_id_to_case_id_dependency_tree(
     {
         job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
+        case_id_chain_key   => $case_id_chain_key,
         sample_id_chain_key => $sample_id_chain_key,
     }
 );
 
-my $push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$family_id_chain_key} };
-is(
-    $push_result,
-    q{job_id_6 job_id_4 job_id_5},
-    q{Pushed sample_id to family_id job_id}
-);
+my $push_result = join $SPACE, @{ $job_id{$case_id_chain_key}{$case_id_chain_key} };
+is( $push_result, q{job_id_6 job_id_4 job_id_5}, q{Pushed sample_id to case_id job_id} );
 
 done_testing();
 

@@ -51,11 +51,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -103,27 +99,22 @@ diag(   q{Test create_job_id_string_for_sample_id from Processes.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $family_id             = q{family1};
+my $case_id               = q{case1};
 my $sample_id             = q{sample1};
 my $path                  = q{MAIN};
 my $sbatch_script_tracker = 0;
-my $family_id_chain_key   = $family_id . $UNDERSCORE . $path;
+my $case_id_chain_key     = $case_id . $UNDERSCORE . $path;
 my $sample_id_chain_key   = $sample_id . $UNDERSCORE . $path;
 my $sample_id_parallel_chain_key =
-    $sample_id
-  . $UNDERSCORE
-  . q{parallel}
-  . $UNDERSCORE
-  . $path
-  . $sbatch_script_tracker;
+  $sample_id . $UNDERSCORE . q{parallel} . $UNDERSCORE . $path . $sbatch_script_tracker;
 
 my %job_id = (
-    $family_id_chain_key => {
+    $case_id_chain_key => {
         q{sample1} . $UNDERSCORE . $path => [qw{job_id_1 job_id_2}],
         q{sample2} . $UNDERSCORE . $path => [qw{job_id_3}],
         q{sample3} . $UNDERSCORE . $path => [qw{job_id_4 job_id_5 job_id_8}],
         q{sample4} . $UNDERSCORE . $path => [undef],
-        $family_id_chain_key             => [qw{job_id_6}],
+        $case_id_chain_key               => [qw{job_id_6}],
     },
 );
 
@@ -133,9 +124,9 @@ my %job_id = (
 my $job_ids_string = create_job_id_string_for_sample_id(
     {
         job_id_href         => \%job_id,
-        family_id           => $family_id,
+        case_id             => $case_id,
         sample_id           => $sample_id,
-        family_id_chain_key => $family_id_chain_key,
+        case_id_chain_key   => $case_id_chain_key,
         sample_id_chain_key => $sample_id_chain_key,
         path                => $path,
     }
@@ -143,21 +134,20 @@ my $job_ids_string = create_job_id_string_for_sample_id(
 
 ## Then add job_ids for sample1 from MAIN
 my $expected_job_id_string = q{:job_id_1:job_id_2};
-is( $job_ids_string, $expected_job_id_string,
-    q{Added job_id from MAIN job_id chain} );
+is( $job_ids_string, $expected_job_id_string, q{Added job_id from MAIN job_id chain} );
 
 ## Given job id string using job ids from other chain with no previous job ids for sample id
 my $path_other                = q{other};
-my $family_id_chain_key_other = $family_id . $UNDERSCORE . $path_other;
+my $case_id_chain_key_other   = $case_id . $UNDERSCORE . $path_other;
 my $sample_id_chain_key_other = $sample_id . $UNDERSCORE . $path_other;
 
 ## Add job_ids from MAIN chain to job_id_string
 $job_ids_string = create_job_id_string_for_sample_id(
     {
         job_id_href         => \%job_id,
-        family_id           => $family_id,
+        case_id             => $case_id,
         sample_id           => $sample_id,
-        family_id_chain_key => $family_id_chain_key_other,
+        case_id_chain_key   => $case_id_chain_key_other,
         sample_id_chain_key => $sample_id_chain_key_other,
         path                => $path_other,
     }
@@ -174,7 +164,7 @@ is(
 ### Inherit job_ids from other chain
 
 %job_id = (
-    $family_id_chain_key_other => {
+    $case_id_chain_key_other => {
         q{sample1} . $UNDERSCORE . $path_other => [qw{job_id_9 job_id_10}],
     },
 );
@@ -183,9 +173,9 @@ is(
 $job_ids_string = create_job_id_string_for_sample_id(
     {
         job_id_href         => \%job_id,
-        family_id           => $family_id,
+        case_id             => $case_id,
         sample_id           => $sample_id,
-        family_id_chain_key => $family_id_chain_key_other,
+        case_id_chain_key   => $case_id_chain_key_other,
         sample_id_chain_key => $sample_id_chain_key_other,
         path                => $path_other,
     }
@@ -202,16 +192,16 @@ is( $job_ids_string, $expected_job_id_string_other,
 ## Clean-up for new test
 %job_id = ();
 
-$job_id{$family_id_chain_key}{$sample_id_parallel_chain_key} =
+$job_id{$case_id_chain_key}{$sample_id_parallel_chain_key} =
   [qw{ job_id_11 job_id_12 }];
 
 ## Add job_ids from MAIN chain to job_id_string
 $job_ids_string = create_job_id_string_for_sample_id(
     {
         job_id_href           => \%job_id,
-        family_id             => $family_id,
+        case_id               => $case_id,
         sample_id             => $sample_id,
-        family_id_chain_key   => $family_id_chain_key_other,
+        case_id_chain_key     => $case_id_chain_key_other,
         sample_id_chain_key   => $sample_id_chain_key_other,
         path                  => $path_other,
         sbatch_script_tracker => $sbatch_script_tracker,

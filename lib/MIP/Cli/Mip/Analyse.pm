@@ -130,7 +130,7 @@ sub _build_usage {
     );
 
     parameter(
-        q{family_id} => (
+        q{case_id} => (
             documentation => q{Group id of samples to be compared},
             is            => q{rw},
             isa           => Str,

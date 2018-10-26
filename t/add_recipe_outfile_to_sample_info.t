@@ -84,19 +84,19 @@ add_recipe_outfile_to_sample_info(
 );
 
 ## Test
-is( exists $sample_info{recipe}{$test_recipe_name}, 1, q{Created family level hash key} );
+is( exists $sample_info{recipe}{$test_recipe_name}, 1, q{Created case level hash key} );
 
 is( $sample_info{recipe}{$test_recipe_name}{outdirectory},
-    $directory, q{Assigned correct value to family level outdirectory} );
+    $directory, q{Assigned correct value to case level outdirectory} );
 
 is( $sample_info{recipe}{$test_recipe_name}{outfile},
-    $outfile, q{Assigned correct value to family level outfile} );
+    $outfile, q{Assigned correct value to case level outfile} );
 
 is( $sample_info{recipe}{$test_recipe_name}{path},
-    $path, q{Assigned correct value to family level path} );
+    $path, q{Assigned correct value to case level path} );
 
 is( $sample_info{recipe}{$test_recipe_name}{version},
-    $version, q{Assigned correct value to family level version} );
+    $version, q{Assigned correct value to case level version} );
 
 ## Sample level, without infile
 my $sample_id = q{test_sample_id};

@@ -66,7 +66,7 @@ my $aggregate_gene_panel_file =
   catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
 my $aggregate_gene_panels_key = q{select_file};
 my $gene_panel                = q{TEST};
-my $family_id_test            = q{family_id};
+my $case_id_test              = q{case_id};
 my $recipe_name_test          = q{vcfparser};
 my %sample_info;
 
@@ -81,7 +81,7 @@ add_gene_panel(
     {
         aggregate_gene_panel_file => $aggregate_gene_panel_file,
         aggregate_gene_panels_key => $aggregate_gene_panels_key,
-        family_id                 => $family_id_test,
+        case_id                   => $case_id_test,
         recipe_name               => $recipe_name_test,
         sample_info_href          => \%sample_info,
     }

@@ -12,7 +12,7 @@ The parameters that MIP support are recorded in a yaml file format. The order of
 The define parameters file has the following data structure and keys:
 ```
 recipe: { # Recipe hash
-  analysis_mode: string, value="sample | family" # Mode for running the analysis recipe
+  analysis_mode: string, value="sample | case" # Mode for running the analysis recipe
   associated_recipe: [
     - string, value="mip | <recipe>" # Evaluate parameter if associated recipe is active. Ties recipe argument to one or several recipes.
   ]

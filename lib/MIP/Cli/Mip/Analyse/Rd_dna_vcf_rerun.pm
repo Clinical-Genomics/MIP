@@ -29,7 +29,7 @@ command_short_description(q{Rare disease DNA vcf rerun analysis});
 command_long_description(
     q{Rare disease DNA vcf rerun analysis on wes, wgs or mixed sequence data});
 
-command_usage(q{mip <analyse> <rd_dna_vcf_rerun> <family_id> --config <config_file> });
+command_usage(q{mip <analyse> <rd_dna_vcf_rerun> <case_id> --config <config_file> });
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -508,7 +508,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{sv_genmod_models_family_type} => (
+        q{sv_genmod_models_case_type} => (
             cmd_aliases   => [qw{ svravgft }],
             cmd_flag      => q{sv_genmod_mod_fam_typ},
             cmd_tags      => [q{Default: mip}],
@@ -987,7 +987,7 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
     );
 
     option(
-        q{genmod_models_family_type} => (
+        q{genmod_models_case_type} => (
             cmd_aliases   => [qw{ ravgft }],
             cmd_flag      => q{genmod_mod_fam_typ},
             cmd_tags      => [q{Default: mip}],

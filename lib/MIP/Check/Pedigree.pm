@@ -92,7 +92,7 @@ sub check_founder_id {
 
 sub check_pedigree_mandatory_key {
 
-## Function : Check that the pedigree family mandatory keys are present
+## Function : Check that the pedigree case mandatory keys are present
 ## Returns  :
 ## Arguments: $file_path     => Pedigree file path
 ##          : $log           => Log object
@@ -124,13 +124,13 @@ sub check_pedigree_mandatory_key {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @mandatory_family_keys = qw{ family samples };
+    my @mandatory_case_keys   = qw{ case samples };
     my @mandatory_sample_keys = qw{ sample_id father mother sex phenotype };
 
     ### Family
-    ## Check mandatory family keys
+    ## Check mandatory case keys
   MANDATORY_KEY:
-    foreach my $key (@mandatory_family_keys) {
+    foreach my $key (@mandatory_case_keys) {
 
         next MANDATORY_KEY if ( exists $pedigree_href->{$key} );
 

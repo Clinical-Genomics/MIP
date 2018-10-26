@@ -45,16 +45,16 @@ sub add_gene_panel {
 ## Returns  :
 ## Arguments: $aggregate_gene_panel_file => The database file
 ##          : $aggregate_gene_panels_key => The database key i.e. select or range
-##          : $family_id                 => The family ID
+##          : $case_id                 => The case ID
 ##          : $recipe_name               => Recipe name
-##          : $sample_info_href          => Info on samples and family hash {REF}
+##          : $sample_info_href          => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $aggregate_gene_panel_file;
     my $aggregate_gene_panels_key;
-    my $family_id;
+    my $case_id;
     my $recipe_name;
     my $sample_info_href;
 
@@ -67,10 +67,10 @@ sub add_gene_panel {
             store       => \$aggregate_gene_panels_key,
             strict_type => 1,
         },
-        family_id => {
+        case_id => {
             defined     => 1,
             required    => 1,
-            store       => \$family_id,
+            store       => \$case_id,
             strict_type => 1,
         },
         recipe_name => {
@@ -175,7 +175,7 @@ sub add_gene_panel {
             %gene_panel = ();
         }
 
-        # Call add_processing_metafile_to_sample_info with family parameter
+        # Call add_processing_metafile_to_sample_info with case parameter
         add_processing_metafile_to_sample_info(
             {
                 metafile_tag     => $aggregate_gene_panels_key,
@@ -205,7 +205,7 @@ sub add_infile_info {
 ##          : $lane_tracker                    => Counts the number of lanes sequenced {REF}
 ##          : $read_length                     => Sequence read length
 ##          : $sample_id                       => Sample id
-##          : $sample_info_href                => Info on samples and family hash {REF}
+##          : $sample_info_href                => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -421,7 +421,7 @@ sub add_most_complete_vcf {
 ## Arguments: $active_parameter_href     => Active parameters for this analysis hash {REF}
 ##          : $path                      => Path to file
 ##          : $recipe_name               => Recipe name
-##          : $sample_info_href          => Info on samples and family hash {REF}
+##          : $sample_info_href          => Info on samples and case hash {REF}
 ##          : $vcf_file_key              => Key for labelling most complete vcf
 ##          : $vcfparser_outfile_counter => Number of outfile files from in vcfParser (select, range)
 
@@ -494,7 +494,7 @@ sub add_parameter_to_sample_info {
 ##Returns  :
 ##Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##         : $key_to_add            => Key and value to add
-##         : $sample_info_href      => Info on samples and family hash {REF}
+##         : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -546,7 +546,7 @@ sub add_recipe_outfile_to_sample_info {
 ##          : $path             => Path of file
 ##          : $recipe_name      => Recipe name
 ##          : $sample_id        => Sample_id for data at sample level {Optional}
-##          : $sample_info_href => Records on samples and family hash {REF}
+##          : $sample_info_href => Records on samples and case hash {REF}
 ##          : $version          => Version of file
 
     my ($arg_href) = @_;
@@ -646,12 +646,12 @@ sub add_recipe_outfile_to_sample_info {
 
 sub add_processing_metafile_to_sample_info {
 
-## Function : Adds metafile path from sample_id|family_id processing to sample_info to track all metafiles and extract downstream
+## Function : Adds metafile path from sample_id|case_id processing to sample_info to track all metafiles and extract downstream
 ## Returns  :
 ## Arguments: $metafile_tag     => Id tag of meta file
 ##          : $path             => Path of file
 ##          : $sample_id        => Sample_id for data at sample level {Optional}
-##          : $sample_info_href => Records on samples and family hash {REF}
+##          : $sample_info_href => Records on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -726,7 +726,7 @@ sub add_recipe_metafile_to_sample_info {
 ##          : $recipe_name      => Recipe name
 ##          : $version          => Version of file
 ##          : $sample_id        => Sample_id for data at sample level {Optional}
-##          : $sample_info_href => Records on samples and family hash {REF}
+##          : $sample_info_href => Records on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -829,11 +829,11 @@ sub add_to_sample_info {
 ## Function : Adds parameter info to sample_info
 ## Returns  :
 ## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
-##          : $family_id_ref          => The family_id_ref {REF}
+##          : $case_id_ref          => The case_id_ref {REF}
 ##          : $file_info_href         => File info hash {REF}
 ##          : $human_genome_reference => Human genome reference
 ##          : $outdata_dir            => Outdata directory
-##          : $sample_info_href       => Info on samples and family hash {REF}
+##          : $sample_info_href       => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -843,7 +843,7 @@ sub add_to_sample_info {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id_ref;
+    my $case_id_ref;
     my $human_genome_reference;
     my $outdata_dir;
 
@@ -855,9 +855,9 @@ sub add_to_sample_info {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id_ref,
+        case_id_ref => {
+            default     => \$arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id_ref,
             strict_type => 1,
         },
         file_info_href => {

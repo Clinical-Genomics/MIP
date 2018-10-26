@@ -24,7 +24,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_active_parameter_pedigree_keys set_pedigree_capture_kit_info set_pedigree_family_info set_pedigree_phenotype_info set_pedigree_sample_info set_pedigree_sex_info };
+      qw{ set_active_parameter_pedigree_keys set_pedigree_capture_kit_info set_pedigree_case_info set_pedigree_phenotype_info set_pedigree_sample_info set_pedigree_sex_info };
 }
 
 ## Constants
@@ -32,11 +32,11 @@ Readonly my $SPACE => q{ };
 
 sub set_active_parameter_pedigree_keys {
 
-## Function : Get the pedigree family keys and values
+## Function : Get the pedigree case keys and values
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $pedigree_href           => YAML pedigree info hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $user_supply_switch_href => The user supplied info switch {REF}
 
     my ($arg_href) = @_;
@@ -80,9 +80,8 @@ sub set_active_parameter_pedigree_keys {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @pedigree_keys =
-      qw{ analysis_type expected_coverage sample_origin time_point };
-    my @sample_ids = @{ $pedigree_href->{samples} };
+    my @pedigree_keys = qw{ analysis_type expected_coverage sample_origin time_point };
+    my @sample_ids    = @{ $pedigree_href->{samples} };
 
   SAMPLE_HREF:
     foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
@@ -105,8 +104,7 @@ sub set_active_parameter_pedigree_keys {
             next PEDIGREE_KEY if ( $user_supply_switch_href->{$pedigree_key} );
 
             ## Add value for sample_id using pedigree info
-            $active_parameter_href->{$pedigree_key}{$sample_id} =
-              $pedigree_value;
+            $active_parameter_href->{$pedigree_key}{$sample_id} = $pedigree_value;
         }
     }
     return;
@@ -119,7 +117,7 @@ sub set_pedigree_capture_kit_info {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $pedigree_href           => YAML pedigree info hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $user_supply_switch_href => The user supplied info switch {REF}
 
     my ($arg_href) = @_;
@@ -200,8 +198,7 @@ sub set_pedigree_capture_kit_info {
         ## No capture kit returned
         next SAMPLE_HREF if ( not $exome_target_bed_file );
 
-        push @{ $exom_target_bed_file_tracker{$exome_target_bed_file} },
-          $sample_id;
+        push @{ $exom_target_bed_file_tracker{$exome_target_bed_file} }, $sample_id;
     }
 
   BED_FILE:
@@ -216,12 +213,12 @@ sub set_pedigree_capture_kit_info {
     return;
 }
 
-sub set_pedigree_family_info {
+sub set_pedigree_case_info {
 
-## Function : Get the pedigree family keys and values
+## Function : Get the pedigree case keys and values
 ## Returns  :
 ## Arguments: $pedigree_href    => YAML pedigree info hash {REF}
-##          : $sample_info_href => Info on samples and family hash {REF}
+##          : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -248,7 +245,7 @@ sub set_pedigree_family_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### Add key and values for family level info
+    ### Add key and values for case level info
   KEY:
     foreach my $key ( keys %{$pedigree_href} ) {
 
@@ -307,8 +304,8 @@ sub set_pedigree_phenotype_info {
         my $sample_id = $pedigree_sample_href->{sample_id};
         my $phenotype = $pedigree_sample_href->{phenotype};
 
-        push @{ $parameter_href->{dynamic_parameter}
-              { $pedigree_sample_href->{phenotype} } },
+        push
+          @{ $parameter_href->{dynamic_parameter}{ $pedigree_sample_href->{phenotype} } },
           $sample_id;
 
         if ( exists $plink_phenotype{$phenotype} ) {
@@ -326,7 +323,7 @@ sub set_pedigree_sample_info {
 ## Returns  :
 ## Arguments: $active_parameter_href     => Active parameters for this analysis hash {REF}
 ##          : $pedigree_href             => YAML pedigree info hash {REF}
-##          : $sample_info_href          => Info on samples and family hash {REF}
+##          : $sample_info_href          => Info on samples and case hash {REF}
 ##          : $user_supply_switch_href   => User supplied info switch {REF}
 ##          : $user_input_sample_ids_ref => User supplied sample_ids via cmd or config
 
@@ -473,8 +470,7 @@ sub set_pedigree_sex_info {
         my $sample_id = $pedigree_sample_href->{sample_id};
         my $sex       = $pedigree_sample_href->{sex};
 
-        push @{ $parameter_href->{dynamic_parameter}
-              { $pedigree_sample_href->{sex} } },
+        push @{ $parameter_href->{dynamic_parameter}{ $pedigree_sample_href->{sex} } },
           $sample_id;
 
         if ( exists $plink_sex{$sex} ) {
@@ -492,7 +488,7 @@ sub _add_pedigree_sample_info {
 ## Returns  :
 ## Arguments: $pedigree_sample_href => YAML sample info hash {REF}
 ##          : $sample_id            => Sample ID
-##          : $sample_info_href     => Info on samples and family hash {REF}
+##          : $sample_info_href     => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 

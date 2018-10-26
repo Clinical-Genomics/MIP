@@ -41,14 +41,14 @@ sub analysis_markduplicates {
 ## Function : Mark duplicated reads using Picardtools markduplicates or Sambamba markduplicates in files generated from alignment (sorted, merged).
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
 ##          : $sample_id               => Sample id
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -65,7 +65,7 @@ sub analysis_markduplicates {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -77,9 +77,9 @@ sub analysis_markduplicates {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -482,7 +482,7 @@ sub analysis_markduplicates {
         submit_recipe(
             {
                 dependency_method       => q{sample_to_sample},
-                family_id               => $family_id,
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
@@ -501,7 +501,7 @@ sub analysis_markduplicates_rio {
 ## Function : Mark duplicated reads using Picardtools markduplicates or Sambamba markduplicates in files generated from alignment (sorted, merged).
 ## Returns  : |$xargs_file_counter
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $file_path               => File path
@@ -512,7 +512,7 @@ sub analysis_markduplicates_rio {
 ##          : $recipe_info_path       => Recipe info path
 ##          : $recipe_name            => Program name
 ##          : $sample_id               => Sample id
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -532,7 +532,7 @@ sub analysis_markduplicates_rio {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $outaligner_dir;
     my $temp_directory;
     my $xargs_file_counter;
@@ -545,9 +545,9 @@ sub analysis_markduplicates_rio {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         FILEHANDLE     => { required => 1, store => \$FILEHANDLE, },

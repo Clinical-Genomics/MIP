@@ -43,8 +43,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -83,8 +82,7 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes
-  qw{add_sample_job_id_to_sample_id_dependency_tree};
+use MIP::Processmanagement::Processes qw{add_sample_job_id_to_sample_id_dependency_tree};
 
 diag(
 "Test add_sample_job_id_to_sample_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
@@ -93,15 +91,15 @@ diag(
 ## Base arguments
 my $sample_id           = q{sample1};
 my $path                = q{MAIN};
-my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
+my $case_id_chain_key   = q{case1} . $UNDERSCORE . $path;
 my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 
 my %job_id = (
-    $family_id_chain_key => {
+    $case_id_chain_key => {
         $sample_id_chain_key => [qw{job_id_1 job_id_2}],
         q{sample2_MAIN}      => [qw{job_id_3}],
         q{sample3_MAIN}      => [qw{job_id_4 job_id_5}],
-        $family_id_chain_key => [qw{job_id_6}],
+        $case_id_chain_key   => [qw{job_id_6}],
     },
 );
 
@@ -112,19 +110,15 @@ my $job_id_returned = q{job_id_7};
 add_sample_job_id_to_sample_id_dependency_tree(
     {
         job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
+        case_id_chain_key   => $case_id_chain_key,
         sample_id_chain_key => $sample_id_chain_key,
         job_id_returned     => $job_id_returned,
     }
 );
 
 my $sample_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
-is(
-    $sample_push_result,
-    q{job_id_1 job_id_2 job_id_7},
-    q{Pushed to sample_id job_id}
-);
+  @{ $job_id{$case_id_chain_key}{$sample_id_chain_key} };
+is( $sample_push_result, q{job_id_1 job_id_2 job_id_7}, q{Pushed to sample_id job_id} );
 
 done_testing();
 

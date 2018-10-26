@@ -44,8 +44,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -91,17 +90,17 @@ diag(
 );
 
 ## Base arguments
-my $sample_id           = q{sample2};
-my $path                = q{MAIN};
-my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
+my $sample_id         = q{sample2};
+my $path              = q{MAIN};
+my $case_id_chain_key = q{case1} . $UNDERSCORE . $path;
 
 my %job_id = (
-    $family_id_chain_key => {
+    $case_id_chain_key => {
         q{sample1} . $UNDERSCORE . $path => [qw{job_id_1 job_id_2}],
         q{sample2} . $UNDERSCORE . $path => [qw{job_id_3}],
         q{sample3} . $UNDERSCORE . $path => [qw{job_id_4 job_id_5 job_id_8}],
         q{sample4} . $UNDERSCORE . $path => [undef],
-        $family_id_chain_key             => [qw{job_id_6}],
+        $case_id_chain_key               => [qw{job_id_6}],
     },
 );
 
@@ -112,14 +111,13 @@ my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 
 my $job_ids_string = add_to_job_id_dependency_string(
     {
-        job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
-        chain_key           => $sample_id_chain_key,
+        job_id_href       => \%job_id,
+        case_id_chain_key => $case_id_chain_key,
+        chain_key         => $sample_id_chain_key,
     }
 );
 my $expected_job_id_string = q{:job_id_3};
-is( $job_ids_string, $expected_job_id_string,
-    q{Added 1 job_id to job_id_string} );
+is( $job_ids_string, $expected_job_id_string, q{Added 1 job_id to job_id_string} );
 
 ## Add 2 job_ids to job_id_string
 $sample_id           = q{sample1};
@@ -128,16 +126,15 @@ $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 ## Add to job_id string
 $job_ids_string = add_to_job_id_dependency_string(
     {
-        job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
-        chain_key           => $sample_id_chain_key,
+        job_id_href       => \%job_id,
+        case_id_chain_key => $case_id_chain_key,
+        chain_key         => $sample_id_chain_key,
     }
 );
 
 $expected_job_id_string = q{:job_id_1:job_id_2};
 
-is( $job_ids_string, $expected_job_id_string,
-    q{Added 2 job_ids to job_id_string} );
+is( $job_ids_string, $expected_job_id_string, q{Added 2 job_ids to job_id_string} );
 
 ## Add 3 job_ids to job_id_string
 $sample_id           = q{sample3};
@@ -146,16 +143,15 @@ $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 ## Add to job_id string
 $job_ids_string = add_to_job_id_dependency_string(
     {
-        job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
-        chain_key           => $sample_id_chain_key,
+        job_id_href       => \%job_id,
+        case_id_chain_key => $case_id_chain_key,
+        chain_key         => $sample_id_chain_key,
     }
 );
 
 $expected_job_id_string = q{:job_id_4:job_id_5:job_id_8};
 
-is( $job_ids_string, $expected_job_id_string,
-    q{Added 3 job_ids to job_id_string} );
+is( $job_ids_string, $expected_job_id_string, q{Added 3 job_ids to job_id_string} );
 
 ## Do not add undef job_ids to job_id_string
 $sample_id           = q{sample4};
@@ -164,16 +160,15 @@ $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 ## Add to job_id string
 $job_ids_string = add_to_job_id_dependency_string(
     {
-        job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
-        chain_key           => $sample_id_chain_key,
+        job_id_href       => \%job_id,
+        case_id_chain_key => $case_id_chain_key,
+        chain_key         => $sample_id_chain_key,
     }
 );
 
 $expected_job_id_string = $EMPTY_STR;
 
-is( $job_ids_string, $expected_job_id_string,
-    q{Nothing was added to job_id_string} );
+is( $job_ids_string, $expected_job_id_string, q{Nothing was added to job_id_string} );
 
 done_testing();
 

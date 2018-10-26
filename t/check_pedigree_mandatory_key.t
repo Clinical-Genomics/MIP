@@ -48,11 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -116,7 +112,7 @@ my $log = initiate_logger(
 );
 
 my %pedigree = (
-    family  => q{family_1},
+    case    => q{case_1},
     samples => [
         {
             analysis_type => q{wes},
@@ -164,8 +160,8 @@ my $is_ok = check_pedigree_mandatory_key(
 ## Then return true
 ok( $is_ok, q{Found all mandatory keys in pedigree yaml file} );
 
-## Given a missing mandatory family key
-delete $pedigree{family};
+## Given a missing mandatory case key
+delete $pedigree{case};
 
 trap {
     check_pedigree_mandatory_key(
@@ -178,12 +174,12 @@ trap {
 };
 
 ## Then exit and throw FATAL log message
-ok( $trap->exit, q{Exit if mandatory family key cannot be found} );
+ok( $trap->exit, q{Exit if mandatory case key cannot be found} );
 like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message if mandatory family key cannot be found} );
+    q{Throw fatal log message if mandatory case key cannot be found} );
 
 # Reinitialize key
-$pedigree{family} = q{family_1};
+$pedigree{case} = q{case_1};
 
 ## Given a missing mandatory sample key
 delete $pedigree{samples}[0]{phenotype};

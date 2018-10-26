@@ -48,11 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -102,16 +98,15 @@ diag(   q{Test check_cmd_config_vs_definition_file from Check::Parameter.pm v}
 ## Given no unique andn hence illegal keys
 my %parameter = load_yaml(
     {
-        yaml_file =>
-          catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
+        yaml_file => catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
     }
 );
 
 my %active_parameter = (
     bwa_mem                 => 1,
     vcfparser_outfile_count => 1,
-    family_id               => q{family_1},    #Add mandatory key default
-    family_1                => 1,
+    case_id                 => q{case_1},    #Add mandatory key default
+    case_1                  => 1,
 );
 
 my $return = check_cmd_config_vs_definition_file(
@@ -137,8 +132,7 @@ trap {
 };
 
 ## Then fatal message should be thrown
-like( $trap->stderr, qr/illegal\s+key/xms,
-    q{Throw fatal message if illegal key} );
+like( $trap->stderr, qr/illegal\s+key/xms, q{Throw fatal message if illegal key} );
 
 done_testing();
 

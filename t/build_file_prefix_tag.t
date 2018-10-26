@@ -68,7 +68,7 @@ my $other_chain   = q{SV};
 my @order_recipes = qw{ bwa_mem pmerge pmark manta };
 
 my %active_parameter = (
-    family_id             => q{simpsons},
+    case_id               => q{simpsons},
     bwa_mem               => 1,
     manta                 => 1,
     pmark                 => 1,

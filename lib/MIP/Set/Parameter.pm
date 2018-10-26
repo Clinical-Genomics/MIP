@@ -267,7 +267,7 @@ sub set_default_to_active_parameter {
     my $parameter_name;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
 
     my $tmpl = {
         parameter_href => {
@@ -297,9 +297,9 @@ sub set_default_to_active_parameter {
             store    => \$log
         },
         parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
-        family_id      => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id        => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
     };
@@ -536,7 +536,7 @@ sub set_no_dry_run_parameters {
 ## Arguments: $analysis_date    => Analysis date
 ##          : $is_dry_run_all   => Dry run boolean
 ##          : $mip_version      => MIP version
-##          : $sample_info_href => Info on samples and family hash {REF}
+##          : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -1370,7 +1370,7 @@ sub _set_infile_dirs {
         }
         my $path = catfile(
             $active_parameter_href->{cluster_constant_path},
-            $active_parameter_href->{family_id},
+            $active_parameter_href->{case_id},
             $active_parameter_href->{analysis_type}{$sample_id},
             $sample_id,
             q{fastq}
@@ -1424,8 +1424,8 @@ sub _set_sample_info_file {
     ## Set sample info file
     $parameter_href->{sample_info_file}{default} = catfile(
         $active_parameter_href->{outdata_dir},
-        $active_parameter_href->{family_id},
-        $active_parameter_href->{family_id} . $UNDERSCORE . q{qc_sample_info.yaml}
+        $active_parameter_href->{case_id},
+        $active_parameter_href->{case_id} . $UNDERSCORE . q{qc_sample_info.yaml}
     );
 
     ## Set qccollect sampleinfo file input

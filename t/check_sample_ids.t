@@ -48,11 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -114,13 +110,13 @@ my $log = initiate_logger(
     }
 );
 
-## Given family_id, when no sample_ids
-my %active_parameter = ( family_id => q{family-1}, );
+## Given case_id, when no sample_ids
+my %active_parameter = ( case_id => q{case-1}, );
 
 trap {
     check_sample_ids(
         {
-            family_id      => $active_parameter{family_id},
+            case_id        => $active_parameter{case_id},
             log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
@@ -131,16 +127,16 @@ trap {
 ok( $trap->exit, q{Exit if the path cannot be found} );
 like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message} );
 
-## Given family_id, when equals sample_ids
+## Given case_id, when equals sample_ids
 %active_parameter = (
-    family_id  => q{sample-1},
+    case_id    => q{sample-1},
     sample_ids => [qw{ sample-1 sample-2 }],
 );
 
 trap {
     check_sample_ids(
         {
-            family_id      => $active_parameter{family_id},
+            case_id        => $active_parameter{case_id},
             log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
@@ -151,16 +147,16 @@ trap {
 ok( $trap->exit, q{Exit if the path cannot be found} );
 like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message} );
 
-## Given family_id, when duplicate sample_ids
+## Given case_id, when duplicate sample_ids
 %active_parameter = (
-    family_id  => q{family-1},
+    case_id    => q{case-1},
     sample_ids => [qw{ sample-1 sample-2 sample-1 }],
 );
 
 trap {
     check_sample_ids(
         {
-            family_id      => $active_parameter{family_id},
+            case_id        => $active_parameter{case_id},
             log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
@@ -171,16 +167,16 @@ trap {
 ok( $trap->exit, q{Exit if the path cannot be found} );
 like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message} );
 
-## Given family_id, when sample_ids contain "-"
+## Given case_id, when sample_ids contain "-"
 %active_parameter = (
-    family_id  => q{family-1},
+    case_id    => q{case-1},
     sample_ids => [qw{ sample_1 sample-2 sample-3 }],
 );
 
 trap {
     check_sample_ids(
         {
-            family_id      => $active_parameter{family_id},
+            case_id        => $active_parameter{case_id},
             log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
@@ -191,15 +187,15 @@ trap {
 ok( $trap->exit, q{Exit if the path cannot be found} );
 like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message} );
 
-## Given family_id, when sample_ids are correct
+## Given case_id, when sample_ids are correct
 %active_parameter = (
-    family_id  => q{family-1},
+    case_id    => q{case-1},
     sample_ids => [qw{ sample-1 sample-2 sample-3 }],
 );
 
 my $is_ok = check_sample_ids(
     {
-        family_id      => $active_parameter{family_id},
+        case_id        => $active_parameter{case_id},
         log            => $log,
         sample_ids_ref => \@{ $active_parameter{sample_ids} },
     }

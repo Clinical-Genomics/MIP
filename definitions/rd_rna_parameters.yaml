@@ -207,7 +207,7 @@ salmon_quant_reference_genome:
   type: path
 ## Blobfish
 blobfish:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -568,7 +568,7 @@ bootstrapann:
   type: recipe
 ## MultiQC
 multiqc:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR
@@ -586,7 +586,7 @@ multiqc_per_sample:
   type: recipe_argument
 ## Sacct
 sacct:
-  analysis_mode: family
+  analysis_mode: case
   associated_recipe:
    - mip
   data_type: SCALAR

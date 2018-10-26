@@ -27,7 +27,7 @@ command_short_description(q{Rare disease RNA analysis});
 
 command_long_description(q{Rare diseae RNA analysis on wts sequence data});
 
-command_usage(q{mip <analyse> <rd_rna> <family_id> --config <config_file> });
+command_usage(q{mip <analyse> <rd_rna> <case_id> --config <config_file> });
 
 ## Define, check and get Cli supplied parameters
 _build_usage();

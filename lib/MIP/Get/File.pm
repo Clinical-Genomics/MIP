@@ -285,7 +285,7 @@ sub get_io_files {
 
 ## Function : Get the io files per chain, id and stream
 ## Returns  : %io
-## Arguments: $id             => Id (sample or family)
+## Arguments: $id             => Id (sample or case)
 ##          : $file_info_href => File info hash {REF}
 ##          : $parameter_href => Parameter hash {REF}
 ##          : $recipe_name    => Recipe name
@@ -559,7 +559,7 @@ sub get_path_entries {
 ## Function  : Collects all recipes outfile path(s) created by MIP as Path->value located in %sample_info.
 ## Returns   :
 ## Arguments : $paths_ref        => Holds the collected paths {REF}
-##           : $sample_info_href => Info on samples and family hash {REF}
+##           : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -942,7 +942,7 @@ sub _inherit_upstream_io_files {
 ## Function : Switch upstream out to recipe in - i.e. inherit from upstream
 ## Returns  : %io
 ## Arguments: $chain_id           => Chain id
-##          : $id                 => Id (sample or family)
+##          : $id                 => Id (sample or case)
 ##          : $file_info_href     => File info hash {REF}
 ##          : $recipe_name        => Recipe name
 ##          : $stream             => Stream (in or out or temp)

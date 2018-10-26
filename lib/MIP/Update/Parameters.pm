@@ -63,7 +63,7 @@ sub update_dynamic_config_parameters {
     return if ( not defined $active_parameter_href->{$parameter_name} );
 
     my @dynamic_parameters =
-      qw{ cluster_constant_path analysis_constant_path family_id outaligner_dir };
+      qw{ cluster_constant_path analysis_constant_path case_id outaligner_dir };
 
   DYNAMIC_PARAMETER:
     foreach my $dynamic_parameter (@dynamic_parameters) {

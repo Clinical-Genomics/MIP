@@ -44,8 +44,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -98,21 +97,21 @@ Readonly my $OVER_MAX_JOB_IDS_TO_TRACK => q{120};
 my @job_ids = ( 0 .. $OVER_MAX_JOB_IDS_TO_TRACK );
 
 ## Base arguments
-my $family_id           = q{family1};
+my $case_id             = q{case1};
 my $sample_id           = q{sample1};
 my $path                = q{MAIN};
-my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
+my $case_id_chain_key   = $case_id . $UNDERSCORE . $path;
 my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-my $pan_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+my $pan_chain_key       = $case_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
 my %job_id = (
-    $family_id_chain_key => {
+    $case_id_chain_key => {
         q{sample1} . $UNDERSCORE . $path => [qw{job_id_1 job_id_2}],
         q{sample2} . $UNDERSCORE . $path => [qw{job_id_3}],
         q{sample3} . $UNDERSCORE . $path => [qw{job_id_4 job_id_5 job_id_8}],
         q{sample4} . $UNDERSCORE . $path => [undef],
         $pan_chain_key                   => [qw{job_id_1 job_id_2}],
-        $family_id_chain_key             => [qw{job_id_6}],
+        $case_id_chain_key               => [qw{job_id_6}],
     },
     q{ALL} => { q{ALL} => [@job_ids], }
 );
@@ -134,13 +133,13 @@ is( $result_ref, $expected_result, q{Limited nr of job_ids in job_id chain} );
 ## Add job_ids from MAIN chain to job_id_string
 limit_job_id_string(
     {
-        job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
-        chain_key           => $sample_id_chain_key,
+        job_id_href       => \%job_id,
+        case_id_chain_key => $case_id_chain_key,
+        chain_key         => $sample_id_chain_key,
     }
 );
 
-$result_ref = scalar @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
+$result_ref      = scalar @{ $job_id{$case_id_chain_key}{$sample_id_chain_key} };
 $expected_result = q{2};
 
 is( $result_ref, $expected_result, q{Keept job_ids in job_id chain} );

@@ -22,7 +22,7 @@ analysis_mode:
   key_data_type: SCALAR
   values:
     - sample
-    - family
+    - case
 outfile_suffix:
   key_data_type: SCALAR
 program_name_path:

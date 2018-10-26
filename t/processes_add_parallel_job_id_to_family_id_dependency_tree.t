@@ -43,8 +43,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -83,68 +82,60 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes
-  qw{add_parallel_job_id_to_family_id_dependency_tree};
+use MIP::Processmanagement::Processes qw{add_parallel_job_id_to_case_id_dependency_tree};
 
 diag(
-"Test add_parallel_job_id_to_family_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test add_parallel_job_id_to_case_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $family_id             = q{family1};
+my $case_id               = q{case1};
 my $sample_id             = q{sample2};
 my $path                  = q{MAIN};
-my $family_id_chain_key   = $family_id . $UNDERSCORE . $path;
+my $case_id_chain_key     = $case_id . $UNDERSCORE . $path;
 my $sample_id_chain_key   = $sample_id . $UNDERSCORE . $path;
 my $sbatch_script_tracker = 0;
-my $family_id_parallel_chain_key =
-    $family_id
-  . $UNDERSCORE
-  . q{parallel}
-  . $UNDERSCORE
-  . $path
-  . $sbatch_script_tracker;
+my $case_id_parallel_chain_key =
+  $case_id . $UNDERSCORE . q{parallel} . $UNDERSCORE . $path . $sbatch_script_tracker;
 
 my %job_id = (
-    $family_id_chain_key => {
-        $sample_id_chain_key          => [qw{job_id_1 job_id_2}],
-        q{sample2_MAIN}               => [qw{job_id_3}],
-        q{sample3_MAIN}               => [qw{job_id_4 job_id_5}],
-        $family_id_parallel_chain_key => [qw{job_id_10 job_id_11}],
-        $family_id_chain_key          => [qw{job_id_6}],
+    $case_id_chain_key => {
+        $sample_id_chain_key        => [qw{job_id_1 job_id_2}],
+        q{sample2_MAIN}             => [qw{job_id_3}],
+        q{sample3_MAIN}             => [qw{job_id_4 job_id_5}],
+        $case_id_parallel_chain_key => [qw{job_id_10 job_id_11}],
+        $case_id_chain_key          => [qw{job_id_6}],
     },
 );
 
 ### Parallel jobs
 
-my $pan_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+my $pan_chain_key = $case_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
-add_parallel_job_id_to_family_id_dependency_tree(
+add_parallel_job_id_to_case_id_dependency_tree(
     {
         job_id_href           => \%job_id,
-        family_id_chain_key   => $family_id_chain_key . q{no_parallel},
-        family_id             => $family_id . q{no_parallel},
+        case_id_chain_key     => $case_id_chain_key . q{no_parallel},
+        case_id               => $case_id . q{no_parallel},
         path                  => $path,
         sbatch_script_tracker => $sbatch_script_tracker,
     }
 );
 
-my $no_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$family_id_chain_key} };
+my $no_push_result = join $SPACE, @{ $job_id{$case_id_chain_key}{$case_id_chain_key} };
 is( $no_push_result, q{job_id_6}, q{No parallel job_ids} );
 
-add_parallel_job_id_to_family_id_dependency_tree(
+add_parallel_job_id_to_case_id_dependency_tree(
     {
         job_id_href           => \%job_id,
-        family_id_chain_key   => $family_id_chain_key,
-        family_id             => $family_id,
+        case_id_chain_key     => $case_id_chain_key,
+        case_id               => $case_id,
         path                  => $path,
         sbatch_script_tracker => $sbatch_script_tracker,
     }
 );
 
-my $pan_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$family_id_chain_key} };
+my $pan_push_result = join $SPACE, @{ $job_id{$case_id_chain_key}{$case_id_chain_key} };
 is(
     $pan_push_result,
     q{job_id_6 job_id_10 job_id_11},

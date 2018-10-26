@@ -66,7 +66,7 @@ diag(   q{Test set_active_parameter_pedigree_keys from Pedigree.pm v}
 my %active_parameter = ( expected_coverage => { sample_1 => 30 }, );
 
 my %pedigree = (
-    family  => q{family_1},
+    case    => q{case_1},
     samples => [
         {
             analysis_type => q{wes},
@@ -145,15 +145,8 @@ my $set_time_point        = $sample_info{sample}{sample_2}{time_point};
 
 is( $set_analysis_type,     q{wes}, q{Set analysis type} );
 is( $set_expected_coverage, undef,  q(Did not set expected coverage) );
-is(
-    $set_sample_origin,
-    $active_parameter{sample_origin}{sample_2},
-    q{Set sample origin}
-);
-is(
-    $set_time_point,
-    $active_parameter{time_point}{sample_2},
-    q{Set time point}
-);
+is( $set_sample_origin, $active_parameter{sample_origin}{sample_2},
+    q{Set sample origin} );
+is( $set_time_point, $active_parameter{time_point}{sample_2}, q{Set time point} );
 
 done_testing();

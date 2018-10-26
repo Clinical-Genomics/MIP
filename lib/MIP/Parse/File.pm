@@ -43,7 +43,7 @@ sub parse_fastq_infiles {
 ##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
 ##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##          : $log                             => Log object
-##          : $sample_info_href                => Info on samples and family hash {REF}
+##          : $sample_info_href                => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -326,7 +326,7 @@ sub parse_io_outfiles {
 ##          : $file_name_prefixes     => Build outfile using file name prefix
 ##          : $file_name_prefixes_ref => Build outfile using file name prefixes {REF}
 ##          : $file_paths_ref         => File paths {REF}
-##          : $id                     => Id (sample or family)
+##          : $id                     => Id (sample or case)
 ##          : $iterators_ref          => Build outfile using iterator (e.g contigs) {REF}
 ##          : $outdata_dir            => Outdata directory
 ##          : $parameter_href         => Parameter hash {REF}

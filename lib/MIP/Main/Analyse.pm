@@ -269,7 +269,7 @@ sub mip_analyse {
           . $active_parameter{log_file} );
 
 ## Parse pedigree file
-## Reads family_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
+## Reads case_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
     # Meta data in YAML format
     if ( defined $active_parameter{pedigree_file} ) {
 
@@ -437,7 +437,7 @@ sub mip_analyse {
         }
     );
 
-## Detect family constellation based on pedigree file
+## Detect case constellation based on pedigree file
     $parameter{dynamic_parameter}{trio} = detect_trio(
         {
             active_parameter_href => \%active_parameter,
@@ -548,10 +548,10 @@ sub mip_analyse {
         }
     );
 
-## Test that the family_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
+## Test that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
     check_sample_ids(
         {
-            family_id      => $active_parameter{family_id},
+            case_id        => $active_parameter{case_id},
             log            => $log,
             sample_ids_ref => \@{ $active_parameter{sample_ids} },
         }
@@ -673,8 +673,8 @@ sub mip_analyse {
             sample_info_href      => \%sample_info,
             execution_mode        => q{system},
             fam_file_path         => catfile(
-                $active_parameter{outdata_dir}, $active_parameter{family_id},
-                $active_parameter{family_id} . '.fam'
+                $active_parameter{outdata_dir}, $active_parameter{case_id},
+                $active_parameter{case_id} . '.fam'
             ),
         }
     );

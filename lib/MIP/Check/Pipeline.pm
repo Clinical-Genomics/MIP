@@ -41,7 +41,7 @@ sub check_rd_dna {
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
 ##          : $parameter_href                  => Parameter hash {REF}
-##          : $sample_info_href                => Info on samples and family hash {REF}
+##          : $sample_info_href                => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -300,7 +300,7 @@ sub check_rd_dna {
         }
     );
 
-    ## Write config file for family
+    ## Write config file for case
     write_mip_config(
         {
             active_parameter_href => $active_parameter_href,
@@ -376,7 +376,7 @@ sub check_rd_rna {
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
 ##          : $parameter_href                  => Parameter hash {REF}
-##          : $sample_info_href                => Info on samples and family hash {REF}
+##          : $sample_info_href                => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -535,7 +535,7 @@ sub check_rd_rna {
         }
     );
 
-    ## Write config file for family
+    ## Write config file for case
     write_mip_config(
         {
             active_parameter_href => $active_parameter_href,
@@ -598,7 +598,7 @@ sub check_rd_dna_vcf_rerun {
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
 ##          : $parameter_href                  => Parameter hash {REF}
-##          : $sample_info_href                => Info on samples and family hash {REF}
+##          : $sample_info_href                => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -755,7 +755,7 @@ sub check_rd_dna_vcf_rerun {
         $log->info($parameter_info);
     }
 
-    ## Write config file for family
+    ## Write config file for case
     write_mip_config(
         {
             active_parameter_href => $active_parameter_href,

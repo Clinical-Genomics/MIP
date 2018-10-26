@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - New pipelines: rd_dna (previous MIP), rd_dna_vcf_rerun (light rerun from rd_dna data) and rd_rna
 - Install now has sbatch features
 - Added initiation_maps for pipeline engine
+- Changed family to case
 - Changed output data dir structure to flat for each ID
 - Removed call type value in file names
 - Renamed option `start_with_program` to `start_with_recipe`

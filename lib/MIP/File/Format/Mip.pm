@@ -35,7 +35,7 @@ sub build_file_prefix_tag {
 ## Function : Build the file tags depending on which modules are used by the user to relevant chain.
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $family_id             => Family id {REF}
+##          : $case_id             => Family id {REF}
 ##          : $file_info_href        => Info on files hash {REF}
 ##          : $order_recipes_ref     => Order of addition to parameter array {REF}
 ##          : $parameter_href        => Parameter hash {REF}
@@ -49,7 +49,7 @@ sub build_file_prefix_tag {
     my $parameter_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
 
     my $tmpl = {
         active_parameter_href => {
@@ -59,9 +59,9 @@ sub build_file_prefix_tag {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -126,15 +126,15 @@ sub build_file_prefix_tag {
             );
         }
 
-        ### Per family_id
+        ### Per case_id
         ## Set file tag for recipe and update sequential build-up of fileending
-        $temp_file_ending{$current_chain}{$family_id} = set_file_prefix_tag(
+        $temp_file_ending{$current_chain}{$case_id} = set_file_prefix_tag(
             {
                 active_parameter_href => $active_parameter_href,
                 current_chain         => $current_chain,
                 file_tag              => $file_tag,
                 file_info_href        => $file_info_href,
-                id                    => $family_id,
+                id                    => $case_id,
                 recipe_name           => $recipe_name,
                 temp_file_ending_href => \%temp_file_ending,
             }

@@ -39,7 +39,7 @@ sub build_human_genome_prerequisites {
 ## Function : Creates the human genome prerequisites using active_parameters{human_genome_reference} as reference.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family ID
+##          : $case_id               => Family ID
 ##          : $FILEHANDLE              => Filehandle to write to. A new sbatch script will be generated if $FILEHANDLE is lacking, else write to exising $FILEHANDLE {Optional}
 ##          : $file_info_href          => File info hash {REF}
 ##          : $human_genome_reference  => Human genome reference
@@ -51,7 +51,7 @@ sub build_human_genome_prerequisites {
 ##          : $recipe_name            => Program under evaluation
 ##          : $random_integer          => The random integer to create temporary file name
 ##          : $reference_dir           => MIP reference directory
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -69,7 +69,7 @@ sub build_human_genome_prerequisites {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $human_genome_reference;
     my $reference_dir;
 
@@ -81,9 +81,9 @@ sub build_human_genome_prerequisites {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         FILEHANDLE     => { store => \$FILEHANDLE, },
@@ -188,7 +188,7 @@ sub build_human_genome_prerequisites {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
                 FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $family_id,
+                directory_id          => $case_id,
                 log                   => $log,
                 recipe_name           => $recipe_name,
                 recipe_directory      => $recipe_name,
@@ -364,7 +364,7 @@ sub build_human_genome_prerequisites {
             submit_recipe(
                 {
                     dependency_method  => q{island_to_samples},
-                    family_id          => $family_id,
+                    case_id            => $case_id,
                     job_id_href        => $job_id_href,
                     log                => $log,
                     job_id_chain       => q{MAIN},

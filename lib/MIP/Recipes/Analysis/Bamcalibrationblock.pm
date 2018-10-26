@@ -48,7 +48,7 @@ sub analysis_bamcalibrationblock {
 ##          : $order_recipes_ref       => Order of recipes
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;

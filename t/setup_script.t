@@ -73,7 +73,7 @@ my $test_dir = File::Temp->newdir();
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
 
-my $directory_id     = q{family_1};
+my $directory_id     = q{case_1};
 my $temp_dir         = catfile($test_dir);
 my $test_recipe_name = q{bwa_mem};
 

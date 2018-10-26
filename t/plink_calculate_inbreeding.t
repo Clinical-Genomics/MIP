@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -116,22 +112,22 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory family_id _data }),
+        input           => catfile(qw{ temp_directory case_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory family_id _data }),
+          . catfile(qw{ temp_directory case_id _data }),
     },
     binary_fileset_prefix => {
-        input           => catfile(qw{ temp_directory family_id _data }),
+        input           => catfile(qw{ temp_directory case_id _data }),
         expected_output => q{--bfile}
           . $SPACE
-          . catfile(qw{ temp_directory family_id _data }),
+          . catfile(qw{ temp_directory case_id _data }),
     },
     extract_file => {
-        input => catfile(qw{ temp_directory family_id _data.prune.in }),
+        input           => catfile(qw{ temp_directory case_id _data.prune.in }),
         expected_output => q{--extract}
           . $SPACE
-          . catfile(qw{ temp_directory family_id _data.prune.in }),
+          . catfile(qw{ temp_directory case_id _data.prune.in }),
     },
 );
 

@@ -44,7 +44,7 @@ sub setup_script {
 ## Returns  : $file_path, $file_info_path . $file_name_version
 ## Arguments: $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##          : $core_number                     => Number of cores to allocate {Optional}
-##          : $directory_id                    => $samplID|$family_id
+##          : $directory_id                    => $sample id | $case_id
 ##          : $email_types_ref                 => Email type
 ##          : $error_trap                      => Error trap switch {Optional}
 ##          : $FILEHANDLE                      => FILEHANDLE to write to

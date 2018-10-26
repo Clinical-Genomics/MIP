@@ -100,7 +100,7 @@ my $is_ok = check_parameter_hash(
 ok( $is_ok, q{No errors in parameters detected} );
 
 ## Given wrong data type, when SCALAR
-$parameter{family_id}{data_type} = [q{wrong_data_type}];
+$parameter{case_id}{data_type} = [q{wrong_data_type}];
 
 trap {
     check_parameter_hash(
@@ -118,10 +118,10 @@ like( $trap->stderr, qr/ARRAY/xms,
     q{Throw fatal log message for wrong data type - array} );
 
 ## Reset parameter
-$parameter{family_id}{data_type} = q{SCALAR};
+$parameter{case_id}{data_type} = q{SCALAR};
 
 ## Given wrong data type, when ARRAY or HASH
-$parameter{family_id}{associated_recipe} = q{not_an_array};
+$parameter{case_id}{associated_recipe} = q{not_an_array};
 
 trap {
     check_parameter_hash(
@@ -139,10 +139,10 @@ like( $trap->stderr, qr/SCALAR/xms,
     q{Throw fatal log message for wrong data type - scalar} );
 
 ## Reset parameter
-$parameter{family_id}{associated_recipe} = [qw{ mip }];
+$parameter{case_id}{associated_recipe} = [qw{ mip }];
 
 ## Given not allowed value
-$parameter{family_id}{data_type} = q{not_valid_value};
+$parameter{case_id}{data_type} = q{not_valid_value};
 
 trap {
     check_parameter_hash(
@@ -163,7 +163,7 @@ like(
 );
 
 ## Given a missing mandatory key
-delete $parameter{family_id}{data_type};
+delete $parameter{case_id}{data_type};
 
 trap {
     check_parameter_hash(

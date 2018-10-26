@@ -47,14 +47,14 @@ sub analysis_mip_vcfparser {
 ## Function : Vcfparser performs parsing of varianteffectpredictor annotated variants
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -71,7 +71,7 @@ sub analysis_mip_vcfparser {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -83,9 +83,9 @@ sub analysis_mip_vcfparser {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -165,7 +165,7 @@ sub analysis_mip_vcfparser {
 ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
-            id             => $family_id,
+            id             => $case_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -221,7 +221,7 @@ sub analysis_mip_vcfparser {
         parse_io_outfiles(
             {
                 chain_id         => $job_id_chain,
-                id               => $family_id,
+                id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
                 iterators_ref    => \@set_outfile_name_suffixes,
@@ -255,7 +255,7 @@ sub analysis_mip_vcfparser {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $family_id,
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -378,7 +378,7 @@ sub analysis_mip_vcfparser {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    family_id                 => $family_id,
+                    case_id                   => $case_id,
                     recipe_name               => $recipe_name,
                     sample_info_href          => $sample_info_href,
                 }
@@ -403,8 +403,8 @@ sub analysis_mip_vcfparser {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_family},
-                family_id               => $family_id,
+                dependency_method       => q{sample_to_case},
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -423,14 +423,14 @@ sub analysis_vcfparser_sv_wes {
 ## Function : Vcfparser performs parsing of varianteffectpredictor annotated wes SV variants
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -446,7 +446,7 @@ sub analysis_vcfparser_sv_wes {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -458,9 +458,9 @@ sub analysis_vcfparser_sv_wes {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -542,7 +542,7 @@ sub analysis_vcfparser_sv_wes {
     ## Unpack parameters
     my %io = get_io_files(
         {
-            id             => $family_id,
+            id             => $case_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -604,7 +604,7 @@ sub analysis_vcfparser_sv_wes {
         parse_io_outfiles(
             {
                 chain_id         => $job_id_chain,
-                id               => $family_id,
+                id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
                 iterators_ref    => \@vcfparser_analysis_types,
@@ -624,7 +624,7 @@ sub analysis_vcfparser_sv_wes {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $family_id,
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -715,7 +715,7 @@ sub analysis_vcfparser_sv_wes {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    family_id        => $arg_href->{active_parameter_href}{family_id},
+                    case_id          => $arg_href->{active_parameter_href}{case_id},
                     recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
@@ -724,8 +724,8 @@ sub analysis_vcfparser_sv_wes {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_family},
-                family_id               => $family_id,
+                dependency_method       => q{sample_to_case},
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -744,21 +744,21 @@ sub analysis_vcfparser_sv_wgs {
 ## Function : Vcfparser performs parsing of varianteffectpredictor annotated ws SV variants
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -779,9 +779,9 @@ sub analysis_vcfparser_sv_wgs {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -863,7 +863,7 @@ sub analysis_vcfparser_sv_wgs {
     ## Unpack parameters
     my %io = get_io_files(
         {
-            id             => $family_id,
+            id             => $case_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -910,7 +910,7 @@ sub analysis_vcfparser_sv_wgs {
         parse_io_outfiles(
             {
                 chain_id         => $job_id_chain,
-                id               => $family_id,
+                id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
                 iterators_ref    => \@vcfparser_analysis_types,
@@ -937,7 +937,7 @@ sub analysis_vcfparser_sv_wgs {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $family_id,
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -1103,7 +1103,7 @@ sub analysis_vcfparser_sv_wgs {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    family_id        => $arg_href->{active_parameter_href}{family_id},
+                    case_id          => $arg_href->{active_parameter_href}{case_id},
                     recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
@@ -1112,8 +1112,8 @@ sub analysis_vcfparser_sv_wgs {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_family},
-                family_id               => $family_id,
+                dependency_method       => q{sample_to_case},
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,

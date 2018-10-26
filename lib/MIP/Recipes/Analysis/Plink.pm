@@ -43,13 +43,13 @@ sub analysis_plink {
 ## Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
@@ -64,7 +64,7 @@ sub analysis_plink {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $temp_directory;
 
     my $tmpl = {
@@ -75,9 +75,9 @@ sub analysis_plink {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -161,7 +161,7 @@ sub analysis_plink {
     ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
-            id             => $family_id,
+            id             => $case_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -230,7 +230,7 @@ sub analysis_plink {
         parse_io_outfiles(
             {
                 chain_id         => $job_id_chain,
-                id               => $family_id,
+                id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
                 iterators_ref    => \@plink_outfiles,
@@ -255,7 +255,7 @@ sub analysis_plink {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $family_id,
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -275,14 +275,14 @@ sub analysis_plink {
     ### SHELL:
 
     my $plink_outfile_prefix =
-      catfile( $outdir_path_prefix, $family_id . $UNDERSCORE . q{data} );
-    my $family_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
+      catfile( $outdir_path_prefix, $case_id . $UNDERSCORE . q{data} );
+    my $case_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
             active_parameter_href => $active_parameter_href,
-            fam_file_path         => $family_file_path,
+            fam_file_path         => $case_file_path,
             FILEHANDLE            => $FILEHANDLE,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -333,7 +333,7 @@ sub analysis_plink {
     say {$FILEHANDLE} q{## Create pruning set and uniq IDs};
     plink_variant_pruning(
         {
-            const_fid           => $family_id,
+            const_fid           => $case_id,
             FILEHANDLE          => $FILEHANDLE,
             make_bed            => 1,
             outfile_prefix      => $plink_outfile_prefix,
@@ -367,7 +367,7 @@ sub analysis_plink {
         {
             allow_no_sex          => $allow_no_sex,
             binary_fileset_prefix => $binary_fileset_prefix,
-            fam_file_path         => $family_file_path,
+            fam_file_path         => $case_file_path,
             FILEHANDLE            => $FILEHANDLE,
             freqx                 => 1,
             make_just_fam         => 1,
@@ -377,12 +377,12 @@ sub analysis_plink {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    my $inbreeding_outfile_prefix = catfile( $outdir_path_prefix, $family_id );
+    my $inbreeding_outfile_prefix = catfile( $outdir_path_prefix, $case_id );
 
     # Only perform if more than 1 sample
     if ( scalar @sample_ids > 1 ) {
 
-        say {$FILEHANDLE} q{## Calculate inbreeding coefficients per family};
+        say {$FILEHANDLE} q{## Calculate inbreeding coefficients per case};
         plink_calculate_inbreeding(
             {
                 binary_fileset_prefix   => $binary_fileset_prefix,
@@ -396,7 +396,7 @@ sub analysis_plink {
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        say {$FILEHANDLE} q{## Create Plink .mibs per family};
+        say {$FILEHANDLE} q{## Create Plink .mibs per case};
         plink_create_mibs(
             {
                 cluster        => 1,
@@ -455,7 +455,7 @@ sub analysis_plink {
             $read_freqfile_path = $binary_fileset_prefix . $DOT . q{frqx};
         }
 
-        my $sex_check_outfile_prefix = catfile( $outdir_path_prefix, $family_id );
+        my $sex_check_outfile_prefix = catfile( $outdir_path_prefix, $case_id );
 
         plink_sex_check(
             {
@@ -500,8 +500,8 @@ sub analysis_plink {
 
         submit_recipe(
             {
-                dependency_method       => q{family_to_island},
-                family_id               => $family_id,
+                dependency_method       => q{case_to_island},
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,

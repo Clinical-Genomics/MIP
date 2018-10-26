@@ -78,7 +78,7 @@ my $is_interleaved;
 my $read_length = $READ_LENGTH;
 my $sample_id   = q{sample-1};
 
-my %active_parameter = ( family_id => q{Adams}, );
+my %active_parameter = ( case_id => q{Adams}, );
 my %file_info = ( $sample_id => { mip_infiles => [qw{ file-1 }], }, );
 my %infile_both_strands_prefix;
 my %infile_info = (
@@ -135,8 +135,8 @@ for my $sample_id ( keys %file_info ) {
                 lane                            => $infile_info{lane},
                 lane_tracker                    => $lane_tracker,
                 read_length                     => $read_length,
-                sample_id        => $infile_info{infile_sample_id},
-                sample_info_href => \%sample_info,
+                sample_id                       => $infile_info{infile_sample_id},
+                sample_info_href                => \%sample_info,
             }
         );
     }
@@ -149,9 +149,8 @@ my %expected_result = (
             lanes => [1],
         },
     },
-    infile_both_strands_prefix =>
-      { $sample_id => [ $mip_file_format_with_direction, ], },
-    infile_lane_prefix => {
+    infile_both_strands_prefix => { $sample_id => [ $mip_file_format_with_direction, ], },
+    infile_lane_prefix         => {
         $sample_id => [ $mip_file_format, ],
     },
     sample_info => {
@@ -164,15 +163,14 @@ my %expected_result = (
                         interleaved         => undef,
                         read_direction_file => {
                             $mip_file_format_with_direction => {
-                                date               => $parsed_date,
-                                original_file_name => q{file-1},
-                                original_file_name_prefix =>
-                                  $original_file_name_prefix,
-                                read_direction => $infile_info{direction},
-                                lane           => $infile_info{lane},
-                                flowcell       => $infile_info{flowcell},
-                                sample_barcode => $infile_info{index},
-                                run_barcode    => $run_barcode,
+                                date                      => $parsed_date,
+                                original_file_name        => q{file-1},
+                                original_file_name_prefix => $original_file_name_prefix,
+                                read_direction            => $infile_info{direction},
+                                lane                      => $infile_info{lane},
+                                flowcell                  => $infile_info{flowcell},
+                                sample_barcode            => $infile_info{index},
+                                run_barcode               => $run_barcode,
                             },
                         },
                     },
@@ -254,8 +252,7 @@ for my $sample_id ( keys %file_info ) {
               );
 
             ## Add second read to infile lane prefix
-            push @{ $expected_result{infile_lane_prefix}{$sample_id} },
-              $mip_file_format;
+            push @{ $expected_result{infile_lane_prefix}{$sample_id} }, $mip_file_format;
         }
 
         ## Add the infile both strands prefix
@@ -277,8 +274,8 @@ for my $sample_id ( keys %file_info ) {
                 lane                            => $infile_info{lane},
                 lane_tracker                    => $lane_tracker,
                 read_length                     => $read_length,
-                sample_id        => $infile_info{infile_sample_id},
-                sample_info_href => \%sample_info,
+                sample_id                       => $infile_info{infile_sample_id},
+                sample_info_href                => \%sample_info,
             }
         );
 
@@ -290,8 +287,7 @@ for my $sample_id ( keys %file_info ) {
 
         ## Alias
         my $file_level_href =
-          \%{ $expected_result{sample_info}{sample}{$sample_id}{file}
-              {$mip_file_format} };
+          \%{ $expected_result{sample_info}{sample}{$sample_id}{file}{$mip_file_format} };
       INFO:
         while ( my ( $file_key, $file_value ) = each %direction_one_metric ) {
 
@@ -299,11 +295,10 @@ for my $sample_id ( keys %file_info ) {
         }
 
         my %both_directions_metric = (
-            date     => $parsed_date,
-            flowcell => $infile_info{flowcell},
-            lane     => $infile_info{lane},
-            original_file_name =>
-              $file_info{$sample_id}{mip_infiles}[$file_index],
+            date                      => $parsed_date,
+            flowcell                  => $infile_info{flowcell},
+            lane                      => $infile_info{lane},
+            original_file_name        => $file_info{$sample_id}{mip_infiles}[$file_index],
             original_file_name_prefix => $original_file_name_prefix,
             read_direction            => $infile_info{direction},
             run_barcode               => $run_barcode,
@@ -313,8 +308,7 @@ for my $sample_id ( keys %file_info ) {
         ## Alias
         my $direction_level_href =
           \%{ $expected_result{sample_info}{sample}{$sample_id}{file}
-              {$mip_file_format}{read_direction_file}
-              {$mip_file_format_with_direction} };
+              {$mip_file_format}{read_direction_file}{$mip_file_format_with_direction} };
 
       INFO:
         while ( my ( $file_key, $file_value ) = each %both_directions_metric ) {
@@ -378,8 +372,7 @@ sub _file_name_formats {
     my $sample_id;
 
     my $tmpl = {
-        date =>
-          { defined => 1, required => 1, store => \$date, strict_type => 1, },
+        date      => { defined => 1, required => 1, store => \$date, strict_type => 1, },
         direction => {
             allow       => [ 1, 2 ],
             defined     => 1,
@@ -393,9 +386,8 @@ sub _file_name_formats {
             store       => \$flowcell,
             strict_type => 1,
         },
-        index =>
-          { defined => 1, required => 1, store => \$index, strict_type => 1, },
-        lane => {
+        index => { defined => 1, required => 1, store => \$index, strict_type => 1, },
+        lane  => {
             allow       => qr/ ^\d+$ /xsm,
             defined     => 1,
             required    => 1,
@@ -423,8 +415,7 @@ sub _file_name_formats {
       . $UNDERSCORE . q{lane}
       . $lane;
 
-    my $mip_file_format_with_direction =
-      $mip_file_format . $UNDERSCORE . $direction;
+    my $mip_file_format_with_direction = $mip_file_format . $UNDERSCORE . $direction;
 
     my $original_file_name_prefix =
         $lane
@@ -440,13 +431,7 @@ sub _file_name_formats {
       . $direction;
 
     my $run_barcode =
-        $date
-      . $UNDERSCORE
-      . $flowcell
-      . $UNDERSCORE
-      . $lane
-      . $UNDERSCORE
-      . $index;
+      $date . $UNDERSCORE . $flowcell . $UNDERSCORE . $lane . $UNDERSCORE . $index;
     return $mip_file_format, $mip_file_format_with_direction,
       $original_file_name_prefix, $run_barcode;
 }

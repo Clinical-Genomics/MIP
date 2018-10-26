@@ -43,8 +43,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -83,8 +82,7 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes
-  qw{add_pan_job_id_to_sample_id_dependency_tree};
+use MIP::Processmanagement::Processes qw{add_pan_job_id_to_sample_id_dependency_tree};
 
 diag(
 "Test add_pan_job_id_to_sample_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
@@ -93,47 +91,46 @@ diag(
 ## Base arguments
 my $sample_id           = q{sample2};
 my $path                = q{MAIN};
-my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
+my $case_id_chain_key   = q{case1} . $UNDERSCORE . $path;
 my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 
 my %job_id = (
-    $family_id_chain_key => {
+    $case_id_chain_key => {
         $sample_id_chain_key => [qw{job_id_1 job_id_2}],
         q{sample2_MAIN}      => [qw{job_id_3}],
         q{sample3_MAIN}      => [qw{job_id_4 job_id_5}],
-        $family_id_chain_key => [qw{job_id_6}],
+        $case_id_chain_key   => [qw{job_id_6}],
     },
 );
 
 ### Pan jobs
 
-my $pan_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+my $pan_chain_key = $case_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
 add_pan_job_id_to_sample_id_dependency_tree(
     {
         job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
+        case_id_chain_key   => $case_id_chain_key,
         sample_id_chain_key => $sample_id_chain_key,
     }
 );
 
 my $no_pan_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
+  @{ $job_id{$case_id_chain_key}{$sample_id_chain_key} };
 is( $no_pan_push_result, q{job_id_3}, q{No pan job_id} );
 
 ## Add previous pan job
-$job_id{$family_id_chain_key}{$pan_chain_key} = [qw{job_id_0 job_id_1}];
+$job_id{$case_id_chain_key}{$pan_chain_key} = [qw{job_id_0 job_id_1}];
 
 add_pan_job_id_to_sample_id_dependency_tree(
     {
         job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
+        case_id_chain_key   => $case_id_chain_key,
         sample_id_chain_key => $sample_id_chain_key,
     }
 );
 
-my $pan_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
+my $pan_push_result = join $SPACE, @{ $job_id{$case_id_chain_key}{$sample_id_chain_key} };
 is( $pan_push_result, q{job_id_3 job_id_0 job_id_1}, q{Pushed pan job_id} );
 
 done_testing();

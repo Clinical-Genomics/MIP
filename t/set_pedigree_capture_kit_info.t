@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -103,15 +99,15 @@ my %parameter = (
     supported_capture_kit => {
         default => {
             q{agilent_sureselect.v4} =>
-q{genome_reference_source_version_agilent_sureselect_targets_-v4-.bed},
+              q{genome_reference_source_version_agilent_sureselect_targets_-v4-.bed},
             q{agilent_sureselect.v5} =>
-q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed},
+              q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed},
         },
     },
 );
 
 my %pedigree = (
-    family  => q{family_1},
+    case    => q{case_1},
     samples => [
         {
             analysis_type => q{wes},
@@ -184,8 +180,7 @@ set_pedigree_capture_kit_info(
 
 my $capture_kit_string = $active_parameter{exome_target_bed}
   {q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed}};
-is( $capture_kit_string, q{sample_1,sample_3},
-    q{Set sample_ids for capture kit 1} );
+is( $capture_kit_string, q{sample_1,sample_3}, q{Set sample_ids for capture kit 1} );
 
 $capture_kit_string = $active_parameter{exome_target_bed}
   {q{genome_reference_source_version_agilent_sureselect_targets_-v4-.bed}};
@@ -212,8 +207,7 @@ set_pedigree_capture_kit_info(
         user_supply_switch_href => \%user_supply_switch,
     }
 );
-$capture_kit_string =
-  $active_parameter{exome_target_bed}{q{unknown_capture_kit}};
+$capture_kit_string = $active_parameter{exome_target_bed}{q{unknown_capture_kit}};
 is( $capture_kit_string, q{sample_1}, q(Unknown capture kit) );
 
 ## Test no capture kit

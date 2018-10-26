@@ -47,13 +47,13 @@ sub analysis_rankvariant {
 ## Function : Annotate and score variants depending on mendelian inheritance, frequency and phenotype etc.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -69,7 +69,7 @@ sub analysis_rankvariant {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -81,9 +81,9 @@ sub analysis_rankvariant {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -168,7 +168,7 @@ sub analysis_rankvariant {
 ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
-            id             => $family_id,
+            id             => $case_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -203,7 +203,7 @@ sub analysis_rankvariant {
         parse_io_outfiles(
             {
                 chain_id         => $job_id_chain,
-                id               => $family_id,
+                id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
                 iterators_ref    => [ ( keys %infile_path ) ],
@@ -247,7 +247,7 @@ sub analysis_rankvariant {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $family_id,
+            directory_id                    => $case_id,
             log                             => $log,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
@@ -261,13 +261,13 @@ sub analysis_rankvariant {
 
     ### SHELL:
 
-    my $family_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
+    my $case_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
             active_parameter_href => $active_parameter_href,
-            fam_file_path         => $family_file_path,
+            fam_file_path         => $case_file_path,
             FILEHANDLE            => $FILEHANDLE,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -353,8 +353,8 @@ sub analysis_rankvariant {
         genmod_models(
             {
                 FILEHANDLE   => $XARGSFILEHANDLE,
-                family_file  => $family_file_path,
-                family_type  => $active_parameter_href->{genmod_models_family_type},
+                case_file    => $case_file_path,
+                case_type    => $active_parameter_href->{genmod_models_case_type},
                 infile_path  => $genmod_indata,
                 outfile_path => catfile( dirname( devnull() ), q{stdout} ),
                 reduced_penetrance_file_path =>
@@ -377,12 +377,12 @@ sub analysis_rankvariant {
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
         genmod_score(
             {
-                family_file  => $family_file_path,
-                family_type  => $active_parameter_href->{genmod_models_family_type},
-                FILEHANDLE   => $XARGSFILEHANDLE,
-                infile_path  => $genmod_indata,
-                outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-                rank_result  => 1,
+                case_file            => $case_file_path,
+                case_type            => $active_parameter_href->{genmod_models_case_type},
+                FILEHANDLE           => $XARGSFILEHANDLE,
+                infile_path          => $genmod_indata,
+                outfile_path         => catfile( dirname( devnull() ), q{stdout} ),
+                rank_result          => 1,
                 rank_model_file_path => $active_parameter_href->{rank_model_file},
                 stderrfile_path      => $score_stderrfile_path,
                 verbosity            => q{v},
@@ -444,8 +444,8 @@ sub analysis_rankvariant {
         }
         submit_recipe(
             {
-                dependency_method       => q{sample_to_family},
-                family_id               => $family_id,
+                dependency_method       => q{sample_to_case},
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -464,13 +464,13 @@ sub analysis_rankvariant_unaffected {
 ## Function : Annotate variants but do not score.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -486,7 +486,7 @@ sub analysis_rankvariant_unaffected {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -498,9 +498,9 @@ sub analysis_rankvariant_unaffected {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -585,7 +585,7 @@ sub analysis_rankvariant_unaffected {
 ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
-            id             => $family_id,
+            id             => $case_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -620,7 +620,7 @@ sub analysis_rankvariant_unaffected {
         parse_io_outfiles(
             {
                 chain_id         => $job_id_chain,
-                id               => $family_id,
+                id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
                 iterators_ref    => [ ( keys %infile_path ) ],
@@ -664,7 +664,7 @@ sub analysis_rankvariant_unaffected {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $family_id,
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -678,13 +678,13 @@ sub analysis_rankvariant_unaffected {
 
     ### SHELL:
 
-    my $family_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
+    my $case_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
             active_parameter_href => $active_parameter_href,
-            fam_file_path         => $family_file_path,
+            fam_file_path         => $case_file_path,
             FILEHANDLE            => $FILEHANDLE,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
@@ -780,8 +780,8 @@ sub analysis_rankvariant_unaffected {
         }
         submit_recipe(
             {
-                dependency_method       => q{sample_to_family},
-                family_id               => $family_id,
+                dependency_method       => q{sample_to_case},
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -800,7 +800,7 @@ sub analysis_rankvariant_sv {
 ## Function : Annotate and score SV variants depending on mendelian inheritance, frequency and phenotype etc.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
@@ -808,7 +808,7 @@ sub analysis_rankvariant_sv {
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
 ##          : $reference_dir_ref       => MIP reference directory {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
@@ -823,7 +823,7 @@ sub analysis_rankvariant_sv {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $reference_dir_ref;
     my $temp_directory;
 
@@ -835,9 +835,9 @@ sub analysis_rankvariant_sv {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -914,7 +914,7 @@ sub analysis_rankvariant_sv {
     ## Unpack parameters
     my %io = get_io_files(
         {
-            id             => $family_id,
+            id             => $case_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -959,7 +959,7 @@ sub analysis_rankvariant_sv {
         parse_io_outfiles(
             {
                 chain_id         => $job_id_chain,
-                id               => $family_id,
+                id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
                 iterators_ref    => \@vcfparser_analysis_types,
@@ -992,7 +992,7 @@ sub analysis_rankvariant_sv {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $family_id,
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -1006,7 +1006,7 @@ sub analysis_rankvariant_sv {
 
     ### SHELL:
 
-    my $fam_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
+    my $fam_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
 
     ## Create .fam file
     create_fam_file(
@@ -1072,8 +1072,8 @@ sub analysis_rankvariant_sv {
         genmod_models(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                family_file  => $fam_file_path,
-                family_type  => $active_parameter_href->{sv_genmod_models_family_type},
+                case_file    => $fam_file_path,
+                case_type    => $active_parameter_href->{sv_genmod_models_case_type},
                 infile_path  => $genmod_indata,
                 outfile_path => catfile( dirname( devnull() ), q{stdout} ),
                 reduced_penetrance_file_path =>
@@ -1099,8 +1099,8 @@ sub analysis_rankvariant_sv {
         genmod_score(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                family_file  => $fam_file_path,
-                family_type  => $active_parameter_href->{sv_genmod_models_family_type},
+                case_file    => $fam_file_path,
+                case_type    => $active_parameter_href->{sv_genmod_models_case_type},
                 infile_path  => $genmod_indata,
                 outfile_path => catfile( dirname( devnull() ), q{stdout} ),
                 rank_model_file_path => $active_parameter_href->{sv_rank_model_file},
@@ -1175,8 +1175,8 @@ sub analysis_rankvariant_sv {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_family},
-                family_id               => $family_id,
+                dependency_method       => q{sample_to_case},
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -1195,7 +1195,7 @@ sub analysis_rankvariant_sv_unaffected {
 ## Function : Annotate variants using genmod anotate only.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id               => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
@@ -1203,7 +1203,7 @@ sub analysis_rankvariant_sv_unaffected {
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_name            => Program name
 ##          : $reference_dir_ref       => MIP reference directory {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
@@ -1218,7 +1218,7 @@ sub analysis_rankvariant_sv_unaffected {
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $reference_dir_ref;
     my $temp_directory;
 
@@ -1230,9 +1230,9 @@ sub analysis_rankvariant_sv_unaffected {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -1308,7 +1308,7 @@ sub analysis_rankvariant_sv_unaffected {
     ## Unpack parameters
     my %io = get_io_files(
         {
-            id             => $family_id,
+            id             => $case_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -1354,7 +1354,7 @@ sub analysis_rankvariant_sv_unaffected {
         parse_io_outfiles(
             {
                 chain_id         => $job_id_chain,
-                id               => $family_id,
+                id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
                 iterators_ref    => \@vcfparser_analysis_types,
@@ -1386,7 +1386,7 @@ sub analysis_rankvariant_sv_unaffected {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $family_id,
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -1465,8 +1465,8 @@ sub analysis_rankvariant_sv_unaffected {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_family},
-                family_id               => $family_id,
+                dependency_method       => q{sample_to_case},
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,

@@ -332,7 +332,7 @@ sub check_parameter_files {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Holds all set parameter for analysis
 ##          : $associated_recipes_ref  => The parameters recipe(s) {REF}
-##          : $family_id               => The family_id
+##          : $case_id               => The case_id
 ##          : $log                     => Log object to write to
 ##          : $parameter_exists_check  => Check if intendend file exists in reference directory
 ##          : $parameter_href          => Holds all parameters
@@ -349,7 +349,7 @@ sub check_parameter_files {
     my $parameter_name;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
 
     my $tmpl = {
         active_parameter_href => {
@@ -366,9 +366,9 @@ sub check_parameter_files {
             store       => \$associated_recipes_ref,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         log                    => { required => 1, store => \$log, },

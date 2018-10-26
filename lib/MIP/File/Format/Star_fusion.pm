@@ -40,7 +40,7 @@ sub create_star_fusion_sample_file {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $sample_id               => Sample id
 ##          : $samples_file_path       => Path to STAR-Fuison sample file
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -120,8 +120,7 @@ sub create_star_fusion_sample_file {
           {sequence_run_type};
 
         ## Add read one to file index array
-        push @{ $sample_line{$infile_index} },
-          $infile_paths_ref->[$paired_end_tracker];
+        push @{ $sample_line{$infile_index} }, $infile_paths_ref->[$paired_end_tracker];
 
         # If second read direction is present
         if ( $sequence_run_mode eq q{paired-end} ) {

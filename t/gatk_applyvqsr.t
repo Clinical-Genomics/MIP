@@ -76,8 +76,8 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => catfile(qw{ my family.vcf  }),
-        expected_output => q{--variant } . catfile(qw{ my family.vcf }),
+        input           => catfile(qw{ my case.vcf  }),
+        expected_output => q{--variant } . catfile(qw{ my case.vcf }),
     },
     outfile_path => {
         input           => catfile(qw{ my output.vcf }),
@@ -89,15 +89,14 @@ my %required_argument = (
     },
     tranches_file_path => {
         input           => catfile(qw{ my output.tranches }),
-        expected_output => q{--tranches-file }
-          . catdir(qw{ my output.tranches }),
+        expected_output => q{--tranches-file } . catdir(qw{ my output.tranches }),
     },
 );
 
 my %specific_argument = (
     infile_path => {
-        input           => catfile(qw{ my family.vcf  }),
-        expected_output => q{--variant } . catfile(qw{ my family.vcf }),
+        input           => catfile(qw{ my case.vcf  }),
+        expected_output => q{--variant } . catfile(qw{ my case.vcf }),
     },
     outfile_path => {
         input           => catfile(qw{ my output.vcf }),
@@ -109,8 +108,7 @@ my %specific_argument = (
     },
     tranches_file_path => {
         input           => catfile(qw{ my output.tranches }),
-        expected_output => q{--tranches-file }
-          . catdir(qw{ my output.tranches }),
+        expected_output => q{--tranches-file } . catdir(qw{ my output.tranches }),
     },
     mode => {
         input           => q{SNP},
@@ -118,8 +116,7 @@ my %specific_argument = (
     },
     ts_filter_level => {
         input           => $TS_FILTER_LEVEL,
-        expected_output => q{--truth-sensitivity-filter-level }
-          . $TS_FILTER_LEVEL,
+        expected_output => q{--truth-sensitivity-filter-level } . $TS_FILTER_LEVEL,
     },
 );
 

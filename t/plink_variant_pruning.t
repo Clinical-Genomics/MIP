@@ -49,11 +49,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -123,20 +119,18 @@ my %required_argument = (
         expected_output => q{--vcf} . $SPACE . catfile(qw{ dir infile.vcf }),
     },
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     set_missing_var_ids => {
         input           => q?@:#[hg19]\$1,\$2?,
-        expected_output => q{--set-missing-var-ids}
-          . $SPACE
-          . q?@:#[hg19]\$1,\$2?,
+        expected_output => q{--set-missing-var-ids} . $SPACE . q?@:#[hg19]\$1,\$2?,
     },
     const_fid => {
-        input           => q{family_id},
-        expected_output => q{--const-fid} . $SPACE . q{family_id},
+        input           => q{case_id},
+        expected_output => q{--const-fid} . $SPACE . q{case_id},
     },
     indep => {
         input           => 1,

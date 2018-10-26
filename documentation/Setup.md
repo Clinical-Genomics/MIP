@@ -11,7 +11,7 @@ Where some types or formats are required for each element:
 - BARCODE-SEQ = A, C, G, T or integer
 - DIRECTION = 1 or 2
 
-The `familyID` and `sampleID(s)` needs to be unique and the sample id supplied should be equal to the {SAMPLE_ID} in the filename.
+The `caseID` and `sampleID(s)` needs to be unique and the sample id supplied should be equal to the {SAMPLE_ID} in the filename.
 Underscore cannot be part of any element in the file name as this is used as the seperator for each element.
 
 However, MIP will except filenames in other formats as long as the filename contains the sample id and the mandatory information can be collected from the fastq header.

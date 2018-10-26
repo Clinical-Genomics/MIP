@@ -302,7 +302,7 @@ sub check_cmd_config_vs_definition_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my @allowed_unique_keys =
-      ( q{vcfparser_outfile_count}, $active_parameter_href->{family_id} );
+      ( q{vcfparser_outfile_count}, $active_parameter_href->{case_id} );
     my @unique;
 
   ACTIVE_PARAMETER:
@@ -949,16 +949,16 @@ sub check_recipe_mode {
 
 sub check_sample_ids {
 
-## Function : Test that the family_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
+## Function : Test that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
 ## Returns  :
-## Arguments: $family_id      => Family id
+## Arguments: $case_id      => Family id
 ##          : $log            => Log object
 ##          : $sample_ids_ref => Sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $family_id;
+    my $case_id;
     my $log;
     my $sample_ids_ref;
 
@@ -975,10 +975,10 @@ sub check_sample_ids {
             store       => \$sample_ids_ref,
             strict_type => 1,
         },
-        family_id => {
+        case_id => {
             defined     => 1,
             required    => 1,
-            store       => \$family_id,
+            store       => \$case_id,
             strict_type => 1,
         },
     };
@@ -1001,14 +1001,13 @@ sub check_sample_ids {
         $seen{$sample_id}++;
 
         ## Family_id cannot be the same as sample_id
-        if ( $family_id eq $sample_id ) {
+        if ( $case_id eq $sample_id ) {
 
             $log->fatal( q{Family_id: }
-                  . $family_id
+                  . $case_id
                   . q{ equals sample_id: }
                   . $sample_id
-                  . q{. Please make sure that the family_id and sample_id(s) are unique.}
-            );
+                  . q{. Please make sure that the case_id and sample_id(s) are unique.} );
             exit 1;
         }
         ## Check for unique sample_ids

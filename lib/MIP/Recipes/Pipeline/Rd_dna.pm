@@ -46,7 +46,7 @@ sub pipeline_rd_dna {
 ##          : $order_recipes_ref               => Order of recipes
 ##          : $outaligner_dir                  => Outaligner dir used in the analysis
 ##          : $parameter_href                  => Parameter hash {REF}
-##          : $sample_info_href                => Info on samples and family hash {REF}
+##          : $sample_info_href                => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -418,7 +418,7 @@ sub pipeline_rd_dna {
             }
 
             ## Family mode
-            elsif ( $parameter_href->{$recipe}{analysis_mode} eq q{family} ) {
+            elsif ( $parameter_href->{$recipe}{analysis_mode} eq q{case} ) {
 
                 $analysis_recipe{$recipe}->(
                     {

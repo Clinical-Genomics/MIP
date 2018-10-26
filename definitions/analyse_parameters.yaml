@@ -51,7 +51,7 @@ exclude_contigs:
   data_type: ARRAY
   mandatory: no
   type: mip
-family_id:
+case_id:
   associated_recipe:
    - mip
   data_type: SCALAR

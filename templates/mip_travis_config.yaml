@@ -1,22 +1,22 @@
 ---
 analysis_constant_path: analysis
 java_use_large_pages: 1
-outscript_dir: cluster_constant_path!/family_id!/analysis_constant_path!/scripts
+outscript_dir: cluster_constant_path!/case_id!/analysis_constant_path!/scripts
 gatk_genotypegvcfs_ref_gvcf: GRCh37_merged_reference_infiles_-2014-.gvcf
 gatk_combinevariants_prioritize_caller: gatk,samtools,freebayes
 qccollect_regexp_file: qc_regexp_-v1.13-.yaml
-qccollect_sampleinfo_file: cluster_constant_path!/family_id!/analysis_constant_path!/family_id!_qc_sample_info.yaml
+qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 sambamba_depth_bed: GRCh37_scout_exons_-2017-01-.bed
 gatk_path: cluster_constant_path!/modules/GenomeAnalysisTK-3.6
 human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
 max_cores_per_node: 16
-outdata_dir: cluster_constant_path!/family_id!/analysis_constant_path!
-pedigree_file: cluster_constant_path!/family_id!/family_id!_pedigree.yaml
+outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
+pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
 picardtools_path: /home/travis/miniconda/envs/test_environment/bin
 project_id: travis_test
 reference_dir: cluster_constant_path!/references
-sample_info_file: cluster_constant_path!/family_id!/analysis_constant_path!/family_id!_qc_sample_info.yaml
-config_file_analysis: cluster_constant_path!/family_id!/analysis_constant_path!/family_id!_config.yaml
+sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
+config_file_analysis: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_config.yaml
 cnvnator: 0
 sv_svdb_merge_prioritize: manta,delly,tiddit
 sv_svdb_query_db_files:
@@ -30,10 +30,10 @@ sv_vcfannotation_header_lines_file: vcfanno_headerLines_-v1.0-.txt
 vep_directory_path: /home/travis/miniconda/envs/test_environment/ensembl-tools-release-87/scripts/variant_effect_predictor
 vep_directory_cache:  /home/travis/miniconda/envs/test_environment/ensembl-tools-release-87/cache
 vcfparser_vep_transcripts: 1
-vcfparser_select_file: cluster_constant_path!/family_id!/aggregated_gene_panel_test.txt
+vcfparser_select_file: cluster_constant_path!/case_id!/aggregated_gene_panel_test.txt
 vcfparser_select_file_matching_column: 3
 sv_vcfparser_vep_transcripts: 1
-sv_vcfparser_select_file: cluster_constant_path!/family_id!/aggregated_gene_panel_test.txt
+sv_vcfparser_select_file: cluster_constant_path!/case_id!/aggregated_gene_panel_test.txt
 sv_vcfparser_select_file_matching_column: 3
 snpeff_path: /home/travis/miniconda/envs/test_environment/bin
 snpsift_annotation_files:
@@ -59,7 +59,7 @@ genmod_annotate_cadd_files:
 genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv 
 genmod_annotate_spidex_file: GRCh37_spidex_public_noncommercial_-v1_0-.tab.gz
 rank_model_file: rank_model_cmms_-v1.18-.ini
-sv_genmod_models_family_type: cmms
+sv_genmod_models_case_type: cmms
 sv_genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv
 sv_rank_model_file: svrank_model_cmms_-v1.0-.ini
 source_environment_commands:

@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -116,22 +112,22 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     ped_file_path => {
-        input => catfile(qw{ temp_directory family_id_ref _data.ped }),
+        input           => catfile(qw{ temp_directory case_id_ref _data.ped }),
         expected_output => q{--ped}
           . $SPACE
-          . catfile(qw{ temp_directory family_id_ref _data.ped }),
+          . catfile(qw{ temp_directory case_id_ref _data.ped }),
     },
     map_file_path => {
-        input => catfile(qw{ temp_directory family_id_ref _data.map }),
+        input           => catfile(qw{ temp_directory case_id_ref _data.map }),
         expected_output => q{--map}
           . $SPACE
-          . catfile(qw{ temp_directory family_id_ref _data.map }),
+          . catfile(qw{ temp_directory case_id_ref _data.map }),
     },
 );
 

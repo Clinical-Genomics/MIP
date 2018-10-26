@@ -35,7 +35,7 @@ sub peddy {
 
 ## Function : Perl wrapper for writing peddy recipe to already open $FILEHANDLE or return commands array. Based on peddy 0.2.9.
 ## Returns  : @commands
-## Arguments: $family_file_path       => Family file path
+## Arguments: $case_file_path       => Family file path
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_prefix_path    => Outfile path
@@ -48,7 +48,7 @@ sub peddy {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $family_file_path;
+    my $case_file_path;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_prefix_path;
@@ -88,10 +88,10 @@ sub peddy {
             store       => \$outfile_prefix_path,
             strict_type => 1,
         },
-        family_file_path => {
+        case_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$family_file_path,
+            store       => \$case_file_path,
             strict_type => 1,
         },
         processor_number => {
@@ -136,9 +136,9 @@ sub peddy {
         push @commands, $infile_path;
     }
 
-    if ($family_file_path) {
+    if ($case_file_path) {
 
-        push @commands, $family_file_path;
+        push @commands, $case_file_path;
     }
 
     push @commands,

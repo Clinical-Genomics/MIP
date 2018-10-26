@@ -75,28 +75,27 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => catfile(qw{ my family.vcf  }),
-        expected_output => q{--variant } . catfile(qw{ my family.vcf }),
+        input           => catfile(qw{ my case.vcf  }),
+        expected_output => q{--variant } . catfile(qw{ my case.vcf }),
     },
     outfile_path => {
-        input           => catfile(qw{ my family_refined.vcf }),
-        expected_output => q{--output } . catfile(qw{ my family_refined.vcf }),
+        input           => catfile(qw{ my case_refined.vcf }),
+        expected_output => q{--output } . catfile(qw{ my case_refined.vcf }),
     },
 );
 
 my %specific_argument = (
     infile_path => {
-        input           => catfile(qw{ my family.vcf  }),
-        expected_output => q{--variant } . catfile(qw{ my family.vcf }),
+        input           => catfile(qw{ my case.vcf  }),
+        expected_output => q{--variant } . catfile(qw{ my case.vcf }),
     },
     outfile_path => {
-        input           => catfile(qw{ my family_refined.vcf }),
-        expected_output => q{--output } . catfile(qw{ my family_refined.vcf }),
+        input           => catfile(qw{ my case_refined.vcf }),
+        expected_output => q{--output } . catfile(qw{ my case_refined.vcf }),
     },
     supporting_callset_file_path => {
         input           => catfile(qw{ my support.vcf }),
-        expected_output => q{--supporting-callsets }
-          . catfile(qw{ my support.vcf }),
+        expected_output => q{--supporting-callsets } . catfile(qw{ my support.vcf }),
     },
 );
 

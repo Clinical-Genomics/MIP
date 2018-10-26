@@ -1,7 +1,7 @@
 default_gene_panels:
   - IEM
 customer: 'cust000'
-family: '643594-miptest'
+case: '643594-miptest'
 samples:
   - analysis_type: vrn
     sample_id: ADM1059A2

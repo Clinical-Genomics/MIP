@@ -43,8 +43,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -93,7 +92,7 @@ diag(
 ## Base arguments
 my $sample_id           = q{sample2};
 my $path                = q{MAIN};
-my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
+my $case_id_chain_key   = q{case1} . $UNDERSCORE . $path;
 my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 my $infile_index        = 0;
 my $sample_id_parallel_chain_key =
@@ -106,47 +105,45 @@ my %infile_lane_prefix = (
 );
 
 my %job_id = (
-    $family_id_chain_key => {
+    $case_id_chain_key => {
         $sample_id_chain_key          => [qw{job_id_1 job_id_2}],
         q{sample2_MAIN}               => [qw{job_id_3}],
         q{sample3_MAIN}               => [qw{job_id_4 job_id_5}],
         $sample_id_parallel_chain_key => [qw{job_id_10 job_id_11}],
-        $family_id_chain_key          => [qw{job_id_6}],
+        $case_id_chain_key            => [qw{job_id_6}],
     },
 );
 
 ### Pan jobs
 
-my $pan_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+my $pan_chain_key = $case_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
 add_parallel_job_id_to_sample_id_dependency_tree(
     {
         job_id_href             => \%job_id,
         infile_lane_prefix_href => \%infile_lane_prefix,
-        family_id_chain_key     => $family_id_chain_key,
+        case_id_chain_key       => $case_id_chain_key,
         sample_id_chain_key     => q{test_no_parallel_jobs},
         sample_id               => $sample_id,
         path                    => $path,
     }
 );
 
-my $no_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
+my $no_push_result = join $SPACE, @{ $job_id{$case_id_chain_key}{$sample_id_chain_key} };
 is( $no_push_result, q{job_id_3}, q{No parallel job_ids} );
 
 add_parallel_job_id_to_sample_id_dependency_tree(
     {
         job_id_href             => \%job_id,
         infile_lane_prefix_href => \%infile_lane_prefix,
-        family_id_chain_key     => $family_id_chain_key,
+        case_id_chain_key       => $case_id_chain_key,
         sample_id_chain_key     => $sample_id_chain_key,
         sample_id               => $sample_id,
         path                    => $path,
     }
 );
 
-my $pan_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
+my $pan_push_result = join $SPACE, @{ $job_id{$case_id_chain_key}{$sample_id_chain_key} };
 is(
     $pan_push_result,
     q{job_id_3 job_id_10 job_id_11},

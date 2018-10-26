@@ -1,6 +1,6 @@
 default_gene_panels:
   - IEM
-family: '118-rnatest'
+case: '118-rnatest'
 samples:
   - analysis_type: wts
     sample_id: 118-1-2A

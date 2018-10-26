@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -116,22 +112,22 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     binary_fileset_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--bfile}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     fam_file_path => {
-        input => catfile(qw{ outfamily_file_directory family_id .fam }),
+        input           => catfile(qw{ outcase_file_directory case_id .fam }),
         expected_output => q{--fam}
           . $SPACE
-          . catfile(qw{ outfamily_file_directory family_id .fam }),
+          . catfile(qw{ outcase_file_directory case_id .fam }),
     },
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
 );
 
@@ -141,16 +137,16 @@ my %specific_argument = (
         expected_output => q{--allow-no-sex},
     },
     binary_fileset_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--bfile}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     fam_file_path => {
-        input => catfile(qw{ outfamily_file_directory family_id .fam }),
+        input           => catfile(qw{ outcase_file_directory case_id .fam }),
         expected_output => q{--fam}
           . $SPACE
-          . catfile(qw{ outfamily_file_directory family_id .fam }),
+          . catfile(qw{ outcase_file_directory case_id .fam }),
     },
     freqx => {
         input           => 1,
@@ -161,10 +157,10 @@ my %specific_argument = (
         expected_output => q{--make-just-fam},
     },
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     recode => {
         input           => 1,

@@ -40,8 +40,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -109,10 +108,10 @@ add_processing_metafile_to_sample_info(
 );
 
 ## Test
-is( exists $sample_info{$metafile_tag}, 1, q{Created family level hash key} );
+is( exists $sample_info{$metafile_tag}, 1, q{Created case level hash key} );
 
 is( $sample_info{$metafile_tag}{path},
-    $path, q{Assigned correct value to family level path} );
+    $path, q{Assigned correct value to case level path} );
 
 ## Sample level
 my $sample_id = q{test_sample_id};

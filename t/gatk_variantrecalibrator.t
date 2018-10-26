@@ -81,8 +81,8 @@ my %required_argument = (
         expected_output => q{--use-annotation MQRankSum --use-annotation: QD},
     },
     infile_path => {
-        input           => catfile(qw{ my family.vcf  }),
-        expected_output => q{--variant } . catfile(qw{ my family.vcf }),
+        input           => catfile(qw{ my case.vcf  }),
+        expected_output => q{--variant } . catfile(qw{ my case.vcf }),
     },
     outfile_path => {
         input           => catfile(qw{ my output.recal }),
@@ -94,15 +94,14 @@ my %required_argument = (
     },
     tranches_file_path => {
         input           => catfile(qw{ my output.tranches }),
-        expected_output => q{--tranches-file }
-          . catdir(qw{ my output.tranches }),
+        expected_output => q{--tranches-file } . catdir(qw{ my output.tranches }),
     },
 );
 
 my %specific_argument = (
     infile_path => {
-        input           => catfile(qw{ my family.vcf }),
-        expected_output => q{--variant } . catfile(qw{ my family.vcf }),
+        input           => catfile(qw{ my case.vcf }),
+        expected_output => q{--variant } . catfile(qw{ my case.vcf }),
     },
     max_attempts => {
         input           => $MAX_ATTEMPTS,
@@ -130,8 +129,7 @@ my %specific_argument = (
     },
     tranches_file_path => {
         input           => catfile(qw{ my output.tranches }),
-        expected_output => q{--tranches-file }
-          . catdir(qw{ my output.tranches }),
+        expected_output => q{--tranches-file } . catdir(qw{ my output.tranches }),
     },
     trust_all_polymorphic => {
         input           => 1,

@@ -75,23 +75,23 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => catfile(qw{ path to family_chr1.vcf }),
+        input           => catfile(qw{ path to case_chr1.vcf }),
         expected_output => q{--feature-file}
           . $SPACE
-          . catfile(qw{ path to family_chr1.vcf})
+          . catfile(qw{ path to case_chr1.vcf})
     },
 );
 
 my %specific_argument = (
     infile_path => {
-        input           => catfile(qw{ path to family_chr1.vcf }),
+        input           => catfile(qw{ path to case_chr1.vcf }),
         expected_output => q{--feature-file}
           . $SPACE
-          . catfile(qw{ path to family_chr1.vcf})
+          . catfile(qw{ path to case_chr1.vcf})
     },
     outfile_path => {
-        input           => catfile(qw{ path to family.vcf.idx }),
-        expected_output => q{--output } . catfile(qw{ path to family.vcf.idx }),
+        input           => catfile(qw{ path to case.vcf.idx }),
+        expected_output => q{--output } . catfile(qw{ path to case.vcf.idx }),
     },
 );
 
