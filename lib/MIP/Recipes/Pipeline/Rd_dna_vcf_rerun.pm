@@ -285,7 +285,7 @@ sub pipeline_rd_dna_vcf_rerun {
             }
         }
 
-        ## Family mode
+        ## Case mode
         elsif ( $parameter_href->{$recipe}{analysis_mode} eq q{case} ) {
 
             $analysis_recipe{$recipe}->(

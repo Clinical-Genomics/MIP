@@ -77,6 +77,10 @@ sub set_recipe_on_analysis_type {
             sv_vcfparser              => \&analysis_vcfparser_sv_wgs,
             sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
         },
+        vrn => {
+            sv_vcfparser              => \&analysis_vcfparser_sv_wgs,
+            sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
+        },
     );
 
   RECIPE:

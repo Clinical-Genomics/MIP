@@ -744,13 +744,13 @@ sub analysis_vcfparser_sv_wgs {
 ## Function : Vcfparser performs parsing of varianteffectpredictor annotated ws SV variants
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
