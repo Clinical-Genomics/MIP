@@ -1,6 +1,6 @@
 package MIP::Language::Shell;
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;

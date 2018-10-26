@@ -12,7 +12,7 @@ use Params::Check qw{ check allow last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
+use 5.026;
 
 ## CPANM
 use Modern::Perl qw{ 2014 };

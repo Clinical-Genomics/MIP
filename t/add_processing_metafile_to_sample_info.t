@@ -3,7 +3,7 @@
 use Modern::Perl qw{2014};
 use warnings qw{FATAL utf8};
 use autodie;
-use 5.018;    # Require at least perl 5.18
+use 5.026;    # Require at least perl 5.18
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
