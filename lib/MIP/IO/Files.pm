@@ -30,14 +30,13 @@ BEGIN {
     our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ migrate_file migrate_files xargs_migrate_contig_files };
+    our @EXPORT_OK = qw{ migrate_file migrate_files xargs_migrate_contig_files };
 
 }
 
 ## Constants
 Readonly my $AMPERSAND  => q{&};
-Readonly my $ASTERISK    => q{*};
+Readonly my $ASTERISK   => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
 Readonly my $NEWLINE    => qq{\n};
@@ -187,8 +186,8 @@ sub migrate_file {
     use MIP::Gnu::Coreutils qw{ gnu_cp };
 
     ## Split relative infile_path to file(s)
-    my ( $infile_path_volume, $infile_path_directory, $infile_path_file_name )
-      = splitpath($infile_path);
+    my ( $infile_path_volume, $infile_path_directory, $infile_path_file_name ) =
+      splitpath($infile_path);
 
     gnu_cp(
         {
@@ -225,7 +224,7 @@ sub xargs_migrate_contig_files {
 ##          : $infile             => Infile name without suffix attached
 ##          : $outdirectory       => Outdirectory
 ##          : $outfile            => Outfile name without suffix attached
-##          : $program_info_path  => Program info path
+##          : $recipe_info_path   => Recipe info path
 ##          : $temp_directory     => Temporary directory
 ##          : $XARGSFILEHANDLE    => XARGS filehandle to write to
 ##          : $xargs_file_counter => Xargs file counter
@@ -241,7 +240,7 @@ sub xargs_migrate_contig_files {
     my $infile;
     my $outdirectory;
     my $outfile;
-    my $program_info_path;
+    my $recipe_info_path;
     my $temp_directory;
     my $XARGSFILEHANDLE;
 
@@ -276,21 +275,19 @@ sub xargs_migrate_contig_files {
             store       => \$file_path,
             strict_type => 1,
         },
-        first_command => { store => \$first_command, strict_type => 1, },
-        indirectory   => { store => \$indirectory,   strict_type => 1, },
-        infile        => { store => \$infile,        strict_type => 1, },
-        outdirectory  => { store => \$outdirectory,  strict_type => 1, },
-        outfile       => { store => \$outfile,       strict_type => 1, },
-        program_info_path =>
-          { store => \$program_info_path, strict_type => 1, },
-        temp_directory => {
+        first_command    => { store => \$first_command,    strict_type => 1, },
+        indirectory      => { store => \$indirectory,      strict_type => 1, },
+        infile           => { store => \$infile,           strict_type => 1, },
+        outdirectory     => { store => \$outdirectory,     strict_type => 1, },
+        outfile          => { store => \$outfile,          strict_type => 1, },
+        recipe_info_path => { store => \$recipe_info_path, strict_type => 1, },
+        temp_directory   => {
             defined     => 1,
             required    => 1,
             store       => \$temp_directory,
             strict_type => 1,
         },
-        XARGSFILEHANDLE =>
-          { defined => 1, required => 1, store => \$XARGSFILEHANDLE, },
+        XARGSFILEHANDLE => { defined => 1, required => 1, store => \$XARGSFILEHANDLE, },
         xargs_file_counter => {
             allow       => qr/ ^\d+$ /xsm,
             default     => 0,
@@ -310,7 +307,7 @@ sub xargs_migrate_contig_files {
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $file_path,
             first_command      => $first_command,
-            program_info_path  => $program_info_path,
+            recipe_info_path   => $recipe_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -342,8 +339,8 @@ sub xargs_migrate_contig_files {
         if ( defined $outfile && defined $outdirectory ) {
 
             ## Get parameters
-            my $infile_path = catfile( $temp_directory,
-                $outfile . $DOT . $contig . $file_ending );
+            my $infile_path =
+              catfile( $temp_directory, $outfile . $DOT . $contig . $file_ending );
             ## Copy file(s) from temporary directory.
             migrate_file(
                 {

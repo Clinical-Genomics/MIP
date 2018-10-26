@@ -48,7 +48,7 @@ sub analysis_gatk_splitncigarreads {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -63,7 +63,7 @@ sub analysis_gatk_splitncigarreads {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
     my $sample_id;
 
@@ -114,10 +114,10 @@ sub analysis_gatk_splitncigarreads {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -150,13 +150,13 @@ sub analysis_gatk_splitncigarreads {
 
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Gatk qw{ gatk_splitncigarreads };
     use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_processing_metafile_to_sample_info };
+      qw{ add_recipe_outfile_to_sample_info add_processing_metafile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -171,7 +171,7 @@ sub analysis_gatk_splitncigarreads {
             file_info_href => $file_info_href,
             id             => $sample_id,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -179,18 +179,18 @@ sub analysis_gatk_splitncigarreads {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %temp_infile_path   = %{ $io{temp}{file_path_href} };
     my $infile_path_prefix = $io{in}{file_path_prefix};
-    my $program_mode       = $active_parameter_href->{$program_name};
-    my $job_id_chain       = get_program_attributes(
+    my $recipe_mode        = $active_parameter_href->{$recipe_name};
+    my $job_id_chain       = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
         }
     );
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -206,7 +206,7 @@ sub analysis_gatk_splitncigarreads {
                 iterators_ref    => $file_info_href->{contigs_size_ordered},
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 temp_directory   => $temp_directory,
             }
         )
@@ -224,8 +224,8 @@ sub analysis_gatk_splitncigarreads {
     my $XARGSFILEHANDLE = IO::Handle->new();
     my $FILEHANDLE      = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -234,8 +234,8 @@ sub analysis_gatk_splitncigarreads {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -277,7 +277,7 @@ sub analysis_gatk_splitncigarreads {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
-            program_info_path  => $program_info_path,
+            recipe_info_path   => $recipe_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -323,16 +323,16 @@ sub analysis_gatk_splitncigarreads {
     close $FILEHANDLE;
     close $XARGSFILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         my $first_outfile_path = $outfile_paths[0];
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $first_outfile_path,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

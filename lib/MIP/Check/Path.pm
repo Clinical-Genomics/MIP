@@ -1,5 +1,6 @@
 package MIP::Check::Path;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -166,10 +167,7 @@ sub check_filesystem_objects_existance {
     if ( not -f $object_name ) {
 
         $error_msg =
-            q{Could not find intended }
-          . $parameter_name
-          . q{ file: }
-          . $object_name;
+          q{Could not find intended } . $parameter_name . q{ file: } . $object_name;
 
         return 0, $error_msg;
     }
@@ -267,14 +265,13 @@ sub check_filesystem_objects_and_index_existance {
 
         my $path_index = $path . $DOT . q{tbi};
 
-        my ( $index_exist, $index_error_msg ) =
-          check_filesystem_objects_existance(
+        my ( $index_exist, $index_error_msg ) = check_filesystem_objects_existance(
             {
                 object_name    => $path_index,
                 object_type    => $object_type,
                 parameter_name => $path_index,
             }
-          );
+        );
         if ( not $index_exist ) {
             $log->fatal($index_error_msg);
             exit 1;
@@ -334,7 +331,7 @@ sub check_parameter_files {
 ## Function : Checks that files/directories files exists
 ## Returns  :
 ## Arguments: $active_parameter_href   => Holds all set parameter for analysis
-##          : $associated_programs_ref => The parameters program(s) {REF}
+##          : $associated_recipes_ref  => The parameters recipe(s) {REF}
 ##          : $family_id               => The family_id
 ##          : $log                     => Log object to write to
 ##          : $parameter_exists_check  => Check if intendend file exists in reference directory
@@ -345,7 +342,7 @@ sub check_parameter_files {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $associated_programs_ref;
+    my $associated_recipes_ref;
     my $log;
     my $parameter_exists_check;
     my $parameter_href;
@@ -362,11 +359,11 @@ sub check_parameter_files {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        associated_programs_ref => {
+        associated_recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$associated_programs_ref,
+            store       => \$associated_recipes_ref,
             strict_type => 1,
         },
         family_id => {
@@ -412,29 +409,27 @@ sub check_parameter_files {
       if ( exists $only_wgs{$parameter_name}
         && $consensus_analysis_type =~ / wgs /xsm );
 
-    ## Check all programs that use parameter
-  ASSOCIATED_PROGRAM:
-    foreach my $associated_program ( @{$associated_programs_ref} ) {
+    ## Check all recipes that use parameter
+  ASSOCIATED_RECIPE:
+    foreach my $associated_recipe ( @{$associated_recipes_ref} ) {
 
-        ## Active associated program
-        my $associated_program_name =
-          $active_parameter_href->{$associated_program};
+        ## Active associated recipe
+        my $associated_recipe_name = $active_parameter_href->{$associated_recipe};
 
         ## Active parameter
         my $active_parameter = $active_parameter_href->{$parameter_name};
 
-        ## Only check active associated programs parameters
-        next ASSOCIATED_PROGRAM if ( not $associated_program_name );
+        ## Only check active associated recipes parameters
+        next ASSOCIATED_RECIPE if ( not $associated_recipe_name );
 
         ## Only check active parameters
-        next ASSOCIATED_PROGRAM if ( not defined $active_parameter );
+        next ASSOCIATED_RECIPE if ( not defined $active_parameter );
 
         if ( ref $active_parameter eq q{ARRAY} ) {
 
             ## Get path for array elements
           PATH:
-            foreach my $path ( @{ $active_parameter_href->{$parameter_name} } )
-            {
+            foreach my $path ( @{ $active_parameter_href->{$parameter_name} } ) {
 
                 check_filesystem_objects_and_index_existance(
                     {
@@ -453,8 +448,7 @@ sub check_parameter_files {
 
             ## Get path for hash keys
           PATH:
-            for my $path ( keys %{ $active_parameter_href->{$parameter_name} } )
-            {
+            for my $path ( keys %{ $active_parameter_href->{$parameter_name} } ) {
 
                 check_filesystem_objects_and_index_existance(
                     {
@@ -515,8 +509,7 @@ sub check_target_bed_file_suffix {
             store       => \$parameter_name,
             strict_type => 1,
         },
-        path =>
-          { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -576,8 +569,7 @@ sub check_vcfanno_toml {
     my $FILEHANDLE = IO::Handle->new();
 
     open $FILEHANDLE, q{<}, $vcfanno_file_toml
-      or $log->logdie(
-        q{Cannot open '} . $vcfanno_file_toml . q{': } . $OS_ERROR );
+      or $log->logdie( q{Cannot open '} . $vcfanno_file_toml . q{': } . $OS_ERROR );
 
   LINE:
     while (<$FILEHANDLE>) {
@@ -664,10 +656,10 @@ sub _check_program_name_path_binaries {
         next PARAMETER
           if ( not exists $parameter_href->{$parameter_name}{type} );
 
-        ## Only check path(s) for parameters with type value eq "program"
+        ## Only check path(s) for parameters with type value eq "recipe"
         next PARAMETER
-          if ( not $parameter_href->{$parameter_name}{type} eq q{program} );
-        ## Only check path(s) for active programs
+          if ( not $parameter_href->{$parameter_name}{type} eq q{recipe} );
+        ## Only check path(s) for active recipes
         next PARAMETER if ( not $active_parameter_href->{$parameter_name} );
 
         ## Alias
@@ -695,7 +687,7 @@ sub _check_program_name_path_binaries {
 
 sub _check_program_source_env_cmd_binary {
 
-## Function : Checking commands for _program source environment command binary exists and is executable
+## Function : Checking commands for program source environment command binary exists and is executable
 ## Returns  : %seen
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $log                   => Log object

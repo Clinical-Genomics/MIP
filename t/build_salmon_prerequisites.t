@@ -68,18 +68,18 @@ diag(   q{Test build_salmon_quant_prerequisites from Salmon_quant_prerequisites.
 my $log = test_log();
 
 ## Given build parameters
-my $program_name = q{salmon_quant};
+my $recipe_name = q{salmon_quant};
 
 my %active_parameter = test_mip_hashes(
     {
         mip_hash_name => q{active_parameter},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 my %infile_lane_prefix;
@@ -103,7 +103,7 @@ trap {
             parameter_href          => \%parameter,
             parameter_build_suffixes_ref =>
               \@{ $file_info{salmon_quant_reference_genome} },
-            program_name     => $program_name,
+            recipe_name      => $recipe_name,
             sample_info_href => \%sample_info,
         }
       )

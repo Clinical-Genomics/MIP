@@ -50,7 +50,7 @@ sub analysis_gatk_variantrecalibration_wes {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 
@@ -62,7 +62,7 @@ sub analysis_gatk_variantrecalibration_wes {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -110,10 +110,10 @@ sub analysis_gatk_variantrecalibration_wes {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -134,13 +134,13 @@ sub analysis_gatk_variantrecalibration_wes {
 
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_variantrecalibrator gatk_applyvqsr gatk_selectvariants gatk_calculategenotypeposteriors };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -157,7 +157,7 @@ sub analysis_gatk_variantrecalibration_wes {
             id             => $family_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -172,23 +172,23 @@ sub analysis_gatk_variantrecalibration_wes {
       $active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians};
     my $enable_snv_max_gaussians_filter =
       $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode       = $active_parameter_href->{$program_name};
+    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $resource_indel_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_indel};
     my $resource_snv_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_snv};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -202,7 +202,7 @@ sub analysis_gatk_variantrecalibration_wes {
                 file_name_prefixes_ref => [$infile_name_prefix],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
-                program_name           => $program_name,
+                recipe_name            => $recipe_name,
                 temp_directory         => $temp_directory,
             }
         )
@@ -217,8 +217,8 @@ sub analysis_gatk_variantrecalibration_wes {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -227,8 +227,8 @@ sub analysis_gatk_variantrecalibration_wes {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -236,7 +236,7 @@ sub analysis_gatk_variantrecalibration_wes {
 
     ## Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) =
-      splitpath( $program_info_path . $DOT . q{stderr.txt} );
+      splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
 
     ## Create .fam file to be used in variant calling analyses
     my $fam_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
@@ -255,7 +255,7 @@ sub analysis_gatk_variantrecalibration_wes {
     my %commands = gatk_pedigree_flag(
         {
             fam_file_path => $fam_file_path,
-            program_name  => $program_name,
+            recipe_name   => $recipe_name,
         }
     );
 
@@ -453,22 +453,22 @@ sub analysis_gatk_variantrecalibration_wes {
 
     close $FILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
 
         # Used to find order of samples in qccollect downstream
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
-                program_name     => q{pedigree_check},
+                recipe_name      => q{pedigree_check},
                 sample_info_href => $sample_info_href,
             }
         );
@@ -500,7 +500,7 @@ sub analysis_gatk_variantrecalibration_wgs {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 
@@ -512,7 +512,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -560,10 +560,10 @@ sub analysis_gatk_variantrecalibration_wgs {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -585,7 +585,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -593,7 +593,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_variantrecalibrator gatk_applyvqsr gatk_selectvariants gatk_calculategenotypeposteriors };
     use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_processing_metafile_to_sample_info };
+      qw{ add_recipe_outfile_to_sample_info add_processing_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -612,7 +612,7 @@ sub analysis_gatk_variantrecalibration_wgs {
             id             => $family_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -627,23 +627,23 @@ sub analysis_gatk_variantrecalibration_wgs {
       $active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians};
     my $enable_snv_max_gaussians_filter =
       $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode       = $active_parameter_href->{$program_name};
+    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $resource_indel_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_indel};
     my $resource_snv_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_snv};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -657,7 +657,7 @@ sub analysis_gatk_variantrecalibration_wgs {
                 file_name_prefixes_ref => [$infile_name_prefix],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
-                program_name           => $program_name,
+                recipe_name            => $recipe_name,
                 temp_directory         => $temp_directory,
             }
         )
@@ -672,8 +672,8 @@ sub analysis_gatk_variantrecalibration_wgs {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -682,8 +682,8 @@ sub analysis_gatk_variantrecalibration_wgs {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -691,7 +691,7 @@ sub analysis_gatk_variantrecalibration_wgs {
 
     ## Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) =
-      splitpath( $program_info_path . $DOT . q{stderr.txt} );
+      splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
 
     ## Create .fam file to be used in variant calling analyses
     my $fam_file_path = catfile( $outdir_path_prefix, $family_id . $DOT . q{fam} );
@@ -710,7 +710,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     my %commands = gatk_pedigree_flag(
         {
             fam_file_path => $fam_file_path,
-            program_name  => $program_name,
+            recipe_name   => $recipe_name,
         }
     );
 
@@ -918,22 +918,22 @@ sub analysis_gatk_variantrecalibration_wgs {
 
     close $FILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
 
         # Used to find order of samples in qccollect downstream
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
-                program_name     => q{pedigree_check},
+                recipe_name      => q{pedigree_check},
                 sample_info_href => $sample_info_href,
             }
         );

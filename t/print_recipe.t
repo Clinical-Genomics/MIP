@@ -43,17 +43,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Pedigree} => [qw{ gatk_pedigree_flag }],
-        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
+        q{MIP::Get::Analysis}  => [qw{ print_recipe }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Pedigree qw{ gatk_pedigree_flag };
+use MIP::Get::Analysis qw{ print_recipe };
 
-diag(   q{Test gatk_pedigree_flag from Pedigree.pm v}
-      . $MIP::File::Format::Pedigree::VERSION
+diag(   q{Test print_recipe from Analysis.pm v}
+      . $MIP::Get::Analysis::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,17 +61,23 @@ diag(   q{Test gatk_pedigree_flag from Pedigree.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $fam_file_path_test = catfile( $Bin, qw{ data 643594-miptest 643594-200M.fam } );
+my %parameter = ( bwa_mem => { type => q{recipe} } );
 
-my %command = gatk_pedigree_flag(
+my @printed_recipes = print_recipe(
     {
-        fam_file_path            => $fam_file_path_test,
-        pedigree_validation_type => q{STRICT},
+        parameter_href    => \%parameter,
+        print_recipe_mode => 1,
+        define_parameters_files_ref =>
+          [ catfile( $Bin, qw{ data test_data define_parameters.yaml } ) ],
     }
 );
 
-is( $command{pedigree_validation_type},
-    q{STRICT}, q{Pedigree validation type is verified} );
-is( $command{pedigree}, $fam_file_path_test, q{Path to pedigree file is verified} );
+is( scalar @printed_recipes, 1, q{Did not print rio block: bamcalibrationblock} );
+
+my @recipe_mode = split $SPACE, $printed_recipes[0];
+
+is( $recipe_mode[1], 1, q{Printed correct recipe mode} );
+
+is( $printed_recipes[0], q{bwa_mem 1}, q{Printed recipe} );
 
 done_testing();

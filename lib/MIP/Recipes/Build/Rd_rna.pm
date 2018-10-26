@@ -124,12 +124,12 @@ sub build_rd_rna_meta_files {
   BUILD_RECIPE:
     foreach my $parameter_build_name ( keys %build_recipe ) {
 
-      PROGRAM:
-        foreach my $program (
-            @{ $parameter_href->{$parameter_build_name}{associated_program} } )
+      RECIPE:
+        foreach
+          my $recipe ( @{ $parameter_href->{$parameter_build_name}{associated_recipe} } )
         {
 
-            next PROGRAM if ( not $active_parameter_href->{$program} );
+            next RECIPE if ( not $active_parameter_href->{$recipe} );
 
             next BUILD_RECIPE
               if ( not $parameter_href->{$parameter_build_name}{build_file} == 1 );
@@ -144,12 +144,12 @@ sub build_rd_rna_meta_files {
                     parameter_build_suffixes_ref =>
                       \@{ $file_info_href->{$parameter_build_name} },
                     parameter_href   => $parameter_href,
-                    program_name     => $program,
+                    recipe_name      => $recipe,
                     sample_info_href => $sample_info_href,
                 }
             );
 
-            ## Build once for all associated programs
+            ## Build once for all associated recipes
             $parameter_href->{$parameter_build_name}{build_file} = 0;
         }
     }

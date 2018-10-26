@@ -45,9 +45,9 @@ sub analysis_bamcalibrationblock {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $log                     => Log object to write to
-##          : $order_programs_ref      => Order of programs
+##          : $order_recipes_ref       => Order of recipes
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 
@@ -60,9 +60,9 @@ sub analysis_bamcalibrationblock {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
-    my $order_programs_ref;
+    my $order_recipes_ref;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -109,11 +109,11 @@ sub analysis_bamcalibrationblock {
             required => 1,
             store    => \$log,
         },
-        order_programs_ref => {
+        order_recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$order_programs_ref,
+            store       => \$order_recipes_ref,
             strict_type => 1,
         },
         parameter_href => {
@@ -123,10 +123,10 @@ sub analysis_bamcalibrationblock {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -145,8 +145,8 @@ sub analysis_bamcalibrationblock {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Log::MIP_log4perl qw{ log_display_program_for_user };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
+    use MIP::Get::Parameter qw{ get_recipe_parameters };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -159,17 +159,17 @@ sub analysis_bamcalibrationblock {
 
     ## Broadcasting
   PROGRAM:
-    foreach my $program ( @{$order_programs_ref} ) {
+    foreach my $recipe ( @{$order_recipes_ref} ) {
 
-        ## Only for active programs
-        next PROGRAM if ( not $active_parameter_href->{$program} );
+        ## Only for active recipes
+        next PROGRAM if ( not $active_parameter_href->{$recipe} );
 
         ## For displaying
-        log_display_program_for_user(
+        log_display_recipe_for_user(
             {
                 indent_level => 1,
                 log          => $log,
-                program      => $program,
+                recipe       => $recipe,
             }
         );
     }
@@ -178,15 +178,15 @@ sub analysis_bamcalibrationblock {
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         my $xargs_file_counter = 0;
-        my ( $c_n, $t, @source_environment_cmds ) = get_module_parameters(
+        my ( $c_n, $t, @source_environment_cmds ) = get_recipe_parameters(
             {
                 active_parameter_href => $active_parameter_href,
-                program_name          => $program_name,
+                recipe_name           => $recipe_name,
             }
         );
 
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $file_path, $program_info_path ) = setup_script(
+        ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+        my ( $file_path, $recipe_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 core_number           => $CORE_NUMBER,
@@ -194,21 +194,21 @@ sub analysis_bamcalibrationblock {
                 FILEHANDLE            => $FILEHANDLE,
                 job_id_href           => $job_id_href,
                 log                   => $log,
-                program_directory => $active_parameter_href->{outaligner_dir},
-                program_name      => $program_name,
-                process_time      => $PROCESS_TIME,
+                recipe_directory      => $active_parameter_href->{outaligner_dir},
+                recipe_name           => $recipe_name,
+                process_time          => $PROCESS_TIME,
                 source_environment_commands_ref => \@source_environment_cmds,
                 temp_directory                  => $temp_directory,
             }
         );
 
       PROGRAM:
-        foreach my $program ( @{$order_programs_ref} ) {
+        foreach my $recipe ( @{$order_recipes_ref} ) {
 
-            ## Only for active programs
-            next PROGRAM if ( not $active_parameter_href->{$program} );
+            ## Only for active recipes
+            next PROGRAM if ( not $active_parameter_href->{$recipe} );
 
-            ($xargs_file_counter) = $bamcal_ar_href->{$program}->(
+            ($xargs_file_counter) = $bamcal_ar_href->{$recipe}->(
                 {
                     active_parameter_href   => $active_parameter_href,
                     file_info_href          => $file_info_href,
@@ -217,8 +217,8 @@ sub analysis_bamcalibrationblock {
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
                     parameter_href          => $parameter_href,
-                    program_info_path       => $program_info_path,
-                    program_name            => $program,
+                    recipe_info_path        => $recipe_info_path,
+                    recipe_name             => $recipe,
                     sample_id               => $sample_id,
                     sample_info_href        => $sample_info_href,
                     xargs_file_counter      => $xargs_file_counter,

@@ -50,7 +50,7 @@ sub analysis_bwa_mem {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -63,7 +63,7 @@ sub analysis_bwa_mem {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
 
@@ -112,10 +112,10 @@ sub analysis_bwa_mem {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -142,7 +142,7 @@ sub analysis_bwa_mem {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_module_parameters get_program_attributes get_read_group };
+      qw{ get_recipe_parameters get_recipe_attributes get_read_group };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -150,7 +150,7 @@ sub analysis_bwa_mem {
     use MIP::Program::Alignment::Samtools qw{ samtools_stats samtools_view };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
     use MIP::QC::Record
-      qw{ add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+      qw{ add_processing_metafile_to_sample_info add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -158,8 +158,8 @@ sub analysis_bwa_mem {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Set MIP recipe name
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -168,7 +168,7 @@ sub analysis_bwa_mem {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -180,18 +180,18 @@ sub analysis_bwa_mem {
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -205,7 +205,7 @@ sub analysis_bwa_mem {
                 file_name_prefixes_ref => \@{ $infile_lane_prefix_href->{$sample_id} },
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
-                program_name           => $program_name,
+                recipe_name            => $recipe_name,
                 temp_directory         => $temp_directory,
             }
         )
@@ -225,7 +225,7 @@ sub analysis_bwa_mem {
 
     ## Assign file tags
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
+      $file_info_href->{$sample_id}{$recipe_name}{file_tag};
 
     my $uncompressed_bam_output;
     if ( $outfile_suffix eq q{.bam} ) {
@@ -259,8 +259,8 @@ sub analysis_bwa_mem {
         my $interleaved_fastq_file =
           $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}{interleaved};
 
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $recipe_file_path, $program_info_path ) = setup_script(
+        ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+        my ( $recipe_file_path, $recipe_info_path ) = setup_script(
             {
                 active_parameter_href           => $active_parameter_href,
                 core_number                     => $core_number,
@@ -268,8 +268,8 @@ sub analysis_bwa_mem {
                 FILEHANDLE                      => $FILEHANDLE,
                 job_id_href                     => $job_id_href,
                 log                             => $log,
-                program_directory               => $program_name,
-                program_name                    => $program_name,
+                recipe_directory                => $recipe_name,
+                recipe_name                     => $recipe_name,
                 process_time                    => $time,
                 sleep                           => 1,
                 source_environment_commands_ref => \@source_environment_cmds,
@@ -279,7 +279,7 @@ sub analysis_bwa_mem {
 
         # Split to enable submission to %sample_info_qc later
         my ( $volume, $directory, $stderr_file ) =
-          splitpath( $program_info_path . $DOT . q{stderr.txt} );
+          splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
 
         ### SHELL:
 
@@ -311,7 +311,7 @@ sub analysis_bwa_mem {
 
         ### BWA MEM
         say {$FILEHANDLE} q{## Aligning reads with }
-          . $program_name
+          . $recipe_name
           . q{ and sorting via Sambamba};
 
         ## Detect version and source of the human_genome_reference: Source (hg19 or GRCh) and return the correct bwa_mem binary
@@ -536,7 +536,7 @@ sub analysis_bwa_mem {
 
         close $FILEHANDLE;
 
-        if ( $program_mode == 1 ) {
+        if ( $recipe_mode == 1 ) {
 
             my $most_complete_format_key =
               q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
@@ -555,12 +555,12 @@ sub analysis_bwa_mem {
 
                 # Required for analysisRunStatus check downstream
                 my $qc_cram_path = $outfile_path_prefix . $DOT . q{cram};
-                add_program_metafile_to_sample_info(
+                add_recipe_metafile_to_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         metafile_tag     => q{cram},
                         path             => $qc_cram_path,
-                        program_name     => $program_name,
+                        recipe_name      => $recipe_name,
                         sample_id        => $sample_id,
                         sample_info_href => $sample_info_href,
                     }
@@ -571,11 +571,11 @@ sub analysis_bwa_mem {
 
                 ## Collect QC metadata info for later use
                 my $qc_stats_outfile = $outfile_path_prefix . $DOT . q{stats};
-                add_program_outfile_to_sample_info(
+                add_recipe_outfile_to_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         path             => $qc_stats_outfile,
-                        program_name     => q{bamstats},
+                        recipe_name      => q{bamstats},
                         sample_id        => $sample_id,
                         sample_info_href => $sample_info_href,
                     }
@@ -584,11 +584,11 @@ sub analysis_bwa_mem {
 
             if ( $bwa_binary eq q{bwa mem} ) {
 
-                add_program_outfile_to_sample_info(
+                add_recipe_outfile_to_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         path             => catfile( $directory, $stderr_file ),
-                        program_name     => $program_name,
+                        recipe_name      => $recipe_name,
                         sample_id        => $sample_id,
                         sample_info_href => $sample_info_href,
                     }
@@ -597,11 +597,11 @@ sub analysis_bwa_mem {
             if ( $bwa_binary eq q{run-bwamem} ) {
 
                 my $qc_bwa_log = $outfile_path_prefix . $DOT . q{log.bwamem};
-                add_program_outfile_to_sample_info(
+                add_recipe_outfile_to_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         path             => $$qc_bwa_log,
-                        program_name     => $program_name,
+                        recipe_name      => $recipe_name,
                         sample_id        => $sample_id,
                         sample_info_href => $sample_info_href,
                     }

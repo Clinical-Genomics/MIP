@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -45,8 +45,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module =
-      ( q{MIP::Test::Fixtures} =>
-          [qw{ test_log test_mip_hashes test_standard_cli }], );
+      ( q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -65,24 +64,24 @@ diag(   q{Test test_mip_hashes from Fixtures.pm v}
 my $log = test_log();
 
 ## Given active parameters
-my $program_name = q{bwa_mem};
+my $recipe_name = q{bwa_mem};
 
 my %active_parameter = test_mip_hashes(
     {
         mip_hash_name => q{active_parameter},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 
 ## Then dynamic parameters should be set
-is( $active_parameter{$program_name}, 2, q{Set program mode} );
+is( $active_parameter{$recipe_name}, 2, q{Set recipe mode} );
 ok( $active_parameter{temp_directory}, q{Set temp_directory} );
 
 ## Given file info parameters
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 ## Then dynamic parameters should be set
@@ -96,6 +95,6 @@ is(
 my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
 
 ## Then dynamic parameters should be set
-is( $parameter{$program_name}{chain}, q{TEST}, q{Set program chain} );
+is( $parameter{$recipe_name}{chain}, q{TEST}, q{Set recipe chain} );
 
 done_testing();

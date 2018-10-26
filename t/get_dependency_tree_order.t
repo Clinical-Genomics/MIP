@@ -1,13 +1,12 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
-use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
@@ -21,69 +20,34 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.00;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Get::Analysis}  => [qw{ get_dependency_tree_order }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Get::Analysis});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Get::Analysis qw{ get_dependency_tree_order };
@@ -99,83 +63,50 @@ diag(   q{Test get_dependency_tree_order from Analysis.pm v}
 
 my %dependency_tree = (
     ALL_CHAINS => [
-        q{program_0},
-        q{program_1},
+        q{recipe_0},
+        q{recipe_1},
         {
             CHAIN_0 => {
                 PARALLEL => [
-                    q{parallel_program_0},
-                    q{parallel_program_1},
+                    q{parallel_recipe_0},
+                    q{parallel_recipe_1},
                     {
-                        parallel_program_2 =>
-                          [ q{parallel_program_2}, q{parallel_program_3}, ],
+                        parallel_recipe_2 =>
+                          [ q{parallel_recipe_2}, q{parallel_recipe_3}, ],
                     },
                 ],
             },
         },
-        q{program_2},
+        q{recipe_2},
         {
             CHAIN_1 => {
                 PARALLEL => [
-                    q{parallel_program_4},
-                    q{parallel_program_5},
+                    q{parallel_recipe_4},
+                    q{parallel_recipe_5},
                     {
-                        parallel_program_6 =>
-                          [ q{parallel_program_6}, q{parallel_program_7}, ],
+                        parallel_recipe_6 =>
+                          [ q{parallel_recipe_6}, q{parallel_recipe_7}, ],
                     },
                 ],
             },
         },
-        q{program_3},
+        q{recipe_3},
     ],
 );
 
 ## Expected results from traversing the dependency tree
-my @expected_programs =
-  qw{ program_0 program_1 parallel_program_0 parallel_program_1 parallel_program_2 parallel_program_3 program_2 parallel_program_4 parallel_program_5 parallel_program_6 parallel_program_7 program_3 };
+my @expected_recipes =
+  qw{ recipe_0 recipe_1 parallel_recipe_0 parallel_recipe_1 parallel_recipe_2 parallel_recipe_3 recipe_2 parallel_recipe_4 parallel_recipe_5 parallel_recipe_6 parallel_recipe_7 recipe_3 };
 
-my @programs;
+my @recipes;
 
 get_dependency_tree_order(
     {
         dependency_tree_href => \%dependency_tree,
-        programs_ref         => \@programs,
+        recipes_ref          => \@recipes,
     }
 );
 
-is_deeply( \@programs, \@expected_programs, q{Got order of programs } );
+is_deeply( \@recipes, \@expected_recipes, q{Got order of recipes } );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}

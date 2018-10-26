@@ -48,7 +48,7 @@ sub build_human_genome_prerequisites {
 ##          : $log                     => Log object
 ##          : $parameter_build_suffixes_ref => The human genome reference associated file endings {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program under evaluation
+##          : $recipe_name            => Program under evaluation
 ##          : $random_integer          => The random integer to create temporary file name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -64,7 +64,7 @@ sub build_human_genome_prerequisites {
     my $log;
     my $parameter_build_suffixes_ref;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $random_integer;
     my $sample_info_href;
 
@@ -128,10 +128,10 @@ sub build_human_genome_prerequisites {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         random_integer => { store => \$random_integer, strict_type => 1, },
@@ -169,7 +169,7 @@ sub build_human_genome_prerequisites {
     my $submit_switch;
 
     ## Alias
-    my $program_mode = $active_parameter_href->{$program_name};
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
 
     ## No supplied FILEHANDLE i.e. create new sbatch script
     if ( not defined $FILEHANDLE ) {
@@ -182,7 +182,7 @@ sub build_human_genome_prerequisites {
         ## Generate a random integer between 0-10,000.
         $random_integer = int rand $MAX_RANDOM_NUMBER;
 
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+        ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         ($recipe_file_path) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
@@ -190,8 +190,8 @@ sub build_human_genome_prerequisites {
                 FILEHANDLE            => $FILEHANDLE,
                 directory_id          => $family_id,
                 log                   => $log,
-                program_name          => $program_name,
-                program_directory     => $program_name,
+                recipe_name           => $recipe_name,
+                recipe_directory      => $recipe_name,
             }
         );
     }
@@ -202,7 +202,7 @@ sub build_human_genome_prerequisites {
         $log->warn( q{Will try to decompress }
               . $human_genome_reference
               . q{ before executing }
-              . $program_name );
+              . $recipe_name );
 
         ## Perl wrapper for writing gzip recipe to $FILEHANDLE
         gzip(
@@ -236,7 +236,7 @@ sub build_human_genome_prerequisites {
                 log                          => $log,
                 parameter_build_suffixes_ref => \@{ $file_info_href->{exome_target_bed} },
                 parameter_href               => $parameter_href,
-                program_name                 => $program_name,
+                recipe_name                  => $recipe_name,
                 sample_info_href             => $sample_info_href,
             }
         );
@@ -253,7 +253,7 @@ sub build_human_genome_prerequisites {
                       . q{ file for }
                       . $human_genome_reference
                       . q{ before executing }
-                      . $program_name );
+                      . $recipe_name );
 
                 my $filename_prefix = catfile( $reference_dir,
                     $file_info_href->{human_genome_reference_name_prefix} );
@@ -300,7 +300,7 @@ sub build_human_genome_prerequisites {
                       . q{ file for }
                       . $human_genome_reference
                       . q{ before executing }
-                      . $program_name );
+                      . $recipe_name );
 
                 my $human_genome_reference_temp_file =
                   $human_genome_reference . $UNDERSCORE . $random_integer;
@@ -359,7 +359,7 @@ sub build_human_genome_prerequisites {
 
         close $FILEHANDLE;
 
-        if ( $program_mode == 1 ) {
+        if ( $recipe_mode == 1 ) {
 
             submit_recipe(
                 {

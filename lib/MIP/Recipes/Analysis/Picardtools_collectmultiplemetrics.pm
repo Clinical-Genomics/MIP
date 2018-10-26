@@ -44,7 +44,7 @@ sub analysis_picardtools_collectmultiplemetrics {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -57,7 +57,7 @@ sub analysis_picardtools_collectmultiplemetrics {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
 
@@ -106,10 +106,10 @@ sub analysis_picardtools_collectmultiplemetrics {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_id => {
@@ -135,13 +135,13 @@ sub analysis_picardtools_collectmultiplemetrics {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_collectmultiplemetrics };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -156,7 +156,7 @@ sub analysis_picardtools_collectmultiplemetrics {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -168,18 +168,18 @@ sub analysis_picardtools_collectmultiplemetrics {
     my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
     my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
 
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -193,7 +193,7 @@ sub analysis_picardtools_collectmultiplemetrics {
                 file_name_prefixes_ref => [$infile_name_prefix],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
-                program_name           => $program_name,
+                recipe_name            => $recipe_name,
                 temp_directory         => $temp_directory,
             }
         )
@@ -209,7 +209,7 @@ sub analysis_picardtools_collectmultiplemetrics {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
@@ -220,8 +220,8 @@ sub analysis_picardtools_collectmultiplemetrics {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -281,27 +281,27 @@ sub analysis_picardtools_collectmultiplemetrics {
 
     close $FILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         my $metrics_outfile_path =
           $outfile_path_prefix . $DOT . q{alignment_summary_metrics};
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $metrics_outfile_path,
-                program_name     => q{collectmultiplemetrics},
+                recipe_name      => q{collectmultiplemetrics},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
         my $insertsize_outfile_path =
           $outfile_path_prefix . $DOT . q{insert_size_metrics};
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $insertsize_outfile_path,
-                program_name     => q{collectmultiplemetricsinsertsize},
+                recipe_name      => q{collectmultiplemetricsinsertsize},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

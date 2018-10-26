@@ -1,5 +1,6 @@
 package MIP::Parse::File;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -137,8 +138,7 @@ sub parse_fastq_infiles {
             }
 
             ## Parse infile according to filename convention
-            my %infile_info =
-              parse_fastq_infiles_format( { file_name => $file_name, } );
+            my %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
 
             ## Get read length and interleaved status from file
             if ( exists $infile_info{direction}
@@ -148,7 +148,7 @@ sub parse_fastq_infiles {
                 ## Get sequence read length from file
                 $read_length = get_read_length(
                     {
-                        file_path => catfile( $infiles_dir, $file_name ),
+                        file_path         => catfile( $infiles_dir, $file_name ),
                         read_file_command => $read_file_command,
                     }
                 );
@@ -156,8 +156,8 @@ sub parse_fastq_infiles {
                 ## Is file interleaved and have proper read direction
                 $is_interleaved = check_interleaved(
                     {
-                        file_path => catfile( $infiles_dir, $file_name ),
-                        log       => $log,
+                        file_path         => catfile( $infiles_dir, $file_name ),
+                        log               => $log,
                         read_file_command => $read_file_command,
                     }
                 );
@@ -173,8 +173,7 @@ sub parse_fastq_infiles {
                         infile_sample_id => $infile_info{infile_sample_id},
                         log              => $log,
                         sample_id        => $sample_id,
-                        sample_ids_ref =>
-                          \@{ $active_parameter_href->{sample_ids} },
+                        sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
                     }
                 );
 
@@ -195,43 +194,39 @@ sub parse_fastq_infiles {
                         lane                    => $infile_info{lane},
                         lane_tracker            => $lane_tracker,
                         read_length             => $read_length,
-                        sample_id        => $infile_info{infile_sample_id},
-                        sample_info_href => $sample_info_href,
+                        sample_id               => $infile_info{infile_sample_id},
+                        sample_info_href        => $sample_info_href,
                     }
                 );
             }
             else {
                 ## No regexp match i.e. file does not follow filename convention
 
-                $log->warn(
-                        q{Could not detect MIP file name convention for file: }
+                $log->warn( q{Could not detect MIP file name convention for file: }
                       . $file_name
                       . q{.} );
-                $log->warn(
-                    q{Will try to find mandatory information from fastq header.}
-                );
+                $log->warn(q{Will try to find mandatory information from fastq header.});
 
                 ## Check that file name at least contains sample id
                 if ( $file_name !~ /$sample_id/sxm ) {
 
                     $log->fatal(
-q{Please check that the file name contains the sample_id.}
-                    );
+                        q{Please check that the file name contains the sample_id.});
                     exit 1;
                 }
 
                 ## Get run info from fastq file header
                 my %fastq_info_header = get_fastq_file_header_info(
                     {
-                        file_path => catfile( $infiles_dir, $file_name ),
-                        log       => $log,
+                        file_path         => catfile( $infiles_dir, $file_name ),
+                        log               => $log,
                         read_file_command => $read_file_command,
                     }
                 );
 
                 if ( not exists $fastq_info_header{index} ) {
 
-           # Special case since index is not present in fast headers casaava 1.4
+                    # Special case since index is not present in fast headers casaava 1.4
                     $fastq_info_header{index} = $EMPTY_STR;
                 }
                 ## Adds information derived from infile name to hashes
@@ -311,9 +306,7 @@ sub parse_fastq_infiles_format {
     my @file_features = $file_name =~ /$mip_file_name_regexp{regexp}/sxm;
 
   FEATURE:
-    while ( my ( $index, $feature ) =
-        each @{ $mip_file_name_regexp{features} } )
-    {
+    while ( my ( $index, $feature ) = each @{ $mip_file_name_regexp{features} } ) {
 
         ## Return undef if not all expected features found
         return if ( not $file_features[$index] );
@@ -337,7 +330,7 @@ sub parse_io_outfiles {
 ##          : $iterators_ref          => Build outfile using iterator (e.g contigs) {REF}
 ##          : $outdata_dir            => Outdata directory
 ##          : $parameter_href         => Parameter hash {REF}
-##          : $program_name           => Program name
+##          : $recipe_name            => Recipe name
 ##          : $stream                 => Stream (out)
 ##          : $temp_directory         => Temporary directory
 
@@ -353,7 +346,7 @@ sub parse_io_outfiles {
     my $iterators_ref;
     my $outdata_dir;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $temp_directory;
 
     ## Default(s)
@@ -409,10 +402,10 @@ sub parse_io_outfiles {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         stream => {
@@ -430,7 +423,7 @@ sub parse_io_outfiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes };
     use MIP::Set::File qw{ set_io_files };
 
     my @file_paths = @{$file_paths_ref};
@@ -438,15 +431,15 @@ sub parse_io_outfiles {
     ## Build default @file_paths
     if ( not @file_paths and $outdata_dir ) {
 
-        my %prg_atr = get_program_attributes(
+        my %rec_atr = get_recipe_attributes(
             {
                 parameter_href => $parameter_href,
-                program_name   => $program_name,
+                recipe_name    => $recipe_name,
             }
         );
-        my $outfile_tag    = $prg_atr{file_tag}       //= $EMPTY_STR;
-        my $outfile_suffix = $prg_atr{outfile_suffix} //= $EMPTY_STR;
-        my $directory = catdir( $outdata_dir, $id, $program_name );
+        my $outfile_tag    = $rec_atr{file_tag}       //= $EMPTY_STR;
+        my $outfile_suffix = $rec_atr{outfile_suffix} //= $EMPTY_STR;
+        my $directory = catdir( $outdata_dir, $id, $recipe_name );
 
         ## Default paths with iterators
         if ( @{$iterators_ref} and $file_name_prefix ) {
@@ -485,7 +478,7 @@ sub parse_io_outfiles {
             id             => $id,
             file_paths_ref => \@file_paths,
             file_info_href => $file_info_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => $stream,
             temp_directory => $temp_directory,
         }
@@ -496,7 +489,7 @@ sub parse_io_outfiles {
             id             => $id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => $stream,
         }
     );

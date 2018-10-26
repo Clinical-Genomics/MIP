@@ -24,7 +24,7 @@ MIP requires pedigree information recorded in a pedigree.yaml file and a config 
 
 ## Dependencies
 Make sure you have installed all dependencies and that they are in your ``$PATH``.
-You only need to install the dependencies that are required for the modules that you want to run. If you have not installed a dependency for a module, MIP will tell you what dependencies you need to install (or add to your ``$PATH``) and exit. MIP comes with an install application, which will install all necessary programs to execute models in MIP via bioconda and/or $SHELL.
+You only need to install the dependencies that are required for the recipes that you want to run. If you have not installed a dependency for a module, MIP will tell you what dependencies you need to install (or add to your ``$PATH``) and exit. MIP comes with an install application, which will install all necessary programs to execute models in MIP via bioconda and/or $SHELL.
 
 ### **Programs**
 
@@ -84,7 +84,7 @@ If you do not supply these parameters (Bwa/Star) MIP will create these from scra
 
 Capture target files:
  1. The "infile_list" and .pad100.infile_list files used in ``ppicardtoolscollecthsmetrics``.
- 2. The ".pad100.interval_list" file used by some GATK modules.
+ 2. The ".pad100.interval_list" file used by some GATK recipes.
 
 #### *Note*
 If you do not supply these parameters MIP will create these from scratch using the supplied "latest" supported capture kit ".bed" file and the supplied human reference genome as template.

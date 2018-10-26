@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -43,16 +43,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Parameter} => [qw{ parse_start_with_program }],
+        q{MIP::Parse::Parameter} => [qw{ parse_start_with_recipe }],
         q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::Parameter qw{ parse_start_with_program };
+use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 
-diag(   q{Test parse_start_with_program from Parameter.pm v}
+diag(   q{Test parse_start_with_recipe from Parameter.pm v}
       . $MIP::Parse::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -63,13 +63,13 @@ diag(   q{Test parse_start_with_program from Parameter.pm v}
 
 my $log = test_log();
 
-## Given no defined start_with_program parameter
+## Given no defined start_with_recipe parameter
 my %active_parameter;
 my %parameter = ( bwa_mem => { default => 0, }, );
 my $initiation_file =
   catfile( dirname($Bin), qw{ definitions rd_dna_initiation_map.yaml } );
 
-my $return = parse_start_with_program(
+my $return = parse_start_with_recipe(
     {
         active_parameter_href => \%active_parameter,
         initiation_file       => $initiation_file,
@@ -81,10 +81,10 @@ my $return = parse_start_with_program(
 ## Then skip parsing
 is( $return, undef, q{Skip parsing} );
 
-## Given start_with_program parameter, when defined
-$active_parameter{start_with_program} = q{bwa_mem};
+## Given start_with_recipe parameter, when defined
+$active_parameter{start_with_recipe} = q{bwa_mem};
 
-my $is_ok = parse_start_with_program(
+my $is_ok = parse_start_with_recipe(
     {
         active_parameter_href => \%active_parameter,
         initiation_file       => $initiation_file,

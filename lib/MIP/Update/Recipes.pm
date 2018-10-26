@@ -1,5 +1,6 @@
-package MIP::Update::Programs;
+package MIP::Update::Recipes;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ update_prioritize_flag update_program_mode_for_analysis_type update_program_mode_with_dry_run_all update_program_mode_with_start_with };
+      qw{ update_prioritize_flag update_recipe_mode_for_analysis_type update_recipe_mode_with_dry_run_all update_recipe_mode_with_start_with };
 }
 
 ## Constants
@@ -33,18 +34,18 @@ Readonly my $SPACE   => q{ };
 
 sub update_prioritize_flag {
 
-##Function : Update prioritize flag depending on analysis run value as some programs are not applicable for e.g. wes
+##Function : Update prioritize flag depending on analysis run value as some recipes are not applicable for e.g. wes
 ##Returns  :
 ##Arguments: $consensus_analysis_type => Consensus analysis_type
 ##         : $prioritize_key          => Prioritize key to update
-##         : $programs_ref            => Programs to update {REF}
+##         : $recipes_ref             => Recipes to update {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $consensus_analysis_type;
     my $prioritize_key;
-    my $programs_ref;
+    my $recipes_ref;
 
     my $tmpl = {
         consensus_analysis_type => {
@@ -57,11 +58,11 @@ sub update_prioritize_flag {
             store       => \$prioritize_key,
             strict_type => 1,
         },
-        programs_ref => {
+        recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$programs_ref,
+            store       => \$recipes_ref,
             strict_type => 1,
         },
     };
@@ -76,7 +77,7 @@ sub update_prioritize_flag {
         my @callers = split $COMMA, $prioritize_key;
 
       CALLER:
-        foreach my $caller ( @{$programs_ref} ) {
+        foreach my $caller ( @{$recipes_ref} ) {
 
             ## Remove all wgs specific callers
             @callers = grep { $caller !~ /^$_/sxm } @callers;
@@ -88,14 +89,14 @@ sub update_prioritize_flag {
     return $prioritize_key;
 }
 
-sub update_program_mode_for_analysis_type {
+sub update_recipe_mode_for_analysis_type {
 
-##Function : Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
+##Function : Update recipe mode depending on analysis run value as some recipes are not applicable for e.g. wes
 ##Returns  :
 ##Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##         : $consensus_analysis_type => Consensus analysis_type
 ##         : $log                     => Log
-##         : $programs_ref            => Programs to update {REF}
+##         : $recipes_ref             => Recipes to update {REF}
 
     my ($arg_href) = @_;
 
@@ -103,7 +104,7 @@ sub update_program_mode_for_analysis_type {
     my $active_parameter_href;
     my $consensus_analysis_type;
     my $log;
-    my $programs_ref;
+    my $recipes_ref;
 
     my $tmpl = {
         active_parameter_href => {
@@ -124,11 +125,11 @@ sub update_program_mode_for_analysis_type {
             required => 1,
             store    => \$log,
         },
-        programs_ref => {
+        recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$programs_ref,
+            store       => \$recipes_ref,
             strict_type => 1,
         },
     };
@@ -139,15 +140,15 @@ sub update_program_mode_for_analysis_type {
 
         my @warning_msgs;
 
-      PROGRAM:
-        foreach my $program ( @{$programs_ref} ) {
+      RECIPE:
+        foreach my $recipe ( @{$recipes_ref} ) {
 
-            ## Update program mode
-            $active_parameter_href->{ $program } = 0;
+            ## Update recipe mode
+            $active_parameter_href->{$recipe} = 0;
 
             my $warning_msg =
                 q{Turned off: }
-              . $program
+              . $recipe
               . q{ as it is not applicable for }
               . $consensus_analysis_type
               . q{ analysis}
@@ -170,20 +171,20 @@ sub update_program_mode_for_analysis_type {
     return;
 }
 
-sub update_program_mode_with_dry_run_all {
+sub update_recipe_mode_with_dry_run_all {
 
-## Function : Update program mode depending on dry_run_all flag
+## Function : Update recipe mode depending on dry_run_all flag
 ## Returns  :
 ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
 ##          : $dry_run_all           => Simulation mode
-##          : $programs_ref          => Programs in MIP
+##          : $recipes_ref           => Recipes in MIP
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $dry_run_all;
-    my $programs_ref;
+    my $recipes_ref;
 
     my $tmpl = {
         active_parameter_href => {
@@ -199,11 +200,11 @@ sub update_program_mode_with_dry_run_all {
             store       => \$dry_run_all,
             strict_type => 1,
         },
-        programs_ref => {
+        recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$programs_ref,
+            store       => \$recipes_ref,
             strict_type => 1,
         },
     };
@@ -215,34 +216,34 @@ sub update_program_mode_with_dry_run_all {
 
     if ($dry_run_all) {
 
-      PROGRAM:
-        foreach my $program_name ( @{$programs_ref} ) {
+      RECIPE:
+        foreach my $recipe_name ( @{$recipes_ref} ) {
 
-            ## If program is activated
-            if ( $active_parameter_href->{$program_name} ) {
+            ## If recipe is activated
+            if ( $active_parameter_href->{$recipe_name} ) {
 
-                # Change program mode to simulation
-                $active_parameter_href->{$program_name} = $simulation_mode;
+                # Change recipe mode to simulation
+                $active_parameter_href->{$recipe_name} = $simulation_mode;
             }
         }
     }
     return;
 }
 
-sub update_program_mode_with_start_with {
+sub update_recipe_mode_with_start_with {
 
-## Function : Update program mode depending on start with flag
+## Function : Update recipe mode depending on start with flag
 ## Returns  :
 ## Arguments: $active_parameter_href   => The active parameters for this analysis hash {REF}
-##          : $programs_ref            => Programs in MIP
-##          : $start_with_programs_ref => Programs to run
+##          : $recipes_ref             => Recipes in MIP
+##          : $start_with_recipes_ref  => Recipes to run
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $programs_ref;
-    my $start_with_programs_ref;
+    my $recipes_ref;
+    my $start_with_recipes_ref;
 
     my $tmpl = {
         active_parameter_href => {
@@ -252,18 +253,18 @@ sub update_program_mode_with_start_with {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        programs_ref => {
+        recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$programs_ref,
+            store       => \$recipes_ref,
             strict_type => 1,
         },
-        start_with_programs_ref => {
+        start_with_recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$start_with_programs_ref,
+            store       => \$start_with_recipes_ref,
             strict_type => 1,
         },
     };
@@ -276,22 +277,22 @@ sub update_program_mode_with_start_with {
     ## Activated simulation mode
     my $simulation_mode = 2;
 
-  PROGRAM:
-    foreach my $program_name ( @{$programs_ref} ) {
+  RECIPE:
+    foreach my $recipe_name ( @{$recipes_ref} ) {
 
-        next PROGRAM if ( not $active_parameter_href->{$program_name} );
+        next RECIPE if ( not $active_parameter_href->{$recipe_name} );
 
-        ## If program is uppstream of start program
-        if ( not any { $_ eq $program_name } @{$start_with_programs_ref} ) {
+        ## If recipe is uppstream of start recipe
+        if ( not any { $_ eq $recipe_name } @{$start_with_recipes_ref} ) {
 
-            # Change program mode to simulation
-            $active_parameter_href->{$program_name} = $simulation_mode;
+            # Change recipe mode to simulation
+            $active_parameter_href->{$recipe_name} = $simulation_mode;
         }
         else {
-            #Program or downstream dependency program
+            #Recipe or downstream dependency recipe
 
-            # Change program mode to active
-            $active_parameter_href->{$program_name} = $run_mode;
+            # Change recipe mode to active
+            $active_parameter_href->{$recipe_name} = $run_mode;
         }
     }
     return;

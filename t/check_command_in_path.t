@@ -71,7 +71,7 @@ my %active_parameter = (
 );
 my %parameter;
 
-## Given switched off active parameter, when no parameter defined
+## Given switched off active recipe parameter, when no parameter defined
 my $return = check_command_in_path(
     {
         active_parameter_href => \%active_parameter,
@@ -83,12 +83,9 @@ my $return = check_command_in_path(
 ## Then return undef
 is( $return, undef, q{Skip check when no parameter defined in parameter hash} );
 
-## Given switched off active parameter and defined program parameter, when no defined
-## program_name_path
-%parameter = (
-    samtools => { type => q{program}, },
+## Given switched off active parameter and defined recipe parameter, when no defined program_name_path
+%parameter = ( samtools => { type => q{recipe}, }, );
 
-);
 $return = check_command_in_path(
     {
         active_parameter_href => \%active_parameter,
@@ -98,8 +95,7 @@ $return = check_command_in_path(
 );
 
 ## Then return undef
-is( $return, undef,
-    q{Skip check when no program_name_path defined in parameter hash} );
+is( $return, undef, q{Skip check when no program_name_path defined in parameter hash} );
 
 ## Given switched on active parameter, defined program and program_name_path parameter, when program is in path and executable
 %active_parameter = (
@@ -110,7 +106,7 @@ is( $return, undef,
 %parameter = (
     samtools => {
         program_name_path => [qw{ samtools }],
-        type              => q{program},
+        type              => q{recipe},
     },
 );
 
@@ -125,10 +121,9 @@ trap {
 };
 
 ## Then INFO message should broadcast
-like( $trap->stderr, qr/INFO/xms,
-    q{Found bin and executable: Throw INFO log message} );
+like( $trap->stderr, qr/INFO/xms, q{Found bin and executable: Throw INFO log message} );
 
-## Given switched on active parameter, defined program and program_name_path parameter, when program is in path and executable
+## Given switched on active parameter, defined recipe and program_name_path parameter, when program is in path and executable
 %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
     samtools   => 1,
@@ -137,7 +132,7 @@ like( $trap->stderr, qr/INFO/xms,
 %parameter = (
     samtools => {
         program_name_path => [qw{ no_binary }],
-        type              => q{program},
+        type              => q{recipe},
     },
 );
 
@@ -152,14 +147,13 @@ trap {
 };
 
 ## Then FATAL message should broadcast
-like( $trap->stderr, qr/FATAL/xms,
-    q{No bin and executable - Throw FATAL log message} );
+like( $trap->stderr, qr/FATAL/xms, q{No bin and executable - Throw FATAL log message} );
 
-## Given switched on active parameter, defined program and program_name_path
+## Given switched on active parameter, defined recipe and program_name_path
 ## parameter, when program is in env path and executable for
 ## module source environment command
 %active_parameter = (
-    conda_path => catfile( $Bin, qw{ data modules miniconda } ),
+    conda_path                        => catfile( $Bin, qw{ data modules miniconda } ),
     module_source_environment_command => {
         rankvariant => [ qw{ source activate test_env_1 }, ],
     },
@@ -169,7 +163,7 @@ like( $trap->stderr, qr/FATAL/xms,
 %parameter = (
     rankvariant => {
         program_name_path => [qw{ genmod }],
-        type              => q{program},
+        type              => q{recipe},
     },
 );
 
@@ -187,11 +181,11 @@ trap {
 like( $trap->stderr, qr/INFO/xms,
     q{Found bin and executable module source env cmd: Throw INFO log message} );
 
-## Given switched on active parameter, defined program and program_name_path
+## Given switched on active parameter, defined recipe and program_name_path
 ## parameter, when program is in env path and not executable for
 ## module source environment command
 %active_parameter = (
-    conda_path => catfile( $Bin, qw{ data modules miniconda } ),
+    conda_path                        => catfile( $Bin, qw{ data modules miniconda } ),
     module_source_environment_command => {
         rankvariant => [ qw{ source activate test_env_1 }, ],
     },
@@ -201,7 +195,7 @@ like( $trap->stderr, qr/INFO/xms,
 %parameter = (
     rankvariant => {
         program_name_path => [qw{ no_binary }],
-        type              => q{program},
+        type              => q{recipe},
     },
 );
 
@@ -217,13 +211,12 @@ trap {
 
 ## Then FATAL message should broadcast
 like( $trap->stderr, qr/FATAL/xms,
-    q{No bin and executable in module source env cmd - Throw FATAL log message}
-);
+    q{No bin and executable in module source env cmd - Throw FATAL log message} );
 
 ## Given switched on active parameter, when program is in env path and
 ## executable for program source environment command
 %active_parameter = (
-    conda_path => catfile( $Bin, qw{ data modules miniconda } ),
+    conda_path                         => catfile( $Bin, qw{ data modules miniconda } ),
     program_source_environment_command => {
         genmod => [ qw{ source activate test_env_1}, ],
     },
@@ -241,14 +234,13 @@ trap {
 
 ## Then INFO message should broadcast
 like( $trap->stderr, qr/INFO/xms,
-q{Found bin and executable in program source env cmd: Throw INFO log message}
-);
+    q{Found bin and executable in program source env cmd: Throw INFO log message} );
 
-## Given switched on active parameter, defined program and program_name_path
+## Given switched on active parameter, defined recipe and program_name_path
 ## parameter, when program is in env path and not executable for
 ## program source environment command
 %active_parameter = (
-    conda_path => catfile( $Bin, qw{ data modules miniconda } ),
+    conda_path                         => catfile( $Bin, qw{ data modules miniconda } ),
     program_source_environment_command => {
         not_a_binary => [ qw{ source activate test_env_1 }, ],
     },
@@ -266,7 +258,6 @@ trap {
 
 ## Then FATAL message should broadcast
 like( $trap->stderr, qr/FATAL/xms,
-    q{No bin and executable in program source env cmd - Throw FATAL log message}
-);
+    q{No bin and executable in program source env cmd - Throw FATAL log message} );
 
 done_testing();

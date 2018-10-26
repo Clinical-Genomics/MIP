@@ -1,5 +1,6 @@
 package MIP::Get::Parameter;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -29,8 +30,8 @@ BEGIN {
       get_dynamic_conda_path
       get_gatk_intervals
       get_install_parameter_attribute
-      get_module_parameters
-      get_program_attributes
+      get_recipe_parameters
+      get_recipe_attributes
       get_program_parameters
       get_program_version
       get_programs_for_shell_installation
@@ -104,17 +105,14 @@ sub get_bin_file_path {
     if ( $environment_key and $environment_href->{$environment_key} ) {
 
         $environment = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
-        $bin_file_path =
-          catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
+        $bin_file_path = catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
     }
     ## Check if main environment in use
     elsif ( $active_parameter_href->{source_main_environment_commands} ) {
 
         $environment =
-          @{ $active_parameter_href->{source_main_environment_commands} }
-          [$MINUS_ONE];
-        $bin_file_path =
-          catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
+          @{ $active_parameter_href->{source_main_environment_commands} }[$MINUS_ONE];
+        $bin_file_path = catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
     }
     ## Assume installed in conda base environment
     else {
@@ -143,7 +141,7 @@ sub get_capture_kit {
     my $supported_capture_kit_href;
 
     my $tmpl = {
-        capture_kit => { store => \$capture_kit, strict_type => 1, },
+        capture_kit                => { store => \$capture_kit, strict_type => 1, },
         supported_capture_kit_href => {
             default     => {},
             defined     => 1,
@@ -264,20 +262,14 @@ sub get_dynamic_conda_path {
     if ( $active_parameter_href->{program_source_environment_command} ) {
         ## Build hash with "program_name" as keys and "source env command" as value
         @environment{
-            keys
-              %{ $active_parameter_href->{program_source_environment_command} }
-          } =
-          values
-          %{ $active_parameter_href->{program_source_environment_command} };
+            keys %{ $active_parameter_href->{program_source_environment_command} }
+        } = values %{ $active_parameter_href->{program_source_environment_command} };
     }
     if ( $active_parameter_href->{module_source_environment_command} ) {
-        ## Add to environment hash with "program_name" as keys and "source env command" as value
+        ## Add to environment hash with "recipe_name" as keys and "source env command" as value
         @environment{
-            keys %{ $active_parameter_href->{module_source_environment_command}
-            }
-          } =
-          values %{ $active_parameter_href->{module_source_environment_command}
-          };
+            keys %{ $active_parameter_href->{module_source_environment_command} }
+        } = values %{ $active_parameter_href->{module_source_environment_command} };
     }
 
     ## Get the bin file path
@@ -367,18 +359,18 @@ sub get_install_parameter_attribute {
     return $parameter_href->{$parameter_name};
 }
 
-sub get_module_parameters {
+sub get_recipe_parameters {
 
 ## Function : Get core number, time and source environment command
 ## Returns  : $core_number, $time, @source_environment_cmds
 ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##          : $program_name          => Program name
+##          : $recipe_name           => Recipe name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $program_name;
+    my $recipe_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -388,10 +380,10 @@ sub get_module_parameters {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
     };
@@ -402,13 +394,11 @@ sub get_module_parameters {
     my @source_environment_cmds;
 
     if (
-        exists $active_parameter_href->{module_source_environment_command}
-        {$program_name} )
+        exists $active_parameter_href->{module_source_environment_command}{$recipe_name} )
     {
 
         @source_environment_cmds =
-          @{ $active_parameter_href->{module_source_environment_command}
-              {$program_name} };
+          @{ $active_parameter_href->{module_source_environment_command}{$recipe_name} };
     }
     elsif ( $active_parameter_href->{source_main_environment_commands}
         && @{ $active_parameter_href->{source_main_environment_commands} } )
@@ -417,27 +407,26 @@ sub get_module_parameters {
         @source_environment_cmds =
           @{ $active_parameter_href->{source_main_environment_commands} };
     }
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$program_name};
-    my $time = $active_parameter_href->{module_time}{$program_name};
+    my $core_number = $active_parameter_href->{module_core_number}{$recipe_name};
+    my $time        = $active_parameter_href->{module_time}{$recipe_name};
 
     return $core_number, $time, @source_environment_cmds;
 }
 
-sub get_program_attributes {
+sub get_recipe_attributes {
 
-## Function : Return program attributes
+## Function : Return recipe attributes
 ## Returns  : $attribute | %attribute
 ## Arguments: $attribute      => Attribute key
 ##          : $parameter_href => Holds all parameters
-##          : $program_name   => Program name
+##          : $recipe_name    => Recipe name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $attribute;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
 
     my $tmpl = {
         attribute => {
@@ -451,7 +440,7 @@ sub get_program_attributes {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => { store => \$program_name, strict_type => 1, },
+        recipe_name => { store => \$recipe_name, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -459,11 +448,11 @@ sub get_program_attributes {
     ## Get attribute value
     if ( defined $attribute && $attribute ) {
 
-        return $parameter_href->{$program_name}{$attribute};
+        return $parameter_href->{$recipe_name}{$attribute};
     }
 
-    ## Get program attribute hash
-    return %{ $parameter_href->{$program_name} };
+    ## Get recipe attribute hash
+    return %{ $parameter_href->{$recipe_name} };
 }
 
 sub get_program_parameters {
@@ -501,13 +490,13 @@ sub get_program_parameters {
     my @source_environment_cmds;
 
     if (
-        exists $active_parameter_href->{program_source_environment_command}
-        {$program_name} )
+        exists $active_parameter_href->{program_source_environment_command}{$program_name}
+      )
     {
 
         @source_environment_cmds =
-          @{ $active_parameter_href->{program_source_environment_command}
-              {$program_name} };
+          @{ $active_parameter_href->{program_source_environment_command}{$program_name}
+          };
     }
     return @source_environment_cmds;
 }
@@ -574,14 +563,13 @@ sub get_program_version {
         && $active_parameter_href->{$parameter_name} )
     {
 
-        ## Dry run mode for all program
+        ## Dry run mode for all recipes
         return if ( $active_parameter_href->{dry_run_all} );
 
-        ## Dry run mode for this program
+        ## Dry run mode for this recipe
         return if ( $active_parameter_href->{$parameter_name} eq q{2} );
 
-        my ($version) =
-          $active_parameter_href->{$parameter_name} =~ /$regexp/xsm;
+        my ($version) = $active_parameter_href->{$parameter_name} =~ /$regexp/xsm;
 
         # If not set - fall back on actually calling program
         if ( not $version ) {
@@ -738,12 +726,10 @@ sub get_programs_for_shell_installation {
     elsif ( @{$shell_install_programs_ref} ) {
 
         # Get elements in @shell_programs that are not part of the conda hash
-        my @shell_only_programs =
-          array_minus( @shell_programs, @conda_programs );
+        my @shell_only_programs = array_minus( @shell_programs, @conda_programs );
 
         # Add the selected program(s) and remove possible duplicates
-        @shell_programs =
-          unique( @shell_only_programs, @{$shell_install_programs_ref} );
+        @shell_programs = unique( @shell_only_programs, @{$shell_install_programs_ref} );
     }
     else {
         # If no shell preferences only add programs lacking conda counterpart

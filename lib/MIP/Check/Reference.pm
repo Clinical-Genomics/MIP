@@ -1,5 +1,6 @@
 package MIP::Check::Reference;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -78,9 +79,8 @@ sub check_human_genome_file_endings {
             strict_type => 1,
         },
         human_genome_reference_name_prefix => {
-            default =>
-              $arg_href->{file_info_href}{human_genome_reference_name_prefix},
-            store       => \$human_genome_reference_name_prefix,
+            default => $arg_href->{file_info_href}{human_genome_reference_name_prefix},
+            store   => \$human_genome_reference_name_prefix,
             strict_type => 1,
         },
         log            => { store => \$log, },
@@ -149,8 +149,8 @@ sub check_human_genome_file_endings {
         $parameter_href->{$parameter_name}{build_file} = 0;
 
         ## Get sequence contigs from human reference ".dict" file since it exists
-        my $dict_file_path = catfile( $reference_dir,
-            $human_genome_reference_name_prefix . $DOT . q{dict} );
+        my $dict_file_path =
+          catfile( $reference_dir, $human_genome_reference_name_prefix . $DOT . q{dict} );
         @{ $file_info_href->{contigs} } = get_seq_dict_contigs(
             {
                 dict_file_path => $dict_file_path,
@@ -213,8 +213,7 @@ sub check_if_processed_by_vt {
         my $regexp = q?perl -nae '?;
 
         ## Find vcf_key
-        $regexp .=
-          q?if($_=~/ID\=? . $vt_regexp{$vt_parameter_name}{vcf_key} . q?/) { ?;
+        $regexp .= q?if($_=~/ID\=? . $vt_regexp{$vt_parameter_name}{vcf_key} . q?/) { ?;
 
         ## Write to stdout
         $regexp .= q?print $_} ?;
@@ -393,18 +392,17 @@ sub check_parameter_metafiles {
 
         next PARAMETER if ( not $parameter );
 
-      ASSOCIATED_PROGRAM:
-        foreach my $associated_program (
-            @{ $parameter_href->{$parameter_name}{associated_program} } )
+      ASSOCIATED_RECIPE:
+        foreach my $associated_recipe (
+            @{ $parameter_href->{$parameter_name}{associated_recipe} } )
         {
 
-            ## Active associated program
-            my $active_associated_program =
-              $active_parameter_href->{$associated_program};
+            ## Active associated recipe
+            my $active_associated_recipe = $active_parameter_href->{$associated_recipe};
 
             ## Only check active parmeters
-            next ASSOCIATED_PROGRAM
-              if ( not defined $active_associated_program );
+            next ASSOCIATED_RECIPE
+              if ( not defined $active_associated_recipe );
 
             if ( ref $parameter eq q{HASH} ) {
 
@@ -435,12 +433,10 @@ sub check_parameter_metafiles {
                 check_object_suffixes_to_build(
                     {
                         active_parameter_href => $active_parameter_href,
-                        file_name =>
-                          $active_parameter_href->{human_genome_reference},
-                        object_suffixes_ref =>
-                          \@{ $file_info_href->{$parameter_name} },
-                        parameter_href => $parameter_href,
-                        parameter_name => $parameter_name,
+                        file_name => $active_parameter_href->{human_genome_reference},
+                        object_suffixes_ref => \@{ $file_info_href->{$parameter_name} },
+                        parameter_href      => $parameter_href,
+                        parameter_name      => $parameter_name,
                     }
                 );
             }
@@ -505,16 +501,15 @@ sub check_references_for_vt {
   PARAMETER_NAME:
     foreach my $parameter_name ( @{$vt_references_ref} ) {
 
-      ASSOCIATED_PROGRAM:
-        foreach my $associated_program (
-            @{ $parameter_href->{$parameter_name}{associated_program} } )
+      ASSOCIATED_RECIPE:
+        foreach my $associated_recipe (
+            @{ $parameter_href->{$parameter_name}{associated_recipe} } )
         {
 
             ## Alias
-            my $active_associated_program =
-              $active_parameter_href->{$associated_program};
+            my $active_associated_recipe = $active_parameter_href->{$associated_recipe};
 
-            next ASSOCIATED_PROGRAM if ( not $active_associated_program );
+            next ASSOCIATED_RECIPE if ( not $active_associated_recipe );
 
             ## If SCALAR data type
             if ( $parameter_href->{$parameter_name}{data_type} eq q{SCALAR} ) {
@@ -534,13 +529,12 @@ sub check_references_for_vt {
                 }
                 $seen{$annotation_file} = undef;
             }
-            elsif ( $parameter_href->{$parameter_name}{data_type} eq q{ARRAY} )
-            {
+            elsif ( $parameter_href->{$parameter_name}{data_type} eq q{ARRAY} ) {
                 ## ARRAY reference
 
               ANNOTION_FILE:
-                foreach my $annotation_file (
-                    @{ $active_parameter_href->{$parameter_name} } )
+                foreach
+                  my $annotation_file ( @{ $active_parameter_href->{$parameter_name} } )
                 {
 
                     if ( not exists $seen{$annotation_file} ) {

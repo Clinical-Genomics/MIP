@@ -33,9 +33,9 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA => q{,};
+Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE => q{ };
+Readonly my $SPACE   => q{ };
 
 BEGIN {
 
@@ -43,8 +43,10 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Check::Reference} => [qw{ check_references_for_vt }],
-			q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }], );
+    my %perl_module = (
+        q{MIP::Check::Reference} => [qw{ check_references_for_vt }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -69,8 +71,7 @@ my %active_parameter_test = (
         catfile( $Bin, qw{ data references GRCh37_dbsnp_-138-.vcf } ),
         catfile( $Bin, qw{ data references GRCh37_1000g_indels_-phase1-.vcf } ),
         catfile(
-            $Bin,
-            qw{ data references GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
+            $Bin, qw{ data references GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
         )
     ],
     gatk_variantevalall => 1,
@@ -79,29 +80,27 @@ my %active_parameter_test = (
     gatk_variantevalexome    => 1,
     snpeff                   => 1,
     snpsift_annotation_files => {
-        catfile( $Bin,
-            qw{ data references GRCh37_anon-swegen_snp_-1000samples-.vcf.gz } )
-          => q{SWEREF},
-        catfile( $Bin,
-            qw{ data references GRCh37_exac_reheader_-r0.3.1-.vcf.gz } ) =>
+        catfile(
+            $Bin, qw{ data references GRCh37_anon-swegen_snp_-1000samples-.vcf.gz }
+          ) => q{SWEREF},
+        catfile( $Bin, qw{ data references GRCh37_exac_reheader_-r0.3.1-.vcf.gz } ) =>
           q{EXAC},
-        catfile( $Bin,
-            qw{ data references GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz } ) =>
+        catfile( $Bin, qw{ data references GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz } ) =>
           q{GNOMAD},
     },
 );
 
 my %parameter_test = (
     gatk_baserecalibration_known_sites => {
-        associated_program => [qw{ gatk_baserecalibration }],
-        data_type          => q{ARRAY},
+        associated_recipe => [qw{ gatk_baserecalibration }],
+        data_type         => q{ARRAY},
     },
     gatk_varianteval_dbsnp => {
-        associated_program => [qw{ gatk_variantevalall gatk_variantevalexome }],
-        data_type          => q{SCALAR},
+        associated_recipe => [qw{ gatk_variantevalall gatk_variantevalexome }],
+        data_type         => q{SCALAR},
     },
     snpsift_annotation_files =>
-      { associated_program => [qw{ snpeff }], data_type => q{HASH}, },
+      { associated_recipe => [qw{ snpeff }], data_type => q{HASH}, },
 );
 
 my @vt_references_test =

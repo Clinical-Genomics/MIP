@@ -1,5 +1,6 @@
 package MIP::Parse::Parameter;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -24,7 +25,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ parse_infiles parse_prioritize_variant_callers parse_start_with_program };
+      qw{ parse_infiles parse_prioritize_variant_callers parse_start_with_recipe };
 
 }
 
@@ -200,10 +201,8 @@ sub parse_prioritize_variant_callers {
                     log                   => $log,
                     parameter_href        => $parameter_href,
                     parameter_name        => $prioritize_parameter_name,
-                    variant_callers_ref   => \@{
-                        $parameter_href->{dynamic_parameter}
-                          {$variant_caller_type}
-                    },
+                    variant_callers_ref =>
+                      \@{ $parameter_href->{dynamic_parameter}{$variant_caller_type} },
                 }
             );
         }
@@ -215,9 +214,9 @@ sub parse_prioritize_variant_callers {
     return 1;
 }
 
-sub parse_start_with_program {
+sub parse_start_with_recipe {
 
-## Function : Get initiation program, downstream dependencies and update program modes fo start_with_program parameter
+## Function : Get initiation recipe, downstream dependencies and update recipe modes fo start_with_recipe parameter
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $initiation_file       => Initiation file for pipeline
@@ -262,12 +261,12 @@ sub parse_start_with_program {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter qw{ check_program_exists_in_hash };
+    use MIP::Check::Parameter qw{ check_recipe_exists_in_hash };
     use MIP::File::Format::Yaml qw{ load_yaml };
     use MIP::Get::Analysis qw{ get_dependency_tree };
-    use MIP::Update::Programs qw{  update_program_mode_with_start_with };
+    use MIP::Update::Recipes qw{  update_recipe_mode_with_start_with };
 
-    return if ( not defined $active_parameter_href->{start_with_program} );
+    return if ( not defined $active_parameter_href->{start_with_recipe} );
 
     my %dependency_tree = load_yaml(
         {
@@ -275,36 +274,36 @@ sub parse_start_with_program {
         }
     );
 
-    check_program_exists_in_hash(
+    check_recipe_exists_in_hash(
         {
             log            => $log,
-            parameter_name => $active_parameter_href->{start_with_program},
-            query_ref      => \$active_parameter_href->{start_with_program},
+            parameter_name => $active_parameter_href->{start_with_recipe},
+            query_ref      => \$active_parameter_href->{start_with_recipe},
             truth_href     => $parameter_href,
         }
     );
 
-    my @start_with_programs;
-    my $is_program_found = 0;
-    my $is_chain_found   = 0;
+    my @start_with_recipes;
+    my $is_recipe_found = 0;
+    my $is_chain_found  = 0;
 
-    ## Collects all downstream programs from initation point
+    ## Collects all downstream recipes from initation point
     get_dependency_tree(
         {
-            dependency_tree_href => \%dependency_tree,
-            is_program_found_ref => \$is_program_found,
-            is_chain_found_ref   => \$is_chain_found,
-            program => $active_parameter_href->{start_with_program},
-            start_with_programs_ref => \@start_with_programs,
+            dependency_tree_href   => \%dependency_tree,
+            is_recipe_found_ref    => \$is_recipe_found,
+            is_chain_found_ref     => \$is_chain_found,
+            recipe                 => $active_parameter_href->{start_with_recipe},
+            start_with_recipes_ref => \@start_with_recipes,
         }
     );
 
-    ## Update program mode depending on start with flag
-    update_program_mode_with_start_with(
+    ## Update recipe mode depending on start with flag
+    update_recipe_mode_with_start_with(
         {
-            active_parameter_href => $active_parameter_href,
-            programs_ref => \@{ $parameter_href->{dynamic_parameter}{program} },
-            start_with_programs_ref => \@start_with_programs,
+            active_parameter_href  => $active_parameter_href,
+            recipes_ref            => \@{ $parameter_href->{dynamic_parameter}{recipe} },
+            start_with_recipes_ref => \@start_with_recipes,
         }
     );
     return 1;

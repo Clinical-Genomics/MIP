@@ -76,8 +76,7 @@ sub sambamba_view {
     my $stderrfile_path_append;
 
     my $tmpl = {
-        regions_ref =>
-          { default => [], strict_type => 1, store => \$regions_ref },
+        regions_ref => { default => [], strict_type => 1, store => \$regions_ref },
         FILEHANDLE  => { required => 1, store => \$FILEHANDLE },
         infile_path => {
             required    => 1,
@@ -85,13 +84,11 @@ sub sambamba_view {
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        referencefile_path =>
-          { strict_type => 1, store => \$referencefile_path },
-        with_header => {
+        outfile_path           => { strict_type => 1, store => \$outfile_path },
+        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
+        referencefile_path     => { strict_type => 1, store => \$referencefile_path },
+        with_header            => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
@@ -137,7 +134,7 @@ sub sambamba_view {
 
     if ($show_progress) {
 
-# Show progressbar in STDERR (works only for BAM files with no regions specified)
+        # Show progressbar in STDERR (works only for BAM files with no regions specified)
         push @commands, q{--show-progress};
     }
 
@@ -206,10 +203,9 @@ sub sambamba_index {
             strict_type => 1,
             store       => \$infile_path
         },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        show_progress => {
+        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
+        show_progress          => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
@@ -224,7 +220,7 @@ sub sambamba_index {
 
     if ($show_progress) {
 
-# Show progressbar in STDERR (works only for BAM files with no regions specified)
+        # Show progressbar in STDERR (works only for BAM files with no regions specified)
         push @commands, q{--show-progress};
     }
 
@@ -288,11 +284,10 @@ sub sambamba_sort {
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        memory_limit => {
+        outfile_path           => { strict_type => 1, store => \$outfile_path },
+        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
+        memory_limit           => {
             allow       => qr/ ^\d+G$ /sxm,
             strict_type => 1,
             store       => \$memory_limit
@@ -313,7 +308,7 @@ sub sambamba_sort {
 
     if ($show_progress) {
 
-# Show progressbar in STDERR (works only for BAM files with no regions specified)
+        # Show progressbar in STDERR (works only for BAM files with no regions specified)
         push @commands, q{--show-progress};
     }
 
@@ -402,13 +397,12 @@ sub sambamba_markdup {
             strict_type => 1,
             store       => \$infile_path
         },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE      => { required    => 1, store => \$FILEHANDLE },
-        temp_directory  => { strict_type => 1, store => \$temp_directory },
-        hash_table_size => {
+        stdoutfile_path        => { strict_type => 1, store => \$stdoutfile_path },
+        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
+        FILEHANDLE             => { required    => 1, store => \$FILEHANDLE },
+        temp_directory         => { strict_type => 1, store => \$temp_directory },
+        hash_table_size        => {
             allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$hash_table_size
@@ -458,7 +452,7 @@ sub sambamba_markdup {
     }
     if ($show_progress) {
 
-# Show progressbar in STDERR (works only for BAM files with no regions specified)
+        # Show progressbar in STDERR (works only for BAM files with no regions specified)
         push @commands, q{--show-progress};
     }
 
@@ -514,10 +508,9 @@ sub sambamba_flagstat {
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        outfile_path           => { strict_type => 1, store => \$outfile_path },
+        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
+        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
         FILEHANDLE => { store => \$FILEHANDLE },
     };
 
@@ -602,13 +595,12 @@ sub sambamba_depth {
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        region           => { strict_type => 1, store => \$region },
-        filter           => { strict_type => 1, store => \$filter },
-        fix_mate_overlap => {
+        outfile_path           => { strict_type => 1, store => \$outfile_path },
+        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
+        region                 => { strict_type => 1, store => \$region },
+        filter                 => { strict_type => 1, store => \$filter },
+        fix_mate_overlap       => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
@@ -699,7 +691,7 @@ sub split_and_index_aligment_file {
 ##          : $file_path          => File name - ususally sbatch
 ##          : $infile             => Infile
 ##          : $output_format      => Output format
-##          : $program_info_path  => Program info path
+##          : $recipe_info_path   => Program info path
 ##          : $temp_directory     => Temporary directory
 ##          : $XARGSFILEHANDLE    => XARGS filehandle to write to
 ##          : $xargs_file_counter => The xargs file counter
@@ -713,7 +705,7 @@ sub split_and_index_aligment_file {
     my $FILEHANDLE;
     my $file_path;
     my $infile;
-    my $program_info_path;
+    my $recipe_info_path;
     my $XARGSFILEHANDLE;
 
     ## Default(s)
@@ -736,19 +728,18 @@ sub split_and_index_aligment_file {
             store       => \$contigs_ref,
             strict_type => 1,
         },
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
-        XARGSFILEHANDLE =>
-          { defined => 1, required => 1, store => \$XARGSFILEHANDLE, },
-        file_path => {
+        FILEHANDLE      => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        XARGSFILEHANDLE => { defined => 1, required => 1, store => \$XARGSFILEHANDLE, },
+        file_path       => {
             defined     => 1,
             required    => 1,
             store       => \$file_path,
             strict_type => 1,
         },
-        program_info_path => {
+        recipe_info_path => {
             defined     => 1,
             required    => 1,
-            store       => \$program_info_path,
+            store       => \$recipe_info_path,
             strict_type => 1,
         },
         core_number => {
@@ -757,8 +748,7 @@ sub split_and_index_aligment_file {
             store       => \$core_number,
             strict_type => 1,
         },
-        infile =>
-          { defined => 1, required => 1, store => \$infile, strict_type => 1, },
+        infile => { defined => 1, required => 1, store => \$infile, strict_type => 1, },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             store       => \$temp_directory,
@@ -792,7 +782,7 @@ sub split_and_index_aligment_file {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $file_path,
-            program_info_path  => $program_info_path,
+            recipe_info_path   => $recipe_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }

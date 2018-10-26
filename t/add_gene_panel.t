@@ -1,14 +1,12 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname  };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
-use Getopt::Long;
-use Log::Log4perl;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
@@ -16,75 +14,40 @@ use utf8;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie qw{ :all };
+use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.00;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::QC::Record}     => [qw{ add_gene_panel }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::QC::Record});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::QC::Record qw{ add_gene_panel };
@@ -104,7 +67,7 @@ my $aggregate_gene_panel_file =
 my $aggregate_gene_panels_key = q{select_file};
 my $gene_panel                = q{TEST};
 my $family_id_test            = q{family_id};
-my $program_name_test         = q{vcfparser};
+my $recipe_name_test          = q{vcfparser};
 my %sample_info;
 
 my %header_info = (
@@ -119,13 +82,13 @@ add_gene_panel(
         aggregate_gene_panel_file => $aggregate_gene_panel_file,
         aggregate_gene_panels_key => $aggregate_gene_panels_key,
         family_id                 => $family_id_test,
-        program_name              => $program_name_test,
+        recipe_name               => $recipe_name_test,
         sample_info_href          => \%sample_info,
     }
 );
 
 is(
-    exists $sample_info{$program_name_test}{$aggregate_gene_panels_key}
+    exists $sample_info{$recipe_name_test}{$aggregate_gene_panels_key}
       {gene_panel}{$gene_panel},
     1,
     q{Gene panel key added to $sample_info}
@@ -135,46 +98,11 @@ while ( my ( $key, $value ) = each %header_info ) {
 
 ## Test gene panel info
     my $set_header_value =
-      $sample_info{$program_name_test}{$aggregate_gene_panels_key}{gene_panel}
+      $sample_info{$recipe_name_test}{$aggregate_gene_panels_key}{gene_panel}
       {$gene_panel}{$key};
 
     is( $set_header_value, $value,
-            q{Gene panel header info value for key: }
-          . $key
-          . q{ added to $sample_info} );
+        q{Gene panel header info value for key: } . $key . q{ added to $sample_info} );
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

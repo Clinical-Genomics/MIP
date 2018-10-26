@@ -1,5 +1,6 @@
 package MIP::Cli::Mip::Analyse::Rd_dna_vcf_rerun;
 
+use 5.026;
 use Carp;
 use File::Spec::Functions qw{ catfile };
 use FindBin qw{ $Bin };
@@ -45,7 +46,7 @@ sub run {
     use MIP::File::Format::Parameter qw{ parse_definition_file  };
     use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
     use MIP::Get::Analysis
-      qw{ get_dependency_tree_chain get_dependency_tree_order print_program };
+      qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
 
     ## Mip analyse rare_disease parameters
     ## CLI commands inheritance
@@ -75,21 +76,20 @@ sub run {
                     define_parameters_path => $definition_file,
                     non_mandatory_parameter_keys_path =>
                       $non_mandatory_parameter_keys_path,
-                    mandatory_parameter_keys_path =>
-                      $mandatory_parameter_keys_path,
+                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
                 }
             ),
         );
     }
 
-    ## Print programs and exit
-    if ( $active_parameter{print_programs} ) {
+    ## Print recipes and exit
+    if ( $active_parameter{print_recipes} ) {
 
-        print_program(
+        print_recipe(
             {
                 define_parameters_files_ref => \@definition_files,
                 parameter_href              => \%parameter,
-                print_program_mode => $active_parameter{print_program_mode},
+                print_recipe_mode           => $active_parameter{print_recipe_mode},
             }
         );
         exit;
@@ -110,12 +110,11 @@ sub run {
         }
     );
 
-    ## Order programs - Parsed from initiation file
+    ## Order recipes - Parsed from initiation file
     get_dependency_tree_order(
         {
             dependency_tree_href => \%dependency_tree,
-            programs_ref =>
-              \@{ $parameter{dynamic_parameter}{order_programs_ref} },
+            recipes_ref => \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
         }
     );
 
@@ -165,10 +164,9 @@ sub _build_usage {
             cmd_tags    => [
 q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config_file, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
             ],
-            documentation =>
-              q{Set the references to be decomposed and normalized},
-            is  => q{rw},
-            isa => ArrayRef [Str],
+            documentation => q{Set the references to be decomposed and normalized},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
         )
     );
 
@@ -194,7 +192,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     option(
         q{module_core_number} => (
             cmd_aliases   => [qw{ mcn }],
-            cmd_tags      => [q{program_name=X(cores)}],
+            cmd_tags      => [q{recipe_name=X(cores)}],
             documentation => q{Set the number of cores for each module},
             is            => q{rw},
             isa           => HashRef,
@@ -204,7 +202,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     option(
         q{module_time} => (
             cmd_aliases   => [qw{ mot }],
-            cmd_tags      => [q{program_name=time(hours)}],
+            cmd_tags      => [q{recipe_name=time(hours)}],
             documentation => q{Set the time allocation for each module},
             is            => q{rw},
             isa           => HashRef,
@@ -272,11 +270,10 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{sv_bcftools_view_filter} => (
-            cmd_aliases => [qw{ svcbtv }],
-            documentation =>
-              q{Include structural variants with PASS in FILTER column},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ svcbtv }],
+            documentation => q{Include structural variants with PASS in FILTER column},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -301,13 +298,11 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{sv_genmod_filter_1000g} => (
-            cmd_aliases => [qw{ svcgfr }],
-            cmd_tags =>
-              [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
-            documentation =>
-              q{Genmod annotate structural variants from 1000G reference},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ svcgfr }],
+            cmd_tags      => [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
+            documentation => q{Genmod annotate structural variants from 1000G reference},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -350,9 +345,8 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{sv_vcfanno_config_file} => (
-            cmd_aliases => [qw{ svcvacf }],
-            cmd_tags =>
-              [q{Default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz}],
+            cmd_aliases   => [qw{ svcvacf }],
+            cmd_tags      => [q{Default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz}],
             documentation => q{Annotation file within vcfAnno config toml file},
             is            => q{rw},
             isa           => Str,
@@ -463,13 +457,12 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{sv_vcfparser_select_file} => (
-            cmd_aliases => [qw{ svvcpsf }],
-            cmd_flag    => q{sv_vcfparser_slt_fl},
-            cmd_tags    => [q{Format: tsv; HGNC Symbol required in file}],
-            documentation =>
-              q{Select file with list of genes to analyse separately},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ svvcpsf }],
+            cmd_flag      => q{sv_vcfparser_slt_fl},
+            cmd_tags      => [q{Format: tsv; HGNC Symbol required in file}],
+            documentation => q{Select file with list of genes to analyse separately},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -508,7 +501,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             cmd_aliases => [qw{ svravanr }],
             cmd_flag    => q{sv_genmod_ann_reg},
             documentation =>
-q{Use predefined gene annotation supplied with genmod for defining genes},
+              q{Use predefined gene annotation supplied with genmod for defining genes},
             is  => q{rw},
             isa => Bool,
         )
@@ -578,7 +571,7 @@ q{Use predefined gene annotation supplied with genmod for defining genes},
         q{sv_rankvariant_binary_file} => (
             cmd_aliases => [qw{ svrevbf }],
             documentation =>
-q{Produce binary file from the rank variant chromosome sorted vcfs},
+              q{Produce binary file from the rank variant chromosome sorted vcfs},
             is  => q{rw},
             isa => Bool,
         )
@@ -622,7 +615,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
             cmd_aliases => [qw{ rhc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
-q{Rhocall performs annotation of variants in autozygosity regions},
+              q{Rhocall performs annotation of variants in autozygosity regions},
             is  => q{rw},
             isa => enum( [ 0, 1, 2 ] ),
         )
@@ -631,8 +624,7 @@ q{Rhocall performs annotation of variants in autozygosity regions},
     option(
         q{rhocall_frequency_file} => (
             cmd_aliases => [qw{ rhcf }],
-            cmd_tags =>
-              [q{Default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
+            cmd_tags    => [q{Default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
             documentation => q{Frequency file for bcftools roh calculation},
             is            => q{rw},
             isa           => Str,
@@ -727,10 +719,9 @@ q{Rhocall performs annotation of variants in autozygosity regions},
 
     option(
         q{frequency_genmod_filter_1000g} => (
-            cmd_aliases => [qw{ fqfgfr }],
-            cmd_flag    => q{freq_genmod_fil_1000g},
-            cmd_tags =>
-              [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
+            cmd_aliases   => [qw{ fqfgfr }],
+            cmd_flag      => q{freq_genmod_fil_1000g},
+            cmd_tags      => [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
             documentation => q{Genmod annotate 1000G reference},
             is            => q{rw},
             isa           => Str,
@@ -829,13 +820,12 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{vcfparser_select_file} => (
-            cmd_aliases => [qw{ vcpsf }],
-            cmd_flag    => q{vcfparser_slt_fl},
-            cmd_tags    => [q{Format: tsv; HGNC Symbol required in file}],
-            documentation =>
-              q{Select file with list of genes to analyse separately},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ vcpsf }],
+            cmd_flag      => q{vcfparser_slt_fl},
+            cmd_tags      => [q{Format: tsv; HGNC Symbol required in file}],
+            documentation => q{Select file with list of genes to analyse separately},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -980,7 +970,7 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
             cmd_aliases => [qw{ ravanr }],
             cmd_flag    => q{genmod_ann_reg},
             documentation =>
-q{Use predefined gene annotation supplied with genmod for defining genes},
+              q{Use predefined gene annotation supplied with genmod for defining genes},
             is  => q{rw},
             isa => Bool,
         )
@@ -1031,7 +1021,7 @@ q{Use predefined gene annotation supplied with genmod for defining genes},
         q{rankvariant_binary_file} => (
             cmd_aliases => [qw{ ravbf }],
             documentation =>
-q{Produce binary file from the rank variant chromosomal sorted vcfs},
+              q{Produce binary file from the rank variant chromosomal sorted vcfs},
             is  => q{rw},
             isa => Bool,
         )
@@ -1048,12 +1038,11 @@ q{Produce binary file from the rank variant chromosomal sorted vcfs},
 
     option(
         q{endvariantannotationblock} => (
-            cmd_aliases => [qw{ evab }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-              q{End variant annotation block by concatenating files},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_aliases   => [qw{ evab }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{End variant annotation block by concatenating files},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 

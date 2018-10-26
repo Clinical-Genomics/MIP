@@ -1,5 +1,6 @@
 package MIP::Check::Pipeline;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -127,15 +128,13 @@ sub check_rd_dna {
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Get::File qw{ get_select_file_contigs };
-    use MIP::Parse::Parameter
-      qw{ parse_infiles parse_prioritize_variant_callers };
+    use MIP::Parse::Parameter qw{ parse_infiles parse_prioritize_variant_callers };
     use MIP::Parse::File qw{ parse_fastq_infiles };
-    use MIP::Update::Contigs
-      qw{ size_sort_select_file_contigs update_contigs_for_run };
+    use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters
       qw{  update_exome_target_bed update_vcfparser_outfile_counter };
-    use MIP::Update::Programs
-      qw{ update_prioritize_flag update_program_mode_for_analysis_type };
+    use MIP::Update::Recipes
+      qw{ update_prioritize_flag update_recipe_mode_for_analysis_type };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::QC::Record qw{ add_to_sample_info };
 
@@ -150,8 +149,7 @@ sub check_rd_dna {
     ## Update exome_target_bed files with human_genome_reference_source and human_genome_reference_version
     update_exome_target_bed(
         {
-            exome_target_bed_file_href =>
-              $active_parameter_href->{exome_target_bed},
+            exome_target_bed_file_href => $active_parameter_href->{exome_target_bed},
             human_genome_reference_source =>
               $file_info_href->{human_genome_reference_source},
             human_genome_reference_version =>
@@ -170,9 +168,7 @@ sub check_rd_dna {
 
     ## Check that supplied target file ends with ".bed" and otherwise croaks
   TARGET_FILE:
-    foreach my $target_bed_file (
-        keys %{ $active_parameter_href->{exome_target_bed} } )
-    {
+    foreach my $target_bed_file ( keys %{ $active_parameter_href->{exome_target_bed} } ) {
 
         check_target_bed_file_suffix(
             {
@@ -203,10 +199,9 @@ sub check_rd_dna {
     ## Check that VEP directory and VEP cache match
     check_vep_directories(
         {
-            log => $log,
-            vep_directory_cache =>
-              $active_parameter_href->{vep_directory_cache},
-            vep_directory_path => $active_parameter_href->{vep_directory_path},
+            log                 => $log,
+            vep_directory_cache => $active_parameter_href->{vep_directory_cache},
+            vep_directory_path  => $active_parameter_href->{vep_directory_path},
         }
     );
 
@@ -238,11 +233,9 @@ sub check_rd_dna {
 
         check_vcfanno_toml(
             {
-                log => $log,
-                vcfanno_file_freq =>
-                  $active_parameter_href->{sv_vcfanno_config_file},
-                vcfanno_file_toml =>
-                  $active_parameter_href->{sv_vcfanno_config},
+                log               => $log,
+                vcfanno_file_freq => $active_parameter_href->{sv_vcfanno_config_file},
+                vcfanno_file_toml => $active_parameter_href->{sv_vcfanno_config},
             }
         );
     }
@@ -284,25 +277,24 @@ sub check_rd_dna {
         }
     );
 
-    ## Update prioritize flag depending on analysis run value as some programs are not applicable for e.g. wes
+    ## Update prioritize flag depending on analysis run value as some recipes are not applicable for e.g. wes
     $active_parameter_href->{sv_svdb_merge_prioritize} = update_prioritize_flag(
         {
             consensus_analysis_type =>
               $parameter_href->{dynamic_parameter}{consensus_analysis_type},
-            prioritize_key =>
-              $active_parameter_href->{sv_svdb_merge_prioritize},
-            programs_ref => [qw{ cnvnator delly_call delly_reformat tiddit }],
+            prioritize_key => $active_parameter_href->{sv_svdb_merge_prioritize},
+            recipes_ref    => [qw{ cnvnator delly_call delly_reformat tiddit }],
         }
     );
 
-    ## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-    update_program_mode_for_analysis_type(
+    ## Update recipe mode depending on analysis run value as some recipes are not applicable for e.g. wes
+    update_recipe_mode_for_analysis_type(
         {
             active_parameter_href => $active_parameter_href,
             consensus_analysis_type =>
               $parameter_href->{dynamic_parameter}{consensus_analysis_type},
-            log          => $log,
-            programs_ref => [
+            log         => $log,
+            recipes_ref => [
                 qw{ cnvnator delly_call delly_reformat expansionhunter tiddit samtools_subsample_mt }
             ],
         }
@@ -313,7 +305,7 @@ sub check_rd_dna {
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
-            remove_keys_ref       => [qw{ associated_program }],
+            remove_keys_ref       => [qw{ associated_recipe }],
             sample_info_href      => $sample_info_href,
         }
     );
@@ -321,17 +313,15 @@ sub check_rd_dna {
     ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
         {
-            analysis_type_href => \%{ $active_parameter_href->{analysis_type} },
-            exclude_contigs_ref =>
-              \@{ $active_parameter_href->{exclude_contigs} },
-            file_info_href => $file_info_href,
-            found_male     => $active_parameter_href->{found_male},
+            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
+            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href      => $file_info_href,
+            found_male          => $active_parameter_href->{found_male},
         }
     );
 
     ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-    @{ $file_info_href->{sorted_select_file_contigs} } =
-      size_sort_select_file_contigs(
+    @{ $file_info_href->{sorted_select_file_contigs} } = size_sort_select_file_contigs(
         {
             consensus_analysis_type =>
               $parameter_href->{dynamic_parameter}{consensus_analysis_type},
@@ -340,7 +330,7 @@ sub check_rd_dna {
             hash_key_to_sort        => q{select_file_contigs},
             log                     => $log,
         }
-      );
+    );
 
     ## Get the ".fastq(.gz)" files from the supplied infiles directory. Checks if the files exist
     parse_infiles(
@@ -471,8 +461,7 @@ sub check_rd_rna {
       qw{ check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_sample_id_in_parameter_value };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
-    use MIP::Parse::Parameter
-      qw{ parse_infiles parse_prioritize_variant_callers };
+    use MIP::Parse::Parameter qw{ parse_infiles parse_prioritize_variant_callers };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
@@ -551,7 +540,7 @@ sub check_rd_rna {
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
-            remove_keys_ref       => [qw{ associated_program }],
+            remove_keys_ref       => [qw{ associated_recipe }],
             sample_info_href      => $sample_info_href,
         }
     );
@@ -559,11 +548,10 @@ sub check_rd_rna {
     ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
         {
-            analysis_type_href => \%{ $active_parameter_href->{analysis_type} },
-            exclude_contigs_ref =>
-              \@{ $active_parameter_href->{exclude_contigs} },
-            file_info_href => $file_info_href,
-            found_male     => $active_parameter_href->{found_male},
+            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
+            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href      => $file_info_href,
+            found_male          => $active_parameter_href->{found_male},
         }
     );
 
@@ -688,8 +676,7 @@ sub check_rd_dna_vcf_rerun {
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Get::File qw{ get_select_file_contigs };
-    use MIP::Update::Contigs
-      qw{ size_sort_select_file_contigs update_contigs_for_run };
+    use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::QC::Record qw{ add_to_sample_info };
@@ -734,10 +721,9 @@ sub check_rd_dna_vcf_rerun {
     ## Check that VEP directory and VEP cache match
     check_vep_directories(
         {
-            log => $log,
-            vep_directory_cache =>
-              $active_parameter_href->{vep_directory_cache},
-            vep_directory_path => $active_parameter_href->{vep_directory_path},
+            log                 => $log,
+            vep_directory_cache => $active_parameter_href->{vep_directory_cache},
+            vep_directory_path  => $active_parameter_href->{vep_directory_path},
         }
     );
 
@@ -774,7 +760,7 @@ sub check_rd_dna_vcf_rerun {
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
-            remove_keys_ref       => [qw{ associated_program }],
+            remove_keys_ref       => [qw{ associated_recipe }],
             sample_info_href      => $sample_info_href,
         }
     );
@@ -782,17 +768,15 @@ sub check_rd_dna_vcf_rerun {
     ## Update contigs depending on settings in run (wes or if only male samples)
     update_contigs_for_run(
         {
-            analysis_type_href => \%{ $active_parameter_href->{analysis_type} },
-            exclude_contigs_ref =>
-              \@{ $active_parameter_href->{exclude_contigs} },
-            file_info_href => $file_info_href,
-            found_male     => $active_parameter_href->{found_male},
+            analysis_type_href  => \%{ $active_parameter_href->{analysis_type} },
+            exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
+            file_info_href      => $file_info_href,
+            found_male          => $active_parameter_href->{found_male},
         }
     );
 
     ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-    @{ $file_info_href->{sorted_select_file_contigs} } =
-      size_sort_select_file_contigs(
+    @{ $file_info_href->{sorted_select_file_contigs} } = size_sort_select_file_contigs(
         {
             consensus_analysis_type =>
               $parameter_href->{dynamic_parameter}{consensus_analysis_type},
@@ -801,7 +785,7 @@ sub check_rd_dna_vcf_rerun {
             hash_key_to_sort        => q{select_file_contigs},
             log                     => $log,
         }
-      );
+    );
 
     ## Add to sample info
     add_to_sample_info(

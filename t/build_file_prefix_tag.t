@@ -1,13 +1,12 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
-use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
@@ -21,69 +20,34 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.00;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::File::Format::Mip} => [qw{ build_file_prefix_tag }],
+        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
+    );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::File::Format::Mip});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
@@ -101,7 +65,7 @@ my $sample_id     = q{homer};
 my $current_chain = q{MAIN};
 my $other_chain   = q{SV};
 
-my @order_programs = qw{ bwa_mem pmerge pmark manta };
+my @order_recipes = qw{ bwa_mem pmerge pmark manta };
 
 my %active_parameter = (
     family_id             => q{simpsons},
@@ -110,12 +74,12 @@ my %active_parameter = (
     pmark                 => 1,
     pmerge                => 0,
     random_test_parameter => undef,
-    random_test_parameter => q{not_a_program},
+    random_test_parameter => q{not_a_recipe},
     sample_ids            => [$sample_id],
 );
 my %file_info;
 my %parameter = (
-    dynamic_parameter => { program => [qw{ bwa_mem pmark manta pmerge }], },
+    dynamic_parameter => { recipe => [qw{ bwa_mem pmark manta pmerge }], },
     bwa_mem           => {
         chain    => $current_chain,
         file_tag => q{mem},
@@ -139,7 +103,7 @@ build_file_prefix_tag(
     {
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
-        order_programs_ref    => \@order_programs,
+        order_recipes_ref     => \@order_recipes,
         parameter_href        => \%parameter,
     }
 );
@@ -161,36 +125,3 @@ my %expected_file_tag = (
 is_deeply( \%file_info, \%expected_file_tag, q{Built file endings} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}

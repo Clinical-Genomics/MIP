@@ -43,16 +43,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Parameter} => [qw{ get_program_attributes }],
+        q{MIP::Get::Parameter} => [qw{ get_recipe_attributes }],
         q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Parameter qw{ get_program_attributes };
+use MIP::Get::Parameter qw{ get_recipe_attributes };
 
-diag(   q{Test get_program_attributes from Parameter.pm v}
+diag(   q{Test get_recipe_attributes from Parameter.pm v}
       . $MIP::Get::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -63,25 +63,25 @@ diag(   q{Test get_program_attributes from Parameter.pm v}
 
 ## Given a program parameter
 my %parameter = test_mip_hashes( { mip_hash_name => q{define_parameter}, } );
-my $program_name = q{bwa_mem};
+my $recipe_name = q{bwa_mem};
 
-my %prg_atr = get_program_attributes(
+my %rec_atr = get_recipe_attributes(
     {
         parameter_href => \%parameter,
-        program_name   => $program_name,
+        recipe_name    => $recipe_name,
     }
 );
 
 ## Then return all program attributes
-is_deeply( \%{ $parameter{$program_name} }, \%prg_atr, q{Got attributes} );
+is_deeply( \%{ $parameter{$recipe_name} }, \%rec_atr, q{Got attributes} );
 
 ## Given a program parameter attribute
 my $attribute     = q{outfile_suffix};
-my $got_attribute = get_program_attributes(
+my $got_attribute = get_recipe_attributes(
     {
         attribute      => $attribute,
         parameter_href => \%parameter,
-        program_name   => $program_name,
+        recipe_name    => $recipe_name,
     }
 );
 

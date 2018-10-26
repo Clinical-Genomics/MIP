@@ -47,7 +47,7 @@ sub build_capture_file_prerequisites {
 ##          : $log                         => Log object
 ##          : $parameter_build_suffixes_ref => Exome target bed associated file endings
 ##          : $parameter_href              => Parameter hash {REF}
-##          : $program_name                => Program name
+##          : $recipe_name                => Program name
 ##          : $sample_info_href            => Info on samples and family hash {REF}
 ##          : $temp_directory              => Temporary directory
 
@@ -62,7 +62,7 @@ sub build_capture_file_prerequisites {
     my $log;
     my $parameter_build_suffixes_ref;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -119,10 +119,10 @@ sub build_capture_file_prerequisites {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -158,7 +158,7 @@ sub build_capture_file_prerequisites {
     ## Unpack parameters
     my $interval_list_suffix        = $parameter_build_suffixes_ref->[0];
     my $padded_interval_list_suffix = $parameter_build_suffixes_ref->[1];
-    my $program_mode                = $active_parameter_href->{$program_name};
+    my $recipe_mode                 = $active_parameter_href->{$recipe_name};
     my $referencefile_path          = $active_parameter_href->{human_genome_reference};
 
     ## No supplied FILEHANDLE i.e. create new sbatch script
@@ -169,7 +169,7 @@ sub build_capture_file_prerequisites {
         ## Create anonymous filehandle
         $FILEHANDLE = IO::Handle->new();
 
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+        ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         ($recipe_file_path) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
@@ -177,8 +177,8 @@ sub build_capture_file_prerequisites {
                 directory_id          => $family_id,
                 job_id_href           => $job_id_href,
                 log                   => $log,
-                program_directory     => $program_name,
-                program_name          => $program_name,
+                recipe_directory      => $recipe_name,
+                recipe_name           => $recipe_name,
             }
         );
     }
@@ -194,7 +194,7 @@ sub build_capture_file_prerequisites {
         $log->warn( q{Will try to create required }
               . $exome_target_bed_file
               . q{ associated file(s) before executing }
-              . $program_name );
+              . $recipe_name );
 
         ## Add random integer
         my $exome_target_bed_file_random =
@@ -348,7 +348,7 @@ sub build_capture_file_prerequisites {
 
         close $FILEHANDLE;
 
-        if ( $program_mode == 1 ) {
+        if ( $recipe_mode == 1 ) {
 
             submit_recipe(
                 {

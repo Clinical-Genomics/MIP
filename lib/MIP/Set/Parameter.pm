@@ -1,5 +1,6 @@
 package MIP::Set::Parameter;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -136,8 +137,7 @@ sub set_custom_default_to_active_parameter {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -147,19 +147,18 @@ sub set_custom_default_to_active_parameter {
 
     ## Set default value only to active_parameter
     my %set_to_active_parameter = (
-        analysis_type       => \&_set_analysis_type,
-        bwa_build_reference => \&_set_human_genome,
-        expansionhunter_repeat_specs_dir =>
-          \&_set_expansionhunter_repeat_specs_dir,
-        fusion_filter_reference_genome => \&_set_human_genome,
-        gatk_path                      => \&_set_dynamic_path,
-        infile_dirs                    => \&_set_infile_dirs,
-        picardtools_path               => \&_set_dynamic_path,
-        rtg_vcfeval_reference_genome   => \&_set_human_genome,
-        salmon_quant_reference_genome  => \&_set_human_genome,
-        star_aln_reference_genome      => \&_set_human_genome,
-        snpeff_path                    => \&_set_dynamic_path,
-        vep_directory_path             => \&_set_dynamic_path,
+        analysis_type                    => \&_set_analysis_type,
+        bwa_build_reference              => \&_set_human_genome,
+        expansionhunter_repeat_specs_dir => \&_set_expansionhunter_repeat_specs_dir,
+        fusion_filter_reference_genome   => \&_set_human_genome,
+        gatk_path                        => \&_set_dynamic_path,
+        infile_dirs                      => \&_set_infile_dirs,
+        picardtools_path                 => \&_set_dynamic_path,
+        rtg_vcfeval_reference_genome     => \&_set_human_genome,
+        salmon_quant_reference_genome    => \&_set_human_genome,
+        star_aln_reference_genome        => \&_set_human_genome,
+        snpeff_path                      => \&_set_dynamic_path,
+        vep_directory_path               => \&_set_dynamic_path,
     );
 
     ## Set default value to parameter and/or active parameter
@@ -252,17 +251,17 @@ sub set_default_to_active_parameter {
 
 ## Function : Checks and sets user input or default values to active_parameters.
 ## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis
-##          : $associated_programs   => The parameters program(s) {array, REF}
-##          : $log                   => Log object
-##          : $parameter_href        => Holds all parameters
-##          : $parameter_name        => Parameter name
+## Arguments: $active_parameter_href  => Holds all set parameter for analysis
+##          : $associated_recipes_ref => The parameters recipe {REF}
+##          : $log                    => Log object
+##          : $parameter_href         => Holds all parameters
+##          : $parameter_name         => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $associated_programs_ref;
+    my $associated_recipes_ref;
     my $log;
     my $parameter_href;
     my $parameter_name;
@@ -285,11 +284,11 @@ sub set_default_to_active_parameter {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        associated_programs_ref => {
+        associated_recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$associated_programs_ref,
+            store       => \$associated_recipes_ref,
             strict_type => 1,
         },
         log => {
@@ -297,9 +296,8 @@ sub set_default_to_active_parameter {
             defined  => 1,
             store    => \$log
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
-        family_id => {
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+        family_id      => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
             strict_type => 1,
@@ -319,9 +317,9 @@ sub set_default_to_active_parameter {
       if ( exists $only_wgs{$parameter_name}
         && $consensus_analysis_type =~ / wgs /xsm );
 
-    ## Check all programs that use parameter
-  ASSOCIATED_PROGRAM:
-    foreach my $associated_program ( @{$associated_programs_ref} ) {
+    ## Check all recipess that use parameter
+  ASSOCIATED_RECIPE:
+    foreach my $associated_recipe ( @{$associated_recipes_ref} ) {
 
         ## Default exists
         if ( exists $parameter_href->{$parameter_name}{default} ) {
@@ -361,7 +359,7 @@ sub set_default_to_active_parameter {
             $log->fatal( q{Supply '-}
                   . $parameter_name
                   . q{' if you want to run }
-                  . $associated_program );
+                  . $associated_recipe );
             exit 1;
         }
     }
@@ -417,19 +415,16 @@ sub set_dynamic_parameter {
             ## Make sure that we get what we expect
             if ( defined $unexpected_data ) {
 
-                carp
-                  q{Unexpected trailing garbage at end of aggregate_element '}
+                carp q{Unexpected trailing garbage at end of aggregate_element '}
                   . $aggregate_element
                   . q{':}, $NEWLINE . $TAB . $unexpected_data . $NEWLINE;
             }
 
             if ( defined $parameter_href->{$parameter_name}{$second_key}
-                && $parameter_href->{$parameter_name}{$second_key} eq
-                $string_to_match )
+                && $parameter_href->{$parameter_name}{$second_key} eq $string_to_match )
             {
 
-                push @{ $parameter_href->{dynamic_parameter}{$string_to_match}
-                  },
+                push @{ $parameter_href->{dynamic_parameter}{$string_to_match} },
                   $parameter_name;
             }
         }
@@ -498,8 +493,8 @@ sub set_human_genome_reference_features {
     foreach my $genome_prefix ( keys %genome_source ) {
 
         ## Capture version
-        my ($genome_version) = $human_genome_reference =~
-          m/ $genome_source{$genome_prefix}_homo_sapiens /xms;
+        my ($genome_version) =
+          $human_genome_reference =~ m/ $genome_source{$genome_prefix}_homo_sapiens /xms;
 
         if ($genome_version) {
 
@@ -511,7 +506,7 @@ sub set_human_genome_reference_features {
     if ( not $file_info_href->{human_genome_reference_version} ) {
 
         $log->fatal(
-q{MIP cannot detect what version of human_genome_reference you have supplied.}
+            q{MIP cannot detect what version of human_genome_reference you have supplied.}
               . $SPACE
               . q{Please supply the reference on this format: [sourceversion]_[species] e.g. 'GRCh37_homo_sapiens' or 'hg19_homo_sapiens'}
               . $NEWLINE );
@@ -677,8 +672,7 @@ sub set_parameter_reference_dir_path {
         $active_parameter_href->{$parameter_name} = $file_name;
 
         ## Update original value
-        my $path =
-          catfile( $reference_dir, $active_parameter_href->{$parameter_name} );
+        my $path = catfile( $reference_dir, $active_parameter_href->{$parameter_name} );
         $active_parameter_href->{$parameter_name} = $path;
 
     }
@@ -747,8 +741,7 @@ sub set_parameter_to_broadcast {
         if ( ref $active_parameter_href->{$parameter_name} eq q{ARRAY} ) {
 
             ## Alias
-            my $element_separator =
-              $parameter_href->{$parameter_name}{element_separator};
+            my $element_separator = $parameter_href->{$parameter_name}{element_separator};
 
             $info .= join $element_separator,
               @{ $active_parameter_href->{$parameter_name} };
@@ -774,9 +767,9 @@ sub set_parameter_to_broadcast {
                 }
                 else {
 
-                    $info .= join $COMMA, map {
-                        qq{$_=$active_parameter_href->{$parameter_name}{$_}}
-                    } ( keys %{ $active_parameter_href->{$parameter_name} } );
+                    $info .= join $COMMA,
+                      map { qq{$_=$active_parameter_href->{$parameter_name}{$_}} }
+                      ( keys %{ $active_parameter_href->{$parameter_name} } );
 
                     last PARAMETER_KEY;
                 }
@@ -843,8 +836,7 @@ sub set_conda_env_names_and_paths {
         }
         else {
             $log->warn(
-q{No environment name has been specified for MIP's main environment.}
-            );
+                q{No environment name has been specified for MIP's main environment.});
             $log->warn(q{MIP will be installed in conda's base environment.});
             $parameter_href->{emip}{conda_prefix_path} =
               $parameter_href->{conda_dir_path};
@@ -864,13 +856,10 @@ q{No environment name has been specified for MIP's main environment.}
             if ( $parameter_href->{environment_name}{emip} ) {
 
                 $parameter_href->{environment_name}{$environment} =
-                    $parameter_href->{environment_name}{emip}
-                  . $UNDERSCORE
-                  . $environment;
+                  $parameter_href->{environment_name}{emip} . $UNDERSCORE . $environment;
             }
             else {
-                $parameter_href->{environment_name}{$environment} =
-                  $environment;
+                $parameter_href->{environment_name}{$environment} = $environment;
             }
         }
 
@@ -966,7 +955,7 @@ sub _get_default_repeat_specs_dir_path {
 
 sub set_programs_for_installation {
 
-## Function : Proccess the lists of programs that has been selected for or omitted from installation
+## Function : Process the lists of programs that has been selected for or omitted from installation
 ##          : and update the environment packages
 ## Returns  :
 ## Arguments: $installation   => Environment to be installed
@@ -1032,17 +1021,16 @@ q{Please select a single installation environment when using the option --select
     ## Get programs that are to be installed via shell
     my @shell_programs_to_install = get_programs_for_shell_installation(
         {
-            conda_programs_href => $parameter_href->{$installation}{conda},
-            log                 => $log,
-            prefer_shell        => $parameter_href->{prefer_shell},
+            conda_programs_href        => $parameter_href->{$installation}{conda},
+            log                        => $log,
+            prefer_shell               => $parameter_href->{prefer_shell},
             shell_install_programs_ref => $parameter_href->{shell_install},
-            shell_programs_href => $parameter_href->{$installation}{shell},
+            shell_programs_href        => $parameter_href->{$installation}{shell},
         }
     );
 
     ## Remove the conda packages that has been selected to be installed via SHELL
-    delete @{ $parameter_href->{$installation}{conda} }
-      {@shell_programs_to_install};
+    delete @{ $parameter_href->{$installation}{conda} }{@shell_programs_to_install};
 
     ## Special case for snpsift since it is installed together with SnpEff
     ## if shell installation of SnpEff has been requested.
@@ -1050,18 +1038,15 @@ q{Please select a single installation environment when using the option --select
         delete $parameter_href->{$installation}{conda}{snpsift};
     }
     ## Store variable outside of shell hash and use Data::Diver module to avoid autovivification of variable
-    $parameter_href->{$installation}{snpeff_genome_versions} = Dive(
-        $parameter_href->{$installation},
-        qw{ shell snpeff snpeff_genome_versions }
-    );
+    $parameter_href->{$installation}{snpeff_genome_versions} =
+      Dive( $parameter_href->{$installation}, qw{ shell snpeff snpeff_genome_versions } );
 
     ## Delete shell programs that are to be installed via conda instead of shell
     my @shell_programs_to_delete =
       keys %{ $parameter_href->{$installation}{shell} };
     @shell_programs_to_delete =
       array_minus( @shell_programs_to_delete, @shell_programs_to_install );
-    delete @{ $parameter_href->{$installation}{shell} }
-      {@shell_programs_to_delete};
+    delete @{ $parameter_href->{$installation}{shell} }{@shell_programs_to_delete};
 
     ## Solve the installation when the skip_program or select_program parameter has been used
   INSTALL_MODE:
@@ -1075,18 +1060,15 @@ q{Please select a single installation environment when using the option --select
         if ( scalar @{ $parameter_href->{select_programs} } > 0 ) {
             my @non_selects =
               keys %{ $parameter_href->{$installation}{$install_mode} };
-            @non_selects = array_minus( @non_selects,
-                @{ $parameter_href->{select_programs} } );
-            delete @{ $parameter_href->{$installation}{$install_mode} }
-              {@non_selects};
+            @non_selects =
+              array_minus( @non_selects, @{ $parameter_href->{select_programs} } );
+            delete @{ $parameter_href->{$installation}{$install_mode} }{@non_selects};
         }
     }
 
     ## Check and add dependencies that are needed for shell programs if they are missing from the programs that are to be installed via conda.
   SHELL_PROGRAM:
-    foreach
-      my $shell_program ( keys %{ $parameter_href->{$installation}{shell} } )
-    {
+    foreach my $shell_program ( keys %{ $parameter_href->{$installation}{shell} } ) {
         my $dependency_href = Dive( $parameter_href->{$installation},
             q{shell}, $shell_program, q{conda_dependency} );
         next SHELL_PROGRAM if not defined $dependency_href;
@@ -1106,8 +1088,8 @@ q{Please select a single installation environment when using the option --select
             installation_set_href => $parameter_href->{$installation},
             log                   => $log,
             python3_programs_ref  => $parameter_href->{python3_programs},
-            python_version => $parameter_href->{$installation}{conda}{python},
-            select_programs_ref => $parameter_href->{select_programs},
+            python_version        => $parameter_href->{$installation}{conda}{python},
+            select_programs_ref   => $parameter_href->{select_programs},
         }
     );
 
@@ -1135,8 +1117,7 @@ sub _set_analysis_type {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1183,8 +1164,7 @@ sub _set_capture_kit {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1207,7 +1187,7 @@ sub _set_capture_kit {
       @{ $active_parameter_href->{sample_ids} };
 
     $log->warn(
-q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit: }
+        q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit: }
           . $capture_kit );
     return;
 }
@@ -1233,8 +1213,7 @@ sub _set_dynamic_path {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1271,7 +1250,7 @@ sub _set_dynamic_path {
         {
             active_parameter_href => $active_parameter_href,
             bin_file              => $dynamic_path{$parameter_name}{bin_file},
-            environment_key => $dynamic_path{$parameter_name}{environment_key},
+            environment_key       => $dynamic_path{$parameter_name}{environment_key},
         }
     );
     return;
@@ -1298,8 +1277,7 @@ sub _set_expansionhunter_repeat_specs_dir {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1311,8 +1289,7 @@ sub _set_expansionhunter_repeat_specs_dir {
     $active_parameter_href->{expansionhunter_repeat_specs_dir} =
       _get_default_repeat_specs_dir_path(
         {
-            reference_genome_path =>
-              $active_parameter_href->{human_genome_reference},
+            reference_genome_path => $active_parameter_href->{human_genome_reference},
         }
       );
 
@@ -1340,8 +1317,7 @@ sub _set_human_genome {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1374,8 +1350,7 @@ sub _set_infile_dirs {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1441,8 +1416,7 @@ sub _set_sample_info_file {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1451,9 +1425,7 @@ sub _set_sample_info_file {
     $parameter_href->{sample_info_file}{default} = catfile(
         $active_parameter_href->{outdata_dir},
         $active_parameter_href->{family_id},
-        $active_parameter_href->{family_id}
-          . $UNDERSCORE
-          . q{qc_sample_info.yaml}
+        $active_parameter_href->{family_id} . $UNDERSCORE . q{qc_sample_info.yaml}
     );
 
     ## Set qccollect sampleinfo file input

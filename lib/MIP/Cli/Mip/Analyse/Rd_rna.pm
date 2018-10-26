@@ -1,5 +1,6 @@
 package MIP::Cli::Mip::Analyse::Rd_rna;
 
+use 5.026;
 use Carp;
 use File::Spec::Functions qw{ catfile };
 use FindBin qw{ $Bin };
@@ -43,7 +44,7 @@ sub run {
     use MIP::File::Format::Parameter qw{ parse_definition_file  };
     use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
     use MIP::Get::Analysis
-      qw{ get_dependency_tree_chain get_dependency_tree_order print_program };
+      qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
 
     ## Mip analyse rd_rna parameters
     ## CLI commands inheritance
@@ -79,14 +80,14 @@ sub run {
         );
     }
 
-    ## Print programs and exit
-    if ( $active_parameter{print_programs} ) {
+    ## Print recipes and exit
+    if ( $active_parameter{print_recipes} ) {
 
-        print_program(
+        print_recipe(
             {
                 define_parameters_files_ref => \@definition_files,
                 parameter_href              => \%parameter,
-                print_program_mode          => $active_parameter{print_program_mode},
+                print_recipe_mode           => $active_parameter{print_recipe_mode},
             }
         );
         exit;
@@ -106,11 +107,11 @@ sub run {
         }
     );
 
-    ## Order programs - Parsed from initiation file
+    ## Order recipes - Parsed from initiation file
     get_dependency_tree_order(
         {
             dependency_tree_href => \%dependency_tree,
-            programs_ref => \@{ $parameter{dynamic_parameter}{order_programs_ref} },
+            recipes_ref => \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
         }
     );
 
@@ -227,7 +228,7 @@ sub _build_usage {
     option(
         q{module_core_number} => (
             cmd_aliases   => [qw{ mcn }],
-            cmd_tags      => [q{program_name=X(cores)}],
+            cmd_tags      => [q{recipe_name=X(cores)}],
             documentation => q{Set the number of cores for each module},
             is            => q{rw},
             isa           => HashRef,
@@ -237,7 +238,7 @@ sub _build_usage {
     option(
         q{module_time} => (
             cmd_aliases   => [qw{ mot }],
-            cmd_tags      => [q{program_name=time(hours)}],
+            cmd_tags      => [q{recipe_name=time(hours)}],
             documentation => q{Set the time allocation for each module},
             is            => q{rw},
             isa           => HashRef,

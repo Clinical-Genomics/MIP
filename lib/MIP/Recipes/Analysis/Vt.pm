@@ -52,7 +52,7 @@ sub analysis_vt {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
@@ -66,7 +66,7 @@ sub analysis_vt {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -116,10 +116,10 @@ sub analysis_vt {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -146,11 +146,11 @@ sub analysis_vt {
 
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core_rio};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -167,7 +167,7 @@ sub analysis_vt {
             id             => $family_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -176,18 +176,18 @@ sub analysis_vt {
     my %infile_path        = %{ $io{in}{file_path_href} };
 
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain         = get_program_attributes(
+    my $job_id_chain         = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -203,7 +203,7 @@ sub analysis_vt {
                 iterators_ref    => \@contigs_size_ordered,
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 temp_directory   => $temp_directory,
             }
         )
@@ -227,8 +227,8 @@ sub analysis_vt {
         }
     );
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -237,13 +237,13 @@ sub analysis_vt {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
-    my $stderr_path = $program_info_path . $DOT . q{stderr.txt};
+    my $stderr_path = $recipe_info_path . $DOT . q{stderr.txt};
 
     # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
@@ -261,7 +261,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
-            program_info_path  => $program_info_path,
+            recipe_info_path   => $recipe_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -290,7 +290,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
         );
 
         if (   $contig_index == 0
-            && $program_mode == 1 )
+            && $recipe_mode == 1 )
         {
 
             ## Split to enable submission to sample_info QC later
@@ -300,10 +300,10 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
             ## Collect QC metadata info for later use
             my $qc_vt_outfile_path = catfile( $directory,
                 $stderr_file_xargs . $DOT . $contig . $DOT . q{stderr.txt} );
-            add_program_outfile_to_sample_info(
+            add_recipe_outfile_to_sample_info(
                 {
                     path             => $qc_vt_outfile_path,
-                    program_name     => $program_name,
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
             );
@@ -345,7 +345,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
     close $XARGSFILEHANDLE
       or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {
@@ -438,7 +438,7 @@ sub _remove_decomposed_asterisk_entries {
       . q{stderr.txt}
       . $SPACE;
 
-    # Redirect xargs output to program specific stderr file
+    # Redirect xargs output to recipe specific stderr file
     print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
 
     return;

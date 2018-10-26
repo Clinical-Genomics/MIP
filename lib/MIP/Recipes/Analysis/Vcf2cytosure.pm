@@ -50,7 +50,7 @@ sub analysis_vcf2cytosure {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 
@@ -62,7 +62,7 @@ sub analysis_vcf2cytosure {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -116,10 +116,10 @@ sub analysis_vcf2cytosure {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -141,14 +141,14 @@ sub analysis_vcf2cytosure {
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_module_parameters get_program_attributes get_program_parameters };
+      qw{ get_program_parameters get_recipe_attributes get_recipe_parameters };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Variantcalling::Tiddit qw{ tiddit_coverage };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -157,18 +157,18 @@ sub analysis_vcf2cytosure {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -182,7 +182,7 @@ sub analysis_vcf2cytosure {
             file_name_prefix => $family_id,
             iterators_ref    => $active_parameter_href->{sample_ids},
             parameter_href   => $parameter_href,
-            program_name     => $program_name,
+            recipe_name      => $recipe_name,
             temp_directory   => $temp_directory,
         }
     );
@@ -201,12 +201,12 @@ sub analysis_vcf2cytosure {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $active_parameter_href->{sample_ids} },
             module_core_number =>
-              $active_parameter_href->{module_core_number}{$program_name},
+              $active_parameter_href->{module_core_number}{$recipe_name},
         }
     );
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -215,8 +215,8 @@ sub analysis_vcf2cytosure {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -234,7 +234,7 @@ sub analysis_vcf2cytosure {
             id             => $family_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => q{sv_annotate},
+            recipe_name    => q{sv_annotate},
             stream         => q{out},
             temp_directory => $temp_directory,
         }
@@ -258,8 +258,8 @@ sub analysis_vcf2cytosure {
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    ## Collect BAM infiles for dependence programs streams for all sample_ids
-    my %program_tag_keys = ( gatk_baserecalibration => q{out}, );
+    ## Collect BAM infiles for dependence recipes streams for all sample_ids
+    my %recipe_tag_keys = ( gatk_baserecalibration => q{out}, );
 
     my $process_batches_count = 1;
     while ( my ( $sample_id_index, $sample_id ) =
@@ -267,7 +267,7 @@ sub analysis_vcf2cytosure {
     {
 
       PROGRAM_TAG:
-        while ( my ( $program_tag, $stream ) = each %program_tag_keys ) {
+        while ( my ( $recipe_tag, $stream ) = each %recipe_tag_keys ) {
 
             ## Get the io infiles per chain and id
             my %sample_io = get_io_files(
@@ -275,7 +275,7 @@ sub analysis_vcf2cytosure {
                     id             => $sample_id,
                     file_info_href => $file_info_href,
                     parameter_href => $parameter_href,
-                    program_name   => $program_tag,
+                    recipe_name    => $recipe_tag,
                     stream         => $stream,
                     temp_directory => $temp_directory,
                 }
@@ -314,7 +314,7 @@ sub analysis_vcf2cytosure {
 
     ## Excute vcf2cytosure just to get an error message for version
     say {$FILEHANDLE} q{## Log vcf2cytosure version - use dummy parameters} . $NEWLINE;
-    my $stderrfile_path = $program_info_path . $DOT . q{stderr.txt};
+    my $stderrfile_path = $recipe_info_path . $DOT . q{stderr.txt};
     vcf2cytosure_convert(
         {
             coverage_file   => q{Na},
@@ -402,25 +402,25 @@ sub analysis_vcf2cytosure {
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
 
-        if ( $program_mode == 1 ) {
+        if ( $recipe_mode == 1 ) {
 
-            add_program_outfile_to_sample_info(
+            add_recipe_outfile_to_sample_info(
                 {
                     infile           => $outfile_name{$sample_id},
                     sample_id        => $sample_id,
                     path             => $outfile_path{$sample_id},
-                    program_name     => q{vcf2cytosure},
+                    recipe_name      => q{vcf2cytosure},
                     sample_info_href => $sample_info_href,
                 }
             );
 
             ## For logging version - until present in cgh file
-            add_program_outfile_to_sample_info(
+            add_recipe_outfile_to_sample_info(
                 {
                     infile           => $outfile_name{$sample_id},
                     sample_id        => $sample_id,
                     path             => $stderrfile_path,
-                    program_name     => q{vcf2cytosure_version},
+                    recipe_name      => q{vcf2cytosure_version},
                     sample_info_href => $sample_info_href,
                 }
             );
@@ -428,7 +428,7 @@ sub analysis_vcf2cytosure {
     }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {

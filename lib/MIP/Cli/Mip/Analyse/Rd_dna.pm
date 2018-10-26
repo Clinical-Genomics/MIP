@@ -1,5 +1,6 @@
 package MIP::Cli::Mip::Analyse::Rd_dna;
 
+use 5.026;
 use Carp;
 use File::Spec::Functions qw{ catfile };
 use FindBin qw{ $Bin };
@@ -25,11 +26,9 @@ extends(qw{ MIP::Cli::Mip::Analyse });
 
 command_short_description(q{Rare disease DNA analysis});
 
-command_long_description(
-    q{Rare disease DNA analysis on wes, wgs or mixed sequence data});
+command_long_description(q{Rare disease DNA analysis on wes, wgs or mixed sequence data});
 
-command_usage(
-    q{mip <analyse> <rd_dna> <family_id> --config <config_file> });
+command_usage(q{mip <analyse> <rd_dna> <family_id> --config <config_file> });
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -46,7 +45,7 @@ sub run {
     use MIP::File::Format::Parameter qw{ parse_definition_file  };
     use MIP::File::Format::Yaml qw{ load_yaml order_parameter_names };
     use MIP::Get::Analysis
-      qw{ get_dependency_tree_chain get_dependency_tree_order print_program };
+      qw{ get_dependency_tree_chain get_dependency_tree_order print_recipe };
 
     ## Mip analyse rd_dna parameters
     ## CLI commands inheritance
@@ -76,21 +75,20 @@ sub run {
                     define_parameters_path => $definition_file,
                     non_mandatory_parameter_keys_path =>
                       $non_mandatory_parameter_keys_path,
-                    mandatory_parameter_keys_path =>
-                      $mandatory_parameter_keys_path,
+                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
                 }
             ),
         );
     }
 
-    ## Print programs and exit
-    if ( $active_parameter{print_programs} ) {
+    ## Print recipes and exit
+    if ( $active_parameter{print_recipes} ) {
 
-        print_program(
+        print_recipe(
             {
                 define_parameters_files_ref => \@definition_files,
                 parameter_href              => \%parameter,
-                print_program_mode => $active_parameter{print_program_mode},
+                print_recipe_mode           => $active_parameter{print_recipe_mode},
             }
         );
         exit;
@@ -98,9 +96,7 @@ sub run {
 
     my %dependency_tree = load_yaml(
         {
-            yaml_file => catfile(
-                $Bin, qw{ definitions rd_dna_initiation_map.yaml }
-            ),
+            yaml_file => catfile( $Bin, qw{ definitions rd_dna_initiation_map.yaml } ),
         }
     );
 
@@ -112,12 +108,11 @@ sub run {
         }
     );
 
-    ## Order programs - Parsed from initiation file
+    ## Order recipes - Parsed from initiation file
     get_dependency_tree_order(
         {
             dependency_tree_href => \%dependency_tree,
-            programs_ref =>
-              \@{ $parameter{dynamic_parameter}{order_programs_ref} },
+            recipes_ref => \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
         }
     );
 
@@ -175,18 +170,16 @@ sub _build_usage {
             cmd_tags    => [
 q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config_file, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
             ],
-            documentation =>
-              q{Set the references to be decomposed and normalized},
-            is  => q{rw},
-            isa => ArrayRef [Str],
+            documentation => q{Set the references to be decomposed and normalized},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
         )
     );
 
     option(
         q{exome_target_bed} => (
             cmd_aliases => [qw{ extb }],
-            cmd_tags =>
-              [q{file.bed=Sample_id; Default: latest_supported_capturekit.bed}],
+            cmd_tags => [q{file.bed=Sample_id; Default: latest_supported_capturekit.bed}],
             documentation => q{Exome target bed file per sample id},
             is            => q{rw},
             isa           => HashRef,
@@ -215,12 +208,11 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
 
     option(
         q{gatk_disable_auto_index_and_file_lock} => (
-            cmd_aliases => [qw{ gdai }],
-            cmd_flag    => q{gatk_dis_auto_ind_fl},
-            documentation =>
-              q{Disable auto index creation and locking when reading rods},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ gdai }],
+            cmd_flag      => q{gatk_dis_auto_ind_fl},
+            documentation => q{Disable auto index creation and locking when reading rods},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -266,7 +258,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     option(
         q{module_core_number} => (
             cmd_aliases   => [qw{ mcn }],
-            cmd_tags      => [q{program_name=X(cores)}],
+            cmd_tags      => [q{recipe_name=X(cores)}],
             documentation => q{Set the number of cores for each module},
             is            => q{rw},
             isa           => HashRef,
@@ -276,7 +268,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     option(
         q{module_time} => (
             cmd_aliases   => [qw{ mot }],
-            cmd_tags      => [q{program_name=time(hours)}],
+            cmd_tags      => [q{recipe_name=time(hours)}],
             documentation => q{Set the time allocation for each module},
             is            => q{rw},
             isa           => HashRef,
@@ -323,22 +315,20 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
 
     option(
         q{replace_iupac} => (
-            cmd_aliases => [qw{ riu }],
-            documentation =>
-              q{Replace IUPAC code in alternative alleles with N},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ riu }],
+            documentation => q{Replace IUPAC code in alternative alleles with N},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
     option(
         q{split_fastq_file} => (
-            cmd_aliases => [qw{ sfq }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-              q{Split fastq files in batches of X reads and exits},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_aliases   => [qw{ sfq }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Split fastq files in batches of X reads and exits},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -428,7 +418,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_flag    => q{ppicard_mergesamfiles},
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
-q{Merge (BAM file(s) ) or rename single samples for downstream processing},
+              q{Merge (BAM file(s) ) or rename single samples for downstream processing},
             is  => q{rw},
             isa => enum( [ 1, 2 ] ),
         )
@@ -467,13 +457,12 @@ q{Merge (BAM file(s) ) or rename single samples for downstream processing},
 
     option(
         q{markduplicates_sambamba_markdup_hash_table_size} => (
-            cmd_aliases => [qw{ mdshts }],
-            cmd_flag    => q{sba_mdup_hts},
-            cmd_tags    => [q{Default: 262144}],
-            documentation =>
-              q{Sambamba size of hash table for finding read pairs},
-            is  => q{rw},
-            isa => Int,
+            cmd_aliases   => [qw{ mdshts }],
+            cmd_flag      => q{sba_mdup_hts},
+            cmd_tags      => [q{Default: 262144}],
+            documentation => q{Sambamba size of hash table for finding read pairs},
+            is            => q{rw},
+            isa           => Int,
         )
     );
 
@@ -547,10 +536,9 @@ q{Default: ReadGroupCovariate, ContextCovariate, CycleCovariate, QualityScoreCov
             cmd_tags    => [
 q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
             ],
-            documentation =>
-              q{GATK BaseReCalibration known SNV and INDEL sites},
-            is  => q{rw},
-            isa => ArrayRef [Str],
+            documentation => q{GATK BaseReCalibration known SNV and INDEL sites},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
         )
     );
 
@@ -658,23 +646,21 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
 
     option(
         q{sambamba_depth_noduplicates} => (
-            cmd_aliases => [qw{ sdtndu }],
-            cmd_flag    => q{sba_depth_nod},
-            documentation =>
-              q{Do not include duplicates in coverage calculation},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ sdtndu }],
+            cmd_flag      => q{sba_depth_nod},
+            documentation => q{Do not include duplicates in coverage calculation},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
     option(
         q{sambamba_depth_quality_control} => (
-            cmd_aliases => [qw{ sdtfqc }],
-            cmd_flag    => q{sba_depth_qc},
-            documentation =>
-              q{Do not include reads with failed quality control},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ sdtfqc }],
+            cmd_flag      => q{sba_depth_qc},
+            documentation => q{Do not include reads with failed quality control},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -742,12 +728,11 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
 
     option(
         q{delly_exclude_file} => (
-            cmd_aliases => [qw{ delexc }],
-            cmd_tags    => [q{Default: hg19_human_excl_-0.7.6-.tsv}],
-            documentation =>
-              q{Exclude centomere and telemore regions in delly calling},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ delexc }],
+            cmd_tags      => [q{Default: hg19_human_excl_-0.7.6-.tsv}],
+            documentation => q{Exclude centomere and telemore regions in delly calling},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -773,12 +758,11 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
 
     option(
         q{expansionhunter_repeat_specs_dir} => (
-            cmd_aliases => [qw{ exphun_rspd }],
-            cmd_flag    => q{exphun_rep_spec_dir},
-            documentation =>
-              q{Path to reference genome specic folder with repeat specs},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ exphun_rspd }],
+            cmd_flag      => q{exphun_rep_spec_dir},
+            documentation => q{Path to reference genome specic folder with repeat specs},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -846,11 +830,10 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
 
     option(
         q{sv_svdb_merge_prioritize} => (
-            cmd_aliases => [qw{ svsvdbmp }],
-            documentation =>
-              q{Prioritization order of structural variant callers},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ svsvdbmp }],
+            documentation => q{Prioritization order of structural variant callers},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -875,11 +858,10 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
 
     option(
         q{sv_bcftools_view_filter} => (
-            cmd_aliases => [qw{ svcbtv }],
-            documentation =>
-              q{Include structural variants with PASS in FILTER column},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ svcbtv }],
+            documentation => q{Include structural variants with PASS in FILTER column},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -904,13 +886,11 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
 
     option(
         q{sv_genmod_filter_1000g} => (
-            cmd_aliases => [qw{ svcgfr }],
-            cmd_tags =>
-              [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
-            documentation =>
-              q{Genmod annotate structural variants from 1000G reference},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ svcgfr }],
+            cmd_tags      => [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
+            documentation => q{Genmod annotate structural variants from 1000G reference},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -953,9 +933,8 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
 
     option(
         q{sv_vcfanno_config_file} => (
-            cmd_aliases => [qw{ svcvacf }],
-            cmd_tags =>
-              [q{Default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz}],
+            cmd_aliases   => [qw{ svcvacf }],
+            cmd_tags      => [q{Default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz}],
             documentation => q{Annotation file within vcfAnno config toml file},
             is            => q{rw},
             isa           => Str,
@@ -1126,13 +1105,12 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{sv_vcfparser_select_file} => (
-            cmd_aliases => [qw{ svvcpsf }],
-            cmd_flag    => q{sv_vcfparser_slt_fl},
-            cmd_tags    => [q{Format: tsv; HGNC Symbol required in file}],
-            documentation =>
-              q{Select file with list of genes to analyse separately},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ svvcpsf }],
+            cmd_flag      => q{sv_vcfparser_slt_fl},
+            cmd_tags      => [q{Format: tsv; HGNC Symbol required in file}],
+            documentation => q{Select file with list of genes to analyse separately},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -1171,7 +1149,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             cmd_aliases => [qw{ svravanr }],
             cmd_flag    => q{sv_genmod_ann_reg},
             documentation =>
-q{Use predefined gene annotation supplied with genmod for defining genes},
+              q{Use predefined gene annotation supplied with genmod for defining genes},
             is  => q{rw},
             isa => Bool,
         )
@@ -1241,7 +1219,7 @@ q{Use predefined gene annotation supplied with genmod for defining genes},
         q{sv_rankvariant_binary_file} => (
             cmd_aliases => [qw{ svrevbf }],
             documentation =>
-q{Produce binary file from the rank variant chromosome sorted vcfs},
+              q{Produce binary file from the rank variant chromosome sorted vcfs},
             is  => q{rw},
             isa => Bool,
         )
@@ -1307,18 +1285,17 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             cmd_tags      => [q{Default: GVCF}],
             documentation => q{VCF to produce},
             is            => q{rw},
-            isa => ArrayRef [ enum( [qw{ NONE BP_RESOLUTION GVCF }] ), ],
+            isa           => ArrayRef [ enum( [qw{ NONE BP_RESOLUTION GVCF }] ), ],
         )
     );
 
     option(
         q{gatk_haplotypecaller_no_soft_clipped_bases} => (
-            cmd_aliases => [qw{ ghcscb }],
-            cmd_flag    => q{gatk_haplotype_no_soft_cb},
-            documentation =>
-              q{Do not include soft clipped bases in the variant calling},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ ghcscb }],
+            cmd_flag      => q{gatk_haplotype_no_soft_cb},
+            documentation => q{Do not include soft clipped bases in the variant calling},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -1329,20 +1306,19 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             cmd_tags      => [q{Default: NONE; Set to "0" to disable}],
             documentation => q{PCR indel model to use},
             is            => q{rw},
-            isa           => ArrayRef [
-                enum( [ 0, qw{ AGGRESSIVE CONSERVATIVE HOSTILE NONE } ] ), ],
+            isa =>
+              ArrayRef [ enum( [ 0, qw{ AGGRESSIVE CONSERVATIVE HOSTILE NONE } ] ), ],
         )
     );
 
     option(
         q{gatk_haplotypecaller_snp_known_set} => (
-            cmd_aliases => [qw{ ghckse }],
-            cmd_flag    => q{gatk_haplotype_snp_ks},
-            cmd_tags    => [q{Default: GRCh37_dbsnp_-138-.vcf}],
-            documentation =>
-              q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ ghckse }],
+            cmd_flag      => q{gatk_haplotype_snp_ks},
+            cmd_tags      => [q{Default: GRCh37_dbsnp_-138-.vcf}],
+            documentation => q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -1361,7 +1337,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             cmd_aliases => [qw{ ggtgrl }],
             cmd_flag    => q{gatk_genotype_ref_gvcf},
             documentation =>
-q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
+              q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
             is  => q{rw},
             isa => Str,
         )
@@ -1369,23 +1345,21 @@ q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
 
     option(
         q{gatk_gathervcfs} => (
-            cmd_aliases => [qw{ gcgt }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-              q{Concatenate gVCF records using GATK Concatenate variants},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_aliases   => [qw{ gcgt }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Concatenate gVCF records using GATK Concatenate variants},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
     option(
         q{gatk_gathervcfs_bcf_file} => (
-            cmd_aliases => [qw{ gcgbcf }],
-            cmd_flag    => q{gatk_genotype_bcf_f},
-            documentation =>
-              q{Produce a bcf from the GATK ConcatenateGenoTypeGVCFs vcf},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ gcgbcf }],
+            cmd_flag      => q{gatk_genotype_bcf_f},
+            documentation => q{Produce a bcf from the GATK ConcatenateGenoTypeGVCFs vcf},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -1394,7 +1368,7 @@ q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
             cmd_aliases => [qw{ gvr }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
-q{Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration},
+              q{Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration},
             is  => q{rw},
             isa => enum( [ 0, 1, 2 ] ),
         )
@@ -1402,14 +1376,12 @@ q{Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration},
 
     option(
         q{gatk_variantrecalibration_annotations} => (
-            cmd_aliases => [qw{ gvrann }],
-            cmd_flag    => q{gatk_varrecal_ann},
-            cmd_tags =>
-              [q{Default: QD, MQRankSum, ReadPosRankSum, FS, SOR, DP}],
-            documentation =>
-              q{Annotations to use with GATK VariantRecalibrator},
-            is  => q{rw},
-            isa => ArrayRef [Str],
+            cmd_aliases   => [qw{ gvrann }],
+            cmd_flag      => q{gatk_varrecal_ann},
+            cmd_tags      => [q{Default: QD, MQRankSum, ReadPosRankSum, FS, SOR, DP}],
+            documentation => q{Annotations to use with GATK VariantRecalibrator},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
         )
     );
 
@@ -1507,10 +1479,9 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
 
     option(
         q{gatk_calculategenotypeposteriors_support_set} => (
-            cmd_aliases => [qw{ gcgpss }],
-            cmd_flag    => q{gatk_calcgenotypepost_ss},
-            cmd_tags =>
-              [q{Defaults: 1000g_sites_GRCh37_phase3_v4_20130502.vcf}],
+            cmd_aliases   => [qw{ gcgpss }],
+            cmd_flag      => q{gatk_calcgenotypepost_ss},
+            cmd_tags      => [q{Defaults: 1000g_sites_GRCh37_phase3_v4_20130502.vcf}],
             documentation => q{GATK CalculateGenotypePosteriors support set},
             is            => q{rw},
             isa           => Str,
@@ -1529,12 +1500,11 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
 
     option(
         q{gatk_combinevariantcallsets_bcf_file} => (
-            cmd_aliases => [qw{ gcvbcf }],
-            cmd_flag    => q{gatk_combinevar_bcf_f},
-            documentation =>
-              q{Produce a bcf from the GATK CombineVariantCallSet vcf},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ gcvbcf }],
+            cmd_flag      => q{gatk_combinevar_bcf_f},
+            documentation => q{Produce a bcf from the GATK CombineVariantCallSet vcf},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -1545,7 +1515,7 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
             cmd_tags      => [q{Defaults: PRIORITIZE}],
             documentation => q{Type of merge to perform},
             is            => q{rw},
-            isa => enum( [qw{ UNIQUIFY PRIORITIZE UNSORTED REQUIRE_UNIQUE }] ),
+            isa           => enum( [qw{ UNIQUIFY PRIORITIZE UNSORTED REQUIRE_UNIQUE }] ),
         )
     );
 
@@ -1594,8 +1564,7 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
     option(
         q{gatk_varianteval_gold} => (
             cmd_aliases => [qw{ gveedbg }],
-            cmd_tags =>
-              [q{Default: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}],
+            cmd_tags => [q{Default: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}],
             documentation => q{Gold indel file used in GATK varianteval},
             is            => q{rw},
             isa           => Str,
@@ -1619,7 +1588,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
             cmd_aliases => [qw{ rhc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
-q{Rhocall performs annotation of variants in autozygosity regions},
+              q{Rhocall performs annotation of variants in autozygosity regions},
             is  => q{rw},
             isa => enum( [ 0, 1, 2 ] ),
         )
@@ -1628,8 +1597,7 @@ q{Rhocall performs annotation of variants in autozygosity regions},
     option(
         q{rhocall_frequency_file} => (
             cmd_aliases => [qw{ rhcf }],
-            cmd_tags =>
-              [q{Default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
+            cmd_tags    => [q{Default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
             documentation => q{Frequency file for bcftools roh calculation},
             is            => q{rw},
             isa           => Str,
@@ -1724,10 +1692,9 @@ q{Rhocall performs annotation of variants in autozygosity regions},
 
     option(
         q{frequency_genmod_filter_1000g} => (
-            cmd_aliases => [qw{ fqfgfr }],
-            cmd_flag    => q{freq_genmod_fil_1000g},
-            cmd_tags =>
-              [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
+            cmd_aliases   => [qw{ fqfgfr }],
+            cmd_flag      => q{freq_genmod_fil_1000g},
+            cmd_tags      => [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
             documentation => q{Genmod annotate 1000G reference},
             is            => q{rw},
             isa           => Str,
@@ -1826,13 +1793,12 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{vcfparser_select_file} => (
-            cmd_aliases => [qw{ vcpsf }],
-            cmd_flag    => q{vcfparser_slt_fl},
-            cmd_tags    => [q{Format: tsv; HGNC Symbol required in file}],
-            documentation =>
-              q{Select file with list of genes to analyse separately},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ vcpsf }],
+            cmd_flag      => q{vcfparser_slt_fl},
+            cmd_tags      => [q{Format: tsv; HGNC Symbol required in file}],
+            documentation => q{Select file with list of genes to analyse separately},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -1977,7 +1943,7 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
             cmd_aliases => [qw{ ravanr }],
             cmd_flag    => q{genmod_ann_reg},
             documentation =>
-q{Use predefined gene annotation supplied with genmod for defining genes},
+              q{Use predefined gene annotation supplied with genmod for defining genes},
             is  => q{rw},
             isa => Bool,
         )
@@ -2028,7 +1994,7 @@ q{Use predefined gene annotation supplied with genmod for defining genes},
         q{rankvariant_binary_file} => (
             cmd_aliases => [qw{ ravbf }],
             documentation =>
-q{Produce binary file from the rank variant chromosomal sorted vcfs},
+              q{Produce binary file from the rank variant chromosomal sorted vcfs},
             is  => q{rw},
             isa => Bool,
         )
@@ -2045,12 +2011,11 @@ q{Produce binary file from the rank variant chromosomal sorted vcfs},
 
     option(
         q{endvariantannotationblock} => (
-            cmd_aliases => [qw{ evab }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-              q{End variant annotation block by concatenating files},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_aliases   => [qw{ evab }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{End variant annotation block by concatenating files},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -2116,9 +2081,9 @@ q{Produce binary file from the rank variant chromosomal sorted vcfs},
 
     option(
         q{nist_high_confidence_call_set} => (
-            cmd_aliases => [qw{ evlnhc }],
-            cmd_flag    => q{nist_hc_call_s},
-            cmd_tags    => [q{Default: GRCh37_nist_hg001_-na12878_v2.19-.vcf}],
+            cmd_aliases   => [qw{ evlnhc }],
+            cmd_flag      => q{nist_hc_call_s},
+            cmd_tags      => [q{Default: GRCh37_nist_hg001_-na12878_v2.19-.vcf}],
             documentation => q{NIST high-confidence variant calls},
             is            => q{rw},
             isa           => Str,
@@ -2127,13 +2092,12 @@ q{Produce binary file from the rank variant chromosomal sorted vcfs},
 
     option(
         q{nist_high_confidence_call_set_bed} => (
-            cmd_aliases => [qw{ evlnil }],
-            cmd_flag    => q{nist_hc_call_sb},
-            cmd_tags    => [q{Default: GRCh37_nist_hg001_-na12878_v2.19-.bed}],
-            documentation =>
-              q{NIST high-confidence variant calls interval list},
-            is  => q{rw},
-            isa => Str,
+            cmd_aliases   => [qw{ evlnil }],
+            cmd_flag      => q{nist_hc_call_sb},
+            cmd_tags      => [q{Default: GRCh37_nist_hg001_-na12878_v2.19-.bed}],
+            documentation => q{NIST high-confidence variant calls interval list},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -2151,7 +2115,7 @@ q{Produce binary file from the rank variant chromosomal sorted vcfs},
         q{qccollect} => (
             cmd_aliases   => [qw{ qcc }],
             cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Collect QC metrics from programs output},
+            documentation => q{Collect QC metrics from recipes output},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )
@@ -2171,11 +2135,10 @@ q{Regular expression file containing the regular expression to be used for each 
     option(
         q{qccollect_sampleinfo_file} => (
             cmd_aliases => [qw{ qccsi }],
-            cmd_tags    => [
-q{Default: {outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml}
-            ],
+            cmd_tags =>
+              [q{Default: {outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml}],
             documentation =>
-q{Sample info file containing info on what to parse from this analysis run},
+              q{Sample info file containing info on what to parse from this analysis run},
             is  => q{rw},
             isa => Str,
         )
@@ -2195,7 +2158,7 @@ q{Sample info file containing info on what to parse from this analysis run},
             cmd_aliases => [qw{ mqc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
-q{Create aggregate bioinformatics analysis report across many samples},
+              q{Create aggregate bioinformatics analysis report across many samples},
             is  => q{rw},
             isa => enum( [ 0, 1, 2 ] ),
         )

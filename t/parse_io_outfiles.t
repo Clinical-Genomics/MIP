@@ -64,18 +64,15 @@ diag(   q{Test parse_io_outfiles from File.pm v}
 ## Given
 my $chain_main = q{CHAIN_MAIN};
 my $id         = q{sample_1};
-my @file_paths = (
-    catfile(qw{ a test bwa_mem file_1.txt}),
-    catfile(qw{ a test bwa_mem file_2.txt}),
-);
+my @file_paths =
+  ( catfile(qw{ a test bwa_mem file_1.txt}), catfile(qw{ a test bwa_mem file_2.txt}), );
 my %file_info = (
     $id => {
         mip_infiles_dir => catfile(qw{ a dir }),
-        mip_infiles =>
-          [qw{ fastq_sample_1_1.fastq.gz fastq_sample_1_2.fastq.gz }],
+        mip_infiles     => [qw{ fastq_sample_1_1.fastq.gz fastq_sample_1_2.fastq.gz }],
     },
 );
-my @order_programs =
+my @order_recipes =
   qw{ bwa_mem picard_mergesamfiles markduplicates gatk_baserecalibration chanjo_sexcheck cnvnator sv_combinevariantcallsets };
 
 my %parameter = (
@@ -83,14 +80,14 @@ my %parameter = (
         chain          => $chain_main,
         outfile_suffix => q{.bam},
     },
-    chanjo_sexcheck           => { chain              => q{CHAIN_CHANJO}, },
-    cnvnator                  => { chain              => q{CNVNATOR}, },
-    dynamic_parameter         => { order_programs_ref => \@order_programs, },
-    markduplicates            => { chain              => $chain_main, },
-    picard_mergesamfiles      => { chain              => $chain_main, },
-    sv_combinevariantcallsets => { chain              => q{CHAIN_SV}, },
+    chanjo_sexcheck           => { chain             => q{CHAIN_CHANJO}, },
+    cnvnator                  => { chain             => q{CNVNATOR}, },
+    dynamic_parameter         => { order_recipes_ref => \@order_recipes, },
+    markduplicates            => { chain             => $chain_main, },
+    picard_mergesamfiles      => { chain             => $chain_main, },
+    sv_combinevariantcallsets => { chain             => q{CHAIN_SV}, },
 );
-my $program_name = q{bwa_mem};
+my $recipe_name = q{bwa_mem};
 
 ## Given no set infiles - inherit from base i.e MIP infiles
 my %io = parse_io_outfiles(
@@ -100,13 +97,13 @@ my %io = parse_io_outfiles(
         file_info_href => \%file_info,
         file_paths_ref => [ catfile(qw{ a dir file.bam}) ],
         parameter_href => \%parameter,
-        program_name   => $program_name,
+        recipe_name    => $recipe_name,
     }
 );
 
-## Then outfile for program should be returned
+## Then outfile for recipe should be returned
 is_deeply(
-    \%{ $file_info{io}{$chain_main}{$id}{$program_name}{out} },
+    \%{ $file_info{io}{$chain_main}{$id}{$recipe_name}{out} },
     \%{ $io{out} },
     q{Set and got fastq file features for sample_1}
 );
@@ -121,17 +118,16 @@ is_deeply(
         iterators_ref    => [qw{ MT X }],
         outdata_dir      => catdir(qw{ test dir }),
         parameter_href   => \%parameter,
-        program_name     => $program_name,
+        recipe_name      => $recipe_name,
     }
 );
 
 ## Then construct outfile paths
 my %expected_outfile_hash = (
-    MT => catfile( qw{test dir}, $id, $program_name, q{alignment_file.MT.bam} ),
-    X  => catfile( qw{test dir}, $id, $program_name, q{alignment_file.X.bam} ),
+    MT => catfile( qw{test dir}, $id, $recipe_name, q{alignment_file.MT.bam} ),
+    X  => catfile( qw{test dir}, $id, $recipe_name, q{alignment_file.X.bam} ),
 );
 is_deeply( \%{ $io{out}{file_path_href} },
-    \%expected_outfile_hash,
-    q{Construct default filenames from prefix and iterators} );
+    \%expected_outfile_hash, q{Construct default filenames from prefix and iterators} );
 
 done_testing();

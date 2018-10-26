@@ -46,7 +46,7 @@ sub analysis_analysisrunstatus {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
@@ -57,7 +57,7 @@ sub analysis_analysisrunstatus {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -111,10 +111,10 @@ sub analysis_analysisrunstatus {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
     };
@@ -122,22 +122,22 @@ sub analysis_analysisrunstatus {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_path_entries };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_recipe_parameters };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set program mode
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Set recipe mode
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $job_id_chain = $parameter_href->{$recipe_name}{chain};
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -145,7 +145,7 @@ sub analysis_analysisrunstatus {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
@@ -155,8 +155,8 @@ sub analysis_analysisrunstatus {
             job_id_href           => $job_id_href,
             log                   => $log,
             process_time          => $time,
-            program_directory     => $program_name,
-            program_name          => $program_name,
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -165,7 +165,7 @@ sub analysis_analysisrunstatus {
 
     my @paths;
 
-    ## Collects all programs file path(s) created by MIP located in %sample_info
+    ## Collects all recipes file path(s) created by MIP located in %sample_info
     get_path_entries(
         {
             paths_ref        => \@paths,
@@ -183,17 +183,17 @@ sub analysis_analysisrunstatus {
 
     ## Test varianteffectpredictor fork status. If varianteffectpredictor is unable to fork it will prematurely end the analysis and we will lose variants.
     my $variant_effect_predictor_file =
-      $sample_info_href->{program}{varianteffectpredictor}{stderrfile}{path};
+      $sample_info_href->{recipe}{varianteffectpredictor}{stderrfile}{path};
 
     ## Test peddy warnings
     my $peddy_file =
-      $sample_info_href->{program}{peddy}{stderr}{path};
+      $sample_info_href->{recipe}{peddy}{stderr}{path};
 
     ## Test if FAIL exists in qccollect file i.e. issues with samples e.g. Sex and seq data correlation, relationship etc
     my $qccollect_file;
     if ( not $active_parameter_href->{qccollect_skip_evaluation} ) {
 
-        $qccollect_file = $sample_info_href->{program}{qccollect}{path};
+        $qccollect_file = $sample_info_href->{recipe}{qccollect}{path};
     }
 
     my %files_to_check = (
@@ -239,7 +239,7 @@ sub analysis_analysisrunstatus {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {

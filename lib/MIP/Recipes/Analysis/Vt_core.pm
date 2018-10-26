@@ -43,7 +43,7 @@ sub analysis_vt_core {
 ##          : $cmd_break               => Command line separator ['"\n\n"'|";"]
 ##          : $contig                  => The contig to extract {OPTIONAL, REF}
 ##          : $core_number             => The number of cores to allocate
-##          : $decompose               => Vt program decomnpose for splitting multiallelic variants
+##          : $decompose               => Vt program decompose for splitting multiallelic variants
 ##          : $family_id               => The family ID
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
@@ -55,8 +55,8 @@ sub analysis_vt_core {
 ##          : $normalize               => Vt program normalize for normalizing to reference used in analysis
 ##          : $outfile_path            => Outfile path
 ##          : $parameter_href          => Hash with paremters from yaml file {REF}
-##          : $program_directory       => Program directory to write to in sbatch script
-##          : $program_name            => Program name
+##          : $recipe_directory       => Program directory to write to in sbatch script
+##          : $recipe_name            => Program name
 ##          : $tabix                   => Index compressed output using tabix
 ##          : $uniq                    => Vt program uniq for removing variant duplication that appear later in file
 ##          : $xargs_file_path_prefix  => The xargs sbatch script file name {OPTIONAL}
@@ -75,8 +75,8 @@ sub analysis_vt_core {
     my $instream;
     my $normalize;
     my $outfile_path;
-    my $program_directory;
-    my $program_name;
+    my $recipe_directory;
+    my $recipe_name;
     my $tabix;
     my $uniq;
 
@@ -110,8 +110,7 @@ sub analysis_vt_core {
             strict_type => 1,
             store       => \$bgzip
         },
-        cmd_break =>
-          { default => $NEWLINE x 2, strict_type => 1, store => \$cmd_break },
+        cmd_break => { default => $NEWLINE x 2, strict_type => 1, store => \$cmd_break },
         core_number => {
             default     => 1,
             allow       => qr/ ^\d+$ /xsm,
@@ -138,8 +137,7 @@ sub analysis_vt_core {
             store       => \$gnu_sed
         },
         human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
+            default     => $arg_href->{active_parameter_href}{human_genome_reference},
             strict_type => 1,
             store       => \$human_genome_reference
         },
@@ -162,8 +160,7 @@ sub analysis_vt_core {
             strict_type => 1,
             store       => \$instream
         },
-        job_id_href =>
-          { default => {}, strict_type => 1, store => \$job_id_href },
+        job_id_href => { default => {}, strict_type => 1, store => \$job_id_href },
         ## Use same path as infile path unless parameter is supplied
         normalize => {
             default     => 0,
@@ -176,13 +173,11 @@ sub analysis_vt_core {
             strict_type => 1,
             store       => \$outfile_path,
         },
-        parameter_href =>
-          { default => {}, strict_type => 1, store => \$parameter_href },
-        program_directory =>
-          { default => q{vt}, strict_type => 1, store => \$program_directory },
-        program_name =>
-          { default => q{vt}, strict_type => 1, store => \$program_name },
-        tabix => {
+        parameter_href => { default => {}, strict_type => 1, store => \$parameter_href },
+        recipe_directory =>
+          { default => q{vt}, strict_type => 1, store => \$recipe_directory },
+        recipe_name => { default => q{vt}, strict_type => 1, store => \$recipe_name },
+        tabix       => {
             default     => 0,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
@@ -194,8 +189,7 @@ sub analysis_vt_core {
             strict_type => 1,
             store       => \$uniq
         },
-        xargs_file_path_prefix =>
-          { strict_type => 1, store => \$xargs_file_path_prefix },
+        xargs_file_path_prefix => { strict_type => 1, store => \$xargs_file_path_prefix },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -205,12 +199,9 @@ sub analysis_vt_core {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
-    use MIP::Program::Variantcalling::Allele_frequency
-      qw{ calculate_af max_af };
-    use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_view bcftools_index };
-    use MIP::Program::Variantcalling::Vt
-      qw{ vt_decompose vt_normalize vt_uniq };
+    use MIP::Program::Variantcalling::Allele_frequency qw{ calculate_af max_af };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view bcftools_index };
+    use MIP::Program::Variantcalling::Vt qw{ vt_decompose vt_normalize vt_uniq };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -220,14 +211,14 @@ sub analysis_vt_core {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Set MIP recipe name
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
+    my $job_id_chain = $parameter_href->{$recipe_name}{chain};
 
     my $file_path;
-    my $program_info_path;
+    my $recipe_info_path;
 
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
@@ -235,8 +226,8 @@ sub analysis_vt_core {
     ## Create anonymous filehandle
     $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ( $file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    ( $file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             core_number           => $core_number,
@@ -245,8 +236,8 @@ sub analysis_vt_core {
             job_id_href           => $job_id_href,
             log                   => $log,
             process_time          => $PROCESS_TIME,
-            program_name          => $program_name,
-            program_directory     => $program_directory,
+            recipe_name           => $recipe_name,
+            recipe_directory      => $recipe_directory,
         }
     );
 
@@ -364,11 +355,7 @@ sub analysis_vt_core {
     if ( -e $infile_path_tbi || $tabix ) {
 
         my $tabix_infile_path =
-            $outfile_path
-          . $UNDERSCORE
-          . q{splitted}
-          . $UNDERSCORE
-          . $random_integer;
+          $outfile_path . $UNDERSCORE . q{splitted} . $UNDERSCORE . $random_integer;
         htslib_tabix(
             {
                 FILEHANDLE  => $FILEHANDLE,
@@ -406,7 +393,7 @@ sub analysis_vt_core {
 
     close $FILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         slurm_submit_job_no_dependency_add_to_samples(
             {
@@ -432,7 +419,7 @@ sub analysis_vt_core_rio {
 ##          : $cmd_break               => Command line separator ['"\n\n"'|";"]
 ##          : $contig                  => The contig to extract {OPTIONAL, REF}
 ##          : $core_number             => The number of cores to allocate
-##          : $decompose               => Vt program decomnpose for splitting multiallelic variants
+##          : $decompose               => Vt program decompose for splitting multiallelic variants
 ##          : $family_id               => The family ID
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $gnu_sed                 => Sed program for changing vcf #FORMAT field in variant vcfs
@@ -441,8 +428,8 @@ sub analysis_vt_core_rio {
 ##          : $instream                => Data to vt is supplied as a unix pipe
 ##          : $normalize               => Vt program normalize for normalizing to reference used in analysis
 ##          : $outfile_path            => Outfile path
-##          : $program_directory       => Program directory to write to in sbatch script
-##          : $program_name            => Program name
+##          : $recipe_directory       => Program directory to write to in sbatch script
+##          : $recipe_name            => Program name
 ##          : $tabix                   => Index compressed output using tabix
 ##          : $uniq                    => Vt program uniq for removing variant duplication that appear later in file
 ##          : $xargs_file_path_prefix  => The xargs sbatch script file name {OPTIONAL}
@@ -468,8 +455,8 @@ sub analysis_vt_core_rio {
     my $instream;
     my $normalize;
     my $outfile_path;
-    my $program_directory;
-    my $program_name;
+    my $recipe_directory;
+    my $recipe_name;
     my $tabix;
     my $uniq;
 
@@ -493,8 +480,7 @@ sub analysis_vt_core_rio {
             strict_type => 1,
             store       => \$bgzip
         },
-        cmd_break =>
-          { default => $NEWLINE x 2, strict_type => 1, store => \$cmd_break },
+        cmd_break => { default => $NEWLINE x 2, strict_type => 1, store => \$cmd_break },
         contig      => { strict_type => 1, store => \$contig },
         core_number => {
             default     => 1,
@@ -521,8 +507,7 @@ sub analysis_vt_core_rio {
             store       => \$gnu_sed
         },
         human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
+            default     => $arg_href->{active_parameter_href}{human_genome_reference},
             strict_type => 1,
             store       => \$human_genome_reference
         },
@@ -550,13 +535,11 @@ sub analysis_vt_core_rio {
             strict_type => 1,
             store       => \$outfile_path,
         },
-        program_directory =>
-          { default => q{vt}, strict_type => 1, store => \$program_directory },
-        program_name =>
-          { default => q{vt}, strict_type => 1, store => \$program_name },
-        xargs_file_path_prefix =>
-          { strict_type => 1, store => \$xargs_file_path_prefix },
-        tabix => {
+        recipe_directory =>
+          { default => q{vt}, strict_type => 1, store => \$recipe_directory },
+        recipe_name => { default => q{vt}, strict_type => 1, store => \$recipe_name },
+        xargs_file_path_prefix => { strict_type => 1, store => \$xargs_file_path_prefix },
+        tabix                  => {
             default     => 0,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
@@ -577,12 +560,9 @@ sub analysis_vt_core_rio {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
-    use MIP::Program::Variantcalling::Allele_frequency
-      qw{ calculate_af max_af };
-    use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_view bcftools_index };
-    use MIP::Program::Variantcalling::Vt
-      qw{ vt_decompose vt_normalize vt_uniq };
+    use MIP::Program::Variantcalling::Allele_frequency qw{ calculate_af max_af };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view bcftools_index };
+    use MIP::Program::Variantcalling::Vt qw{ vt_decompose vt_normalize vt_uniq };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -591,11 +571,11 @@ sub analysis_vt_core_rio {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Set MIP program name
-    my $program_mode = $active_parameter_href->{$program_name};
+    ## Set MIP recipe name
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
 
     my $file_path;
-    my $program_info_path;
+    my $recipe_info_path;
 
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
@@ -711,11 +691,7 @@ sub analysis_vt_core_rio {
     if ( -e $infile_path_tbi || $tabix ) {
 
         my $tabix_infile_path =
-            $outfile_path
-          . $UNDERSCORE
-          . q{splitted}
-          . $UNDERSCORE
-          . $random_integer;
+          $outfile_path . $UNDERSCORE . q{splitted} . $UNDERSCORE . $random_integer;
         htslib_tabix(
             {
                 FILEHANDLE  => $FILEHANDLE,

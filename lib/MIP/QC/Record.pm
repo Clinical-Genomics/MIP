@@ -1,5 +1,6 @@
 package MIP::QC::Record;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -27,7 +28,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ add_gene_panel add_infile_info add_most_complete_vcf add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_parameter_to_sample_info add_program_outfile_to_sample_info add_to_sample_info };
+      qw{ add_gene_panel add_infile_info add_most_complete_vcf add_processing_metafile_to_sample_info add_recipe_metafile_to_sample_info add_parameter_to_sample_info add_recipe_outfile_to_sample_info add_to_sample_info };
 
 }
 
@@ -45,7 +46,7 @@ sub add_gene_panel {
 ## Arguments: $aggregate_gene_panel_file => The database file
 ##          : $aggregate_gene_panels_key => The database key i.e. select or range
 ##          : $family_id                 => The family ID
-##          : $program_name              => Program name
+##          : $recipe_name               => Recipe name
 ##          : $sample_info_href          => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
@@ -54,7 +55,7 @@ sub add_gene_panel {
     my $aggregate_gene_panel_file;
     my $aggregate_gene_panels_key;
     my $family_id;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     my $tmpl = {
@@ -72,10 +73,10 @@ sub add_gene_panel {
             store       => \$family_id,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -109,12 +110,11 @@ sub add_gene_panel {
         $sub_database_regexp .= q?if ($_=~/^##gene_panel=/)? . $SPACE;
 
         # Remove newline char and split fields
-        $sub_database_regexp .=
-          q?{chomp($_);my @entries=split(/,/, $_);? . $SPACE;
+        $sub_database_regexp .= q?{chomp($_);my @entries=split(/,/, $_);? . $SPACE;
 
-   # Join fields with comma separator appending ":". Skip rest if it's a comment
+        # Join fields with comma separator appending ":". Skip rest if it's a comment
         $sub_database_regexp .=
-q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
+          q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
 
         # Collect header_lines(s) from select_file header
         my $ret = `$sub_database_regexp $aggregate_gene_panel_file`;
@@ -156,9 +156,9 @@ q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
               FEATURE:
                 foreach my $feature ( keys %gene_panel ) {
 
-                    $sample_info_href->{$program_name}
-                      {$aggregate_gene_panels_key}{gene_panel}
-                      {$gene_panel_name}{$feature} = $gene_panel{$feature};
+                    $sample_info_href->{$recipe_name}
+                      {$aggregate_gene_panels_key}{gene_panel}{$gene_panel_name}{$feature}
+                      = $gene_panel{$feature};
                 }
             }
             else {
@@ -234,8 +234,7 @@ sub add_infile_info {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        date =>
-          { defined => 1, required => 1, store => \$date, strict_type => 1, },
+        date      => { defined => 1, required => 1, store => \$date, strict_type => 1, },
         direction => {
             allow       => [ 1, 2 ],
             defined     => 1,
@@ -244,7 +243,7 @@ sub add_infile_info {
             strict_type => 1,
         },
         file_index => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             defined     => 1,
             required    => 1,
             store       => \$file_index,
@@ -263,8 +262,7 @@ sub add_infile_info {
             store       => \$flowcell,
             strict_type => 1,
         },
-        index =>
-          { defined => 1, required => 1, store => \$index, strict_type => 1, },
+        index => { defined => 1, required => 1, store => \$index, strict_type => 1, },
         infile_both_strands_prefix_href => {
             default     => {},
             defined     => 1,
@@ -285,7 +283,7 @@ sub add_infile_info {
             strict_type => 1,
         },
         lane => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             defined     => 1,
             required    => 1,
             store       => \$lane,
@@ -342,8 +340,7 @@ sub add_infile_info {
         push @{ $file_info_href->{$sample_id}{lanes} }, $lane;
 
 # Save new format (sample_id_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
-        $infile_lane_prefix_href->{$sample_id}[$lane_tracker] =
-          $mip_file_format;
+        $infile_lane_prefix_href->{$sample_id}[$lane_tracker] = $mip_file_format;
 
         ## Detect Undetermined in flowcell id
         if ( $flowcell =~ /Undetermined/ixsm ) {
@@ -374,8 +371,7 @@ sub add_infile_info {
 
         ## $lane_tracker -1 since it gets incremented after direction eq 1
         # Alias
-        $mip_file_format =
-          $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ];
+        $mip_file_format = $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ];
 
         my %direction_two_metric = ( sequence_run_type => q{paired-end}, );
 
@@ -394,11 +390,10 @@ sub add_infile_info {
       $mip_file_format_with_direction;
 
     my %both_directions_metric = (
-        date     => $parsed_date,
-        flowcell => $flowcell,
-        lane     => $lane,
-        original_file_name =>
-          $file_info_href->{$sample_id}{mip_infiles}[$file_index],
+        date               => $parsed_date,
+        flowcell           => $flowcell,
+        lane               => $lane,
+        original_file_name => $file_info_href->{$sample_id}{mip_infiles}[$file_index],
         original_file_name_prefix => $original_file_name_prefix,
         read_direction            => $direction,
         run_barcode               => $run_barcode,
@@ -425,7 +420,7 @@ sub add_most_complete_vcf {
 ## Returns  :
 ## Arguments: $active_parameter_href     => Active parameters for this analysis hash {REF}
 ##          : $path                      => Path to file
-##          : $program_name              => Program name
+##          : $recipe_name               => Recipe name
 ##          : $sample_info_href          => Info on samples and family hash {REF}
 ##          : $vcf_file_key              => Key for labelling most complete vcf
 ##          : $vcfparser_outfile_counter => Number of outfile files from in vcfParser (select, range)
@@ -435,7 +430,7 @@ sub add_most_complete_vcf {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $path;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -450,12 +445,11 @@ sub add_most_complete_vcf {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        path =>
-          { defined => 1, required => 1, store => \$path, strict_type => 1, },
-        program_name => {
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -480,7 +474,7 @@ sub add_most_complete_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $active_parameter_href->{$program_name} == 1 ) {
+    if ( $active_parameter_href->{$recipe_name} == 1 ) {
 
         if ( $vcfparser_outfile_counter == 1 ) {
 
@@ -536,22 +530,21 @@ sub add_parameter_to_sample_info {
 
     if ( exists $active_parameter_href->{$key_to_add} ) {
 
-        $sample_info_href->{$key_to_add} =
-          $active_parameter_href->{$key_to_add};
+        $sample_info_href->{$key_to_add} = $active_parameter_href->{$key_to_add};
     }
 
     return;
 }
 
-sub add_program_outfile_to_sample_info {
+sub add_recipe_outfile_to_sample_info {
 
-## Function : Adds path and/or outdirectory and/or outfile and/or version from programs to sample_info to track all outfiles and extract downstream
+## Function : Adds path and/or outdirectory and/or outfile and/or version from recipes to sample_info to track all outfiles and extract downstream
 ## Returns  :
 ## Arguments: $infile           => Infile for data at sample level {Optional}
 ##          : $outdirectory     => Outdirectory of the file
 ##          : $outfile          => Outfile name
 ##          : $path             => Path of file
-##          : $program_name     => Program name
+##          : $recipe_name      => Recipe name
 ##          : $sample_id        => Sample_id for data at sample level {Optional}
 ##          : $sample_info_href => Records on samples and family hash {REF}
 ##          : $version          => Version of file
@@ -563,7 +556,7 @@ sub add_program_outfile_to_sample_info {
     my $outdirectory;
     my $outfile;
     my $path;
-    my $program_name;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
     my $version;
@@ -582,11 +575,11 @@ sub add_program_outfile_to_sample_info {
             strict_type => 1,
             store       => \$path,
         },
-        program_name => {
+        recipe_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
         },
         sample_id        => { strict_type => 1, store => \$sample_id, },
         sample_info_href => {
@@ -619,7 +612,7 @@ sub add_program_outfile_to_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{sample}{$sample_id}{program}{$program_name}
+                $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}
                   {$infile}{$parameter_key} = $parameter_value;
             }
         }
@@ -631,7 +624,7 @@ sub add_program_outfile_to_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{sample}{$sample_id}{program}{$program_name}
+                $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}
                   {$parameter_key} = $parameter_value;
             }
         }
@@ -643,7 +636,7 @@ sub add_program_outfile_to_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{program}{$program_name}{$parameter_key} =
+                $sample_info_href->{recipe}{$recipe_name}{$parameter_key} =
                   $parameter_value;
             }
         }
@@ -701,8 +694,8 @@ sub add_processing_metafile_to_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{sample}{$sample_id}{$metafile_tag}
-                  {$parameter_key} = $parameter_value;
+                $sample_info_href->{sample}{$sample_id}{$metafile_tag}{$parameter_key} =
+                  $parameter_value;
             }
         }
     }
@@ -713,17 +706,16 @@ sub add_processing_metafile_to_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{$metafile_tag}{$parameter_key} =
-                  $parameter_value;
+                $sample_info_href->{$metafile_tag}{$parameter_key} = $parameter_value;
             }
         }
     }
     return;
 }
 
-sub add_program_metafile_to_sample_info {
+sub add_recipe_metafile_to_sample_info {
 
-## Function : Adds path and/or directory and/or file and/or version from programs to sample_info to track all metafiles and extract downstream
+## Function : Adds path and/or directory and/or file and/or version from recipes to sample_info to track all metafiles and extract downstream
 ## Returns  :
 ## Arguments: $infile           => Infile for data at sample level {Optional}
 ##          : $directory        => Directory of the file
@@ -731,7 +723,7 @@ sub add_program_metafile_to_sample_info {
 ##          : $metafile_tag     => Id tag of meta file
 ##          : $path             => Path of file
 ##          : $processed_by     => Processed by
-##          : $program_name     => Program name
+##          : $recipe_name      => Recipe name
 ##          : $version          => Version of file
 ##          : $sample_id        => Sample_id for data at sample level {Optional}
 ##          : $sample_info_href => Records on samples and family hash {REF}
@@ -745,7 +737,7 @@ sub add_program_metafile_to_sample_info {
     my $infile;
     my $path;
     my $processed_by;
-    my $program_name;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
     my $version;
@@ -774,11 +766,11 @@ sub add_program_metafile_to_sample_info {
             strict_type => 1,
             store       => \$processed_by,
         },
-        program_name => {
+        recipe_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
         },
         sample_id        => { strict_type => 1, store => \$sample_id },
         sample_info_href => {
@@ -812,7 +804,7 @@ sub add_program_metafile_to_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{sample}{$sample_id}{program}{$program_name}
+                $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}
                   {$infile}{$metafile_tag}{$parameter_key} = $parameter_value;
             }
         }
@@ -824,8 +816,8 @@ sub add_program_metafile_to_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{program}{$program_name}{$metafile_tag}
-                  {$parameter_key} = $parameter_value;
+                $sample_info_href->{recipe}{$recipe_name}{$metafile_tag}{$parameter_key}
+                  = $parameter_value;
             }
         }
     }
@@ -836,24 +828,24 @@ sub add_to_sample_info {
 
 ## Function : Adds parameter info to sample_info
 ## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $family_id_ref              => The family_id_ref {REF}
-##          : $file_info_href             => File info hash {REF}
+## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
+##          : $family_id_ref          => The family_id_ref {REF}
+##          : $file_info_href         => File info hash {REF}
 ##          : $human_genome_reference => Human genome reference
-##          : $outdata_dir                => Outdata directory
-##          : $sample_info_href           => Info on samples and family hash {REF}
+##          : $outdata_dir            => Outdata directory
+##          : $sample_info_href       => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $human_genome_reference;
-    my $outdata_dir;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
     my $sample_info_href;
+
+    ## Default(s)
+    my $family_id_ref;
+    my $human_genome_reference;
+    my $outdata_dir;
 
     my $tmpl = {
         active_parameter_href => {
@@ -876,8 +868,7 @@ sub add_to_sample_info {
             strict_type => 1,
         },
         human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
+            default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$human_genome_reference,
             strict_type => 1,
         },
@@ -915,8 +906,8 @@ sub add_to_sample_info {
     }
 
     ## Define program features to find version of program that do not print version to log file or can be collected from the parameter
-    my %program_feature = define_program_features(
-        { active_parameter_href => $active_parameter_href, } );
+    my %program_feature =
+      define_program_features( { active_parameter_href => $active_parameter_href, } );
 
   PARAMETER:
     foreach my $parameter_name ( keys %program_feature ) {
@@ -927,16 +918,16 @@ sub add_to_sample_info {
                 active_parameter_href => $active_parameter_href,
                 cmd                   => $program_feature{$parameter_name}{cmd},
                 parameter_name        => $parameter_name,
-                regexp           => $program_feature{$parameter_name}{regexp},
-                sample_info_href => $sample_info_href,
+                regexp                => $program_feature{$parameter_name}{regexp},
+                sample_info_href      => $sample_info_href,
             }
         );
 
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name => $program_feature{$parameter_name}{program_name},
-                version      => $version,
+                recipe_name      => $program_feature{$parameter_name}{program_name},
+                version          => $version,
             }
         );
     }
@@ -963,9 +954,8 @@ sub add_to_sample_info {
 
         ## Add log_file_dir to sample info file
         my $path = dirname( dirname( $active_parameter_href->{log_file} ) );
-        $sample_info_href->{log_file_dir} = $path;
-        $sample_info_href->{last_log_file_path} =
-          $active_parameter_href->{log_file};
+        $sample_info_href->{log_file_dir}       = $path;
+        $sample_info_href->{last_log_file_path} = $active_parameter_href->{log_file};
     }
     return;
 }
@@ -992,8 +982,7 @@ sub _file_name_formats {
     my $sample_id;
 
     my $tmpl = {
-        date =>
-          { defined => 1, required => 1, store => \$date, strict_type => 1, },
+        date      => { defined => 1, required => 1, store => \$date, strict_type => 1, },
         direction => {
             allow       => [ 1, 2 ],
             defined     => 1,
@@ -1007,10 +996,9 @@ sub _file_name_formats {
             store       => \$flowcell,
             strict_type => 1,
         },
-        index =>
-          { defined => 1, required => 1, store => \$index, strict_type => 1, },
-        lane => {
-            allow       => qr/ ^\d+$ /xsm,
+        index => { defined => 1, required => 1, store => \$index, strict_type => 1, },
+        lane  => {
+            allow       => qr{ \A\d+\z }xsm,
             defined     => 1,
             required    => 1,
             store       => \$lane,
@@ -1037,8 +1025,7 @@ sub _file_name_formats {
       . $UNDERSCORE . q{lane}
       . $lane;
 
-    my $mip_file_format_with_direction =
-      $mip_file_format . $UNDERSCORE . $direction;
+    my $mip_file_format_with_direction = $mip_file_format . $UNDERSCORE . $direction;
 
     my $original_file_name_prefix =
         $lane
@@ -1054,21 +1041,15 @@ sub _file_name_formats {
       . $direction;
 
     my $run_barcode =
-        $date
-      . $UNDERSCORE
-      . $flowcell
-      . $UNDERSCORE
-      . $lane
-      . $UNDERSCORE
-      . $index;
+      $date . $UNDERSCORE . $flowcell . $UNDERSCORE . $lane . $UNDERSCORE . $index;
     return $mip_file_format, $mip_file_format_with_direction,
       $original_file_name_prefix, $run_barcode;
 }
 
 sub define_program_features {
 
-    ## Function : Define program features to find version of program
-    ## Returns  :
+## Function : Define program features to find version of program
+## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 
     my ($arg_href) = @_;
@@ -1094,9 +1075,9 @@ sub define_program_features {
 
     if ( exists $active_parameter_href->{gatk_path} ) {
 
-        $gatk_cmd = q{java -jar }
-          . catfile( $active_parameter_href->{gatk_path},
-            q{GenomeAnalysisTK.jar} )
+        $gatk_cmd =
+            q{java -jar }
+          . catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} )
           . $SPACE
           . q{--version 2>&1};
     }
@@ -1122,8 +1103,8 @@ sub define_program_features {
             program_name => q{picardtools},
         },
         bwa_mem => {
-            cmd    => $sambamba_cmd,     #bwa_mem uses sambamba post alignment
-            regexp => q?Not relevant?,
+            cmd          => $sambamba_cmd,     #bwa_mem uses sambamba post alignment
+            regexp       => q?Not relevant?,
             program_name => q{sambamba},
         },
         sambamba_depth => {

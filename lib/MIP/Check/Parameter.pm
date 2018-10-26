@@ -1,5 +1,6 @@
 package MIP::Check::Parameter;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use File::Spec::Functions qw{ catdir catfile };
@@ -37,9 +38,9 @@ BEGIN {
       check_infiles
       check_mutually_exclusive_parameters
       check_parameter_hash
-      check_program_exists_in_hash
+      check_recipe_exists_in_hash
       check_prioritize_variant_callers
-      check_program_mode
+      check_recipe_mode
       check_sample_ids
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
@@ -226,8 +227,7 @@ sub check_aligner {
     my %aligner;
 
   ALIGNER:
-    foreach my $aligner ( @{ $parameter_href->{dynamic_parameter}{aligners} } )
-    {
+    foreach my $aligner ( @{ $parameter_href->{dynamic_parameter}{aligners} } ) {
 
         ## Active aligner
         if ( $active_parameter_href->{$aligner} ) {
@@ -685,9 +685,9 @@ sub check_parameter_hash {
     return 1;
 }
 
-sub check_program_exists_in_hash {
+sub check_recipe_exists_in_hash {
 
-## Function : Test if parameter "program name" from query parameter exists truth hash
+## Function : Test if parameter "recipe name" from query parameter exists truth hash
 ## Returns  :
 ## Arguments: $log            => Log object
 ##          : $parameter_name => Parameter name
@@ -708,9 +708,8 @@ sub check_program_exists_in_hash {
             required => 1,
             store    => \$log,
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
-        truth_href => {
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+        truth_href     => {
             default     => {},
             defined     => 1,
             required    => 1,
@@ -726,33 +725,30 @@ sub check_program_exists_in_hash {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $error_msg =
-      qq{$SINGLE_QUOTE - Does not exist as module program parameter in MIP};
+    my $error_msg = qq{$SINGLE_QUOTE - Does not exist as recipe parameter in MIP};
 
     if ( ref $query_ref eq q{HASH} ) {
 
-      PROGRAM_NAME:
-        foreach my $program_name ( keys %{$query_ref} ) {
+      RECIPE_NAME:
+        foreach my $recipe_name ( keys %{$query_ref} ) {
 
-            next PROGRAM_NAME if ( exists $truth_href->{$program_name} );
+            next RECIPE_NAME if ( exists $truth_href->{$recipe_name} );
 
-            $log->fatal( $parameter_name
-                  . qq{ key $SINGLE_QUOTE}
-                  . $program_name
-                  . $error_msg );
+            $log->fatal(
+                $parameter_name . qq{ key $SINGLE_QUOTE} . $recipe_name . $error_msg );
             exit 1;
         }
     }
     if ( ref $query_ref eq q{ARRAY} ) {
 
-      PROGRAM_NAME:
-        foreach my $program_name ( @{$query_ref} ) {
+      RECIPE_NAME:
+        foreach my $recipe_name ( @{$query_ref} ) {
 
-            next PROGRAM_NAME if ( exists $truth_href->{$program_name} );
+            next RECIPE_NAME if ( exists $truth_href->{$recipe_name} );
 
             $log->fatal( $parameter_name
                   . qq{ element $SINGLE_QUOTE}
-                  . $program_name
+                  . $recipe_name
                   . $error_msg );
             exit 1;
         }
@@ -761,10 +757,8 @@ sub check_program_exists_in_hash {
 
         return if ( exists $truth_href->{$parameter_name} );
 
-        $log->fatal( $parameter_name
-              . qq{ element $SINGLE_QUOTE}
-              . $parameter_name
-              . $error_msg );
+        $log->fatal(
+            $parameter_name . qq{ element $SINGLE_QUOTE} . $parameter_name . $error_msg );
         exit 1;
     }
     return;
@@ -836,16 +830,14 @@ sub check_prioritize_variant_callers {
   CALLER:
     foreach my $variant_caller ( @{$variant_callers_ref} ) {
 
-        my $variant_caller_alias =
-          $parameter_href->{$variant_caller}{outdir_name};
+        my $variant_caller_alias = $parameter_href->{$variant_caller}{outdir_name};
         push @variant_caller_aliases, $variant_caller_alias;
 
-        ## Only active programs
+        ## Only active recipes
         if ( $active_parameter_href->{$variant_caller} ) {
 
             ## If variant caller alias is not part of priority order names
-            if ( not any { $_ eq $variant_caller_alias } @priority_order_names )
-            {
+            if ( not any { $_ eq $variant_caller_alias } @priority_order_names ) {
 
                 $log->fatal( $parameter_name
                       . q{ does not contain active variant caller: '}
@@ -855,7 +847,7 @@ sub check_prioritize_variant_callers {
             }
         }
         else {
-            ## Only NOT active programs
+            ## Only NOT active recipes
 
             ## If variant caller alias is part of priority order names
             if ( any { $_ eq $variant_caller_alias } @priority_order_names ) {
@@ -887,9 +879,9 @@ sub check_prioritize_variant_callers {
     return 1;
 }
 
-sub check_program_mode {
+sub check_recipe_mode {
 
-## Function : Check correct value for program mode in MIP.
+## Function : Check correct value for recipe mode in MIP.
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $log                   => Log object
@@ -929,20 +921,23 @@ sub check_program_mode {
     ## Set allowed values
     my %is_allowed = map { $_ => 1 } ( 0 .. 2 );
 
-  PROGRAM:
-    foreach my $program ( @{ $parameter_href->{dynamic_parameter}{program} } ) {
+  RECIPE:
+    foreach my $recipe ( @{ $parameter_href->{dynamic_parameter}{recipe} } ) {
+
+        my $err_msg = q{Recipe: } . $recipe . q{ does not exist in %active_parameters};
+        croak($err_msg) if ( not exists $active_parameter_href->{$recipe} );
 
         ## Alias
-        my $program_mode = $active_parameter_href->{$program};
+        my $recipe_mode = $active_parameter_href->{$recipe};
 
-        next PROGRAM if ( $is_allowed{$program_mode} );
+        next RECIPE if ( $is_allowed{$recipe_mode} );
 
         #If not an allowed value in active parameters
         $log->fatal(
             $SINGLE_QUOTE
-              . $active_parameter_href->{$program}
-              . q{' Is not an allowed mode for program '--}
-              . $program
+              . $active_parameter_href->{$recipe}
+              . q{' Is not an allowed mode for recipe '--}
+              . $recipe
               . q{'. Set to: }
               . join $PIPE,
             ( sort keys %is_allowed )
@@ -1103,9 +1098,8 @@ sub check_sample_id_in_hash_parameter {
         foreach my $sample_id ( @{$sample_ids_ref} ) {
 
             ## Unpack
-            my $sample_id_value =
-              $active_parameter_href->{$parameter_name}{$sample_id};
-            my $is_mandatory = $parameter_href->{$parameter_name}{mandatory};
+            my $sample_id_value = $active_parameter_href->{$parameter_name}{$sample_id};
+            my $is_mandatory    = $parameter_href->{$parameter_name}{mandatory};
 
             ## Check that a value exists
             if ( not defined $sample_id_value ) {
@@ -1186,8 +1180,7 @@ sub check_sample_id_in_hash_parameter_path {
         my %seen;
 
       SAMPLE_STR:
-        foreach my $sample_id_str (
-            keys %{ $active_parameter_href->{$parameter_name} } )
+        foreach my $sample_id_str ( keys %{ $active_parameter_href->{$parameter_name} } )
         {
 
             ## Get sample ids for parameter
@@ -1309,8 +1302,7 @@ sub check_sample_id_in_parameter_value {
         foreach my $sample_id ( @{$sample_ids_ref} ) {
 
             ## Unpack
-            my $sample_id_value =
-              $active_parameter_href->{$parameter_name}{$sample_id};
+            my $sample_id_value = $active_parameter_href->{$parameter_name}{$sample_id};
 
             ## Check that a value exists
             if ( not defined $sample_id_value ) {
@@ -1398,11 +1390,8 @@ sub check_snpsift_keys {
               . $file
               . q{ does not match any file in '--snpsift_annotation_files'} );
         $log->fatal(
-            q{Supplied snpsift_annotation_files files:}
-              . $NEWLINE
-              . join $NEWLINE,
-            keys %{$snpsift_annotation_files_href}
-        );
+            q{Supplied snpsift_annotation_files files:} . $NEWLINE . join $NEWLINE,
+            keys %{$snpsift_annotation_files_href} );
         exit 1;
     }
     return 1;
@@ -1449,8 +1438,7 @@ sub check_vep_directories {
     use Cwd qw{ abs_path };
 
     ## Get VEP version from file
-    my $vep_version_file =
-      catfile( $vep_directory_path, $DOT . q{version}, q{ensembl} );
+    my $vep_version_file = catfile( $vep_directory_path, $DOT . q{version}, q{ensembl} );
     open my $vep_version_fh, q{<}, $vep_version_file;
     my $vep_version_line = <$vep_version_fh>;
     close $vep_version_fh;
@@ -1467,8 +1455,7 @@ q{Could not retrieve VEP version. Skipping checking that VEP api and cache match
     }
 
     ## Get absolute path to VEP cache as it is commonly linked
-    my $vep_cache_dir_path =
-      abs_path( catdir( $vep_directory_cache, q{homo_sapiens} ) );
+    my $vep_cache_dir_path = abs_path( catdir( $vep_directory_cache, q{homo_sapiens} ) );
 
     ## Get folders in cache directory
     # Build rule
@@ -1670,8 +1657,7 @@ sub _check_parameter_values {
             store       => \$file_path,
             strict_type => 1,
         },
-        key =>
-          { defined => 1, required => 1, store => \$key, strict_type => 1, },
+        key      => { defined => 1, required => 1, store => \$key, strict_type => 1, },
         key_href => {
             default     => {},
             required    => 1,
@@ -1747,8 +1733,7 @@ sub _check_parameter_data_type {
             store       => \$file_path,
             strict_type => 1,
         },
-        key =>
-          { defined => 1, required => 1, store => \$key, strict_type => 1, },
+        key      => { defined => 1, required => 1, store => \$key, strict_type => 1, },
         key_href => {
             default     => {},
             required    => 1,

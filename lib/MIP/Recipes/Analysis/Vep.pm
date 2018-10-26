@@ -52,7 +52,7 @@ sub analysis_vep {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
@@ -66,7 +66,7 @@ sub analysis_vep {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -116,10 +116,10 @@ sub analysis_vep {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -146,12 +146,12 @@ sub analysis_vep {
 
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::QC::Record
-      qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -170,7 +170,7 @@ sub analysis_vep {
             id             => $family_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -180,18 +180,18 @@ sub analysis_vep {
     my $infile_suffix      = $io{in}{file_suffix};
 
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain         = get_program_attributes(
+    my $job_id_chain         = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
     my $xargs_file_path_prefix;
@@ -208,7 +208,7 @@ sub analysis_vep {
                 iterators_ref    => \@contigs_size_ordered,
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 temp_directory   => $temp_directory,
             }
         )
@@ -229,15 +229,15 @@ sub analysis_vep {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
             module_core_number =>
-              $active_parameter_href->{module_core_number}{$program_name},
+              $active_parameter_href->{module_core_number}{$recipe_name},
         }
     );
 
     # Adjust for the number of forks vep forks
     $core_number = floor( $core_number / $VEP_FORK_NUMBER );
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -246,13 +246,13 @@ sub analysis_vep {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
-    my $stderr_path = $program_info_path . $DOT . q{stderr.txt};
+    my $stderr_path = $recipe_info_path . $DOT . q{stderr.txt};
 
     ### SHELL:
 
@@ -271,7 +271,7 @@ sub analysis_vep {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
-            program_info_path  => $program_info_path,
+            recipe_info_path   => $recipe_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -362,33 +362,33 @@ sub analysis_vep {
     close $XARGSFILEHANDLE
       or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         my $qc_vep_summary_outfile_path =
           $outfile_paths[0] . $UNDERSCORE . q{summary.html};
-        add_program_metafile_to_sample_info(
+        add_recipe_metafile_to_sample_info(
             {
                 metafile_tag     => q{summary},
                 path             => $qc_vep_summary_outfile_path,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
-        add_program_metafile_to_sample_info(
+        add_recipe_metafile_to_sample_info(
             {
                 metafile_tag     => q{stderrfile},
                 path             => $stderr_path,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_paths[0],
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -421,8 +421,8 @@ sub analysis_vep_sv_wes {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
-##          : $program_info_path       => The program info path
+##          : $recipe_name            => Program name
+##          : $recipe_info_path       => Recipe info path
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
@@ -435,7 +435,7 @@ sub analysis_vep_sv_wes {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -484,10 +484,10 @@ sub analysis_vep_sv_wes {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -514,13 +514,13 @@ sub analysis_vep_sv_wes {
 
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record
-      qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
 
     ### PREPROCESSING:
 
@@ -537,7 +537,7 @@ sub analysis_vep_sv_wes {
             id             => $family_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -550,18 +550,18 @@ sub analysis_vep_sv_wes {
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
     my $xargs_file_path_prefix;
@@ -576,7 +576,7 @@ sub analysis_vep_sv_wes {
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 file_name_prefixes_ref => [$infile_name_prefix],
                 parameter_href         => $parameter_href,
-                program_name           => $program_name,
+                recipe_name            => $recipe_name,
                 temp_directory         => $temp_directory,
             }
         )
@@ -597,12 +597,12 @@ sub analysis_vep_sv_wes {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => 1,
             module_core_number =>
-              $active_parameter_href->{module_core_number}{$program_name},
+              $active_parameter_href->{module_core_number}{$recipe_name},
         }
     );
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -611,13 +611,13 @@ sub analysis_vep_sv_wes {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
-    my $stderr_path = $program_info_path . $DOT . q{stderr.txt};
+    my $stderr_path = $recipe_info_path . $DOT . q{stderr.txt};
 
     # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
@@ -700,25 +700,25 @@ sub analysis_vep_sv_wes {
 
     close $FILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         my $qc_vep_summary_outfile = $outfile_path_prefix . $DOT . q{vcf_summary.html};
-        add_program_metafile_to_sample_info(
+        add_recipe_metafile_to_sample_info(
             {
                 directory        => $outdir_path_prefix,
                 file             => $qc_vep_summary_outfile,
                 metafile_tag     => q{summary},
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -750,7 +750,7 @@ sub analysis_vep_sv_wgs {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
@@ -763,7 +763,7 @@ sub analysis_vep_sv_wgs {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -812,10 +812,10 @@ sub analysis_vep_sv_wgs {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -842,13 +842,13 @@ sub analysis_vep_sv_wgs {
 
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::QC::Record
-      qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -866,7 +866,7 @@ sub analysis_vep_sv_wgs {
             id             => $family_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -880,18 +880,18 @@ sub analysis_vep_sv_wgs {
     my $contigs_ref = \@{ $file_info_href->{contigs} };
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
     my $xargs_file_path_prefix;
@@ -908,7 +908,7 @@ sub analysis_vep_sv_wgs {
                 file_name_prefix => $infile_name_prefix,
                 iterators_ref    => $file_info_href->{contigs_size_ordered},
                 parameter_href   => $parameter_href,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 temp_directory   => $temp_directory,
             }
         )
@@ -930,12 +930,12 @@ sub analysis_vep_sv_wgs {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs_size_ordered} },
             module_core_number =>
-              $active_parameter_href->{module_core_number}{$program_name},
+              $active_parameter_href->{module_core_number}{$recipe_name},
         }
     );
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -944,13 +944,13 @@ sub analysis_vep_sv_wgs {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
-    my $stderr_path = $program_info_path . $DOT . q{stderr.txt};
+    my $stderr_path = $recipe_info_path . $DOT . q{stderr.txt};
 
     # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
@@ -1004,7 +1004,7 @@ sub analysis_vep_sv_wgs {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
-            program_info_path  => $program_info_path,
+            recipe_info_path   => $recipe_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -1097,25 +1097,25 @@ sub analysis_vep_sv_wgs {
     close $XARGSFILEHANDLE;
     close $FILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         my $qc_vep_summary_outfile = $outfile_paths[0] . $DOT . q{vcf_summary.html};
-        add_program_metafile_to_sample_info(
+        add_recipe_metafile_to_sample_info(
             {
                 directory        => $outdir_path_prefix,
                 file             => $qc_vep_summary_outfile,
                 metafile_tag     => q{summary},
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_paths[0],
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

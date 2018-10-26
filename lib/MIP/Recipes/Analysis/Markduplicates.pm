@@ -46,7 +46,7 @@ sub analysis_markduplicates {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -60,7 +60,7 @@ sub analysis_markduplicates {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
 
@@ -110,10 +110,10 @@ sub analysis_markduplicates {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_id => {
@@ -146,7 +146,7 @@ sub analysis_markduplicates {
 
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -156,7 +156,7 @@ sub analysis_markduplicates {
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record
-      qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
 
     ### PREPROCESSING:
 
@@ -170,7 +170,7 @@ sub analysis_markduplicates {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -180,20 +180,20 @@ sub analysis_markduplicates {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %temp_infile_path   = %{ $io{temp}{file_path_href} };
 
-    my %prg_atr = get_program_attributes(
+    my %rec_atr = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
         }
     );
-    my $job_id_chain       = $prg_atr{chain};
-    my $program_mode       = $active_parameter_href->{$program_name};
+    my $job_id_chain       = $rec_atr{chain};
+    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -207,11 +207,11 @@ sub analysis_markduplicates {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = $prg_atr{outfile_suffix};
+    my $outfile_suffix = $rec_atr{outfile_suffix};
     my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $program_name );
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
+      $file_info_href->{$sample_id}{$recipe_name}{file_tag};
     my @outfile_paths =
       map {
         catdir( $outsample_directory,
@@ -228,7 +228,7 @@ sub analysis_markduplicates {
                 file_info_href => $file_info_href,
                 file_paths_ref => \@outfile_paths,
                 parameter_href => $parameter_href,
-                program_name   => $program_name,
+                recipe_name    => $recipe_name,
                 temp_directory => $temp_directory,
             }
         )
@@ -248,8 +248,8 @@ sub analysis_markduplicates {
     # Store which program performed the markduplication
     my $markduplicates_program;
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -258,8 +258,8 @@ sub analysis_markduplicates {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -278,7 +278,7 @@ sub analysis_markduplicates {
             file_path          => $recipe_file_path,
             indirectory        => $indir_path_prefix,
             infile             => $infile_name_prefix,
-            program_info_path  => $program_info_path,
+            recipe_info_path   => $recipe_info_path,
             temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -304,7 +304,7 @@ sub analysis_markduplicates {
                   catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx4g},
-                program_info_path    => $program_info_path,
+                recipe_info_path     => $recipe_info_path,
                 temp_directory       => $temp_directory,
                 XARGSFILEHANDLE      => $XARGSFILEHANDLE,
                 xargs_file_counter   => $xargs_file_counter,
@@ -357,7 +357,7 @@ sub analysis_markduplicates {
                 core_number        => $core_number,
                 FILEHANDLE         => $FILEHANDLE,
                 file_path          => $recipe_file_path,
-                program_info_path  => $program_info_path,
+                recipe_info_path   => $recipe_info_path,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
             }
@@ -443,7 +443,7 @@ sub analysis_markduplicates {
             file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
             outdirectory       => $outdir_path_prefix,
             outfile            => $outfile_name_prefix,
-            program_info_path  => $program_info_path,
+            recipe_info_path   => $recipe_info_path,
             temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -454,26 +454,26 @@ sub analysis_markduplicates {
     close $XARGSFILEHANDLE;
     close $FILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 infile => $outfile_name_prefix,
                 path   => catfile( $outfile_path_name_prefix . $UNDERSCORE . q{metric} ),
-                program_name     => q{markduplicates},
+                recipe_name      => q{markduplicates},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
 
 # Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
-        add_program_metafile_to_sample_info(
+        add_recipe_metafile_to_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 metafile_tag     => q{marking_duplicates},
                 processed_by     => $markduplicates_program,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
@@ -509,8 +509,8 @@ sub analysis_markduplicates_rio {
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_info_path       => The program info path
-##          : $program_name            => Program name
+##          : $recipe_info_path       => Recipe info path
+##          : $recipe_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -526,8 +526,8 @@ sub analysis_markduplicates_rio {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
-    my $program_name;
+    my $recipe_info_path;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
 
@@ -583,11 +583,11 @@ sub analysis_markduplicates_rio {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path => { store => \$program_info_path, strict_type => 1, },
-        program_name      => {
+        recipe_info_path => { store => \$recipe_info_path, strict_type => 1, },
+        recipe_name      => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_id => {
@@ -620,7 +620,7 @@ sub analysis_markduplicates_rio {
 
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Get::File qw{ get_merged_infile_prefix };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
@@ -628,7 +628,7 @@ sub analysis_markduplicates_rio {
     use MIP::Program::Alignment::Sambamba qw{ sambamba_flagstat sambamba_markdup };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
     use MIP::QC::Record
-      qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
 
     ### PREPROCESSING:
@@ -643,7 +643,7 @@ sub analysis_markduplicates_rio {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -655,20 +655,20 @@ sub analysis_markduplicates_rio {
     my %temp_infile_path        = %{ $io{temp}{file_path_href} };
 
     ## Unpack parameters
-    my %prg_atr = get_program_attributes(
+    my %rec_atr = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
         }
     );
-    my $job_id_chain       = $prg_atr{chain};
-    my $program_mode       = $active_parameter_href->{$program_name};
+    my $job_id_chain       = $rec_atr{chain};
+    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $xargs_file_path_prefix;
-    my ($core_number) = get_module_parameters(
+    my ($core_number) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -682,11 +682,11 @@ sub analysis_markduplicates_rio {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = $prg_atr{outfile_suffix};
+    my $outfile_suffix = $rec_atr{outfile_suffix};
     my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $program_name );
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
+      $file_info_href->{$sample_id}{$recipe_name}{file_tag};
     my @outfile_paths =
       map {
         catdir( $outsample_directory,
@@ -703,7 +703,7 @@ sub analysis_markduplicates_rio {
                 file_info_href => $file_info_href,
                 file_paths_ref => \@outfile_paths,
                 parameter_href => $parameter_href,
-                program_name   => $program_name,
+                recipe_name    => $recipe_name,
                 temp_directory => $temp_directory,
             }
         )
@@ -741,7 +741,7 @@ sub analysis_markduplicates_rio {
                   catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx4g},
-                program_info_path    => $program_info_path,
+                recipe_info_path     => $recipe_info_path,
                 temp_directory       => $temp_directory,
                 XARGSFILEHANDLE      => $XARGSFILEHANDLE,
                 xargs_file_counter   => $xargs_file_counter,
@@ -794,7 +794,7 @@ sub analysis_markduplicates_rio {
                 core_number        => $core_number,
                 FILEHANDLE         => $FILEHANDLE,
                 file_path          => $file_path,
-                program_info_path  => $program_info_path,
+                recipe_info_path   => $recipe_info_path,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
             }
@@ -883,26 +883,26 @@ sub analysis_markduplicates_rio {
 
     close $XARGSFILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 infile => $outfile_name_prefix,
                 path   => catfile( $outfile_path_name_prefix . $UNDERSCORE . q{metric} ),
-                program_name     => q{markduplicates},
+                recipe_name      => q{markduplicates},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
 
 # Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
-        add_program_metafile_to_sample_info(
+        add_recipe_metafile_to_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 metafile_tag     => q{marking_duplicates},
                 processed_by     => $markduplicates_program,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

@@ -49,7 +49,7 @@ sub analysis_sv_combinevariantcallsets {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory {REF}
@@ -62,7 +62,7 @@ sub analysis_sv_combinevariantcallsets {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -111,10 +111,10 @@ sub analysis_sv_combinevariantcallsets {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -140,7 +140,7 @@ sub analysis_sv_combinevariantcallsets {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_module_parameters get_program_parameters get_program_attributes };
+      qw{ get_program_parameters get_recipe_attributes get_recipe_parameters };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -149,7 +149,7 @@ sub analysis_sv_combinevariantcallsets {
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
     use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
+      qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -161,15 +161,15 @@ sub analysis_sv_combinevariantcallsets {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
 
-    my $program_mode = $active_parameter_href->{$program_name};
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
     my @structural_variant_callers;
 
     ## Only process active callers
@@ -182,10 +182,10 @@ sub analysis_sv_combinevariantcallsets {
         }
     }
 
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -198,7 +198,7 @@ sub analysis_sv_combinevariantcallsets {
             file_name_prefixes_ref => [$family_id],
             outdata_dir            => $active_parameter_href->{outdata_dir},
             parameter_href         => $parameter_href,
-            program_name           => $program_name,
+            recipe_name            => $recipe_name,
             temp_directory         => $temp_directory,
         }
     );
@@ -215,8 +215,8 @@ sub analysis_sv_combinevariantcallsets {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -225,15 +225,15 @@ sub analysis_sv_combinevariantcallsets {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
     ## Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) =
-      splitpath( $program_info_path . $DOT . q{stderr.txt} );
+      splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
 
     ### SHELL:
 
@@ -261,7 +261,7 @@ sub analysis_sv_combinevariantcallsets {
             file_path_href                 => \%file_path,
             outfile_suffix                 => $outfile_suffix,
             parameter_href                 => $parameter_href,
-            program_info_path              => $program_info_path,
+            recipe_info_path               => $recipe_info_path,
             structural_variant_callers_ref => \@structural_variant_callers,
         }
     );
@@ -362,12 +362,12 @@ sub analysis_sv_combinevariantcallsets {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
-                program_name     => q{svdb},
+                recipe_name      => q{svdb},
                 sample_info_href => $sample_info_href,
             }
         );
@@ -377,11 +377,11 @@ sub analysis_sv_combinevariantcallsets {
         if ( $active_parameter_href->{sv_combinevariantcallsets_bcf_file} ) {
 
             my $sv_bcf_file_path = $outfile_path_prefix . $DOT . q{bcf};
-            add_program_metafile_to_sample_info(
+            add_recipe_metafile_to_sample_info(
                 {
                     metafile_tag     => q{sv_bcf_file},
                     path             => $sv_bcf_file_path,
-                    program_name     => $program_name,
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
             );
@@ -563,7 +563,7 @@ sub _migrate_joint_callers_file {
                 id             => $family_id,
                 file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
-                program_name   => $structural_variant_caller,
+                recipe_name    => $structural_variant_caller,
                 stream         => $stream,
                 temp_directory => $temp_directory,
             }
@@ -707,7 +707,7 @@ sub _migrate_and_preprocess_single_callers_file {
                     id             => $sample_id,
                     file_info_href => $file_info_href,
                     parameter_href => $parameter_href,
-                    program_name   => $structural_variant_caller,
+                    recipe_name    => $structural_variant_caller,
                     stream         => $stream,
                     temp_directory => $temp_directory,
                 }
@@ -766,7 +766,7 @@ sub _merge_or_reformat_single_callers_file {
 ##          : $file_path_href                 => Store file path prefix {REF}
 ##          : $outfile_suffix                 => Outfile suffix
 ##          : $parameter_href                 => Parameter hash {REF}
-##          : $program_info_path              => Program info path
+##          : $recipe_info_path              => Program info path
 ##          : $structural_variant_callers_ref => Structural variant callers that do not use joint calling
 ##          : $temp_directory                 => Temporary directory
 
@@ -778,7 +778,7 @@ sub _merge_or_reformat_single_callers_file {
     my $file_path_href;
     my $outfile_suffix;
     my $parameter_href;
-    my $program_info_path;
+    my $recipe_info_path;
     my $structural_variant_callers_ref;
 
     ## Default(s)
@@ -819,10 +819,10 @@ sub _merge_or_reformat_single_callers_file {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path => {
+        recipe_info_path => {
             defined     => 1,
             required    => 1,
-            store       => \$program_info_path,
+            store       => \$recipe_info_path,
             strict_type => 1,
         },
         structural_variant_callers_ref => {
@@ -870,7 +870,7 @@ sub _merge_or_reformat_single_callers_file {
                     infile_paths_ref => \@merge_infile_paths,
                     outfile_path     => $merge_outfile_path,
                     output_type      => q{v},
-                    stderrfile_path  => $program_info_path
+                    stderrfile_path  => $recipe_info_path
                       . $UNDERSCORE
                       . $structural_variant_caller
                       . $UNDERSCORE
@@ -891,7 +891,7 @@ sub _merge_or_reformat_single_callers_file {
                     infile_path     => $merge_infile_paths[0],    # Can be only one
                     outfile_path    => $merge_outfile_path,
                     output_type     => q{v},
-                    stderrfile_path => $program_info_path
+                    stderrfile_path => $recipe_info_path
                       . $UNDERSCORE
                       . $structural_variant_caller
                       . $UNDERSCORE

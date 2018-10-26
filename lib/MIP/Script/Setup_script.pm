@@ -40,7 +40,7 @@ Readonly my $UNDERSCORE => q{_};
 
 sub setup_script {
 
-## Function : Creates program directories (info & program data & program script), program script filenames and writes sbatch header.
+## Function : Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header.
 ## Returns  : $file_path, $file_info_path . $file_name_version
 ## Arguments: $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##          : $core_number                     => Number of cores to allocate {Optional}
@@ -50,18 +50,18 @@ sub setup_script {
 ##          : $FILEHANDLE                      => FILEHANDLE to write to
 ##          : $job_id_href                     => The job_id hash {REF}
 ##          : $log                             => Log object
-##          : $program_directory               => Builds from $directory_id/$outaligner_dir
-##          : $program_name                    => Assigns filename to sbatch script
 ##          : $outdata_dir                     => MIP outdata directory {Optional}
 ##          : $outscript_dir                   => MIP outscript directory {Optional}
 ##          : $process_time                    => Allowed process time (Hours) {Optional}
+##          : $recipe_directory                => Builds from $directory_id/$outaligner_dir
+##          : $recipe_name                     => Assigns filename to sbatch script
 ##          : $set_errexit                     => Bash set -e {Optional}
 ##          : $set_nounset                     => Bash set -u {Optional}
 ##          : $set_pipefail                    => Pipe fail switch {Optional}
 ##          : $sleep                           => Sleep for X seconds {Optional}
 ##          : $slurm_quality_of_service        => SLURM quality of service priority {Optional}
 ##          : $source_environment_commands_ref => Source environment command {REF}
-##          : $temp_directory                  => Temporary directory for program {Optional}
+##          : $temp_directory                  => Temporary directory for recipe {Optional}
 
     my ($arg_href) = @_;
 
@@ -71,8 +71,8 @@ sub setup_script {
     my $FILEHANDLE;
     my $job_id_href;
     my $log;
-    my $program_directory;
-    my $program_name;
+    my $recipe_directory;
+    my $recipe_name;
     my $source_environment_commands_ref;
 
     ## Default(s)
@@ -157,16 +157,16 @@ sub setup_script {
             store       => \$process_time,
             strict_type => 1,
         },
-        program_directory => {
+        recipe_directory => {
             defined     => 1,
             required    => 1,
-            store       => \$program_directory,
+            store       => \$recipe_directory,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         set_errexit => {
@@ -224,7 +224,7 @@ sub setup_script {
     Readonly my $MAX_SECONDS_TO_SLEEP => 240;
 
     ## Unpack parameters
-    my $program_mode       = $active_parameter_href->{$program_name};
+    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $submission_profile = $active_parameter_href->{submission_profile};
 
     my %submission_method = ( slurm => q{sbatch}, );
@@ -232,7 +232,7 @@ sub setup_script {
 
     ### Script names and directory creation
     ## File
-    my $file_name_prefix = $program_name . $UNDERSCORE . $directory_id . $DOT;
+    my $file_name_prefix = $recipe_name . $UNDERSCORE . $directory_id . $DOT;
     my $file_name_version;
     my $file_name_suffix = $DOT . q{sh};
 
@@ -240,27 +240,27 @@ sub setup_script {
     my $file_path;
 
     ## Directory paths
-    my $program_data_directory_path =
-      catdir( $outdata_dir, $directory_id, $program_directory );
-    my $program_info_directory_path = catdir( $program_data_directory_path, q{info} );
-    my $program_script_directory_path =
-      catdir( $outscript_dir, $directory_id, $program_directory );
+    my $recipe_data_directory_path =
+      catdir( $outdata_dir, $directory_id, $recipe_directory );
+    my $recipe_info_directory_path = catdir( $recipe_data_directory_path, q{info} );
+    my $recipe_script_directory_path =
+      catdir( $outscript_dir, $directory_id, $recipe_directory );
 
     ## Create directories
-    make_path( $program_info_directory_path, $program_data_directory_path,
-        $program_script_directory_path );
+    make_path( $recipe_info_directory_path, $recipe_data_directory_path,
+        $recipe_script_directory_path );
 
     ## File paths
-    my $file_path_prefix = catfile( $program_script_directory_path, $file_name_prefix );
-    my $file_info_path   = catfile( $program_info_directory_path,   $file_name_prefix );
-    my $dry_run_file_path_prefix = catfile( $program_script_directory_path,
+    my $file_path_prefix = catfile( $recipe_script_directory_path, $file_name_prefix );
+    my $file_info_path   = catfile( $recipe_info_directory_path,   $file_name_prefix );
+    my $dry_run_file_path_prefix = catfile( $recipe_script_directory_path,
         q{dry_run} . $UNDERSCORE . $file_name_prefix );
     my $dry_run_file_info_path =
-      catfile( $program_info_directory_path,
+      catfile( $recipe_info_directory_path,
         q{dry_run} . $UNDERSCORE . $file_name_prefix );
 
-    ## Dry run program - update file paths
-    if ( $program_mode == 2 ) {
+    ## Dry run recipe - update file paths
+    if ( $recipe_mode == 2 ) {
 
         $file_path_prefix = $dry_run_file_path_prefix;
         $file_info_path   = $dry_run_file_info_path;
@@ -280,16 +280,16 @@ sub setup_script {
     $log->info( q{Creating }
           . $script_type
           . q{ script for }
-          . $program_name
+          . $recipe_name
           . q{ and writing script file(s) to: }
           . $file_path
           . $NEWLINE );
     $log->info(
             ucfirst $script_type
           . q{ script }
-          . $program_name
+          . $recipe_name
           . q{ data files will be written to: }
-          . $program_data_directory_path
+          . $recipe_data_directory_path
           . $NEWLINE );
 
     ## Script file
@@ -318,7 +318,7 @@ sub setup_script {
 
     ### Sbatch header
     ## Get parameters
-    my $job_name        = $program_name . $UNDERSCORE . $directory_id;
+    my $job_name        = $recipe_name . $UNDERSCORE . $directory_id;
     my $stderrfile_path = $file_info_path . $file_name_version . $DOT . q{stderr.txt};
     my $stdoutfile_path = $file_info_path . $file_name_version . $DOT . q{stdout.txt};
 
@@ -376,7 +376,7 @@ sub setup_script {
         );
     }
 
-    # Not all programs need a temporary directory
+    # Not all recipes need a temporary directory
     if ( defined $temp_directory ) {
 
         say {$FILEHANDLE} q{## Create temporary directory};

@@ -30,8 +30,7 @@ BEGIN {
     our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ test_import test_log test_mip_hashes test_standard_cli };
+    our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
 }
 
 ## Constants
@@ -136,14 +135,14 @@ sub test_mip_hashes {
 ## Function : Loads test MIP hashes with core parameters set e.g. active_parameter
 ## Returns  : MIP core hash
 ## Arguments: $mip_hash_name  => MIP core hash to return
-##          : $program_name   => Program name
+##          : $recipe_name    => Recipe name
 ##          : $temp_directory => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $mip_hash_name;
-    my $program_name;
+    my $recipe_name;
     my $temp_directory;
 
     my $tmpl = {
@@ -156,9 +155,9 @@ sub test_mip_hashes {
             store       => \$mip_hash_name,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             default     => q{bwa_mem},
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         temp_directory => {
@@ -175,15 +174,12 @@ sub test_mip_hashes {
     my %test_hash = (
         active_parameter =>
           catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
-        define_parameter =>
-          catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
-        file_info =>
-          catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
+        define_parameter => catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
+        file_info        => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
         install_parameter =>
           catfile( $Bin, qw{ data test_data install_rd_dna_parameters.yaml } ),
-        recipe_parameter =>
-          catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
-        pedigree => catfile( $Bin, qw{ data test_data pedigree.yaml } ),
+        recipe_parameter => catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
+        pedigree         => catfile( $Bin, qw{ data test_data pedigree.yaml } ),
     );
 
     my %hash_to_return = load_yaml(
@@ -195,24 +191,21 @@ sub test_mip_hashes {
     ## Add dynamic parameters
     if ( $mip_hash_name eq q{active_parameter} ) {
 
-        ## Adds the program name
-        $hash_to_return{$program_name} = 2;
+        ## Adds the recipe name
+        $hash_to_return{$recipe_name} = 2;
 
         ## Adds reference dir
-        $hash_to_return{reference_dir} =
-          catfile( $Bin, qw{ data test_data references } );
+        $hash_to_return{reference_dir} = catfile( $Bin, qw{ data test_data references } );
 
         ## Adds parameters with temp directory
-        $hash_to_return{outdata_dir} =
-          catfile( $temp_directory, q{test_data_dir} );
-        $hash_to_return{outscript_dir} =
-          catfile( $temp_directory, q{test_script_dir} );
+        $hash_to_return{outdata_dir}   = catfile( $temp_directory, q{test_data_dir} );
+        $hash_to_return{outscript_dir} = catfile( $temp_directory, q{test_script_dir} );
         $hash_to_return{temp_directory} = $temp_directory;
     }
     if ( $mip_hash_name eq q{recipe_parameter} ) {
 
-        ## Adds a program chain
-        $hash_to_return{$program_name}{chain} = q{TEST};
+        ## Adds a recipe chain
+        $hash_to_return{$recipe_name}{chain} = q{TEST};
     }
     return %hash_to_return;
 }

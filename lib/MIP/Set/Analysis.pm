@@ -64,41 +64,38 @@ sub set_recipe_on_analysis_type {
       qw{ analysis_gatk_variantrecalibration_wes analysis_gatk_variantrecalibration_wgs };
     use MIP::Recipes::Analysis::Mip_vcfparser
       qw{ analysis_vcfparser_sv_wes analysis_vcfparser_sv_wgs };
-    use MIP::Recipes::Analysis::Vep
-      qw{ analysis_vep_sv_wes analysis_vep_sv_wgs };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_sv_wes analysis_vep_sv_wgs };
 
     my %analysis_type_recipe = (
         wes => {
-            gatk_variantrecalibration =>
-              \&analysis_gatk_variantrecalibration_wes,
+            gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wes,
             sv_vcfparser              => \&analysis_vcfparser_sv_wes,
             sv_varianteffectpredictor => \&analysis_vep_sv_wes,
         },
         wgs => {
-            gatk_variantrecalibration =>
-              \&analysis_gatk_variantrecalibration_wgs,
+            gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wgs,
             sv_vcfparser              => \&analysis_vcfparser_sv_wgs,
             sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
         },
     );
 
-  PROGRAM:
-    while ( my ( $program_name, $recipe_cref ) =
+  RECIPE:
+    while ( my ( $recipe_name, $recipe_cref ) =
         each %{ $analysis_type_recipe{$consensus_analysis_type} } )
     {
 
-        next PROGRAM if ( not exists $analysis_recipe_href->{$program_name} );
+        next RECIPE if ( not exists $analysis_recipe_href->{$recipe_name} );
 
         if ( exists $analysis_type_recipe{$consensus_analysis_type} ) {
-            $analysis_recipe_href->{$program_name} = $recipe_cref;
+            $analysis_recipe_href->{$recipe_name} = $recipe_cref;
         }
         else {
 
             ## Use wgs as default
-            my $recipe_wgs_cref = $analysis_type_recipe{wgs}{$program_name};
+            my $recipe_wgs_cref = $analysis_type_recipe{wgs}{$recipe_name};
 
             # Set recipe
-            $analysis_recipe_href->{$program_name} = $recipe_wgs_cref;
+            $analysis_recipe_href->{$recipe_name} = $recipe_wgs_cref;
         }
     }
     return;
@@ -156,18 +153,15 @@ sub set_rankvariants_ar {
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
 
     if ( defined $parameter_href->{dynamic_parameter}{unaffected}
-        && @{ $parameter_href->{dynamic_parameter}{unaffected} } eq
-        @{$sample_ids_ref} )
+        && @{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{$sample_ids_ref} )
     {
 
         $log->warn(
 q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
         );
 
-        $analysis_recipe_href->{sv_rankvariant} =
-          \&analysis_rankvariant_sv_unaffected;
-        $analysis_recipe_href->{rankvariant} =
-          \&analysis_rankvariant_unaffected;
+        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv_unaffected;
+        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant_unaffected;
     }
     else {
 

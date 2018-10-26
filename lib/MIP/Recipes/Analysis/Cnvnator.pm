@@ -49,7 +49,7 @@ sub analysis_cnvnator {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $sample_id               => Sample id
@@ -64,7 +64,7 @@ sub analysis_cnvnator {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
 
@@ -115,10 +115,10 @@ sub analysis_cnvnator {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         reference_dir => {
@@ -157,7 +157,7 @@ sub analysis_cnvnator {
 
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -166,7 +166,7 @@ sub analysis_cnvnator {
       qw{ bcftools_annotate bcftools_concat bcftools_create_reheader_samples_file bcftools_rename_vcf_samples };
     use MIP::Program::Variantcalling::Cnvnator
       qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -182,7 +182,7 @@ sub analysis_cnvnator {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -193,18 +193,18 @@ sub analysis_cnvnator {
     my %temp_infile_path   = %{ $io{temp}{file_path_href} };
 
     my $human_genome_reference = $active_parameter_href->{human_genome_reference};
-    my $job_id_chain           = get_program_attributes(
+    my $job_id_chain           = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
     my $xargs_file_path_prefix;
@@ -219,7 +219,7 @@ sub analysis_cnvnator {
                 file_name_prefixes_ref => [$infile_name_prefix],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
-                program_name           => $program_name,
+                recipe_name            => $recipe_name,
                 temp_directory         => $temp_directory,
             }
         )
@@ -237,8 +237,8 @@ sub analysis_cnvnator {
     my $FILEHANDLE      = IO::Handle->new();
     my $XARGSFILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -246,8 +246,8 @@ sub analysis_cnvnator {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             process_time                    => $time,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
@@ -303,7 +303,7 @@ sub analysis_cnvnator {
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             contigs_ref        => \@size_ordered_contigs,
             file_path          => $recipe_file_path,
-            program_info_path  => $program_info_path,
+            recipe_info_path   => $recipe_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
             infile             => $infile_name_prefix,
@@ -322,7 +322,7 @@ sub analysis_cnvnator {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             file_path          => $recipe_file_path,
-            program_info_path  => $program_info_path,
+            recipe_info_path   => $recipe_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -510,12 +510,12 @@ sub analysis_cnvnator {
 
     close $FILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => q{cnvnator},
+                recipe_name      => q{cnvnator},
                 path             => $outfile_path,
             }
         );

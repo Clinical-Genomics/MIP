@@ -2,7 +2,7 @@
 ## Version: 2.1.2
 ## HumanGenomeReference
 human_genome_reference:
-  associated_program:
+  associated_recipe:
    - mip
    - gatk_asereadcounter
    - gatk_baserecalibration
@@ -16,7 +16,7 @@ human_genome_reference:
   reference: reference_dir
   type: path
 human_genome_reference_file_endings:
-  associated_program:
+  associated_recipe:
    - gatk_asereadcounter
    - gatk_baserecalibration
    - gatk_haplotypecaller
@@ -30,7 +30,7 @@ human_genome_reference_file_endings:
   reference: reference_dir
   type: path
 transcript_annotation:
-  associated_program:
+  associated_recipe:
    - blobfish
    - salmon_quant
    - star_aln
@@ -40,17 +40,17 @@ transcript_annotation:
   exists_check: file
   reference: reference_dir
   type: path
-## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
+## GATK FTP Bundle Download version. Needed for all recipes that download the human genome reference
 gatk_bundle_download_version:
-  associated_program:
+  associated_recipe:
    - gatk_asereadcounter
    - gatk_baserecalibration
    - gatk_haplotypecaller
   data_type: SCALAR
   default: 2.8
-  type: program_argument
+  type: recipe_argument
 gatk_logging_level:
-  associated_program:
+  associated_recipe:
    - gatk_asereadcounter
    - gatk_baserecalibration
    - gatk_haplotypecaller
@@ -58,9 +58,9 @@ gatk_logging_level:
    - gatk_variantfiltration
   data_type: SCALAR
   default: INFO
-  type: program_argument
+  type: recipe_argument
 infile_dirs:
-  associated_program:
+  associated_recipe:
    - mip
   exists_check: directory
   data_type: HASH
@@ -68,7 +68,7 @@ infile_dirs:
   update_path: absolute_path
 ## java large pages - affects all modules using java
 java_use_large_pages:
-  associated_program:
+  associated_recipe:
    - gatk_asereadcounter
    - gatk_baserecalibration
    - gatk_haplotypecaller
@@ -76,10 +76,10 @@ java_use_large_pages:
    - star_aln
   data_type: SCALAR
   default: 1
-  type: program_argument
+  type: recipe_argument
 ####Bash
 module_time:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: HASH
   default:
@@ -102,7 +102,7 @@ module_time:
     star_fusion: 4
   type: mip
 module_core_number:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: HASH
   default:
@@ -126,13 +126,13 @@ module_core_number:
   type: mip
 ## Choosen MIP Aligner
 outaligner_dir:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   mandatory: no
   type: mip
 picardtools_path:
-  associated_program:
+  associated_recipe:
    - markduplicates
    - picardtools_mergesamfiles
    - star_aln
@@ -141,13 +141,13 @@ picardtools_path:
   type: path
   update_path: absolute_path
 sample_origin:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: HASH
   mandatory: no
   type: mip
 time_point:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: HASH
   mandatory: no
@@ -156,7 +156,7 @@ time_point:
 ## Gzip
 gzip_fastq:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -164,11 +164,11 @@ gzip_fastq:
   infile_suffix: ".fastq"
   program_name_path:
    - gzip
-  type: program
+  type: recipe
 ## FastQC
 fastqc:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -176,11 +176,11 @@ fastqc:
   infile_suffix: ".fastq"
   program_name_path:
    - fastqc
-  type: program
+  type: recipe
 ## Salmon
 salmon_quant:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -189,15 +189,15 @@ salmon_quant:
   outdir_name: salmon
   program_name_path:
    - salmon
-  type: program
+  type: recipe
 salmon_rna_lib_configuration:
-  associated_program:
+  associated_recipe:
    - salmon_quant
   data_type: SCALAR
   default: ISF
-  type: program_argument
+  type: recipe_argument
 salmon_quant_reference_genome:
-  associated_program:
+  associated_recipe:
    - salmon_quant
   build_file: 1
   data_type: SCALAR
@@ -208,7 +208,7 @@ salmon_quant_reference_genome:
 ## Blobfish
 blobfish:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -216,11 +216,11 @@ blobfish:
   outdir_name: blobfish
   program_name_path:
    - BlobFish.py
-  type: program
+  type: recipe
 ## Star Aln
 star_aln:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -229,40 +229,40 @@ star_aln:
   outdir_name: star
   program_name_path:
    - STAR
-  program_type: aligners
-  type: program
+  recipe_type: aligners
+  type: recipe
 align_intron_max:
-  associated_program:
+  associated_recipe:
    - star_aln
   data_type: SCALAR
   default: 100000
-  type: program_argument
+  type: recipe_argument
 align_mates_gap_max:
-  associated_program:
+  associated_recipe:
    - star_aln
   data_type: SCALAR
   default: 100000
-  type: program_argument
+  type: recipe_argument
 align_sjdb_overhang_min:
-  associated_program:
+  associated_recipe:
    - star_aln
   data_type: SCALAR
   default: 10
-  type: program_argument
+  type: recipe_argument
 chim_junction_overhang_min:
-  associated_program:
+  associated_recipe:
    - star_aln
   data_type: SCALAR
   default: 12
-  type: program_argument
+  type: recipe_argument
 chim_segment_min:
-  associated_program:
+  associated_recipe:
    - star_aln
   data_type: SCALAR
   default: 12
-  type: program_argument
+  type: recipe_argument
 star_aln_reference_genome:
-  associated_program:
+  associated_recipe:
    - star_aln
   build_file: 1
   data_type: SCALAR
@@ -271,15 +271,15 @@ star_aln_reference_genome:
   reference: reference_dir
   type: path
 two_pass_mode:
-  associated_program:
+  associated_recipe:
    - star_aln
   data_type: SCALAR
   default: Basic
-  type: program_argument
+  type: recipe_argument
 ## Star Fusion
 star_fusion:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -292,9 +292,9 @@ star_fusion:
     - samtools
     - STAR
     - STAR-Fusion
-  type: program
+  type: recipe
 star_fusion_genome_lib_dir:
-  associated_program:
+  associated_recipe:
    - star_fusion
   data_type: SCALAR
   default: GRCh37_v19_CTAT_lib_Feb092018
@@ -302,7 +302,7 @@ star_fusion_genome_lib_dir:
   reference: reference_dir
   type: path
 fusion_filter_reference_genome:
-  associated_program:
+  associated_recipe:
    - star_fusion
   build_file: 1
   data_type: SCALAR
@@ -313,7 +313,7 @@ fusion_filter_reference_genome:
 ## Merge bam files
 picardtools_mergesamfiles:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -321,11 +321,11 @@ picardtools_mergesamfiles:
   outfile_suffix: ".bam"
   program_name_path:
    - sambamba
-  type: program
+  type: recipe
 ## Mark duplicates
 markduplicates:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 0
@@ -333,41 +333,41 @@ markduplicates:
   outfile_suffix: ".bam"
   program_name_path:
    - sambamba
-  type: program
+  type: recipe
 markduplicates_picardtools_markduplicates:
-  associated_program:
+  associated_recipe:
    - markduplicates
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 markduplicates_sambamba_markdup:
-  associated_program:
+  associated_recipe:
    - markduplicates
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 markduplicates_sambamba_markdup_hash_table_size:
-  associated_program:
+  associated_recipe:
    - markduplicates
   data_type: SCALAR
   default: 262144
-  type: program_argument
+  type: recipe_argument
 markduplicates_sambamba_markdup_io_buffer_size:
-  associated_program:
+  associated_recipe:
    - markduplicates
   data_type: SCALAR
   default: 2048
-  type: program_argument
+  type: recipe_argument
 markduplicates_sambamba_markdup_overflow_list_size:
-  associated_program:
+  associated_recipe:
    - markduplicates
   data_type: SCALAR
   default: 200000
-  type: program_argument
+  type: recipe_argument
 ## GATK SplitNCigarReads
 gatk_splitncigarreads:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
@@ -375,11 +375,11 @@ gatk_splitncigarreads:
   outfile_suffix: ".bam"
   program_name_path:
    - gatk
-  type: program
+  type: recipe
 ## GATK BAM Calibration
 gatk_baserecalibration:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -387,9 +387,9 @@ gatk_baserecalibration:
   outfile_suffix: ".bam"
   program_name_path:
    - gatk
-  type: program
+  type: recipe
 gatk_baserecalibration_known_sites:
-  associated_program:
+  associated_recipe:
    - gatk_baserecalibration
   element_separator: ,
   data_type: ARRAY
@@ -401,15 +401,15 @@ gatk_baserecalibration_known_sites:
   reference: reference_dir
   type: path
 gatk_baserecalibration_read_filters:
-  associated_program:
+  associated_recipe:
    - gatk_baserecalibration
   element_separator: ,
   data_type: ARRAY
   default:
    - OverclippedReadFilter
-  type: program_argument
+  type: recipe_argument
 gatk_baserecalibration_static_quantized_quals:
-  associated_program:
+  associated_recipe:
    - gatk_baserecalibration
   element_separator: ,
   data_type: ARRAY
@@ -419,10 +419,10 @@ gatk_baserecalibration_static_quantized_quals:
    - 20
    - 30
    - 40
-  type: program_argument
+  type: recipe_argument
 rseqc:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -436,9 +436,9 @@ rseqc:
    - read_distribution.py
    - read_duplication.py
   outfile_suffix: ".txt"
-  type: program
+  type: recipe
 rseqc_transcripts_file:
-  associated_program:
+  associated_recipe:
    - rseqc
   data_type: SCALAR
   default: GRCh37_gencode_-v28-.bed
@@ -448,7 +448,7 @@ rseqc_transcripts_file:
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -456,9 +456,9 @@ gatk_haplotypecaller:
   outfile_suffix: ".vcf"
   program_name_path:
    - gatk
-  type: program
+  type: recipe
 gatk_haplotypecaller_annotation:
-  associated_program:
+  associated_recipe:
    - gatk_haplotypecaller
   element_separator: ,
   data_type: ARRAY
@@ -473,7 +473,7 @@ gatk_haplotypecaller_annotation:
    - RMSMappingQuality
    - ReadPosRankSumTest
    - StrandOddsRatio
-  type: program_argument
+  type: recipe_argument
 #BaseQualityRankSumTest;  #Rank Sum Test of REF versus ALT base quality scores
 #ChromosomeCounts;  #Counts and frequency of alleles in called genotypes
 #Coverage;  #Total depth of coverage per sample and over all samples
@@ -485,25 +485,25 @@ gatk_haplotypecaller_annotation:
 #ReadPosRankSumTest;  #Rank Sum Test for relative positioning of REF versus ALT alleles within reads
 #StrandOddsRatio ;  #Strand bias estimated by the Symmetric Odds Ratio test
 gatk_haplotypecaller_emit_ref_confidence:
-  associated_program:
+  associated_recipe:
    - gatk_haplotypecaller
   data_type: SCALAR
   default: "NONE"
-  type: program_argument
+  type: recipe_argument
 gatk_haplotypecaller_no_soft_clipped_bases:
-  associated_program:
+  associated_recipe:
    - gatk_haplotypecaller
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 gatk_haplotypecaller_pcr_indel_model:
-  associated_program:
+  associated_recipe:
    - gatk_haplotypecaller
   data_type: SCALAR
   default: "CONSERVATIVE"
-  type: program_argument
+  type: recipe_argument
 gatk_haplotypecaller_snp_known_set:
-  associated_program:
+  associated_recipe:
    - gatk_haplotypecaller
   data_type: SCALAR
   default: GRCh37_dbsnp_-138-.vcf
@@ -513,7 +513,7 @@ gatk_haplotypecaller_snp_known_set:
 ## GATK ASE
 gatk_asereadcounter:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -521,11 +521,11 @@ gatk_asereadcounter:
   outfile_suffix: ".csv"
   program_name_path:
    - gatk
-  type: program
+  type: recipe
 ## GATK VariantFiltration
 gatk_variantfiltration:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
@@ -533,31 +533,31 @@ gatk_variantfiltration:
   outfile_suffix: ".vcf"
   program_name_path:
    - gatk
-  type: program
+  type: recipe
 gatk_variantfiltration_cluster_size:
-  associated_program:
+  associated_recipe:
    - gatk_variantfiltration
   data_type: SCALAR
   default: 3
-  type: program_argument
+  type: recipe_argument
 gatk_variantfiltration_filter:
-  associated_program:
+  associated_recipe:
     - gatk_variantfiltration
   data_type: HASH
   default:
     FS: "FS > 30.0"
     QD: "QD < 2.0"
-  type: program_argument
+  type: recipe_argument
 gatk_variantfiltration_cluster_window_size:
-  associated_program:
+  associated_recipe:
     - gatk_variantfiltration
   data_type: SCALAR
   default: 35
-  type: program_argument
+  type: recipe_argument
 ## BootstrapAnn
 bootstrapann:
   analysis_mode: sample
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -565,11 +565,11 @@ bootstrapann:
   outfile_suffix: ".vcf"
   program_name_path:
    - BootstrapAnn.py
-  type: program
+  type: recipe
 ## MultiQC
 multiqc:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -577,24 +577,24 @@ multiqc:
   outdir_name: multiqc
   program_name_path:
    - multiqc
-  type: program
+  type: recipe
 multiqc_per_sample:
-  associated_program:
+  associated_recipe:
    - multiqc
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 ## Sacct
 sacct:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
-  type: program
+  type: recipe
 sacct_format_fields:
-  associated_program:
+  associated_recipe:
    - sacct
   data_type: ARRAY
   default:
@@ -610,4 +610,4 @@ sacct_format_fields:
    - state
    - exitcode
   element_separator: ,
-  type: program_argument
+  type: recipe_argument

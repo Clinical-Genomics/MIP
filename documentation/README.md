@@ -241,7 +241,7 @@ MIP is called from the command line and takes input from the command line \(prec
 Lists are supplied as repeated flag entries on the command line or in the config using the yaml format for arrays.  
 Only flags that will actually be used needs to be specified and MIP will check that all required parameters are set before submitting to SLURM.
 
-Program parameters always begins with "p" followed by a capital letter. Program parameters can be set to "0" \(=off\), "1" \(=on\) and "2" \(=dry run mode\). Any progam can be set to dry run mode and MIP will create sbatch scripts, but not submit them to SLURM. MIP can be restarted from any module, but you need to supply previous dependent programs in dry run mode to ensure proper file handling.
+Recipe analysis parameters can be set to "0" \(=off\), "1" \(=on\) and "2" \(=dry run mode\). Any recipe can be set to dry run mode and MIP will create sbatch scripts, but not submit them to SLURM. MIP can be restarted from any recipe, but you need to supply previous upstream dependent receipes in dry run mode to ensure proper file handling.
 
 MIP will overwrite data files when reanalyzing, but keeps all "versioned" sbatch scripts for traceability.
 
@@ -252,7 +252,7 @@ Example usage:
 $ mip analyse rd_dna -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
 ```
 
-This will analyse family 3 using 3 individuals from that family and begin the analysis with programs after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
+This will analyse family 3 using 3 individuals from that family and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
 
 #### Input
 
@@ -277,7 +277,7 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 
 ##### Data
 
-MIP will place any generated datafiles in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each program is written in the program/info directory prior to alignment and in the aligner/info directory post alignment.
+MIP will place any generated datafiles in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each recipe is written in the `recipe/info` directory.
 
 [Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_config.yaml
 [Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/aggregated_master.txt

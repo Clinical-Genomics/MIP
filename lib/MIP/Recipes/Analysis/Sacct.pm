@@ -43,7 +43,7 @@ sub analysis_sacct {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
@@ -54,7 +54,7 @@ sub analysis_sacct {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -101,10 +101,10 @@ sub analysis_sacct {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -118,7 +118,7 @@ sub analysis_sacct {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Workloadmanager::Slurm qw{ slurm_sacct };
@@ -129,18 +129,18 @@ sub analysis_sacct {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -148,7 +148,7 @@ sub analysis_sacct {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
@@ -158,8 +158,8 @@ sub analysis_sacct {
             job_id_href           => $job_id_href,
             log                   => $log,
             process_time          => $time,
-            program_directory     => $program_name,
-            program_name          => $program_name,
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -176,7 +176,7 @@ sub analysis_sacct {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {

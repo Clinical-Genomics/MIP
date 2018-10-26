@@ -46,8 +46,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
-        q{MIP::Test::Fixtures} =>
-          [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -67,18 +66,18 @@ diag(   q{Test SUB_ROUTINE from MODULE.pm v}
 my $log = test_log();
 
 ## Given build parameters
-my $program_name = q{PROGRAM_NAME};
+my $recipe_name = q{RECIPE_NAME};
 
 my %active_parameter = test_mip_hashes(
     {
         mip_hash_name => q{active_parameter},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 my %infile_lane_prefix;
@@ -96,7 +95,7 @@ trap {
             job_id_href             => \%job_id,
             log                     => $log,
             parameter_href          => \%parameter,
-            program_name            => $program_name,
+            recipe_name             => $recipe_name,
             sample_id               => $sample_id,
             sample_info_href        => \%sample_info,
         }
@@ -105,6 +104,6 @@ trap {
 
 ## Then broadcast info log message
 my $log_msg = q{};
-like( $trap->stderr, qr/$log_msg/msx, q{Broadcast PROGRAM_NAME log message} );
+like( $trap->stderr, qr/$log_msg/msx, q{Broadcast RECIPE_NAME log message} );
 
 done_testing();

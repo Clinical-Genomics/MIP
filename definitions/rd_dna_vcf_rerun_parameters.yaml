@@ -1,7 +1,7 @@
 ---
 ## Version: 2.1.0
 decompose_normalize_references:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: ARRAY
   default:
@@ -10,14 +10,14 @@ decompose_normalize_references:
   element_separator: ,
   type: mip
 gatk_logging_level:
-  associated_program:
+  associated_recipe:
    - varianteffectpredictor
    - rankvariant
   data_type: SCALAR
   default: INFO
-  type: program_argument
+  type: recipe_argument
 gatk_path:
-  associated_program:
+  associated_recipe:
    - varianteffectpredictor
    - rankvariant
   data_type: SCALAR
@@ -26,7 +26,7 @@ gatk_path:
   update_path: absolute_path
 ## HumanGenomeReference
 human_genome_reference:
-  associated_program:
+  associated_recipe:
    - mip
    - vt
   data_type: SCALAR
@@ -35,7 +35,7 @@ human_genome_reference:
   reference: reference_dir
   type: path
 human_genome_reference_file_endings:
-  associated_program:
+  associated_recipe:
    - vt
   build_file: 1
   data_type: SCALAR
@@ -45,15 +45,15 @@ human_genome_reference_file_endings:
   type: path
 ## java large pages - affects all modules using java
 java_use_large_pages:
-  associated_program:
+  associated_recipe:
    - varianteffectpredictor
    - snpeff
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 ####Bash
 module_core_number:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: HASH
   default:
@@ -70,7 +70,7 @@ module_core_number:
     sv_vcfparser: 16
   type: mip
 module_time:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: HASH
   default:
@@ -95,20 +95,20 @@ module_time:
   type: mip
 ## Choosen MIP Aligner
 outaligner_dir:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: bwa
   type: mip
 picardtools_path:
-  associated_program:
+  associated_recipe:
    - prepareforvariantannotationblock
   data_type: SCALAR
   exists_check: directory
   type: path
   update_path: absolute_path
 reduce_io:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 0
@@ -116,7 +116,7 @@ reduce_io:
 ###Programs
 sv_vcf_rerun_reformat:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -124,9 +124,9 @@ sv_vcf_rerun_reformat:
   outfile_suffix: ".vcf"
   program_name_path:
    - bcftools
-  type: program
+  type: recipe
 sv_vcf_rerun_file:
-  associated_program:
+  associated_recipe:
    - sv_vcf_rerun_reformat
   data_type: SCALAR
   exists_check: file
@@ -134,7 +134,7 @@ sv_vcf_rerun_file:
   update_path: absolute_path
 sv_annotate:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -143,27 +143,27 @@ sv_annotate:
   program_name_path:
    - bcftools
    - svdb
-  type: program
+  type: recipe
 sv_bcftools_view_filter:
-  associated_program:
+  associated_recipe:
    - sv_annotate
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 sv_genmod_filter:
-  associated_program:
+  associated_recipe:
    - sv_annotate
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 sv_genmod_filter_threshold:
-  associated_program:
+  associated_recipe:
    - sv_annotate
   data_type: SCALAR
   default: 0.10
-  type: program_argument
+  type: recipe_argument
 sv_genmod_filter_1000g:
-  associated_program:
+  associated_recipe:
    - sv_annotate
   data_type: SCALAR
   default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
@@ -171,49 +171,49 @@ sv_genmod_filter_1000g:
   reference: reference_dir
   type: path
 sv_svdb_query:
-  associated_program:
+  associated_recipe:
    - sv_annotate
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 sv_svdb_query_db_files:
-  associated_program:
+  associated_recipe:
    - sv_annotate
   data_type: HASH
   exists_check: file
   reference: reference_dir
   type: path
 sv_vcfanno:
-  associated_program:
+  associated_recipe:
    - sv_annotate
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 sv_vcfannotation_header_lines_file:
-  associated_program:
+  associated_recipe:
    - sv_annotate
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path
 sv_vcfanno_config:
-  associated_program:
+  associated_recipe:
    - sv_annotate
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path
 sv_vcfanno_config_file:
-  associated_program:
+  associated_recipe:
    - sv_annotate
   data_type: SCALAR
   default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz
   exists_check: file
   reference: reference_dir
   type: path
-  type: program_argument
+  type: recipe_argument
 sv_vcfanno_lua:
-  associated_program:
+  associated_recipe:
    - sv_annotate
   data_type: SCALAR
   exists_check: file
@@ -221,7 +221,7 @@ sv_vcfanno_lua:
   type: path
 sv_varianteffectpredictor:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -229,9 +229,9 @@ sv_varianteffectpredictor:
   outfile_suffix: ".vcf"
   program_name_path:
    - vep
-  type: program
+  type: recipe
 sv_vep_features:
-  associated_program:
+  associated_recipe:
    - sv_varianteffectpredictor
   element_separator: ,
   data_type: ARRAY
@@ -254,32 +254,32 @@ sv_vep_features:
    - force_overwrite
    - no_progress
    - offline
-  type: program_argument
+  type: recipe_argument
 sv_vep_plugins:
-  associated_program:
+  associated_recipe:
    - sv_varianteffectpredictor
   element_separator: ,
   data_type: ARRAY
   default:
    - LoFtool
-  type: program_argument
+  type: recipe_argument
 sv_vcfparser:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
   file_tag: _parsed
-  type: program
+  type: recipe
 sv_vcfparser_range_feature_annotation_columns:
-  associated_program:
+  associated_recipe:
    - sv_vcfparser
   element_separator: ,
   data_type: ARRAY
   mandatory: no
-  type: program_argument
+  type: recipe_argument
 sv_vcfparser_range_feature_file:
-  associated_program:
+  associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
   exists_check: file
@@ -287,78 +287,78 @@ sv_vcfparser_range_feature_file:
   reference: reference_dir
   type: path
 sv_vcfparser_outfile_count:
-  associated_program:
+  associated_recipe:
    - sv_vcfparser
    - mip
   data_type: SCALAR
   default: 1
-  type: program_argument
+  type: recipe_argument
 sv_vcfparser_per_gene:
-  associated_program:
+  associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 sv_vcfparser_select_feature_annotation_columns:
-  associated_program:
+  associated_recipe:
    - sv_vcfparser
   element_separator: ,
   data_type: ARRAY
   mandatory: no
-  type: program_argument
+  type: recipe_argument
 sv_vcfparser_select_file:
-  associated_program:
+  associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
   exists_check: file
   type: path
   update_path: absolute_path
 sv_vcfparser_select_file_matching_column:
-  associated_program:
+  associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
-  type: program_argument
+  type: recipe_argument
 sv_vcfparser_vep_transcripts:
-  associated_program:
+  associated_recipe:
    - sv_vcfparser
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 sv_rankvariant:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
   file_tag: _ranked
-  type: program
+  type: recipe
 sv_genmod_annotate_regions:
-  associated_program:
+  associated_recipe:
    - sv_rankvariant
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 sv_genmod_models_family_type:
-  associated_program:
+  associated_recipe:
    - sv_rankvariant
   data_type: SCALAR
   default: mip
-  type: program_argument
+  type: recipe_argument
 sv_genmod_models_reduced_penetrance_file:
-  associated_program:
+  associated_recipe:
    - sv_rankvariant
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path
 sv_genmod_models_whole_gene:
-  associated_program:
+  associated_recipe:
    - sv_rankvariant
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 sv_rank_model_file:
-  associated_program:
+  associated_recipe:
    - sv_rankvariant
   data_type: SCALAR
   exists_check: file
@@ -367,7 +367,7 @@ sv_rank_model_file:
 ##Sv_reformat
 sv_reformat:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -375,15 +375,15 @@ sv_reformat:
   outfile_suffix: ".vcf"
   program_name_path:
    - grep
-  type: program
+  type: recipe
 sv_rankvariant_binary_file:
-  associated_program:
+  associated_recipe:
    - sv_reformat
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 sv_reformat_remove_genes_file:
-  associated_program:
+  associated_recipe:
    - sv_reformat
   data_type: SCALAR
   exists_check: file
@@ -392,7 +392,7 @@ sv_reformat_remove_genes_file:
   type: path
 vcf_rerun_reformat:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -400,9 +400,9 @@ vcf_rerun_reformat:
   outfile_suffix: ".vcf"
   program_name_path:
    - bcftools
-  type: program
+  type: recipe
 vcf_rerun_file:
-  associated_program:
+  associated_recipe:
    - vcf_rerun_reformat
   data_type: SCALAR
   exists_check: file
@@ -410,17 +410,17 @@ vcf_rerun_file:
   update_path: absolute_path
 prepareforvariantannotationblock:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
   file_tag: ""
   outfile_suffix: ".vcf.gz"
-  type: program
+  type: recipe
 ##rhocall
 rhocall:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -429,9 +429,9 @@ rhocall:
    - rhocall
    - bcftools
   outfile_suffix: ".vcf"
-  type: program
+  type: recipe
 rhocall_frequency_file:
-  associated_program:
+  associated_recipe:
    - rhocall
   data_type: SCALAR
   default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz
@@ -441,7 +441,7 @@ rhocall_frequency_file:
 ##VT
 vt:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -452,34 +452,34 @@ vt:
    - bgzip
    - tabix
   outfile_suffix: ".vcf"
-  type: program
+  type: recipe
 vt_decompose:
-  associated_program:
+  associated_recipe:
    - vt
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 vt_normalize:
-  associated_program:
+  associated_recipe:
    - vt
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 vt_missing_alt_allele:
-  associated_program:
+  associated_recipe:
    - vt
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 vt_uniq:
-  associated_program:
+  associated_recipe:
    - vt
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 frequency_filter:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -487,27 +487,27 @@ frequency_filter:
   outfile_suffix: ".vcf"
   program_name_path:
    - genmod
-  type: program
+  type: recipe
 frequency_genmod_filter:
-  associated_program:
+  associated_recipe:
    - frequency_filter
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 frequency_genmod_filter_max_af:
-  associated_program:
+  associated_recipe:
    - frequency_filter
   data_type: SCALAR
   default: 1
-  type: program_argument
+  type: recipe_argument
 frequency_genmod_filter_threshold:
-  associated_program:
+  associated_recipe:
    - frequency_filter
   data_type: SCALAR
   default: 0.10
-  type: program_argument
+  type: recipe_argument
 frequency_genmod_filter_1000g:
-  associated_program:
+  associated_recipe:
    - frequency_filter
   data_type: SCALAR
   default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
@@ -517,7 +517,7 @@ frequency_genmod_filter_1000g:
 ## VEP
 varianteffectpredictor:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -525,23 +525,23 @@ varianteffectpredictor:
   outfile_suffix: ".vcf"
   program_name_path:
    - vep
-  type: program
+  type: recipe
 vep_directory_cache:
-  associated_program:
+  associated_recipe:
    - varianteffectpredictor
   data_type: SCALAR
   exists_check: directory
   type: path
   update_path: absolute_path
 vep_directory_path:
-  associated_program:
+  associated_recipe:
    - varianteffectpredictor
   data_type: SCALAR
   exists_check: directory
   type: path
   update_path: absolute_path
 vep_features:
-  associated_program:
+  associated_recipe:
    - varianteffectpredictor
   element_separator: ,
   data_type: ARRAY
@@ -565,18 +565,18 @@ vep_features:
    - force_overwrite
    - no_progress
    - offline
-  type: program_argument
+  type: recipe_argument
 vep_plugins:
-  associated_program:
+  associated_recipe:
    - varianteffectpredictor
   element_separator: ,
   data_type: ARRAY
   default:
    - LoFtool
    - MaxEntScan
-  type: program_argument
+  type: recipe_argument
 vep_plugins_dir_path:
-  associated_program:
+  associated_recipe:
     - varianteffectpredictor
   data_type: SCALAR
   exists_check: directory
@@ -585,29 +585,29 @@ vep_plugins_dir_path:
 ## VCFParser
 vcfparser:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
   file_tag: _parsed
   outfile_suffix: ".vcf"
-  type: program
+  type: recipe
 vcfparser_outfile_count:
-  associated_program:
+  associated_recipe:
    - vcfparser
    - mip
   data_type: SCALAR
   default: 1
-  type: program_argument
+  type: recipe_argument
 vcfparser_range_feature_annotation_columns:
-  associated_program:
+  associated_recipe:
    - vcfparser
   element_separator: ,
   data_type: ARRAY
   mandatory: no
-  type: program_argument
+  type: recipe_argument
 vcfparser_range_feature_file:
-  associated_program:
+  associated_recipe:
    - vcfparser
   data_type: SCALAR
   exists_check: file
@@ -615,48 +615,48 @@ vcfparser_range_feature_file:
   reference: reference_dir
   type: path
 vcfparser_select_feature_annotation_columns:
-  associated_program:
+  associated_recipe:
    - vcfparser
   element_separator: ,
   data_type: ARRAY
   mandatory: no
-  type: program_argument
+  type: recipe_argument
 vcfparser_select_file:
-  associated_program:
+  associated_recipe:
    - vcfparser
   data_type: SCALAR
   exists_check: file
   type: path
   update_path: absolute_path
 vcfparser_select_file_matching_column:
-  associated_program:
+  associated_recipe:
    - vcfparser
   data_type: SCALAR
-  type: program_argument
+  type: recipe_argument
 vcfparser_vep_transcripts:
-  associated_program:
+  associated_recipe:
    - vcfparser
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 ## SnpEFF
 snpeff:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
   file_tag: _snpeff
   outfile_suffix: ".vcf"
-  type: program
+  type: recipe
 snpeff_ann:
-  associated_program:
+  associated_recipe:
    - snpeff
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 snpsift_annotation_files:
-  associated_program:
+  associated_recipe:
    - snpeff
   data_type: HASH
   default:
@@ -668,7 +668,7 @@ snpsift_annotation_files:
   reference: reference_dir
   type: path
 snpsift_annotation_outinfo_key:
-  associated_program:
+  associated_recipe:
    - snpeff
   data_type: HASH
   default:
@@ -680,7 +680,7 @@ snpsift_annotation_outinfo_key:
   reference: reference_dir
   type: path
 snpsift_dbnsfp_annotations:
-  associated_program:
+  associated_recipe:
    - snpeff
   element_separator: ,
   data_type: ARRAY
@@ -693,7 +693,7 @@ snpsift_dbnsfp_annotations:
    - phastCons100way_vertebrate
   type: path
 snpsift_dbnsfp_file:
-  associated_program:
+  associated_recipe:
    - snpeff
   data_type: SCALAR
   default: GRCh37_dbnsfp_-v2.9-.txt.gz
@@ -701,13 +701,13 @@ snpsift_dbnsfp_file:
   reference: reference_dir
   type: path
 snpeff_genome_build_version:
-  associated_program:
+  associated_recipe:
    - snpeff
   data_type: SCALAR
   default: GRCh37.75
-  type: program_argument
+  type: recipe_argument
 snpeff_path:
-  associated_program:
+  associated_recipe:
    - snpeff
   data_type: SCALAR
   exists_check: directory
@@ -716,7 +716,7 @@ snpeff_path:
 ## RankVariant
 rankvariant:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -724,9 +724,9 @@ rankvariant:
   outfile_suffix: ".vcf"
   program_name_path:
    - genmod
-  type: program
+  type: recipe
 genmod_annotate_cadd_files:
-  associated_program:
+  associated_recipe:
    - rankvariant
   data_type: ARRAY
   element_separator: ,
@@ -735,39 +735,39 @@ genmod_annotate_cadd_files:
   reference: reference_dir
   type: path
 genmod_annotate_regions:
-  associated_program:
+  associated_recipe:
    - rankvariant
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 genmod_annotate_spidex_file:
-  associated_program:
+  associated_recipe:
    - rankvariant
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path
 genmod_models_family_type:
-  associated_program:
+  associated_recipe:
    - rankvariant
   data_type: SCALAR
   default: ped
-  type: program_argument
+  type: recipe_argument
 genmod_models_reduced_penetrance_file:
-  associated_program:
+  associated_recipe:
    - rankvariant
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path
 genmod_models_whole_gene:
-  associated_program:
+  associated_recipe:
    - rankvariant
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 rank_model_file:
-  associated_program:
+  associated_recipe:
    - rankvariant
   data_type: SCALAR
   exists_check: file
@@ -776,7 +776,7 @@ rank_model_file:
 ##Endvariantannotationblock
 endvariantannotationblock:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
@@ -784,15 +784,15 @@ endvariantannotationblock:
   outfile_suffix: ".vcf"
   program_name_path:
    - grep
-  type: program
+  type: recipe
 rankvariant_binary_file:
-  associated_program:
+  associated_recipe:
    - endvariantannotationblock
   data_type: SCALAR
   default: 0
-  type: program_argument
+  type: recipe_argument
 endvariantannotationblock_remove_genes_file:
-  associated_program:
+  associated_recipe:
    - endvariantannotationblock
   data_type: SCALAR
   exists_check: file
@@ -802,23 +802,23 @@ endvariantannotationblock_remove_genes_file:
 ## AnalysisRunStatus
 analysisrunstatus:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
-  type: program
+  type: recipe
 ## Sacct
 sacct:
   analysis_mode: family
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
-  type: program
+  type: recipe
 sacct_format_fields:
-  associated_program:
+  associated_recipe:
    - sacct
   data_type: ARRAY
   default:
@@ -834,4 +834,4 @@ sacct_format_fields:
    - state
    - exitcode
   element_separator: ,
-  type: program_argument
+  type: recipe_argument

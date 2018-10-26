@@ -1,5 +1,6 @@
 package MIP::File::Format::Mip;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -36,7 +37,7 @@ sub build_file_prefix_tag {
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $family_id             => Family id {REF}
 ##          : $file_info_href        => Info on files hash {REF}
-##          : $order_programs_ref    => Order of addition to parameter array {REF}
+##          : $order_recipes_ref     => Order of addition to parameter array {REF}
 ##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
@@ -44,7 +45,7 @@ sub build_file_prefix_tag {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $order_programs_ref;
+    my $order_recipes_ref;
     my $parameter_href;
 
     ## Default(s)
@@ -70,11 +71,11 @@ sub build_file_prefix_tag {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        order_programs_ref => {
+        order_recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$order_programs_ref,
+            store       => \$order_recipes_ref,
             strict_type => 1,
         },
         parameter_href => {
@@ -94,15 +95,15 @@ sub build_file_prefix_tag {
     my %temp_file_ending;
 
   PARAMETER:
-    foreach my $program_name ( @{$order_programs_ref} ) {
+    foreach my $recipe_name ( @{$order_recipes_ref} ) {
 
         ## Alias
-        my $current_chain = $parameter_href->{$program_name}{chain};
-        my $file_tag      = $parameter_href->{$program_name}{file_tag};
+        my $current_chain = $parameter_href->{$recipe_name}{chain};
+        my $file_tag      = $parameter_href->{$recipe_name}{file_tag};
 
         ## Only active parameters
         next PARAMETER
-          if ( not defined $active_parameter_href->{$program_name} );
+          if ( not defined $active_parameter_href->{$recipe_name} );
 
         ## Skip parameters with no file tag
         next PARAMETER if ( $file_tag eq q{nofile_tag} );
@@ -111,7 +112,7 @@ sub build_file_prefix_tag {
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-            ## Set file tag for program and update sequential build-up of fileending
+            ## Set file tag for recipe and update sequential build-up of fileending
             $temp_file_ending{$current_chain}{$sample_id} = set_file_prefix_tag(
                 {
                     active_parameter_href => $active_parameter_href,
@@ -119,14 +120,14 @@ sub build_file_prefix_tag {
                     file_tag              => $file_tag,
                     file_info_href        => $file_info_href,
                     id                    => $sample_id,
-                    program_name          => $program_name,
+                    recipe_name           => $recipe_name,
                     temp_file_ending_href => \%temp_file_ending,
                 }
             );
         }
 
         ### Per family_id
-        ## Set file tag for program and update sequential build-up of fileending
+        ## Set file tag for recipe and update sequential build-up of fileending
         $temp_file_ending{$current_chain}{$family_id} = set_file_prefix_tag(
             {
                 active_parameter_href => $active_parameter_href,
@@ -134,7 +135,7 @@ sub build_file_prefix_tag {
                 file_tag              => $file_tag,
                 file_info_href        => $file_info_href,
                 id                    => $family_id,
-                program_name          => $program_name,
+                recipe_name           => $recipe_name,
                 temp_file_ending_href => \%temp_file_ending,
             }
         );

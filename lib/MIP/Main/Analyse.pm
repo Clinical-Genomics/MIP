@@ -38,8 +38,8 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_cmd_config_vs_definition_file
   check_email_address
   check_parameter_hash
-  check_program_exists_in_hash
-  check_program_mode
+  check_recipe_exists_in_hash
+  check_recipe_mode
   check_sample_ids
 };
 use MIP::Check::Path qw{ check_command_in_path check_parameter_files };
@@ -50,7 +50,7 @@ use MIP::File::Format::Pedigree
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
-use MIP::Parse::Parameter qw{ parse_start_with_program };
+use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Script::Utils qw{ help write_script_version };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
@@ -58,7 +58,7 @@ use MIP::Set::Parameter
 use MIP::Update::Parameters
   qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
-use MIP::Update::Programs qw{ update_program_mode_with_dry_run_all };
+use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 ## Recipes
 use MIP::Recipes::Pipeline::Rd_dna qw{ pipeline_rd_dna };
@@ -91,7 +91,7 @@ sub mip_analyse {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $file_info_href        => File info hash {REF}
-#           : $order_parameters_ref  => Order of addition to parameter array {REF}
+    #           : $order_parameters_ref  => Order of addition to parameter array {REF}
 ##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
@@ -168,8 +168,7 @@ sub mip_analyse {
     );
 
 ## Directories, files, job_ids and sample_info
-    my ( %infile_lane_prefix,
-        %infile_both_strands_prefix, %job_id, %sample_info );
+    my ( %infile_lane_prefix, %infile_both_strands_prefix, %job_id, %sample_info );
 
 #### Staging Area
 ### Get and/or set input parameters
@@ -220,8 +219,7 @@ sub mip_analyse {
             }
         );
 
-        my @config_dynamic_parameters =
-          qw{ analysis_constant_path outaligner_dir };
+        my @config_dynamic_parameters = qw{ analysis_constant_path outaligner_dir };
 
         ## Replace config parameter with cmd info for config dynamic parameter
         set_default_config_dynamic_parameters(
@@ -292,7 +290,7 @@ sub mip_analyse {
         );
     }
 
-# Detect if all samples has the same sequencing type and return consensus if reached
+    # Detect if all samples has the same sequencing type and return consensus if reached
     $parameter{dynamic_parameter}{consensus_analysis_type} =
       get_overall_analysis_type(
         { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
@@ -350,8 +348,8 @@ sub mip_analyse {
         set_default_to_active_parameter(
             {
                 active_parameter_href => \%active_parameter,
-                associated_programs_ref =>
-                  \@{ $parameter{$parameter_name}{associated_program} },
+                associated_recipes_ref =>
+                  \@{ $parameter{$parameter_name}{associated_recipe} },
                 log            => $log,
                 parameter_href => \%parameter,
                 parameter_name => $parameter_name,
@@ -388,8 +386,8 @@ sub mip_analyse {
             update_reference_parameters(
                 {
                     active_parameter_href => \%active_parameter,
-                    associated_programs_ref =>
-                      \@{ $parameter{$parameter_name}{associated_program} },
+                    associated_recipes_ref =>
+                      \@{ $parameter{$parameter_name}{associated_recipe} },
                     parameter_name => $parameter_name,
                 }
             );
@@ -407,13 +405,12 @@ sub mip_analyse {
             check_parameter_files(
                 {
                     active_parameter_href => \%active_parameter,
-                    associated_programs_ref =>
-                      \@{ $parameter{$parameter_name}{associated_program} },
-                    log => $log,
-                    parameter_exists_check =>
-                      $parameter{$parameter_name}{exists_check},
-                    parameter_href => \%parameter,
-                    parameter_name => $parameter_name,
+                    associated_recipes_ref =>
+                      \@{ $parameter{$parameter_name}{associated_recipe} },
+                    log                    => $log,
+                    parameter_exists_check => $parameter{$parameter_name}{exists_check},
+                    parameter_href         => \%parameter,
+                    parameter_name         => $parameter_name,
                 }
             );
         }
@@ -474,14 +471,14 @@ sub mip_analyse {
         }
     );
 
-## Parameters that have keys as MIP program names
+## Parameters that have keys as MIP recipe names
     my @parameter_keys_to_check =
       (qw{ module_time module_core_number module_source_environment_command });
   PARAMETER_NAME:
     foreach my $parameter_name (@parameter_keys_to_check) {
 
         ## Test if key from query hash exists truth hash
-        check_program_exists_in_hash(
+        check_recipe_exists_in_hash(
             {
                 log            => $log,
                 parameter_name => $parameter_name,
@@ -491,8 +488,8 @@ sub mip_analyse {
         );
     }
 
-## Parameters with key(s) that have elements as MIP program names
-    my @parameter_element_to_check = qw(associated_program);
+## Parameters with key(s) that have elements as MIP recipe names
+    my @parameter_element_to_check = qw(associated_recipe);
   PARAMETER:
     foreach my $parameter ( keys %parameter ) {
 
@@ -502,24 +499,24 @@ sub mip_analyse {
             next KEY if ( not exists $parameter{$parameter}{$parameter_name} );
 
             ## Test if element from query array exists truth hash
-            check_program_exists_in_hash(
+            check_recipe_exists_in_hash(
                 {
                     log            => $log,
                     parameter_name => $parameter_name,
-                    query_ref  => \@{ $parameter{$parameter}{$parameter_name} },
-                    truth_href => \%parameter,
+                    query_ref      => \@{ $parameter{$parameter}{$parameter_name} },
+                    truth_href     => \%parameter,
                 }
             );
         }
     }
 
-## Parameters that have elements as MIP program names
+## Parameters that have elements as MIP recipe names
     my @parameter_elements_to_check =
-      (qw(associated_program decompose_normalize_references));
+      (qw(associated_recipe decompose_normalize_references));
     foreach my $parameter_name (@parameter_elements_to_check) {
 
         ## Test if element from query array exists truth hash
-        check_program_exists_in_hash(
+        check_recipe_exists_in_hash(
             {
                 log            => $log,
                 parameter_name => $parameter_name,
@@ -530,18 +527,16 @@ sub mip_analyse {
     }
 
 ## Check that the module core number do not exceed the maximum per node
-    foreach my $program_name ( keys %{ $active_parameter{module_core_number} } )
-    {
+    foreach my $recipe_name ( keys %{ $active_parameter{module_core_number} } ) {
 
         ## Limit number of cores requested to the maximum number of cores available per node
-        $active_parameter{module_core_number}{$program_name} =
-          check_max_core_number(
+        $active_parameter{module_core_number}{$recipe_name} = check_max_core_number(
             {
                 max_cores_per_node => $active_parameter{max_cores_per_node},
                 core_number_requested =>
-                  $active_parameter{module_core_number}{$program_name},
+                  $active_parameter{module_core_number}{$recipe_name},
             }
-          );
+        );
     }
 
 ## Check programs in path, and executable
@@ -566,14 +561,14 @@ sub mip_analyse {
     set_dynamic_parameter(
         {
             aggregates_ref => [
-                ## Collects all programs that MIP can handle
-                q{type:program},
+                ## Collects all recipes that MIP can handle
+                q{type:recipe},
                 ## Collects all variant_callers
-                q{program_type:variant_callers},
+                q{recipe_type:variant_callers},
                 ## Collects all structural variant_callers
-                q{program_type:structural_variant_callers},
+                q{recipe_type:structural_variant_callers},
                 ## Collect all aligners
-                q{program_type:aligners},
+                q{recipe_type:aligners},
                 ## Collects all references in that are supposed to be in reference directory
                 q{reference:reference_dir},
             ],
@@ -581,8 +576,8 @@ sub mip_analyse {
         }
     );
 
-## Check correct value for program mode in MIP
-    check_program_mode(
+## Check correct value for recipe mode in MIP
+    check_recipe_mode(
         {
             active_parameter_href => \%active_parameter,
             log                   => $log,
@@ -590,18 +585,15 @@ sub mip_analyse {
         }
     );
 
-    my $consensus_analysis_type =
-      $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
 
-## Get initiation program, downstream dependencies and update program modes for start_with_program parameter depending on pipeline
-    my $initiation_file =
-      catfile( $Bin, qw{ definitions rd_dna_initiation_map.yaml } );
+## Get initiation recipe, downstream dependencies and update recipe modes for start_with_recipe parameter depending on pipeline
+    my $initiation_file = catfile( $Bin, qw{ definitions rd_dna_initiation_map.yaml } );
 
     # For Rd RNA pipeline
     if ( $consensus_analysis_type eq q{wts} ) {
 
-        $initiation_file =
-          catfile( $Bin, qw{ definitions rd_rna_initiation_map.yaml } );
+        $initiation_file = catfile( $Bin, qw{ definitions rd_rna_initiation_map.yaml } );
     }
 
     # For Vcf rerun pipeline
@@ -610,7 +602,7 @@ sub mip_analyse {
         $initiation_file =
           catfile( $Bin, qw{ definitions rd_dna_vcf_rerun_initiation_map.yaml } );
     }
-    parse_start_with_program(
+    parse_start_with_recipe(
         {
             active_parameter_href => \%active_parameter,
             initiation_file       => $initiation_file,
@@ -619,12 +611,12 @@ sub mip_analyse {
         },
     );
 
-## Update program mode depending on dry_run_all flag
-    update_program_mode_with_dry_run_all(
+## Update recipe mode depending on dry_run_all flag
+    update_recipe_mode_with_dry_run_all(
         {
             active_parameter_href => \%active_parameter,
             dry_run_all           => $active_parameter{dry_run_all},
-            programs_ref => \@{ $parameter{dynamic_parameter}{program} },
+            recipes_ref           => \@{ $parameter{dynamic_parameter}{recipe} },
         }
     );
 
@@ -668,9 +660,8 @@ sub mip_analyse {
         {
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
-            order_programs_ref =>
-              \@{ $parameter{dynamic_parameter}{order_programs_ref} },
-            parameter_href => \%parameter,
+            order_recipes_ref => \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
+            parameter_href    => \%parameter,
         }
     );
 
@@ -682,8 +673,7 @@ sub mip_analyse {
             sample_info_href      => \%sample_info,
             execution_mode        => q{system},
             fam_file_path         => catfile(
-                $active_parameter{outdata_dir},
-                $active_parameter{family_id},
+                $active_parameter{outdata_dir}, $active_parameter{family_id},
                 $active_parameter{family_id} . '.fam'
             ),
         }
@@ -718,8 +708,8 @@ sub mip_analyse {
                 job_id_href                     => \%job_id,
                 log                             => $log,
                 order_parameters_ref            => \@order_parameters,
-                order_programs_ref =>
-                  \@{ $parameter{dynamic_parameter}{order_programs_ref} },
+                order_recipes_ref =>
+                  \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
                 parameter_href   => \%parameter,
                 sample_info_href => \%sample_info,
             }
@@ -741,8 +731,8 @@ sub mip_analyse {
                 job_id_href             => \%job_id,
                 log                     => $log,
                 order_parameters_ref    => \@order_parameters,
-                order_programs_ref =>
-                  \@{ $parameter{dynamic_parameter}{order_programs_ref} },
+                order_recipes_ref =>
+                  \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
                 parameter_href   => \%parameter,
                 sample_info_href => \%sample_info,
             }
@@ -768,8 +758,8 @@ sub mip_analyse {
                 job_id_href                     => \%job_id,
                 log                             => $log,
                 order_parameters_ref            => \@order_parameters,
-                order_programs_ref =>
-                  \@{ $parameter{dynamic_parameter}{order_programs_ref} },
+                order_recipes_ref =>
+                  \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
                 outaligner_dir   => $active_parameter{outaligner_dir},
                 parameter_href   => \%parameter,
                 sample_info_href => \%sample_info,
@@ -777,7 +767,7 @@ sub mip_analyse {
         );
     }
 
-## Write QC for programs used in analysis
+## Write QC for recipes used in analysis
     # Write sample info to yaml file
     if ( $active_parameter{sample_info_file} ) {
 

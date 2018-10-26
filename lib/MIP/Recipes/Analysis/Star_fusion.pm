@@ -43,7 +43,7 @@ sub analysis_star_fusion {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -56,7 +56,7 @@ sub analysis_star_fusion {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
 
@@ -105,10 +105,10 @@ sub analysis_star_fusion {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_id => {
@@ -135,12 +135,12 @@ sub analysis_star_fusion {
 
     use MIP::File::Format::Star_fusion qw{ create_star_fusion_sample_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## PREPROCESSING:
@@ -158,7 +158,7 @@ sub analysis_star_fusion {
             file_info_href => $file_info_href,
             id             => $sample_id,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -167,21 +167,21 @@ sub analysis_star_fusion {
     my @temp_infile_paths = @{ $io{temp}{file_paths} };
 
     ## Build outfile_paths
-    my %program_attribute = get_program_attributes(
+    my %recipe_attribute = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
         }
     );
     my $outdir_path =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $program_name );
-    my $outsample_name = $STAR_FUSION_PREFIX . $program_attribute{outfile_suffix};
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
+    my $outsample_name = $STAR_FUSION_PREFIX . $recipe_attribute{outfile_suffix};
     my @file_paths     = catfile( $outdir_path, $outsample_name );
-    my $program_mode   = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $recipe_mode    = $active_parameter_href->{$recipe_name};
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -189,12 +189,12 @@ sub analysis_star_fusion {
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $program_attribute{chain},
+                chain_id       => $recipe_attribute{chain},
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 file_paths_ref => \@file_paths,
                 parameter_href => $parameter_href,
-                program_name   => $program_name,
+                recipe_name    => $recipe_name,
             }
         )
     );
@@ -203,8 +203,8 @@ sub analysis_star_fusion {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-# Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+# Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -212,8 +212,8 @@ sub analysis_star_fusion {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             process_time                    => $time,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
@@ -233,8 +233,7 @@ sub analysis_star_fusion {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Star-fusion
-    say {$FILEHANDLE} q{## Performing fusion transcript detections using }
-      . $program_name;
+    say {$FILEHANDLE} q{## Performing fusion transcript detections using } . $recipe_name;
 
     ## Create sample file
     my $sample_files_path = catfile( $outdir_path, $sample_id . q{_file.txt} );
@@ -273,12 +272,12 @@ sub analysis_star_fusion {
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 path             => $file_paths[0],
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
@@ -291,7 +290,7 @@ sub analysis_star_fusion {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $program_attribute{chain},
+                job_id_chain            => $recipe_attribute{chain},
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

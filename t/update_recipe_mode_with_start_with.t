@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -43,17 +43,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Pedigree} => [qw{ gatk_pedigree_flag }],
-        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
+        q{MIP::Update::Recipes} => [qw{ update_recipe_mode_with_start_with }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Pedigree qw{ gatk_pedigree_flag };
+use MIP::Update::Recipes qw{ update_recipe_mode_with_start_with };
 
-diag(   q{Test gatk_pedigree_flag from Pedigree.pm v}
-      . $MIP::File::Format::Pedigree::VERSION
+diag(   q{Test update_recipe_mode_with_start_with from Recipes.pm v}
+      . $MIP::Update::Recipes::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,17 +61,29 @@ diag(   q{Test gatk_pedigree_flag from Pedigree.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $fam_file_path_test = catfile( $Bin, qw{ data 643594-miptest 643594-200M.fam } );
+my %active_parameter = (
+    fastqc   => 1,
+    bwa_mem  => 2,
+    star_aln => 0,
+    multiqc  => 2,
+);
+my @recipes            = qw{ fastqc bwa_mem star_aln multiqc };
+my @start_with_recipes = qw{ bwa_mem multiqc };
 
-my %command = gatk_pedigree_flag(
+update_recipe_mode_with_start_with(
     {
-        fam_file_path            => $fam_file_path_test,
-        pedigree_validation_type => q{STRICT},
+        active_parameter_href  => \%active_parameter,
+        recipes_ref            => \@recipes,
+        start_with_recipes_ref => \@start_with_recipes,
     }
 );
 
-is( $command{pedigree_validation_type},
-    q{STRICT}, q{Pedigree validation type is verified} );
-is( $command{pedigree}, $fam_file_path_test, q{Path to pedigree file is verified} );
+is( $active_parameter{fastqc}, 2, q{Udated upstreams dependencies recipe mode} );
+
+is( $active_parameter{bwa_mem}, 1, q{Udated start with recipe mode} );
+
+is( $active_parameter{multiqc}, 1, q{Udated downstream dependencies recipe mode} );
+
+is( $active_parameter{star_aln}, 0, q{Did not update switched off recipe } );
 
 done_testing();

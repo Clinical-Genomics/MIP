@@ -46,7 +46,7 @@ sub analysis_picardtools_genotypeconcordance {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -60,7 +60,7 @@ sub analysis_picardtools_genotypeconcordance {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
 
@@ -110,11 +110,11 @@ sub analysis_picardtools_genotypeconcordance {
             strict_type => 1,
             store       => \$parameter_href,
         },
-        program_name => {
+        recipe_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
         },
         reference_dir => {
             default     => $arg_href->{active_parameter_href}{reference_dir},
@@ -144,7 +144,7 @@ sub analysis_picardtools_genotypeconcordance {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -170,7 +170,7 @@ sub analysis_picardtools_genotypeconcordance {
             id             => $family_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -178,20 +178,20 @@ sub analysis_picardtools_genotypeconcordance {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path        = $io{in}{file_path};
 
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
     my $nist_id            = $active_parameter_href->{nist_id};
-    my $program_mode       = $active_parameter_href->{$program_name};
+    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -207,7 +207,7 @@ sub analysis_picardtools_genotypeconcordance {
                 iterators_ref    => [$nist_id],
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 temp_directory   => $temp_directory,
             }
         )
@@ -221,7 +221,7 @@ sub analysis_picardtools_genotypeconcordance {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
@@ -232,8 +232,8 @@ sub analysis_picardtools_genotypeconcordance {
             job_id_href  => $job_id_href,
             log          => $log,
             process_time => $time,
-            program_directory => $program_name,
-            program_name      => $program_name,
+            recipe_directory => $recipe_name,
+            recipe_name      => $recipe_name,
             set_errexit => 0,              # Special case to allow "vcf.idx" to be created
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
@@ -488,7 +488,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
 
     close $FILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {

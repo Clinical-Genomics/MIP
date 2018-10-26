@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -73,9 +73,9 @@ my $test_dir = File::Temp->newdir();
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
 
-my $directory_id      = q{family_1};
-my $temp_dir          = catfile($test_dir);
-my $test_program_name = q{bwa_mem};
+my $directory_id     = q{family_1};
+my $temp_dir         = catfile($test_dir);
+my $test_recipe_name = q{bwa_mem};
 
 my %active_parameter = (
     bash_set_errexit                => 1,
@@ -87,10 +87,10 @@ my %active_parameter = (
     outdata_dir                     => catfile( $test_dir, q{test_data_dir} ),
     outscript_dir                   => catfile( $test_dir, q{test_script_dir} ),
     project_id                      => q{wamdu},
-			sacct_format_fields => [qw{ jobid }],
+    sacct_format_fields             => [qw{ jobid }],
     slurm_quality_of_service        => q{low},
     source_environment_commands_ref => [qw{ source activate test }],
-			submission_profile => q{slurm},
+    submission_profile              => q{slurm},
     temp_directory                  => $temp_dir,
 );
 my %job_id;
@@ -103,23 +103,19 @@ my ($file_path) = setup_script(
         FILEHANDLE            => $FILEHANDLE,
         job_id_href           => \%job_id,
         log                   => $log,
-        program_directory     => $active_parameter{outaligner_dir},
-        program_name          => $test_program_name,
+        recipe_directory      => $active_parameter{outaligner_dir},
+        recipe_name           => $test_recipe_name,
         sleep                 => 1,
         source_environment_commands_ref =>
           \@{ $active_parameter{source_environment_commands_ref} },
     }
 );
 
-my $program_script_directory_path = catdir( $active_parameter{outscript_dir},
+my $recipe_script_directory_path = catdir( $active_parameter{outscript_dir},
     $directory_id, $active_parameter{outaligner_dir} );
-my $file_name_prefix =
-    $test_program_name
-  . $UNDERSCORE
-  . $directory_id
-  . $DOT;
-my $file_path_prefix = catfile( $program_script_directory_path,
-    q{dry_run} . $UNDERSCORE . $file_name_prefix );
+my $file_name_prefix = $test_recipe_name . $UNDERSCORE . $directory_id . $DOT;
+my $file_path_prefix =
+  catfile( $recipe_script_directory_path, q{dry_run} . $UNDERSCORE . $file_name_prefix );
 my $file_name_suffix   = $DOT . q{sh};
 my $expected_file_path = $file_path_prefix . q{0} . $file_name_suffix;
 is( $file_path, $expected_file_path, q{Generated file path} );

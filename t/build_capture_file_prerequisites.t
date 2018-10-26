@@ -47,8 +47,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Build::Capture_file_prerequisites} =>
           [qw{ build_capture_file_prerequisites }],
-        q{MIP::Test::Fixtures} =>
-          [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -57,8 +56,7 @@ BEGIN {
 use MIP::Recipes::Build::Capture_file_prerequisites
   qw{ build_capture_file_prerequisites };
 
-diag(
-q{Test build_capture_file_prerequisites from Capture_file_prerequisites.pm v}
+diag(   q{Test build_capture_file_prerequisites from Capture_file_prerequisites.pm v}
       . $MIP::Recipes::Build::Capture_file_prerequisites::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -77,27 +75,22 @@ my $file_content;
 
 ## Store file content in memory by using referenced variable
 open $FILEHANDLE, q{>}, \$file_content
-  or croak q{Cannot write to}
-  . $SPACE
-  . $file_content
-  . $COLON
-  . $SPACE
-  . $OS_ERROR;
+  or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given build parameters
 my $parameter_build_name = q{exome_target_bed};
-my $program_name         = q{picardtools_collecthsmetrics};
+my $recipe_name          = q{picardtools_collecthsmetrics};
 
 my %active_parameter = test_mip_hashes(
     {
         mip_hash_name => q{active_parameter},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 my %infile_lane_prefix;
@@ -112,17 +105,16 @@ my $padded_interval_list_suffix = $file_info{exome_target_bed}[1];
 trap {
     build_capture_file_prerequisites(
         {
-            active_parameter_href   => \%active_parameter,
-            FILEHANDLE              => $FILEHANDLE,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            log                     => $log,
-            parameter_build_suffixes_ref =>
-              \@{ $file_info{$parameter_build_name} },
-            parameter_href   => \%parameter,
-            program_name     => $program_name,
-            sample_info_href => \%sample_info,
+            active_parameter_href        => \%active_parameter,
+            FILEHANDLE                   => $FILEHANDLE,
+            file_info_href               => \%file_info,
+            infile_lane_prefix_href      => \%infile_lane_prefix,
+            job_id_href                  => \%job_id,
+            log                          => $log,
+            parameter_build_suffixes_ref => \@{ $file_info{$parameter_build_name} },
+            parameter_href               => \%parameter,
+            recipe_name                  => $recipe_name,
+            sample_info_href             => \%sample_info,
         }
       )
 };
@@ -131,7 +123,6 @@ close $FILEHANDLE;
 
 ## Then broadcast info log message
 my $log_msg = q{Will\s+try\s+to\s+create\s+required};
-like( $trap->stderr, qr/$log_msg/msx,
-    q{Broadcast exome_target_bed build log message} );
+like( $trap->stderr, qr/$log_msg/msx, q{Broadcast exome_target_bed build log message} );
 
 done_testing();

@@ -47,8 +47,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Build::Fusion_filter_prerequisites} =>
           [qw{ build_fusion_filter_prerequisites }],
-        q{MIP::Test::Fixtures} =>
-          [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -57,8 +56,7 @@ BEGIN {
 use MIP::Recipes::Build::Fusion_filter_prerequisites
   qw{ build_fusion_filter_prerequisites };
 
-diag(
-q{Test build_fusion_filter_prerequisites from Fusion_filter_prerequisites.pm v}
+diag(   q{Test build_fusion_filter_prerequisites from Fusion_filter_prerequisites.pm v}
       . $MIP::Recipes::Build::Fusion_filter_prerequisites::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -70,18 +68,18 @@ q{Test build_fusion_filter_prerequisites from Fusion_filter_prerequisites.pm v}
 my $log = test_log();
 
 ## Given build parameters
-my $program_name = q{star_fusion};
+my $recipe_name = q{star_fusion};
 
 my %active_parameter = test_mip_hashes(
     {
         mip_hash_name => q{active_parameter},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 my %infile_lane_prefix;
@@ -105,7 +103,7 @@ trap {
             parameter_href          => \%parameter,
             parameter_build_suffixes_ref =>
               \@{ $file_info{fusion_filter_reference_genome} },
-            program_name     => $program_name,
+            recipe_name      => $recipe_name,
             sample_info_href => \%sample_info,
         }
       )
@@ -113,7 +111,7 @@ trap {
 
 ## Then broadcast info log message
 my $log_msg =
-q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+Fusion-filter\s+files};
+  q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+Fusion-filter\s+files};
 like( $trap->stderr, qr/$log_msg/msx, q{Broadcast star_fusion log message} );
 
 done_testing();

@@ -33,7 +33,7 @@ reduce_io:
   key_data_type: SCALAR
   values:
     - 1
-program_type:
+recipe_type:
   key_data_type: SCALAR
   values:
     - aligners

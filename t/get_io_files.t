@@ -78,10 +78,8 @@ my @base_temp_paths = (
     catfile( $temp_directory, q{fastq_sample_1_1.fastq.gz} ),
     catfile( $temp_directory, q{fastq_sample_1_2.fastq.gz} ),
 );
-my @file_paths = (
-    catfile(qw{ a test bwa_mem file_1.txt}),
-    catfile(qw{ a test bwa_mem file_2.txt}),
-);
+my @file_paths =
+  ( catfile(qw{ a test bwa_mem file_1.txt}), catfile(qw{ a test bwa_mem file_2.txt}), );
 my @file_paths_2 = (
     catfile(qw{ a test picard_mergesamfiles file_1.txt}),
     catfile(qw{ a test picard_mergesamfiles file_2.txt}),
@@ -94,33 +92,32 @@ my @delly_file_paths = (
 my %file_info = (
     $id => {
         mip_infiles_dir => catfile(qw{ a dir }),
-        mip_infiles =>
-          [qw{ fastq_sample_1_1.fastq.gz fastq_sample_1_2.fastq.gz }],
-        base                 => { file_paths => \@base_paths, },
-        base_temp            => { file_paths => \@base_temp_paths, },
-        bwa_mem              => { file_paths => \@file_paths, },
+        mip_infiles     => [qw{ fastq_sample_1_1.fastq.gz fastq_sample_1_2.fastq.gz }],
+        base            => { file_paths => \@base_paths, },
+        base_temp       => { file_paths => \@base_temp_paths, },
+        bwa_mem         => { file_paths => \@file_paths, },
         picard_mergesamfiles => { file_paths => \@file_paths_2, },
-        delly_call           => { file_paths => \@delly_file_paths, },
+        delly_call => { file_paths => \@delly_file_paths, },
     },
 );
-my @order_programs =
+my @order_recipes =
   qw{ bwa_mem picard_mergesamfiles markduplicates gatk_baserecalibration chanjo_sexcheck cnvnator delly_call delly_reformat sv_combinevariantcallsets };
 
 my %parameter = (
-    bwa_mem                   => { chain              => $chain_main, },
-    chanjo_sexcheck           => { chain              => $chain_chanjo, },
-    cnvnator                  => { chain              => q{CNVNATOR}, },
-    delly_call                => { chain              => q{DELLY_CALL}, },
-    delly_reformat            => { chain              => q{DELLY_CALL}, },
-    dynamic_parameter         => { order_programs_ref => \@order_programs, },
-    markduplicates            => { chain              => $chain_main, },
-    picard_mergesamfiles      => { chain              => $chain_main, },
-    sv_combinevariantcallsets => { chain              => q{CHAIN_SV}, },
+    bwa_mem                   => { chain             => $chain_main, },
+    chanjo_sexcheck           => { chain             => $chain_chanjo, },
+    cnvnator                  => { chain             => q{CNVNATOR}, },
+    delly_call                => { chain             => q{DELLY_CALL}, },
+    delly_reformat            => { chain             => q{DELLY_CALL}, },
+    dynamic_parameter         => { order_recipes_ref => \@order_recipes, },
+    markduplicates            => { chain             => $chain_main, },
+    picard_mergesamfiles      => { chain             => $chain_main, },
+    sv_combinevariantcallsets => { chain             => q{CHAIN_SV}, },
 );
 
-my $program_name = q{bwa_mem};
-my $stream       = q{in};
-my $stream_out   = q{out};
+my $recipe_name = q{bwa_mem};
+my $stream      = q{in};
+my $stream_out  = q{out};
 
 ## Given no set infiles - inherit from base i.e MIP infiles
 my %io = get_io_files(
@@ -128,13 +125,13 @@ my %io = get_io_files(
         id             => $id,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $program_name,
+        recipe_name    => $recipe_name,
         stream         => $stream,
         temp_directory => $temp_directory,
     }
 );
 
-## Then infile for new program should be returned
+## Then infile for new recipe should be returned
 is_deeply(
     \@{ $io{$stream}{file_paths} },
     \@{ $file_info{$id}{base}{file_paths} },
@@ -154,7 +151,7 @@ set_io_files(
         id             => $id,
         file_paths_ref => \@file_paths,
         file_info_href => \%file_info,
-        program_name   => $program_name,
+        recipe_name    => $recipe_name,
         stream         => $stream_out,
         temp_directory => $temp_directory,
     }
@@ -167,12 +164,12 @@ set_io_files(
         id             => $id_2,
         file_paths_ref => \@file_paths,
         file_info_href => \%file_info,
-        program_name   => $program_name,
+        recipe_name    => $recipe_name,
         stream         => $stream_out,
     }
 );
 
-## Given new program
+## Given new recipe
 my $merge_sam = q{picard_mergesamfiles};
 
 %io = get_io_files(
@@ -180,7 +177,7 @@ my $merge_sam = q{picard_mergesamfiles};
         id             => $id,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $merge_sam,
+        recipe_name    => $merge_sam,
         stream         => $stream,
     }
 );
@@ -198,7 +195,7 @@ my %io_id_2 = get_io_files(
         id             => $id_2,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $merge_sam,
+        recipe_name    => $merge_sam,
         stream         => $stream,
     }
 );
@@ -210,14 +207,14 @@ is_deeply(
     q{Got bwa_mem infile features for merge_sam for sample_2}
 );
 
-## Set new outfiles for second program
+## Set new outfiles for second recipe
 set_io_files(
     {
         chain_id       => $chain_main,
         id             => $id,
         file_paths_ref => \@file_paths_2,
         file_info_href => \%file_info,
-        program_name   => $merge_sam,
+        recipe_name    => $merge_sam,
         stream         => $stream_out,
     }
 );
@@ -227,7 +224,7 @@ set_io_files(
         id             => $id,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $merge_sam,
+        recipe_name    => $merge_sam,
         stream         => $stream_out,
     }
 );
@@ -239,14 +236,14 @@ is_deeply(
     q{Got picard_mergesamfiles outfile features for merge_sam for sample_1}
 );
 
-## Given the first program in a chain that should inherit from MAIN
-my $first_in_chain_program_name = q{chanjo_sexcheck};
+## Given the first recipe in a chain that should inherit from MAIN
+my $first_in_chain_recipe_name = q{chanjo_sexcheck};
 %io = get_io_files(
     {
         id             => $id,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $first_in_chain_program_name,
+        recipe_name    => $first_in_chain_recipe_name,
         stream         => $stream,
     }
 );
@@ -257,15 +254,15 @@ is_deeply(
 q{Got picard_mergesamfiles outfile features as infiles for chanjo_sexcheck for sample_1}
 );
 
-## Given a program downstream of PARALLEL chain and other chain
-my $downstream_program = q{sv_combinevariantcallsets};
+## Given a recipe downstream of PARALLEL chain and other chain
+my $downstream_recipe = q{sv_combinevariantcallsets};
 
 %io = get_io_files(
     {
         id             => $id,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $downstream_program,
+        recipe_name    => $downstream_recipe,
         stream         => $stream,
     }
 );
@@ -276,7 +273,7 @@ is_deeply(
 q{Got picard_mergesamfiles outfile features as infiles for sv_combinevariantcallsets for sample_1}
 );
 
-## Given a program in a PARALLEL chain and other chain
+## Given a recipe in a PARALLEL chain and other chain
 my $delly_call = q{delly_call};
 
 %io = get_io_files(
@@ -284,7 +281,7 @@ my $delly_call = q{delly_call};
         id             => $id,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $delly_call,
+        recipe_name    => $delly_call,
         stream         => $stream,
     }
 );
@@ -292,22 +289,22 @@ my $delly_call = q{delly_call};
 is_deeply(
     \@{ $file_info{$id}{picard_mergesamfiles}{file_paths} },
     \@{ $io{$stream}{file_paths} },
-q{Got picard_mergesamfiles outfile features as infiles for delly_call for sample_1}
+    q{Got picard_mergesamfiles outfile features as infiles for delly_call for sample_1}
 );
 
-## Set new outfiles for second program in PARALLEL self chain
+## Set new outfiles for second recipe in PARALLEL self chain
 set_io_files(
     {
         chain_id       => q{DELLY_CALL},
         id             => $id,
         file_paths_ref => \@delly_file_paths,
         file_info_href => \%file_info,
-        program_name   => $delly_call,
+        recipe_name    => $delly_call,
         stream         => $stream_out,
     }
 );
 
-## Given a program in a PARALLEL chain and other chain
+## Given a recipe in a PARALLEL chain and other chain
 my $delly_reformat = q{delly_reformat};
 
 %io = get_io_files(
@@ -315,7 +312,7 @@ my $delly_reformat = q{delly_reformat};
         id             => $id,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $delly_reformat,
+        recipe_name    => $delly_reformat,
         stream         => $stream,
     }
 );
@@ -323,26 +320,26 @@ my $delly_reformat = q{delly_reformat};
 is_deeply(
     \@{ $file_info{$id}{delly_call}{file_paths} },
     \@{ $io{$stream}{file_paths} },
-q{Got delly_call outfile features as infiles for delly_reformat for sample_1}
+    q{Got delly_call outfile features as infiles for delly_reformat for sample_1}
 );
 
-## Given a already processed program
+## Given a already processed recipe
 my %io_bwa = get_io_files(
     {
         id             => $id,
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        program_name   => $program_name,
+        recipe_name    => $recipe_name,
         stream         => $stream,
         temp_directory => $temp_directory,
     }
 );
 
-## Then infile for program should be returned
+## Then infile for recipe should be returned
 is_deeply(
     \@{ $io_bwa{$stream}{file_paths} },
     \@{ $file_info{$id}{base}{file_paths} },
-    q{Got persistent infile features for program and sample_1}
+    q{Got persistent infile features for recipe and sample_1}
 );
 
 done_testing();

@@ -83,9 +83,7 @@ my %active_parameter = (
 
 my %parameter = load_yaml(
     {
-        yaml_file => catfile(
-            dirname($Bin), qw{ definitions rd_dna_parameters.yaml}
-        ),
+        yaml_file => catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml} ),
     }
 );
 
@@ -97,8 +95,8 @@ foreach my $parameter_name (@order_parameters) {
     set_default_to_active_parameter(
         {
             active_parameter_href => \%active_parameter,
-            associated_programs_ref =>
-              \@{ $parameter{$parameter_name}{associated_program} },
+            associated_recipes_ref =>
+              \@{ $parameter{$parameter_name}{associated_recipe} },
             log            => $log,
             parameter_href => \%parameter,
             parameter_name => $parameter_name,
@@ -110,16 +108,16 @@ is( $active_parameter{gatk_genotypegvcfs_ref_gvcf},
     q{test_file}, q{Returned for not required exome mode parameter} );
 
 is( $active_parameter{bwa_mem_bamstats},
-    q{1}, q{Set default for non active associated_program parameter} );
+    q{1}, q{Set default for non active associated_recipe parameter} );
 
 is( $active_parameter{markduplicates_picardtools_markduplicates},
-    q{1}, q{Did not set default for not defined associated_program parameter} );
+    q{1}, q{Did not set default for not defined associated_recipe parameter} );
 
-is( $active_parameter{bcftools_mpileup_filter_variant}, 0, q{Set default for scalar parameter} );
+is( $active_parameter{bcftools_mpileup_filter_variant},
+    0, q{Set default for scalar parameter} );
 
 my %expected_resource_indel = (
-    q{GRCh37_dbsnp_-138-.vcf} =>
-      q{dbsnp,known=true,training=false,truth=false,prior=2.0},
+    q{GRCh37_dbsnp_-138-.vcf} => q{dbsnp,known=true,training=false,truth=false,prior=2.0},
     q{GRCh37_mills_and_1000g_indels_-gold_standard-.vcf} =>
       q{mills,known=true,training=true,truth=true,prior=12.0},
 );

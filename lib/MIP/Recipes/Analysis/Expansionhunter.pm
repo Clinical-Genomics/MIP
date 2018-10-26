@@ -45,7 +45,7 @@ sub analysis_expansionhunter {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -58,7 +58,7 @@ sub analysis_expansionhunter {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -107,10 +107,10 @@ sub analysis_expansionhunter {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         reference_dir => {
@@ -137,7 +137,7 @@ sub analysis_expansionhunter {
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_module_parameters get_program_attributes get_program_parameters };
+      qw{ get_program_parameters get_recipe_attributes get_recipe_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -147,7 +147,7 @@ sub analysis_expansionhunter {
     use MIP::Program::Variantcalling::Expansionhunter qw{ expansionhunter };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script
       qw{ setup_script write_return_to_conda_environment write_source_environment_command };
 
@@ -162,20 +162,20 @@ sub analysis_expansionhunter {
       scalar( @{ $active_parameter_href->{sample_ids} } );
     my $human_genome_reference =
       $arg_href->{active_parameter_href}{human_genome_reference};
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode = $active_parameter_href->{$program_name};
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
     my $repeat_specs_dir_path =
       $active_parameter_href->{expansionhunter_repeat_specs_dir};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -188,7 +188,7 @@ sub analysis_expansionhunter {
             file_name_prefixes_ref => [$family_id],
             outdata_dir            => $active_parameter_href->{outdata_dir},
             parameter_href         => $parameter_href,
-            program_name           => $program_name,
+            recipe_name            => $recipe_name,
             temp_directory         => $temp_directory,
         }
     );
@@ -214,8 +214,8 @@ sub analysis_expansionhunter {
         }
     );
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -224,8 +224,8 @@ sub analysis_expansionhunter {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -248,7 +248,7 @@ sub analysis_expansionhunter {
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
-                program_name   => $program_name,
+                recipe_name    => $recipe_name,
                 stream         => q{in},
                 temp_directory => $temp_directory,
             }
@@ -410,12 +410,12 @@ sub analysis_expansionhunter {
 
     close $FILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => q{expansionhunter},
+                recipe_name      => q{expansionhunter},
                 path             => $outfile_path,
             }
         );

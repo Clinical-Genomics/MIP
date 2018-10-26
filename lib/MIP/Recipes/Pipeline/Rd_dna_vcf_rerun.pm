@@ -1,5 +1,6 @@
 package MIP::Recipes::Pipeline::Rd_dna_vcf_rerun;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -46,7 +47,7 @@ sub pipeline_rd_dna_vcf_rerun {
 ##          : $job_id_href                     => Job id hash {REF}
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
-##          : $order_programs_ref              => Order of programs
+##          : $order_recipes_ref               => Order of recipes
 ##          : $outaligner_dir                  => Outaligner dir used in the analysis
 ##          : $parameter_href                  => Parameter hash {REF}
 ##          : $sample_info_href                => Info on samples and family hash {REF}
@@ -61,7 +62,7 @@ sub pipeline_rd_dna_vcf_rerun {
     my $job_id_href;
     my $log;
     my $order_parameters_ref;
-    my $order_programs_ref;
+    my $order_recipes_ref;
     my $parameter_href;
     my $sample_info_href;
 
@@ -116,11 +117,11 @@ sub pipeline_rd_dna_vcf_rerun {
             store       => \$order_parameters_ref,
             strict_type => 1,
         },
-        order_programs_ref => {
+        order_recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$order_programs_ref,
+            store       => \$order_recipes_ref,
             strict_type => 1,
         },
         outaligner_dir => {
@@ -149,24 +150,20 @@ sub pipeline_rd_dna_vcf_rerun {
     use MIP::Check::Pipeline qw{ check_rd_dna_vcf_rerun };
 
     ## Recipes
-    use MIP::Log::MIP_log4perl qw{ log_display_program_for_user };
-    use MIP::Recipes::Analysis::Analysisrunstatus
-      qw{ analysis_analysisrunstatus };
+    use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
+    use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock };
-    use MIP::Recipes::Analysis::Frequency_filter
-      qw{ analysis_frequency_filter };
+    use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Mip_vcfparser
       qw{ analysis_mip_vcfparser analysis_vcfparser_sv_wes analysis_vcfparser_sv_wgs };
     use MIP::Recipes::Analysis::Prepareforvariantannotationblock
       qw{ analysis_prepareforvariantannotationblock };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
-    use MIP::Recipes::Analysis::Rhocall
-      qw{ analysis_rhocall_annotate };
+    use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
-    use MIP::Recipes::Analysis::Snpeff
-      qw{ analysis_snpeff };
+    use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
     use MIP::Recipes::Analysis::Vcf_rerun_reformat
@@ -211,23 +208,22 @@ sub pipeline_rd_dna_vcf_rerun {
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        analysisrunstatus         => \&analysis_analysisrunstatus,
-        endvariantannotationblock => \&analysis_endvariantannotationblock,
-        frequency_filter          => \&analysis_frequency_filter,
-        prepareforvariantannotationblock =>
-          \&analysis_prepareforvariantannotationblock,
-        rankvariant => undef,                       # Depends on sample features
-        rhocall     => \&analysis_rhocall_annotate,
-        sacct       => \&analysis_sacct,
-        snpeff      => \&analysis_snpeff,
-        sv_annotate => \&analysis_sv_annotate,
-        sv_rankvariant => undef,                    # Depends on sample features
+        analysisrunstatus                => \&analysis_analysisrunstatus,
+        endvariantannotationblock        => \&analysis_endvariantannotationblock,
+        frequency_filter                 => \&analysis_frequency_filter,
+        prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
+        rankvariant    => undef,                         # Depends on sample features
+        rhocall        => \&analysis_rhocall_annotate,
+        sacct          => \&analysis_sacct,
+        snpeff         => \&analysis_snpeff,
+        sv_annotate    => \&analysis_sv_annotate,
+        sv_rankvariant => undef,                         # Depends on sample features
         sv_reformat    => \&analysis_reformat_sv,
         sv_vcf_rerun_reformat => \&analysis_vcf_rerun_reformat_sv,
-        sv_varianteffectpredictor => undef,          # Depends on analysis type,
-        sv_vcfparser              => undef,          # Depends on analysis type
+        sv_varianteffectpredictor => undef,                    # Depends on analysis type,
+        sv_vcfparser              => undef,                    # Depends on analysis type
         varianteffectpredictor    => \&analysis_vep,
-        vcfparser          => \&analysis_mip_vcfparser,
+        vcfparser                 => \&analysis_mip_vcfparser,
         vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
         vt                 => \&analysis_vt,
     );
@@ -235,10 +231,10 @@ sub pipeline_rd_dna_vcf_rerun {
     ## Special case for rankvariants recipe
     set_rankvariants_ar(
         {
-            analysis_recipe_href  => \%analysis_recipe,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-	 sample_ids_ref => $active_parameter_href->{sample_ids},
+            analysis_recipe_href => \%analysis_recipe,
+            log                  => $log,
+            parameter_href       => $parameter_href,
+            sample_ids_ref       => $active_parameter_href->{sample_ids},
         }
     );
 
@@ -251,63 +247,61 @@ sub pipeline_rd_dna_vcf_rerun {
         }
     );
 
-  PROGRAM:
-    foreach my $program ( @{$order_programs_ref} ) {
+  RECIPE:
+    foreach my $recipe ( @{$order_recipes_ref} ) {
 
-        ## Skip not active programs
-        next PROGRAM if ( not $active_parameter_href->{$program} );
+        ## Skip not active recipes
+        next RECIPE if ( not $active_parameter_href->{$recipe} );
 
-        ## Skip program if not part of dispatch table (such as gzip_fastq)
-        next PROGRAM if ( not $analysis_recipe{$program} );
+        ## Skip recipe if not part of dispatch table (such as gzip_fastq)
+        next RECIPE if ( not $analysis_recipe{$recipe} );
 
-            ## For displaying
-            log_display_program_for_user(
-                {
-                    log     => $log,
-                    program => $program,
-                }
-            );
-
-            ## Sample mode
-            if ( $parameter_href->{$program}{analysis_mode} eq q{sample} ) {
-
-              SAMPLE_ID:
-                foreach
-                  my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-                {
-
-                    $analysis_recipe{$program}->(
-                        {
-                            active_parameter_href   => $active_parameter_href,
-                            file_info_href          => $file_info_href,
-                            infile_lane_prefix_href => $infile_lane_prefix_href,
-                            job_id_href             => $job_id_href,
-                            parameter_href          => $parameter_href,
-                            program_name            => $program,
-                            sample_id               => $sample_id,
-                            sample_info_href        => $sample_info_href,
-                        }
-                    );
-                }
+        ## For displaying
+        log_display_recipe_for_user(
+            {
+                log    => $log,
+                recipe => $recipe,
             }
+        );
 
-            ## Family mode
-            elsif ( $parameter_href->{$program}{analysis_mode} eq q{family} ) {
+        ## Sample mode
+        if ( $parameter_href->{$recipe}{analysis_mode} eq q{sample} ) {
 
-                $analysis_recipe{$program}->(
+          SAMPLE_ID:
+            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+                $analysis_recipe{$recipe}->(
                     {
                         active_parameter_href   => $active_parameter_href,
                         file_info_href          => $file_info_href,
                         infile_lane_prefix_href => $infile_lane_prefix_href,
                         job_id_href             => $job_id_href,
                         parameter_href          => $parameter_href,
-                        program_name            => $program,
+                        recipe_name             => $recipe,
+                        sample_id               => $sample_id,
                         sample_info_href        => $sample_info_href,
                     }
                 );
             }
-      }
+        }
+
+        ## Family mode
+        elsif ( $parameter_href->{$recipe}{analysis_mode} eq q{family} ) {
+
+            $analysis_recipe{$recipe}->(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    parameter_href          => $parameter_href,
+                    recipe_name             => $recipe,
+                    sample_info_href        => $sample_info_href,
+                }
+            );
+        }
+    }
     return;
-  }
+}
 
 1;

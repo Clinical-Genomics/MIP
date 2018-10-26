@@ -52,7 +52,7 @@ sub analysis_sv_annotate {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory {REF}
@@ -65,7 +65,7 @@ sub analysis_sv_annotate {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -114,10 +114,10 @@ sub analysis_sv_annotate {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -143,7 +143,7 @@ sub analysis_sv_annotate {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_module_parameters get_program_attributes get_program_parameters };
+      qw{ get_program_parameters get_recipe_attributes get_recipe_parameters };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -154,7 +154,7 @@ sub analysis_sv_annotate {
     use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_query };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script
       qw{ setup_script write_return_to_conda_environment write_source_environment_command };
 
@@ -170,7 +170,7 @@ sub analysis_sv_annotate {
             id             => $family_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -184,20 +184,20 @@ sub analysis_sv_annotate {
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = get_program_attributes(
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             attribute      => q{chain},
         }
     );
-    my $program_mode       = $active_parameter_href->{$program_name};
+    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $sequence_dict_file = catfile( $reference_dir,
         $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} );
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -211,7 +211,7 @@ sub analysis_sv_annotate {
                 file_name_prefixes_ref => [$infile_name_prefix],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
-                program_name           => $program_name,
+                recipe_name            => $recipe_name,
                 temp_directory         => $temp_directory,
             }
         )
@@ -230,8 +230,8 @@ sub analysis_sv_annotate {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -240,8 +240,8 @@ sub analysis_sv_annotate {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -249,7 +249,7 @@ sub analysis_sv_annotate {
 
     ## Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) =
-      splitpath( $program_info_path . $DOT . q{stderr.txt} );
+      splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
 
     ### SHELL:
 
@@ -463,12 +463,12 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
           . $alt_file_tag
           . $outfile_suffix, $NEWLINE;
 
-        if ( $program_mode == 1 ) {
+        if ( $recipe_mode == 1 ) {
 
-            add_program_outfile_to_sample_info(
+            add_recipe_outfile_to_sample_info(
                 {
                     path             => catfile( $directory, $stderr_file ),
-                    program_name     => q{sv_annotate},
+                    recipe_name      => q{sv_annotate},
                     sample_info_href => $sample_info_href,
                 }
             );
@@ -527,12 +527,12 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
-                program_name     => q{sv_annotate},
+                recipe_name      => q{sv_annotate},
                 sample_info_href => $sample_info_href,
             }
         );

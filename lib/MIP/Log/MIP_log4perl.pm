@@ -1,5 +1,6 @@
 package MIP::Log::MIP_log4perl;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -25,7 +26,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ create_log4perl_config log_display_program_for_user initiate_logger retrieve_log set_default_log4perl_file };
+      qw{ create_log4perl_config log_display_recipe_for_user initiate_logger retrieve_log set_default_log4perl_file };
 }
 
 ## Constants
@@ -79,12 +80,8 @@ sub create_log4perl_config {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $config =
-        q{log4perl.category.}
-      . $log_name
-      . $SPACE . q{=}
-      . $SPACE
-      . join $COMMA
-      . $SPACE, @{$categories_ref};
+      q{log4perl.category.} . $log_name . $SPACE . q{=} . $SPACE . join $COMMA . $SPACE,
+      @{$categories_ref};
     $config .= <<"EOF";
 $NEWLINE log4perl.appender.LogFile = Log::Log4perl::Appender::File
 $NEWLINE log4perl.appender.LogFile.filename = $file_path
@@ -102,19 +99,19 @@ EOF
     return $config;
 }
 
-sub log_display_program_for_user {
+sub log_display_recipe_for_user {
 
-## Function : Mutate program for display
+## Function : Mutate recipe for display
 ## Returns  :
 ## Arguments: $indent_level => Number of TABS
 ##          : $log          => Log object
-##          : $program      => Program
+##          : $recipe       => Recipe
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $log;
-    my $program;
+    my $recipe;
 
     ## Defaults
     my $indent_level;
@@ -130,10 +127,10 @@ sub log_display_program_for_user {
             required => 1,
             store    => \$log,
         },
-        program => {
+        recipe => {
             defined     => 1,
             required    => 1,
-            store       => \$program,
+            store       => \$recipe,
             strict_type => 1,
         },
     };
@@ -146,11 +143,8 @@ sub log_display_program_for_user {
     }
 
     ## Replace "_" with $SPACE and make upper case
-    my $display_program_name = uc join $SPACE, split /_/sxm, $program;
-    $log->info( $indent_level
-          . $OPEN_BRACKET
-          . $display_program_name
-          . $CLOSE_BRACKET );
+    my $display_recipe_name = uc join $SPACE, split /_/sxm, $recipe;
+    $log->info( $indent_level . $OPEN_BRACKET . $display_recipe_name . $CLOSE_BRACKET );
     return;
 }
 

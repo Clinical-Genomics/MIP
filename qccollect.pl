@@ -2,7 +2,7 @@
 
 #### Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format.
 
-use v5.18;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
@@ -43,9 +43,7 @@ BEGIN {
     use MIP::Check::Modules qw{ check_perl_modules parse_cpan_file };
 
     my @modules =
-      parse_cpan_file {
-        cpanfile_path => catfile( $Bin, qw{ definitions cpanfile } ),
-      };
+      parse_cpan_file { cpanfile_path => catfile( $Bin, qw{ definitions cpanfile } ), };
 
     ## Evaluate that all modules required are installed
     check_perl_modules(
@@ -73,9 +71,9 @@ my ( %qc_data, %evaluate_metric );
 my %qc_header;
 
 ## Save data in each outfile
-my %qc_program_data;
+my %qc_recipe_data;
 
-my $qccollect_version = q{2.0.8};
+my $qccollect_version = q{2.1.0};
 
 ###User Options
 GetOptions(
@@ -91,10 +89,8 @@ GetOptions(
     q{h|help} => sub { say STDOUT $USAGE; exit; },
     ## Display version number
     q{v|version} => sub {
-        say STDOUT $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $qccollect_version, $NEWLINE;
+        say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $qccollect_version,
+          $NEWLINE;
         exit;
     },
   )
@@ -124,15 +120,13 @@ if ($print_regexp) {
 if ( not $sample_info_file ) {
 
     $log->info($USAGE);
-    $log->fatal( q{Must supply a '-sample_info_file' (supply whole path)},
-        $NEWLINE );
+    $log->fatal( q{Must supply a '-sample_info_file' (supply whole path)}, $NEWLINE );
     exit;
 }
 if ( not $regexp_file ) {
 
     $log->info($USAGE);
-    $log->fatal( q{Must supply a '-regexp_file' (supply whole path)},
-        $NEWLINE );
+    $log->fatal( q{Must supply a '-regexp_file' (supply whole path)}, $NEWLINE );
     exit;
 }
 
@@ -151,33 +145,33 @@ $log->info( q{Loaded: } . $regexp_file );
 ## Extracts all qcdata on sample_id level using information in %sample_info and %regexp
 sample_qc(
     {
-        sample_info_href     => \%sample_info,
-        regexp_href          => \%regexp,
-        qc_data_href         => \%qc_data,
-        qc_header_href       => \%qc_header,
-        qc_program_data_href => \%qc_program_data,
+        sample_info_href    => \%sample_info,
+        regexp_href         => \%regexp,
+        qc_data_href        => \%qc_data,
+        qc_header_href      => \%qc_header,
+        qc_recipe_data_href => \%qc_recipe_data,
     }
 );
 
 ## Extracts all qcdata on family level using information in %sample_info_file and %regexp
 family_qc(
     {
-        sample_info_href     => \%sample_info,
-        regexp_href          => \%regexp,
-        qc_data_href         => \%qc_data,
-        qc_header_href       => \%qc_header,
-        qc_program_data_href => \%qc_program_data,
+        sample_info_href    => \%sample_info,
+        regexp_href         => \%regexp,
+        qc_data_href        => \%qc_data,
+        qc_header_href      => \%qc_header,
+        qc_recipe_data_href => \%qc_recipe_data,
     }
 );
 
 ##Add qcCollect version to qc_data yaml file
-$qc_data{program}{qccollect}{version}     = $qccollect_version;
-$qc_data{program}{qccollect}{regexp_file} = $regexp_file;
+$qc_data{recipe}{qccollect}{version}     = $qccollect_version;
+$qc_data{recipe}{qccollect}{regexp_file} = $regexp_file;
 
 SAMPLE_ID:
 foreach my $sample_id ( keys %{ $sample_info{sample} } ) {
 
-    ## Defines programs, metrics and thresholds to evaluate
+    ## Defines recipes, metrics and thresholds to evaluate
     define_evaluate_metric(
         {
             sample_info_href => \%sample_info,
@@ -252,7 +246,7 @@ sub family_qc {
 ## Returns  :
 ## Arguments: $qc_data_href         => QCData hash {REF}
 ##          : $qc_header_href       => Save header(s) in each outfile {REF}
-##          : $qc_program_data_href => Hash to save data in each outfile {REF}
+##          : $qc_recipe_data_href  => Hash to save data in each outfile {REF}
 ##          : $regexp_href          => RegExp hash {REF}
 ##          : $sample_info_href     => Info on samples and family hash {REF}
 
@@ -261,7 +255,7 @@ sub family_qc {
     ## Flatten argument(s)
     my $qc_data_href;
     my $qc_header_href;
-    my $qc_program_data_href;
+    my $qc_recipe_data_href;
     my $regexp_href;
     my $sample_info_href;
 
@@ -294,56 +288,56 @@ sub family_qc {
             store       => \$qc_header_href,
             strict_type => 1,
         },
-        qc_program_data_href => {
+        qc_recipe_data_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$qc_program_data_href,
+            store       => \$qc_recipe_data_href,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## For every program
-  PROGRAM:
-    for my $program ( keys %{ $sample_info_href->{program} } ) {
+    ## For every recipe
+  RECIPE:
+    for my $recipe ( keys %{ $sample_info_href->{recipe} } ) {
 
         my $outdirectory;
         my $outfile;
 
-        if ( $sample_info_href->{program}{$program}{version} ) {
+        if ( $sample_info_href->{recipe}{$recipe}{version} ) {
 
             ## Add version to qc_data
-            $qc_data_href->{program}{$program}{version} =
-              $sample_info_href->{program}{$program}{version};
+            $qc_data_href->{recipe}{$recipe}{version} =
+              $sample_info_href->{recipe}{$recipe}{version};
         }
-        if ( $sample_info_href->{program}{$program}{outdirectory} ) {
+        if ( $sample_info_href->{recipe}{$recipe}{outdirectory} ) {
 
-            ## Extract OutDirectory
+            ## Extract outdirectory
             $outdirectory =
-              $sample_info_href->{program}{$program}{outdirectory};
+              $sample_info_href->{recipe}{$recipe}{outdirectory};
         }
-        if ( $sample_info_href->{program}{$program}{outfile} ) {
+        if ( $sample_info_href->{recipe}{$recipe}{outfile} ) {
 
-            ## Extract OutFile
-            $outfile = $sample_info_href->{program}{$program}{outfile};
+            ## Extract outfile
+            $outfile = $sample_info_href->{recipe}{$recipe}{outfile};
         }
-        if ( $sample_info_href->{program}{$program}{path} ) {
+        if ( $sample_info_href->{recipe}{$recipe}{path} ) {
 
             ( $outfile, $outdirectory ) =
-              fileparse( $sample_info_href->{program}{$program}{path} );
+              fileparse( $sample_info_href->{recipe}{$recipe}{path} );
         }
 
         ## Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
         parse_regexp_hash_and_collect(
             {
-                outdirectory         => $outdirectory,
-                outfile              => $outfile,
-                program              => $program,
-                qc_program_data_href => $qc_program_data_href,
-                qc_header_href       => $qc_header_href,
-                regexp_href          => $regexp_href,
+                outdirectory        => $outdirectory,
+                outfile             => $outfile,
+                recipe              => $recipe,
+                qc_recipe_data_href => $qc_recipe_data_href,
+                qc_header_href      => $qc_header_href,
+                regexp_href         => $regexp_href,
             }
         );
 
@@ -353,8 +347,8 @@ sub family_qc {
                 evaluate_plink_gender => $evaluate_plink_gender,
                 qc_data_href          => $qc_data_href,
                 qc_header_href        => $qc_header_href,
-                qc_program_data_href  => $qc_program_data_href,
-                program               => $program,
+                qc_recipe_data_href   => $qc_recipe_data_href,
+                recipe                => $recipe,
                 regexp_href           => $regexp_href,
                 sample_info_href      => $sample_info_href,
             }
@@ -371,7 +365,7 @@ sub sample_qc {
 ##          : $regexp_href          => RegExp hash {REF}
 ##          : $qc_data_href         => QCData hash {REF}
 ##          : $qc_header_href       => Save header(s) in each outfile {REF}
-##          : $qc_program_data_href => Hash to save data in each outfile {REF}
+##          : $qc_recipe_data_href  => Hash to save data in each outfile {REF}
 
     my ($arg_href) = @_;
 
@@ -380,7 +374,7 @@ sub sample_qc {
     my $regexp_href;
     my $qc_data_href;
     my $qc_header_href;
-    my $qc_program_data_href;
+    my $qc_recipe_data_href;
 
     my $tmpl = {
         sample_info_href => {
@@ -411,12 +405,12 @@ sub sample_qc {
             strict_type => 1,
             store       => \$qc_header_href
         },
-        qc_program_data_href => {
+        qc_recipe_data_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$qc_program_data_href
+            store       => \$qc_recipe_data_href
         },
     };
 
@@ -425,69 +419,65 @@ sub sample_qc {
   SAMPLE_ID:
     for my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
 
-      PROGRAM:
-        for my $program (
-            keys %{ $sample_info_href->{sample}{$sample_id}{program} } )
-        {
+      RECIPE:
+        for my $recipe ( keys %{ $sample_info_href->{sample}{$sample_id}{recipe} } ) {
 
           INFILE:
             for my $infile (
-                keys
-                %{ $sample_info_href->{sample}{$sample_id}{program}{$program} }
-              )
+                keys %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe} } )
             {
 
                 my $outdirectory;
                 my $outfile;
-                if ( $sample_info_href->{sample}{$sample_id}{program}{$program}
+                if ( $sample_info_href->{sample}{$sample_id}{recipe}{$recipe}
                     {$infile}{outdirectory} )
                 {
 
                     ## Extract OutDirectory
                     $outdirectory =
-                      $sample_info_href->{sample}{$sample_id}{program}
-                      {$program}{$infile}{outdirectory};
+                      $sample_info_href->{sample}{$sample_id}{recipe}
+                      {$recipe}{$infile}{outdirectory};
                 }
-                if ( $sample_info_href->{sample}{$sample_id}{program}{$program}
+                if ( $sample_info_href->{sample}{$sample_id}{recipe}{$recipe}
                     {$infile}{outfile} )
                 {
 
                     ## Extract OutFile
-                    $outfile = $sample_info_href->{sample}{$sample_id}{program}
-                      {$program}{$infile}{outfile};
+                    $outfile = $sample_info_href->{sample}{$sample_id}{recipe}
+                      {$recipe}{$infile}{outfile};
                 }
-                if ( $sample_info_href->{sample}{$sample_id}{program}{$program}
+                if ( $sample_info_href->{sample}{$sample_id}{recipe}{$recipe}
                     {$infile}{path} )
                 {
 
-                    ( $outfile, $outdirectory ) = fileparse(
-                        $sample_info_href->{sample}{$sample_id}{program}
-                          {$program}{$infile}{path} );
+                    ( $outfile, $outdirectory ) =
+                      fileparse( $sample_info_href->{sample}{$sample_id}{recipe}
+                          {$recipe}{$infile}{path} );
                 }
 
                 ## Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
                 parse_regexp_hash_and_collect(
                     {
-                        regexp_href          => $regexp_href,
-                        qc_program_data_href => $qc_program_data_href,
-                        qc_header_href       => $qc_header_href,
-                        program              => $program,
-                        outdirectory         => $outdirectory,
-                        outfile              => $outfile,
+                        regexp_href         => $regexp_href,
+                        qc_recipe_data_href => $qc_recipe_data_href,
+                        qc_header_href      => $qc_header_href,
+                        recipe              => $recipe,
+                        outdirectory        => $outdirectory,
+                        outfile             => $outfile,
                     }
                 );
 
                 ## Add extracted information to qc_data
                 add_to_qc_data(
                     {
-                        infile               => $infile,
-                        qc_data_href         => $qc_data_href,
-                        qc_header_href       => $qc_header_href,
-                        qc_program_data_href => $qc_program_data_href,
-                        program              => $program,
-                        regexp_href          => $regexp_href,
-                        sample_id            => $sample_id,
-                        sample_info_href     => $sample_info_href,
+                        infile              => $infile,
+                        qc_data_href        => $qc_data_href,
+                        qc_header_href      => $qc_header_href,
+                        qc_recipe_data_href => $qc_recipe_data_href,
+                        recipe              => $recipe,
+                        regexp_href         => $regexp_href,
+                        sample_id           => $sample_id,
+                        sample_info_href    => $sample_info_href,
                     }
                 );
             }
@@ -500,11 +490,11 @@ sub parse_regexp_hash_and_collect {
 
 ## Function  : Parses the regexp hash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
 ## Returns   :
-## Arguments : $outdirectory         => Programs outdirectory
-##           : $outfile              => Programs outfile containing parameter to evaluate
+## Arguments : $outdirectory         => Recipes outdirectory
+##           : $outfile              => Recipes outfile containing parameter to evaluate
 ##           : $qc_header_href       => Save header(s) in each outfile {REF}
-##           : $qc_program_data_href => Hash to save data in each outfile {REF}
-##           : $program              => The program to examine
+##           : $qc_recipe_data_href  => Hash to save data in each outfile {REF}
+##           : $recipe               => The recipe to examine
 ##           : $regexp_href          => Regexp hash {REF}
 
     my ($arg_href) = @_;
@@ -513,8 +503,8 @@ sub parse_regexp_hash_and_collect {
     my $outdirectory;
     my $outfile;
     my $qc_header_href;
-    my $qc_program_data_href;
-    my $program;
+    my $qc_recipe_data_href;
+    my $recipe;
     my $regexp_href;
 
     my $tmpl = {
@@ -532,17 +522,17 @@ sub parse_regexp_hash_and_collect {
             store       => \$qc_header_href,
             strict_type => 1,
         },
-        qc_program_data_href => {
+        qc_recipe_data_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$qc_program_data_href,
+            store       => \$qc_recipe_data_href,
             strict_type => 1,
         },
-        program => {
+        recipe => {
             defined     => 1,
             required    => 1,
-            store       => \$program,
+            store       => \$recipe,
             strict_type => 1,
         },
         outdirectory => { store => \$outdirectory, strict_type => 1, },
@@ -557,22 +547,20 @@ sub parse_regexp_hash_and_collect {
     ## Covers both whitespace and tab. Add other separators if required
     my @separators = ( qw{ \s+ ! }, q{,} );
 
-    ## Find the actual regular expression(s) for each program that is used
+    ## Find the actual regular expression(s) for each recipe that is used
   REG_EXP:
-    for my $regexp_key ( keys %{ $regexp_href->{$program} } ) {
+    for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
 
         if ( $regexp_key =~ /^header|header$/i ) {
 ## Detect if the outfile contains paragrafs/header info in the outfile i.e. data is formated as a paragraf with header(s) and line(s). "regexp_key" should either start with or end with "header". This section extracts the header line(s) for the entire outdata file. Necessary to assign correct data entry to header entry later (headers and data are saved in seperate hashes).
 
             ## Format outfile: Paragraf section
           PARAGRAPH:
-            for my $regexp_header_key (
-                keys %{ $regexp_href->{$program}{$regexp_key} } )
-            {
+            for my $regexp_header_key ( keys %{ $regexp_href->{$recipe}{$regexp_key} } ) {
 
                 ## Regular expression used to collect paragraf header info
                 $regexp =
-                  $regexp_href->{$program}{$regexp_key}{$regexp_header_key};
+                  $regexp_href->{$recipe}{$regexp_key}{$regexp_header_key};
 
                 ## Loop through possible separators to seperate any eventual header elements
               SEPARATOR:
@@ -587,16 +575,16 @@ sub parse_regexp_hash_and_collect {
                     if ( $regexp_header_key =~ /^header|header$/i ) {
 
                         ## Collect paragraf header
-                        @{ ${$qc_header_href}{$program}{$regexp_key}
-                              {$regexp_header_key} } = split(
+                        @{ ${$qc_header_href}{$recipe}{$regexp_key}{$regexp_header_key} }
+                          = split(
                             /$separators[$separator_element_counter]/,
                             `$regexp $outdirectory/$outfile`
-                              );
+                          );
 
                         #Then split should have been successful
                         if (
                             defined(
-                                ${$qc_header_href}{$program}{$regexp_key}
+                                ${$qc_header_href}{$recipe}{$regexp_key}
                                   {$regexp_header_key}
                             )
                           )
@@ -610,7 +598,7 @@ sub parse_regexp_hash_and_collect {
                         ## For paragraf data line(s)
 
                         ## Collect paragraf data
-                        @{ $qc_program_data_href->{$program}{$regexp_key}
+                        @{ $qc_recipe_data_href->{$recipe}{$regexp_key}
                               {$regexp_header_key} } = split(
                             /$separators[$separator_element_counter]/,
                             `$regexp $outdirectory/$outfile`
@@ -619,7 +607,7 @@ sub parse_regexp_hash_and_collect {
                         ## Then split should have been successful
                         if (
                             defined(
-                                $qc_program_data_href->{$program}{$regexp_key}
+                                $qc_recipe_data_href->{$recipe}{$regexp_key}
                                   {$regexp_header_key}[1]
                             )
                           )
@@ -636,7 +624,7 @@ sub parse_regexp_hash_and_collect {
             ##For info contained in Entry --> Value i.e. same line.
 
             ## The regular expression used to collect info
-            $regexp = $regexp_href->{$program}{$regexp_key};
+            $regexp = $regexp_href->{$recipe}{$regexp_key};
 
             ## Loop through possible separators
           SEPARATOR:
@@ -648,18 +636,13 @@ sub parse_regexp_hash_and_collect {
             {
 
                 ## Collect data. Use regexp_key as element header
-                @{ $qc_program_data_href->{$program}{$regexp_key} } = split(
+                @{ $qc_recipe_data_href->{$recipe}{$regexp_key} } = split(
                     /$separators[$separator_element_counter]/,
                     `$regexp $outdirectory/$outfile`
                 );
 
                 ## Then split should have been successful
-                if (
-                    defined(
-                        $qc_program_data_href->{$program}{$regexp_key}[1]
-                    )
-                  )
-                {
+                if ( defined( $qc_recipe_data_href->{$recipe}{$regexp_key}[1] ) ) {
 
                     ## Found correct separator do not continue
                     last SEPARATOR;
@@ -675,11 +658,11 @@ sub add_to_qc_data {
 ## Function  : Add to qc_data hash to enable write to yaml format
 ## Returns   :
 ## Arguments : $evaluate_plink_gender => Evaluate plink gender
-##           : $infile                => Infile to program
-##           : $program               => Program to examine
+##           : $infile                => Infile to recipe
+##           : $recipe                => Recipe to examine
 ##           : $qc_data_href          => QCData hash {REF}
 ##           : $qc_header_href        => Save header(s) in each outfile {REF}
-##           : $qc_program_data_href  => Hash to save data in each outfile {REF}
+##           : $qc_recipe_data_href   => Hash to save data in each outfile {REF}
 ##           : $regexp_href           => RegExp hash {REF}
 ##           : $sample_id             => SampleID
 ##           : $sample_info_href      => Info on samples and family hash {REF}
@@ -689,10 +672,10 @@ sub add_to_qc_data {
     ## Flatten argument(s)
     my $evaluate_plink_gender;
     my $infile;
-    my $program;
+    my $recipe;
     my $qc_data_href;
     my $qc_header_href;
-    my $qc_program_data_href;
+    my $qc_recipe_data_href;
     my $regexp_href;
     my $sample_id;
     my $sample_info_href;
@@ -703,11 +686,11 @@ sub add_to_qc_data {
             store       => \$evaluate_plink_gender,
             strict_type => 1,
         },
-        infile  => { store => \$infile, strict_type => 1, },
-        program => {
+        infile => { store => \$infile, strict_type => 1, },
+        recipe => {
             defined     => 1,
             required    => 1,
-            store       => \$program,
+            store       => \$recipe,
             strict_type => 1,
         },
         qc_data_href => {
@@ -724,11 +707,11 @@ sub add_to_qc_data {
             store       => \$qc_header_href,
             strict_type => 1,
         },
-        qc_program_data_href => {
+        qc_recipe_data_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$qc_program_data_href,
+            store       => \$qc_recipe_data_href,
             strict_type => 1,
         },
         regexp_href => {
@@ -751,38 +734,34 @@ sub add_to_qc_data {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
   REGEXP:
-    for my $regexp_key ( keys %{ $regexp_href->{$program} } ) {
+    for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
 
         ## For info contained in entry --> Value i.e. same line
         if ( $regexp_key !~ /^header|header$/i ) {
 
             ## Enable seperation of writing array or key-->value in qc_data
-            if (
-                scalar( @{ $qc_program_data_href->{$program}{$regexp_key} } )
-                == 1 )
-            {
+            if ( scalar( @{ $qc_recipe_data_href->{$recipe}{$regexp_key} } ) == 1 ) {
 
                 if ( ($sample_id) && ($infile) ) {
 
                     ## key-->value for sample_id
-                    $qc_data_href->{sample}{$sample_id}{$infile}{$program}
-                      {$regexp_key} =
-                      $qc_program_data_href->{$program}{$regexp_key}[0];
+                    $qc_data_href->{sample}{$sample_id}{$infile}{$recipe}{$regexp_key} =
+                      $qc_recipe_data_href->{$recipe}{$regexp_key}[0];
                 }
                 else {
                     ## Family level
 
                     ## key-->value for familyID
-                    $qc_data_href->{program}{$program}{$regexp_key} =
-                      $qc_program_data_href->{$program}{$regexp_key}[0];
+                    $qc_data_href->{recipe}{$recipe}{$regexp_key} =
+                      $qc_recipe_data_href->{$recipe}{$regexp_key}[0];
                 }
 
                 ## Check gender for sample_id
-                if ( $program eq q{chanjo_sexcheck} ) {
+                if ( $recipe eq q{chanjo_sexcheck} ) {
 
                     ## Array_ref
                     my $chanjo_sexcheck =
-                      @{ $qc_program_data_href->{$program}{$regexp_key} }[0];
+                      @{ $qc_recipe_data_href->{$recipe}{$regexp_key} }[0];
 
                     ## Check that assumed gender is supported by coverage on chrX and chrY
                     _chanjo_gender_check(
@@ -801,40 +780,35 @@ sub add_to_qc_data {
 
                 for (
                     my $regexp_key_counter = 0 ;
-                    $regexp_key_counter < scalar(
-                        @{ $qc_program_data_href->{$program}{$regexp_key} }
-                    ) ;
+                    $regexp_key_counter <
+                    scalar( @{ $qc_recipe_data_href->{$recipe}{$regexp_key} } ) ;
                     $regexp_key_counter++
                   )
                 {
 
                     if ( ($sample_id) && ($infile) ) {
 
-                        $qc_data_href->{sample}{$sample_id}{$infile}{$program}
+                        $qc_data_href->{sample}{$sample_id}{$infile}{$recipe}
                           {$regexp_key}[$regexp_key_counter] =
-                          $qc_program_data_href->{$program}{$regexp_key}
+                          $qc_recipe_data_href->{$recipe}{$regexp_key}
                           [$regexp_key_counter];
 
                     }
                     else {
 
-                        $qc_data_href->{program}{$program}{$regexp_key}
-                          [$regexp_key_counter] =
-                          $qc_program_data_href->{$program}{$regexp_key}
+                        $qc_data_href->{recipe}{$recipe}{$regexp_key}[$regexp_key_counter]
+                          = $qc_recipe_data_href->{$recipe}{$regexp_key}
                           [$regexp_key_counter];
                     }
                     ## Check gender for sample_id
-                    if (   $program eq q{plink_sexcheck}
+                    if (   $recipe eq q{plink_sexcheck}
                         && $evaluate_plink_gender )
                     {
 
                         ## Array ref
-                        my @sexchecks = split(
-                            q{:},
-                            @{
-                                $qc_program_data_href->{$program}{$regexp_key}
-                            }[$regexp_key_counter]
-                        );
+                        my @sexchecks = split( q{:},
+                            @{ $qc_recipe_data_href->{$recipe}{$regexp_key} }
+                              [$regexp_key_counter] );
 
                         ## Check that assumed gender is supported by variants on chrX and chrY
                         plink_gender_check(
@@ -849,15 +823,10 @@ sub add_to_qc_data {
                 }
                 if (
                     defined(
-                        $qc_data_href->{program}{relation_check}
-                          {sample_relation_check}
+                        $qc_data_href->{recipe}{relation_check}{sample_relation_check}
                     )
                     && (
-                        defined(
-                            $qc_data_href->{program}{pedigree_check}
-                              {sample_order}
-                        )
-                    )
+                        defined( $qc_data_href->{recipe}{pedigree_check}{sample_order} ) )
                   )
                 {
 
@@ -866,13 +835,11 @@ sub add_to_qc_data {
                             sample_info_href        => $sample_info_href,
                             qc_data_href            => $qc_data_href,
                             relationship_values_ref => \@{
-                                $qc_data_href->{program}{relation_check}
+                                $qc_data_href->{recipe}{relation_check}
                                   {sample_relation_check}
                             },
-                            sample_orders_ref => \@{
-                                $qc_data_href->{program}{pedigree_check}
-                                  {sample_order}
-                            },
+                            sample_orders_ref =>
+                              \@{ $qc_data_href->{recipe}{pedigree_check}{sample_order} },
                         }
                     );
                 }
@@ -882,13 +849,13 @@ sub add_to_qc_data {
             ## Paragraf data i.e. header and subsequent data lines
 
           HEADER_INFO:
-            for my $regexp_header_key (
-                keys %{ ${$qc_header_href}{$program}{$regexp_key} } )
+            for
+              my $regexp_header_key ( keys %{ ${$qc_header_href}{$recipe}{$regexp_key} } )
             {
 
               PARAGRAPH_KEYS:
-                for my $regexp_key_header (
-                    keys %{ $regexp_href->{$program}{$regexp_key} } )
+                for
+                  my $regexp_key_header ( keys %{ $regexp_href->{$recipe}{$regexp_key} } )
                 {
                     ## All paragraf keys (header and data line(s))
 
@@ -900,7 +867,7 @@ sub add_to_qc_data {
                             my $qc_headers_counter = 0 ;
                             $qc_headers_counter < scalar(
                                 @{
-                                    ${$qc_header_href}{$program}{$regexp_key}
+                                    ${$qc_header_href}{$recipe}{$regexp_key}
                                       {$regexp_header_key}
                                 }
                             ) ;
@@ -912,26 +879,21 @@ sub add_to_qc_data {
 
                                 ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
                                 $qc_data_href->{sample}{$sample_id}{$infile}
-                                  {$program}{$regexp_header_key}
-                                  {$regexp_key_header}
-                                  { ${$qc_header_href}{$program}{$regexp_key}
-                                      {$regexp_header_key}[$qc_headers_counter]
-                                  } =
-                                  $qc_program_data_href->{$program}
-                                  {$regexp_key}{$regexp_key_header}
-                                  [$qc_headers_counter];
+                                  {$recipe}{$regexp_header_key}{$regexp_key_header}
+                                  { ${$qc_header_href}{$recipe}{$regexp_key}
+                                      {$regexp_header_key}[$qc_headers_counter] } =
+                                  $qc_recipe_data_href->{$recipe}
+                                  {$regexp_key}{$regexp_key_header}[$qc_headers_counter];
                             }
                             else {
 
                                 ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
-                                $qc_data_href->{$program}{$regexp_header_key}
+                                $qc_data_href->{$recipe}{$regexp_header_key}
                                   {$regexp_key_header}
-                                  { ${$qc_header_href}{$program}{$regexp_key}
-                                      {$regexp_header_key}[$qc_headers_counter]
-                                  } =
-                                  $qc_program_data_href->{$program}
-                                  {$regexp_key}{$regexp_key_header}
-                                  [$qc_headers_counter];
+                                  { ${$qc_header_href}{$recipe}{$regexp_key}
+                                      {$regexp_header_key}[$qc_headers_counter] } =
+                                  $qc_recipe_data_href->{$recipe}
+                                  {$regexp_key}{$regexp_key_header}[$qc_headers_counter];
 
                             }
                         }
@@ -945,7 +907,7 @@ sub add_to_qc_data {
 
 sub define_evaluate_metric {
 
-## Function  : Sets programs and program metrics and thresholds to be evaluated
+## Function  : Sets recipes and recipe metrics and thresholds to be evaluated
 ## Returns   :
 ## Arguments : $sample_info_href => Info on samples and family hash {REF}
 ##           : $sample_id        => Sample ID
@@ -977,21 +939,20 @@ sub define_evaluate_metric {
     $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} = 95;
     $evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_10X}{lt} =
       0.95;
-    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}
-      {lt} = 0.95;
+    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} = 0.95;
     $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_ADAPTER}{gt} =
       0.0005;
     $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} = 0.2;
 
     if ( exists $sample_info_href->{sample}{$sample_id}{expected_coverage} ) {
 
-        $evaluate_metric{$sample_id}{collecthsmetrics}{MEAN_TARGET_COVERAGE}{lt}
-          = $sample_info_href->{sample}{$sample_id}{expected_coverage};
+        $evaluate_metric{$sample_id}{collecthsmetrics}{MEAN_TARGET_COVERAGE}{lt} =
+          $sample_info_href->{sample}{$sample_id}{expected_coverage};
     }
 
     $evaluate_metric{mendel}{fraction_of_errors}{gt} = 0.06;
-    $evaluate_metric{father}{fraction_of_common_variants}{lt}
-      = 0.55;
+    $evaluate_metric{father}{fraction_of_common_variants}{lt} =
+      0.55;
 
     return;
 }
@@ -1028,27 +989,26 @@ sub evaluate_qc_parameters {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-  PROGRAM:
-    for my $program ( keys %{ $qc_data_href->{program} } ) {
+  RECIPE:
+    for my $recipe ( keys %{ $qc_data_href->{recipe} } ) {
 
-        ## Program to be evaluated
-        if ( exists $evaluate_metric_href->{$program} ) {
+        ## Recipe to be evaluated
+        if ( exists $evaluate_metric_href->{$recipe} ) {
 
           METRIC:
-            for my $metric ( keys %{ $qc_data_href->{program}{$program} } ) {
+            for my $metric ( keys %{ $qc_data_href->{recipe}{$recipe} } ) {
 
               FAMILY_LEVEL:
-                if ( exists $evaluate_metric_href->{$program}{$metric} ) {
+                if ( exists $evaluate_metric_href->{$recipe}{$metric} ) {
 
                     check_metric(
                         {
                             qc_data_href => $qc_data_href,
                             reference_metric_href =>
-                              $evaluate_metric_href->{$program}{$metric},
-                            program => $program,
-                            metric  => $metric,
-                            qc_metric_value =>
-                              $qc_data_href->{program}{$program}{$metric},
+                              $evaluate_metric_href->{$recipe}{$metric},
+                            recipe          => $recipe,
+                            metric          => $metric,
+                            qc_metric_value => $qc_data_href->{recipe}{$recipe}{$metric},
                         }
                     );
 
@@ -1084,23 +1044,20 @@ sub evaluate_qc_parameters {
                 next INFILE;
             }
 
-          PROGRAM:
-            for my $program (
-                keys %{ $qc_data_href->{sample}{$sample_id}{$infile} } )
-            {
+          RECIPE:
+            for my $recipe ( keys %{ $qc_data_href->{sample}{$sample_id}{$infile} } ) {
 
-                ## Program to be evaluated
-                if ( exists $evaluate_metric_href->{$sample_id}{$program} ) {
+                ## Recipe to be evaluated
+                if ( exists $evaluate_metric_href->{$sample_id}{$recipe} ) {
 
                   METRIC:
                     for my $metric (
-                        keys %{ $evaluate_metric_href->{$sample_id}{$program} }
-                      )
+                        keys %{ $evaluate_metric_href->{$sample_id}{$recipe} } )
                     {
 
                         if (
                             exists $qc_data_href->{sample}{$sample_id}{$infile}
-                            {$program}{$metric} )
+                            {$recipe}{$metric} )
                         {
 
                             check_metric(
@@ -1108,12 +1065,12 @@ sub evaluate_qc_parameters {
                                     qc_data_href => $qc_data_href,
                                     reference_metric_href =>
                                       $evaluate_metric_href->{$sample_id}
-                                      {$program}{$metric},
-                                    program => $program,
-                                    metric  => $metric,
+                                      {$recipe}{$metric},
+                                    recipe => $recipe,
+                                    metric => $metric,
                                     qc_metric_value =>
                                       $qc_data_href->{sample}{$sample_id}
-                                      {$infile}{$program}{$metric},
+                                      {$infile}{$recipe}{$metric},
                                 }
                             );
                         }
@@ -1121,21 +1078,21 @@ sub evaluate_qc_parameters {
 
                             if (
                                 exists $qc_data_href->{sample}{$sample_id}
-                                {$infile}{$program}{header} )
+                                {$infile}{$recipe}{header} )
                             {
 
                               HEADER:
                                 for my $data_header (
                                     keys %{
                                         $qc_data_href->{sample}{$sample_id}
-                                          {$infile}{$program}{header}
+                                          {$infile}{$recipe}{header}
                                     }
                                   )
                                 {
 
                                     if (
                                         exists $qc_data_href->{sample}
-                                        {$sample_id}{$infile}{$program}{header}
+                                        {$sample_id}{$infile}{$recipe}{header}
                                         {$data_header}{$metric} )
                                     {
 
@@ -1143,15 +1100,13 @@ sub evaluate_qc_parameters {
                                             {
                                                 qc_data_href => $qc_data_href,
                                                 reference_metric_href =>
-                                                  $evaluate_metric_href
-                                                  ->{$sample_id}{$program}
-                                                  {$metric},
-                                                program => $program,
-                                                metric  => $metric,
+                                                  $evaluate_metric_href->{$sample_id}
+                                                  {$recipe}{$metric},
+                                                recipe => $recipe,
+                                                metric => $metric,
                                                 qc_metric_value =>
                                                   $qc_data_href->{sample}
-                                                  {$sample_id}{$infile}
-                                                  {$program}{header}
+                                                  {$sample_id}{$infile}{$recipe}{header}
                                                   {$data_header}{$metric},
                                             }
                                         );
@@ -1173,7 +1128,7 @@ sub check_metric {
 ## Returns  :
 ## Arguments: $qc_data_href           => QCData hash {REF}
 ##          : $reference_metric_href  => Metrics to evaluate
-##          : $program                => The program to examine
+##          : $recipe                 => The recipe to examine
 ##          : $metric                 => Metric to evaluate
 ##          : $qc_metric_value        => Qc metric value
 
@@ -1182,7 +1137,7 @@ sub check_metric {
     ## Flatten argument(s)
     my $qc_data_href;
     my $reference_metric_href;
-    my $program;
+    my $recipe;
     my $metric;
     my $qc_metric_value;
 
@@ -1201,10 +1156,8 @@ sub check_metric {
             strict_type => 1,
             store       => \$reference_metric_href
         },
-        program =>
-          { required => 1, defined => 1, strict_type => 1, store => \$program },
-        metric =>
-          { required => 1, defined => 1, strict_type => 1, store => \$metric },
+        recipe => { required => 1, defined => 1, strict_type => 1, store => \$recipe },
+        metric => { required => 1, defined => 1, strict_type => 1, store => \$metric },
         qc_metric_value => {
             required    => 1,
             defined     => 1,
@@ -1222,8 +1175,8 @@ sub check_metric {
         ## Determine status - if lower than add to hash. otherwise PASS and do not include
         if ( $qc_metric_value < $reference_metric_href->{lt} ) {
 
-            $status .= $program . q{_} . $metric . q{:} . $qc_metric_value;
-            push @{ $qc_data_href->{evaluation}{$program} }, $status;
+            $status .= $recipe . q{_} . $metric . q{:} . $qc_metric_value;
+            push @{ $qc_data_href->{evaluation}{$recipe} }, $status;
         }
     }
 
@@ -1232,8 +1185,8 @@ sub check_metric {
         ## Determine status - if greater than add to hash. otherwise PASS and do not include
         if ( $qc_metric_value > $reference_metric_href->{gt} ) {
 
-            $status .= $program . q{_} . $metric . q{:} . $qc_metric_value;
-            push @{ $qc_data_href->{evaluation}{$program} }, $status;
+            $status .= $recipe . q{_} . $metric . q{:} . $qc_metric_value;
+            push @{ $qc_data_href->{evaluation}{$recipe} }, $status;
         }
     }
     return;
@@ -1311,12 +1264,7 @@ sub relation_check {
           splice( @relationship_values, 0, scalar( @{$sample_orders_ref} ) );
 
         ## All columns in .mibs file
-        for (
-            my $column = 0 ;
-            $column < scalar(@$sample_orders_ref) ;
-            $column++
-          )
-        {
+        for ( my $column = 0 ; $column < scalar(@$sample_orders_ref) ; $column++ ) {
 
             ## Store sample_id, family membersID (including self) and each pairwise comparison. Uses array for to accomodate sibling info.
             push(
@@ -1390,10 +1338,7 @@ sub relation_check {
                 { #Should include parent to child and child to siblings unless inbreed parents
 
                     if (
-                        (
-                               ( $sample_id ne $father_id )
-                            && ( $sample_id ne $mother_id )
-                        )
+                        ( ( $sample_id ne $father_id ) && ( $sample_id ne $mother_id ) )
                         || (   ( $members ne $father_id )
                             && ( $members ne $mother_id ) )
                       )
@@ -1428,10 +1373,7 @@ sub relation_check {
 
                         $incorrect_relation++;
                         $qc_data_href->{sample}{$sample_id}{relation_check} =
-                            "FAIL:"
-                          . $sample_id
-                          . " not related to "
-                          . $members . ";";
+                          "FAIL:" . $sample_id . " not related to " . $members . ";";
 
 #print "Incorrect: ".$sample_id,"\t", $members, "\t", $family{$sample_id}{$members}[$members_count], "\n";
                     }
@@ -1593,27 +1535,23 @@ sub plink_gender_check {
         && ( $$sample_id_sex_ref =~ /2|female/ ) )
     {
 
-        push @{ $qc_data_href->{program}{plink_gender_check} },
-          $$sample_id_ref . q{:PASS};
+        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $$sample_id_ref . q{:PASS};
     }
     elsif (( $$plink_sexcheck_gender_ref eq q{1} )
         && ( $$sample_id_sex_ref =~ /1|^male/ ) )
     {
         ## Male
 
-        push @{ $qc_data_href->{program}{plink_gender_check} },
-          $$sample_id_ref . q{:PASS};
+        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $$sample_id_ref . q{:PASS};
     }
     elsif ( $$sample_id_sex_ref =~ /other|unknown/ ) {
         ## Other|Unknown
 
-        push @{ $qc_data_href->{program}{plink_gender_check} },
-          $$sample_id_ref . q{:PASS};
+        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $$sample_id_ref . q{:PASS};
     }
     else {
 
-        push @{ $qc_data_href->{program}{plink_gender_check} },
-          $$sample_id_ref . q{:FAIL};
+        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $$sample_id_ref . q{:FAIL};
     }
     return;
 }
@@ -1659,11 +1597,11 @@ q?perl -nae' if ($_=~/Encoding\s+(\S+\s\S+\s\S+\s\S+|\S+\s\S+)/) { my $encoding 
       q?perl -nae' if ($_=~/Total Sequences\s(\d+)/) {print $1;last;}' ?
       ;    #Collect Total sequences
 
-    $regexp{fastqc}{gc} = q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;last;}' ?
-      ;    #Collect GC content
+    $regexp{fastqc}{gc} =
+      q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;last;}' ?;    #Collect GC content
 
     $regexp{fastqc}{sequence_duplication} =
-q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;last;}' ?
+      q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;last;}' ?
       ;    #Collect Sequence duplication level
 
     $regexp{fastqc}{basic_statistics} =
@@ -1671,15 +1609,15 @@ q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;last;}'
       ;    #Collect Basic Statistics
 
     $regexp{fastqc}{per_base_sequence_quality} =
-q?perl -nae' if ($_=~/>>Per base sequence quality\s+(\S+)/) {print $1;last;}' ?
+      q?perl -nae' if ($_=~/>>Per base sequence quality\s+(\S+)/) {print $1;last;}' ?
       ;    #Collect Per base sequence quality
 
     $regexp{fastqc}{per_sequence_quality_scores} =
-q?perl -nae' if ($_=~/>>Per sequence quality scores\s+(\S+)/) {print $1;last;}' ?
+      q?perl -nae' if ($_=~/>>Per sequence quality scores\s+(\S+)/) {print $1;last;}' ?
       ;    #Collect Per sequence quality scores
 
     $regexp{fastqc}{per_base_sequence_content} =
-q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;last;}' ?
+      q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;last;}' ?
       ;    #Collect Per base sequence content
 
     $regexp{fastqc}{per_base_gc_content} =
@@ -1687,7 +1625,7 @@ q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;last;}' ?
       ;    #Collect Per base GC content
 
     $regexp{fastqc}{per_sequence_gc_content} =
-q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;last;}' ?
+      q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;last;}' ?
       ;    #Collect Per sequence GC content
 
     $regexp{fastqc}{per_base_n_content} =
@@ -1695,11 +1633,11 @@ q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;last;}' ?
       ;    #Collect Per base N content
 
     $regexp{fastqc}{sequence_duplication_levels} =
-q?perl -nae' if ($_=~/>>Sequence Duplication Levels\s+(\S+)/) {print $1;last;}' ?
+      q?perl -nae' if ($_=~/>>Sequence Duplication Levels\s+(\S+)/) {print $1;last;}' ?
       ;    #Collect Sequence Duplication Levels
 
     $regexp{fastqc}{overrepresented_sequences} =
-q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;last;}' ?
+      q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;last;}' ?
       ;    #Collect Overrepresented sequences
 
     $regexp{fastqc}{kmer_content} =
@@ -1745,7 +1683,7 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
 
     $regexp{collecthsmetrics}{header_info}{data} =
       q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?
-      ; #Note return whole line and only look at line 8, where the data action is
+      ;    #Note return whole line and only look at line 8, where the data action is
 
     $regexp{collectmultiplemetrics}{header_info}{header} =
       q?perl -nae' if ($_ =~/^CATEGORY/ ) {print $_;last;}' ?
@@ -1760,8 +1698,7 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
       ;    #Note return whole line (SECOND_OF_PAIR)
 
     $regexp{collectmultiplemetrics}{header_info}{pair} =
-      q?perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  ?
-      ;    #Note return whole line (PAIR)
+      q?perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  ?; #Note return whole line (PAIR)
 
     $regexp{collectmultiplemetricsinsertsize}{header_info}{header} =
       q?perl -nae' if ($_ =~/^MEDIAN_INSERT_SIZE/ ) {print $_;last;}' ?
@@ -1769,7 +1706,7 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
 
     $regexp{collectmultiplemetricsinsertsize}{header_info}{data} =
       q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?
-      ; #Note return whole line and only look at line 8, where the data action is
+      ;    #Note return whole line and only look at line 8, where the data action is
 
     $regexp{variantevalall}{comp_overlap_header}{comp_overlap_header} =
       q?perl -nae' if ($_ =~/^CompOverlap\s+CompRod/ ) {print $_;last;}' ?
@@ -1780,59 +1717,54 @@ q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print
       ;    #Note return whole line
 
     $regexp{variantevalall}{comp_overlap_header}{comp_overlap_data_known} =
-q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/known\s/) ) {print $_;last;}' ?
+      q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/known\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
 
     $regexp{variantevalall}{comp_overlap_header}{comp_overlap_data_novel} =
-q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
+      q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
 
     $regexp{variantevalall}{count_variants_header}{count_variants_header} =
       q?perl -nae' if ($_ =~/^CountVariants\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{count_variants_header}{count_variants_data_all} =
-q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/all\s/) ) {print $_;last;}' ?
+      q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/all\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
     $regexp{variantevalall}{count_variants_header}{count_variants_data_known} =
-q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/known\s/) ) {print $_;last;}' ?
+      q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/known\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
     $regexp{variantevalall}{count_variants_header}{count_variants_data_novel} =
-q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
+      q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
 
     $regexp{variantevalall}{indel_summary_header}{indel_summary_header} =
       q?perl -nae' if ($_ =~/^IndelSummary\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{indel_summary_header}{indel_summary_data_all} =
-q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
+      q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
     $regexp{variantevalall}{indel_summary_header}{indel_summary_data_known} =
-q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?
+      q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
     $regexp{variantevalall}{indel_summary_header}{indel_summary_data_novel} =
-q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
+      q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
 
-    $regexp{variantevalall}{multiallelic_summary_header}
-      {multiallelic_summary_header} =
-q?perl -nae' if ($_ =~/^MultiallelicSummary\s+CompRod/ ) {print $_;last;}' ?
+    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_header} =
+      q?perl -nae' if ($_ =~/^MultiallelicSummary\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
-    $regexp{variantevalall}{multiallelic_summary_header}
-      {multiallelic_summary_data_all} =
+    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_all} =
 q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
-    $regexp{variantevalall}{multiallelic_summary_header}
-      {multiallelic_summary_data_known} =
-q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?
+    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_known}
+      = q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
-    $regexp{variantevalall}{multiallelic_summary_header}
-      {multiallelic_summary_data_novel} =
-q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
+    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_novel}
+      = q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
 
-    $regexp{variantevalall}{titv_variant_evaluator_header}
-      {titv_variant_evaluator_header} =
-q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+CompRod/ ) {print $_;last;}' ?
+    $regexp{variantevalall}{titv_variant_evaluator_header}{titv_variant_evaluator_header}
+      = q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{titv_variant_evaluator_header}
       {titv_variant_evaluator_data_all} =
@@ -1847,19 +1779,16 @@ q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/known\s/) ) {print $_
 q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
 
-    $regexp{variantevalall}{validation_report_header}{validation_report_header}
-      = q?perl -nae' if ($_ =~/^ValidationReport\s+CompRod/ ) {print $_;last;}' ?
+    $regexp{variantevalall}{validation_report_header}{validation_report_header} =
+      q?perl -nae' if ($_ =~/^ValidationReport\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
-    $regexp{variantevalall}{validation_report_header}
-      {validation_report_data_all} =
+    $regexp{variantevalall}{validation_report_header}{validation_report_data_all} =
 q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/all\s/) && ($_ =~/none\s/)) {print $_;last;}' ?
       ;    #Note return whole line
-    $regexp{variantevalall}{validation_report_header}
-      {validation_report_data_known} =
+    $regexp{variantevalall}{validation_report_header}{validation_report_data_known} =
 q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/known\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
-    $regexp{variantevalall}{validation_report_header}
-      {validation_report_data_novel} =
+    $regexp{variantevalall}{validation_report_header}{validation_report_data_novel} =
 q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
 
@@ -1867,13 +1796,13 @@ q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\s/) ) {print $_;las
       q?perl -nae' if ($_ =~/^VariantSummary\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{variant_summary_header}{variant_summary_data_all} =
-q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
+      q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
-    $regexp{variantevalall}{variant_summary_header}{variant_summary_data_known}
-      = q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?
+    $regexp{variantevalall}{variant_summary_header}{variant_summary_data_known} =
+      q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
-    $regexp{variantevalall}{variant_summary_header}{variant_summary_data_novel}
-      = q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
+    $regexp{variantevalall}{variant_summary_header}{variant_summary_data_novel} =
+      q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
       ;    #Note return whole line
 
     $regexp{variantevalexome} = $regexp{variantevalall};
@@ -1911,7 +1840,7 @@ q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;prin
       ;    #Collect varianteffectpredictor assembly
 
     $regexp{varianteffectpredictor}{hgmd_public} =
-q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?
       ;    #Collect varianteffectpredictor HGMD-PUBLIC version
 
     $regexp{varianteffectpredictor}{reg_build} =
@@ -1919,7 +1848,7 @@ q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?
       ;    #Collect varianteffectpredictor regbuild version
 
     $regexp{varianteffectpredictor}{gencode} =
-q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?
       ;    #Collect varianteffectpredictor gencode version
 
     $regexp{vcfparser}{version} =
@@ -1935,8 +1864,7 @@ q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print 
       ;    #Collect Chanjo version
 
     $regexp{vt}{version} =
-      q?perl -nae 'if($_=~/decompose\sv(\S+)/) {print $1;last;}' ?
-      ;    #Collect vt version
+      q?perl -nae 'if($_=~/decompose\sv(\S+)/) {print $1;last;}' ?;    #Collect vt version
 
     $regexp{samtools}{version} =
       q?perl -nae 'if($_=~/samtoolsVersion=(\S+)/) {print $1;last;}' ?
@@ -1951,7 +1879,7 @@ q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print 
       ;    #Collect Freebayes version
 
     $regexp{delly}{version} =
-q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?
+      q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?
       ;    #Collect Delly version
 
     $regexp{manta}{version} =
@@ -1987,7 +1915,7 @@ q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?
       ;    #Collect sv_varianteffectpredictor assembly
 
     $regexp{sv_varianteffectpredictor}{hgmd_public} =
-q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?
       ;    #Collect sv_varianteffectpredictor HGMD-PUBLIC version
 
     $regexp{sv_varianteffectpredictor}{reg_build} =
@@ -1995,7 +1923,7 @@ q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?
       ;    #Collect sv_varianteffectpredictor regbuild version
 
     $regexp{sv_varianteffectpredictor}{gencode} =
-q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?
       ;    #Collect sv_varianteffectpredictor gencode version
 
     $regexp{sv_vcfparser}{version} =
@@ -2029,7 +1957,7 @@ q?perl -nae 'if($_=~/^##source=TIDDIT-(\S+)/) { print $1; last; } else { if($_=~
 q?perl -nae 'if($_=~/^##SVDB_version=(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
 
     $regexp{vcf2cytosure_version}{version} =
-q?perl -nae 'if($_=~/cytosure\s+(\d+[.]\d+[.]\d+)/xsm) { print $1;last; }' ?;
+      q?perl -nae 'if($_=~/cytosure\s+(\d+[.]\d+[.]\d+)/xsm) { print $1;last; }' ?;
 
     ## Writes a YAML hash to file
     write_yaml(

@@ -1,5 +1,6 @@
 package MIP::Get::File;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
@@ -92,9 +93,7 @@ sub get_exom_target_bed_file {
     my %exome_target_bed = %{$exome_target_bed_href};
 
   BED_FILE:
-    while ( my ( $exome_target_bed_file, $sample_id_string ) =
-        each %exome_target_bed )
-    {
+    while ( my ( $exome_target_bed_file, $sample_id_string ) = each %exome_target_bed ) {
 
         my @capture_kit_samples = split $COMMA, $sample_id_string;
 
@@ -194,8 +193,7 @@ sub get_fastq_file_header_info {
 
             # Get features
             my @features =
-              @{ $casava_header_regexp{ $casava_version . q{_header_features} }
-              };
+              @{ $casava_header_regexp{ $casava_version . q{_header_features} } };
 
             # Parse header string into array
             my @fastq_info_headers = split $SPACE, $fastq_info_header_string;
@@ -290,7 +288,7 @@ sub get_io_files {
 ## Arguments: $id             => Id (sample or family)
 ##          : $file_info_href => File info hash {REF}
 ##          : $parameter_href => Parameter hash {REF}
-##          : $program_name   => Program name
+##          : $recipe_name    => Recipe name
 ##          : $stream         => Stream (in or out or temp)
 ##          : $temp_directory => Temporary directory
 
@@ -300,7 +298,7 @@ sub get_io_files {
     my $id;
     my $file_info_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $stream;
     my $temp_directory;
 
@@ -325,10 +323,10 @@ sub get_io_files {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         stream => {
@@ -355,47 +353,41 @@ sub get_io_files {
     Readonly my $CHAIN_MAIN => q{CHAIN_MAIN};
 
     ## Unpack
-    my $chain_id = $parameter_href->{$program_name}{chain};
+    my $chain_id = $parameter_href->{$recipe_name}{chain};
 
     ## Not first in chain - return file features
-    if (
-        Dive(
-            $file_info_href, ( q{io}, $chain_id, $id, $program_name, $stream )
-        )
-      )
-    {
+    if ( Dive( $file_info_href, ( q{io}, $chain_id, $id, $recipe_name, $stream ) ) ) {
 
-        return %{ $file_info_href->{io}{$chain_id}{$id}{$program_name} };
+        return %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
     }
     else {
         ## First in chain - need to find out stream file features of
-        ## correct upstream program
+        ## correct upstream recipe
 
         my $upstream_direction = q{out};
 
         ## Unpack
-        my @order_programs =
-          @{ $parameter_href->{dynamic_parameter}{order_programs_ref} };
+        my @order_recipes =
+          @{ $parameter_href->{dynamic_parameter}{order_recipes_ref} };
 
-        ## Find upstream programs starting from (and not including) program_name
-        my @upstream_programs =
-          reverse before { $_ eq $program_name } @order_programs;
+        ## Find upstream recipes starting from (and not including) recipe_name
+        my @upstream_recipes =
+          reverse before { $_ eq $recipe_name } @order_recipes;
 
-      UPSTREAM_PROGRAM:
-        foreach my $upstream_program (@upstream_programs) {
+      UPSTREAM_RECIPE:
+        foreach my $upstream_recipe (@upstream_recipes) {
 
             # Get chain id
-            my $upstream_chain_id = $parameter_href->{$upstream_program}{chain};
+            my $upstream_chain_id = $parameter_href->{$upstream_recipe}{chain};
 
             ## No io file features found in chain and stream
-            next UPSTREAM_PROGRAM
+            next UPSTREAM_RECIPE
               if (
                 not Dive(
                     $file_info_href,
                     (
-                        q{io}, $upstream_chain_id,
-                        $id,   $upstream_program,
-                        $upstream_direction
+                        q{io},            $upstream_chain_id, $id,
+                        $upstream_recipe, $upstream_direction
                     )
                 )
               );
@@ -404,60 +396,57 @@ sub get_io_files {
             # second in chain
             if ( $upstream_chain_id eq $chain_id ) {
 
-                ## Switch upstream out to program in - i.e. inherit from upstream
+                ## Switch upstream out to recipe in - i.e. inherit from upstream
                 _inherit_upstream_io_files(
                     {
                         chain_id           => $chain_id,
                         id                 => $id,
                         file_info_href     => $file_info_href,
-                        program_name       => $program_name,
+                        recipe_name        => $recipe_name,
                         stream             => $stream,
                         temp_directory     => $temp_directory,
                         upstream_direction => $upstream_direction,
                         upstream_chain_id  => $upstream_chain_id,
-                        upstream_program   => $upstream_program,
+                        upstream_recipe    => $upstream_recipe,
                     }
                 );
 
                 ##  Return set file features
-                return %{ $file_info_href->{io}{$chain_id}{$id}{$program_name}
-                };
+                return %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
             }
 
             ## Do not inherit from other chains than self or MAIN
-            next UPSTREAM_PROGRAM if ( $upstream_chain_id ne q{MAIN} );
+            next UPSTREAM_RECIPE if ( $upstream_chain_id ne q{MAIN} );
 
-            ## Found io file features found in chain, id, program and stream
+            ## Found io file features found in chain, id, recipe and stream
             if (
                 Dive(
                     $file_info_href,
                     (
-                        q{io}, $upstream_chain_id,
-                        $id,   $upstream_program,
-                        $upstream_direction
+                        q{io},            $upstream_chain_id, $id,
+                        $upstream_recipe, $upstream_direction
                     )
                 )
               )
             {
 
-                ## Switch upstream out to program in - i.e. inherit from upstream
+                ## Switch upstream out to recipe in - i.e. inherit from upstream
                 _inherit_upstream_io_files(
                     {
                         chain_id           => $chain_id,
                         id                 => $id,
                         file_info_href     => $file_info_href,
-                        program_name       => $program_name,
+                        recipe_name        => $recipe_name,
                         stream             => $stream,
                         temp_directory     => $temp_directory,
                         upstream_direction => $upstream_direction,
                         upstream_chain_id  => $upstream_chain_id,
-                        upstream_program   => $upstream_program,
+                        upstream_recipe    => $upstream_recipe,
                     }
                 );
 
                 ##  Return set file features
-                return %{ $file_info_href->{io}{$chain_id}{$id}{$program_name}
-                };
+                return %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
             }
         }
     }
@@ -474,12 +463,12 @@ sub get_io_files {
             id             => $id,
             file_paths_ref => \@base_file_paths,
             file_info_href => $file_info_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => $stream,
             temp_directory => $temp_directory,
         }
     );
-    return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id}{$program_name} };
+    return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id}{$recipe_name} };
 }
 
 sub get_matching_values_key {
@@ -567,7 +556,7 @@ sub get_merged_infile_prefix {
 
 sub get_path_entries {
 
-## Function  : Collects all programs outfile path(s) created by MIP as Path->value located in %sample_info.
+## Function  : Collects all recipes outfile path(s) created by MIP as Path->value located in %sample_info.
 ## Returns   :
 ## Arguments : $paths_ref        => Holds the collected paths {REF}
 ##           : $sample_info_href => Info on samples and family hash {REF}
@@ -600,10 +589,10 @@ sub get_path_entries {
     ## Copy hash to enable recursive removal of keys
     my %info = %{$sample_info_href};
 
-    ## Temporary array for collecting outDirectories within the same program
+    ## Temporary array for collecting outdirectories within the same recipe
     my @outdirectories;
 
-    ## Temporary array for collecting outfile within the same program
+    ## Temporary array for collecting outfile within the same recipe
     my @outfiles;
 
   KEY_VALUE_PAIR:
@@ -697,8 +686,7 @@ sub get_read_length {
     # Print and exit
     $seq_length_regexp .= q?print $seq_length;last;}' ?;
 
-    my $read_length_cmd =
-      qq{$read_file_command $file_path | $seq_length_regexp;};
+    my $read_length_cmd = qq{$read_file_command $file_path | $seq_length_regexp;};
 
     my %return = system_cmd_call( { command_string => $read_length_cmd, } );
 
@@ -764,7 +752,7 @@ sub get_select_file_contigs {
     if ( not @contigs ) {
 
         $log->fatal(
-q{Could not detect any '##contig' in meta data header in select file: }
+            q{Could not detect any '##contig' in meta data header in select file: }
               . $select_file_path );
         exit 1;
     }
@@ -829,8 +817,8 @@ sub get_seq_dict_contigs {
 
     if ( not @contigs ) {
 
-        $log->fatal( q{Could not detect any 'SN:contig_names' in dict file: }
-              . $dict_file_path );
+        $log->fatal(
+            q{Could not detect any 'SN:contig_names' in dict file: } . $dict_file_path );
         exit 1;
     }
     return @contigs;
@@ -852,8 +840,7 @@ sub _check_and_add_to_array {
     my $value;
 
     my $tmpl = {
-        key =>
-          { defined => 1, required => 1, store => \$key, strict_type => 1, },
+        key       => { defined => 1, required => 1, store => \$key, strict_type => 1, },
         paths_ref => {
             default     => [],
             defined     => 1,
@@ -918,8 +905,7 @@ sub _collect_outfile {
             strict_type => 1,
         },
         value => { defined => 1, required => 1, store => \$value, },
-        key =>
-          { defined => 1, store => \$key, required => 1, strict_type => 1, },
+        key => { defined => 1, store => \$key, required => 1, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -941,8 +927,7 @@ sub _collect_outfile {
         ## Do not add same path twice
         if ( not any { $_ eq $path } @{$paths_ref} ) {
 
-            push @{$paths_ref},
-              catfile( $outdirectories_ref->[0], $outfiles_ref->[0] );
+            push @{$paths_ref}, catfile( $outdirectories_ref->[0], $outfiles_ref->[0] );
 
             ## Restart
             @{$outdirectories_ref} = ();
@@ -954,17 +939,17 @@ sub _collect_outfile {
 
 sub _inherit_upstream_io_files {
 
-## Function : Switch upstream out to program in - i.e. inherit from upstream
+## Function : Switch upstream out to recipe in - i.e. inherit from upstream
 ## Returns  : %io
 ## Arguments: $chain_id           => Chain id
 ##          : $id                 => Id (sample or family)
 ##          : $file_info_href     => File info hash {REF}
-##          : $program_name       => Program name
+##          : $recipe_name        => Recipe name
 ##          : $stream             => Stream (in or out or temp)
 ##          : $temp_directory     => Temporary directory
 ##          : $upstream_direction => Upstream direction
 ##          : $upstream_chain_id  => Upstream chain id
-##          : $upstream_program   => Upstream program
+##          : $upstream_recipe    => Upstream recipe
 
     my ($arg_href) = @_;
 
@@ -972,12 +957,12 @@ sub _inherit_upstream_io_files {
     my $chain_id;
     my $id;
     my $file_info_href;
-    my $program_name;
+    my $recipe_name;
     my $stream;
     my $temp_directory;
     my $upstream_direction;
     my $upstream_chain_id;
-    my $upstream_program;
+    my $upstream_recipe;
 
     my $tmpl = {
         chain_id => {
@@ -999,10 +984,10 @@ sub _inherit_upstream_io_files {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         stream => {
@@ -1028,27 +1013,27 @@ sub _inherit_upstream_io_files {
             store       => \$upstream_chain_id,
             strict_type => 1,
         },
-        upstream_program => {
+        upstream_recipe => {
             defined     => 1,
             required    => 1,
-            store       => \$upstream_program,
+            store       => \$upstream_recipe,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Switch upstream out to program in - i.e. inherit from upstream
+    ## Switch upstream out to recipe in - i.e. inherit from upstream
     my @upstream_outfile_paths =
       @{ $file_info_href->{io}{$upstream_chain_id}{$id}
-          {$upstream_program}{$upstream_direction}{file_paths} };
+          {$upstream_recipe}{$upstream_direction}{file_paths} };
     set_io_files(
         {
             chain_id       => $chain_id,
             id             => $id,
             file_paths_ref => \@upstream_outfile_paths,
             file_info_href => $file_info_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => $stream,
             temp_directory => $temp_directory,
         }

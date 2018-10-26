@@ -1,5 +1,6 @@
 package MIP::Recipes::Pipeline::Rd_rna;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -45,7 +46,7 @@ sub pipeline_rd_rna {
 ##          : $job_id_href                     => Job id hash {REF}
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
-##          : $order_programs_ref              => Execution order of programs {REF}
+##          : $order_recipes_ref               => Execution order of recipes {REF}
 ##          : $parameter_href                  => Parameter hash {REF}
 ##          : $sample_info_href                => Info on samples and family hash {REF}
 
@@ -60,7 +61,7 @@ sub pipeline_rd_rna {
     my $job_id_href;
     my $log;
     my $order_parameters_ref;
-    my $order_programs_ref;
+    my $order_recipes_ref;
     my $parameter_href;
     my $sample_info_href;
 
@@ -119,11 +120,11 @@ sub pipeline_rd_rna {
             store       => \$order_parameters_ref,
             strict_type => 1,
         },
-        order_programs_ref => {
+        order_recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$order_programs_ref,
+            store       => \$order_recipes_ref,
             strict_type => 1,
         },
         parameter_href => {
@@ -147,7 +148,7 @@ sub pipeline_rd_rna {
     use MIP::Check::Pipeline qw{ check_rd_rna };
 
     ## Recipes
-    use MIP::Log::MIP_log4perl qw{ log_display_program_for_user };
+    use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
     use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
@@ -221,37 +222,37 @@ sub pipeline_rd_rna {
         star_fusion               => \&analysis_star_fusion,
     );
 
-  PROGRAM:
-    foreach my $program ( @{$order_programs_ref} ) {
+  RECIPE:
+    foreach my $recipe ( @{$order_recipes_ref} ) {
 
-        ## Skip not active programs
-        next PROGRAM if ( not $active_parameter_href->{$program} );
+        ## Skip not active recipes
+        next RECIPE if ( not $active_parameter_href->{$recipe} );
 
-        ## Skip program if not part of dispatch table (such as gzip fastq)
-        next PROGRAM if ( not $analysis_recipe{$program} );
+        ## Skip recipe if not part of dispatch table (such as gzip fastq)
+        next RECIPE if ( not $analysis_recipe{$recipe} );
 
         ## For displaying
-        log_display_program_for_user(
+        log_display_recipe_for_user(
             {
-                log     => $log,
-                program => $program,
+                log    => $log,
+                recipe => $recipe,
             }
         );
 
         ## Sample mode
-        if ( $parameter_href->{$program}{analysis_mode} eq q{sample} ) {
+        if ( $parameter_href->{$recipe}{analysis_mode} eq q{sample} ) {
 
           SAMPLE:
             foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-                $analysis_recipe{$program}->(
+                $analysis_recipe{$recipe}->(
                     {
                         active_parameter_href   => $active_parameter_href,
                         file_info_href          => $file_info_href,
                         infile_lane_prefix_href => $infile_lane_prefix_href,
                         job_id_href             => $job_id_href,
                         parameter_href          => $parameter_href,
-                        program_name            => $program,
+                        recipe_name             => $recipe,
                         sample_id               => $sample_id,
                         sample_info_href        => $sample_info_href,
                     }
@@ -259,16 +260,16 @@ sub pipeline_rd_rna {
             }
         }
         ## Family mode
-        elsif ( $parameter_href->{$program}{analysis_mode} eq q{family} ) {
+        elsif ( $parameter_href->{$recipe}{analysis_mode} eq q{family} ) {
 
-            $analysis_recipe{$program}->(
+            $analysis_recipe{$recipe}->(
                 {
                     active_parameter_href   => $active_parameter_href,
                     file_info_href          => $file_info_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
                     parameter_href          => $parameter_href,
-                    program_name            => $program,
+                    recipe_name             => $recipe,
                     sample_info_href        => $sample_info_href,
                 }
             );

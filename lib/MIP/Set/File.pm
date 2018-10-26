@@ -116,7 +116,7 @@ sub set_file_compression_features {
 
 sub set_file_prefix_tag {
 
-## Function : Set the file tag depending on active programs.
+## Function : Set the file tag depending on active recipes.
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $current_chain         => Name of current chain
@@ -124,7 +124,7 @@ sub set_file_prefix_tag {
 ##          : $file_tag              => File tag to set
 ##          : $file_info_href        => Info on files hash {REF}
 ##          : $id                    => To change id for
-##          : $program_name          => Program to add file tag for
+##          : $recipe_name           => Recipe to add file tag for
 ##          : $temp_file_ending_href => Store sequential build of file tag
 
     my ($arg_href) = @_;
@@ -135,7 +135,7 @@ sub set_file_prefix_tag {
     my $file_tag;
     my $file_info_href;
     my $id;
-    my $program_name;
+    my $recipe_name;
     my $temp_file_ending_href;
 
     my $tmpl = {
@@ -171,10 +171,10 @@ sub set_file_prefix_tag {
             store       => \$id,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         temp_file_ending_href => {
@@ -188,8 +188,8 @@ sub set_file_prefix_tag {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## File_ending should be added for this program
-    if ( $active_parameter_href->{$program_name} ) {
+    ## File_ending should be added for this recipe
+    if ( $active_parameter_href->{$recipe_name} ) {
 
         _inherit_chain_main(
             {
@@ -202,23 +202,23 @@ sub set_file_prefix_tag {
         if ( defined $temp_file_ending_href->{$current_chain}{$id} ) {
 
             ## Add new file tag to build-up
-            $file_info_href->{$id}{$program_name}{file_tag} =
+            $file_info_href->{$id}{$recipe_name}{file_tag} =
               $temp_file_ending_href->{$current_chain}{$id} . $file_tag;
         }
         else {
-            ## First module that should add filending
+            ## First recipe that should add filending
 
-            $file_info_href->{$id}{$program_name}{file_tag} = $file_tag;
+            $file_info_href->{$id}{$recipe_name}{file_tag} = $file_tag;
         }
     }
     else {
-        ## Do not add module file_tag for this program but for previous programs
+        ## Do not add recipe file_tag for this recipe but for previous recipes
 
-        $file_info_href->{$id}{$program_name}{file_tag} =
+        $file_info_href->{$id}{$recipe_name}{file_tag} =
           $temp_file_ending_href->{$current_chain}{$id};
     }
 
-    return $file_info_href->{$id}{$program_name}{file_tag};
+    return $file_info_href->{$id}{$recipe_name}{file_tag};
 }
 
 sub _inherit_chain_main {
@@ -260,7 +260,7 @@ sub _inherit_chain_main {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Check if branch and first program on branch
+    ## Check if branch and first recipe on branch
     if ( $current_chain ne q{MAIN}
         and not defined $temp_file_ending_href->{$current_chain}{$id} )
     {
@@ -336,6 +336,7 @@ sub set_io_files {
 ##          : $id             => Id (sample or family)
 ##          : $file_info_href => File info hash {REF}
 ##          : $file_paths_ref => File paths {REF}
+##          : $recipe_name    => Recipe name
 ##          : $stream         => Stream (in or out or temp)
 ##          : $temp_directory => Temporary directory
 
@@ -346,7 +347,7 @@ sub set_io_files {
     my $id;
     my $file_info_href;
     my $file_paths_ref;
-    my $program_name;
+    my $recipe_name;
     my $stream;
     my $temp_directory;
 
@@ -377,10 +378,10 @@ sub set_io_files {
             store       => \$file_paths_ref,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         stream => {
@@ -399,11 +400,11 @@ sub set_io_files {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Alias
-    my $io_program_href =
-      \%{ $file_info_href->{io}{$chain_id}{$id}{$program_name} };
+    my $io_recipe_href =
+      \%{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
 
     ## Delete previous record (if any)
-    delete $io_program_href->{$stream};
+    delete $io_recipe_href->{$stream};
 
   FILE_PATH:
     foreach my $file_path ( @{$file_paths_ref} ) {
@@ -411,25 +412,24 @@ sub set_io_files {
         my ( $file_name_prefix, $dirs, $suffix ) =
           fileparse( $file_path, qr/([.][^.]*)*/sxm );
 
-        push @{ $io_program_href->{$stream}{file_names} }, basename($file_path);
-        push @{ $io_program_href->{$stream}{file_name_prefixes} },
-          $file_name_prefix;
-        push @{ $io_program_href->{$stream}{file_paths} }, $file_path;
-        push @{ $io_program_href->{$stream}{file_path_prefixes} },
+        push @{ $io_recipe_href->{$stream}{file_names} },         basename($file_path);
+        push @{ $io_recipe_href->{$stream}{file_name_prefixes} }, $file_name_prefix;
+        push @{ $io_recipe_href->{$stream}{file_paths} },         $file_path;
+        push @{ $io_recipe_href->{$stream}{file_path_prefixes} },
           catfile( $dirs, $file_name_prefix );
 
         ## Collect everything after first dot
-        push @{ $io_program_href->{$stream}{file_suffixes} }, $suffix;
+        push @{ $io_recipe_href->{$stream}{file_suffixes} }, $suffix;
     }
 
-    if ( scalar @{ $io_program_href->{$stream}{file_suffixes} } ) {
+    if ( scalar @{ $io_recipe_href->{$stream}{file_suffixes} } ) {
 
         _set_io_files_hash(
             {
                 chain_id       => $chain_id,
                 file_info_href => $file_info_href,
                 id             => $id,
-                program_name   => $program_name,
+                recipe_name    => $recipe_name,
                 stream         => $stream,
             }
         );
@@ -440,21 +440,21 @@ sub set_io_files {
     my ( $infile_path_volume, $file_path_directory, $file_path_file_name ) =
       splitpath( $file_paths_ref->[0] );
 
-    $io_program_href->{$stream}{dir_path} = $file_path_directory;
-    $io_program_href->{$stream}{dir_path_prefix} =
+    $io_recipe_href->{$stream}{dir_path} = $file_path_directory;
+    $io_recipe_href->{$stream}{dir_path_prefix} =
       dirname( $file_paths_ref->[0] );
 
     ## Collect everything after last dot
     my ( $filename, $dirs, $suffix ) =
       fileparse( $file_paths_ref->[0], qr/[.][^.]*/sxm );
-    $io_program_href->{$stream}{file_suffix} = $suffix;
+    $io_recipe_href->{$stream}{file_suffix} = $suffix;
 
     _set_io_files_constant(
         {
             chain_id       => $chain_id,
             file_info_href => $file_info_href,
             id             => $id,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => $stream,
         }
     );
@@ -465,7 +465,7 @@ sub set_io_files {
         ## Switch to temp dir for path
         my @file_paths_temp =
           map { catfile( $temp_directory, $_ ) }
-          @{ $io_program_href->{$stream}{file_names} };
+          @{ $io_recipe_href->{$stream}{file_names} };
 
         set_io_files(
             {
@@ -473,7 +473,7 @@ sub set_io_files {
                 id             => $id,
                 file_paths_ref => \@file_paths_temp,
                 file_info_href => $file_info_href,
-                program_name   => $program_name,
+                recipe_name    => $recipe_name,
                 stream         => q{temp},
             }
         );
@@ -541,7 +541,7 @@ sub _set_io_files_constant {
     my $chain_id;
     my $id;
     my $file_info_href;
-    my $program_name;
+    my $recipe_name;
     my $stream;
 
     my $tmpl = {
@@ -564,10 +564,10 @@ sub _set_io_files_constant {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         stream => {
@@ -582,8 +582,8 @@ sub _set_io_files_constant {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Alias
-    my $io_program_href =
-      \%{ $file_info_href->{io}{$chain_id}{$id}{$program_name} };
+    my $io_recipe_href =
+      \%{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
 
     my %constant_map = (
         file_name_prefixes => q{file_name_prefix},
@@ -592,18 +592,17 @@ sub _set_io_files_constant {
         file_suffixes      => q{file_constant_suffix},
     );
 
-    while ( my ( $file_feature, $file_constant_feature ) = each %constant_map )
-    {
+    while ( my ( $file_feature, $file_constant_feature ) = each %constant_map ) {
 
         ## Get unique suffixes
         my @uniq_elements =
-          uniq( @{ $io_program_href->{$stream}{$file_feature} } );
+          uniq( @{ $io_recipe_href->{$stream}{$file_feature} } );
 
         ## If unique
         if ( scalar @uniq_elements == 1 ) {
 
             ## Set file constant suffix
-            $io_program_href->{$stream}{$file_constant_feature} =
+            $io_recipe_href->{$stream}{$file_constant_feature} =
               $uniq_elements[0];
         }
     }
@@ -612,12 +611,13 @@ sub _set_io_files_constant {
 
 sub _set_io_files_hash {
 
-## Function : Set the io hash files per chain, id, program and stream
+## Function : Set the io hash files per chain, id, recipe and stream
 ## Returns  : io
 ## Arguments: $chain_id       => Chain of recipe
 ##          : $id             => Id (sample or family)
 ##          : $file_info_href => File info hash {REF}
 ##          : $file_paths_ref => File paths {REF}
+##          : $recipe_name    => Recipe name
 ##          : $stream         => Stream (in or out or temp)
 
     my ($arg_href) = @_;
@@ -627,7 +627,7 @@ sub _set_io_files_hash {
     my $id;
     my $file_info_href;
     my $file_paths_ref;
-    my $program_name;
+    my $recipe_name;
     my $stream;
 
     my $tmpl = {
@@ -650,10 +650,10 @@ sub _set_io_files_hash {
             store       => \$file_info_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         stream => {
@@ -668,8 +668,8 @@ sub _set_io_files_hash {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Alias
-    my $io_program_href =
-      \%{ $file_info_href->{io}{$chain_id}{$id}{$program_name} };
+    my $io_recipe_href =
+      \%{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
 
     my %file_map = (
         file_names => q{file_name_href},
@@ -681,17 +681,17 @@ sub _set_io_files_hash {
 
       SUFFIX:
         while ( my ( $file_index, $suffix ) =
-            each @{ $io_program_href->{$stream}{file_suffixes} } )
+            each @{ $io_recipe_href->{$stream}{file_suffixes} } )
         {
 
-            my $file = $io_program_href->{$stream}{$array_key}[$file_index];
+            my $file = $io_recipe_href->{$stream}{$array_key}[$file_index];
 
             ## Find iterator string between dots
             my ($iterator) = $suffix =~ /[.]([^.]+)[.]/sxm;
 
             if ($iterator) {
 
-                $io_program_href->{$stream}{$hash_key}{$iterator} = $file;
+                $io_recipe_href->{$stream}{$hash_key}{$iterator} = $file;
             }
         }
     }

@@ -48,11 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -176,26 +172,26 @@ sub build_usage {
 
 ##Function : Build the USAGE instructions
 ##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
+##Arguments: $recipe_name
+##         : $recipe_name => Name of the script
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $program_name;
+    my $recipe_name;
 
     my $tmpl = {
-        program_name => {
+        recipe_name => {
             default     => basename($PROGRAM_NAME),
             strict_type => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
     return <<"END_USAGE";
- $program_name [options]
+ $recipe_name [options]
     -vb/--verbose Verbose
     -h/--help Display this help message
     -v/--version Display version

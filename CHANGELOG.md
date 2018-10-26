@@ -9,8 +9,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added initiation_maps for pipeline engine
 - Changed output data dir structure to flat for each ID
 - Removed call type value in file names
-- Removed use of "p" before program names
-- Add check for program when using start_with_flag
+- Renamed option `start_with_program` to `start_with_recipe`
+- Removed use of "p" before recipe names
+- Add check for recipe when using start_with_flag
 - Modify parsing of pedigree to allow new RNA DE keys Fix https://github.com/Clinical-Genomics/MIP/issues/554
 - Two-step model for reruns. Fix https://github.com/Clinical-Genomics/MIP/issues/546
 - Add input SV vcf for rd_dna_vcf_rerun to qc_sample_info. Fix https://github.com/Clinical-Genomics/MIP/issues/548

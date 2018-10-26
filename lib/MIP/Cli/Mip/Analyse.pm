@@ -95,7 +95,7 @@ sub _build_usage {
         q{dry_run_all} => (
             cmd_aliases => [qw{ dra }],
             documentation =>
-              q{Sets all programs to dry run mode i.e. no sbatch submission},
+              q{Sets all recipes to dry run mode i.e. no sbatch submission},
             is  => q{rw},
             isa => Bool,
         )
@@ -180,7 +180,7 @@ sub _build_usage {
     option(
         q{module_core_number} => (
             cmd_aliases   => [qw{ mcn }],
-            cmd_tags      => [q{program_name=X(cores)}],
+            cmd_tags      => [q{recipe_name=X(cores)}],
             documentation => q{Set the number of cores for each module},
             is            => q{rw},
             isa           => HashRef,
@@ -190,7 +190,7 @@ sub _build_usage {
     option(
         q{module_time} => (
             cmd_aliases   => [qw{ mot }],
-            cmd_tags      => [q{program_name=time(hours)}],
+            cmd_tags      => [q{recipe_name=time(hours)}],
             documentation => q{Set the time allocation for each module},
             is            => q{rw},
             isa           => HashRef,
@@ -236,18 +236,18 @@ sub _build_usage {
     );
 
     option(
-        q{print_programs} => (
+        q{print_recipes} => (
             cmd_aliases   => [qw{ pp }],
-            documentation => q{Print all programs that are supported},
+            documentation => q{Print all recipes that are supported},
             is            => q{rw},
             isa           => Bool,
         )
     );
 
     option(
-        q{print_program_mode} => (
-            cmd_aliases   => [qw{ ppm }],
-            documentation => q{Print all programs that are supported},
+        q{print_recipe_mode} => (
+            cmd_aliases   => [qw{ prm }],
+            documentation => q{Print all recipes that are supported in [mode]},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )
@@ -311,9 +311,9 @@ sub _build_usage {
     );
 
     option(
-        q{start_with_program} => (
-            cmd_aliases   => [qw{ swp }],
-            documentation => q{Start analysis with program},
+        q{start_with_recipe} => (
+            cmd_aliases   => [qw{ swr }],
+            documentation => q{Start analysis with recipe},
             is            => q{rw},
             isa           => Str,
         )

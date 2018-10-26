@@ -47,7 +47,7 @@ sub build_fusion_filter_prerequisites {
 ##          : $log                          => Log object
 ##          : $outaligner_dir               => Outaligner_dir used in the analysis
 ##          : $parameter_href               => Parameter hash {REF}
-##          : $program_name                 => Program name
+##          : $recipe_name                 => Program name
 ##          : $parameter_build_suffixes_ref => The rtg reference associated directory suffixes {REF}
 ##          : $sample_info_href             => Info on samples and family hash {REF}
 ##          : $temp_directory               => Temporary directory
@@ -61,7 +61,7 @@ sub build_fusion_filter_prerequisites {
     my $job_id_href;
     my $log;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $parameter_build_suffixes_ref;
     my $sample_info_href;
 
@@ -127,10 +127,10 @@ sub build_fusion_filter_prerequisites {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         parameter_build_suffixes_ref => {
@@ -156,7 +156,7 @@ sub build_fusion_filter_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_recipe_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -177,12 +177,12 @@ sub build_fusion_filter_prerequisites {
     Readonly my $WORD_SIZE         => 11;
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my $program_mode = $active_parameter_href->{$program_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my $job_id_chain = $parameter_href->{$recipe_name}{chain};
+    my $recipe_mode  = $active_parameter_href->{$recipe_name};
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -193,7 +193,7 @@ sub build_fusion_filter_prerequisites {
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
@@ -202,8 +202,8 @@ sub build_fusion_filter_prerequisites {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             process_time                    => $PROCESSING_TIME,
             source_environment_commands_ref => \@source_environment_cmds,
         }
@@ -220,7 +220,7 @@ sub build_fusion_filter_prerequisites {
             parameter_build_suffixes_ref =>
               \@{ $file_info_href->{human_genome_reference_file_endings} },
             parameter_href   => $parameter_href,
-            program_name     => $program_name,
+            recipe_name      => $recipe_name,
             random_integer   => $random_integer,
             sample_info_href => $sample_info_href,
         }
@@ -231,7 +231,7 @@ sub build_fusion_filter_prerequisites {
         $log->warn( q{Will try to create required }
               . $human_genome_reference
               . q{ Fusion-filter files before executing }
-              . $program_name );
+              . $recipe_name );
 
         say {$FILEHANDLE} q{## Building Fusion-filter dir files};
         ## Get parameters
@@ -329,7 +329,7 @@ sub build_fusion_filter_prerequisites {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {

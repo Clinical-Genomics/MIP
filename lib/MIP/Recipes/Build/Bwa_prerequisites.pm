@@ -47,7 +47,7 @@ sub build_bwa_prerequisites {
 ##          : $log                          => Log object
 ##          : $parameter_build_suffixes_ref => The bwa reference associated file endings {REF}
 ##          : $parameter_href               => Parameter hash {REF}
-##          : $program_name                 => Program name
+##          : $recipe_name                 => Program name
 ##          : $sample_info_href             => Info on samples and family hash {REF}
 ##          : $temp_directory               => Temporary directory
 
@@ -61,7 +61,7 @@ sub build_bwa_prerequisites {
     my $log;
     my $parameter_build_suffixes_ref;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
@@ -127,10 +127,10 @@ sub build_bwa_prerequisites {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -161,8 +161,8 @@ sub build_bwa_prerequisites {
     Readonly my $PROCESSING_TIME   => 3;
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$program_name}{chain};
-    my $program_mode = $active_parameter_href->{$program_name};
+    my $job_id_chain = $parameter_href->{$recipe_name}{chain};
+    my $recipe_mode  = $active_parameter_href->{$recipe_name};
 
     ## FILEHANDLES
     # Create anonymous filehandle
@@ -171,7 +171,7 @@ sub build_bwa_prerequisites {
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
@@ -179,8 +179,8 @@ sub build_bwa_prerequisites {
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
             log                   => $log,
-            program_directory     => $program_name,
-            program_name          => $program_name,
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
             process_time          => $PROCESSING_TIME,
         }
     );
@@ -196,7 +196,7 @@ sub build_bwa_prerequisites {
             parameter_build_suffixes_ref =>
               \@{ $file_info_href->{human_genome_reference_file_endings} },
             parameter_href   => $parameter_href,
-            program_name     => $program_name,
+            recipe_name      => $recipe_name,
             random_integer   => $random_integer,
             sample_info_href => $sample_info_href,
         }
@@ -207,7 +207,7 @@ sub build_bwa_prerequisites {
         $log->warn( q{Will try to create required }
               . $human_genome_reference
               . q{ index files before executing }
-              . $program_name );
+              . $recipe_name );
 
         say {$FILEHANDLE} q{## Building BWA index};
 
@@ -246,7 +246,7 @@ sub build_bwa_prerequisites {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         submit_recipe(
             {

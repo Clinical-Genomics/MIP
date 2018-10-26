@@ -45,10 +45,8 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Build::Star_prerequisites} =>
-          [qw{ build_star_prerequisites }],
-        q{MIP::Test::Fixtures} =>
-          [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Recipes::Build::Star_prerequisites} => [qw{ build_star_prerequisites }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -68,18 +66,18 @@ diag(   q{Test build_star_prerequisites from Star_prerequisites.pm v}
 my $log = test_log();
 
 ## Given build parameters
-my $program_name = q{star_fusion};
+my $recipe_name = q{star_fusion};
 
 my %active_parameter = test_mip_hashes(
     {
         mip_hash_name => q{active_parameter},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
-        program_name  => $program_name,
+        recipe_name   => $recipe_name,
     }
 );
 my %infile_lane_prefix;
@@ -95,23 +93,21 @@ $active_parameter{star_aln_transcripts_file} = q{GRCH37_transcripts.gtf};
 trap {
     build_star_prerequisites(
         {
-            active_parameter_href   => \%active_parameter,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            log                     => $log,
-            parameter_href          => \%parameter,
-            parameter_build_suffixes_ref =>
-              \@{ $file_info{star_aln_reference_genome} },
-            program_name     => $program_name,
-            sample_info_href => \%sample_info,
+            active_parameter_href        => \%active_parameter,
+            file_info_href               => \%file_info,
+            infile_lane_prefix_href      => \%infile_lane_prefix,
+            job_id_href                  => \%job_id,
+            log                          => $log,
+            parameter_href               => \%parameter,
+            parameter_build_suffixes_ref => \@{ $file_info{star_aln_reference_genome} },
+            recipe_name                  => $recipe_name,
+            sample_info_href             => \%sample_info,
         }
       )
 };
 
 ## Then broadcast info log message
-my $log_msg =
-  q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+star\s+files};
+my $log_msg = q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+star\s+files};
 like( $trap->stderr, qr/$log_msg/msx, q{Broadcast star_fusion log message} );
 
 done_testing();

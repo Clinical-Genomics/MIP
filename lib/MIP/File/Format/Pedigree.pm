@@ -1,5 +1,6 @@
 package MIP::File::Format::Pedigree;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -121,8 +122,7 @@ sub create_fam_file {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my @fam_headers =
-      ( q{#family_id}, qw{ sample_id father mother sex phenotype } );
+    my @fam_headers = ( q{#family_id}, qw{ sample_id father mother sex phenotype } );
 
     my @pedigree_lines;
     my $header;
@@ -335,9 +335,7 @@ sub detect_sample_id_gender {
 
             $found_male = 1;
         }
-        elsif (
-            $sample_info_href->{sample}{$sample_id}{sex} =~ / 2 | female /sxm )
-        {
+        elsif ( $sample_info_href->{sample}{$sample_id}{sex} =~ / 2 | female /sxm ) {
             ## If female
 
             $found_female = 1;
@@ -397,14 +395,10 @@ sub detect_trio {
 
     if ( scalar @{ $active_parameter_href->{sample_ids} } == 1 ) {
 
-        $log->info( q{Found single sample: }
-              . $active_parameter_href->{sample_ids}[0] );
+        $log->info( q{Found single sample: } . $active_parameter_href->{sample_ids}[0] );
         return;
     }
-    elsif (
-        scalar @{ $active_parameter_href->{sample_ids} } ==
-        $TRIO_MEMBERS_COUNT )
-    {
+    elsif ( scalar @{ $active_parameter_href->{sample_ids} } == $TRIO_MEMBERS_COUNT ) {
 
         my $is_trio;
 
@@ -437,14 +431,12 @@ sub gatk_pedigree_flag {
 ## Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 ## Returns  : %command
 ## Arguments: $fam_file_path            => The family file path
-##          : $program_name             => The program to use the pedigree file
 ##          : $pedigree_validation_type => The pedigree validation strictness level
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $fam_file_path;
-    my $program_name;
 
     ## Default(s)
     my $pedigree_validation_type;
@@ -454,12 +446,6 @@ sub gatk_pedigree_flag {
             defined     => 1,
             required    => 1,
             store       => \$fam_file_path,
-            strict_type => 1,
-        },
-        program_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$program_name,
             strict_type => 1,
         },
         pedigree_validation_type => {
@@ -797,11 +783,8 @@ sub _build_parent_child_counter_regexp {
 q?while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) ?;
 
     ## Increment the counter
-    $regexp .= q?{ $?
-      . $family_member
-      . q?++} } } print $?
-      . $family_member
-      . q?; last;'?;
+    $regexp .=
+      q?{ $? . $family_member . q?++} } } print $? . $family_member . q?; last;'?;
 
     return $regexp;
 }
@@ -853,18 +836,15 @@ sub _update_sample_info_hash {
             if ( exists $previous_sample_href->{$pedigree_key} ) {
 
                 ## Required to update keys downstream
-                my $previous_pedigree_value =
-                  delete $sample_href->{$pedigree_key};
+                my $previous_pedigree_value = delete $sample_href->{$pedigree_key};
 
                 ## Update previous sample info key
-                $previous_sample_href->{$pedigree_key} =
-                  $previous_pedigree_value;
+                $previous_sample_href->{$pedigree_key} = $previous_pedigree_value;
             }
             else {
 
                 ## New sample_id or key
-                $previous_sample_href->{$pedigree_key} =
-                  $sample_href->{$pedigree_key};
+                $previous_sample_href->{$pedigree_key} = $sample_href->{$pedigree_key};
             }
         }
     }

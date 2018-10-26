@@ -1,5 +1,6 @@
 package MIP::Script::Utils;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
@@ -235,7 +236,7 @@ sub nest_hash {
             _recursive_nesting(
                 {
                     array_to_shift_ref => [ ( split /:/xms, $parameter ) ],
-                    final_value           => $final_value,
+                    final_value => $final_value,
                     hash_to_populate_href => $cmd_href->{$installation},
                 }
             );
@@ -246,7 +247,7 @@ sub nest_hash {
 }
 
 sub update_program_versions {
-## Function : Set program versions in paramter hash
+## Function : Set program versions in parameter hash
 ## Returns  :
 ## Arguments: $parameter_href => Parameter hash {REF}
 
@@ -279,24 +280,16 @@ sub update_program_versions {
         foreach my $program (@programs) {
 
           INSTALL_MODE:
-            foreach
-              my $install_mode ( keys %{ $parameter_href->{$installation} } )
-            {
+            foreach my $install_mode ( keys %{ $parameter_href->{$installation} } ) {
                 if ( $install_mode eq q{shell} ) {
-                    if ( $parameter_href->{$installation}{$install_mode}
-                        {$program} )
-                    {
-                        $parameter_href->{$installation}{$install_mode}
-                          {$program}{version} =
-                          $parameter_href->{program_versions}{$program};
+                    if ( $parameter_href->{$installation}{$install_mode}{$program} ) {
+                        $parameter_href->{$installation}{$install_mode}{$program}{version}
+                          = $parameter_href->{program_versions}{$program};
                     }
                 }
                 else {
-                    if ( $parameter_href->{$installation}{$install_mode}
-                        {$program} )
-                    {
-                        $parameter_href->{$installation}{$install_mode}
-                          {$program} =
+                    if ( $parameter_href->{$installation}{$install_mode}{$program} ) {
+                        $parameter_href->{$installation}{$install_mode}{$program} =
                           $parameter_href->{program_versions}{$program};
                     }
                 }
@@ -341,8 +334,7 @@ sub write_script_version {
 
     return 1 if ( not $write_version );
 
-    say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $version,
-      $NEWLINE;
+    say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $version, $NEWLINE;
     exit;
 }
 

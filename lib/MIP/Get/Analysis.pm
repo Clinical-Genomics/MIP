@@ -31,7 +31,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ get_dependency_tree get_dependency_tree_chain get_dependency_tree_order get_overall_analysis_type get_vcf_parser_analysis_suffix print_program };
+      qw{ get_dependency_tree get_dependency_tree_chain get_dependency_tree_order get_overall_analysis_type get_vcf_parser_analysis_suffix print_recipe };
 
 }
 
@@ -42,23 +42,23 @@ Readonly my $NEWLINE   => qq{\n};
 
 sub get_dependency_tree {
 
-## Function  : Collects all downstream programs from initation point.
+## Function  : Collects all downstream recipes from initation point.
 ## Returns   :
-## Arguments : $current_chain           => Current chain
-##           : $is_program_found_ref    => Found initiation program {REF}
-##           : $is_chain_found_ref      => Found program chain
-##           : $program                 => Initiation point
-##           : $start_with_programs_ref => Store programs
-##           : $dependency_tree_href    => Dependency hash {REF}
+## Arguments : $current_chain          => Current chain
+##           : $is_recipe_found_ref    => Found initiation recipe {REF}
+##           : $is_chain_found_ref     => Found recipe chain
+##           : $recipe                 => Initiation point
+##           : $start_with_recipes_ref => Store recipes
+##           : $dependency_tree_href   => Dependency hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $current_chain;
-    my $is_program_found_ref;
+    my $is_recipe_found_ref;
     my $is_chain_found_ref;
-    my $program;
-    my $start_with_programs_ref;
+    my $recipe;
+    my $start_with_recipes_ref;
     my $dependency_tree_href;
 
     my $tmpl = {
@@ -66,9 +66,9 @@ sub get_dependency_tree {
             store       => \$current_chain,
             strict_type => 1,
         },
-        is_program_found_ref => {
+        is_recipe_found_ref => {
             default     => \$$,
-            store       => \$is_program_found_ref,
+            store       => \$is_recipe_found_ref,
             strict_type => 1,
         },
         is_chain_found_ref => {
@@ -76,16 +76,16 @@ sub get_dependency_tree {
             store       => \$is_chain_found_ref,
             strict_type => 1,
         },
-        program => {
+        recipe => {
             required    => 1,
-            store       => \$program,
+            store       => \$recipe,
             strict_type => 1,
         },
-        start_with_programs_ref => {
+        start_with_recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$start_with_programs_ref,
+            store       => \$start_with_recipes_ref,
             strict_type => 1,
         },
         dependency_tree_href => {
@@ -105,13 +105,13 @@ sub get_dependency_tree {
   KEY_VALUE_PAIR:
     while ( my ( $key, $value ) = each %tree ) {
 
-        ## Do not enter into more chains than one if program and chain is found
+        ## Do not enter into more chains than one if recipe and chain is found
         next KEY_VALUE_PAIR
           if ( $key =~ /CHAIN_/sxm
-            && ${$is_program_found_ref}
+            && ${$is_recipe_found_ref}
             && ${$is_chain_found_ref} ne q{CHAIN_MAIN} );
 
-        ## Do not add program name or PARALLEL
+        ## Do not add recipe name or PARALLEL
         if ( $key =~ /CHAIN_/sxm ) {
 
             $current_chain = $key;
@@ -121,12 +121,12 @@ sub get_dependency_tree {
 
             get_dependency_tree(
                 {
-                    current_chain           => $current_chain,
-                    dependency_tree_href    => $value,
-                    is_program_found_ref    => $is_program_found_ref,
-                    is_chain_found_ref      => $is_chain_found_ref,
-                    program                 => $program,
-                    start_with_programs_ref => $start_with_programs_ref,
+                    current_chain          => $current_chain,
+                    dependency_tree_href   => $value,
+                    is_recipe_found_ref    => $is_recipe_found_ref,
+                    is_chain_found_ref     => $is_chain_found_ref,
+                    recipe                 => $recipe,
+                    start_with_recipes_ref => $start_with_recipes_ref,
                 }
             );
         }
@@ -141,24 +141,24 @@ sub get_dependency_tree {
 
                     get_dependency_tree(
                         {
-                            current_chain           => $current_chain,
-                            dependency_tree_href    => $element,
-                            is_program_found_ref    => $is_program_found_ref,
-                            is_chain_found_ref      => $is_chain_found_ref,
-                            program                 => $program,
-                            start_with_programs_ref => $start_with_programs_ref,
+                            current_chain          => $current_chain,
+                            dependency_tree_href   => $element,
+                            is_recipe_found_ref    => $is_recipe_found_ref,
+                            is_chain_found_ref     => $is_chain_found_ref,
+                            recipe                 => $recipe,
+                            start_with_recipes_ref => $start_with_recipes_ref,
                         }
                     );
                 }
-                ## Found initiator program
+                ## Found initiator recipe
                 if ( ref $element ne q{HASH}
-                    && $element eq $program )
+                    && $element eq $recipe )
                 {
 
-                    ## Start collecting programs downstream
-                    ${$is_program_found_ref} = 1;
+                    ## Start collecting recipes downstream
+                    ${$is_recipe_found_ref} = 1;
 
-                    ## Found chain that program belongs to
+                    ## Found chain that recipe belongs to
                     # Set is part of chain signal
                     ${$is_chain_found_ref} = $current_chain;
 
@@ -166,25 +166,25 @@ sub get_dependency_tree {
 
                 ## Special case for parallel section
                 if ( $key eq q{PARALLEL}
-                    && ${$is_program_found_ref} )
+                    && ${$is_recipe_found_ref} )
                 {
 
-                    if ( any { $_ eq $program } @{$value} ) {
+                    if ( any { $_ eq $recipe } @{$value} ) {
 
-                        ## Add only start_with program from parallel section
-                        push @{$start_with_programs_ref}, $program;
+                        ## Add only start_with recipe from parallel section
+                        push @{$start_with_recipes_ref}, $recipe;
 
                         ## Skip any remaining hash_ref or element
                         last ELEMENT;
                     }
                 }
 
-                ## Add downstream programs
+                ## Add downstream recipes
                 if ( ref $element ne q{HASH}
-                    && ${$is_program_found_ref} )
+                    && ${$is_recipe_found_ref} )
                 {
 
-                    push @{$start_with_programs_ref}, $element;
+                    push @{$start_with_recipes_ref}, $element;
                 }
             }
         }
@@ -278,7 +278,7 @@ sub get_dependency_tree_chain {
                     );
                 }
 
-                ## Found programs
+                ## Found recipes
                 if ( ref $element ne q{HASH} ) {
 
                     $parameter_href->{$element}{chain} = $current_chain;
@@ -293,10 +293,10 @@ sub get_dependency_tree_chain {
                 ## E.g. haplotypecaller->genotypegvcfs
                 if ( $key eq uc $element ) {
 
-                  PROGRAM:
-                    foreach my $program ( @{$value} ) {
+                  RECIPE:
+                    foreach my $recipe ( @{$value} ) {
 
-                        $parameter_href->{$program}{chain} = uc $element;
+                        $parameter_href->{$recipe}{chain} = uc $element;
                     }
                     last ELEMENT;
                 }
@@ -311,23 +311,23 @@ sub get_dependency_tree_chain {
 
 sub get_dependency_tree_order {
 
-## Function  : Collects order of all programs from initiation.
+## Function  : Collects order of all recipes from initiation.
 ## Returns   :
-## Arguments : $programs_ref         => Programs {REF}
+## Arguments : $recipes_ref          => Recipes {REF}
 ##           : $dependency_tree_href => Dependency hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $programs_ref;
+    my $recipes_ref;
     my $dependency_tree_href;
 
     my $tmpl = {
-        programs_ref => {
+        recipes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$programs_ref,
+            store       => \$recipes_ref,
             strict_type => 1,
         },
         dependency_tree_href => {
@@ -353,7 +353,7 @@ sub get_dependency_tree_order {
             get_dependency_tree_order(
                 {
                     dependency_tree_href => $value,
-                    programs_ref         => $programs_ref,
+                    recipes_ref          => $recipes_ref,
                 }
             );
         }
@@ -369,15 +369,15 @@ sub get_dependency_tree_order {
                     get_dependency_tree_order(
                         {
                             dependency_tree_href => $element,
-                            programs_ref         => $programs_ref,
+                            recipes_ref          => $recipes_ref,
                         }
                     );
                 }
-                ## Found program
+                ## Found recipe
                 if ( ref $element ne q{HASH} ) {
 
                     ## Add to order
-                    push @{$programs_ref}, $element;
+                    push @{$recipes_ref}, $element;
                 }
             }
         }
@@ -431,9 +431,8 @@ sub get_overall_analysis_type {
 
         if ( not any { $_ eq $user_analysis_type } @analysis_types ) {
 
-            $log->fatal( q{'}
-                  . $user_analysis_type
-                  . q{' is not a supported analysis_type} );
+            $log->fatal(
+                q{'} . $user_analysis_type . q{' is not a supported analysis_type} );
             $log->fatal( q{Supported analysis types are '}
                   . join( q{', '}, @analysis_types )
                   . q(') );
@@ -487,13 +486,13 @@ sub get_vcf_parser_analysis_suffix {
     return @analysis_suffixes;
 }
 
-sub print_program {
+sub print_recipe {
 
-## Function : Print all supported programs in '-ppm' mode
+## Function : Print all supported recipes in '-prm' mode
 ## Returns  :
 ## Arguments: $define_parameters_files_ref => MIPs define parameters file
-##          : $parameter_href         => Parameter hash {REF}
-##          : $print_program_mode     => Mode to run modules in
+##          : $parameter_href              => Parameter hash {REF}
+##          : $print_recipe_mode           => Mode to run recipes in
 
     my ($arg_href) = @_;
 
@@ -502,7 +501,7 @@ sub print_program {
 
     ## Default(s)
     my $define_parameters_files_ref;
-    my $print_program_mode;
+    my $print_recipe_mode;
 
     my $tmpl = {
         define_parameters_files_ref => {
@@ -517,10 +516,10 @@ sub print_program {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        print_program_mode => {
+        print_recipe_mode => {
             allow => [ undef, 0, 1, 2 ],
-            default => $arg_href->{print_program_mode} //= 2,
-            store => \$print_program_mode,
+            default => $arg_href->{print_recipe_mode} //= 2,
+            store => \$print_recipe_mode,
             strict_type => 1,
         },
     };
@@ -530,11 +529,11 @@ sub print_program {
     use MIP::File::Format::Yaml qw{ order_parameter_names };
     use MIP::Set::Parameter qw{ set_dynamic_parameter };
 
-    my @printed_programs;
+    my @printed_recipes;
 
     set_dynamic_parameter(
         {
-            aggregates_ref => [q{type:program}],
+            aggregates_ref => [q{type:recipe}],
             parameter_href => $parameter_href,
         }
     );
@@ -554,29 +553,24 @@ sub print_program {
   PARAMETER:
     foreach my $parameter (@order_parameters) {
 
-        ## Only process programs
+        ## Only process recipes
         if (
             any { $_ eq $parameter }
-            @{ $parameter_href->{dynamic_parameter}{program} }
+            @{ $parameter_href->{dynamic_parameter}{recipe} }
           )
         {
 
             if ( not $parameter eq q{bamcalibrationblock} ) {
 
-                print {*STDOUT} q{--}
-                  . $parameter
-                  . $SPACE
-                  . $print_program_mode
-                  . $SPACE;
+                print {*STDOUT} q{--} . $parameter . $SPACE . $print_recipe_mode . $SPACE;
 
-                push @printed_programs,
-                  $parameter . $SPACE . $print_program_mode;
+                push @printed_recipes, $parameter . $SPACE . $print_recipe_mode;
             }
         }
     }
     print {*STDOUT} $NEWLINE;
 
-    return @printed_programs;
+    return @printed_recipes;
 }
 
 1;

@@ -50,7 +50,7 @@ sub analysis_picardtools_mergesamfiles {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $recipe_name            => Program name
 ##          : $referencefile_path      => Human genome reference file path
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -65,7 +65,7 @@ sub analysis_picardtools_mergesamfiles {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
     my $sample_id;
 
@@ -116,10 +116,10 @@ sub analysis_picardtools_mergesamfiles {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         referencefile_path => {
@@ -157,7 +157,7 @@ sub analysis_picardtools_mergesamfiles {
 
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters  get_program_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_parameters  get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -165,7 +165,7 @@ sub analysis_picardtools_mergesamfiles {
     use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
     use MIP::Program::Alignment::Sambamba qw{ split_and_index_aligment_file };
     use MIP::Program::Alignment::Samtools qw{ samtools_index };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_merged_infile_prefix };
@@ -182,7 +182,7 @@ sub analysis_picardtools_mergesamfiles {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -192,35 +192,35 @@ sub analysis_picardtools_mergesamfiles {
     my @infile_name_prefixes      = @{ $io{in}{file_name_prefixes} };
     my @temp_infile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
 
-    my %prg_atr = get_program_attributes(
+    my %rec_atr = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
         }
     );
-    my $job_id_chain = $prg_atr{chain};
+    my $job_id_chain = $rec_atr{chain};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $program_mode = $active_parameter_href->{$program_name};
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
     ## Assign suffix
-    my $outfile_suffix = $prg_atr{outfile_suffix};
+    my $outfile_suffix = $rec_atr{outfile_suffix};
 
     ## Extract lanes
     my $lanes_id = join $EMPTY_STRING, @{ $file_info_href->{$sample_id}{lanes} };
 
     ## Outpaths
     my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $program_name );
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
+      $file_info_href->{$sample_id}{$recipe_name}{file_tag};
     my @outfile_paths =
       map {
         catdir( $outsample_directory,
@@ -245,7 +245,7 @@ sub analysis_picardtools_mergesamfiles {
                 file_info_href => $file_info_href,
                 file_paths_ref => \@outfile_paths,
                 parameter_href => $parameter_href,
-                program_name   => $program_name,
+                recipe_name    => $recipe_name,
                 temp_directory => $temp_directory,
             }
         )
@@ -262,8 +262,8 @@ sub analysis_picardtools_mergesamfiles {
     my $FILEHANDLE      = IO::Handle->new();
     my $XARGSFILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $recipe_file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
@@ -272,8 +272,8 @@ sub analysis_picardtools_mergesamfiles {
             job_id_href                     => $job_id_href,
             log                             => $log,
             process_time                    => $time,
-            program_directory               => $program_name,
-            program_name                    => $program_name,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
@@ -318,7 +318,7 @@ sub analysis_picardtools_mergesamfiles {
                 file_path             => $recipe_file_path,
                 infile                => $infile,
                 output_format         => substr( $infile_suffix, 1 ),
-                program_info_path     => $program_info_path,
+                recipe_info_path      => $recipe_info_path,
                 temp_directory        => $temp_directory,
                 XARGSFILEHANDLE       => $XARGSFILEHANDLE,
                 xargs_file_counter    => $xargs_file_counter,
@@ -357,7 +357,7 @@ sub analysis_picardtools_mergesamfiles {
                   catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                program_info_path    => $program_info_path,
+                recipe_info_path     => $recipe_info_path,
                 temp_directory       => $temp_directory,
                 XARGSFILEHANDLE      => $XARGSFILEHANDLE,
                 xargs_file_counter   => $xargs_file_counter,
@@ -401,7 +401,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                 core_number        => $core_number,
                 FILEHANDLE         => $FILEHANDLE,
                 file_path          => $recipe_file_path,
-                program_info_path  => $program_info_path,
+                recipe_info_path   => $recipe_info_path,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
             }
@@ -452,7 +452,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
             file_path          => $recipe_file_path,
             outdirectory       => $outdir_path_prefix,
             outfile            => $outfile_name_prefix,
-            program_info_path  => $program_info_path,
+            recipe_info_path   => $recipe_info_path,
             temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -462,14 +462,14 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
     close $XARGSFILEHANDLE;
     close $FILEHANDLE;
 
-    if ( $program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         my $qc_outfile_path = $outfile_paths[0];
-        add_program_outfile_to_sample_info(
+        add_recipe_outfile_to_sample_info(
             {
                 infile           => $merged_infile_prefix,
                 path             => $qc_outfile_path,
-                program_name     => $program_name,
+                recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
@@ -508,8 +508,8 @@ sub analysis_picardtools_mergesamfiles_rio {
 ##          : $referencefile_path      => Human genome reference file path
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
-##          : $program_info_path       => The program info path
-##          : $program_name            => Program name
+##          : $recipe_info_path       => Recipe info path
+##          : $recipe_name            => Program name
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -523,8 +523,8 @@ sub analysis_picardtools_mergesamfiles_rio {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $program_info_path;
-    my $program_name;
+    my $recipe_info_path;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
 
@@ -583,11 +583,11 @@ sub analysis_picardtools_mergesamfiles_rio {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_info_path => { store => \$program_info_path, strict_type => 1, },
-        program_name      => {
+        recipe_info_path => { store => \$recipe_info_path, strict_type => 1, },
+        recipe_name      => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         referencefile_path => {
@@ -626,7 +626,7 @@ sub analysis_picardtools_mergesamfiles_rio {
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Delete::File qw{ delete_files };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_recipe_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -650,7 +650,7 @@ sub analysis_picardtools_mergesamfiles_rio {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
             stream         => q{in},
             temp_directory => $temp_directory,
         }
@@ -663,34 +663,34 @@ sub analysis_picardtools_mergesamfiles_rio {
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my %prg_atr = get_program_attributes(
+    my %rec_atr = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
-            program_name   => $program_name,
+            recipe_name    => $recipe_name,
         }
     );
-    my $job_id_chain  = $prg_atr{chain};
-    my $program_mode  = $active_parameter_href->{$program_name};
+    my $job_id_chain  = $rec_atr{chain};
+    my $recipe_mode   = $active_parameter_href->{$recipe_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_module_parameters(
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => $program_name,
+            recipe_name           => $recipe_name,
         }
     );
 
     ## Assign suffix
-    my $outfile_suffix = $prg_atr{outfile_suffix};
+    my $outfile_suffix = $rec_atr{outfile_suffix};
 
     # Extract lanes
     my $lanes_id = join $EMPTY_STRING, @{ $file_info_href->{$sample_id}{lanes} };
 
     ## Outpaths
     my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $program_name );
+      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$program_name}{file_tag};
+      $file_info_href->{$sample_id}{$recipe_name}{file_tag};
     my @outfile_paths =
       map {
         catdir( $outsample_directory,
@@ -715,7 +715,7 @@ sub analysis_picardtools_mergesamfiles_rio {
                 file_info_href => $file_info_href,
                 file_paths_ref => \@outfile_paths,
                 parameter_href => $parameter_href,
-                program_name   => $program_name,
+                recipe_name    => $recipe_name,
                 temp_directory => $temp_directory,
             }
         )
@@ -770,7 +770,7 @@ sub analysis_picardtools_mergesamfiles_rio {
                 file_path             => $file_path,
                 infile                => $infile,
                 output_format         => substr( $infile_suffix, 1 ),
-                program_info_path     => $program_info_path,
+                recipe_info_path      => $recipe_info_path,
                 temp_directory        => $temp_directory,
                 XARGSFILEHANDLE       => $XARGSFILEHANDLE,
                 xargs_file_counter    => $xargs_file_counter,
@@ -809,7 +809,7 @@ sub analysis_picardtools_mergesamfiles_rio {
                 java_jar =>
                   catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                program_info_path  => $program_info_path,
+                recipe_info_path   => $recipe_info_path,
                 temp_directory     => $temp_directory,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
@@ -853,7 +853,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                 core_number        => $core_number,
                 FILEHANDLE         => $FILEHANDLE,
                 file_path          => $file_path,
-                program_info_path  => $program_info_path,
+                recipe_info_path   => $recipe_info_path,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
             }
