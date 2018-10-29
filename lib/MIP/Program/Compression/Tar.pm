@@ -1,5 +1,6 @@
 package MIP::Program::Compression::Tar;
 
+use 5.026;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -20,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ tar };
@@ -32,8 +33,7 @@ Readonly my $SPACE => q{ };
 sub tar {
 
 ## Function : Perl wrapper for writing tar command recipe to $FILEHANDLE or return commands array. Based on tar 1.23.
-## Returns  : "@commands"
-
+## Returns  : @commands
 ##Arguments : $extract                => Extract files from an archive
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $filter_gzip            => Filter the archive through gzip
