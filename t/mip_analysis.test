@@ -467,7 +467,7 @@ sub read_infile_vcf {
                 {
                     vcf_header_href     => \%vcf_header,
                     vcfparser_data_href => $vcfparser_data_href,
-                    vcfparser_mode      => $active_parameter_href->{vcfparser},
+                    vcfparser_mode      => $active_parameter_href->{vcfparser_ar},
                 }
             );
 

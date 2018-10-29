@@ -72,7 +72,7 @@ my %active_parameter = (
         bwa_mem          => 1,
         bcftools_mpileup => 1,
     },
-    associated_recipe => [ qw{ fastqc }, ],
+    associated_recipe => [ qw{ fastqc_ar }, ],
 );
 ## When one does not exist in truth hash
 trap {
@@ -127,7 +127,7 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 %parameter = (
     q{bcftools_mpileup} => 1,
     q{bwa_mem}          => 1,
-    q{fastqc}           => 1,
+    q{fastqc_ar}        => 1,
 );
 
 ## When all exists in truth hash

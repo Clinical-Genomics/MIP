@@ -283,7 +283,7 @@ sub check_rd_dna {
             consensus_analysis_type =>
               $parameter_href->{dynamic_parameter}{consensus_analysis_type},
             prioritize_key => $active_parameter_href->{sv_svdb_merge_prioritize},
-            recipes_ref    => [qw{ cnvnator delly_call delly_reformat tiddit }],
+            recipes_ref    => [qw{ cnvnator_ar delly_call delly_reformat tiddit }],
         }
     );
 
@@ -295,7 +295,7 @@ sub check_rd_dna {
               $parameter_href->{dynamic_parameter}{consensus_analysis_type},
             log         => $log,
             recipes_ref => [
-                qw{ cnvnator delly_call delly_reformat expansionhunter tiddit samtools_subsample_mt }
+                qw{ cnvnator_ar delly_call delly_reformat expansionhunter tiddit samtools_subsample_mt }
             ],
         }
     );

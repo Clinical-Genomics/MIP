@@ -85,7 +85,7 @@ module_time:
   default:
     blobfish: 1
     bootstrapann: 3
-    fastqc: 1
+    fastqc_ar: 1
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
     gatk_haplotypecaller: 2
@@ -93,7 +93,7 @@ module_time:
     gatk_variantfiltration: 1
     gzip_fastq: 2
     markduplicates: 4
-    multiqc: 1
+    multiqc_ar: 1
     picardtools_mergesamfiles: 2
     rseqc: 3
     sacct: 1
@@ -108,14 +108,14 @@ module_core_number:
   default:
     blobfish: 1
     bootstrapann: 1
-    fastqc: 0
+    fastqc_ar: 0
     gatk_asereadcounter: 2
     gatk_baserecalibration: 16
     gatk_haplotypecaller: 16
     gatk_splitncigarreads: 16
     gatk_variantfiltration: 1
     gzip_fastq: 0
-    multiqc: 1
+    multiqc_ar: 1
     markduplicates: 16
     picardtools_mergesamfiles: 16
     rseqc: 1
@@ -166,7 +166,7 @@ gzip_fastq:
    - gzip
   type: recipe
 ## FastQC
-fastqc:
+fastqc_ar:
   analysis_mode: sample
   associated_recipe:
    - mip
@@ -567,7 +567,7 @@ bootstrapann:
    - BootstrapAnn.py
   type: recipe
 ## MultiQC
-multiqc:
+multiqc_ar:
   analysis_mode: case
   associated_recipe:
    - mip
@@ -580,7 +580,7 @@ multiqc:
   type: recipe
 multiqc_per_sample:
   associated_recipe:
-   - multiqc
+   - multiqc_ar
   data_type: SCALAR
   default: 0
   type: recipe_argument

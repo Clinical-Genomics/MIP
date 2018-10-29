@@ -187,13 +187,13 @@ sub analysis_analysisrunstatus {
 
     ## Test peddy warnings
     my $peddy_file =
-      $sample_info_href->{recipe}{peddy}{stderr}{path};
+      $sample_info_href->{recipe}{peddy_ar}{stderr}{path};
 
     ## Test if FAIL exists in qccollect file i.e. issues with samples e.g. Sex and seq data correlation, relationship etc
     my $qccollect_file;
     if ( not $active_parameter_href->{qccollect_skip_evaluation} ) {
 
-        $qccollect_file = $sample_info_href->{recipe}{qccollect}{path};
+        $qccollect_file = $sample_info_href->{recipe}{qccollect_ar}{path};
     }
 
     my %files_to_check = (

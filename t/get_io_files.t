@@ -101,12 +101,12 @@ my %file_info = (
     },
 );
 my @order_recipes =
-  qw{ bwa_mem picard_mergesamfiles markduplicates gatk_baserecalibration chanjo_sexcheck cnvnator delly_call delly_reformat sv_combinevariantcallsets };
+  qw{ bwa_mem picard_mergesamfiles markduplicates gatk_baserecalibration chanjo_sexcheck cnvnator_ar delly_call delly_reformat sv_combinevariantcallsets };
 
 my %parameter = (
     bwa_mem                   => { chain             => $chain_main, },
     chanjo_sexcheck           => { chain             => $chain_chanjo, },
-    cnvnator                  => { chain             => q{CNVNATOR}, },
+    cnvnator_ar               => { chain             => q{CNVNATOR}, },
     delly_call                => { chain             => q{DELLY_CALL}, },
     delly_reformat            => { chain             => q{DELLY_CALL}, },
     dynamic_parameter         => { order_recipes_ref => \@order_recipes, },

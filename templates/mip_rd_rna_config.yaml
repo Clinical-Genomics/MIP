@@ -13,7 +13,7 @@ program_source_environment_command:
     - activate
     - MIP_star
 module_source_environment_command:
-  multiqc:
+  multiqc_ar:
     - source
     - activate
     - MIP_py3

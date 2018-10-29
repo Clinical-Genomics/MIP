@@ -39,6 +39,7 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_email_address
   check_parameter_hash
   check_recipe_exists_in_hash
+  check_recipe_name
   check_recipe_mode
   check_sample_ids
 };
@@ -71,7 +72,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -158,12 +159,12 @@ sub mip_analyse {
 #### Set program parameters
 
 ## Set MIP version
-    our $VERSION = 'v7.0.1';
+    our $VERSION = q{v7.0.1};
 
     write_script_version(
         {
-            write_version => $active_parameter{version},
             version       => $VERSION,
+            write_version => $active_parameter{version},
         }
     );
 
@@ -602,6 +603,15 @@ sub mip_analyse {
         $initiation_file =
           catfile( $Bin, qw{ definitions rd_dna_vcf_rerun_initiation_map.yaml } );
     }
+
+## Check that recipe name and program name are not identical
+    check_recipe_name(
+        {
+            parameter_href   => \%parameter,
+            recipe_names_ref => \@{ $parameter{dynamic_parameter}{recipe} },
+        }
+    );
+
     parse_start_with_recipe(
         {
             active_parameter_href => \%active_parameter,

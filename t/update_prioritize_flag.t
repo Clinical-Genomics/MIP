@@ -61,7 +61,7 @@ diag(   q{Test update_prioritize_flag from Recipes.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my @recipes                 = qw{ cnvnator delly_call delly_reformat tiddit };
+my @recipes                 = qw{ cnvnator_ar delly_call delly_reformat tiddit };
 my $prioritize_key          = q{manta,delly,cnvnator,tiddit};
 my $consensus_analysis_type = q{wes};
 

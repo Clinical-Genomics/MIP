@@ -611,7 +611,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{rhocall} => (
+        q{rhocall_ar} => (
             cmd_aliases => [qw{ rhc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -632,8 +632,8 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{vt} => (
-            cmd_aliases   => [qw{ vt }],
+        q{vt_ar} => (
+            cmd_aliases   => [qw{ vt_ar }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Decompose and normalize},
             is            => q{rw},
@@ -788,7 +788,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{vcfparser} => (
+        q{vcfparser_ar} => (
             cmd_aliases   => [qw{ vcp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Parse structural variants using vcfParser.pl},

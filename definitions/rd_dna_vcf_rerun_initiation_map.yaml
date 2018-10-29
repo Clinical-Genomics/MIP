@@ -7,15 +7,15 @@ CHAIN_ALL:
          - sv_vcfparser
          - sv_rankvariant
          - sv_reformat
-         - vcf2cytosure
+         - vcf2cytosure_ar
    - CHAIN_MAIN:
       - vcf_rerun_reformat
       - prepareforvariantannotationblock
-      - rhocall
-      - vt
+      - rhocall_ar
+      - vt_ar
       - frequency_filter
       - varianteffectpredictor
-      - vcfparser
+      - vcfparser_ar
       - snpeff
       - rankvariant
       - endvariantannotationblock

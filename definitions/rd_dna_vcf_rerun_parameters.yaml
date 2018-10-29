@@ -28,7 +28,7 @@ gatk_path:
 human_genome_reference:
   associated_recipe:
    - mip
-   - vt
+   - vt_ar
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
   exists_check: file
@@ -36,7 +36,7 @@ human_genome_reference:
   type: path
 human_genome_reference_file_endings:
   associated_recipe:
-   - vt
+   - vt_ar
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -79,7 +79,7 @@ module_time:
     frequency_filter: 2
     prepareforvariantannotationblock: 5
     vcf_rerun_reformat: 1
-    rhocall: 1
+    rhocall_ar: 1
     rankvariant: 10
     sacct: 1
     snpeff: 10
@@ -90,8 +90,8 @@ module_time:
     sv_varianteffectpredictor: 10
     sv_vcfparser: 2
     varianteffectpredictor: 10
-    vcfparser: 5
-    vt: 10
+    vcfparser_ar: 5
+    vt_ar: 10
   type: mip
 ## Choosen MIP Aligner
 outaligner_dir:
@@ -420,7 +420,7 @@ prepareforvariantannotationblock:
   outfile_suffix: ".vcf.gz"
   type: recipe
 ##rhocall
-rhocall:
+rhocall_ar:
   analysis_mode: case
   associated_recipe:
    - mip
@@ -434,14 +434,14 @@ rhocall:
   type: recipe
 rhocall_frequency_file:
   associated_recipe:
-   - rhocall
+   - rhocall_ar
   data_type: SCALAR
   default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz
   exists_check: file
   reference: reference_dir
   type: path
 ##VT
-vt:
+vt_ar:
   analysis_mode: case
   associated_recipe:
    - mip
@@ -457,25 +457,25 @@ vt:
   type: recipe
 vt_decompose:
   associated_recipe:
-   - vt
+   - vt_ar
   data_type: SCALAR
   default: 0
   type: recipe_argument
 vt_normalize:
   associated_recipe:
-   - vt
+   - vt_ar
   data_type: SCALAR
   default: 0
   type: recipe_argument
 vt_missing_alt_allele:
   associated_recipe:
-   - vt
+   - vt_ar
   data_type: SCALAR
   default: 0
   type: recipe_argument
 vt_uniq:
   associated_recipe:
-   - vt
+   - vt_ar
   data_type: SCALAR
   default: 0
   type: recipe_argument
@@ -548,25 +548,26 @@ vep_features:
   element_separator: ,
   data_type: ARRAY
   default:
-   - hgvs
-   - symbol
-   - numbers
-   - "sift p"
-   - "polyphen p"
-   - humdiv
-   - domains
-   - protein
-   - ccds
-   - uniprot
-   - biotype
-   - regulatory
-   - tsl
-   - canonical
    - appris
+   - biotype
    - cache
+   - canonical
+   - ccds
+   - domains
    - force_overwrite
+   - hgvs
+   - humdiv
    - no_progress
+   - no_stats
+   - numbers
+   - "polyphen p"
+   - protein
    - offline
+   - regulatory
+   - "sift p"
+   - symbol
+   - tsl
+   - uniprot
   type: recipe_argument
 vep_plugins:
   associated_recipe:
@@ -585,7 +586,7 @@ vep_plugins_dir_path:
   type: path
   update_path: absolute_path
 ## VCFParser
-vcfparser:
+vcfparser_ar:
   analysis_mode: case
   associated_recipe:
    - mip
@@ -596,21 +597,21 @@ vcfparser:
   type: recipe
 vcfparser_outfile_count:
   associated_recipe:
-   - vcfparser
+   - vcfparser_ar
    - mip
   data_type: SCALAR
   default: 1
   type: recipe_argument
 vcfparser_range_feature_annotation_columns:
   associated_recipe:
-   - vcfparser
+   - vcfparser_ar
   element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
 vcfparser_range_feature_file:
   associated_recipe:
-   - vcfparser
+   - vcfparser_ar
   data_type: SCALAR
   exists_check: file
   mandatory: no
@@ -618,26 +619,26 @@ vcfparser_range_feature_file:
   type: path
 vcfparser_select_feature_annotation_columns:
   associated_recipe:
-   - vcfparser
+   - vcfparser_ar
   element_separator: ,
   data_type: ARRAY
   mandatory: no
   type: recipe_argument
 vcfparser_select_file:
   associated_recipe:
-   - vcfparser
+   - vcfparser_ar
   data_type: SCALAR
   exists_check: file
   type: path
   update_path: absolute_path
 vcfparser_select_file_matching_column:
   associated_recipe:
-   - vcfparser
+   - vcfparser_ar
   data_type: SCALAR
   type: recipe_argument
 vcfparser_vep_transcripts:
   associated_recipe:
-   - vcfparser
+   - vcfparser_ar
   data_type: SCALAR
   default: 0
   type: recipe_argument

@@ -354,7 +354,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{fastqc} => (
+        q{fastqc_ar} => (
             cmd_aliases   => [qw{ fqc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Sequence quality analysis using FastQC},
@@ -687,7 +687,7 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{cnvnator} => (
+        q{cnvnator_ar} => (
             cmd_aliases   => [qw{ cnv }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Structural variant calling using CNVnator},
@@ -962,7 +962,7 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{vcf2cytosure} => (
+        q{vcf2cytosure_ar} => (
             cmd_aliases => [qw{ v2cs }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -1246,7 +1246,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{freebayes} => (
+        q{freebayes_ar} => (
             cmd_aliases   => [qw{ frb }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant calling using Freebayes},
@@ -1584,7 +1584,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{rhocall} => (
+        q{rhocall_ar} => (
             cmd_aliases => [qw{ rhc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>
@@ -1605,8 +1605,8 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{vt} => (
-            cmd_aliases   => [qw{ vt }],
+        q{vt_ar} => (
+            cmd_aliases   => [qw{ vt_ar }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Decompose and normalize},
             is            => q{rw},
@@ -1761,7 +1761,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{vcfparser} => (
+        q{vcfparser_ar} => (
             cmd_aliases   => [qw{ vcp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Parse structural variants using vcfParser.pl},
@@ -2030,7 +2030,7 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
     );
 
     option(
-        q{peddy} => (
+        q{peddy_ar} => (
             cmd_aliases   => [qw{ pedd }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{QC for familial-relationships and sexes},
@@ -2050,7 +2050,7 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
     );
 
     option(
-        q{variant_integrity} => (
+        q{variant_integrity_ar} => (
             cmd_aliases   => [qw{ vai }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{QC for samples relationship},
@@ -2112,7 +2112,7 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
     );
 
     option(
-        q{qccollect} => (
+        q{qccollect_ar} => (
             cmd_aliases   => [qw{ qcc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Collect QC metrics from recipes output},
@@ -2154,7 +2154,7 @@ q{Regular expression file containing the regular expression to be used for each 
     );
 
     option(
-        q{multiqc} => (
+        q{multiqc_ar} => (
             cmd_aliases => [qw{ mqc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>

@@ -73,7 +73,7 @@ my %file_info = (
     },
 );
 my @order_recipes =
-  qw{ bwa_mem picard_mergesamfiles markduplicates gatk_baserecalibration chanjo_sexcheck cnvnator sv_combinevariantcallsets };
+  qw{ bwa_mem picard_mergesamfiles markduplicates gatk_baserecalibration chanjo_sexcheck cnvnator_ar sv_combinevariantcallsets };
 
 my %parameter = (
     bwa_mem => {
@@ -81,7 +81,7 @@ my %parameter = (
         outfile_suffix => q{.bam},
     },
     chanjo_sexcheck           => { chain             => q{CHAIN_CHANJO}, },
-    cnvnator                  => { chain             => q{CNVNATOR}, },
+    cnvnator_ar               => { chain             => q{CNVNATOR}, },
     dynamic_parameter         => { order_recipes_ref => \@order_recipes, },
     markduplicates            => { chain             => $chain_main, },
     picard_mergesamfiles      => { chain             => $chain_main, },

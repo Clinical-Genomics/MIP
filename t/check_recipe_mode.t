@@ -89,11 +89,11 @@ my $log = test_log();
 
 ## Given recipes when correct recipe modes
 my %parameter =
-  ( dynamic_parameter => { recipe => [ qw{ bwa_mem fastqc genmod}, ], }, );
+  ( dynamic_parameter => { recipe => [ qw{ bwa_mem fastqc_ar genmod}, ], }, );
 my %active_parameter = (
-    bwa_mem => 1,
-    fastqc  => 0,
-    genmod  => 2,
+    bwa_mem   => 1,
+    fastqc_ar => 0,
+    genmod    => 2,
 );
 
 my $is_ok = check_recipe_mode(

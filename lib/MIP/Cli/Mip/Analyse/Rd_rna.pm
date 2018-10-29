@@ -316,7 +316,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{fastqc} => (
+        q{fastqc_ar} => (
             cmd_aliases   => [qw{ fqc }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Sequence quality analysis using FastQC},
@@ -773,7 +773,7 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
     );
 
     option(
-        q{multiqc} => (
+        q{multiqc_ar} => (
             cmd_aliases => [qw{ mqc }],
             cmd_tags    => [q{Analysis recipe switch}],
             documentation =>

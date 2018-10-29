@@ -213,7 +213,7 @@ sub pipeline_rd_dna_vcf_rerun {
         frequency_filter                 => \&analysis_frequency_filter,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
         rankvariant    => undef,                         # Depends on sample features
-        rhocall        => \&analysis_rhocall_annotate,
+        rhocall_ar     => \&analysis_rhocall_annotate,
         sacct          => \&analysis_sacct,
         snpeff         => \&analysis_snpeff,
         sv_annotate    => \&analysis_sv_annotate,
@@ -223,9 +223,9 @@ sub pipeline_rd_dna_vcf_rerun {
         sv_varianteffectpredictor => undef,                    # Depends on analysis type,
         sv_vcfparser              => undef,                    # Depends on analysis type
         varianteffectpredictor    => \&analysis_vep,
-        vcfparser                 => \&analysis_mip_vcfparser,
+        vcfparser_ar              => \&analysis_mip_vcfparser,
         vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
-        vt                 => \&analysis_vt,
+        vt_ar              => \&analysis_vt,
     );
 
     ## Special case for rankvariants recipe

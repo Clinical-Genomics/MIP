@@ -65,12 +65,12 @@ diag(   q{Test update_recipe_mode_with_dry_run_all from Recipes.pm v}
 
 my $simulation_mode = 0;
 
-my @recipes = qw{fastqc bwa_mem peddy};
+my @recipes = qw{fastqc_ar bwa_mem peddy_ar};
 
 my %active_parameter = (
-    fastqc  => 0,
-    bwa_mem => 1,
-    peddy   => 2,
+    fastqc_ar => 0,
+    bwa_mem   => 1,
+    peddy_ar  => 2,
 );
 
 update_recipe_mode_with_dry_run_all(
@@ -81,11 +81,11 @@ update_recipe_mode_with_dry_run_all(
     }
 );
 
-is( $active_parameter{fastqc}, 0, q{No update fastqc} );
+is( $active_parameter{fastqc_ar}, 0, q{No update fastqc_ar} );
 
 is( $active_parameter{bwa_mem}, 1, q{No update bwa_mem} );
 
-is( $active_parameter{peddy}, 2, q{No update peddy} );
+is( $active_parameter{peddy_ar}, 2, q{No update peddy_ar} );
 
 ### Update of recipe parameters
 
@@ -100,10 +100,10 @@ update_recipe_mode_with_dry_run_all(
     }
 );
 
-is( $active_parameter{fastqc}, 0, q{No update fastqc} );
+is( $active_parameter{fastqc_ar}, 0, q{No update fastqc_ar} );
 
 is( $active_parameter{bwa_mem}, 2, q{Update bwa_mem to simulation mode} );
 
-is( $active_parameter{peddy}, 2, q{No update peddy} );
+is( $active_parameter{peddy_ar}, 2, q{No update peddy_ar} );
 
 done_testing();

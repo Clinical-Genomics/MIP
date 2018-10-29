@@ -62,13 +62,13 @@ diag(   q{Test update_recipe_mode_with_start_with from Recipes.pm v}
       . $EXECUTABLE_NAME );
 
 my %active_parameter = (
-    fastqc   => 1,
-    bwa_mem  => 2,
-    star_aln => 0,
-    multiqc  => 2,
+    fastqc_ar  => 1,
+    bwa_mem    => 2,
+    star_aln   => 0,
+    multiqc_ar => 2,
 );
-my @recipes            = qw{ fastqc bwa_mem star_aln multiqc };
-my @start_with_recipes = qw{ bwa_mem multiqc };
+my @recipes            = qw{ fastqc_ar bwa_mem star_aln multiqc_ar };
+my @start_with_recipes = qw{ bwa_mem multiqc_ar };
 
 update_recipe_mode_with_start_with(
     {
@@ -78,11 +78,11 @@ update_recipe_mode_with_start_with(
     }
 );
 
-is( $active_parameter{fastqc}, 2, q{Udated upstreams dependencies recipe mode} );
+is( $active_parameter{fastqc_ar}, 2, q{Udated upstreams dependencies recipe mode} );
 
 is( $active_parameter{bwa_mem}, 1, q{Udated start with recipe mode} );
 
-is( $active_parameter{multiqc}, 1, q{Udated downstream dependencies recipe mode} );
+is( $active_parameter{multiqc_ar}, 1, q{Udated downstream dependencies recipe mode} );
 
 is( $active_parameter{star_aln}, 0, q{Did not update switched off recipe } );
 

@@ -64,9 +64,9 @@ diag(   q{Test update_recipe_mode_for_analysis_type from Recipes.pm v}
 ## Create log object
 my $log = test_log();
 
-my @recipes = qw{ cnvnator delly_call delly_reformat samtools_subsample_mt tiddit };
+my @recipes = qw{ cnvnator_ar delly_call delly_reformat samtools_subsample_mt tiddit };
 my %active_parameter = (
-    cnvnator              => 1,
+    cnvnator_ar           => 1,
     delly_call            => 1,
     delly_reformat        => 1,
     manta                 => 1,
@@ -94,7 +94,7 @@ is( @warning_msgs, 0, q{No updates to recipes mode} );
     }
 );
 ## Alias
-my $cnvnator_mode              = $active_parameter{cnvnator};
+my $cnvnator_mode              = $active_parameter{cnvnator_ar};
 my $delly_call_mode            = $active_parameter{delly_call};
 my $delly_reformat_mode        = $active_parameter{delly_reformat};
 my $manta_mode                 = $active_parameter{manta};
@@ -102,7 +102,7 @@ my $samtools_subsample_mt_mode = $active_parameter{samtools_subsample_mt};
 my $tiddit_mode                = $active_parameter{tiddit};
 
 ## Test recipe mode updates and warnings
-is( $cnvnator_mode,              0, q{Updated recipes mode for cnvnator} );
+is( $cnvnator_mode,              0, q{Updated recipes mode for cnvnator_ar} );
 is( $delly_call_mode,            0, q{Updated recipes mode for delly_call} );
 is( $delly_reformat_mode,        0, q{Updated recipes mode for delly_reformat} );
 is( $manta_mode,                 1, q{Updated recipes mode for manta} );

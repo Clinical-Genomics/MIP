@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -220,7 +220,7 @@ sub update_vcfparser_outfile_counter {
     ## Create link
     my %vcfparser_select_file = (
         sv_vcfparser => { sv_vcfparser_select_file => q{sv_vcfparser_outfile_count} },
-        vcfparser    => { vcfparser_select_file    => q{vcfparser_outfile_count} },
+        vcfparser_ar => { vcfparser_select_file    => q{vcfparser_outfile_count} },
     );
 ## Determine if to expect select outfile for vcfparser and sv_vcfparser
   RECIPE:

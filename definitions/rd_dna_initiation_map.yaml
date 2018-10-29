@@ -5,7 +5,7 @@ CHAIN_ALL:
    - CHAIN_SPLITFASTQ:
       - split_fastq_file
    - CHAIN_FASTQ:
-      - fastqc
+      - fastqc_ar
    - CHAIN_MAIN:
       - bwa_mem
       - picardtools_mergesamfiles
@@ -25,7 +25,7 @@ CHAIN_ALL:
       - CHAIN_SV:
 # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_SV after execution
          - PARALLEL:
-            - cnvnator
+            - cnvnator_ar
             - expansionhunter
             - manta
             - tiddit
@@ -38,11 +38,11 @@ CHAIN_ALL:
          - sv_vcfparser
          - sv_rankvariant
          - sv_reformat
-         - vcf2cytosure
+         - vcf2cytosure_ar
    - CHAIN_MAIN:
 # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
       - PARALLEL: 
-         - freebayes
+         - freebayes_ar
          - bcftools_mpileup
          - GATK_HAPLOTYPECALLER:
             - gatk_haplotypecaller
@@ -52,11 +52,11 @@ CHAIN_ALL:
       - gatk_combinevariantcallsets
 # Parallel chains (branches), which inherit from MAIN in initiation
       - CHAIN_PEDDY:
-         - peddy
+         - peddy_ar
       - CHAIN_PLINK:
          - plink
       - CHAIN_VINTEGRITY:
-         - variant_integrity
+         - variant_integrity_ar
       - CHAIN_RTEVAL:
          - rtg_vcfeval
       - CHAIN_PTEVAL:
@@ -65,17 +65,17 @@ CHAIN_ALL:
          - gatk_variantevalall
    - CHAIN_MAIN:
       - prepareforvariantannotationblock
-      - rhocall
-      - vt
+      - rhocall_ar
+      - vt_ar
       - frequency_filter
       - varianteffectpredictor
-      - vcfparser
+      - vcfparser_ar
       - snpeff
       - rankvariant
       - endvariantannotationblock
       - CHAIN_GATKEVALEXO:
          - gatk_variantevalexome
-   - qccollect
-   - multiqc
+   - qccollect_ar
+   - multiqc_ar
    - analysisrunstatus
    - sacct 

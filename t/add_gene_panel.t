@@ -67,7 +67,7 @@ my $aggregate_gene_panel_file =
 my $aggregate_gene_panels_key = q{select_file};
 my $gene_panel                = q{TEST};
 my $case_id_test              = q{case_id};
-my $recipe_name_test          = q{vcfparser};
+my $recipe_name_test          = q{vcfparser_ar};
 my %sample_info;
 
 my %header_info = (

@@ -172,7 +172,7 @@ $ perl t/mip_analyse_rare_disease.test
      - source
      - activate
      - MIP_py3
-    cnvnator:
+    cnvnator_ar:
      - LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH;
      - export
      - LD_LIBRARY_PATH;
@@ -193,11 +193,11 @@ $ perl t/mip_analyse_rare_disease.test
      - source
      - activate
      - MIP_freebayes
-    multiqc:
+    multiqc_ar:
      - source
      - activate
      - MIP_py3
-    peddy:
+    peddy_ar:
      - source
      - activate
      - MIP_peddy
@@ -223,7 +223,7 @@ $ perl t/mip_analyse_rare_disease.test
      - source
      - activate
      - MIP_vep
-    variant_integrity:
+    variant_integrity_ar:
      - source
      - activate
      - MIP_py3
