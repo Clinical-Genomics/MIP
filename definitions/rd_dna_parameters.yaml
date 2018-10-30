@@ -356,7 +356,6 @@ bwa_mem:
   default: 1
   file_tag: _sorted
   outfile_suffix: ".bam"
-  outdir_name: bwa
   program_name_path:
    - bwa
    - samtools
@@ -618,7 +617,6 @@ cnvnator_ar:
   data_type: SCALAR
   default: 1
   file_tag: _cnvnator
-  outdir_name: cnvnator
   outfile_suffix: ".vcf"
   program_name_path:
    - bcftools
@@ -641,7 +639,6 @@ delly_call:
   file_tag: _dellycall
   program_name_path:
    - delly
-  outdir_name: delly
   outfile_suffix: ".bcf"
   type: recipe
 delly_reformat:
@@ -654,7 +651,6 @@ delly_reformat:
   program_name_path:
    - delly
    - bcftools
-  outdir_name: delly
   outfile_suffix: ".vcf"
   recipe_type: structural_variant_callers
   type: recipe
@@ -686,7 +682,6 @@ expansionhunter:
   data_type: SCALAR
   default: 1
   file_tag: _exphun
-  outdir_name: expansionhunter
   outfile_suffix: ".vcf.gz"
   program_name_path:
    - ExpansionHunter
@@ -708,7 +703,6 @@ manta:
   file_tag: _manta
   program_name_path:
    - configManta.py
-  outdir_name: manta
   outfile_suffix: ".vcf"
   recipe_type: structural_variant_callers
   type: recipe
@@ -719,7 +713,6 @@ tiddit:
   data_type: SCALAR
   default: 1
   file_tag: _tiddit
-  outdir_name: tiddit
   outfile_suffix: ".vcf"
   coverage_file_suffix: ".tab"
   program_name_path:
@@ -865,7 +858,6 @@ vcf2cytosure_ar:
   default: 1
   file_tag: _cyto
   outfile_suffix: ".cgh"
-  outdir_name: vcf2cytosure
   program_name_path:
     - bcftools
     - TIDDIT.py
@@ -1076,7 +1068,6 @@ bcftools_mpileup:
   data_type: SCALAR
   default: 1
   file_tag: _mpileup
-  outdir_name: bcftools
   program_name_path:
    - bcftools
   recipe_type: variant_callers
@@ -1099,7 +1090,6 @@ freebayes_ar:
   program_name_path:
    - freebayes
    - bcftools
-  outdir_name: freebayes
   recipe_type: variant_callers
   outfile_suffix: ".vcf"
   type: recipe
@@ -1215,7 +1205,6 @@ gatk_variantrecalibration:
   program_name_path:
    - bcftools
    - gatk
-  outdir_name: gatk
   recipe_type: variant_callers
   outfile_suffix: ".vcf"
   type: recipe

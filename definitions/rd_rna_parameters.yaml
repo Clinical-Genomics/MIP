@@ -186,7 +186,6 @@ salmon_quant:
   default: 1
   file_tag: nofile_tag
   outfile_suffix: ".sf"
-  outdir_name: salmon
   program_name_path:
    - salmon
   type: recipe
@@ -213,7 +212,6 @@ blobfish:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
-  outdir_name: blobfish
   program_name_path:
    - BlobFish.py
   type: recipe
@@ -226,7 +224,6 @@ star_aln:
   default: 1
   file_tag: _star_sorted
   outfile_suffix: ".bam"
-  outdir_name: star
   program_name_path:
    - STAR
   recipe_type: aligners
@@ -285,7 +282,6 @@ star_fusion:
   default: 1
   file_tag: _fusion
   outfile_suffix: ".tsv"
-  outdir_name: star
   program_name_path:
     - gtf_file_to_feature_seqs.pl
     - prep_genome_lib.pl
@@ -574,7 +570,6 @@ multiqc_ar:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
-  outdir_name: multiqc
   program_name_path:
    - multiqc
   type: recipe

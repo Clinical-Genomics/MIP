@@ -45,7 +45,6 @@ bwa_mem:
   default: 0
   file_tag: _sorted
   outfile_suffix: ".bam"
-  outdir_name: bwa
   program_name_path:
    - bwa
    - samtools

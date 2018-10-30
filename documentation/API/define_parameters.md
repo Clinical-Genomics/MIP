@@ -20,7 +20,6 @@ recipe: { # Recipe hash
   default: integer, value="0 (=off) | 1 (=on) | 2 (=simulate)"
   file_tag: string, value="nofile_tag | <file_tag>" # Tag to include in output filename or no tag use "nofile_tag"
   infile_suffix: string, # Suffix for infiles to analysis recipe
-  outdir_name: string, # Set outdirectory for recipe
   outfile_suffix: string, # Set to enable file suffix for analysis recipe outfile
   program_name_path: string, value="<binary_name>" # Set to check if can run when executing mip
   recipe_type: string, value="aligners | variant_callers | structural_variant_callers", # For collecting output from multiple analysis recipes

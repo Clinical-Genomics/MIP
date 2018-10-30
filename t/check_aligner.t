@@ -49,11 +49,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -112,16 +108,13 @@ my $log = initiate_logger(
     }
 );
 
-## Given one active aligner, when outdir_name is undefined
+## Given one active aligner
 my @broadcasts;
 my %active_parameter = (
     bwa_mem => 1,
     verbose => 1,
 );
-my %parameter = (
-    dynamic_parameter => { aligners    => [ qw{ bwa_mem pstar }, ], },
-    bwa_mem           => { outdir_name => q{.bam}, }
-);
+my %parameter = ( dynamic_parameter => { aligners => [ qw{ bwa_mem pstar }, ], }, );
 
 check_aligner(
     {
@@ -136,16 +129,8 @@ check_aligner(
 ## Then active aligner should be set
 is( $parameter{active_aligner}, q{bwa_mem}, q{Set active aligner} );
 
-## Then outdir_name should be set to active aligner
-is( $active_parameter{outaligner_dir},
-    q{.bam}, q{Set outdir_name using active aligner} );
-
 ## Then the active aligner should be added to broadcasts
-like(
-    $broadcasts[0],
-    qr/Set \s+ outaligner_dir \s+ to:/xsm,
-    q{Added info to broadcast}
-);
+like( $broadcasts[0], qr/Set \s+ outaligner_dir \s+ to:/xsm, q{Added info to broadcast} );
 
 ## Given more than one active aligner
 $active_parameter{pstar} = 1;

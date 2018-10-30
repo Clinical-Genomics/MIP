@@ -40,8 +40,6 @@ recipe_type:
     - repeats_variant_callers
     - structural_variant_callers
     - variant_callers
-outdir_name:
-  key_data_type: SCALAR
 reference:
   key_data_type: SCALAR
   values:

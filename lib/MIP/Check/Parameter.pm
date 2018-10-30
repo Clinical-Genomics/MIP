@@ -245,8 +245,7 @@ sub check_aligner {
             if ( not defined $outaligner_dir ) {
 
                 # Set outaligner_dir parameter depending on active aligner
-                $active_parameter_href->{outaligner_dir} = $outaligner_dir =
-                  $parameter_href->{$aligner}{outdir_name};
+                $active_parameter_href->{outaligner_dir} = $outaligner_dir;
 
                 next ALIGNER if ( not $verbose );
 
@@ -804,9 +803,10 @@ sub check_recipe_name {
 
         next RECIPE if ( not exists $parameter_href->{$recipe}{program_name_path} );
 
-        map { $program_name{$_} = undef }
-          @{ $parameter_href->{$recipe}{program_name_path} };
+        foreach my $program ( @{ $parameter_href->{$recipe}{program_name_path} } ) {
 
+            $program_name{$program} = undef;
+        }
         if ( exists $program_name{$recipe} ) {
 
             my $err_msg =
@@ -883,7 +883,8 @@ sub check_prioritize_variant_callers {
   CALLER:
     foreach my $variant_caller ( @{$variant_callers_ref} ) {
 
-        my $variant_caller_alias = $parameter_href->{$variant_caller}{outdir_name};
+        ## Only use first part of name
+        my ($variant_caller_alias) = split /_/sxm, $variant_caller;
         push @variant_caller_aliases, $variant_caller_alias;
 
         ## Only active recipes
