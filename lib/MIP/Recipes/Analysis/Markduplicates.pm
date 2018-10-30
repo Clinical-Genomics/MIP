@@ -507,7 +507,6 @@ sub analysis_markduplicates_rio {
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $recipe_info_path       => Recipe info path
 ##          : $recipe_name            => Program name
@@ -533,7 +532,6 @@ sub analysis_markduplicates_rio {
 
     ## Default(s)
     my $case_id;
-    my $outaligner_dir;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -569,11 +567,6 @@ sub analysis_markduplicates_rio {
             default     => {},
             defined     => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {

@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Bamcalibrationblock;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bamcalibrationblock };
@@ -147,6 +148,7 @@ sub analysis_bamcalibrationblock {
 
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Get::Parameter qw{ get_recipe_parameters };
+    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -186,17 +188,17 @@ sub analysis_bamcalibrationblock {
         );
 
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
-        my ( $file_path, $recipe_info_path ) = setup_script(
+        my ( $recipe_file_path, $recipe_info_path ) = setup_script(
             {
-                active_parameter_href => $active_parameter_href,
-                core_number           => $CORE_NUMBER,
-                directory_id          => $sample_id,
-                FILEHANDLE            => $FILEHANDLE,
-                job_id_href           => $job_id_href,
-                log                   => $log,
-                recipe_directory      => $active_parameter_href->{outaligner_dir},
-                recipe_name           => $recipe_name,
-                process_time          => $PROCESS_TIME,
+                active_parameter_href           => $active_parameter_href,
+                core_number                     => $CORE_NUMBER,
+                directory_id                    => $sample_id,
+                FILEHANDLE                      => $FILEHANDLE,
+                job_id_href                     => $job_id_href,
+                log                             => $log,
+                recipe_directory                => $recipe_name,
+                recipe_name                     => $recipe_name,
+                process_time                    => $PROCESS_TIME,
                 source_environment_commands_ref => \@source_environment_cmds,
                 temp_directory                  => $temp_directory,
             }
@@ -208,11 +210,24 @@ sub analysis_bamcalibrationblock {
             ## Only for active recipes
             next PROGRAM if ( not $active_parameter_href->{$recipe} );
 
+            say {$FILEHANDLE} q{## Create recipe dir for per recipe output};
+            gnu_mkdir(
+                {
+                    FILEHANDLE       => $FILEHANDLE,
+                    indirectory_path => catfile(
+                        $active_parameter_href->{outdata_dir},
+                        $sample_id, $recipe
+                    ),
+                    parents => 1,
+                }
+            );
+            say {$FILEHANDLE} $NEWLINE;
+
             ($xargs_file_counter) = $bamcal_ar_href->{$recipe}->(
                 {
                     active_parameter_href   => $active_parameter_href,
                     file_info_href          => $file_info_href,
-                    file_path               => $file_path,
+                    file_path               => $recipe_file_path,
                     FILEHANDLE              => $FILEHANDLE,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,

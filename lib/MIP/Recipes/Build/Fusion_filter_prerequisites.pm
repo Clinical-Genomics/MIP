@@ -45,7 +45,6 @@ sub build_fusion_filter_prerequisites {
 ##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                  => Job id hash {REF}
 ##          : $log                          => Log object
-##          : $outaligner_dir               => Outaligner_dir used in the analysis
 ##          : $parameter_href               => Parameter hash {REF}
 ##          : $recipe_name                 => Program name
 ##          : $parameter_build_suffixes_ref => The rtg reference associated directory suffixes {REF}
@@ -68,7 +67,6 @@ sub build_fusion_filter_prerequisites {
     ## Default(s)
     my $case_id;
     my $human_genome_reference;
-    my $outaligner_dir;
     my $temp_directory;
 
     my $tmpl = {
@@ -114,11 +112,6 @@ sub build_fusion_filter_prerequisites {
             defined  => 1,
             required => 1,
             store    => \$log,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
         },
         parameter_href => {
             default     => {},

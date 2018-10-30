@@ -53,7 +53,7 @@ sub setup_script {
 ##          : $outdata_dir                     => MIP outdata directory {Optional}
 ##          : $outscript_dir                   => MIP outscript directory {Optional}
 ##          : $process_time                    => Allowed process time (Hours) {Optional}
-##          : $recipe_directory                => Builds from $directory_id/$outaligner_dir
+##          : $recipe_directory                => Builds from $directory_id
 ##          : $recipe_name                     => Assigns filename to sbatch script
 ##          : $set_errexit                     => Bash set -e {Optional}
 ##          : $set_nounset                     => Bash set -u {Optional}

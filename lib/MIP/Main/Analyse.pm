@@ -34,7 +34,6 @@ use Readonly;
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
-  check_aligner
   check_cmd_config_vs_definition_file
   check_email_address
   check_parameter_hash
@@ -220,7 +219,7 @@ sub mip_analyse {
             }
         );
 
-        my @config_dynamic_parameters = qw{ analysis_constant_path outaligner_dir };
+        my @config_dynamic_parameters = qw{ analysis_constant_path };
 
         ## Replace config parameter with cmd info for config dynamic parameter
         set_default_config_dynamic_parameters(
@@ -630,17 +629,6 @@ sub mip_analyse {
         }
     );
 
-## Check that the correct number of aligners is used in MIP and sets the aligner flag accordingly
-    check_aligner(
-        {
-            active_parameter_href => \%active_parameter,
-            broadcasts_ref        => \@broadcasts,
-            log                   => $log,
-            parameter_href        => \%parameter,
-            verbose               => $active_parameter{verbose},
-        }
-    );
-
 ## Detect the gender(s) included in current analysis
     (
 
@@ -770,7 +758,6 @@ sub mip_analyse {
                 order_parameters_ref            => \@order_parameters,
                 order_recipes_ref =>
                   \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
-                outaligner_dir   => $active_parameter{outaligner_dir},
                 parameter_href   => \%parameter,
                 sample_info_href => \%sample_info,
             }

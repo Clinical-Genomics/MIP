@@ -124,13 +124,6 @@ module_core_number:
     star_aln: 16
     star_fusion: 4
   type: mip
-## Choosen MIP Aligner
-outaligner_dir:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
 picardtools_path:
   associated_recipe:
    - markduplicates

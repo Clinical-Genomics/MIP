@@ -504,7 +504,6 @@ sub analysis_picardtools_mergesamfiles_rio {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $referencefile_path      => Human genome reference file path
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -530,7 +529,6 @@ sub analysis_picardtools_mergesamfiles_rio {
 
     ## Default(s)
     my $case_id;
-    my $outaligner_dir;
     my $referencefile_path;
     my $temp_directory;
     my $xargs_file_counter;
@@ -569,11 +567,6 @@ sub analysis_picardtools_mergesamfiles_rio {
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {

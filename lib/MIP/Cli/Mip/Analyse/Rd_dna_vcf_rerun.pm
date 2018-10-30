@@ -210,16 +210,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{outaligner_dir} => (
-            cmd_aliases => [qw{ ald }],
-            documentation =>
-q{Sets which aligner out directory was used for alignment in previous analysis},
-            is  => q{rw},
-            isa => enum( [qw{ bwa }] ),
-        )
-    );
-
-    option(
         q{picardtools_path} => (
             cmd_aliases   => [qw{ ptp }],
             documentation => q{Path to Picardtools},

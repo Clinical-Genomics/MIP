@@ -93,13 +93,6 @@ module_time:
     vcfparser_ar: 5
     vt_ar: 10
   type: mip
-## Choosen MIP Aligner
-outaligner_dir:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: bwa
-  type: mip
 picardtools_path:
   associated_recipe:
    - prepareforvariantannotationblock

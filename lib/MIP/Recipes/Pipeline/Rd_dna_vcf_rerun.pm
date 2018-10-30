@@ -48,7 +48,6 @@ sub pipeline_rd_dna_vcf_rerun {
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
 ##          : $order_recipes_ref               => Order of recipes
-##          : $outaligner_dir                  => Outaligner dir used in the analysis
 ##          : $parameter_href                  => Parameter hash {REF}
 ##          : $sample_info_href                => Info on samples and case hash {REF}
 
@@ -65,9 +64,6 @@ sub pipeline_rd_dna_vcf_rerun {
     my $order_recipes_ref;
     my $parameter_href;
     my $sample_info_href;
-
-    ## Default(s)
-    my $outaligner_dir;
 
     my $tmpl = {
         active_parameter_href => {
@@ -122,11 +118,6 @@ sub pipeline_rd_dna_vcf_rerun {
             defined     => 1,
             required    => 1,
             store       => \$order_recipes_ref,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
             strict_type => 1,
         },
         parameter_href => {

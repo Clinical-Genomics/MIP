@@ -272,13 +272,6 @@ infile_dirs:
   data_type: HASH
   type: path
   update_path: absolute_path
-## Choosen MIP Aligner
-outaligner_dir:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
 picardtools_path:
   associated_recipe:
    - bwa_mem

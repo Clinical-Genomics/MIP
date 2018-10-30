@@ -246,16 +246,6 @@ sub _build_usage {
     );
 
     option(
-        q{outaligner_dir} => (
-            cmd_aliases => [qw{ ald }],
-            documentation =>
-q{Sets which aligner out directory was used for alignment in previous analysis},
-            is  => q{rw},
-            isa => enum( [qw{ star }] ),
-        )
-    );
-
-    option(
         q{picardtools_path} => (
             cmd_aliases   => [qw{ ptp }],
             documentation => q{Path to Picardtools},
