@@ -316,7 +316,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
                     cache_directory => $cache_directory,
                     cache_version   => $vep_version,
                     FILEHANDLE      => $FILEHANDLE,
-                    species_ref     => [qw{ homo_sapiens }],
+                    species_ref     => \@species,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
