@@ -229,24 +229,26 @@ sv_vep_features:
   element_separator: ,
   data_type: ARRAY
   default:
-   - hgvs
-   - symbol
-   - numbers
-   - humdiv
-   - domains
-   - protein
-   - ccds
-   - uniprot
-   - biotype
-   - regulatory
-   - tsl
-   - canonical
-   - per_gene
    - appris
+   - biotype
+   - canonical
    - cache
+   - ccds
+   - domains
+   - exclude_predicted
    - force_overwrite
+   - hgvs
+   - humdiv
    - no_progress
+   - no_stats
+   - numbers
    - offline
+   - per_gene
+   - protein
+   - regulatory
+   - symbol
+   - tsl
+   - uniprot
   type: recipe_argument
 sv_vep_plugins:
   associated_recipe:
@@ -547,6 +549,7 @@ vep_features:
    - canonical
    - ccds
    - domains
+   - exclude_predicted
    - force_overwrite
    - hgvs
    - humdiv
