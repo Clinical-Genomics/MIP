@@ -196,6 +196,8 @@ evep:
       vep_plugins:
         - LoFtool
         - MaxEntScan
+      vep_species:
+        - homo_sapiens_merged
       version: 94
 
 # Specify environment names
