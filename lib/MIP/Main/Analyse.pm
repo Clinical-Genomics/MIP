@@ -472,8 +472,7 @@ sub mip_analyse {
     );
 
 ## Parameters that have keys as MIP recipe names
-    my @parameter_keys_to_check =
-      (qw{ module_time module_core_number module_source_environment_command });
+    my @parameter_keys_to_check = (qw{ module_time module_core_number });
   PARAMETER_NAME:
     foreach my $parameter_name (@parameter_keys_to_check) {
 
@@ -489,7 +488,7 @@ sub mip_analyse {
     }
 
 ## Parameters with key(s) that have elements as MIP recipe names
-    my @parameter_element_to_check = qw(associated_recipe);
+    my @parameter_element_to_check = qw{ associated_recipe };
   PARAMETER:
     foreach my $parameter ( keys %parameter ) {
 

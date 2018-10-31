@@ -1,5 +1,6 @@
 package MIP::Check::Unix;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use File::Spec::Functions qw{ catfile };
@@ -17,7 +18,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_binary_in_path };

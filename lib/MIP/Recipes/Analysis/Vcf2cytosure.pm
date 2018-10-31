@@ -140,8 +140,7 @@ sub analysis_vcf2cytosure {
 
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_program_parameters get_recipe_attributes get_recipe_parameters };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_parameters };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };

@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_salmon_quant_prerequisites };
@@ -39,14 +39,14 @@ sub build_salmon_quant_prerequisites {
 ## Function : Creates the Fusion-filter prerequisites for the human genome and transcriptome
 ## Returns  :
 ## Arguments: $active_parameter_href        => Active parameters for this analysis hash {REF}
-##          : $case_id                    => Family id
+##          : $case_id                      => Family id
 ##          : $file_info_href               => File info hash {REF}
 ##          : $human_genome_reference       => Human genome reference
 ##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                  => Job id hash {REF}
 ##          : $log                          => Log object
 ##          : $parameter_href               => Parameter hash {REF}
-##          : $recipe_name                 => Program name
+##          : $recipe_name                  => Program name
 ##          : $parameter_build_suffixes_ref => The rtg reference associated directory suffixes {REF}
 ##          : $sample_info_href             => Info on samples and case hash {REF}
 ##          : $temp_directory               => Temporary directory
@@ -149,7 +149,7 @@ sub build_salmon_quant_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_program_parameters get_recipe_parameters };
+    use MIP::Get::Parameter qw{ get_package_source_env_cmds get_recipe_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -158,7 +158,7 @@ sub build_salmon_quant_prerequisites {
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script
-      qw{ setup_script write_return_to_conda_environment write_source_environment_command };
+      qw{ setup_script write_return_to_environment write_source_environment_command };
 
     ## Constants
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
@@ -242,10 +242,10 @@ sub build_salmon_quant_prerequisites {
         say {$FILEHANDLE} $NEWLINE;
 
         ## Soure program specific env - required by STAR-fusion
-        my @program_source_commands = get_program_parameters(
+        my @program_source_commands = get_package_source_env_cmds(
             {
                 active_parameter_href => $active_parameter_href,
-                program_name          => q{gtf_file_to_feature_seqs.pl},
+                package_name          => q{gtf_file_to_feature_seqs.pl},
             }
         );
 
@@ -269,14 +269,15 @@ sub build_salmon_quant_prerequisites {
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        write_return_to_conda_environment(
+        write_return_to_environment(
             {
-                FILEHANDLE                           => $FILEHANDLE,
-                source_main_environment_commands_ref => \@source_environment_cmds,
+                active_parameter_href => $active_parameter_href,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
+        print {$FILEHANDLE} $NEWLINE;
 
-        ## Build SAlmon index file
+        ## Build Salmon index file
         salmon_index(
             {
                 fasta_path   => catfile( $salmon_quant_directory_tmp, q{cDNA_seqs.fa} ),
