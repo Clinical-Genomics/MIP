@@ -36,15 +36,14 @@ In `lib/MIP/Cli/Mip/Install/[PIPELINE]`:
 
 ## Add the environment to the travis tests
 
-1. Add the environment to the `module_source_environment_command`:
+1. Add the environment to the `load_env` option:
 
 In `templates/mip_config.yaml`:
 ```
-module_source_environment_command:
-  [RECIPE]:
-   - source
-   - activate
-   - mip_travis_[ENV_NAME]
+load_env:
+  mip_travis_[ENV_NAME]:
+   [RECIPE|PROGRAM]:
+   method: [ENV_METHOD] # e.g conda
 ```
 2. Add the binaries of your environment to the test envs:
 

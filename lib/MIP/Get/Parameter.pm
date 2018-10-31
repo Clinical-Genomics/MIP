@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -28,11 +28,13 @@ BEGIN {
       get_capture_kit
       get_conda_path
       get_dynamic_conda_path
+      get_env_method_cmds
       get_gatk_intervals
       get_install_parameter_attribute
       get_recipe_parameters
       get_recipe_attributes
-      get_program_parameters
+      get_package_env_attributes
+      get_package_source_env_cmds
       get_program_version
       get_programs_for_shell_installation
       get_read_group
@@ -43,6 +45,7 @@ BEGIN {
 ## Constants
 Readonly my $COLON      => q{:};
 Readonly my $DOT        => q{.};
+Readonly my $EMPTY_STR  => q{};
 Readonly my $MINUS_FOUR => -4;
 Readonly my $MINUS_ONE  => -1;
 Readonly my $MINUS_TWO  => -2;
@@ -105,13 +108,6 @@ sub get_bin_file_path {
     if ( $environment_key and $environment_href->{$environment_key} ) {
 
         $environment = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
-        $bin_file_path = catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
-    }
-    ## Check if main environment in use
-    elsif ( $active_parameter_href->{source_main_environment_commands} ) {
-
-        $environment =
-          @{ $active_parameter_href->{source_main_environment_commands} }[$MINUS_ONE];
         $bin_file_path = catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
     }
     ## Assume installed in conda base environment
@@ -253,23 +249,34 @@ sub get_dynamic_conda_path {
         $active_parameter_href->{conda_path} = get_conda_path();
     }
     if ( not -d $active_parameter_href->{conda_path} ) {
+
         return q{Failed to find default conda path};
     }
     my $conda_path = $active_parameter_href->{conda_path};
 
     ## Get module and program environments in use
     my %environment;
-    if ( $active_parameter_href->{program_source_environment_command} ) {
-        ## Build hash with "program_name" as keys and "source env command" as value
-        @environment{
-            keys %{ $active_parameter_href->{program_source_environment_command} }
-        } = values %{ $active_parameter_href->{program_source_environment_command} };
-    }
-    if ( $active_parameter_href->{module_source_environment_command} ) {
+
+    ## Load env
+    my ( $env_name, $env_method ) = get_package_env_attributes(
+        {
+            active_parameter_href => $active_parameter_href,
+            package_name          => $environment_key,
+        }
+    );
+    if ($env_name) {
+
+        ## Get env load command
+        my @env_method_cmds = get_env_method_cmds(
+            {
+                action     => q{load},
+                env_name   => $env_name,
+                env_method => $env_method,
+            }
+        );
+
         ## Add to environment hash with "recipe_name" as keys and "source env command" as value
-        @environment{
-            keys %{ $active_parameter_href->{module_source_environment_command} }
-        } = values %{ $active_parameter_href->{module_source_environment_command} };
+        $environment{$environment_key} = [@env_method_cmds];
     }
 
     ## Get the bin file path
@@ -391,26 +398,90 @@ sub get_recipe_parameters {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Initilize variable
-    my @source_environment_cmds;
+    my @source_environment_cmds = get_package_source_env_cmds(
+        {
+            active_parameter_href => $active_parameter_href,
+            package_name          => $recipe_name,
+        }
+    );
 
-    if (
-        exists $active_parameter_href->{module_source_environment_command}{$recipe_name} )
-    {
-
-        @source_environment_cmds =
-          @{ $active_parameter_href->{module_source_environment_command}{$recipe_name} };
-    }
-    elsif ( $active_parameter_href->{source_main_environment_commands}
-        && @{ $active_parameter_href->{source_main_environment_commands} } )
-    {
-
-        @source_environment_cmds =
-          @{ $active_parameter_href->{source_main_environment_commands} };
-    }
     my $core_number = $active_parameter_href->{module_core_number}{$recipe_name};
     my $time        = $active_parameter_href->{module_time}{$recipe_name};
 
     return $core_number, $time, @source_environment_cmds;
+}
+
+sub get_package_source_env_cmds {
+
+## Function : Get package source environment commands
+## Returns  : @source_environment_cmds
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $package_name          => Package name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $package_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        package_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$package_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Initilize variable
+    my @source_environment_cmds;
+
+    my ( $env_name, $env_method ) = get_package_env_attributes(
+        {
+            active_parameter_href => $active_parameter_href,
+            package_name          => $package_name,
+        }
+    );
+
+    ## Could not find recipe within env
+    if ( not $env_name ) {
+
+        ## Fall back to MIPs MAIN env
+        ( $env_name, $env_method ) = get_package_env_attributes(
+            {
+                active_parameter_href => $active_parameter_href,
+                package_name          => q{mip},
+            }
+        );
+    }
+    ## Prior to env command special case
+    ## for recipes needing addtional processing
+    my $prior_to_load_cmd = $active_parameter_href->{load_env}{$env_name}{$package_name};
+    if ($prior_to_load_cmd) {
+
+        push @source_environment_cmds, $prior_to_load_cmd;
+    }
+
+    ## Get env load command
+    my @env_method_cmds = get_env_method_cmds(
+        {
+            action     => q{load},
+            env_name   => $env_name,
+            env_method => $env_method,
+        }
+    );
+    push @source_environment_cmds, @env_method_cmds;
+
+    return @source_environment_cmds;
 }
 
 sub get_recipe_attributes {
@@ -453,52 +524,6 @@ sub get_recipe_attributes {
 
     ## Get recipe attribute hash
     return %{ $parameter_href->{$recipe_name} };
-}
-
-sub get_program_parameters {
-
-##Function : Get specific source environment command for program
-##Returns  : @source_environment_cmds
-##Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##         : $program_name          => Program name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $program_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        program_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Initilize variable
-    my @source_environment_cmds;
-
-    if (
-        exists $active_parameter_href->{program_source_environment_command}{$program_name}
-      )
-    {
-
-        @source_environment_cmds =
-          @{ $active_parameter_href->{program_source_environment_command}{$program_name}
-          };
-    }
-    return @source_environment_cmds;
 }
 
 sub get_program_version {
@@ -815,6 +840,100 @@ sub get_read_group {
     $rg{lb} = $sample_id;
 
     return %rg;
+}
+
+sub get_env_method_cmds {
+
+## Function : Get the standard load env command for environment method
+## Returns  : @env_method_cmds
+## Arguments: $action     => What to do with the environment
+##          : $env_method => Method used to load environment
+##          : $env_name   => Name of environment
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $action;
+    my $env_method;
+    my $env_name;
+
+    my $tmpl = {
+        action => {
+            allow       => [qw{ load unload }],
+            defined     => 1,
+            required    => 1,
+            store       => \$action,
+            strict_type => 1,
+        },
+        env_method => {
+            allow       => [qw{ conda }],
+            defined     => 1,
+            required    => 1,
+            store       => \$env_method,
+            strict_type => 1,
+        },
+        env_name => {
+            required    => 1,
+            store       => \$env_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %method_cmd = (
+        conda => {
+            load   => [ qw{ source activate }, $env_name ],
+            unload => [qw{source deactivate}],
+        },
+    );
+
+    return ( @{ $method_cmd{$env_method}{$action} } );
+}
+
+sub get_package_env_attributes {
+
+## Function : Get environment name and method for package (recipe, program or MIP)
+## Returns  : $env_name, $env_method or "undef"
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $package_name          => Package name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $package_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        package_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$package_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  ENV:
+    foreach my $env_name ( keys %{ $active_parameter_href->{load_env} } ) {
+
+        ## Found recipe within env
+        if ( exists $active_parameter_href->{load_env}{$env_name}{$package_name} ) {
+
+            ## Unpack
+            my $env_method = $active_parameter_href->{load_env}{$env_name}{method};
+            return $env_name, $env_method;
+        }
+    }
+    return;
 }
 
 sub get_gatk_intervals {

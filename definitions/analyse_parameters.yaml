@@ -68,12 +68,6 @@ max_cores_per_node:
   data_type: SCALAR
   default: 16
   type: mip
-module_source_environment_command:
-  associated_recipe:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 outdata_dir:
   associated_recipe:
    - mip
@@ -104,7 +98,7 @@ print_recipe_mode:
   data_type: SCALAR
   default: 2
   type: mip
-program_source_environment_command:
+load_env:
   associated_recipe:
    - mip
   data_type: HASH
@@ -139,13 +133,6 @@ slurm_quality_of_service:
    - mip
   data_type: SCALAR
   default: normal
-  type: mip
-source_main_environment_commands:
-  associated_recipe:
-   - mip
-  element_separator: " "
-  data_type: ARRAY
-  mandatory: no
   type: mip
 start_with_recipe:
   associated_recipe:

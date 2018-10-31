@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -41,13 +41,15 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $COMMA      => q{,};
-Readonly my $MINUS_ONE  => -1;
-Readonly my $MINUS_TWO  => -2;
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $TAB        => qq{\t};
-Readonly my $UNDERSCORE => q{_};
+Readonly my $COMMA       => q{,};
+Readonly my $OPEN_BRACE  => q{\{};
+Readonly my $CLOSE_BRACE => q{\}};
+Readonly my $MINUS_ONE   => -1;
+Readonly my $MINUS_TWO   => -2;
+Readonly my $NEWLINE     => qq{\n};
+Readonly my $SPACE       => q{ };
+Readonly my $TAB         => qq{\t};
+Readonly my $UNDERSCORE  => q{_};
 
 sub set_config_to_active_parameters {
 
@@ -756,7 +758,25 @@ sub set_parameter_to_broadcast {
                 each %{ $active_parameter_href->{$parameter_name} } )
             {
 
-                if ( ref $value eq q{ARRAY} ) {
+                ## Hash of hash
+                if ( ref $value eq q{HASH} ) {
+
+                    $info .= $OPEN_BRACE . $key . q{ => };
+
+                  HASH:
+                    foreach my $sec_key ( keys %{$value} ) {
+
+                        $info .= $sec_key . q{=};
+                        if ( $value->{$sec_key} ) {
+
+                            $info .= $value->{$sec_key};
+                        }
+                        $info .= $COMMA;
+                    }
+                    $info .= $CLOSE_BRACE . $SPACE;
+                }
+                ## Hash of array
+                elsif ( ref $value eq q{ARRAY} ) {
 
                     $info .= join $COMMA, map {
                         qq{$_=} . join $SPACE,

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -47,12 +47,12 @@ sub analysis_sv_annotate {
 ## Function : Annotate SV
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory {REF}
@@ -143,7 +143,7 @@ sub analysis_sv_annotate {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_program_parameters get_recipe_attributes get_recipe_parameters };
+      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_parameters };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -156,7 +156,7 @@ sub analysis_sv_annotate {
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
     use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script
-      qw{ setup_script write_return_to_conda_environment write_source_environment_command };
+      qw{ setup_script write_return_to_environment write_source_environment_command };
 
     ### PREPROCESSING:
 
@@ -379,10 +379,10 @@ sub analysis_sv_annotate {
     ## Remove common variants
     if ( $active_parameter_href->{sv_genmod_filter} ) {
 
-        my @program_source_commands = get_program_parameters(
+        my @program_source_commands = get_package_source_env_cmds(
             {
                 active_parameter_href => $active_parameter_href,
-                program_name          => q{genmod},
+                package_name          => q{genmod},
             }
         );
 
@@ -424,10 +424,10 @@ sub analysis_sv_annotate {
         );
         print {$FILEHANDLE} $NEWLINE;
 
-        write_return_to_conda_environment(
+        write_return_to_environment(
             {
-                FILEHANDLE                           => $FILEHANDLE,
-                source_main_environment_commands_ref => \@source_environment_cmds,
+                active_parameter_href => $active_parameter_href,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
         print {$FILEHANDLE} $NEWLINE;
