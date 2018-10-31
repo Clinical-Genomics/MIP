@@ -86,7 +86,7 @@ recipe_time:
     blobfish: 1
     bootstrapann: 3
     fastqc_ar: 1
-    gatk_asereadcounter: 2
+    gatk_asereadcounter: 3
     gatk_baserecalibration: 5
     gatk_haplotypecaller: 2
     gatk_splitncigarreads: 5
@@ -98,8 +98,8 @@ recipe_time:
     rseqc: 3
     sacct: 1
     salmon_quant: 5
-    star_aln: 5
-    star_fusion: 4
+    star_aln: 6
+    star_fusion: 6
   type: mip
 recipe_core_number:
   associated_recipe:
@@ -109,7 +109,7 @@ recipe_core_number:
     blobfish: 1
     bootstrapann: 1
     fastqc_ar: 0
-    gatk_asereadcounter: 2
+    gatk_asereadcounter: 3
     gatk_baserecalibration: 16
     gatk_haplotypecaller: 16
     gatk_splitncigarreads: 16
@@ -122,7 +122,7 @@ recipe_core_number:
     sacct: 1
     salmon_quant: 1
     star_aln: 16
-    star_fusion: 4
+    star_fusion: 8
   type: mip
 picardtools_path:
   associated_recipe:
@@ -327,7 +327,7 @@ markduplicates_picardtools_markduplicates:
   associated_recipe:
    - markduplicates
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 markduplicates_sambamba_markdup:
   associated_recipe:

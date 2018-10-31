@@ -91,6 +91,36 @@ installations:
   - erseqc
   - epy3
 
+program_name_path:
+  bcftools: bcftools
+  cufflinks: cufflinks
+  fastqc: fastqc
+  gatk4: gatk
+  picard: picard
+  salmon: salmon
+  sambamba: sambamba
+  samtools: samtools
+  blobfish: BlobFish.py
+  bootstrapann: BootstrapAnn.py
+  mip_scripts: 
+   - mip
+   - vcfparser
+   - qccollect 
+  multiqc: multiqc
+  bedops: bedops 
+  rseqc: 
+   - bam_stat.py
+   - infer_experiment.py
+   - inner_distance.py
+   - junction_annotation.py
+   - junction_saturation.py
+   - read_distribution.py
+   - read_duplication.py
+  fusion-filter: gencode_extract_relevant_gtf_exons.pl
+  star: STAR
+  star-fusion: STAR-Fusion
+  blast: blastn
+
 # Optional name of log file
 log_file: ~
 
