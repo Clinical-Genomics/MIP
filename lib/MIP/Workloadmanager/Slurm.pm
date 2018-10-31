@@ -27,7 +27,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -183,11 +183,11 @@ sub slurm_reformat_sacct_output {
       . join( $COMMA, @{$reformat_sacct_headers_ref} ) . q?); ?;
 
     #Write header line
-    print {$FILEHANDLE} q?if($. == 1) {print "#".join("\t", @headers), "\n"} ?;
+    print {$FILEHANDLE} q?if($. == 1) { print q{#} . join(qq{\t}, @headers), qq{\n} } ?;
 
-    # Write individual job line - skip line containing (.batch)
+  # Write individual job line - skip line containing (.batch or .bat+) in the first column
     print {$FILEHANDLE}
-      q?if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
+q?if ($. >= 3 && $F[0] !~ /( .batch | .bat+ )\b/xms) { print join(qq{\t}, @F), qq{\n} }' ?;
 
     #Write to log_file.status
     print {$FILEHANDLE} q{> } . $log_file_path . q{.status} . $NEWLINE x 2;
@@ -350,9 +350,8 @@ sub slurm_build_sbatch_header {
                 sub {
                     check_allowed_array_values(
                         {
-                            allowed_values_ref =>
-                              [qw(NONE BEGIN END FAIL REQUEUE ALL)],
-                            values_ref => $arg_href->{email_types_ref},
+                            allowed_values_ref => [qw(NONE BEGIN END FAIL REQUEUE ALL)],
+                            values_ref         => $arg_href->{email_types_ref},
                         }
                     );
                 }

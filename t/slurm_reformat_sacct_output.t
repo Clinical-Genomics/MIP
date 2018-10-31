@@ -1,162 +1,136 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
-use autodie;
-use 5.026;    #Require at least perl 5.18
-use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use 5.026;
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
-
-use Cwd;
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir catfile);
-use Getopt::Long;
-use Test::More;
+use English qw{ -no_match_vars };
+use File::Basename qw{ basename dirname };
+use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
 use IPC::Cmd qw(can_run run);
+use Params::Check qw{ allow check last_error };
+use Test::More;
+use charnames qw{ :full :short };
+use open qw{ :encoding(UTF-8) :std };
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2014 };
+use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw(help);
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
-our $USAGE = build_usage( {} );
+my $VERBOSE = 1;
+our $VERSION = 1.01;
 
-my $VERBOSE = 0;
-our $VERSION = '1.0.0';
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
-###User Options
-GetOptions(
-    'h|help' => sub {
-        done_testing();
-        print {*STDOUT} $USAGE, "\n";
-        exit;
-    },    #Display help text
-    'v|version' => sub {
-        done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
-        exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+## Constants
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
+Readonly my $TAB     => qq{\t};
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
-##Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = (
+        q{MIP::Workloadmanager::Slurm} => [qw{ slurm_reformat_sacct_output}],
+        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
+    );
 
-    $perl_module{'MIP::Script::Utils'} = [qw(help)];
-
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
-    }
-
-##Modules
-    my @modules = ('MIP::Workloadmanager::Slurm');
-
-    for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Language::Shell qw(build_shebang);
-use MIP::Gnu::Bash qw(gnu_set);
-use MIP::Workloadmanager::Slurm qw(slurm_reformat_sacct_output);
-use MIP::Test::Commands qw(test_function);
+use MIP::Language::Shell qw{ build_shebang };
+use MIP::Gnu::Bash qw{ gnu_set };
+use MIP::Workloadmanager::Slurm qw{ slurm_reformat_sacct_output };
 
-diag(
-"Test slurm_reformat_sacct_output $MIP::Workloadmanager::Slurm::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag(   q{Test slurm_reformat_sacct_output from Slurm.pm v}
+      . $MIP::Workloadmanager::Slurm::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
-## Set up test data parameters
-# Test input from sacct command
-my $test_data_file_path = catfile(
-    cwd(), qw(data test_data
-      slurm_reformat_sacct_output_input.txt)
-);
+###  Set up test data parameters
 
-# Header for output
-my @reformat_sacct_headers = qw(JobID JobName Account Partition
-  AllocCPUS TotalCPU Elapsed Start
-  End State ExitCode);
+## Test input from sacct command
+my $test_data_file_path =
+  catfile( $Bin, qw{ data test_data slurm_reformat_sacct_output_input.txt } );
 
-# Slurm reformat sacct output test file
-my $log_file_path = 'slurm_reformat_sacct_output.txt';
+## Header for output status file
+my @reformat_sacct_headers =
+  qw{ JobID JobName Account Partition AllocCPUS TotalCPU Elapsed Start End State ExitCode };
 
-my @commands = ( 'less', $test_data_file_path );
+## Write test bash script to this file
+my $bash_file_path = catfile( $Bin, q{test_slurm_reformat_sacct_output.sh} );
 
-# Create anonymous filehandle
+## File wit sacct output to reformat
+my $log_file_path = catfile( $Bin, q{slurm_reformat_sacct_output.txt} );
+
+## Output file with reformated sacct output
+my $outfile_path = $log_file_path . q{.status};
+
+### Start test
+
+## Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
 
-# Slurm reformat sacct output test sbatch file
-my $bash_file_path = catfile( cwd(), 'test_slurm_reformat_sacct_output.sh' );
+## Open filehandle
+open $FILEHANDLE, q{>}, $bash_file_path
+  or croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
-# Open filehandle
-open $FILEHANDLE, '>', $bash_file_path
-  or
-  croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . "\n" );
-
-## Write to bash file
+## Write reformat  commando to bash file
+my @commands = ( q{less}, $test_data_file_path );
 _build_test_file_recipe(
     {
-        commands_ref               => \@commands,
-        reformat_sacct_headers_ref => \@reformat_sacct_headers,
-        FILEHANDLE                 => $FILEHANDLE,
         bash_file_path             => $bash_file_path,
+        commands_ref               => \@commands,
+        FILEHANDLE                 => $FILEHANDLE,
         log_file_path              => $log_file_path,
+        reformat_sacct_headers_ref => \@reformat_sacct_headers,
     }
 );
 
 close $FILEHANDLE;
 
-## Testing write to file
-ok( -e $bash_file_path, 'Create bash' );
+## File is created and has content
+ok( -s $bash_file_path, q{Create bash} );
 
-ok( can_run('bash'), 'Checking can run bash binary' );
+## Run command
+my $ok = run( command => [ q{bash}, $bash_file_path ] );
 
-my $cmds_ref = [ 'bash', $bash_file_path ];
-my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref )
-  = run( command => $cmds_ref, verbose => $VERBOSE );
+## Created reformated output file
+ok( -s $outfile_path, q{Created: } . $outfile_path );
 
-my $outfile = $log_file_path . '.status';
-
-ok( -e $log_file_path . '.status', q{Created: } . $log_file_path . '.status' );
-
-# Create anonymous filehandle
+## Create anonymous filehandle
 $FILEHANDLE = IO::Handle->new();
 
-open $FILEHANDLE, '<', $outfile
-  or croak( q{Cannot read '} . $outfile . q{' :} . $OS_ERROR . "\n" );
+## Open filehandle
+open $FILEHANDLE, q{<}, $outfile_path
+  or croak( q{Cannot read '} . $outfile_path . q{' :} . $OS_ERROR . $NEWLINE );
 
 ## Test the outfile from the bash script is properly formatted
 _parse_outfile( { FILEHANDLE => $FILEHANDLE, } );
 
 close $FILEHANDLE;
 
-ok( can_run('rm'), 'Checking can run rm binary' );
-
-$cmds_ref = [ 'rm', $bash_file_path, $outfile ];
-( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
-  run( command => $cmds_ref, verbose => $VERBOSE );
+## Remove test files
+unlink $bash_file_path, $outfile_path or croak q{Could not remove test files};
 
 done_testing();
 
@@ -164,78 +138,52 @@ done_testing();
 ####SubRoutines#######
 ######################
 
-sub build_usage {
-
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}
-
 sub _build_test_file_recipe {
 
-##_build_test_file_recipe
-
-##Function : Builds the test file for testing the housekeeping function
-##Returns  : ""
-##Arguments: $commands_ref, reformat_sacct_headers_ref, $log_file_path, $FILEHANDLE, $bash_file_path
-##         : $commands_ref               => Commands to stream to perl oneliner
-##         : $reformat_sacct_headers_ref => Reformated sacct headers
-##         : $log_file_path              => The log file {REF}
-##         : $FILEHANDLE                 => Sbatch filehandle to write to
-##         : $bash_file_path             => Test file to write recipe to
+## Function : Builds the test file for testing the housekeeping function
+## Returns  : ""
+## Arguments: $bash_file_path             => Test file to write recipe to
+##          : $commands_ref               => Commands to stream to perl oneliner
+##          : $FILEHANDLE                 => Sbatch filehandle to write to
+##          : $log_file_path              => The log file {REF}
+##          : $reformat_sacct_headers_ref => Reformated sacct headers
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $bash_file_path;
     my $commands_ref;
-    my $reformat_sacct_headers_ref;
     my $FILEHANDLE;
     my $log_file_path;
-    my $bash_file_path;
+    my $reformat_sacct_headers_ref;
 
     my $tmpl = {
         commands_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$commands_ref,
             strict_type => 1,
-            store       => \$commands_ref
         },
         reformat_sacct_headers_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$reformat_sacct_headers_ref,
             strict_type => 1,
-            store       => \$reformat_sacct_headers_ref
         },
-        log_file_path  => { strict_type => 1, store => \$log_file_path },
-        FILEHANDLE     => { required    => 1, store => \$FILEHANDLE },
-        bash_file_path => { required    => 1, store => \$bash_file_path },
+        log_file_path => {
+            store       => \$log_file_path,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+        bash_file_path => {
+            required => 1,
+            store    => \$bash_file_path,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
@@ -259,9 +207,9 @@ sub _build_test_file_recipe {
     slurm_reformat_sacct_output(
         {
             commands_ref               => \@commands,
-            reformat_sacct_headers_ref => \@reformat_sacct_headers,
-            log_file_path              => $log_file_path,
             FILEHANDLE                 => $FILEHANDLE,
+            log_file_path              => $log_file_path,
+            reformat_sacct_headers_ref => \@reformat_sacct_headers,
         }
     );
     return;
@@ -269,21 +217,26 @@ sub _build_test_file_recipe {
 
 sub _parse_outfile {
 
-##_parse_outfile
-
-##Function : Test the outfile from the bash script is properly formatted
-##Returns  : ""
-##Arguments: $FILEHANDLE
-##         : $FILEHANDLE => Filehandle to read from
+## Function : Test the outfile from the bash script is properly formatted
+## Returns  : ""
+## Aeguments: $FILEHANDLE => Filehandle to read from
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
 
-    my $tmpl = { FILEHANDLE => { required => 1, store => \$FILEHANDLE }, };
+    my $tmpl = {
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+    };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    Readonly my $EXPECTED_ENTRIES => 11;
+    Readonly my $JOB_ID           => 815_575;
 
     # Read file line by line
     while (<$FILEHANDLE>) {
@@ -293,30 +246,29 @@ sub _parse_outfile {
         chomp $line;
 
         #Header line
-        if ( $. == 1 ) {
+        if ( $NR == 1 ) {
 
-            my @headers = split "\t", $line;
+            my @headers = split $TAB, $line;
 
-            ok( $line =~ /^#/, q{Found header line} );
+            like( $line, qr/^#/xms, q{Found header line} );
 
-            ok( scalar @headers == 11, q{Checking number of expected headers} );
+            is( scalar @headers,
+                $EXPECTED_ENTRIES, q{Checking number of expected headers} );
 
-            ok( $headers[0] eq '#JobID', q{Checking first header} );
+            is( $headers[0], q{#JobID}, q{Checking first header} );
 
-            ok( $headers[-1] eq 'ExitCode', q{Checking last header} );
+            is( $headers[-1], q{ExitCode}, q{Checking last header} );
         }
         else {
 
-            my @job_info_entries = split "\t", $line;
+            my @job_info_entries = split $TAB, $line;
 
-            ok(
-                scalar @job_info_entries == 11,
-                q{Checking number of expected entries}
-            );
+            is( scalar @job_info_entries,
+                $EXPECTED_ENTRIES, q{Checking number of expected entries} );
 
-            ok( $job_info_entries[0] eq '815575', q{Checking first entry} );
+            is( $job_info_entries[0], $JOB_ID, q{Checking first entry} );
 
-            ok( $job_info_entries[-1] eq q{0:0}, q{Checking last entry} );
+            is( $job_info_entries[-1], q{0:0}, q{Checking last entry} );
         }
     }
     return;
