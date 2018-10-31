@@ -41,7 +41,7 @@ In `lib/MIP/Cli/Mip/Install/[PIPELINE]`:
 In `templates/mip_config.yaml`:
 ```
 load_env:
-  mip_travis_[ENV_NAME]
+  mip_travis_[ENV_NAME]:
    [RECIPE|PROGRAM]:
    method: [ENV_METHOD] # e.g conda
 ```
