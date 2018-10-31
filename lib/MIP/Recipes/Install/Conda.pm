@@ -105,8 +105,9 @@ sub check_conda_installation {
     ## Scan the PATH for conda
     check_binary_in_path(
         {
-            binary => q{conda},
-            log    => $log
+            binary       => q{conda},
+            log          => $log,
+            program_name => q{conda},
         }
     );
 
@@ -801,10 +802,10 @@ sub _create_target_link_paths {
         $conda_version =~ tr/=/-/;
 
         ## Special case for Manta
-	if ($program eq q{manta}) {
+        if ( $program eq q{manta} ) {
 
-	  $conda_version =~ s/py27_//g;
-	}
+            $conda_version =~ s/py27_//g;
+        }
 
         print {$FILEHANDLE} $program_path_aliases{$program} . q{=} . $BACKTICK;
         my $search_path =
