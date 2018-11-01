@@ -301,16 +301,6 @@ sub _build_usage {
     );
 
     option(
-        q{source_main_environment_commands} => (
-            cmd_aliases   => [qw{ sen }],
-            cmd_flag      => q{src_main_env},
-            documentation => q{Source main environment command in sbatch scripts},
-            is            => q{rw},
-            isa           => ArrayRef,
-        )
-    );
-
-    option(
         q{start_with_recipe} => (
             cmd_aliases   => [qw{ swr }],
             documentation => q{Start analysis with recipe},

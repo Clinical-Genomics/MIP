@@ -153,9 +153,12 @@ like( $trap->stderr, qr/FATAL/xms, q{No bin and executable - Throw FATAL log mes
 ## parameter, when program is in env path and executable for
 ## module source environment command
 %active_parameter = (
-    conda_path                        => catfile( $Bin, qw{ data modules miniconda } ),
-    module_source_environment_command => {
-        rankvariant => [ qw{ source activate test_env_1 }, ],
+    conda_path => catfile( $Bin, qw{ data modules miniconda } ),
+    load_env   => {
+        test_env_1 => {
+            rankvariant => undef,
+            method      => q{conda},
+        },
     },
     rankvariant => 1,
 );
@@ -179,15 +182,18 @@ trap {
 
 ## Then INFO message should broadcast
 like( $trap->stderr, qr/INFO/xms,
-    q{Found bin and executable module source env cmd: Throw INFO log message} );
+    q{Found bin and executable load env cmd: Throw INFO log message} );
 
 ## Given switched on active parameter, defined recipe and program_name_path
 ## parameter, when program is in env path and not executable for
-## module source environment command
+## load env command
 %active_parameter = (
-    conda_path                        => catfile( $Bin, qw{ data modules miniconda } ),
-    module_source_environment_command => {
-        rankvariant => [ qw{ source activate test_env_1 }, ],
+    conda_path => catfile( $Bin, qw{ data modules miniconda } ),
+    load_env   => {
+        test_env_1 => {
+            rankvariant => undef,
+            method      => q{conda},
+        },
     },
     rankvariant => 1,
 );
@@ -211,53 +217,6 @@ trap {
 
 ## Then FATAL message should broadcast
 like( $trap->stderr, qr/FATAL/xms,
-    q{No bin and executable in module source env cmd - Throw FATAL log message} );
-
-## Given switched on active parameter, when program is in env path and
-## executable for program source environment command
-%active_parameter = (
-    conda_path                         => catfile( $Bin, qw{ data modules miniconda } ),
-    program_source_environment_command => {
-        genmod => [ qw{ source activate test_env_1}, ],
-    },
-);
-
-trap {
-    check_command_in_path(
-        {
-            active_parameter_href => \%active_parameter,
-            log                   => $log,
-            parameter_href        => \%parameter,
-        }
-      )
-};
-
-## Then INFO message should broadcast
-like( $trap->stderr, qr/INFO/xms,
-    q{Found bin and executable in program source env cmd: Throw INFO log message} );
-
-## Given switched on active parameter, defined recipe and program_name_path
-## parameter, when program is in env path and not executable for
-## program source environment command
-%active_parameter = (
-    conda_path                         => catfile( $Bin, qw{ data modules miniconda } ),
-    program_source_environment_command => {
-        not_a_binary => [ qw{ source activate test_env_1 }, ],
-    },
-);
-
-trap {
-    check_command_in_path(
-        {
-            active_parameter_href => \%active_parameter,
-            log                   => $log,
-            parameter_href        => \%parameter,
-        }
-      )
-};
-
-## Then FATAL message should broadcast
-like( $trap->stderr, qr/FATAL/xms,
-    q{No bin and executable in program source env cmd - Throw FATAL log message} );
+    q{No bin and executable in load env cmd - Throw FATAL log message} );
 
 done_testing();

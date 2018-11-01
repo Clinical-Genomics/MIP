@@ -28,7 +28,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ setup_script write_return_to_conda_environment write_source_environment_command };
+      qw{ setup_script write_return_to_environment write_return_to_conda_environment write_source_environment_command };
 }
 
 ## Constant
@@ -441,6 +441,74 @@ sub setup_script {
 
     # Return filen path, file path for stdout/stderr for QC check later
     return ( $file_path, $file_info_path . $file_name_version );
+}
+
+sub write_return_to_environment {
+
+## Function : Return to MIP MAIN conda environment or default environment
+## Returns  :
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $FILEHANDLE            => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        FILEHANDLE => { required => 1, store => \$FILEHANDLE, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_env_method_cmds get_package_env_attributes };
+    my @env_method_cmds;
+
+    ## Get MIPs MAIN env
+    my ( $env_name, $env_method ) = get_package_env_attributes(
+        {
+            active_parameter_href => $active_parameter_href,
+            package_name          => q{mip},
+        }
+    );
+
+    if ($env_name) {
+
+        ## Get env load command
+        @env_method_cmds = get_env_method_cmds(
+            {
+                action     => q{load},
+                env_name   => $env_name,
+                env_method => $env_method,
+            }
+        );
+    }
+    else {
+
+        @env_method_cmds = get_env_method_cmds(
+            {
+                action     => q{unload},
+                env_name   => undef,
+                env_method => $env_method,
+            }
+        );
+    }
+
+    write_source_environment_command(
+        {
+            FILEHANDLE                      => $FILEHANDLE,
+            source_environment_commands_ref => \@env_method_cmds,
+        }
+    );
+    return;
 }
 
 sub write_return_to_conda_environment {

@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Expansionhunter;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -40,12 +41,12 @@ sub analysis_expansionhunter {
 ## Function : Call expansions of Short Tandem Repeats (STR) using Expansion Hunter
 ## Returns  :
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -137,7 +138,7 @@ sub analysis_expansionhunter {
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_program_parameters get_recipe_attributes get_recipe_parameters };
+      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -149,7 +150,7 @@ sub analysis_expansionhunter {
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
     use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script
-      qw{ setup_script write_return_to_conda_environment write_source_environment_command };
+      qw{ setup_script write_return_to_environment write_source_environment_command };
 
     ### PREPROCESSING:
 
@@ -348,10 +349,10 @@ sub analysis_expansionhunter {
     my $svdb_temp_outfile_path =
       $temp_outfile_path_prefix . $UNDERSCORE . q{svdbmerge} . $temp_file_suffix;
 
-    my @program_source_commands = get_program_parameters(
+    my @program_source_commands = get_package_source_env_cmds(
         {
             active_parameter_href => $active_parameter_href,
-            program_name          => q{svdb},
+            package_name          => q{svdb},
         }
     );
 
@@ -372,10 +373,10 @@ sub analysis_expansionhunter {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    write_return_to_conda_environment(
+    write_return_to_environment(
         {
-            FILEHANDLE                           => $FILEHANDLE,
-            source_main_environment_commands_ref => \@source_environment_cmds,
+            active_parameter_href => $active_parameter_href,
+            FILEHANDLE            => $FILEHANDLE,
         }
     );
     print {$FILEHANDLE} $NEWLINE;

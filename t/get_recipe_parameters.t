@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,9 +64,14 @@ diag(   q{Test get_recipe_parameters from Parameter.pm v}
 my $recipe_name = q{chanjo_sexcheck};
 
 my %active_parameter = (
-    module_time                      => { chanjo_sexcheck => 1, },
-    module_core_number               => { chanjo_sexcheck => 1, },
-    source_main_environment_commands => [ qw{ source activate mip }, ],
+    module_time        => { chanjo_sexcheck => 1, },
+    module_core_number => { chanjo_sexcheck => 1, },
+    load_env           => {
+        mip_env => {
+            mip    => undef,
+            method => q{conda},
+        },
+    },
 );
 
 my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
@@ -80,15 +85,22 @@ is( $core_number, 1, q{Got module core_number} );
 
 is( $time, 1, q{Got module time} );
 
-is_deeply( \@source_environment_cmds, [qw{source activate mip}],
-    q{Got main source environment command} );
+is_deeply(
+    \@source_environment_cmds,
+    [qw{source activate mip_env}],
+    q{Got source environment command}
+);
 
 ## Test module specific source command
 %active_parameter = (
     module_time        => { chanjo_sexcheck => 1, },
     module_core_number => { chanjo_sexcheck => 1, },
-    module_source_environment_command =>
-      { chanjo_sexcheck => [ qw{ source activate python_v3.6_tools }, ], },
+    load_env           => {
+        q{py3.6} => {
+            chanjo_sexcheck => undef,
+            method          => q{conda},
+        },
+    },
 );
 
 ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
@@ -100,8 +112,8 @@ is_deeply( \@source_environment_cmds, [qw{source activate mip}],
 
 is_deeply(
     \@source_environment_cmds,
-    [qw{ source activate python_v3.6_tools }],
-    q{Got module source environment commmand}
+    [qw{ source activate py3.6 }],
+    q{Got load env command}
 );
 
 done_testing();

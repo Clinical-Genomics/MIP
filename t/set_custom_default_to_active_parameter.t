@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.2;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -74,15 +74,19 @@ my %active_parameter = (
     conda_path             => catdir( $Bin, qw{ data modules miniconda } ),
     case_id                => 1,
     human_genome_reference => catfile(qw{ a test GRCh37_human_genom_reference.fasta }),
-    module_source_environment_command => {
-        gatk                   => [ qw{ source activate test_env }, ],
-        varianteffectpredictor => [ qw{ source activate test_env }, ],
+    load_env               => {
+        test_env => {
+            gatk                   => undef,
+            method                 => q{conda},
+            varianteffectpredictor => undef,
+        },
+        test_env_1 => {
+            method      => q{conda},
+            picardtools => undef,
+        },
     },
-    outdata_dir                        => catfile(qw{ a outdata dir }),
-    program_source_environment_command => {
-        picardtools => [ qw{ source activate test_env_1 }, ],
-    },
-    sample_ids => [qw{ sample_1 }],
+    outdata_dir => catfile(qw{ a outdata dir }),
+    sample_ids  => [qw{ sample_1 }],
 );
 
 ## Mip analyse rd_dna parameters

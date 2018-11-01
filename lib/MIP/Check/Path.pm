@@ -83,14 +83,6 @@ sub check_command_in_path {
     # Track program paths that have already been checked
     my %seen;
 
-    ## Checking binaries for parameter program_source_environment_command
-    %seen = _check_program_source_env_cmd_binary(
-        {
-            active_parameter_href => $active_parameter_href,
-            log                   => $log,
-        }
-    );
-
     ## Checking program_name_path binaries
     _check_program_name_path_binaries(
         {
@@ -659,6 +651,7 @@ sub _check_program_name_path_binaries {
         ## Only check path(s) for parameters with type value eq "recipe"
         next PARAMETER
           if ( not $parameter_href->{$parameter_name}{type} eq q{recipe} );
+
         ## Only check path(s) for active recipes
         next PARAMETER if ( not $active_parameter_href->{$parameter_name} );
 
@@ -683,58 +676,6 @@ sub _check_program_name_path_binaries {
         }
     }
     return;
-}
-
-sub _check_program_source_env_cmd_binary {
-
-## Function : Checking commands for program source environment command binary exists and is executable
-## Returns  : %seen
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Unix qw{check_binary_in_path};
-
-    # Track program paths that have already been checked
-    my %seen;
-
-    foreach my $program (
-        keys %{ $active_parameter_href->{program_source_environment_command} } )
-    {
-
-        ## Program program source env cmd binaries
-        $seen{$program} = check_binary_in_path(
-            {
-                active_parameter_href => $active_parameter_href,
-                binary                => $program,
-                log                   => $log,
-                program_name          => $program,
-            }
-        );
-    }
-    return %seen;
 }
 
 1;

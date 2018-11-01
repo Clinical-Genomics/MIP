@@ -42,16 +42,16 @@ $ mip analyse rd_dna --case_id [case_id] --bwa_mem 1 --config_file [mip_config.y
   * Splits and merges files/contigs for samples and families when relevant
 * Automatic
   * A minimal amount of hands-on time
-  * Tracks and executes all module without manual intervention
+  * Tracks and executes all recipes without manual intervention
   * Creates internal queues at nodes to optimize processing
   * Minimal IO between nodes and login node
 * Flexible:
-  * Design your own workflow by turning on/off relevant modules
+  * Design your own workflow by turning on/off relevant recipes
   * Restart an analysis from anywhere in your workflow
-  * Process one, or multiple samples using the module\(s\) of your choice
+  * Process one, or multiple samples using the recipe\(s\) of your choice
   * Supply parameters on the command line, in a pedigree.yaml file or via config files
   * Simulate your analysis before performing it
-  * Redirect each modules analysis process to a temporary directory \(@nodes or @login\)
+  * Redirect each recipe analysis process to a temporary directory \(@nodes or @login\)
   * Limit a run to a specific set of genomic intervals or chromosomes
   * Use multiple variant callers for both snv, indels and SV
   * Use multiple annotation programs
@@ -60,7 +60,7 @@ $ mip analyse rd_dna --case_id [case_id] --bwa_mem 1 --config_file [mip_config.y
   * Analyses an exome trio in approximately 4 h
   * Analyses a genome in approximately 21 h
 * Traceability
-  * Track the status of each modules through dynamically updated status logs
+  * Track the status of each recipe through dynamically updated status logs
   * Recreate your analysis from the MIP log or generated config files
   * Log sample meta-data and sequence meta-data
   * Log version numbers of softwares and databases
@@ -103,7 +103,7 @@ Below are instructions for installing MIP for analysis of rare diseases. Install
 $ git clone https://github.com/Clinical-Genomics/MIP.git
 $ cd MIP
 ```
-##### 2.Install required modules from cpan
+##### 2.Install required perl modules from cpan
 
 ```Bash
 $ cd definitions
@@ -128,7 +128,6 @@ This will generate a batch script called "mip.sh" in your working directory.
   * MIP's base environment (named MIP in the example above)
   * MIP_cnvnator
   * MIP_delly
-  * MIP_freebayes
   * MIP_peddy
   * MIP_py3
   * MIP_vep
@@ -158,81 +157,36 @@ $ perl t/mip_analyse_rd_dna.test
 ```
 
 ###### When setting up your analysis config file
-  In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator and VEP in each own, with some extra initialization:
+  In your config yaml file or on the command line you will have to supply the ``load_env`` parameter to activate the environment specific for the tool or recipe. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator and VEP in each own, with some extra initialization:
 
   ```Yml
-  program_source_environment_command:
-    genmod:
-     - source
-     - activate
-     - MIP_py3
-  module_source_environment_command:
-    chanjo_sexcheck:
-     - source
-     - activate
-     - MIP_py3
-    cnvnator_ar:
-     - LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH;
-     - export
-     - LD_LIBRARY_PATH;
-     - source
-     - [CONDA_PATH]/envs/MIP_cnvnator/root/bin/thisroot.sh;
-     - source
-     - activate
-     - MIP_cnvnator
-    delly_call:
-     - source
-     - activate
-     - MIP_delly
-    delly_reformat:
-     - source
-     - activate
-     - MIP_delly
-    freebayes_ar:
-     - source
-     - activate
-     - MIP_freebayes
-    multiqc_ar:
-     - source
-     - activate
-     - MIP_py3
-    peddy_ar:
-     - source
-     - activate
-     - MIP_peddy
-    rankvariant:
-     - source
-     - activate
-     - MIP_py3
-    sv_rankvariant:
-     - source
-     - activate
-     - MIP_py3
-    sv_varianteffectpredictor:
-     - LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH;
-     - export
-     - LD_LIBRARY_PATH;
-     - source
-     - activate
-     - MIP_vep
-    varianteffectpredictor:
-     - LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH;
-     - export
-     - LD_LIBRARY_PATH;
-     - source
-     - activate
-     - MIP_vep
-    variant_integrity_ar:
-     - source
-     - activate
-     - MIP_py3
-  source_main_environment_commands:
-    - source
-    - activate
-    - MIP
+  load_env:
+    MIP:
+     mip:
+     method: conda
+    MIP_py3:
+     chanjo_sexcheck:
+     genmod:
+     method: conda
+     multiqc_ar:
+     rankvariant:
+     sv_rankvariant:
+     variant_integrity_ar:
+    MIP_cnvnator:
+     cnvnator_ar: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/MIP_cnvnator/root/bin/thisroot.sh;"
+     method: conda
+    MIP_delly:
+     delly_call:
+     delly_reformat:
+     method: conda
+    MIP_peddy:
+     peddy_ar:
+     method: conda
+    MIP_vep:
+     sv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
+     varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
+     method: conda
   ```
-
-  MIP will execute this on the node before executing the program and then revert to the ``--source_main_environment_command`` if set. Otherwise ``source deactivate`` is used to return to the conda root environment.
 
 ### Usage
 

@@ -129,8 +129,7 @@ sub analysis_gatk_combinevariantcallsets {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_program_parameters get_recipe_attributes get_recipe_parameters };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_parameters };
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
