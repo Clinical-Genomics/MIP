@@ -28,7 +28,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions};
 
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -374,6 +374,18 @@ sub _build_usage {
             is            => q{rw},
             isa           => ArrayRef [ enum( [qw{ MaxEntScan Loftool }] ), ],
             required      => 0,
+        ),
+    );
+
+    option(
+        q{shell:vep:vep_species} => (
+            cmd_aliases   => [qw{ vepsp }],
+            cmd_flag      => q{vep_species},
+            cmd_tags      => [q{Default: homo_sapiens_merged}],
+            documentation => q{Select the vep species to install},
+            is            => q{rw},
+            isa      => ArrayRef [ enum( [qw{ homo_sapiens homo_sapiens_merged }] ), ],
+            required => 0,
         ),
     );
 

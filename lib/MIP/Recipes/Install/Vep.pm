@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -109,11 +109,14 @@ sub install_vep {
     use MIP::Versionmanager::Git qw{ git_checkout git_clone };
 
     ## Unpack parameters
+    # Assembly names to use during --AUTO
+    my @assemblies = @{ $vep_parameters_href->{vep_assemblies} };
+
     # Plugins
     my @plugins = @{ $vep_parameters_href->{vep_plugins} };
 
-    # Assembly names to use during --AUTO
-    my @assemblies = @{ $vep_parameters_href->{vep_assemblies} };
+    # Species names to use during --AUTO
+    my @species = @{ $vep_parameters_href->{vep_species} };
 
     # Vep version
     my $vep_version = $vep_parameters_href->{version};
@@ -282,7 +285,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
             cache_directory => $cache_directory,
             FILEHANDLE      => $FILEHANDLE,
             plugins_ref     => \@plugins,
-            species_ref     => [qw{ homo_sapiens }],
+            species_ref     => \@species,
             version         => $vep_version,
         }
     );
@@ -313,7 +316,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
                     cache_directory => $cache_directory,
                     cache_version   => $vep_version,
                     FILEHANDLE      => $FILEHANDLE,
-                    species_ref     => [qw{ homo_sapiens }],
+                    species_ref     => \@species,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
