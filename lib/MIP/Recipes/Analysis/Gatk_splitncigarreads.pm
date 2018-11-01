@@ -245,20 +245,20 @@ sub analysis_gatk_splitncigarreads {
 
     ### SHELL
 
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     ($xargs_file_counter) = xargs_migrate_contig_files(
         {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
             core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
             file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
             file_path          => $recipe_file_path,
-            outdirectory       => $indir_path_prefix,
-            outfile            => $infile_name_prefix,
+            FILEHANDLE         => $FILEHANDLE,
+            indirectory        => $indir_path_prefix,
+            infile             => $infile_name_prefix,
             recipe_info_path   => $recipe_info_path,
             temp_directory     => $temp_directory,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
         }
     );
 
