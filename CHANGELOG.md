@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Changed family to case
 - Changed output data dir structure to flat for each ID
 - Removed call type value in file names
+- Rename module time and cores to recipe time and core
 - Renamed option `start_with_program` to `start_with_recipe`
 - Removed use of "p" before recipe names
 - Add check for recipe when using start_with_flag

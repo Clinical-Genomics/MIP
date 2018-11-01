@@ -229,7 +229,7 @@ sub analysis_rankvariant {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar keys %infile_path,
-            module_core_number   => $core_number,
+            recipe_core_number   => $core_number,
         }
     );
 
@@ -646,7 +646,7 @@ sub analysis_rankvariant_unaffected {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar keys %infile_path,
-            module_core_number   => $core_number,
+            recipe_core_number   => $core_number,
         }
     );
 

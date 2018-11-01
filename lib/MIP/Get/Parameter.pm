@@ -405,8 +405,8 @@ sub get_recipe_parameters {
         }
     );
 
-    my $core_number = $active_parameter_href->{module_core_number}{$recipe_name};
-    my $time        = $active_parameter_href->{module_time}{$recipe_name};
+    my $core_number = $active_parameter_href->{recipe_core_number}{$recipe_name};
+    my $time        = $active_parameter_href->{recipe_time}{$recipe_name};
 
     return $core_number, $time, @source_environment_cmds;
 }

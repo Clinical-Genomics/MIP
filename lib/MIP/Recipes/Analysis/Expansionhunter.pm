@@ -211,7 +211,7 @@ sub analysis_expansionhunter {
         {
             max_cores_per_node   => $max_cores_per_node,
             modifier_core_number => $modifier_core_number,
-            module_core_number   => $core_number,
+            recipe_core_number   => $core_number,
         }
     );
 

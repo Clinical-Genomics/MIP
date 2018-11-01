@@ -226,20 +226,20 @@ sub _build_usage {
     );
 
     option(
-        q{module_core_number} => (
-            cmd_aliases   => [qw{ mcn }],
+        q{recipe_core_number} => (
+            cmd_aliases   => [qw{ rcn }],
             cmd_tags      => [q{recipe_name=X(cores)}],
-            documentation => q{Set the number of cores for each module},
+            documentation => q{Set the number of cores for each recipe},
             is            => q{rw},
             isa           => HashRef,
         )
     );
 
     option(
-        q{module_time} => (
-            cmd_aliases   => [qw{ mot }],
+        q{recipe_time} => (
+            cmd_aliases   => [qw{ rot }],
             cmd_tags      => [q{recipe_name=time(hours)}],
-            documentation => q{Set the time allocation for each module},
+            documentation => q{Set the time allocation for each recipe},
             is            => q{rw},
             isa           => HashRef,
         )

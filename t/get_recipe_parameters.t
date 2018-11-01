@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,8 +64,8 @@ diag(   q{Test get_recipe_parameters from Parameter.pm v}
 my $recipe_name = q{chanjo_sexcheck};
 
 my %active_parameter = (
-    module_time        => { chanjo_sexcheck => 1, },
-    module_core_number => { chanjo_sexcheck => 1, },
+    recipe_time        => { chanjo_sexcheck => 1, },
+    recipe_core_number => { chanjo_sexcheck => 1, },
     load_env           => {
         mip_env => {
             mip    => undef,
@@ -93,8 +93,8 @@ is_deeply(
 
 ## Test module specific source command
 %active_parameter = (
-    module_time        => { chanjo_sexcheck => 1, },
-    module_core_number => { chanjo_sexcheck => 1, },
+    recipe_time        => { chanjo_sexcheck => 1, },
+    recipe_core_number => { chanjo_sexcheck => 1, },
     load_env           => {
         q{py3.6} => {
             chanjo_sexcheck => undef,

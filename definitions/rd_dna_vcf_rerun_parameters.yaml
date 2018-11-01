@@ -52,7 +52,7 @@ java_use_large_pages:
   default: 0
   type: recipe_argument
 ####Bash
-module_core_number:
+recipe_core_number:
   associated_recipe:
    - mip
   data_type: HASH
@@ -69,7 +69,7 @@ module_core_number:
     sv_varianteffectpredictor: 16
     sv_vcfparser: 16
   type: mip
-module_time:
+recipe_time:
   associated_recipe:
    - mip
   data_type: HASH

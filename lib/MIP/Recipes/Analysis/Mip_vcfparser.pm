@@ -246,7 +246,7 @@ sub analysis_mip_vcfparser {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
-            module_core_number   => $core_number,
+            recipe_core_number   => $core_number,
         }
     );
 
@@ -584,8 +584,8 @@ sub analysis_vcfparser_sv_wes {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => 1,
-            module_core_number =>
-              $active_parameter_href->{module_core_number}{$recipe_name},
+            recipe_core_number =>
+              $active_parameter_href->{recipe_core_number}{$recipe_name},
         }
     );
 

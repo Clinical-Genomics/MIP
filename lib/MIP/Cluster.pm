@@ -30,14 +30,14 @@ sub get_core_number {
 ## Function : Get core number depending on user supplied input exists or not and max number of cores.
 ## Returns  : $core_number
 ## Arguments: $max_cores_per_node   => The max number of cores per node
-##          : $module_core_number   => User input module core numbers to use
+##          : $recipe_core_number   => User input module core numbers to use
 ##          : $modifier_core_number => Modifier core number dependent on mode of operation of command
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $max_cores_per_node;
-    my $module_core_number;
+    my $recipe_core_number;
     my $modifier_core_number;
 
     my $tmpl = {
@@ -47,8 +47,7 @@ sub get_core_number {
             store       => \$max_cores_per_node,
             strict_type => 1,
         },
-        module_core_number =>
-          { store => \$module_core_number, strict_type => 1, },
+        recipe_core_number   => { store => \$recipe_core_number, strict_type => 1, },
         modifier_core_number => {
             defined     => 1,
             required    => 1,
@@ -63,11 +62,11 @@ sub get_core_number {
 
     my $core_number;
 
-    if ( defined $module_core_number
-        && $module_core_number )
+    if ( defined $recipe_core_number
+        && $recipe_core_number )
     {
 
-        $core_number = $module_core_number;
+        $core_number = $recipe_core_number;
     }
     else {
 

@@ -219,7 +219,7 @@ sub analysis_snpeff {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
-            module_core_number   => $core_number,
+            recipe_core_number   => $core_number,
         }
     );
 

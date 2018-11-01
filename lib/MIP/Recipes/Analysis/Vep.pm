@@ -228,8 +228,8 @@ sub analysis_vep {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
-            module_core_number =>
-              $active_parameter_href->{module_core_number}{$recipe_name},
+            recipe_core_number =>
+              $active_parameter_href->{recipe_core_number}{$recipe_name},
         }
     );
 
@@ -596,8 +596,8 @@ sub analysis_vep_sv_wes {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => 1,
-            module_core_number =>
-              $active_parameter_href->{module_core_number}{$recipe_name},
+            recipe_core_number =>
+              $active_parameter_href->{recipe_core_number}{$recipe_name},
         }
     );
 
@@ -929,8 +929,8 @@ sub analysis_vep_sv_wgs {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs_size_ordered} },
-            module_core_number =>
-              $active_parameter_href->{module_core_number}{$recipe_name},
+            recipe_core_number =>
+              $active_parameter_href->{recipe_core_number}{$recipe_name},
         }
     );
 

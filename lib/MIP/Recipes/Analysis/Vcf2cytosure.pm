@@ -199,8 +199,8 @@ sub analysis_vcf2cytosure {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $active_parameter_href->{sample_ids} },
-            module_core_number =>
-              $active_parameter_href->{module_core_number}{$recipe_name},
+            recipe_core_number =>
+              $active_parameter_href->{recipe_core_number}{$recipe_name},
         }
     );
 

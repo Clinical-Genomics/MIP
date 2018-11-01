@@ -68,7 +68,7 @@ my $log = test_log();
 my %parameter = ( q{bcftools_mpileup} => 1, );
 
 my %active_parameter = (
-    module_time => {
+    recipe_time => {
         bwa_mem          => 1,
         bcftools_mpileup => 1,
     },
@@ -79,8 +79,8 @@ trap {
     check_recipe_exists_in_hash(
         {
             log            => $log,
-            parameter_name => q{module_time},
-            query_ref      => \%{ $active_parameter{module_time} },
+            parameter_name => q{recipe_time},
+            query_ref      => \%{ $active_parameter{recipe_time} },
             truth_href     => \%parameter,
         }
       )
@@ -100,8 +100,8 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 my $return = check_recipe_exists_in_hash(
     {
         log            => $log,
-        parameter_name => q{module_time},
-        query_ref      => \%{ $active_parameter{module_time} },
+        parameter_name => q{recipe_time},
+        query_ref      => \%{ $active_parameter{recipe_time} },
         truth_href     => \%parameter,
     }
 );

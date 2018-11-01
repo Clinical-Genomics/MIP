@@ -221,7 +221,7 @@ sub analysis_prepareforvariantannotationblock {
     ## Get core number depending on user supplied input exists or not and max number of cores
     $core_number = get_core_number(
         {
-            module_core_number   => $core_number,
+            recipe_core_number   => $core_number,
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
         }

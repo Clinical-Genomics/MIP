@@ -472,7 +472,7 @@ sub mip_analyse {
     );
 
 ## Parameters that have keys as MIP recipe names
-    my @parameter_keys_to_check = (qw{ module_time module_core_number });
+    my @parameter_keys_to_check = (qw{ recipe_time recipe_core_number });
   PARAMETER_NAME:
     foreach my $parameter_name (@parameter_keys_to_check) {
 
@@ -526,14 +526,14 @@ sub mip_analyse {
     }
 
 ## Check that the module core number do not exceed the maximum per node
-    foreach my $recipe_name ( keys %{ $active_parameter{module_core_number} } ) {
+    foreach my $recipe_name ( keys %{ $active_parameter{recipe_core_number} } ) {
 
         ## Limit number of cores requested to the maximum number of cores available per node
-        $active_parameter{module_core_number}{$recipe_name} = check_max_core_number(
+        $active_parameter{recipe_core_number}{$recipe_name} = check_max_core_number(
             {
                 max_cores_per_node => $active_parameter{max_cores_per_node},
                 core_number_requested =>
-                  $active_parameter{module_core_number}{$recipe_name},
+                  $active_parameter{recipe_core_number}{$recipe_name},
             }
         );
     }

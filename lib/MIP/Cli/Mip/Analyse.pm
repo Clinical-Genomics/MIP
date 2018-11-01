@@ -178,26 +178,6 @@ sub _build_usage {
     );
 
     option(
-        q{module_core_number} => (
-            cmd_aliases   => [qw{ mcn }],
-            cmd_tags      => [q{recipe_name=X(cores)}],
-            documentation => q{Set the number of cores for each module},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{module_time} => (
-            cmd_aliases   => [qw{ mot }],
-            cmd_tags      => [q{recipe_name=time(hours)}],
-            documentation => q{Set the time allocation for each module},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
         q{outdata_dir} => (
             cmd_aliases   => [qw{ odd }],
             documentation => q{Data output directory},
