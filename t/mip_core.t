@@ -42,8 +42,7 @@ BEGIN {
 
     ##Initate tests
     say {*STDOUT} q{Initiate tests:};
-    say {*STDOUT} qq{\n} . q{Testing perl modules and selected functions},
-      qq{\n};
+    say {*STDOUT} qq{\n} . q{Testing perl modules and selected functions}, qq{\n};
 
     ## More proper testing
     use Test::More;
@@ -93,7 +92,7 @@ Readonly my $SPACE   => q{ };
 
 my $config_file = catfile( dirname($Bin), qw(templates mip_config.yaml) );
 my $VERBOSE = 1;
-our $VERSION = '0.0.4';
+our $VERSION = 1.01;
 
 ###User Options
 GetOptions(
@@ -105,11 +104,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -214,14 +209,10 @@ sub test_modules {
 
     use File::Basename qw{ basename };
     my $file_path = catfile( $Bin, q{mip_core.t} );
-    ok( basename($file_path),
-        q{File::Basename qw{ basename }: Strip directories} );
+    ok( basename($file_path), q{File::Basename qw{ basename }: Strip directories} );
 
     use Cwd qw{ abs_path };
-    ok(
-        abs_path( catfile( $Bin, q{mip_core.pl} ) ),
-        q{Cwd_abs_path: Add absolute path}
-    );
+    ok( abs_path( catfile( $Bin, q{mip_core.pl} ) ), q{Cwd_abs_path: Add absolute path} );
 
     use File::Path qw{ make_path remove_tree };
     ok( make_path(q{TEST}), q{File::Path_make_path: Create path} );
@@ -233,10 +224,8 @@ sub test_modules {
     use lib catdir( dirname($Bin), q{lib} );
     use MIP::File::Format::Yaml qw{ load_yaml };
     use YAML;
-    my $yaml_file =
-      catdir( dirname($Bin), qw{ templates 643594-miptest_pedigree.yaml } );
-    ok( -f $yaml_file,
-        q{YAML: File=} . $yaml_file . q{ in MIP/templates directory} );
+    my $yaml_file = catdir( dirname($Bin), qw{ templates 643594-miptest_pedigree.yaml } );
+    ok( -f $yaml_file, q{YAML: File=} . $yaml_file . q{ in MIP/templates directory} );
 
     my $yaml = load_yaml( { yaml_file => $yaml_file, } );
 
@@ -248,8 +237,7 @@ sub test_modules {
     use Log::Log4perl;
     ## Creates log
     my $log_file = catdir( dirname($Bin), qw{ templates mip_log.yaml } );
-    ok( -f $log_file,
-        q{Log::Log4perl: File=} . $log_file . q{ in MIP directory} );
+    ok( -f $log_file, q{Log::Log4perl: File=} . $log_file . q{ in MIP directory} );
 
     use MIP::Log::MIP_log4perl qw{ initiate_logger };
     ## Creates log object
@@ -270,10 +258,7 @@ sub test_modules {
     push @ARGV, qw{ -verbose 2 };
 
     my $verbose = 1;
-    ok(
-        GetOptions( q{verbose:n} => \$verbose ),
-        q{Getopt::Long: Get options call}
-    );
+    ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
     ok( $verbose == 2, q{Getopt::Long: Get options modified} );
 
     ## Check time
@@ -291,10 +276,7 @@ sub test_modules {
     ## Execution of programs
     use IPC::Cmd qw{ can_run run };
     ok( can_run(q{perl}), q{Can run IPC::Cmd} );
-    ok(
-        my $bool = IPC::Cmd->can_capture_buffer,
-        q{IPC::Cmd can capture buffer}
-    );
+    ok( my $bool = IPC::Cmd->can_capture_buffer, q{IPC::Cmd can capture buffer} );
 
     return;
 }
@@ -311,8 +293,7 @@ sub mip_scripts {
   SCRIPT:
     foreach my $script (@mip_scripts) {
 
-        is( -e catfile( dirname($Bin), $script ),
-            1, q{Found MIP file: } . $script );
+        is( -e catfile( dirname($Bin), $script ), 1, q{Found MIP file: } . $script );
     }
 
     my %mip_sub_scripts = (
@@ -325,12 +306,11 @@ sub mip_scripts {
             qw{ mip_install.test mip_analyse_rd_dna.test mip_analyse_rd_rna.test mip_analyse_rd_dna_vcf_rerun.test mip_core.t mip_analysis.test }
         ],
         templates => [
-            qw{ 643594-miptest_pedigree.yaml aggregated_master.txt mip_config.yaml mip_log.yaml mip_rd_rna_config.yaml mip_travis_config.yaml mip_rd_dna_vcf_rerun_config.yaml qc_regexp_-v1.17-.yaml rank_model_cmms_-v1.20-.ini svrank_model_cmms_-v1.2-.ini }
+            qw{ 643594-miptest_pedigree.yaml aggregated_master.txt mip_config.yaml mip_log.yaml mip_rd_rna_config.yaml mip_rd_dna_vcf_rerun_config.yaml qc_regexp_-v1.17-.yaml rank_model_cmms_-v1.20-.ini svrank_model_cmms_-v1.2-.ini }
         ],
     );
 
-    my @mip_directories =
-      ( qw{ definitions templates lib }, catdir(qw{ t data }), );
+    my @mip_directories = ( qw{ definitions templates lib }, catdir(qw{ t data }), );
 
   DIRECTORY:
     foreach my $directory (@mip_directories) {
