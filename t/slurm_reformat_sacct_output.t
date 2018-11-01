@@ -66,35 +66,35 @@ diag(   q{Test slurm_reformat_sacct_output from Slurm.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-###  Set up test data parameters
+###  PREPROCESSING
 
-## Test input from sacct command
+## Initialize variables
+# Test input from sacct command
 my $test_data_file_path =
   catfile( $Bin, qw{ data test_data slurm_reformat_sacct_output_input.txt } );
 
-## Header for output status file
+# Header for output status file
 my @reformat_sacct_headers =
   qw{ JobID JobName Account Partition AllocCPUS TotalCPU Elapsed Start End State ExitCode };
 
-## Write test bash script to this file
+# Write test bash script to this file
 my $bash_file_path = catfile( $Bin, q{test_slurm_reformat_sacct_output.sh} );
 
-## File wit sacct output to reformat
+# File with sacct output to reformat
 my $log_file_path = catfile( $Bin, q{slurm_reformat_sacct_output.txt} );
 
-## Output file with reformated sacct output
+# Output file with reformated sacct output
 my $outfile_path = $log_file_path . q{.status};
 
-### Start test
-
-## Create anonymous filehandle
+## Create test file
+# Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
 
-## Open filehandle
+# Open filehandle
 open $FILEHANDLE, q{>}, $bash_file_path
   or croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
-## Write reformat  commando to bash file
+# Write reformat command to bash file
 my @commands = ( q{less}, $test_data_file_path );
 _build_test_file_recipe(
     {
@@ -105,31 +105,34 @@ _build_test_file_recipe(
         reformat_sacct_headers_ref => \@reformat_sacct_headers,
     }
 );
-
 close $FILEHANDLE;
 
-## File is created and has content
+# File is created and has content
 ok( -s $bash_file_path, q{Create bash} );
 
-## Run command
+### TESTING STARTS
+
+## When the reformat code parses a given a test file with sacct output
+# Reformat sacct output
 my $ok = run( command => [ q{bash}, $bash_file_path ] );
 
-## Created reformated output file
+# Created reformated output file
 ok( -s $outfile_path, q{Created: } . $outfile_path );
 
-## Create anonymous filehandle
+# Create anonymous filehandle
 $FILEHANDLE = IO::Handle->new();
 
-## Open filehandle
+# Open filehandle
 open $FILEHANDLE, q{<}, $outfile_path
   or croak( q{Cannot read '} . $outfile_path . q{' :} . $OS_ERROR . $NEWLINE );
 
-## Test the outfile from the bash script is properly formatted
+## Then the tests should be passed (check the _parse_outfile sub for more information on the tests)
 _parse_outfile( { FILEHANDLE => $FILEHANDLE, } );
 
+### CLEANUP
 close $FILEHANDLE;
 
-## Remove test files
+# Remove test files
 unlink $bash_file_path, $outfile_path or croak q{Could not remove test files};
 
 done_testing();
@@ -141,7 +144,7 @@ done_testing();
 sub _build_test_file_recipe {
 
 ## Function : Builds the test file for testing the housekeeping function
-## Returns  : ""
+## Returns  :
 ## Arguments: $bash_file_path             => Test file to write recipe to
 ##          : $commands_ref               => Commands to stream to perl oneliner
 ##          : $FILEHANDLE                 => Sbatch filehandle to write to
@@ -218,7 +221,7 @@ sub _build_test_file_recipe {
 sub _parse_outfile {
 
 ## Function : Test the outfile from the bash script is properly formatted
-## Returns  : ""
+## Returns  :
 ## Aeguments: $FILEHANDLE => Filehandle to read from
 
     my ($arg_href) = @_;
@@ -245,29 +248,38 @@ sub _parse_outfile {
 
         chomp $line;
 
-        #Header line
+        # Check header line
         if ( $NR == 1 ) {
 
             my @headers = split $TAB, $line;
 
+            # Starts with "#"
             like( $line, qr/^#/xms, q{Found header line} );
 
+            # The number of header entries are correct
             is( scalar @headers,
                 $EXPECTED_ENTRIES, q{Checking number of expected headers} );
 
+            # The first header entry says "#JobID"
             is( $headers[0], q{#JobID}, q{Checking first header} );
 
+            # The last header entry says "ExitCode"
             is( $headers[-1], q{ExitCode}, q{Checking last header} );
         }
+
+        # Check the job lines
         else {
 
             my @job_info_entries = split $TAB, $line;
 
+            # The number of entries are correct
             is( scalar @job_info_entries,
                 $EXPECTED_ENTRIES, q{Checking number of expected entries} );
 
+            # The first entry is the expected job id
             is( $job_info_entries[0], $JOB_ID, q{Checking first entry} );
 
+            # The last entry is the correct exit code for the test file
             is( $job_info_entries[-1], q{0:0}, q{Checking last entry} );
         }
     }

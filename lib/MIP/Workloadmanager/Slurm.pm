@@ -128,7 +128,7 @@ sub slurm_sacct {
 sub slurm_reformat_sacct_output {
 
 ## Function : Removes ".batch" lines in sacct output.
-## Returns  : ""
+## Returns  :
 ## Arguments: $commands_ref               => Commands to stream to perl oneliner
 ##          : $FILEHANDLE                 => Sbatch filehandle to write to
 ##          : $log_file_path              => The log file {REF}
@@ -249,7 +249,7 @@ sub slurm_sbatch {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## sbatch
 
@@ -316,7 +316,7 @@ sub slurm_build_sbatch_header {
     my $email_types_ref;
     my $separator;
 
-    use MIP::Check::Parameter qw(check_allowed_array_values);
+    use MIP::Check::Parameter qw{ check_allowed_array_values };
 
     my $tmpl = {
         project_id => {
@@ -350,7 +350,7 @@ sub slurm_build_sbatch_header {
                 sub {
                     check_allowed_array_values(
                         {
-                            allowed_values_ref => [qw(NONE BEGIN END FAIL REQUEUE ALL)],
+                            allowed_values_ref => [qw{ NONE BEGIN END FAIL REQUEUE ALL }],
                             values_ref         => $arg_href->{email_types_ref},
                         }
                     );
