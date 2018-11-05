@@ -36,6 +36,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_cmd_config_vs_definition_file
   check_email_address
+  check_load_env_packages
   check_parameter_hash
   check_recipe_exists_in_hash
   check_recipe_name
@@ -49,6 +50,7 @@ use MIP::File::Format::Pedigree
   qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
+use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Script::Utils qw{ help write_script_version };
@@ -560,26 +562,37 @@ sub mip_analyse {
     set_dynamic_parameter(
         {
             aggregates_ref => [
-                ## Collects all recipes that MIP can handle
-                q{type:recipe},
-                ## Collects all variant_callers
-                q{recipe_type:variant_callers},
-                ## Collects all structural variant_callers
-                q{recipe_type:structural_variant_callers},
                 ## Collect all aligners
                 q{recipe_type:aligners},
                 ## Collects all references in that are supposed to be in reference directory
                 q{reference:reference_dir},
+                ## Collects all structural variant_callers
+                q{recipe_type:structural_variant_callers},
+                ## Collects all variant_callers
+                q{recipe_type:variant_callers},
+                ## Collects all recipes that MIP can handle
+                q{type:recipe},
             ],
             parameter_href => \%parameter,
         }
     );
+
+    @{ $parameter{dynamic_parameter}{program_name_path} } =
+      get_program_executables( { parameter_href => \%parameter, } );
 
 ## Check correct value for recipe mode in MIP
     check_recipe_mode(
         {
             active_parameter_href => \%active_parameter,
             log                   => $log,
+            parameter_href        => \%parameter,
+        }
+    );
+
+    ## Check that package name name are included in MIP as either "mip", "recipe" or "program"
+    check_load_env_packages(
+        {
+            active_parameter_href => \%active_parameter,
             parameter_href        => \%parameter,
         }
     );

@@ -13,6 +13,7 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use List::MoreUtils qw { uniq };
 use Readonly;
 
 BEGIN {
@@ -35,6 +36,7 @@ BEGIN {
       get_recipe_attributes
       get_package_env_attributes
       get_package_source_env_cmds
+      get_program_executables
       get_program_version
       get_programs_for_shell_installation
       get_read_group
@@ -524,6 +526,47 @@ sub get_recipe_attributes {
 
     ## Get recipe attribute hash
     return %{ $parameter_href->{$recipe_name} };
+}
+
+sub get_program_executables {
+
+## Function : Get the parameter file program executables per recipe
+## Returns  : uniq @program_executables
+## Arguments: $parameter_href => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get all program executables
+    my @program_executables;
+
+    my $err_msg = q{No keys 'dynamic_parameter' and 'recipe' in parameter hash};
+    croak($err_msg) if ( not exists $parameter_href->{dynamic_parameter}{recipe} );
+
+  RECIPE:
+    foreach my $recipe ( @{ $parameter_href->{dynamic_parameter}{recipe} } ) {
+
+        if ( exists $parameter_href->{$recipe}{program_name_path} ) {
+
+            push @program_executables, @{ $parameter_href->{$recipe}{program_name_path} };
+        }
+    }
+    ## Make unique and return
+    return uniq(@program_executables);
 }
 
 sub get_program_version {

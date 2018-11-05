@@ -414,6 +414,7 @@ markduplicates:
   file_tag: _md
   outfile_suffix: ".bam"
   program_name_path:
+   - picard
    - sambamba
   type: recipe
 markduplicates_picardtools_markduplicates:

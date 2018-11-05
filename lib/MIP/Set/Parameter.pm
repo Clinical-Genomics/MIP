@@ -1251,7 +1251,7 @@ sub _set_dynamic_path {
         },
         picardtools_path => {
             bin_file        => q{picard.jar},
-            environment_key => q{picardtools},
+            environment_key => q{picard},
         },
         snpeff_path => {
             bin_file        => q{snpEff.jar},

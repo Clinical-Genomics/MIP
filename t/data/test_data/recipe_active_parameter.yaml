@@ -21,5 +21,8 @@ sample_ids:
 slurm_quality_of_service: low
 load_env:
   test:
+    bwa_mem:
     method: conda
     mip:
+    samtools:
+    sambamba:

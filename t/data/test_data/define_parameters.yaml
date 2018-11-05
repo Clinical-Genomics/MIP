@@ -63,3 +63,9 @@ bwa_mem_rapid_db:
   exists_check: file
   reference: reference_dir
   type: path
+load_env:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
