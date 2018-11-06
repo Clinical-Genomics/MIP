@@ -45,11 +45,11 @@ load_env:
    [RECIPE|PROGRAM]:
    method: [ENV_METHOD] # e.g conda
 ```
-2. Add the binaries of your environment to the test envs:
+2. Add the executables of your environment to the test envs:
 
 In `t/data/modules/miniconda/envs/`:
 ```
 $ mkdir -p mip_travis_[ENV_NAME]
-$ touch bin/[PROGRAM_BINARY]
-$ chmod a+x bin/[PROGRAM_BINARY]
+$ touch bin/[PROGRAM_EXECUTABLE]
+$ chmod a+x bin/[PROGRAM_EXECUTABLE]
 ```
