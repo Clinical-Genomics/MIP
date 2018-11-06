@@ -1,8 +1,7 @@
 # Adding a PROGRAM
 
 ## Define the program and version
-Add the program to a an env
-In the definitions folder add the program to an environment in the install_[PIPELINE]_parameters.yaml.
+Add the program to a an env. In the definitions folder add the program to an environment in the install_[PIPELINE]_parameters.yaml.
 
 - You need to add your program according to which method is used to install the program:
 
