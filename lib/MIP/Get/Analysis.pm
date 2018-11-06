@@ -1,5 +1,6 @@
 package MIP::Get::Analysis;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -488,7 +489,7 @@ sub get_vcf_parser_analysis_suffix {
 
 sub print_recipe {
 
-## Function : Print all supported recipes in '-prm' mode
+## Function : Print all supported recipes in '-prm' mode and then exit
 ## Returns  :
 ## Arguments: $define_parameters_files_ref => MIPs define parameters file
 ##          : $parameter_href              => Parameter hash {REF}
@@ -529,8 +530,6 @@ sub print_recipe {
     use MIP::File::Format::Yaml qw{ order_parameter_names };
     use MIP::Set::Parameter qw{ set_cache };
 
-    my @printed_recipes;
-
     set_cache(
         {
             aggregates_ref => [q{type:recipe}],
@@ -564,13 +563,12 @@ sub print_recipe {
 
                 print {*STDOUT} q{--} . $parameter . $SPACE . $print_recipe_mode . $SPACE;
 
-                push @printed_recipes, $parameter . $SPACE . $print_recipe_mode;
             }
         }
     }
     print {*STDOUT} $NEWLINE;
 
-    return @printed_recipes;
+    exit;
 }
 
 1;

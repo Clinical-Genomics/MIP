@@ -90,7 +90,6 @@ sub run {
                 print_recipe_mode           => $active_parameter{print_recipe_mode},
             }
         );
-        exit;
     }
 
     my %dependency_tree = load_yaml(

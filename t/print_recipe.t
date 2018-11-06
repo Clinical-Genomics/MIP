@@ -17,6 +17,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -61,23 +62,29 @@ diag(   q{Test print_recipe from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Given a recipe
 my %parameter = ( bwa_mem => { type => q{recipe} } );
 
-my @printed_recipes = print_recipe(
-    {
-        parameter_href    => \%parameter,
-        print_recipe_mode => 1,
-        define_parameters_files_ref =>
-          [ catfile( $Bin, qw{ data test_data define_parameters.yaml } ) ],
-    }
-);
+trap {
+    print_recipe(
+        {
+            parameter_href    => \%parameter,
+            print_recipe_mode => 1,
+            define_parameters_files_ref =>
+              [ catfile( $Bin, qw{ data test_data define_parameters.yaml } ) ],
+        }
+      )
+};
 
-is( scalar @printed_recipes, 1, q{Did not print rio block: bamcalibrationblock} );
+## Then write bwa_mem recipe and mode
+my ( $recipe, $recipe_mode ) = $trap->stdout =~ qr{ (bwa_mem)\s+(1)}sxm;
+is( $recipe, q{bwa_mem}, q{Printed recipe} );
 
-my @recipe_mode = split $SPACE, $printed_recipes[0];
+is( $recipe_mode, 1, q{Printed correct recipe mode} );
 
-is( $recipe_mode[1], 1, q{Printed correct recipe mode} );
+## And do not write bamcalibrationblock recipe and mode
+my ($bamcal_recipe) = $trap->stdout =~ qr{ (bamcalibrationblock) }sxm;
 
-is( $printed_recipes[0], q{bwa_mem 1}, q{Printed recipe} );
+is( $bamcal_recipe, undef, q{Did not print rio block: bamcalibrationblock} );
 
 done_testing();
