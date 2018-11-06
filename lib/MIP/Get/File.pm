@@ -368,7 +368,7 @@ sub get_io_files {
 
         ## Unpack
         my @order_recipes =
-          @{ $parameter_href->{dynamic_parameter}{order_recipes_ref} };
+          @{ $parameter_href->{cache}{order_recipes_ref} };
 
         ## Find upstream recipes starting from (and not including) recipe_name
         my @upstream_recipes =

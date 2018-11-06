@@ -31,7 +31,7 @@ BEGIN {
       set_custom_default_to_active_parameter
       set_default_config_dynamic_parameters
       set_default_to_active_parameter
-      set_dynamic_parameter
+      set_cache
       set_human_genome_reference_features
       set_no_dry_run_parameters
       set_parameter_reference_dir_path
@@ -311,8 +311,7 @@ sub set_default_to_active_parameter {
     my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
 
     ## Alias
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
 
     ## Do nothing since parameter is not required unless exome mode is enabled
     return
@@ -368,7 +367,7 @@ sub set_default_to_active_parameter {
     return;
 }
 
-sub set_dynamic_parameter {
+sub set_cache {
 
 ## Function : Sets dynamic aggregate information from definitions to parameter hash
 ## Returns  :
@@ -426,8 +425,7 @@ sub set_dynamic_parameter {
                 && $parameter_href->{$parameter_name}{$second_key} eq $string_to_match )
             {
 
-                push @{ $parameter_href->{dynamic_parameter}{$string_to_match} },
-                  $parameter_name;
+                push @{ $parameter_href->{cache}{$string_to_match} }, $parameter_name;
             }
         }
     }
@@ -1251,7 +1249,7 @@ sub _set_dynamic_path {
         },
         picardtools_path => {
             bin_file        => q{picard.jar},
-            environment_key => q{picardtools},
+            environment_key => q{picard},
         },
         snpeff_path => {
             bin_file        => q{snpEff.jar},

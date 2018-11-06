@@ -556,9 +556,8 @@ sub analysis_vcfparser_sv_wes {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = get_recipe_attributes(
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+    my $job_id_chain            = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -876,9 +875,8 @@ sub analysis_vcfparser_sv_wgs {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
 
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = get_recipe_attributes(
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+    my $job_id_chain            = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,

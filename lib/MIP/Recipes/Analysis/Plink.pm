@@ -174,8 +174,7 @@ sub analysis_plink {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $io{in}{file_path};
 
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $human_genome_reference_version =
       $file_info_href->{human_genome_reference_version};
     my $human_genome_reference_source = $file_info_href->{human_genome_reference_source};

@@ -306,7 +306,7 @@ split_fastq_file:
   default: 0
   file_tag: nofile_tag
   outfile_suffix: ".fastq.gz"
-  program_name_path:
+  program_executables:
    - pigz
    - split
   type: recipe
@@ -325,7 +325,7 @@ gzip_fastq:
   default: 1
   file_tag: nofile_tag
   infile_suffix: ".fastq"
-  program_name_path:
+  program_executables:
    - gzip
   type: recipe
 ## FastQC
@@ -337,7 +337,7 @@ fastqc_ar:
   default: 1
   file_tag: nofile_tag
   infile_suffix: ".fastq"
-  program_name_path:
+  program_executables:
    - fastqc
   type: recipe
 ## BWA
@@ -349,7 +349,7 @@ bwa_mem:
   default: 1
   file_tag: _sorted
   outfile_suffix: ".bam"
-  program_name_path:
+  program_executables:
    - bwa
    - samtools
    - sambamba
@@ -413,7 +413,8 @@ markduplicates:
   default: 1
   file_tag: _md
   outfile_suffix: ".bam"
-  program_name_path:
+  program_executables:
+   - picard
    - sambamba
   type: recipe
 markduplicates_picardtools_markduplicates:
@@ -455,7 +456,7 @@ gatk_baserecalibration:
   default: 1
   file_tag: _brecal
   outfile_suffix: ".bam"
-  program_name_path:
+  program_executables:
    - gatk
   type: recipe
 gatk_baserecalibration_known_sites:
@@ -499,7 +500,7 @@ chanjo_sexcheck:
   default: 1
   file_tag: _sex
   outfile_suffix: ".tsv"
-  program_name_path:
+  program_executables:
    - chanjo
   type: recipe
 chanjo_sexcheck_log_level:
@@ -516,7 +517,7 @@ samtools_subsample_mt:
   default: 1
   file_tag: _subsample_MT
   outfile_suffix: ".bam"
-  program_name_path:
+  program_executables:
    - samtools
   type: recipe
 samtools_subsample_mt_depth:
@@ -534,7 +535,7 @@ sambamba_depth:
   default: 1
   file_tag: _coverage
   outfile_suffix: ".bed"
-  program_name_path:
+  program_executables:
    - sambamba
   type: recipe
 sambamba_depth_base_quality:
@@ -611,7 +612,7 @@ cnvnator_ar:
   default: 1
   file_tag: _cnvnator
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - bcftools
    - cnvnator
    - samtools
@@ -630,7 +631,7 @@ delly_call:
   data_type: SCALAR
   default: 1
   file_tag: _dellycall
-  program_name_path:
+  program_executables:
    - delly
   outfile_suffix: ".bcf"
   type: recipe
@@ -641,7 +642,7 @@ delly_reformat:
   data_type: SCALAR
   default: 1
   file_tag: _dellyreformat
-  program_name_path:
+  program_executables:
    - delly
    - bcftools
   outfile_suffix: ".vcf"
@@ -676,7 +677,7 @@ expansionhunter:
   default: 1
   file_tag: _exphun
   outfile_suffix: ".vcf.gz"
-  program_name_path:
+  program_executables:
    - ExpansionHunter
   recipe_type: repeats_variant_callers
   type: recipe
@@ -694,7 +695,7 @@ manta:
   data_type: SCALAR
   default: 1
   file_tag: _manta
-  program_name_path:
+  program_executables:
    - configManta.py
   outfile_suffix: ".vcf"
   recipe_type: structural_variant_callers
@@ -708,7 +709,7 @@ tiddit:
   file_tag: _tiddit
   outfile_suffix: ".vcf"
   coverage_file_suffix: ".tab"
-  program_name_path:
+  program_executables:
    - TIDDIT.py
   recipe_type: structural_variant_callers
   type: recipe
@@ -733,7 +734,7 @@ sv_combinevariantcallsets:
   default: 1
   file_tag: _comb
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - bcftools
    - svdb
    - vt
@@ -764,7 +765,7 @@ sv_annotate:
   default: 1
   file_tag: _ann
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - bcftools
    - svdb
   type: recipe
@@ -851,7 +852,7 @@ vcf2cytosure_ar:
   default: 1
   file_tag: _cyto
   outfile_suffix: ".cgh"
-  program_name_path:
+  program_executables:
     - bcftools
     - TIDDIT.py
     - vcf2cytosure
@@ -894,7 +895,7 @@ sv_varianteffectpredictor:
   default: 1
   file_tag: _vep
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - vep
   type: recipe
 sv_vep_features:
@@ -1044,7 +1045,7 @@ sv_reformat:
   default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - grep
   type: recipe
 sv_reformat_remove_genes_file:
@@ -1063,7 +1064,7 @@ bcftools_mpileup:
   data_type: SCALAR
   default: 1
   file_tag: _mpileup
-  program_name_path:
+  program_executables:
    - bcftools
   recipe_type: variant_callers
   outfile_suffix: ".vcf"
@@ -1082,7 +1083,7 @@ freebayes_ar:
   data_type: SCALAR
   default: 1
   file_tag: _freebayes
-  program_name_path:
+  program_executables:
    - freebayes
    - bcftools
   recipe_type: variant_callers
@@ -1097,7 +1098,7 @@ gatk_haplotypecaller:
   default: 1
   file_tag: _haptc
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - gatk
   type: recipe
 gatk_haplotypecaller_annotation:
@@ -1162,7 +1163,7 @@ gatk_genotypegvcfs:
   default: 1
   file_tag: _gent
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - gatk
   type: recipe
 gatk_genotypegvcfs_ref_gvcf:
@@ -1180,7 +1181,7 @@ gatk_gathervcfs:
   default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - bcftools
    - gatk
   type: recipe
@@ -1197,7 +1198,7 @@ gatk_variantrecalibration:
   data_type: SCALAR
   default: 1
   file_tag: _vrecal
-  program_name_path:
+  program_executables:
    - bcftools
    - gatk
   recipe_type: variant_callers
@@ -1327,7 +1328,7 @@ rhocall_ar:
   data_type: SCALAR
   default: 1
   file_tag: _rhocall
-  program_name_path:
+  program_executables:
    - rhocall
    - bcftools
   outfile_suffix: ".vcf"
@@ -1348,7 +1349,7 @@ vt_ar:
   data_type: SCALAR
   default: 1
   file_tag: _vt
-  program_name_path:
+  program_executables:
    - vt
    - sed
    - bgzip
@@ -1387,7 +1388,7 @@ frequency_filter:
   default: 1
   file_tag: _frqf
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - genmod
   type: recipe
 frequency_genmod_filter:
@@ -1433,7 +1434,7 @@ gatk_variantevalexome:
   default: 1
   file_tag: _evalexome
   outfile_suffix: ".varianteval"
-  program_name_path:
+  program_executables:
    - bedtools
   type: recipe
 gatk_varianteval_dbsnp:
@@ -1463,7 +1464,7 @@ varianteffectpredictor:
   default: 1
   file_tag: _vep
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - vep
   type: recipe
 vep_directory_cache:
@@ -1663,7 +1664,7 @@ peddy_ar:
   data_type: SCALAR
   default: 1
   file_tag: ""
-  program_name_path:
+  program_executables:
    - peddy
    - bcftools
   type: recipe
@@ -1674,7 +1675,7 @@ plink:
   data_type: SCALAR
   default: 1
   file_tag: ""
-  program_name_path:
+  program_executables:
    - plink2
    - bcftools
   type: recipe
@@ -1685,7 +1686,7 @@ variant_integrity_ar:
   data_type: SCALAR
   default: 1
   file_tag: _integrity
-  program_name_path:
+  program_executables:
    - variant_integrity
   type: recipe
 rtg_vcfeval:
@@ -1695,7 +1696,7 @@ rtg_vcfeval:
   data_type: SCALAR
   default: 0
   file_tag: _rtgvcfeval
-  program_name_path:
+  program_executables:
    - bcftools
   type: recipe
 rtg_vcfeval_reference_genome:
@@ -1714,7 +1715,7 @@ evaluation:
   default: 0
   file_tag: _genotypeconc
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - gzip
    - bcftools
   type: recipe
@@ -1752,7 +1753,7 @@ rankvariant:
   default: 1
   file_tag: _ranked
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - genmod
   type: recipe
 genmod_annotate_cadd_files:
@@ -1813,7 +1814,7 @@ endvariantannotationblock:
   default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - grep
   type: recipe
 rankvariant_binary_file:
@@ -1868,7 +1869,7 @@ multiqc_ar:
   data_type: SCALAR
   default: 1
   file_tag: _multiqc
-  program_name_path:
+  program_executables:
    - multiqc
   type: recipe
 multiqc_per_sample:

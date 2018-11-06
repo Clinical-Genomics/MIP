@@ -527,11 +527,11 @@ sub print_recipe {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Yaml qw{ order_parameter_names };
-    use MIP::Set::Parameter qw{ set_dynamic_parameter };
+    use MIP::Set::Parameter qw{ set_cache };
 
     my @printed_recipes;
 
-    set_dynamic_parameter(
+    set_cache(
         {
             aggregates_ref => [q{type:recipe}],
             parameter_href => $parameter_href,
@@ -556,7 +556,7 @@ sub print_recipe {
         ## Only process recipes
         if (
             any { $_ eq $parameter }
-            @{ $parameter_href->{dynamic_parameter}{recipe} }
+            @{ $parameter_href->{cache}{recipe} }
           )
         {
 

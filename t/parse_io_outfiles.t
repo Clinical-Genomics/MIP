@@ -82,7 +82,7 @@ my %parameter = (
     },
     chanjo_sexcheck           => { chain             => q{CHAIN_CHANJO}, },
     cnvnator_ar               => { chain             => q{CNVNATOR}, },
-    dynamic_parameter         => { order_recipes_ref => \@order_recipes, },
+    cache                     => { order_recipes_ref => \@order_recipes, },
     markduplicates            => { chain             => $chain_main, },
     picard_mergesamfiles      => { chain             => $chain_main, },
     sv_combinevariantcallsets => { chain             => q{CHAIN_SV}, },

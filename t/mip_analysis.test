@@ -129,11 +129,11 @@ if ( exists $active_parameter{pedigree_file} ) {
 
         ## Phenotype
         push
-          @{ $parameter{dynamic_parameter}{ $pedigree_sample_href->{phenotype} }
+          @{ $parameter{cache}{ $pedigree_sample_href->{phenotype} }
           }, $sample_id;
 
         ## Sex
-        push @{ $parameter{dynamic_parameter}{ $pedigree_sample_href->{sex} } },
+        push @{ $parameter{cache}{ $pedigree_sample_href->{sex} } },
           $sample_id;
     }
 }
@@ -498,7 +498,7 @@ sub read_infile_vcf {
                       \@{ $active_parameter_href->{sample_ids} },
                     spidex_file => $active_parameter_href->{spidex_file},
                     unaffected_samples_ref =>
-                      \@{ $parameter_href->{dynamic_parameter}{unaffected} },
+                      \@{ $parameter_href->{cache}{unaffected} },
                     vcf_header_href => \%vcf_header,
                 }
             );
@@ -759,7 +759,7 @@ sub read_sv_infile_vcf {
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
                     unaffected_samples_ref =>
-                      \@{ $parameter_href->{dynamic_parameter}{unaffected} },
+                      \@{ $parameter_href->{cache}{unaffected} },
                     vcf_header_href => \%vcf_header,
                 }
             );

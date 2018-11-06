@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -33,6 +33,7 @@ BEGIN {
       check_cmd_config_vs_definition_file
       check_email_address
       check_gzipped
+      check_load_env_packages
       check_infile_contain_sample_id
       check_infiles
       check_mutually_exclusive_parameters
@@ -295,6 +296,70 @@ sub check_gzipped {
         $file_compression_status = 1;
     }
     return $file_compression_status;
+}
+
+sub check_load_env_packages {
+
+## Function : Check that package name name are included in MIP as either "mip", "recipe" or "program_executables"
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get all program executables
+    my @program_executables =
+      @{ $parameter_href->{cache}{program_executables} };
+
+  ENV:
+    foreach my $env ( keys %{ $active_parameter_href->{load_env} } ) {
+
+      PACKAGE:
+        foreach my $package ( keys %{ $active_parameter_href->{load_env}{$env} } ) {
+
+            ## is method
+            next PACKAGE if ( $package eq q{method} );
+
+            ## is recipe
+            next PACKAGE if ( exists $parameter_href->{$package} );
+
+            ## is MIP MAIN
+            next PACKAGE if ( $package eq q{mip} );
+
+            ## is program
+            next PACKAGE if ( any { $_ eq $package } @program_executables );
+
+            my $err_msg =
+                q{Could not find load_env package: '}
+              . $package
+              . q{' in MIP as either recipe or program_executables};
+            croak($err_msg);
+        }
+    }
+    return 1;
 }
 
 sub check_infile_contain_sample_id {
@@ -692,9 +757,9 @@ sub check_recipe_name {
   RECIPE:
     foreach my $recipe ( @{$recipe_names_ref} ) {
 
-        next RECIPE if ( not exists $parameter_href->{$recipe}{program_name_path} );
+        next RECIPE if ( not exists $parameter_href->{$recipe}{program_executables} );
 
-        foreach my $program ( @{ $parameter_href->{$recipe}{program_name_path} } ) {
+        foreach my $program ( @{ $parameter_href->{$recipe}{program_executables} } ) {
 
             $program_name{$program} = undef;
         }
@@ -867,7 +932,7 @@ sub check_recipe_mode {
     my %is_allowed = map { $_ => 1 } ( 0 .. 2 );
 
   RECIPE:
-    foreach my $recipe ( @{ $parameter_href->{dynamic_parameter}{recipe} } ) {
+    foreach my $recipe ( @{ $parameter_href->{cache}{recipe} } ) {
 
         my $err_msg = q{Recipe: } . $recipe . q{ does not exist in %active_parameters};
         croak($err_msg) if ( not exists $active_parameter_href->{$recipe} );

@@ -171,10 +171,9 @@ sub analysis_rhocall_annotate {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
 
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain         = get_recipe_attributes(
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+    my @contigs_size_ordered    = @{ $file_info_href->{contigs_size_ordered} };
+    my $job_id_chain            = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -265,11 +264,11 @@ sub analysis_rhocall_annotate {
 
         ## Get parameters
         my @sample_ids;
-        if ( defined $parameter_href->{dynamic_parameter}{affected}
-            && @{ $parameter_href->{dynamic_parameter}{affected} } )
+        if ( defined $parameter_href->{cache}{affected}
+            && @{ $parameter_href->{cache}{affected} } )
         {
 
-            push @sample_ids, $parameter_href->{dynamic_parameter}{affected}[0];
+            push @sample_ids, $parameter_href->{cache}{affected}[0];
         }
         else {
             # No affected - pick any sample_id

@@ -81,8 +81,8 @@ my %active_parameter = (
             varianteffectpredictor => undef,
         },
         test_env_1 => {
-            method      => q{conda},
-            picardtools => undef,
+            method => q{conda},
+            picard => undef,
         },
     },
     outdata_dir => catfile(qw{ a outdata dir }),

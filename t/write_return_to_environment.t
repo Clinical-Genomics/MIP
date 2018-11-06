@@ -20,10 +20,10 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -44,16 +44,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Script::Setup_script} => [qw{ write_source_environment_command }],
-        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
+        q{MIP::Script::Setup_script} => [qw{ write_return_to_environment }],
+        q{MIP::Test::Fixtures}       => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Script::Setup_script qw{ write_source_environment_command };
+use MIP::Script::Setup_script qw{ write_return_to_environment };
 
-diag(   q{Test write_source_environment_command from Setup_script.pm v}
+diag(   q{Test write_return_to_environment from Setup_script.pm v}
       . $MIP::Script::Setup_script::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -61,6 +61,9 @@ diag(   q{Test write_source_environment_command from Setup_script.pm v}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+## Given package attributes and a package name
+my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
 
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
@@ -72,25 +75,19 @@ my $file_content;
 open $FILEHANDLE, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
-## Given a filehandle and a environment command
-write_source_environment_command(
+write_return_to_environment(
     {
-        FILEHANDLE                      => $FILEHANDLE,
-        source_environment_commands_ref => [qw{ source activate test }],
+        active_parameter_href => \%active_parameter,
+        FILEHANDLE            => $FILEHANDLE,
     }
 );
 
 # Close the filehandle
 close $FILEHANDLE;
 
-## Then env comment and env should be written to file
-my ($title) = $file_content =~ /^(## Activate environment)/ms;
+## Then env load command shoudl be written to file
+my ($load_command) = $file_content =~ /^(source activate test)/ms;
 
-ok( $title, q{Wrote environment title} );
-
-my ($write_source_environment_command) =
-  $file_content =~ /^(source\s+activate\s+test)/mxs;
-
-ok( $write_source_environment_command, q{Wrote environment command} );
+ok( $load_command, q{Wrote env load command} );
 
 done_testing();

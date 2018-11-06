@@ -115,7 +115,7 @@ sv_vcf_rerun_reformat:
   default: 1
   file_tag: _vrn
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - bcftools
   type: recipe
 sv_vcf_rerun_file:
@@ -133,7 +133,7 @@ sv_annotate:
   default: 1
   file_tag: _ann
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - bcftools
    - svdb
   type: recipe
@@ -220,7 +220,7 @@ sv_varianteffectpredictor:
   default: 1
   file_tag: _vep
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - vep
   type: recipe
 sv_vep_features:
@@ -370,7 +370,7 @@ sv_reformat:
   default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - grep
   type: recipe
 sv_rankvariant_binary_file:
@@ -395,7 +395,7 @@ vcf_rerun_reformat:
   default: 1
   file_tag: _vrn
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - bcftools
   type: recipe
 vcf_rerun_file:
@@ -422,7 +422,7 @@ rhocall_ar:
   data_type: SCALAR
   default: 1
   file_tag: _rhocall
-  program_name_path:
+  program_executables:
    - rhocall
    - bcftools
   outfile_suffix: ".vcf"
@@ -443,7 +443,7 @@ vt_ar:
   data_type: SCALAR
   default: 1
   file_tag: _vt
-  program_name_path:
+  program_executables:
    - vt
    - sed
    - bgzip
@@ -482,7 +482,7 @@ frequency_filter:
   default: 1
   file_tag: _frqf
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - genmod
   type: recipe
 frequency_genmod_filter:
@@ -520,7 +520,7 @@ varianteffectpredictor:
   default: 1
   file_tag: _vep
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - vep
   type: recipe
 vep_directory_cache:
@@ -721,7 +721,7 @@ rankvariant:
   default: 1
   file_tag: _ranked
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - genmod
   type: recipe
 genmod_annotate_cadd_files:
@@ -781,7 +781,7 @@ endvariantannotationblock:
   default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - grep
   type: recipe
 rankvariant_binary_file:

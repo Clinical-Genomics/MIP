@@ -305,12 +305,12 @@ sub set_pedigree_phenotype_info {
         my $phenotype = $pedigree_sample_href->{phenotype};
 
         push
-          @{ $parameter_href->{dynamic_parameter}{ $pedigree_sample_href->{phenotype} } },
+          @{ $parameter_href->{cache}{ $pedigree_sample_href->{phenotype} } },
           $sample_id;
 
         if ( exists $plink_phenotype{$phenotype} ) {
 
-            $parameter_href->{dynamic_parameter}{$sample_id}{plink_phenotype} =
+            $parameter_href->{cache}{$sample_id}{plink_phenotype} =
               $plink_phenotype{$phenotype};
         }
     }
@@ -470,12 +470,11 @@ sub set_pedigree_sex_info {
         my $sample_id = $pedigree_sample_href->{sample_id};
         my $sex       = $pedigree_sample_href->{sex};
 
-        push @{ $parameter_href->{dynamic_parameter}{ $pedigree_sample_href->{sex} } },
-          $sample_id;
+        push @{ $parameter_href->{cache}{ $pedigree_sample_href->{sex} } }, $sample_id;
 
         if ( exists $plink_sex{$sex} ) {
 
-            $parameter_href->{dynamic_parameter}{$sample_id}{plink_sex} =
+            $parameter_href->{cache}{$sample_id}{plink_sex} =
               $plink_sex{$sex};
         }
     }

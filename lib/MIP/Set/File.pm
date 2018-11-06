@@ -2,7 +2,7 @@ package MIP::Set::File;
 
 use Carp;
 use charnames qw{ :full :short };
-use Cwd qw(abs_path);
+use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname fileparse };
 use File::Spec::Functions qw{ catdir catfile splitpath };

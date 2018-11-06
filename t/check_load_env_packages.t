@@ -44,16 +44,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Parameter} => [qw{ check_recipe_name }],
+        q{MIP::Check::Parameter} => [qw{ check_load_env_packages }],
         q{MIP::Test::Fixtures}   => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Parameter qw{ check_recipe_name };
+use MIP::Check::Parameter qw{ check_load_env_packages };
 
-diag(   q{Test check_recipe_name from Parameter.pm v}
+diag(   q{Test check_load_env_packages from Parameter.pm v}
       . $MIP::Check::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -62,40 +62,40 @@ diag(   q{Test check_recipe_name from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a recipe with no identical name as a program binary
+## Given load_env packages with existing program executables
 my %parameter = test_mip_hashes( { mip_hash_name => q{define_parameter}, } );
+push @{ $parameter{cache}{program_executables} }, qw{ bwa samtools sambamba };
 
-my @recipe_names = qw{ bwa_mem sv_reformat };
+my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
 
-## Check that recipe name and program name are not identical
-my $is_ok = check_recipe_name(
+my $is_ok = check_load_env_packages(
     {
-        parameter_href   => \%parameter,
-        recipe_names_ref => \@recipe_names,
+        active_parameter_href => \%active_parameter,
+        parameter_href        => \%parameter,
     }
 );
 
-## Then return true
-ok( $is_ok, q{No identical recipes and program names} );
+## Then all packages should be found
+ok( $is_ok, q{Found all packages} );
 
-## Given a recipe with identical name as a program binary
-push @{ $parameter{fastqc}{program_executables} }, q{fastqc};
+## Given a not existing recipe
+$active_parameter{load_env}{test}{not_a_package} = undef;
 
-push @recipe_names, q{fastqc};
-
-## Check that recipe name and program name are not identical
 trap {
-    check_recipe_name(
+    check_load_env_packages(
         {
-            parameter_href   => \%parameter,
-            recipe_names_ref => \@recipe_names,
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
         }
     );
 };
 
-## Then croak and die
-is( $trap->leaveby, q{die}, q{Exit if the recipe and program name are identical} );
-like( $trap->die, qr{\AIdentical\s+names\s+for\s+recipe\s+and\s+program}xms,
-    q{Throw error} );
+## Then croak and exist
+is( $trap->leaveby, q{die}, q{Exit if the package cannot be found} );
+like(
+    $trap->die,
+    qr/Could\s+not\s+find\s+load_env\spackage/xms,
+    q{Throw error if package cannot be found}
+);
 
 done_testing();

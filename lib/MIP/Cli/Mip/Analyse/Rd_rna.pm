@@ -111,7 +111,7 @@ sub run {
     get_dependency_tree_order(
         {
             dependency_tree_href => \%dependency_tree,
-            recipes_ref => \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
+            recipes_ref          => \@{ $parameter{cache}{order_recipes_ref} },
         }
     );
 

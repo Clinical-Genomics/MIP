@@ -167,7 +167,7 @@ sub analysis_variant_integrity {
     );
     my $recipe_mode = $active_parameter_href->{$recipe_name};
     my @sample_ids  = @{ $active_parameter_href->{sample_ids} };
-    my $is_trio     = $parameter_href->{dynamic_parameter}{trio};
+    my $is_trio     = $parameter_href->{cache}{trio};
     my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,

@@ -142,9 +142,8 @@ sub analysis_gatk_genotypegvcfs {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = get_recipe_attributes(
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+    my $job_id_chain            = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,

@@ -480,27 +480,14 @@ sub write_return_to_environment {
         }
     );
 
-    if ($env_name) {
-
-        ## Get env load command
-        @env_method_cmds = get_env_method_cmds(
-            {
-                action     => q{load},
-                env_name   => $env_name,
-                env_method => $env_method,
-            }
-        );
-    }
-    else {
-
-        @env_method_cmds = get_env_method_cmds(
-            {
-                action     => q{unload},
-                env_name   => undef,
-                env_method => $env_method,
-            }
-        );
-    }
+    ## Get env load command
+    @env_method_cmds = get_env_method_cmds(
+        {
+            action     => q{load},
+            env_name   => $env_name,
+            env_method => $env_method,
+        }
+    );
 
     write_source_environment_command(
         {

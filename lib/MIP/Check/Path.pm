@@ -21,11 +21,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      check_command_in_path
+      check_executable_in_path
       check_filesystem_objects_existance
       check_filesystem_objects_and_index_existance
       check_file_version_exist
@@ -39,7 +39,7 @@ BEGIN {
 Readonly my $DOT     => q{.};
 Readonly my $NEWLINE => qq{\n};
 
-sub check_command_in_path {
+sub check_executable_in_path {
 
 ## Function : Checking commands in your path and executable
 ## Returns  :
@@ -83,8 +83,8 @@ sub check_command_in_path {
     # Track program paths that have already been checked
     my %seen;
 
-    ## Checking program_name_path binaries
-    _check_program_name_path_binaries(
+    ## Checking program_executables
+    _check_program_executables(
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
@@ -393,8 +393,7 @@ sub check_parameter_files {
     my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
 
     ## Unpack parameters
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
 
     ## Do nothing since parameter is not required unless exome mode is enabled
     return
@@ -591,9 +590,9 @@ sub check_vcfanno_toml {
     return;
 }
 
-sub _check_program_name_path_binaries {
+sub _check_program_executables {
 
-## Function : Checking program_name_path binaries
+## Function : Checking program executables
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $log                   => Log object
@@ -656,11 +655,11 @@ sub _check_program_name_path_binaries {
         next PARAMETER if ( not $active_parameter_href->{$parameter_name} );
 
         ## Alias
-        my $program_name_paths_ref =
-          \@{ $parameter_href->{$parameter_name}{program_name_path} };
+        my $program_executables_ref =
+          \@{ $parameter_href->{$parameter_name}{program_executables} };
 
       PROGRAM:
-        foreach my $program ( @{$program_name_paths_ref} ) {
+        foreach my $program ( @{$program_executables_ref} ) {
 
             ## Only check path once
             next PROGRAM if ( $seen_href->{$program} );

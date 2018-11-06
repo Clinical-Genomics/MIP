@@ -74,7 +74,7 @@ my %active_parameter = (
 );
 
 my %parameter = (
-    dynamic_parameter => {
+    cache => {
         variant_callers => [qw{ freebayes_ar bcftools_mpileup gatk_variantrecalibration}],
     },
 );
@@ -85,7 +85,7 @@ my $is_ok = check_prioritize_variant_callers(
         log                   => $log,
         parameter_href        => \%parameter,
         parameter_name        => q{gatk_combinevariants_prioritize_caller},
-        variant_callers_ref   => \@{ $parameter{dynamic_parameter}{variant_callers} },
+        variant_callers_ref   => \@{ $parameter{cache}{variant_callers} },
     }
 );
 
@@ -102,7 +102,7 @@ trap {
             log                   => $log,
             parameter_href        => \%parameter,
             parameter_name        => q{gatk_combinevariants_prioritize_caller},
-            variant_callers_ref   => \@{ $parameter{dynamic_parameter}{variant_callers} },
+            variant_callers_ref   => \@{ $parameter{cache}{variant_callers} },
         }
       )
 };
@@ -123,7 +123,7 @@ trap {
             log                   => $log,
             parameter_href        => \%parameter,
             parameter_name        => q{gatk_combinevariants_prioritize_caller},
-            variant_callers_ref   => \@{ $parameter{dynamic_parameter}{variant_callers} },
+            variant_callers_ref   => \@{ $parameter{cache}{variant_callers} },
         }
       )
 };
@@ -145,7 +145,7 @@ trap {
             log                   => $log,
             parameter_href        => \%parameter,
             parameter_name        => q{gatk_combinevariants_prioritize_caller},
-            variant_callers_ref   => \@{ $parameter{dynamic_parameter}{variant_callers} },
+            variant_callers_ref   => \@{ $parameter{cache}{variant_callers} },
         }
       )
 };

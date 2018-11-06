@@ -163,10 +163,9 @@ sub analysis_gatk_gathervcfs {
             recipe_name    => $recipe_name,
         }
     );
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+    my $referencefile_path      = $active_parameter_href->{human_genome_reference};
+    my $recipe_mode             = $active_parameter_href->{$recipe_name};
     my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,

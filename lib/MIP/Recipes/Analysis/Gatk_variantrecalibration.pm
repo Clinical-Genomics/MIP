@@ -166,8 +166,7 @@ sub analysis_gatk_variantrecalibration_wes {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path        = $io{in}{file_path};
 
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $enable_indel_max_gaussians_filter =
       $active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians};
     my $enable_snv_max_gaussians_filter =
@@ -391,7 +390,7 @@ sub analysis_gatk_variantrecalibration_wes {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Genotype refinement
-    if ( $parameter_href->{dynamic_parameter}{trio} ) {
+    if ( $parameter_href->{cache}{trio} ) {
 
         say {$FILEHANDLE} q{## GATK CalculateGenotypePosteriors};
 
@@ -620,8 +619,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path        = $io{in}{file_path};
 
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $enable_indel_max_gaussians_filter =
       $active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians};
     my $enable_snv_max_gaussians_filter =
@@ -855,7 +853,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     }
 
     ## GenotypeRefinement
-    if ( $parameter_href->{dynamic_parameter}{trio} ) {
+    if ( $parameter_href->{cache}{trio} ) {
 
         say {$FILEHANDLE} q{## GATK CalculateGenotypePosteriors};
 

@@ -174,10 +174,9 @@ sub analysis_prepareforvariantannotationblock {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path        = $io{in}{file_path};
 
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my @contigs      = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain = get_recipe_attributes(
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+    my @contigs                 = @{ $file_info_href->{contigs_size_ordered} };
+    my $job_id_chain            = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,

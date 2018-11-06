@@ -45,7 +45,7 @@ bwa_mem:
   default: 0
   file_tag: _sorted
   outfile_suffix: ".bam"
-  program_name_path:
+  program_executables:
    - bwa
    - samtools
    - sambamba
@@ -63,3 +63,9 @@ bwa_mem_rapid_db:
   exists_check: file
   reference: reference_dir
   type: path
+load_env:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
