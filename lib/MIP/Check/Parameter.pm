@@ -332,7 +332,7 @@ sub check_load_env_packages {
 
     ## Get all program executables
     my @program_executables =
-      @{ $parameter_href->{cache}{program_name_path} };
+      @{ $parameter_href->{cache}{program_executables} };
 
   ENV:
     foreach my $env ( keys %{ $active_parameter_href->{load_env} } ) {
@@ -355,7 +355,7 @@ sub check_load_env_packages {
             my $err_msg =
                 q{Could not find load_env package: '}
               . $package
-              . q{' in MIP as either recipe or program_name_path};
+              . q{' in MIP as either recipe or program_executables};
             croak($err_msg);
         }
     }
@@ -757,9 +757,9 @@ sub check_recipe_name {
   RECIPE:
     foreach my $recipe ( @{$recipe_names_ref} ) {
 
-        next RECIPE if ( not exists $parameter_href->{$recipe}{program_name_path} );
+        next RECIPE if ( not exists $parameter_href->{$recipe}{program_executables} );
 
-        foreach my $program ( @{ $parameter_href->{$recipe}{program_name_path} } ) {
+        foreach my $program ( @{ $parameter_href->{$recipe}{program_executables} } ) {
 
             $program_name{$program} = undef;
         }

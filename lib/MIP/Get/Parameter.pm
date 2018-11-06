@@ -560,9 +560,10 @@ sub get_program_executables {
   RECIPE:
     foreach my $recipe ( @{ $parameter_href->{cache}{recipe} } ) {
 
-        if ( exists $parameter_href->{$recipe}{program_name_path} ) {
+        if ( exists $parameter_href->{$recipe}{program_executables} ) {
 
-            push @program_executables, @{ $parameter_href->{$recipe}{program_name_path} };
+            push @program_executables,
+              @{ $parameter_href->{$recipe}{program_executables} };
         }
     }
     ## Make unique and return

@@ -21,7 +21,7 @@ recipe: { # Recipe hash
   file_tag: string, value="nofile_tag | <file_tag>" # Tag to include in output filename or no tag use "nofile_tag"
   infile_suffix: string, # Suffix for infiles to analysis recipe
   outfile_suffix: string, # Set to enable file suffix for analysis recipe outfile
-  program_name_path: string, value="<binary_name>" # Set to check if can run when executing mip
+  program_executables: string, value="<executable_name>" # Set to check if can run when executing mip
   recipe_type: string, value="aligners | variant_callers | structural_variant_callers", # For collecting output from multiple analysis recipes
   type: string, value="recipe(=analysis_recipe_switch)"
 }

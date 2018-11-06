@@ -25,7 +25,7 @@ analysis_mode:
     - case
 outfile_suffix:
   key_data_type: SCALAR
-program_name_path:
+program_executables:
   key_data_type: ARRAY
 element_separator:
   key_data_type: SCALAR

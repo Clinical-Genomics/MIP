@@ -79,7 +79,7 @@ my $is_ok = check_recipe_name(
 ok( $is_ok, q{No identical recipes and program names} );
 
 ## Given a recipe with identical name as a program binary
-push @{ $parameter{fastqc}{program_name_path} }, q{fastqc};
+push @{ $parameter{fastqc}{program_executables} }, q{fastqc};
 
 push @recipe_names, q{fastqc};
 

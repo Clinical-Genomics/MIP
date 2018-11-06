@@ -43,7 +43,7 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_recipe_mode
   check_sample_ids
 };
-use MIP::Check::Path qw{ check_command_in_path check_parameter_files };
+use MIP::Check::Path qw{ check_executable_in_path check_parameter_files };
 use MIP::Check::Reference qw{ check_human_genome_file_endings };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Pedigree
@@ -541,7 +541,7 @@ sub mip_analyse {
     }
 
 ## Check programs in path, and executable
-    check_command_in_path(
+    check_executable_in_path(
         {
             active_parameter_href => \%active_parameter,
             log                   => $log,
@@ -577,7 +577,7 @@ sub mip_analyse {
         }
     );
 
-    @{ $parameter{cache}{program_name_path} } =
+    @{ $parameter{cache}{program_executables} } =
       get_program_executables( { parameter_href => \%parameter, } );
 
 ## Check correct value for recipe mode in MIP

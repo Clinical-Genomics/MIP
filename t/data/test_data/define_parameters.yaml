@@ -45,7 +45,7 @@ bwa_mem:
   default: 0
   file_tag: _sorted
   outfile_suffix: ".bam"
-  program_name_path:
+  program_executables:
    - bwa
    - samtools
    - sambamba

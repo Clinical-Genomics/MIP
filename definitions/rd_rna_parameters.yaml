@@ -155,7 +155,7 @@ gzip_fastq:
   default: 1
   file_tag: nofile_tag
   infile_suffix: ".fastq"
-  program_name_path:
+  program_executables:
    - gzip
   type: recipe
 ## FastQC
@@ -167,7 +167,7 @@ fastqc_ar:
   default: 1
   file_tag: nofile_tag
   infile_suffix: ".fastq"
-  program_name_path:
+  program_executables:
    - fastqc
   type: recipe
 ## Salmon
@@ -179,7 +179,7 @@ salmon_quant:
   default: 1
   file_tag: nofile_tag
   outfile_suffix: ".sf"
-  program_name_path:
+  program_executables:
    - salmon
   type: recipe
 salmon_rna_lib_configuration:
@@ -205,7 +205,7 @@ blobfish:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
-  program_name_path:
+  program_executables:
    - BlobFish.py
   type: recipe
 ## Star Aln
@@ -217,7 +217,7 @@ star_aln:
   default: 1
   file_tag: _star_sorted
   outfile_suffix: ".bam"
-  program_name_path:
+  program_executables:
    - STAR
   recipe_type: aligners
   type: recipe
@@ -275,7 +275,7 @@ star_fusion:
   default: 1
   file_tag: _fusion
   outfile_suffix: ".tsv"
-  program_name_path:
+  program_executables:
     - gtf_file_to_feature_seqs.pl
     - prep_genome_lib.pl
     - samtools
@@ -308,7 +308,7 @@ picardtools_mergesamfiles:
   default: 1
   file_tag: _merged
   outfile_suffix: ".bam"
-  program_name_path:
+  program_executables:
    - sambamba
   type: recipe
 ## Mark duplicates
@@ -320,7 +320,7 @@ markduplicates:
   default: 0
   file_tag: _md
   outfile_suffix: ".bam"
-  program_name_path:
+  program_executables:
    - sambamba
   type: recipe
 markduplicates_picardtools_markduplicates:
@@ -362,7 +362,7 @@ gatk_splitncigarreads:
   default: 1
   file_tag: _splitncigar
   outfile_suffix: ".bam"
-  program_name_path:
+  program_executables:
    - gatk
   type: recipe
 ## GATK BAM Calibration
@@ -374,7 +374,7 @@ gatk_baserecalibration:
   default: 1
   file_tag: _brecal
   outfile_suffix: ".bam"
-  program_name_path:
+  program_executables:
    - gatk
   type: recipe
 gatk_baserecalibration_known_sites:
@@ -416,7 +416,7 @@ rseqc:
   data_type: SCALAR
   default: 1
   file_tag: _rseq
-  program_name_path:
+  program_executables:
    - bam_stat.py
    - infer_experiment.py
    - inner_distance.py
@@ -443,7 +443,7 @@ gatk_haplotypecaller:
   default: 1
   file_tag: _haptc
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - gatk
   type: recipe
 gatk_haplotypecaller_annotation:
@@ -508,7 +508,7 @@ gatk_asereadcounter:
   default: 1
   file_tag: _ase
   outfile_suffix: ".csv"
-  program_name_path:
+  program_executables:
    - gatk
   type: recipe
 ## GATK VariantFiltration
@@ -520,7 +520,7 @@ gatk_variantfiltration:
   default: 1
   file_tag: _filtered
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - gatk
   type: recipe
 gatk_variantfiltration_cluster_size:
@@ -552,7 +552,7 @@ bootstrapann:
   default: 1
   file_tag: _bootstr
   outfile_suffix: ".vcf"
-  program_name_path:
+  program_executables:
    - BootstrapAnn.py
   type: recipe
 ## MultiQC
@@ -563,7 +563,7 @@ multiqc_ar:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
-  program_name_path:
+  program_executables:
    - multiqc
   type: recipe
 multiqc_per_sample:
