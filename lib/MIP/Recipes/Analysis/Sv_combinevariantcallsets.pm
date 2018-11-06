@@ -173,7 +173,7 @@ sub analysis_sv_combinevariantcallsets {
 
     ## Only process active callers
     foreach my $structural_variant_caller (
-        @{ $parameter_href->{dynamic_parameter}{structural_variant_callers} } )
+        @{ $parameter_href->{cache}{structural_variant_callers} } )
     {
         if ( $active_parameter_href->{$structural_variant_caller} ) {
 

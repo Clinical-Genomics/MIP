@@ -332,7 +332,7 @@ sub check_load_env_packages {
 
     ## Get all program executables
     my @program_executables =
-      @{ $parameter_href->{dynamic_parameter}{program_name_path} };
+      @{ $parameter_href->{cache}{program_name_path} };
 
   ENV:
     foreach my $env ( keys %{ $active_parameter_href->{load_env} } ) {
@@ -932,7 +932,7 @@ sub check_recipe_mode {
     my %is_allowed = map { $_ => 1 } ( 0 .. 2 );
 
   RECIPE:
-    foreach my $recipe ( @{ $parameter_href->{dynamic_parameter}{recipe} } ) {
+    foreach my $recipe ( @{ $parameter_href->{cache}{recipe} } ) {
 
         my $err_msg = q{Recipe: } . $recipe . q{ does not exist in %active_parameters};
         croak($err_msg) if ( not exists $active_parameter_href->{$recipe} );

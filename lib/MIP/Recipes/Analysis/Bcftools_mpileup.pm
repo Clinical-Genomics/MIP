@@ -328,7 +328,7 @@ sub analysis_bcftools_mpileup {
         ## Get parameter
         my $samples_file;
         my $constrain;
-        if ( $parameter_href->{dynamic_parameter}{trio} ) {
+        if ( $parameter_href->{cache}{trio} ) {
 
             $samples_file =
               catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} ) . $SPACE;

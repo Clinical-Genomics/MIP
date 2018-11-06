@@ -280,21 +280,19 @@ sub check_rd_dna {
     ## Update prioritize flag depending on analysis run value as some recipes are not applicable for e.g. wes
     $active_parameter_href->{sv_svdb_merge_prioritize} = update_prioritize_flag(
         {
-            consensus_analysis_type =>
-              $parameter_href->{dynamic_parameter}{consensus_analysis_type},
-            prioritize_key => $active_parameter_href->{sv_svdb_merge_prioritize},
-            recipes_ref    => [qw{ cnvnator_ar delly_call delly_reformat tiddit }],
+            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+            prioritize_key          => $active_parameter_href->{sv_svdb_merge_prioritize},
+            recipes_ref => [qw{ cnvnator_ar delly_call delly_reformat tiddit }],
         }
     );
 
     ## Update recipe mode depending on analysis run value as some recipes are not applicable for e.g. wes
     update_recipe_mode_for_analysis_type(
         {
-            active_parameter_href => $active_parameter_href,
-            consensus_analysis_type =>
-              $parameter_href->{dynamic_parameter}{consensus_analysis_type},
-            log         => $log,
-            recipes_ref => [
+            active_parameter_href   => $active_parameter_href,
+            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+            log                     => $log,
+            recipes_ref             => [
                 qw{ cnvnator_ar delly_call delly_reformat expansionhunter tiddit samtools_subsample_mt }
             ],
         }
@@ -323,8 +321,7 @@ sub check_rd_dna {
     ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
     @{ $file_info_href->{sorted_select_file_contigs} } = size_sort_select_file_contigs(
         {
-            consensus_analysis_type =>
-              $parameter_href->{dynamic_parameter}{consensus_analysis_type},
+            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
             file_info_href          => $file_info_href,
             hash_key_sort_reference => q{contigs_size_ordered},
             hash_key_to_sort        => q{select_file_contigs},
@@ -778,8 +775,7 @@ sub check_rd_dna_vcf_rerun {
     ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
     @{ $file_info_href->{sorted_select_file_contigs} } = size_sort_select_file_contigs(
         {
-            consensus_analysis_type =>
-              $parameter_href->{dynamic_parameter}{consensus_analysis_type},
+            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
             file_info_href          => $file_info_href,
             hash_key_sort_reference => q{contigs_size_ordered},
             hash_key_to_sort        => q{select_file_contigs},

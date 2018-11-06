@@ -74,12 +74,12 @@ trap {
 is( $trap->leaveby, q{die}, q{Exit if no recipe is found} );
 like(
     $trap->die,
-    qr{ No\skeys\s'dynamic_parameter'\sand\s'recipe'}xms,
+    qr{ No\skeys\s'cache'\sand\s'recipe'}xms,
     q{Throw error if no recipe can be found}
 );
 
-## Given a dynamic_parameter recipe and program
-push @{ $parameter{dynamic_parameter}{recipe} }, q{bwa_mem};
+## Given a cache recipe and program
+push @{ $parameter{cache}{recipe} }, q{bwa_mem};
 
 my @program_executables = get_program_executables( { parameter_href => \%parameter, } );
 

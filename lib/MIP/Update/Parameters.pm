@@ -62,14 +62,14 @@ sub update_dynamic_config_parameters {
 
     return if ( not defined $active_parameter_href->{$parameter_name} );
 
-    my @dynamic_parameters = qw{ cluster_constant_path analysis_constant_path case_id };
+    my @caches = qw{ cluster_constant_path analysis_constant_path case_id };
 
   DYNAMIC_PARAMETER:
-    foreach my $dynamic_parameter (@dynamic_parameters) {
+    foreach my $cache (@caches) {
 
         ## Replace dynamic config parameters with actual value that is now set from cmd or config
         $active_parameter_href->{$parameter_name} =~
-          s/$dynamic_parameter!/$active_parameter_href->{$dynamic_parameter}/smgi;
+          s/$cache!/$active_parameter_href->{$cache}/smgi;
     }
     return;
 }

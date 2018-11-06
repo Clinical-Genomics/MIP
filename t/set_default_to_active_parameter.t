@@ -87,7 +87,7 @@ my %parameter = load_yaml(
     }
 );
 
-$parameter{dynamic_parameter}{consensus_analysis_type} = q{wgs};
+$parameter{cache}{consensus_analysis_type} = q{wgs};
 
 PARAMETER:
 foreach my $parameter_name (@order_parameters) {

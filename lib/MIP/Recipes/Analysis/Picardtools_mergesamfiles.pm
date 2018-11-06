@@ -198,10 +198,9 @@ sub analysis_picardtools_mergesamfiles {
             recipe_name    => $recipe_name,
         }
     );
-    my $job_id_chain = $rec_atr{chain};
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my $job_id_chain            = $rec_atr{chain};
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+    my $recipe_mode             = $active_parameter_href->{$recipe_name};
     my $xargs_file_path_prefix;
     my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
@@ -654,9 +653,8 @@ sub analysis_picardtools_mergesamfiles_rio {
     my @temp_infile_name_prefixes = @{ $io{temp}{file_name_prefixes} };
     my @temp_infile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
 
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my %rec_atr = get_recipe_attributes(
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+    my %rec_atr                 = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,

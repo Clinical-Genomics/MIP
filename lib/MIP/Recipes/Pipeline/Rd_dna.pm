@@ -325,9 +325,8 @@ sub pipeline_rd_dna {
     ## Update which recipe to use depending on consensus analysis type
     set_recipe_on_analysis_type(
         {
-            analysis_recipe_href => \%analysis_recipe,
-            consensus_analysis_type =>
-              $parameter_href->{dynamic_parameter}{consensus_analysis_type},
+            analysis_recipe_href    => \%analysis_recipe,
+            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
         }
     );
 

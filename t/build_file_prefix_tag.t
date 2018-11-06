@@ -79,8 +79,8 @@ my %active_parameter = (
 );
 my %file_info;
 my %parameter = (
-    dynamic_parameter => { recipe => [qw{ bwa_mem pmark manta pmerge }], },
-    bwa_mem           => {
+    cache   => { recipe => [qw{ bwa_mem pmark manta pmerge }], },
+    bwa_mem => {
         chain    => $current_chain,
         file_tag => q{mem},
     },

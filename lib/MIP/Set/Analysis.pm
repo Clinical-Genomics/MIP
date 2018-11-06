@@ -156,8 +156,8 @@ sub set_rankvariants_ar {
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
 
-    if ( defined $parameter_href->{dynamic_parameter}{unaffected}
-        && @{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{$sample_ids_ref} )
+    if ( defined $parameter_href->{cache}{unaffected}
+        && @{ $parameter_href->{cache}{unaffected} } eq @{$sample_ids_ref} )
     {
 
         $log->warn(

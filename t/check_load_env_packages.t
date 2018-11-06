@@ -64,7 +64,7 @@ diag(   q{Test check_load_env_packages from Parameter.pm v}
 
 ## Given load_env packages with existing program executables
 my %parameter = test_mip_hashes( { mip_hash_name => q{define_parameter}, } );
-push @{ $parameter{dynamic_parameter}{program_name_path} }, qw{ bwa samtools sambamba };
+push @{ $parameter{cache}{program_name_path} }, qw{ bwa samtools sambamba };
 
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
 

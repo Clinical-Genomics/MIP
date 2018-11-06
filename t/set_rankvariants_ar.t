@@ -71,7 +71,7 @@ my $log                = test_log();
 my $sample_id          = q{sample_1};
 my $sample_id_affected = q{sample_2};
 my %active_parameter   = ( sample_ids => [$sample_id], );
-my %parameter = ( dynamic_parameter => { unaffected => [$sample_id], }, );
+my %parameter          = ( cache => { unaffected => [$sample_id], }, );
 my %analysis_recipe;
 my %expected_recipe = (
     rankvariant    => \&analysis_rankvariant_unaffected,

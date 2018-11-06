@@ -184,8 +184,7 @@ sub parse_prioritize_variant_callers {
         my $activate_caller_tracker = 0;
 
       CALLER:
-        foreach my $variant_caller (
-            @{ $parameter_href->{dynamic_parameter}{$variant_caller_type} } )
+        foreach my $variant_caller ( @{ $parameter_href->{cache}{$variant_caller_type} } )
         {
 
             if ( $active_parameter_href->{$variant_caller} ) {
@@ -202,7 +201,7 @@ sub parse_prioritize_variant_callers {
                     parameter_href        => $parameter_href,
                     parameter_name        => $prioritize_parameter_name,
                     variant_callers_ref =>
-                      \@{ $parameter_href->{dynamic_parameter}{$variant_caller_type} },
+                      \@{ $parameter_href->{cache}{$variant_caller_type} },
                 }
             );
         }
@@ -302,7 +301,7 @@ sub parse_start_with_recipe {
     update_recipe_mode_with_start_with(
         {
             active_parameter_href  => $active_parameter_href,
-            recipes_ref            => \@{ $parameter_href->{dynamic_parameter}{recipe} },
+            recipes_ref            => \@{ $parameter_href->{cache}{recipe} },
             start_with_recipes_ref => \@start_with_recipes,
         }
     );

@@ -141,15 +141,10 @@ sub create_fam_file {
       HEADER:
         foreach my $header (@fam_headers) {
 
-            if (
-                defined $parameter_href->{dynamic_parameter}{$sample_id}
-                { q{plink_} . $header } )
-            {
+            if ( defined $parameter_href->{cache}{$sample_id}{ q{plink_} . $header } ) {
 
                 $sample_line .=
-                    $TAB
-                  . $parameter_href->{dynamic_parameter}{$sample_id}
-                  { q{plink_} . $header };
+                  $TAB . $parameter_href->{cache}{$sample_id}{ q{plink_} . $header };
             }
             elsif ( defined $sample_info_href->{sample}{$sample_id}{$header} ) {
 

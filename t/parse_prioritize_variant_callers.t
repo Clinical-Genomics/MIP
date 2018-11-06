@@ -73,7 +73,7 @@ my %active_parameter = (
 );
 
 my %parameter = (
-    dynamic_parameter => {
+    cache => {
         variant_callers => [qw{ freebayes_ar bcftools_mpileup gatk_variantrecalibration}],
         structural_variant_callers => [qw{ delly }],
     },

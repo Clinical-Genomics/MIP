@@ -89,7 +89,7 @@ my $log = test_log();
 
 ## Given recipes when correct recipe modes
 my %parameter =
-  ( dynamic_parameter => { recipe => [ qw{ bwa_mem fastqc_ar genmod}, ], }, );
+  ( cache => { recipe => [ qw{ bwa_mem fastqc_ar genmod}, ], }, );
 my %active_parameter = (
     bwa_mem   => 1,
     fastqc_ar => 0,
@@ -128,7 +128,7 @@ like( $trap->stderr, qr/FATAL/xms,
 ## Given a incorrect recipe name
 #Reinstate correct mode
 $active_parameter{bwa_mem} = 1;
-push @{ $parameter{dynamic_parameter}{recipe} }, q{not_a_recipe};
+push @{ $parameter{cache}{recipe} }, q{not_a_recipe};
 
 trap {
     check_recipe_mode(

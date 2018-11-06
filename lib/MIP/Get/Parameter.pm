@@ -554,11 +554,11 @@ sub get_program_executables {
     ## Get all program executables
     my @program_executables;
 
-    my $err_msg = q{No keys 'dynamic_parameter' and 'recipe' in parameter hash};
-    croak($err_msg) if ( not exists $parameter_href->{dynamic_parameter}{recipe} );
+    my $err_msg = q{No keys 'cache' and 'recipe' in parameter hash};
+    croak($err_msg) if ( not exists $parameter_href->{cache}{recipe} );
 
   RECIPE:
-    foreach my $recipe ( @{ $parameter_href->{dynamic_parameter}{recipe} } ) {
+    foreach my $recipe ( @{ $parameter_href->{cache}{recipe} } ) {
 
         if ( exists $parameter_href->{$recipe}{program_name_path} ) {
 

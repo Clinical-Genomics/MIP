@@ -393,8 +393,7 @@ sub check_parameter_files {
     my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
 
     ## Unpack parameters
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
 
     ## Do nothing since parameter is not required unless exome mode is enabled
     return

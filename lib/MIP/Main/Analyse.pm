@@ -56,7 +56,7 @@ use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Script::Utils qw{ help write_script_version };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_dynamic_parameter set_human_genome_reference_features set_no_dry_run_parameters set_parameter_reference_dir_path };
+  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_cache set_human_genome_reference_features set_no_dry_run_parameters set_parameter_reference_dir_path };
 use MIP::Update::Parameters
   qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
@@ -293,7 +293,7 @@ sub mip_analyse {
     }
 
     # Detect if all samples has the same sequencing type and return consensus if reached
-    $parameter{dynamic_parameter}{consensus_analysis_type} =
+    $parameter{cache}{consensus_analysis_type} =
       get_overall_analysis_type(
         { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
 
@@ -440,7 +440,7 @@ sub mip_analyse {
     );
 
 ## Detect case constellation based on pedigree file
-    $parameter{dynamic_parameter}{trio} = detect_trio(
+    $parameter{cache}{trio} = detect_trio(
         {
             active_parameter_href => \%active_parameter,
             log                   => $log,
@@ -559,7 +559,7 @@ sub mip_analyse {
     );
 
 ## Adds dynamic aggregate information from definitions to parameter hash
-    set_dynamic_parameter(
+    set_cache(
         {
             aggregates_ref => [
                 ## Collect all aligners
@@ -577,7 +577,7 @@ sub mip_analyse {
         }
     );
 
-    @{ $parameter{dynamic_parameter}{program_name_path} } =
+    @{ $parameter{cache}{program_name_path} } =
       get_program_executables( { parameter_href => \%parameter, } );
 
 ## Check correct value for recipe mode in MIP
@@ -597,7 +597,7 @@ sub mip_analyse {
         }
     );
 
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter{cache}{consensus_analysis_type};
 
 ## Get initiation recipe, downstream dependencies and update recipe modes for start_with_recipe parameter depending on pipeline
     my $initiation_file = catfile( $Bin, qw{ definitions rd_dna_initiation_map.yaml } );
@@ -619,7 +619,7 @@ sub mip_analyse {
     check_recipe_name(
         {
             parameter_href   => \%parameter,
-            recipe_names_ref => \@{ $parameter{dynamic_parameter}{recipe} },
+            recipe_names_ref => \@{ $parameter{cache}{recipe} },
         }
     );
 
@@ -637,7 +637,7 @@ sub mip_analyse {
         {
             active_parameter_href => \%active_parameter,
             dry_run_all           => $active_parameter{dry_run_all},
-            recipes_ref           => \@{ $parameter{dynamic_parameter}{recipe} },
+            recipes_ref           => \@{ $parameter{cache}{recipe} },
         }
     );
 
@@ -670,8 +670,8 @@ sub mip_analyse {
         {
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
-            order_recipes_ref => \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
-            parameter_href    => \%parameter,
+            order_recipes_ref     => \@{ $parameter{cache}{order_recipes_ref} },
+            parameter_href        => \%parameter,
         }
     );
 
@@ -718,10 +718,9 @@ sub mip_analyse {
                 job_id_href                     => \%job_id,
                 log                             => $log,
                 order_parameters_ref            => \@order_parameters,
-                order_recipes_ref =>
-                  \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
-                parameter_href   => \%parameter,
-                sample_info_href => \%sample_info,
+                order_recipes_ref => \@{ $parameter{cache}{order_recipes_ref} },
+                parameter_href    => \%parameter,
+                sample_info_href  => \%sample_info,
             }
         );
     }
@@ -741,10 +740,9 @@ sub mip_analyse {
                 job_id_href             => \%job_id,
                 log                     => $log,
                 order_parameters_ref    => \@order_parameters,
-                order_recipes_ref =>
-                  \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
-                parameter_href   => \%parameter,
-                sample_info_href => \%sample_info,
+                order_recipes_ref       => \@{ $parameter{cache}{order_recipes_ref} },
+                parameter_href          => \%parameter,
+                sample_info_href        => \%sample_info,
             }
         );
     }
@@ -768,10 +766,9 @@ sub mip_analyse {
                 job_id_href                     => \%job_id,
                 log                             => $log,
                 order_parameters_ref            => \@order_parameters,
-                order_recipes_ref =>
-                  \@{ $parameter{dynamic_parameter}{order_recipes_ref} },
-                parameter_href   => \%parameter,
-                sample_info_href => \%sample_info,
+                order_recipes_ref => \@{ $parameter{cache}{order_recipes_ref} },
+                parameter_href    => \%parameter,
+                sample_info_href  => \%sample_info,
             }
         );
     }
