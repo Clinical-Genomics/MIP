@@ -55,6 +55,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - rtg-tools: 3.8.4-0 -> 3.9.1-1
 - sambamba: 0.6.6 -> 0.6.8-h682856c_0
 - samtools: 1.6 -> 1.9-h8ee4bcc_1
+- svdb: 1.1.2 -> 1.3.0-py27h7eb728f_0
 - tiddit: 2.2.5 -> 2.3.1
 
 ## [6.0.7]
