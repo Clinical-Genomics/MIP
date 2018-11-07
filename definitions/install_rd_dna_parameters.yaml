@@ -194,6 +194,7 @@ evep:
       vep_auto_flag: acfp
       vep_cache_dir: ~
       vep_plugins:
+        - ExACpLI
         - LoFtool
         - MaxEntScan
       vep_species:

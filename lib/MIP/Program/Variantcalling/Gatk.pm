@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Gatk;
 
+use 5.026;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -28,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -61,19 +62,19 @@ sub gatk_genotypegvcfs {
 
 ## Function : Perl wrapper for writing GATK GenoTypeGVCFs recipe to $FILEHANDLE. Based on GATK 4.0.8.
 ## Returns  : @commands
-## Arguments: $dbsnp_path                            => Path to DbSNP file
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $infile_path                           => Path to variant input
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $java_use_large_pages                  => Use java large pages
-##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $outfile_path                          => Outfile path
-##          : $pedigree                              => Pedigree files for samples
-##          : $referencefile_path                    => Reference sequence file
-##          : $stderrfile_path                       => Stderrfile path
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $verbosity                             => Set the minimum level of logging
-##          : $xargs_mode                            => Set if the program will be executed via xargs
+## Arguments: $dbsnp_path           => Path to DbSNP file
+##          : $FILEHANDLE           => Sbatch filehandle to write to
+##          : $infile_path          => Path to variant input
+##          : $intervals_ref        => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages => Use java large pages
+##          : $memory_allocation    => Memory allocation to run Gatk
+##          : $outfile_path         => Outfile path
+##          : $pedigree             => Pedigree files for samples
+##          : $referencefile_path   => Reference sequence file
+##          : $stderrfile_path      => Stderrfile path
+##          : $temp_directory       => Redirect tmp files to java temp
+##          : $verbosity            => Set the minimum level of logging
+##          : $xargs_mode           => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
@@ -1923,6 +1924,8 @@ sub gatk_genomicsdbimport {
 ##          : $pedigree                  => Pedigree files
 ##          : $read_filters_ref          => Filters to apply on reads {REF}
 ##          : $referencefile_path        => Reference sequence file
+##          : $sample_name_map_path      => Sample name map for merged references (Format: sample_id\tfile.vcf )
+
 ##          : $stderrfile_path           => Stderrfile path
 ##          : $temp_directory            => Redirect tmp files to java temp
 ##          : $verbosity                 => Set the minimum level of logging
@@ -1939,6 +1942,7 @@ sub gatk_genomicsdbimport {
     my $memory_allocation;
     my $read_filters_ref;
     my $referencefile_path;
+    my $sample_name_map_path;
     my $stderrfile_path;
     my $temp_directory;
 
@@ -1956,8 +1960,6 @@ sub gatk_genomicsdbimport {
         },
         infile_paths_ref => {
             default     => [],
-            defined     => 1,
-            required    => 1,
             store       => \$infile_paths_ref,
             strict_type => 1,
         },
@@ -1985,6 +1987,10 @@ sub gatk_genomicsdbimport {
         referencefile_path => {
             defined     => 1,
             store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        sample_name_map_path => {
+            store       => \$sample_name_map_path,
             strict_type => 1,
         },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
@@ -2024,9 +2030,17 @@ sub gatk_genomicsdbimport {
     push @commands, q{GenomicsDBImport};
 
     ## Add GVCF files
-    push @commands,
-      q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
-      @{$infile_paths_ref};
+    if ( scalar @{$infile_paths_ref} ) {
+        push @commands,
+          q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
+          @{$infile_paths_ref};
+    }
+
+    ## Add merged reference files
+    if ($sample_name_map_path) {
+
+        push @commands, q{--sample-name-map} . $SPACE . $sample_name_map_path;
+    }
 
     ## Add common options
     gatk_common_options(

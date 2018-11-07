@@ -74,23 +74,9 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_paths_ref => {
-        inputs_ref => [
-            catfile(qw{ path to mother.g.vcf }),
-            catfile(qw{ path to child.g.vcf })
-        ],
-        expected_output => q{--variant}
-          . $SPACE
-          . catfile(qw{ path to mother.g.vcf})
-          . $SPACE
-          . q{--variant}
-          . $SPACE
-          . catfile(qw{ path to child.g.vcf}),
-    },
     genomicsdb_workspace_path => {
         input           => catdir(qw{ a dir }),
-        expected_output => q{--genomicsdb-workspace-path }
-          . catdir(qw{ a dir }),
+        expected_output => q{--genomicsdb-workspace-path } . catdir(qw{ a dir }),
     },
     intervals_ref => {
         inputs_ref      => [qw{ chr1 chr2 }],
@@ -100,10 +86,8 @@ my %required_argument = (
 
 my %specific_argument = (
     infile_paths_ref => {
-        inputs_ref => [
-            catfile(qw{ path to mother.g.vcf }),
-            catfile(qw{ path to child.g.vcf })
-        ],
+        inputs_ref =>
+          [ catfile(qw{ path to mother.g.vcf }), catfile(qw{ path to child.g.vcf }) ],
         expected_output => q{--variant}
           . $SPACE
           . catfile(qw{ path to mother.g.vcf})
@@ -114,12 +98,15 @@ my %specific_argument = (
     },
     genomicsdb_workspace_path => {
         input           => catdir(qw{ a dir }),
-        expected_output => q{--genomicsdb-workspace-path }
-          . catdir(qw{ a dir }),
+        expected_output => q{--genomicsdb-workspace-path } . catdir(qw{ a dir }),
     },
     intervals_ref => {
         inputs_ref      => [qw{ chr1 chr2 }],
         expected_output => q{--intervals chr1 --intervals chr2},
+    },
+    sample_name_map_path => {
+        input           => catfile(qw{ my sample_map.vcf }),
+        expected_output => q{--sample-name-map } . catfile(qw{ my sample_map.vcf }),
     },
 );
 
