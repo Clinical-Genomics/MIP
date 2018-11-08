@@ -270,7 +270,7 @@ qq{ok(run(command => $execution_test, timeout => $TIMEOUT), $execution_test_name
     }
 
     ## Return nothing if no tests are available for the programs
-    return if scalar @program_test_commands == 0;
+    return if ( not scalar @program_test_commands );
 
     ## Start perl oneliner
     my @perl_commands = q{perl -e};
