@@ -17,8 +17,9 @@ use List::MoreUtils qw{ natatime };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 use MIP::Get::Parameter qw{ get_env_method_cmds };
+use MIP::Gnu::Coreutils qw{ gnu_echo gnu_printf };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
@@ -44,7 +45,7 @@ sub check_program_installations {
 ## Arguments: $env                        => Program environment
 ##          : $FILEHANDLE                 => open filehandle
 ##          : $log                        => Log
-##  		: $programs_ref                => Programs to check {REF}
+##          : $programs_ref               => Programs to check {REF}
 ##          : $program_test_command_href  => Hash with test commands {REF}
 
     my ($arg_href) = @_;
@@ -91,13 +92,14 @@ sub check_program_installations {
 
     Readonly my $COLUMNS      => 4;
     Readonly my $COLUMN_WIDTH => 25;
+    Readonly my $HASH_SIGN    => q{#};
 
     $log->info(qq{Writing tests for programs installed in environment: $env});
 
     ## Sort program list for readability
     my @sorted_programs = sort { lc $a cmp lc $b } @{$programs_ref};
 
-    ## Getting environment commands
+    ## Get environment commands
     my @env_method_load_cmds = get_env_method_cmds(
         {
             action     => q{load},
@@ -130,25 +132,52 @@ sub check_program_installations {
 
     say {$FILEHANDLE} qq{## Testing programs installed in $env};
 
-    ## Make bash output
-    say {$FILEHANDLE}
-q{echo -e '\n########################################################################\n'};
-    say {$FILEHANDLE} q{echo -e "\tMIP has attempted to install the following programs"};
-    say {$FILEHANDLE} q{echo -e "\tin in environment: } . $env . q{\n"};
+    ## Build header string to echo
+    my @header = ( q{\n} . ( $HASH_SIGN x $COLUMN_WIDTH x $COLUMNS ) . q{\n\n} );
+    push @header, (q{\tMIP has attempted to install the following programs\n});
+    push @header, ( q{\tin environment: } . $env . q{\n\n} );
 
-    ## Print programs selected for installation in set of 5.
+    gnu_echo(
+        {
+            enable_interpretation => 1,
+            FILEHANDLE            => $FILEHANDLE,
+            strings_ref           => \@header,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Print programs selected for installation in sets
     my $program_iterator = natatime $COLUMNS, @sorted_programs;
 
     ## Create field layout for printf
     my $field = q{"\t} . ( ( q{%-} . $COLUMN_WIDTH . q{s} ) x $COLUMNS ) . q{\n"};
 
+  PRINT_SET:
     while ( my @print_set = $program_iterator->() ) {
         ## Print programs according to field
-        say {$FILEHANDLE} qq{printf $field } . q{"}
-          . join( $DOUBLE_QUOTE . $SPACE . $DOUBLE_QUOTE, @print_set ) . q{"};
+        my $format_string =
+            $field
+          . $SPACE
+          . $DOUBLE_QUOTE
+          . join( $DOUBLE_QUOTE . $SPACE . $DOUBLE_QUOTE, @print_set )
+          . $DOUBLE_QUOTE;
+        gnu_printf(
+            {
+                FILEHANDLE    => $FILEHANDLE,
+                format_string => $format_string,
+            }
+        );
+        print {$FILEHANDLE} $NEWLINE;
     }
 
-    say {$FILEHANDLE} q{echo -e "\n\tTesting installation\n"};
+    gnu_echo(
+        {
+            enable_interpretation => 1,
+            FILEHANDLE            => $FILEHANDLE,
+            strings_ref           => [q{\n\tTesting installation\n}],
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Load env
     say   {$FILEHANDLE} qq{## Load environment: $env};

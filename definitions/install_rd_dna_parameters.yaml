@@ -274,8 +274,8 @@ program_test_command:
     execution: 'fastqc --version'
     path: 'fastqc'
   freebayes:
-    execution: 'freebayes'
-    path: 'freebayes --version'
+    execution: 'freebayes --version'
+    path: 'freebayes'
   gatk4:
     execution: 'gatk'
     path: 'gatk'
@@ -301,7 +301,7 @@ program_test_command:
     execution: 'python -c "import numpy"'
     path: 
   peddy:
-    execution: 'peddy'
+    execution: 'peddy --version'
     path: 'peddy'
   picard: 
     execution: 
