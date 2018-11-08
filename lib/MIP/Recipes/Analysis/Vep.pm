@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.010;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vep analysis_vep_sv_wes analysis_vep_sv_wgs };
@@ -46,13 +46,13 @@ sub analysis_vep {
 ## Function : Varianteffectpredictor performs effect predictions and annotation of variants.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
@@ -292,10 +292,16 @@ sub analysis_vep {
         }
         elsif ( $plugin eq q{MaxEntScan} ) {
 
-            my $max_ent_scan_parameter = q{,}
+            my $max_ent_scan_dir_path = q{,}
               . catfile( $active_parameter_href->{vep_directory_cache},
                 qw{ Plugins fordownload } );
-            push @plugins, $plugin . $max_ent_scan_parameter;
+            push @plugins, $plugin . $max_ent_scan_dir_path;
+        }
+        elsif ( $plugin eq q{ExACpLI} ) {
+
+            my $pli_file_path =
+              q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
+            push @plugins, $plugin . $pli_file_path;
         }
         else {
 

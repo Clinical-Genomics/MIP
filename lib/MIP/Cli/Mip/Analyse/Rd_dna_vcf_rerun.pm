@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -760,7 +760,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     option(
         q{vep_plugins} => (
             cmd_aliases   => [qw{ veppl }],
-            cmd_tags      => [q{Default: UpDownDistance, LoFtool}],
+            cmd_tags      => [q{Default: LoFtool, MaxEntScan}],
             documentation => q{VEP plugins},
             is            => q{rw},
             isa           => ArrayRef [Str],
@@ -771,6 +771,15 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
         q{vep_plugins_dir_path} => (
             cmd_aliases   => [qw{ veppldp }],
             documentation => q{Path to directory with VEP plugins},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{vep_plugin_pli_value_file_path} => (
+            cmd_aliases   => [qw{ vepplpli }],
+            documentation => q{VEP plugin pli file path},
             is            => q{rw},
             isa           => Str,
         )

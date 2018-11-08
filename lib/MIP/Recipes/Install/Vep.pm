@@ -327,6 +327,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
     if ( @plugins && $auto =~ m/p/xms ) {
 
         if ( any { $_ eq q{MaxEntScan} } @plugins ) {
+
             ## Add MaxEntScan required text file
             say {$FILEHANDLE} q{## Add MaxEntScan required text file};
             my $maxent_file_path = catfile( $vep_plugin_dir, q{fordownload.tar.gz} );
@@ -377,6 +378,22 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
                     quiet        => $quiet,
                     url =>
 q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt},
+                    verbose => $verbose,
+                }
+            );
+            say {$FILEHANDLE} $NEWLINE;
+        }
+        if ( any { $_ eq q{ExACpLI} } @plugins ) {
+
+            ## Add ExACpLI required text file
+            say {$FILEHANDLE} q{## Add pLI required value file};
+            wget(
+                {
+                    FILEHANDLE   => $FILEHANDLE,
+                    outfile_path => catfile( $vep_plugin_dir, q{ExACpLI_values.txt} ),
+                    quiet        => $quiet,
+                    url =>
+q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.txt},
                     verbose => $verbose,
                 }
             );

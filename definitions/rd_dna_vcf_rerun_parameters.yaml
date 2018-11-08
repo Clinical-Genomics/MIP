@@ -571,9 +571,18 @@ vep_plugins:
   element_separator: ,
   data_type: ARRAY
   default:
+   - ExACpLI
    - LoFtool
    - MaxEntScan
   type: recipe_argument
+vep_plugin_pli_value_file_path:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  reference: reference_dir
+  type: path
 vep_plugins_dir_path:
   associated_recipe:
     - varianteffectpredictor
