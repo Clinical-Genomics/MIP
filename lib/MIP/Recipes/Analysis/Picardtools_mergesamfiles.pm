@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -159,10 +159,11 @@ sub analysis_picardtools_mergesamfiles {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters  get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
+    use MIP::IO::Files qw{ migrate_file migrate_files xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
+    use MIP::Program::Alignment::Picardtools
+      qw{ picardtools_gatherbamfiles picardtools_mergesamfiles };
     use MIP::Program::Alignment::Sambamba qw{ split_and_index_aligment_file };
     use MIP::Program::Alignment::Samtools qw{ samtools_index };
     use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
@@ -253,8 +254,9 @@ sub analysis_picardtools_mergesamfiles {
     my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     @outfile_paths = @{ $io{out}{file_paths} };
-    my @outfile_suffixes  = @{ $io{out}{file_suffixes} };
-    my %temp_outfile_path = %{ $io{temp}{file_path_href} };
+    my @outfile_suffixes         = @{ $io{out}{file_suffixes} };
+    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
+    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -386,6 +388,42 @@ sub analysis_picardtools_mergesamfiles {
             );
             say {$XARGSFILEHANDLE} $NEWLINE;
         }
+
+        ## Gather BAM files
+        say {$FILEHANDLE} q{## Gather BAM files};
+
+        ## Assemble infile paths in contig order and not per size
+        my @gather_infile_paths =
+          map { $temp_outfile_path{$_} } @{ $file_info_href->{contigs} };
+
+        picardtools_gatherbamfiles(
+            {
+                create_index     => q{true},
+                FILEHANDLE       => $FILEHANDLE,
+                infile_paths_ref => \@gather_infile_paths,
+                java_jar =>
+                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx4g},
+                outfile_path         => $temp_outfile_path_prefix . $outfile_suffix,
+                referencefile_path   => $referencefile_path,
+                temp_directory       => $temp_directory,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+
+        ## Copies file from temporary directory.
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
+        migrate_file(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $temp_outfile_path_prefix
+                  . substr( $outfile_suffix, 0, 2 )
+                  . $ASTERISK,
+                outfile_path => $outdir_path_prefix,
+            }
+        );
+        say {$FILEHANDLE} q{wait}, $NEWLINE;
     }
     else {
         ## Only 1 infile - rename sample and index instead of merge to streamline handling of filenames downstream

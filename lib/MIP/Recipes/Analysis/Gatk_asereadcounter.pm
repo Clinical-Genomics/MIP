@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_asereadcounter };
@@ -150,7 +150,7 @@ sub analysis_gatk_asereadcounter {
 
     ## Constants
     Readonly my $ALLELES                => 2;
-    Readonly my $JAVA_MEMORY_ALLOCATION => 14;
+    Readonly my $JAVA_MEMORY_ALLOCATION => 20;
 
     ### PREPROCESSING
 
