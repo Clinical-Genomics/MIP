@@ -33,6 +33,7 @@ BEGIN {
 
 ## Constants
 Readonly my $ASTERISK               => q{*};
+Readonly my $COMMA                  => q{,};
 Readonly my $DOT                    => q{.};
 Readonly my $EMPTY_STR              => q{};
 Readonly my $NEWLINE                => qq{\n};
@@ -278,6 +279,13 @@ sub analysis_vep {
     );
 
     ## Get parameters
+    # VEP custom annotations
+    my @custom_annotations = _get_custom_annoation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
+
     # VEP plugins
     my @plugins;
   PLUGIN:
@@ -297,7 +305,9 @@ sub analysis_vep {
                 qw{ Plugins fordownload } );
             push @plugins, $plugin . $max_ent_scan_dir_path;
         }
-        elsif ( $plugin eq q{ExACpLI} ) {
+        elsif ( $plugin eq q{ExACpLI}
+            and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
+        {
 
             my $pli_file_path =
               q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
@@ -342,18 +352,19 @@ sub analysis_vep {
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stdout.txt};
         variant_effect_predictor(
             {
-                assembly         => $assembly_version,
-                buffer_size      => 20_000,
-                cache_directory  => $active_parameter_href->{vep_directory_cache},
-                distance         => $distance,
-                FILEHANDLE       => $XARGSFILEHANDLE,
-                fork             => $VEP_FORK_NUMBER,
-                infile_format    => substr( $infile_suffix, 1 ),
-                infile_path      => $infile_path{$contig},
-                outfile_format   => substr( $outfile_suffix, 1 ),
-                outfile_path     => $outfile_path{$contig},
-                plugins_dir_path => $active_parameter_href->{vep_plugins_dir_path},
-                plugins_ref      => \@plugins,
+                assembly               => $assembly_version,
+                buffer_size            => 20_000,
+                cache_directory        => $active_parameter_href->{vep_directory_cache},
+                custom_annotations_ref => \@custom_annotations,
+                distance               => $distance,
+                FILEHANDLE             => $XARGSFILEHANDLE,
+                fork                   => $VEP_FORK_NUMBER,
+                infile_format          => substr( $infile_suffix, 1 ),
+                infile_path            => $infile_path{$contig},
+                outfile_format         => substr( $outfile_suffix, 1 ),
+                outfile_path           => $outfile_path{$contig},
+                plugins_dir_path       => $active_parameter_href->{vep_plugins_dir_path},
+                plugins_ref            => \@plugins,
                 reference_path   => $active_parameter_href->{human_genome_reference},
                 regions_ref      => [$contig],
                 stderrfile_path  => $stderrfile_path,
@@ -646,6 +657,13 @@ sub analysis_vep_sv_wes {
 
     ## Get genome source and version to be compatible with VEP
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
+
+    # VEP custom annotations
+    my @custom_annotations = _get_custom_annoation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
 
     ## VEP plugins
     my @plugins;
@@ -981,6 +999,13 @@ sub analysis_vep_sv_wgs {
     my $vep_infile_path =
       $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $infile_suffix;
 
+    # VEP custom annotations
+    my @custom_annotations = _get_custom_annoation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
+
     ## VEP plugins
     my @plugins;
 
@@ -1138,6 +1163,39 @@ sub analysis_vep_sv_wgs {
         );
     }
     return;
+}
+
+sub _get_custom_annoation_cmds {
+
+## Function : Build the custom annotation command per file for vep
+## Returns  : @custom_annotations
+## Arguments: $vep_custom_annotation_href  => Hash ref description {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $vep_custom_annotation_href;
+
+    my $tmpl = {
+        vep_custom_annotation_href => {
+            store       => \$vep_custom_annotation_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @custom_annotations;
+    my @order_custom_options =
+      qw{ path key file_type annotation_type force_report_coordinates };
+
+  ANNOTATION:
+    foreach my $annotation_href ( values %{$vep_custom_annotation_href} ) {
+
+        my $cmd = join $COMMA, @{$annotation_href}{@order_custom_options};
+        push @custom_annotations, $cmd;
+    }
+    return @custom_annotations;
 }
 
 sub _get_assembly_name {

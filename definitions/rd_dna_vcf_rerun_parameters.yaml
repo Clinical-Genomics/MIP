@@ -523,6 +523,12 @@ varianteffectpredictor:
   program_executables:
    - vep
   type: recipe
+vep_custom_annotation:
+  associated_recipe:
+   - varianteffectpredictor
+  data_type: HASH
+  mandatory: no
+  type: path
 vep_directory_cache:
   associated_recipe:
    - varianteffectpredictor

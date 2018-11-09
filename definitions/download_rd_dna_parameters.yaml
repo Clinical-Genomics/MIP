@@ -39,6 +39,8 @@ reference:
     - v2.9.3
     - v3.2a
     - v3.5a
+  genomic_superdups:
+    - 20181009
   giab:
     - na12878_v2.19_wgs
     - na12878_v2.19_bed
@@ -342,6 +344,16 @@ dbnsfp:
       outfile_reformat_command: '(cat dbNSFP3.2a_variant.chr* | grep -v "^#" ) > hg38_dbnsfp_-v3.2a-.txt; rm dbNSFP3.2a_variant.chr*'
       outfile_bgzip_command: 'bgzip hg38_dbnsfp_-v3.2a-.txt'
       outfile_tabix_command: 'tabix -s 1 -b 2 -e 2 hg38_dbnsfp_-v3.2a-.txt.gz'
+genomic_superdups:
+  grch37:
+    20181009:
+      file: genomicSuperDups.txt.gz
+      outfile: GRCh37_genomics_super_dups_-20181009.txt.gz 
+      url_prefix: http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/
+      outfile_decompress: gzip
+      outfile_reformat_command: perl -i -p -e 'if($_!~/^#/) {s/chr(.+)/$1/g}' GRCh37_genomics_super_dups_-20181009.txt; grep -v ^# GRCh37_genomics_super_dups_-20181009.txt | sort -k2,2 -k3,3n - | cut -f2-4,27 - | uniq > GRCh37_genomics_super_dups_-20181009.bed
+      outfile_bgzip_command: 'bgzip GRCh37_genomics_super_dups_-20181009.bed'
+      outfile_tabix_command: 'tabix -0 -p bed GRCh37_genomics_super_dups_-20181009.bed.gz'
 giab:
   grch37:
     na12878_v2.19_wgs:

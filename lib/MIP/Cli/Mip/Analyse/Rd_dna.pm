@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1697,6 +1697,15 @@ q{Prepare for variant annotation block by copying and splitting files per contig
             documentation => q{Annotate variants using VEP},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{vep_custom_annotation} => (
+            cmd_aliases   => [qw{ vepcann }],
+            documentation => q{VEP custom annotation},
+            is            => q{rw},
+            isa           => HashRef,
         )
     );
 

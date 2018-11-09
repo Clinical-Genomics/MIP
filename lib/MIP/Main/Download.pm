@@ -41,7 +41,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{0.0.4};
+    our $VERSION = q{0.0.5};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -637,6 +637,7 @@ sub decompress_file {
                 FILEHANDLE  => $FILEHANDLE,
             }
         );
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     if ( defined $file_decompress && $file_decompress eq q{tar} ) {
@@ -885,7 +886,7 @@ sub write_post_processing_command {
 
     my ($arg_href) = @_;
 
-## Flatten argument(s)
+    ## Flatten argument(s)
     my $reference_href;
     my $FILEHANDLE;
 
@@ -906,11 +907,6 @@ sub write_post_processing_command {
     my @processing_commands =
       qw{ outfile_reformat_command outfile_bgzip_command outfile_tabix_command};
 
-    if ( scalar @{$reference_href}{@processing_commands} ) {
-
-        ## We have a command to process add ;
-        print {$FILEHANDLE} q{;};
-    }
   COMMAND:
     foreach my $command (@processing_commands) {
 
