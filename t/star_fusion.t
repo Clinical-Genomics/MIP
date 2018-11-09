@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -44,7 +44,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Variantcalling::Star_fusion} => [qw{ star_fusion }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures}                       => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -63,6 +63,7 @@ diag(   q{Test star_fusion from Star_fusion.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
+Readonly my $CPU           => 8;
 Readonly my $READ_LENGTH   => 150;
 Readonly my $THREAD_NUMBER => 16;
 
@@ -105,6 +106,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    cpu => {
+        input           => $CPU,
+        expected_output => q{--CPU} . $SPACE . $CPU,
+    },
     genome_lib_dir_path => {
         input           => catfile(qw{ dir genome_lib_dir_path }),
         expected_output => q{--genome_lib_dir}

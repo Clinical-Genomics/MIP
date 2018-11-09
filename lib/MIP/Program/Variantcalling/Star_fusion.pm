@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_fusion };
@@ -36,7 +36,8 @@ sub star_fusion {
 
 ## Function : Splice site analysis using STAR-fusion.
 ## Returns  :
-## Arguments: $fastq_r1_path          => The path of the R1 fastq
+## Arguments: $cpu                    => Number of threads for running STAR
+##          : $fastq_r1_path          => The path of the R1 fastq
 ##          : $fastq_r2_path          => The path of the R2 fastq
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $genome_lib_dir_path    => Path to the directory containing the genome library
@@ -50,6 +51,7 @@ sub star_fusion {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $cpu;
     my $fastq_r1_path;
     my $fastq_r2_path;
     my $FILEHANDLE;
@@ -62,21 +64,39 @@ sub star_fusion {
     my $stdoutfile_path;
 
     my $tmpl = {
-        fastq_r1_path => { store => \$fastq_r1_path, strict_type => 1, },
-        fastq_r2_path => { store => \$fastq_r2_path, strict_type => 1, },
-        FILEHANDLE    => {
+        cpu => {
+            store       => \$cpu,
+            strict_type => 1,
+        },
+        fastq_r1_path => {
+            store       => \$fastq_r1_path,
+            strict_type => 1,
+        },
+        fastq_r2_path => {
+            store       => \$fastq_r2_path,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-        genome_lib_dir_path =>
-          { required => 1, store => \$genome_lib_dir_path, strict_type => 1, },
+        genome_lib_dir_path => {
+            required    => 1,
+            store       => \$genome_lib_dir_path,
+            strict_type => 1,
+        },
         output_directory_path => {
             required    => 1,
             store       => \$output_directory_path,
             strict_type => 1,
         },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
-        sjdb_path       => { store => \$sjdb_path, strict_type => 1, },
+        samples_file_path => {
+            store       => \$samples_file_path,
+            strict_type => 1,
+        },
+        sjdb_path => {
+            store       => \$sjdb_path,
+            strict_type => 1,
+        },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -120,6 +140,10 @@ sub star_fusion {
     else {
         croak
 q{Error: You must either specify the fastq file paths or a splice junction database (SJDB) file.};
+    }
+
+    if ($cpu) {
+        push @commands, q{--CPU} . $SPACE . $cpu;
     }
 
     push @commands, q{--output_dir} . $SPACE . $output_directory_path;

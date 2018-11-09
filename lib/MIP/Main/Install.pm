@@ -28,8 +28,7 @@ use MIP::Set::Parameter qw{ set_programs_for_installation };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
 use MIP::Language::Shell qw{ create_bash_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
-use MIP::Package_manager::Conda
-  qw{ conda_source_activate conda_source_deactivate };
+use MIP::Package_manager::Conda qw{ conda_source_activate conda_source_deactivate };
 use MIP::Set::Parameter qw{ set_conda_env_names_and_paths  };
 
 ## Recipes
@@ -37,9 +36,9 @@ use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
 use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
 use MIP::Recipes::Install::Blobfish qw{ install_blobfish };
 use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
+use MIP::Recipes::Install::Check qw{check_program_installations};
 use MIP::Recipes::Install::Cnvnator qw{ install_cnvnator };
-use MIP::Recipes::Install::Conda
-  qw{ check_conda_installation install_conda_packages };
+use MIP::Recipes::Install::Conda qw{ check_conda_installation install_conda_packages };
 use MIP::Recipes::Install::Expansionhunter qw{ install_expansionhunter };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
@@ -60,7 +59,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.3.0};
+    our $VERSION = q{1.3.1};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -111,8 +110,8 @@ sub mip_install {
         my $date_time       = localtime;
         my $date_time_stamp = $date_time->datetime;
 
-        $parameter{log_file} = catfile(
-            q{mip_install} . $UNDERSCORE . $date_time_stamp . $DOT . q{log} );
+        $parameter{log_file} =
+          catfile( q{mip_install} . $UNDERSCORE . $date_time_stamp . $DOT . q{log} );
     }
 
     ## Initiate logger
@@ -122,8 +121,7 @@ sub mip_install {
             log_name  => q{mip_install},
         }
     );
-    $log->info(
-        q{Writing log messages to} . $COLON . $SPACE . $parameter{log_file} );
+    $log->info( q{Writing log messages to} . $COLON . $SPACE . $parameter{log_file} );
 
     ## Check the conda installation and set the conda path
     check_conda_installation(
@@ -178,8 +176,7 @@ sub mip_install {
         }
     );
 
-    $log->info(
-        q{Writing install instructions to:} . $SPACE . $file_name_path );
+    $log->info( q{Writing install instructions to:} . $SPACE . $file_name_path );
 
     ## Loop over the selected installations
     foreach my $installation ( @{ $parameter{installations} } ) {
@@ -206,8 +203,8 @@ sub mip_install {
         ## Installing Conda packages
         install_conda_packages(
             {
-                conda_env      => $parameter{environment_name}{$installation},
-                conda_env_path => $parameter{$installation}{conda_prefix_path},
+                conda_env           => $parameter{environment_name}{$installation},
+                conda_env_path      => $parameter{$installation}{conda_prefix_path},
                 conda_no_update_dep => $parameter{conda_no_update_dep},
                 conda_packages_href => $parameter{$installation}{conda},
                 conda_update        => $parameter{conda_update},
@@ -222,8 +219,8 @@ sub mip_install {
         ## Install PIP packages
         install_pip_packages(
             {
-                conda_env  => $parameter{environment_name}{$installation},
-                FILEHANDLE => $FILEHANDLE,
+                conda_env         => $parameter{environment_name}{$installation},
+                FILEHANDLE        => $FILEHANDLE,
                 pip_packages_href => $parameter{$installation}{pip},
                 quiet             => $parameter{quiet},
             }
@@ -258,12 +255,10 @@ sub mip_install {
 
             $shell_subs{$shell_program}->(
                 {
-                    conda_environment =>
-                      $parameter{environment_name}{$installation},
-                    conda_prefix_path =>
-                      $parameter{$installation}{conda_prefix_path},
-                    FILEHANDLE => $FILEHANDLE,
-                    noupdate   => $parameter{noupdate},
+                    conda_environment => $parameter{environment_name}{$installation},
+                    conda_prefix_path => $parameter{$installation}{conda_prefix_path},
+                    FILEHANDLE        => $FILEHANDLE,
+                    noupdate          => $parameter{noupdate},
                     program_parameters_href =>
                       $parameter{$installation}{shell}{$shell_program},
                     quiet   => $parameter{quiet},
@@ -291,16 +286,22 @@ sub mip_install {
         }
     }
 
+    ## Write tests
     foreach my $installation ( @{ $parameter{installations} } ) {
-        ## Add final message to FILEHANDLE
-        display_final_message(
+        ## Get the programs that mip has tried to install
+        my @programs_to_test = (
+            keys %{ $parameter{$installation}{conda} },
+            keys %{ $parameter{$installation}{pip} },
+            keys %{ $parameter{$installation}{shell} },
+        );
+
+        check_program_installations(
             {
-                conda_env_name => $parameter{environment_name}{$installation},
-                conda_programs_href => $parameter{$installation}{conda},
-                FILEHANDLE          => $FILEHANDLE,
-                pip_programs_href   => $parameter{$installation}{pip},
-                shell_programs_ref =>
-                  $parameter{$installation}{shell_programs_to_install},
+                env                       => $parameter{environment_name}{$installation},
+                FILEHANDLE                => $FILEHANDLE,
+                log                       => $log,
+                programs_ref              => \@programs_to_test,
+                program_test_command_href => $parameter{program_test_command},
             }
         );
     }
@@ -308,91 +309,6 @@ sub mip_install {
     $log->info(q{Finished writing installation instructions for MIP});
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    return;
-}
-
-#################
-###SubRoutines###
-#################
-
-sub display_final_message {
-
-## Function : Displays a final message to the user at the end of the installation process
-## Returns  :
-## Arguments: $conda_programs_href => Hash with conda programs {REF}
-##          : $conda_env_name         => Name of conda environment
-##          : $conda_programs_href    => Hash with conda programs {REF}
-##          : pip_programs_href       => Hash with pip programs {REF}
-##          : shell_programs_ref      => Array with shell programs {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $conda_env_name;
-    my $conda_programs_href;
-    my $FILEHANDLE;
-    my $pip_programs_href;
-    my $shell_programs_ref;
-
-    my $tmpl = {
-        conda_env_name => {
-            store => \$conda_env_name,
-        },
-        conda_programs_href => {
-            default => {},
-            store   => \$conda_programs_href,
-        },
-        pip_programs_href => {
-            default => {},
-            store   => \$pip_programs_href,
-        },
-        FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE,
-        },
-        shell_programs_ref => {
-            default => [],
-            store   => \$shell_programs_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-    use Array::Utils qw{ unique };
-
-    ## Get the programs that mip has tried to install
-    my @programs_to_install = unique(
-        keys %{$conda_programs_href},
-        keys %{$pip_programs_href},
-        @{$shell_programs_ref},
-    );
-
-    ## Set conda env variable to Root if no conda environment was specified
-    if ( not $conda_env_name ) {
-        $conda_env_name = q{Root environment};
-    }
-
-    say {$FILEHANDLE}
-q{echo -e '\n##############################################################\n'};
-    if ( any { $_ eq q{cnvnator} } @programs_to_install ) {
-        say {$FILEHANDLE}
-q{echo -e "\tMIP's installation script has attempted to install CNVnator"};
-        say {$FILEHANDLE} q{echo -e "\tin the specified conda environment: }
-          . $conda_env_name . q{\n"};
-        say {$FILEHANDLE}
-          q{echo -e "\tPlease exit the current session before continuing"};
-    }
-    else {
-        say {$FILEHANDLE}
-          q{echo -e "\tMIP has attempted to install the following programs"};
-        say {$FILEHANDLE} q{echo -e "\tin the specified conda environment: }
-          . $conda_env_name . q{\n"};
-
-        foreach my $program_to_install ( sort @programs_to_install ) {
-            say {$FILEHANDLE} q{echo -e "\t"} . $program_to_install;
-        }
-    }
-    say {$FILEHANDLE}
-q{echo -e '\n##############################################################\n'};
     return;
 }
 

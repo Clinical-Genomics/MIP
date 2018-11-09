@@ -13,10 +13,10 @@ CHAIN_ALL:
       - star_aln
       - picardtools_mergesamfiles
       - markduplicates
-      - gatk_splitncigarreads
-      - gatk_baserecalibration
       - CHAIN_RSEQC:
          - rseqc
+      - gatk_splitncigarreads
+      - gatk_baserecalibration
    - CHAIN_MAIN:
       - gatk_haplotypecaller
       - gatk_variantfiltration

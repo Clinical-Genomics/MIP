@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -152,6 +152,7 @@ sub analysis_gatk_splitncigarreads {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Gatk qw{ gatk_splitncigarreads };
@@ -177,8 +178,9 @@ sub analysis_gatk_splitncigarreads {
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my %temp_infile_path   = %{ $io{temp}{file_path_href} };
-    my $infile_path_prefix = $io{in}{file_path_prefix};
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $job_id_chain       = get_recipe_attributes(
         {
@@ -243,16 +245,22 @@ sub analysis_gatk_splitncigarreads {
 
     ### SHELL
 
-    ## Copy file(s) to temporary directory
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    gnu_cp(
+    ($xargs_file_counter) = xargs_migrate_contig_files(
         {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path_prefix . $ASTERISK,
-            outfile_path => $temp_directory,
+            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+            core_number        => $core_number,
+            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
+            file_path          => $recipe_file_path,
+            FILEHANDLE         => $FILEHANDLE,
+            indirectory        => $indir_path_prefix,
+            infile             => $infile_name_prefix,
+            recipe_info_path   => $recipe_info_path,
+            temp_directory     => $temp_directory,
+            xargs_file_counter => $xargs_file_counter,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
 
     ## Division by X according to the java heap
     Readonly my $JAVA_MEMORY_ALLOCATION => 12;
