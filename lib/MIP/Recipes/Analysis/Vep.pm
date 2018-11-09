@@ -280,11 +280,16 @@ sub analysis_vep {
 
     ## Get parameters
     # VEP custom annotations
-    my @custom_annotations = _get_custom_annoation_cmds(
-        {
-            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
-        }
-    );
+    my @custom_annotations;
+    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
+
+        @custom_annotations = _get_custom_annotation_cmds(
+            {
+                vep_custom_annotation_href =>
+                  $active_parameter_href->{vep_custom_annotation},
+            }
+        );
+    }
 
     # VEP plugins
     my @plugins;
@@ -659,11 +664,16 @@ sub analysis_vep_sv_wes {
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
 
     # VEP custom annotations
-    my @custom_annotations = _get_custom_annoation_cmds(
-        {
-            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
-        }
-    );
+    my @custom_annotations;
+    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
+
+        @custom_annotations = _get_custom_annotation_cmds(
+            {
+                vep_custom_annotation_href =>
+                  $active_parameter_href->{vep_custom_annotation},
+            }
+        );
+    }
 
     ## VEP plugins
     my @plugins;
@@ -1000,11 +1010,16 @@ sub analysis_vep_sv_wgs {
       $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $infile_suffix;
 
     # VEP custom annotations
-    my @custom_annotations = _get_custom_annoation_cmds(
-        {
-            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
-        }
-    );
+    my @custom_annotations;
+    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
+
+        @custom_annotations = _get_custom_annotation_cmds(
+            {
+                vep_custom_annotation_href =>
+                  $active_parameter_href->{vep_custom_annotation},
+            }
+        );
+    }
 
     ## VEP plugins
     my @plugins;
@@ -1165,11 +1180,11 @@ sub analysis_vep_sv_wgs {
     return;
 }
 
-sub _get_custom_annoation_cmds {
+sub _get_custom_annotation_cmds {
 
 ## Function : Build the custom annotation command per file for vep
 ## Returns  : @custom_annotations
-## Arguments: $vep_custom_annotation_href  => Hash ref description {REF}
+## Arguments: $vep_custom_annotation_href => Custom annotation info {REF}
 
     my ($arg_href) = @_;
 
@@ -1178,6 +1193,9 @@ sub _get_custom_annoation_cmds {
 
     my $tmpl = {
         vep_custom_annotation_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
             store       => \$vep_custom_annotation_href,
             strict_type => 1,
         },
