@@ -61,7 +61,7 @@ Readonly my $TAB       => qq{\t};
 my ( $infile, $config_file );
 my ( %parameter, %active_parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = 2.02;
+our $VERSION = 2.03;
 
 if ( scalar @ARGV == 0 ) {
 
@@ -76,7 +76,7 @@ if ( scalar @ARGV == 0 ) {
 $infile      = $ARGV[0];
 $config_file = $ARGV[1];
 
-###User Options
+### User Options
 GetOptions(
 
     # Display help text
@@ -181,7 +181,7 @@ else {
 }
 
 ## SV files
-if ( $infile =~ /_SV[.]/sxm ) {
+if ( $infile =~ /\/sv_\w+\//sxm ) {
 
 ## Reads infile in vcf format and parses annotations
     read_sv_infile_vcf(
@@ -443,7 +443,7 @@ sub read_infile_vcf {
             _test_vt_in_vcf_header(
                 {
                     vcf_header_href   => \%vcf_header,
-                    vt_mode           => $active_parameter_href->{vt},
+                    vt_mode           => $active_parameter_href->{vt_ar},
                     vt_decompose_mode => $active_parameter_href->{vt_decompose},
                     vt_normalize_mode => $active_parameter_href->{vt_normalize},
                 }

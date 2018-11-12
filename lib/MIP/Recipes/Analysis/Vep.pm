@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.010;
+    our $VERSION = 1.011;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vep analysis_vep_sv_wes analysis_vep_sv_wgs };
@@ -33,14 +33,14 @@ BEGIN {
 
 ## Constants
 Readonly my $ASTERISK               => q{*};
+Readonly my $ANNOTATION_DISTANCE    => 5000;
+Readonly my $ANNOTATION_DISTANCE_MT => 10;
 Readonly my $COMMA                  => q{,};
 Readonly my $DOT                    => q{.};
 Readonly my $EMPTY_STR              => q{};
 Readonly my $NEWLINE                => qq{\n};
 Readonly my $SPACE                  => q{ };
 Readonly my $UNDERSCORE             => q{_};
-Readonly my $ANNOTATION_DISTANCE    => 5000;
-Readonly my $ANNOTATION_DISTANCE_MT => 10;
 
 sub analysis_vep {
 
@@ -387,16 +387,6 @@ sub analysis_vep {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile_path =
-          $outfile_paths[0] . $UNDERSCORE . q{summary.html};
-        add_recipe_metafile_to_sample_info(
-            {
-                metafile_tag     => q{summary},
-                path             => $qc_vep_summary_outfile_path,
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
         add_recipe_metafile_to_sample_info(
             {
                 metafile_tag     => q{stderrfile},
@@ -734,18 +724,6 @@ sub analysis_vep_sv_wes {
     close $FILEHANDLE;
 
     if ( $recipe_mode == 1 ) {
-
-        ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile = $outfile_path_prefix . $DOT . q{vcf_summary.html};
-        add_recipe_metafile_to_sample_info(
-            {
-                directory        => $outdir_path_prefix,
-                file             => $qc_vep_summary_outfile,
-                metafile_tag     => q{summary},
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
 
         ## Collect QC metadata info for later use
         add_recipe_outfile_to_sample_info(
@@ -1142,18 +1120,6 @@ sub analysis_vep_sv_wgs {
     close $FILEHANDLE;
 
     if ( $recipe_mode == 1 ) {
-
-        ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile = $outfile_paths[0] . $DOT . q{vcf_summary.html};
-        add_recipe_metafile_to_sample_info(
-            {
-                directory        => $outdir_path_prefix,
-                file             => $qc_vep_summary_outfile,
-                metafile_tag     => q{summary},
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
 
         ## Collect QC metadata info for later use
         add_recipe_outfile_to_sample_info(

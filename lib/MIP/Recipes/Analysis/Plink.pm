@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_plink };
@@ -43,12 +43,12 @@ sub analysis_plink {
 ## Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
@@ -195,7 +195,8 @@ sub analysis_plink {
     );
 
     ## Set outfiles depending on sample data
-    my %plink_outfiles = (
+    my %plink_outanalysis_prefix;
+    my %plink_outfile_analysis_map = (
         check_for_sex    => { plink_sexcheck => q{sexcheck}, },
         multiple_samples => {
             inbreeding_factor => q{het},
@@ -205,19 +206,21 @@ sub analysis_plink {
 
     my @plink_outfiles;
   MODE:
-    while ( my ( $mode, $program_href ) = each %plink_outfiles ) {
+    while ( my ( $mode, $program_href ) = each %plink_outfile_analysis_map ) {
 
       PLINK_PROGRAM:
         while ( my ( $file_name_prefix, $file_suffix ) = each %{$program_href} ) {
 
             if ( scalar @sample_ids > 1 and $mode eq q{multiple_samples} ) {
 
+                $plink_outanalysis_prefix{$file_name_prefix} = $file_name_prefix;
                 push @plink_outfiles, $file_name_prefix . $DOT . $file_suffix;
                 next;
             }
             if (    $active_parameter_href->{found_other_count} ne scalar @sample_ids
                 and $mode eq q{check_for_sex} )
             {
+                $plink_outanalysis_prefix{$file_name_prefix} = $file_name_prefix;
                 push @plink_outfiles, $file_name_prefix . $DOT . $file_suffix;
             }
         }
@@ -273,8 +276,8 @@ sub analysis_plink {
 
     ### SHELL:
 
-    my $plink_outfile_prefix =
-      catfile( $outdir_path_prefix, $case_id . $UNDERSCORE . q{data} );
+    my $plink_outfile_prefix = catfile($outfile_path_prefix);
+
     my $case_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
 
     ## Create .fam file to be used in variant calling analyses
@@ -376,7 +379,8 @@ sub analysis_plink {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    my $inbreeding_outfile_prefix = catfile( $outdir_path_prefix, $case_id );
+    my $inbreeding_outfile_prefix_hets =
+      $binary_fileset_prefix . $DOT . $plink_outanalysis_prefix{inbreeding_factor};
 
     # Only perform if more than 1 sample
     if ( scalar @sample_ids > 1 ) {
@@ -389,12 +393,14 @@ sub analysis_plink {
                 FILEHANDLE              => $FILEHANDLE,
                 inbreeding_coefficients => 1,
                 het                     => 1,
-                outfile_prefix          => $inbreeding_outfile_prefix,
+                outfile_prefix          => $inbreeding_outfile_prefix_hets,
                 small_sample            => 1,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
 
+        my $inbreeding_outfile_prefix_mibs =
+          $binary_fileset_prefix . $DOT . $plink_outanalysis_prefix{relation_check};
         say {$FILEHANDLE} q{## Create Plink .mibs per case};
         plink_create_mibs(
             {
@@ -402,7 +408,7 @@ sub analysis_plink {
                 FILEHANDLE     => $FILEHANDLE,
                 map_file_path  => $binary_fileset_prefix . $DOT . q{map},
                 matrix         => 1,
-                outfile_prefix => $inbreeding_outfile_prefix,
+                outfile_prefix => $inbreeding_outfile_prefix_mibs,
                 ped_file_path  => $binary_fileset_prefix . $DOT . q{ped},
             }
         );
@@ -454,8 +460,8 @@ sub analysis_plink {
             $read_freqfile_path = $binary_fileset_prefix . $DOT . q{frqx};
         }
 
-        my $sex_check_outfile_prefix = catfile( $outdir_path_prefix, $case_id );
-
+        my $sex_check_outfile_prefix =
+          $binary_fileset_prefix . $DOT . $plink_outanalysis_prefix{plink_sexcheck};
         plink_sex_check(
             {
                 binary_fileset_prefix => $binary_fileset_prefix

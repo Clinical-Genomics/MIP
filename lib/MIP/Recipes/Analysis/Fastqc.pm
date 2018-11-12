@@ -23,7 +23,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.010;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_fastqc };
@@ -39,12 +39,12 @@ sub analysis_fastqc {
 ## Function : Raw sequence quality analysis using FASTQC.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -184,8 +184,7 @@ sub analysis_fastqc {
       catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
     my @outfile_paths =
       map {
-        catdir( $outsample_directory, $_ . $UNDERSCORE . $recipe_name,
-            q{fastqc_data.txt} )
+        catdir( $outsample_directory, $_ . $UNDERSCORE . q{fastqc}, q{fastqc_data.txt} )
       } @infile_name_prefixes;
 
     ## Set and get the io files per chain, id and stream

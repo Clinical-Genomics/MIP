@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_reformat_sv };
@@ -41,13 +41,13 @@ sub analysis_reformat_sv {
 ## Function : Concatenate and sort contig files. Optionally remove variants from genelist.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -211,11 +211,9 @@ sub analysis_reformat_sv {
         )
     );
 
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my @outfile_paths            = @{ $io{out}{file_paths} };
-    my @outfile_suffixes         = @{ $io{out}{file_suffixes} };
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my @temp_outfile_paths       = @{ $io{temp}{file_paths} };
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my @outfile_paths       = @{ $io{out}{file_paths} };
+    my @outfile_suffixes    = @{ $io{out}{file_suffixes} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -264,7 +262,7 @@ sub analysis_reformat_sv {
                 FILEHANDLE            => $FILEHANDLE,
                 sequence_dict_file    => $sequence_dict_file,
                 infile_paths_ref      => [$infile_path],
-                outfile               => $temp_outfile_paths[$infile_index],
+                outfile               => $outfile_paths[$infile_index],
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -281,7 +279,7 @@ sub analysis_reformat_sv {
             my $filter_file_path = catfile( $reference_dir,
                 $active_parameter_href->{sv_reformat_remove_genes_file} );
             my $filter_outfile_path =
-                $temp_outfile_path_prefix
+                $outfile_path_prefix
               . $UNDERSCORE
               . q{filtered}
               . $outfile_suffixes[$infile_index];
@@ -290,7 +288,7 @@ sub analysis_reformat_sv {
                 {
                     FILEHANDLE       => $FILEHANDLE,
                     filter_file_path => $filter_file_path,
-                    infile_path      => $temp_outfile_paths[$infile_index],
+                    infile_path      => $outfile_paths[$infile_index],
                     invert_match     => 1,
                     outfile_path     => $filter_outfile_path,
                 }
@@ -316,7 +314,7 @@ sub analysis_reformat_sv {
         bcftools_view_and_index_vcf(
             {
                 FILEHANDLE          => $FILEHANDLE,
-                infile_path         => $temp_outfile_paths[$infile_index],
+                infile_path         => $outfile_paths[$infile_index],
                 outfile_path_prefix => $outfile_path_prefix . $bcftools_suffix,
                 output_type         => q{z},
             }
@@ -327,13 +325,27 @@ sub analysis_reformat_sv {
             add_most_complete_vcf(
                 {
                     active_parameter_href => $active_parameter_href,
-                    path                  => $outfile_paths[$infile_index] . $DOT . q{gz},
+                    path                  => $outfile_paths[$infile_index],
                     recipe_name           => $recipe_name,
                     sample_info_href      => $sample_info_href,
                     vcf_file_key          => q{sv}
                       . $UNDERSCORE
                       . substr( $outfile_suffixes[0], 1 )
                       . $UNDERSCORE . q{file},
+                    vcfparser_outfile_counter => $infile_index,
+                }
+            );
+            add_most_complete_vcf(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    path                  => $outfile_paths[$infile_index] . $DOT . q{gz},
+                    recipe_name           => $recipe_name,
+                    sample_info_href      => $sample_info_href,
+                    vcf_file_key          => q{sv}
+                      . $UNDERSCORE
+                      . substr( $outfile_suffixes[0], 1 )
+                      . $UNDERSCORE
+                      . q{binary_file},
                     vcfparser_outfile_counter => $infile_index,
                 }
             );

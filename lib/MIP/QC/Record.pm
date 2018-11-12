@@ -460,9 +460,9 @@ sub add_most_complete_vcf {
             strict_type => 1,
         },
         vcf_file_key => {
-            allow       => [qw{ vcf_file sv_vcf_file sv_vcf_binary_file }],
-            default     => q{vcf_file},
-            store       => \$vcf_file_key,
+            allow   => [qw{ vcf_file vcf_binary_file sv_vcf_file sv_vcf_binary_file }],
+            default => q{vcf_file},
+            store   => \$vcf_file_key,
             strict_type => 1,
         },
         vcfparser_outfile_counter => {
