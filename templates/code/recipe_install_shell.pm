@@ -123,8 +123,7 @@ sub install_PROGRAM {
     use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_rm };
     use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Compression::Zip qw{ unzip };
 
@@ -134,8 +133,7 @@ sub install_PROGRAM {
     ## Set program specific parameters
     my $program_name = q{PROGRAM};
     my $program_directory_path =
-      catdir( $conda_prefix_path, q{share},
-        $program_name . $DASH . $program_version );
+      catdir( $conda_prefix_path, q{share}, $program_name . $DASH . $program_version );
     my $executable  = q{PROGRAM_EXECUTABLE};
     my $program_url = q{https://};
 
@@ -176,7 +174,7 @@ sub install_PROGRAM {
     if ($conda_environment) {
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
-        conda_source_activate(
+        conda_activate(
             {
                 env_name   => $conda_environment,
                 FILEHANDLE => $FILEHANDLE,
@@ -215,11 +213,7 @@ sub install_PROGRAM {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Move to PROGRAM directory
-    say {$FILEHANDLE} q{## Move to}
-      . $SPACE
-      . $program_name
-      . $SPACE
-      . q{directory};
+    say {$FILEHANDLE} q{## Move to} . $SPACE . $program_name . $SPACE . q{directory};
     gnu_cd(
         {
             directory_path => $program_directory_path,
@@ -286,7 +280,7 @@ sub install_PROGRAM {
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {
         say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_source_deactivate(
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }

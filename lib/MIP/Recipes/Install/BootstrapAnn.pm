@@ -99,8 +99,7 @@ sub install_bootstrapann {
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Versionmanager::Git qw{ git_clone };
 
     ## Unpack parameters
@@ -108,10 +107,9 @@ sub install_bootstrapann {
     my $program_version = $bootstrapann_parameters_href->{version};
 
     ## Set parameters
-    my $program_name = q{BootstrapAnn};
-    my $program_directory_path =
-      catdir( $conda_prefix_path, qw{ share BootstrapAnn } );
-    my $executable = q{BootstrapAnn.py};
+    my $program_name           = q{BootstrapAnn};
+    my $program_directory_path = catdir( $conda_prefix_path, qw{ share BootstrapAnn } );
+    my $executable             = q{BootstrapAnn.py};
 
     ## Retrieve logger object
     my $log = retrieve_log(
@@ -148,7 +146,7 @@ sub install_bootstrapann {
 
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
-        conda_source_activate(
+        conda_activate(
             {
                 env_name   => $conda_environment,
                 FILEHANDLE => $FILEHANDLE,
@@ -196,7 +194,7 @@ sub install_bootstrapann {
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {
         say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_source_deactivate(
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }

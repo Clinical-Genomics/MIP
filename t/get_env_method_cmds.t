@@ -72,7 +72,7 @@ my @env_cmds = get_env_method_cmds(
         env_method => $env_method,
     }
 );
-my @expected_load_cmds = ( qw{ source activate }, $env_name );
+my @expected_load_cmds = ( qw{ conda activate }, $env_name );
 
 ## Then return load env commands
 is_deeply( \@expected_load_cmds, \@env_cmds, q{Got env load cmds} );
@@ -86,7 +86,7 @@ is_deeply( \@expected_load_cmds, \@env_cmds, q{Got env load cmds} );
     }
 );
 
-my @expected_unload_cmds = (qw{ source deactivate });
+my @expected_unload_cmds = (qw{ conda deactivate });
 
 ## Then return unload env commands
 is_deeply( \@expected_unload_cmds, \@env_cmds, q{Got env unload cmds} );

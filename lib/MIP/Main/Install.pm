@@ -28,7 +28,7 @@ use MIP::Set::Parameter qw{ set_programs_for_installation };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
 use MIP::Language::Shell qw{ create_bash_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
-use MIP::Package_manager::Conda qw{ conda_source_activate conda_source_deactivate };
+use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
 use MIP::Set::Parameter qw{ set_conda_env_names_and_paths  };
 
 ## Recipes

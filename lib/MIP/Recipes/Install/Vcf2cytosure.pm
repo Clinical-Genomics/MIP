@@ -100,8 +100,7 @@ sub install_vcf2cytosure {
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Package_manager::Pip qw{ pip_install };
     use MIP::Versionmanager::Git qw{ git_clone };
 
@@ -123,8 +122,7 @@ sub install_vcf2cytosure {
     say {$FILEHANDLE} q{### Install Vcf2cytosure};
 
     ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $vcf2cytosure_dir =
-      catdir( $conda_prefix_path, qw{ share vcf2cytosure } );
+    my $vcf2cytosure_dir = catdir( $conda_prefix_path, qw{ share vcf2cytosure } );
     my $install_check = check_existing_installation(
         {
             conda_environment      => $conda_environment,
@@ -148,7 +146,7 @@ sub install_vcf2cytosure {
 
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
-        conda_source_activate(
+        conda_activate(
             {
                 env_name   => $conda_environment,
                 FILEHANDLE => $FILEHANDLE,
@@ -205,7 +203,7 @@ sub install_vcf2cytosure {
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {
         say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_source_deactivate(
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }
