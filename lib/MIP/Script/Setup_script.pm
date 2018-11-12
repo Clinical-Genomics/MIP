@@ -524,7 +524,7 @@ sub write_return_to_conda_environment {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Package_manager::Conda qw{ conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_deactivate };
 
     ## Return to main environment
     if ( @{$source_main_environment_commands_ref}
@@ -543,7 +543,7 @@ sub write_return_to_conda_environment {
         ## Return to login shell environment
 
         say {$FILEHANDLE} q{## Deactivate environment};
-        conda_source_deactivate(
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }

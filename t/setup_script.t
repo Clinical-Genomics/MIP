@@ -89,7 +89,7 @@ my %active_parameter = (
     project_id                      => q{wamdu},
     sacct_format_fields             => [qw{ jobid }],
     slurm_quality_of_service        => q{low},
-    source_environment_commands_ref => [qw{ source activate test }],
+    source_environment_commands_ref => [qw{ conda activate test }],
     submission_profile              => q{slurm},
     temp_directory                  => $temp_dir,
 );

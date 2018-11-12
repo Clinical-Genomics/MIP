@@ -1,5 +1,6 @@
 package MIP::Package_manager::Conda;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
@@ -21,8 +22,8 @@ use Readonly;
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 ## Constants
-Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 BEGIN {
 
@@ -30,11 +31,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ conda_check_env_status conda_create conda_install conda_source_activate conda_source_deactivate conda_uninstall conda_update };
+      qw{ conda_check_env_status conda_create conda_install conda_activate conda_deactivate conda_uninstall conda_update };
 }
 
 sub conda_create {
@@ -143,12 +144,12 @@ sub conda_create {
     return @commands;
 }
 
-sub conda_source_activate {
+sub conda_activate {
 
 ##Function : Activate conda environment
-##Returns  : "@commands"
-##Arguments: $FILEHANDLE => Filehandle to write to
-##         : $env_name   => Name of conda environment
+##Returns  : @commands
+##Arguments: $env_name   => Name of conda environment
+##         : $FILEHANDLE => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -163,8 +164,7 @@ sub conda_source_activate {
             strict_type => 1,
         },
         FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE,
+            store => \$FILEHANDLE,
         },
     };
 
@@ -173,9 +173,9 @@ sub conda_source_activate {
     ## Stores commands depending on input parameters
 
     # Basic command
-    my @commands = q{source activate};
+    my @commands = qw{ conda activate };
 
-    # Activates env, default root
+    # Activates env, default base
     push @commands, $env_name;
 
     unix_write_to_file(
@@ -188,10 +188,10 @@ sub conda_source_activate {
     return @commands;
 }
 
-sub conda_source_deactivate {
+sub conda_deactivate {
 
 ##Function : Deactivate conda environment
-##Returns  : "@commands"
+##Returns  : @commands
 ##Arguments: $FILEHANDLE => Filehandle to write to
 
     my ($arg_href) = @_;
@@ -201,15 +201,13 @@ sub conda_source_deactivate {
 
     my $tmpl = {
         FILEHANDLE => {
-            defined  => 1,
-            required => 1,
-            store    => \$FILEHANDLE,
+            store => \$FILEHANDLE,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = q{source deactivate};
+    my @commands = qw{conda deactivate};
 
     unix_write_to_file(
         {
@@ -303,7 +301,7 @@ sub conda_check_env_status {
     # Unless the active environment is root the expression will return true
     #   and print the environment name
     my $detect_active_conda_env =
-q?perl -nae 'if( ($_!~/ ^root | ^base /xms) && ($_=~/\*/) ) {print $F[0]}'?;
+      q?perl -nae 'if( ($_!~/ ^root | ^base /xms) && ($_=~/\*/) ) {print $F[0]}'?;
 
     # Pipes the output from the shell command "conda info --envs"
     #   to $detect_active_conda_env.
@@ -323,9 +321,7 @@ q?perl -nae 'if( ($_!~/ ^root | ^base /xms) && ($_=~/\*/) ) {print $F[0]}'?;
         ## env not actual install
         if ( not $disable_env_check ) {
 
-            $log->fatal(
-                q{Run 'source deactivate' prior to running installation script}
-            );
+            $log->fatal(q{Run 'conda deactivate' prior to running installation script});
             exit 1;
         }
     }

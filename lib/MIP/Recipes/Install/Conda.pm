@@ -469,7 +469,7 @@ sub finish_conda_package_install {
     use File::Spec::Functions qw{ catdir catfile };
     use IPC::Cmd qw{ run };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod gnu_rm };
-    use MIP::Package_manager::Conda qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Variantcalling::Snpeff qw{ snpeff_download };
     use MIP::Recipes::Install::Gatk qw{ gatk_download };
     use MIP::Recipes::Install::SnpEff qw{ check_mt_codon_table };
@@ -484,7 +484,7 @@ sub finish_conda_package_install {
 
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
-        conda_source_activate(
+        conda_activate(
             {
                 env_name   => $conda_env,
                 FILEHANDLE => $FILEHANDLE,
@@ -632,7 +632,7 @@ sub finish_conda_package_install {
     if ($conda_env) {
 
         say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_source_deactivate(
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }

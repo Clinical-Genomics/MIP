@@ -76,7 +76,7 @@ open $FILEHANDLE, q{>}, \$file_content
 write_source_environment_command(
     {
         FILEHANDLE                      => $FILEHANDLE,
-        source_environment_commands_ref => [qw{ source activate test }],
+        source_environment_commands_ref => [qw{ conda activate test }],
     }
 );
 
@@ -88,8 +88,7 @@ my ($title) = $file_content =~ /^(## Activate environment)/ms;
 
 ok( $title, q{Wrote environment title} );
 
-my ($write_source_environment_command) =
-  $file_content =~ /^(source\s+activate\s+test)/mxs;
+my ($write_source_environment_command) = $file_content =~ /^(conda\s+activate\s+test)/mxs;
 
 ok( $write_source_environment_command, q{Wrote environment command} );
 

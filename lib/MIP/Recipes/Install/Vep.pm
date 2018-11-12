@@ -102,7 +102,7 @@ sub install_vep {
     use MIP::Gnu::Bash qw{ gnu_cd gnu_unset };
     use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_rm };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor_install };
@@ -188,7 +188,7 @@ sub install_vep {
 
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
-        conda_source_activate(
+        conda_activate(
             {
                 env_name   => $conda_environment,
                 FILEHANDLE => $FILEHANDLE,
@@ -442,7 +442,7 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.tx
     if ($conda_environment) {
 
         say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_source_deactivate(
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }

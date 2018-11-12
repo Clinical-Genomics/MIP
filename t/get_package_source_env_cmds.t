@@ -81,7 +81,7 @@ my @program_source_environment_cmds = get_package_source_env_cmds(
 
 is_deeply(
     \@program_source_environment_cmds,
-    [qw{ source activate mip_pyv3.6 }],
+    [qw{ conda activate mip_pyv3.6 }],
     q{Got package source environment command}
 );
 

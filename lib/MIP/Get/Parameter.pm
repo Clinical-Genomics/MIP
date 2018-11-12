@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -888,7 +888,7 @@ sub get_read_group {
 
 sub get_env_method_cmds {
 
-## Function : Get the standard load env command for environment method
+## Function : Get the standard load and unload env command for environment method
 ## Returns  : @env_method_cmds
 ## Arguments: $action     => What to do with the environment
 ##          : $env_method => Method used to load environment
@@ -925,10 +925,12 @@ sub get_env_method_cmds {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+
     my %method_cmd = (
         conda => {
-            load   => [ qw{ source activate }, $env_name ],
-            unload => [qw{source deactivate}],
+            load => [ ( conda_activate( { env_name => $env_name, } ), ) ],
+            unload => [ ( conda_deactivate( {} ), ) ],
         },
     );
 

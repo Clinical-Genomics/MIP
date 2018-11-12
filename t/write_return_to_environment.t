@@ -86,7 +86,7 @@ write_return_to_environment(
 close $FILEHANDLE;
 
 ## Then env load command shoudl be written to file
-my ($load_command) = $file_content =~ /^(source activate test)/ms;
+my ($load_command) = $file_content =~ /^(conda activate test)/ms;
 
 ok( $load_command, q{Wrote env load command} );
 

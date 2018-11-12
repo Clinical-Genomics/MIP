@@ -87,7 +87,7 @@ is( $time, 1, q{Got module time} );
 
 is_deeply(
     \@source_environment_cmds,
-    [qw{source activate mip_env}],
+    [qw{conda activate mip_env}],
     q{Got source environment command}
 );
 
@@ -112,7 +112,7 @@ is_deeply(
 
 is_deeply(
     \@source_environment_cmds,
-    [qw{ source activate py3.6 }],
+    [qw{ conda activate py3.6 }],
     q{Got load env command}
 );
 
