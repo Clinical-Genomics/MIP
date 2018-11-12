@@ -36,7 +36,7 @@ emip:
     samtools: 1.9=h8ee4bcc_1
     snpeff: 4.3.1
     snpsift: 4.3.1
-    svdb: 1.1.2
+    svdb: 1.3.0=py27h7eb728f_0
     vcfanno: 0.1.0
     vt: 2015.11.10
   pip:
@@ -154,7 +154,7 @@ etiddit:
     pip:
     python: 2.7
     scipy:
-    svdb: 1.1.2
+    svdb: 1.3.0=py27h7eb728f_0
   pip:
   shell:
     svdb:
@@ -164,7 +164,7 @@ etiddit:
         pip:
         python: 2.7
         scipy:
-      version: 1.1.2
+      version: 1.3.0
     tiddit:
       conda_dependency:
         cmake:
