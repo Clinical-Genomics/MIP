@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_rd_dna check_rd_rna check_rd_dna_vcf_rerun };
@@ -122,9 +122,14 @@ sub check_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Parameter
-      qw{ check_mutually_exclusive_parameters check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_snpsift_keys check_vep_custom_annotation check_vep_directories };
-    use MIP::Check::Path qw{ check_target_bed_file_suffix check_vcfanno_toml };
+    use MIP::Check::Parameter qw{ check_mutually_exclusive_parameters
+      check_sample_id_in_hash_parameter
+      check_sample_id_in_hash_parameter_path
+      check_snpsift_keys
+      check_vep_custom_annotation
+      check_vep_directories };
+    use MIP::Check::Path
+      qw{ check_gatk_sample_map_paths check_target_bed_file_suffix check_vcfanno_toml };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Get::File qw{ get_select_file_contigs };
@@ -234,6 +239,14 @@ sub check_rd_dna {
             log                   => $log,
             parameter_names_ref   => [qw{ infile_dirs exome_target_bed }],
             sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    ## Check that the supplied gatk sample map file paths exists
+    check_gatk_sample_map_paths(
+        {
+            log             => $log,
+            sample_map_path => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
         }
     );
 

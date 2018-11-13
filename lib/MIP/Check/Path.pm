@@ -29,6 +29,7 @@ BEGIN {
       check_filesystem_objects_existance
       check_filesystem_objects_and_index_existance
       check_file_version_exist
+      check_gatk_sample_map_paths
       check_parameter_files
       check_target_bed_file_suffix
       check_vcfanno_toml
@@ -38,6 +39,7 @@ BEGIN {
 ## Constants
 Readonly my $DOT     => q{.};
 Readonly my $NEWLINE => qq{\n};
+Readonly my $TAB     => qq{\t};
 
 sub check_executable_in_path {
 
@@ -316,6 +318,78 @@ sub check_file_version_exist {
         $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
     }
     return ( $file_path, $file_name_version );
+}
+
+sub check_gatk_sample_map_paths {
+
+## Function : Check that the supplied gatk sample map file paths exists
+## Returns  :
+## Arguments: $log             => Log object
+##          : $sample_map_path => Sample map path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $sample_map_path;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        sample_map_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_map_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Constants
+    Readonly my $RECORD_SEPARATOR => qq{\t};
+    Readonly my $FIELD_COUNTER    => 2;
+
+    ## Create anonymous filehandle
+    my $FILEHANDLE = IO::Handle->new();
+
+    open $FILEHANDLE, q{<}, $sample_map_path
+      or $log->logdie( q{Cannot open '} . $sample_map_path . q{': } . $OS_ERROR );
+
+  LINE:
+    while (<$FILEHANDLE>) {
+
+        ## Remove newline
+        chomp;
+
+        ## Unpack line
+        my $line = $_;
+
+        ## Get sample and file path (and check proper format)
+        my ( $sample, $file_path, $unexpected_data ) =
+          split $RECORD_SEPARATOR, $line, $FIELD_COUNTER + 1;
+
+        ## Make sure that we get what we expect
+        if ( defined $unexpected_data ) {
+
+            carp q{Unexpected trailing garbage at end of line '} . $line . q{':},
+              $NEWLINE . $TAB . $unexpected_data . $NEWLINE;
+        }
+        ## Path exists
+        next LINE if ( -e $file_path );
+
+        $log->fatal( q{The supplied file path: }
+              . $file_path
+              . q{ from sample map file: }
+              . $sample_map_path
+              . q{ does not exist} );
+        exit 1;
+    }
+    close $FILEHANDLE;
+    return 1;
 }
 
 sub check_parameter_files {
