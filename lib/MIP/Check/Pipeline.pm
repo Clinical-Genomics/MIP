@@ -123,7 +123,7 @@ sub check_rd_dna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter
-      qw{ check_mutually_exclusive_parameters check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_snpsift_keys check_vep_directories };
+      qw{ check_mutually_exclusive_parameters check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_snpsift_keys check_vep_custom_annotation check_vep_directories };
     use MIP::Check::Path qw{ check_target_bed_file_suffix check_vcfanno_toml };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
@@ -204,6 +204,17 @@ sub check_rd_dna {
             vep_directory_path  => $active_parameter_href->{vep_directory_path},
         }
     );
+
+    ## Check VEP custom annotations options
+    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
+
+        check_vep_custom_annotation(
+            {
+                log                 => $log,
+                vep_custom_ann_href => $active_parameter_href->{vep_custom_annotation},
+            }
+        );
+    }
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -723,6 +734,17 @@ sub check_rd_dna_vcf_rerun {
             vep_directory_path  => $active_parameter_href->{vep_directory_path},
         }
     );
+
+    ## Check VEP custom annotations options
+    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
+
+        check_vep_custom_annotation(
+            {
+                log                 => $log,
+                vep_custom_ann_href => $active_parameter_href->{vep_custom_annotation},
+            }
+        );
+    }
 
     check_snpsift_keys(
         {

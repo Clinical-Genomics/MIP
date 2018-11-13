@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.010;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -47,6 +47,7 @@ BEGIN {
       check_sample_id_in_hash_parameter_path
       check_sample_id_in_parameter_value
       check_snpsift_keys
+      check_vep_custom_annotation
       check_vep_directories
     };
 }
@@ -61,6 +62,121 @@ Readonly my $PIPE          => q{|};
 Readonly my $SINGLE_QUOTE  => q{'};
 Readonly my $SPACE         => q{ };
 Readonly my $UNDERSCORE    => q{_};
+
+sub check_vep_custom_annotation {
+
+## Function : Check VEP custom annotations options
+## Returns  :
+## Arguments: $log                 => Log object
+##          : $vep_custom_ann_href => VEP custom annotation {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $vep_custom_ann_href;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        vep_custom_ann_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_custom_ann_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Path qw { check_filesystem_objects_and_index_existance };
+    use Test::Trap;
+
+  ANN:
+    while ( my ( $ann, $value_href ) = each %{$vep_custom_ann_href} ) {
+
+        my $err_msg = $ann . q{ Is not a hash ref for vep_custom_annotation};
+        croak($err_msg) if ( ref $value_href ne q{HASH} );
+
+        ## Check the VEP custom annotations options are defined and with allowed values
+        trap {
+            _check_vep_custom_annotation_options(
+                {
+                    annotation_type          => $value_href->{annotation_type},
+                    file_type                => $value_href->{file_type},
+                    force_report_coordinates => $value_href->{force_report_coordinates},
+                    key                      => $value_href->{key},
+                }
+              )
+        };
+
+        if ( $trap->stderr ) {
+
+            $log->fatal(
+q{Malformed option for 'vep_custom_annotation' - please check your supplied options }
+            );
+            croak( $trap->stderr, $trap->die );
+        }
+        ## Check path object exists
+        check_filesystem_objects_and_index_existance(
+            {
+                log            => $log,
+                object_name    => $ann,
+                object_type    => q{file},
+                parameter_href => {},
+                parameter_name => q{vep_custom_annotation},
+                path           => $value_href->{path},
+            }
+        );
+    }
+    return 1;
+}
+
+sub _check_vep_custom_annotation_options {
+
+## Function : Check the VEP custom annotations options are defined and with allowed values
+## Returns  :
+## Arguments: $annotation_type          => Type of annotation
+##          : $file_type                => Type of file
+##          : $force_report_coordinates => Force report coordinates
+##          : $key                      => Vcf INFO key
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $annotation_type;
+    my $file_type;
+    my $force_report_coordinates;
+    my $key;
+
+    my $tmpl = {
+        annotation_type => {
+            allow => [ undef, qw{ exact overlap } ],
+            store => \$annotation_type,
+        },
+        file_type => {
+            allow => [ undef, qw{ bed gff gtf vcf bigwig } ],
+            store => \$file_type,
+        },
+        force_report_coordinates => {
+            allow => [ undef, 0, 1 ],
+            store => \$force_report_coordinates,
+        },
+        key => {
+            defined  => 1,
+            required => 1,
+            store    => \$key,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return 1;
+}
 
 sub check_allowed_array_values {
 
