@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.010;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -340,6 +340,9 @@ sub check_load_env_packages {
 
       PACKAGE:
         foreach my $package ( keys %{ $active_parameter_href->{load_env}{$env} } ) {
+
+            ## is installation
+            next PACKAGE if ( $package eq q{installation} );
 
             ## is method
             next PACKAGE if ( $package eq q{method} );

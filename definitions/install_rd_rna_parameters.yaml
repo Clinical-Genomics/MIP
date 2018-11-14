@@ -13,7 +13,7 @@ conda_update: 0
 disable_env_check: 0
 
 # MIP main environment spec
-emip: 
+emip:
   conda:
     bcftools: 1.8
     bioconductor-deseq2:
@@ -39,7 +39,7 @@ emip:
         bioconductor-deseq2:
         bioconductor-tximport:
         python: 2.7
-        r-optparse: 
+        r-optparse:
         r-readr:
       version: git
       url: https://github.com/J35P312/BlobFish.git
@@ -57,7 +57,7 @@ emip:
 ## Python 3 environment spec
 epy3:
   conda:
-    pip: 
+    pip:
     python: 3.6
   pip:
     multiqc: 1.4
@@ -84,7 +84,7 @@ environment_name:
   erseqc: MIP_rseqc
   estar: MIP_star
 
-# Environments to install
+# Environments and their recipes
 installations:
   - emip
   - estar
@@ -98,7 +98,7 @@ log_file: ~
 noupdate: 0
 
 ## Which pipeline are these instructions for
-pipeline: rna
+pipeline: rd_rna
 
 # Prefer installation via shell instead of via conda,
 # only applicaple for shell programs that overlap with existing conda packages
@@ -114,10 +114,10 @@ program_test_command:
     path: 'bedops'
   bioconductor-deseq2:
     execution: 'R -e "library(DESeq2)"'
-    path: 
+    path:
   bioconductor-tximport:
-    execution: 'R -e "library(tximport)"' 
-    path: 
+    execution: 'R -e "library(tximport)"'
+    path:
   blast:
     execution: 'blastn -version'
     path: 'blastn'
@@ -128,13 +128,13 @@ program_test_command:
     execution: 'BootstrapAnn.py --help'
     path: 'BootstrapAnn.py'
   cufflinks:
-    execution: 
+    execution:
     path: 'cufflinks'
   fastqc:
     execution: 'fastqc --version'
     path: 'fastqc'
   fusion-filter:
-    execution: 
+    execution:
     path: 'gtf_file_to_feature_seqs.pl'
   gatk4:
     execution: 'gatk'
@@ -145,24 +145,24 @@ program_test_command:
   java-jdk:
     execution: 'java -version'
     path: 'java'
-  mip_scripts: 
+  mip_scripts:
     execution: 'mip --help'
     path: 'mip'
   multiqc:
     execution: 'multiqc --version'
     path: 'multiqc'
-  numpy: 
+  numpy:
     execution: 'python -c "import numpy"'
-    path: 
-  picard: 
-    execution: 
+    path:
+  picard:
+    execution:
     path: 'picard'
   r-optparse:
     execution: 'R -e "library(tximport)"'
-    path: 
+    path:
   r-readr:
     execution: 'R -e "library(readr)"'
-    path: 
+    path:
   rseqc:
     execution: 'inner_distance.py'
     path: 'inner_distance.py'
@@ -177,15 +177,15 @@ program_test_command:
     path: 'samtools'
   scipy:
     execution: 'python -c "import scipy"'
-    path: 
+    path:
   star-fusion:
     execution: 'STAR-Fusion --version'
     path: 'STAR-Fusion'
   star:
     execution: 'STAR'
     path: 'STAR'
-  
-# Programs that needs to be installed with pyhton 3, only touch if you know what you're doing 
+
+# Programs that needs to be installed with pyhton 3, only touch if you know what you're doing
 python3_programs: []
 
 # Supress output, both when generating the install script and running it
@@ -218,5 +218,11 @@ shell_install: []
 # Don't write installation instructions for these programs
 skip_programs: []
 
+# Path to existing config to update
+update_config: ~
+
 # Verbose output when running the generated install script
 verbose: 0
+
+# Write config based on template
+write_config: ~

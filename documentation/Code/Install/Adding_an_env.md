@@ -43,6 +43,7 @@ In `templates/mip_config.yaml`:
 load_env:
   mip_travis_[ENV_NAME]:
    [RECIPE|PROGRAM]:
+   installation: e[ENV_NAME]
    method: [ENV_METHOD] # e.g conda
 ```
 2. Add the executables of your environment to the test envs:

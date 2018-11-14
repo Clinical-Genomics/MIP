@@ -9,16 +9,20 @@ max_cores_per_node: 16
 project_id: test
 load_env:
   MIP_py3:
+    installation: epy3
     method: conda
     multiqc_ar:
   MIP_rna:
+    installation: emip
     method: conda
     mip:
   MIP_rseqc:
+    installation: erseqc
     method: conda
     rseqc:
   MIP_star:
     gtf_file_to_feature_seqs.pl:
+    installation: estar
     method: conda
     star_aln:
     star_fusion:

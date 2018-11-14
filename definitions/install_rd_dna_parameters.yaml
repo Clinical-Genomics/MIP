@@ -230,7 +230,7 @@ log_file: ~
 noupdate: 0
 
 ## Which pipeline are these instructions for
-pipeline: rare_disease
+pipeline: rd_dna
 
 # Prefer installation via shell instead of via conda,
 # only applicaple for shell programs that overlap with existing conda packages
@@ -392,5 +392,11 @@ shell_install: []
 # Don't write installation instructions for these programs
 skip_programs: []
 
+# Path to existing config to update
+update_config: ~
+
 # Verbose output when running the generated install script
 verbose: 0
+
+# Write config based on template
+write_config: ~
