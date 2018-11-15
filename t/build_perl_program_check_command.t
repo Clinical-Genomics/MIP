@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -43,17 +43,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Install::Check} => [qw{ build_perl_program_check_command }],
-        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
+        q{MIP::Recipes::Install::Post_installation} =>
+          [qw{ build_perl_program_check_command }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Install::Check qw{ build_perl_program_check_command };
+use MIP::Recipes::Install::Post_installation qw{ build_perl_program_check_command };
 
 diag(   q{Test build_perl_program_check_command from Check.pm v}
-      . $MIP::Recipes::Install::Check::VERSION
+      . $MIP::Recipes::Install::Post_installation::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

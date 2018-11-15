@@ -14,14 +14,13 @@ use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 extends(qw{ MIP::Cli::Mip });
 
 command_short_description(q{MIP install command});
 
-command_long_description(
-    q{Entry point for generating MIP installation scripts});
+command_long_description(q{Entry point for generating MIP installation scripts});
 
 command_usage(q{install <pipeline>});
 
@@ -32,7 +31,7 @@ sub run {
     my ($arg_href) = @_;
 
     say {*STDERR}
-q{Please choose a pipeline to start generation of the installation script};
+      q{Please choose a pipeline to start generation of the installation script};
     return;
 }
 
@@ -121,7 +120,7 @@ sub _build_usage {
             cmd_aliases => [qw{ psh }],
             cmd_flag    => q{prefer_shell},
             documentation =>
-q{Shell will be used for overlapping shell and biconda installations},
+              q{Shell will be used for overlapping shell and biconda installations},
             is       => q{rw},
             isa      => Bool,
             required => 0,
@@ -185,6 +184,28 @@ q{Shell will be used for overlapping shell and biconda installations},
             is            => q{rw},
             isa           => enum( [qw{ low normal high }] ),
         )
+    );
+
+    option(
+        q{update_config} => (
+            cmd_aliases   => [qw{ uc }],
+            cmd_flag      => q{update_config},
+            documentation => q{Path to existing config},
+            is            => q{rw},
+            isa           => Str,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{write_config} => (
+            cmd_aliases   => [qw{ wc }],
+            cmd_flag      => q{write_config},
+            documentation => q{Generate config from template},
+            is            => q{rw},
+            isa           => Bool,
+            required      => 0,
+        ),
     );
 
     return;

@@ -8,44 +8,48 @@ java_use_large_pages: 1
 max_cores_per_node: 16
 load_env:
   mip_travis:
-   method: conda
-   mip:
+    installation: emip
+    method: conda
+    mip:
   mip_travis_eperl_5.26:
-   bwa_mem:
-   fastqc_ar:
-   freebayes_ar:
-   method: conda
+    bwa_mem:
+    fastqc_ar:
+    freebayes_ar:
+    installation: eperl_5.26
+    method: conda
   mip_travis_py3:  
-   chanjo_sexcheck:
-   frequency_filter:
-   genmod:
-   method: conda
-   multiqc_ar:
-   rankvariant:
-   sv_rankvariant:
-   variant_integrity_ar:
+    chanjo_sexcheck:
+    frequency_filter:
+    genmod:
+    installation: epy3
+    method: conda
+    multiqc_ar:
+    rankvariant:
+    sv_rankvariant:
+    variant_integrity_ar:
   mip_travis_delly:
-   delly_call:
-   delly_reformat:
-   method: conda
+    delly_call:
+    delly_reformat:
+    installation: edelly
+    method: conda
   mip_travis_peddy:
-   method: conda
-   peddy_ar:
-  mip_travis_svdb:
-   method: conda
-   sv_annotate:
-   sv_combinevariantcallsets:
+    installation: epeddy
+    method: conda
+    peddy_ar:
   mip_travis_vep:
-   method: conda
-   sv_varianteffectpredictor:
-   varianteffectpredictor:
+    method: conda
+    installation: evep
+    sv_varianteffectpredictor:
+    varianteffectpredictor:
   mip_travis_cnvnator:
-   cnvnator_ar:
-   method: conda
+    cnvnator_ar: 
+    installation: ecnvnator
+    method: conda
   mip_travis_tiddit:
-   method: conda
-   tiddit:
-   vcf2cytosure_ar:
+    method: conda
+    installation: etiddit
+    tiddit:
+    vcf2cytosure_ar:
 project_id: travis_test
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
