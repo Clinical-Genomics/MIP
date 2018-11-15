@@ -3,11 +3,9 @@ package MIP::Main::Install;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
-use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname basename fileparse };
 use File::Spec::Functions qw{ catfile catdir devnull };
-
 use Getopt::Long;
 use IO::Handle;
 use List::Util qw{ any uniq };
@@ -32,11 +30,10 @@ use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
 use MIP::Set::Parameter qw{ set_conda_env_names_and_paths  };
 
 ## Recipes
-use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
 use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
 use MIP::Recipes::Install::Blobfish qw{ install_blobfish };
 use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
-use MIP::Recipes::Install::Check qw{check_program_installations};
+use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
 use MIP::Recipes::Install::Cnvnator qw{ install_cnvnator };
 use MIP::Recipes::Install::Conda qw{ check_conda_installation install_conda_packages };
 use MIP::Recipes::Install::Expansionhunter qw{ install_expansionhunter };
@@ -44,6 +41,8 @@ use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
+use MIP::Recipes::Install::Post_installation
+  qw{check_program_installations update_config };
 use MIP::Recipes::Install::Reference qw{ download_genome_references };
 use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
@@ -178,6 +177,15 @@ sub mip_install {
 
     $log->info( q{Writing install instructions to:} . $SPACE . $file_name_path );
 
+    ## Source conda
+    if ( not $parameter{sbatch_mode} ) {
+        say {$FILEHANDLE} q{## Source conda};
+        say {$FILEHANDLE} q{source}
+          . $SPACE
+          . catfile( $parameter{conda_dir_path}, qw{ etc profile.d conda.sh } )
+          . $NEWLINE;
+    }
+
     ## Loop over the selected installations
     foreach my $installation ( @{ $parameter{installations} } ) {
         my $env_name = $parameter{environment_name}{$installation};
@@ -297,14 +305,28 @@ sub mip_install {
 
         check_program_installations(
             {
-                env                       => $parameter{environment_name}{$installation},
+                env_name                  => $parameter{environment_name}{$installation},
                 FILEHANDLE                => $FILEHANDLE,
+                installation              => $installation,
                 log                       => $log,
                 programs_ref              => \@programs_to_test,
                 program_test_command_href => $parameter{program_test_command},
             }
         );
     }
+
+    ## Update/create config
+    update_config(
+        {
+            env_name_href     => $parameter{environment_name},
+            FILEHANDLE        => $FILEHANDLE,
+            installations_ref => $parameter{installations},
+            log               => $log,
+            pipeline          => $parameter{pipeline},
+            update_config     => $parameter{update_config},
+            write_config      => $parameter{write_config},
+        }
+    );
 
     $log->info(q{Finished writing installation instructions for MIP});
 

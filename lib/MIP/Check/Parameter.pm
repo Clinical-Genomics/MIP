@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.010;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -331,9 +331,11 @@ sub check_load_env_packages {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Get all program executables
-    my @program_executables =
-      @{ $parameter_href->{cache}{program_executables} };
+    ## Allowed packages/keywords in load_env section of  config
+    my @allowed_packages = (
+        @{ $parameter_href->{cache}{program_executables} },
+        qw{ installation method mip }
+    );
 
   ENV:
     foreach my $env ( keys %{ $active_parameter_href->{load_env} } ) {
@@ -341,17 +343,11 @@ sub check_load_env_packages {
       PACKAGE:
         foreach my $package ( keys %{ $active_parameter_href->{load_env}{$env} } ) {
 
-            ## is method
-            next PACKAGE if ( $package eq q{method} );
+            ## is program executable, installation, method or MIP main
+            next PACKAGE if ( any { $_ eq $package } @allowed_packages );
 
             ## is recipe
             next PACKAGE if ( exists $parameter_href->{$package} );
-
-            ## is MIP MAIN
-            next PACKAGE if ( $package eq q{mip} );
-
-            ## is program
-            next PACKAGE if ( any { $_ eq $package } @program_executables );
 
             my $err_msg =
                 q{Could not find load_env package: '}
