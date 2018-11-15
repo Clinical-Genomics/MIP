@@ -42,7 +42,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - vcf_rerun_reformat
 
 **References**
-
+- dbnsfp: v2.9 -> v3.5a (GRCh37)
+- GRCh37_gatk_merged_reference_samples.txt
+- GRCh37_mip_sv_svdb_export_-2018-10-09-.vcf
+- VEPs cache: 91 -> 94
 
 **Tools**
 - bcftools: 1.6 -> 1.9-h4da6232_0
@@ -54,6 +57,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - delly: 0.7.7 -> 0.7.8-h278814d_3
 - fastqc: 0.11.4 -> 0.11.8-0
 - freebayes: 1.1.0 -> 1.2.0-py27h82df9c4_3
+- genmod: 3.7.2 -> 3.7.3
 - GATK: 3.8 -> 4.0.10.0-0
 - htslib: 1.6 -> 1.9-hc238db4_4
 - manta: 1.1.0 -> 1.4.0-py27_1

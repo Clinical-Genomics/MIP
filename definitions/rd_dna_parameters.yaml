@@ -1654,7 +1654,7 @@ snpsift_dbnsfp_file:
   associated_recipe:
    - snpeff
   data_type: SCALAR
-  default: GRCh37_dbnsfp_-v2.9-.txt.gz
+  default: GRCh37_dbnsfp_-v3.5a-.txt.gz
   exists_check: file
   reference: reference_dir
   type: path

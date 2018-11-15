@@ -138,7 +138,7 @@ epy3:
     ldc: 1.11.0=hb2c9046_0
   pip:
     chanjo: 4.2.0
-    genmod: 3.7.2
+    genmod: 3.7.3
     multiqc: 1.6
     variant_integrity: 0.0.4
   shell:
