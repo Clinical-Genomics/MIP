@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vep analysis_vep_sv_wes analysis_vep_sv_wgs };
@@ -680,6 +680,14 @@ sub analysis_vep_sv_wes {
               );
             push @plugins, $plugin . $lof_parameter;
         }
+        elsif ( $plugin eq q{ExACpLI}
+            and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
+        {
+
+            my $pli_file_path =
+              q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
+            push @plugins, $plugin . $pli_file_path;
+        }
         else {
 
             push @plugins, $plugin;
@@ -1013,6 +1021,14 @@ sub analysis_vep_sv_wgs {
                 q{human_ancestor.fa,filter_position:0.05}
               );
             push @plugins, $plugin . $lof_parameter;
+        }
+        elsif ( $plugin eq q{ExACpLI}
+            and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
+        {
+
+            my $pli_file_path =
+              q{,} . $active_parameter_href->{vep_plugin_pli_value_file_path};
+            push @plugins, $plugin . $pli_file_path;
         }
         else {
 

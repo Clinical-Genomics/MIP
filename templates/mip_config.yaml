@@ -109,9 +109,7 @@ snpsift_annotation_outinfo_key:
 snpsift_dbnsfp_annotations:
   - GERP++_RS
   - GERP++_NR
-  - phyloP46way_primate
   - phyloP100way_vertebrate
-  - phastCons46way_primate
   - phastCons100way_vertebrate
 sv_bcftools_view_filter: 1
 sv_combinevariantcallsets_bcf_file: 1

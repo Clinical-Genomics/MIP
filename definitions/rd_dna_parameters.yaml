@@ -931,6 +931,7 @@ sv_vep_plugins:
   element_separator: ,
   data_type: ARRAY
   default:
+   - ExACpLI
    - LoFtool
   type: recipe_argument
 sv_vcfparser:
@@ -1643,11 +1644,9 @@ snpsift_dbnsfp_annotations:
   element_separator: ,
   data_type: ARRAY
   default:
-   - SIFT_pred
-   - Polyphen2_HDIV_pred
-   - Polyphen2_HVAR_pred
-   - GERP++_NR
    - GERP++_RS
+   - GERP++_NR
+   - phyloP100way_vertebrate
    - phastCons100way_vertebrate
   type: path
 snpsift_dbnsfp_file:
