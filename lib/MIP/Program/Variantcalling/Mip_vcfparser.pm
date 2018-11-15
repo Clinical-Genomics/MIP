@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_vcfparser };
@@ -83,7 +83,7 @@ sub mip_vcfparser {
             store       => \$infile_path,
         },
         padding => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm, ],
             strict_type => 1,
             store       => \$padding,
         },
@@ -115,7 +115,7 @@ sub mip_vcfparser {
         select_feature_file_path =>
           { strict_type => 1, store => \$select_feature_file_path, },
         select_feature_matching_column => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm, ],
             strict_type => 1,
             store       => \$select_feature_matching_column,
         },
@@ -153,15 +153,14 @@ sub mip_vcfparser {
         push @commands, q{--per_gene};
     }
 
-    if ( $padding ) {
+    if ( defined $padding ) {
 
         push @commands, q{--padding} . $SPACE . $padding;
     }
 
     if ($range_feature_file_path) {
 
-        push @commands,
-          q{--range_feature_file} . $SPACE . $range_feature_file_path;
+        push @commands, q{--range_feature_file} . $SPACE . $range_feature_file_path;
     }
 
     # Limit output to regions
@@ -174,16 +173,13 @@ sub mip_vcfparser {
 
     if ($select_feature_file_path) {
 
-        push @commands,
-          q{--select_feature_file} . $SPACE . $select_feature_file_path;
+        push @commands, q{--select_feature_file} . $SPACE . $select_feature_file_path;
     }
 
     if ($select_feature_matching_column) {
 
         push @commands,
-            q{--select_feature_matching_column}
-          . $SPACE
-          . $select_feature_matching_column;
+          q{--select_feature_matching_column} . $SPACE . $select_feature_matching_column;
     }
 
     # Limit output to regions

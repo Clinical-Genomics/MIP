@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.011;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vep analysis_vep_sv_wes analysis_vep_sv_wgs };
@@ -34,7 +34,7 @@ BEGIN {
 ## Constants
 Readonly my $ASTERISK               => q{*};
 Readonly my $ANNOTATION_DISTANCE    => 5000;
-Readonly my $ANNOTATION_DISTANCE_MT => 10;
+Readonly my $ANNOTATION_DISTANCE_MT => 0;
 Readonly my $COMMA                  => q{,};
 Readonly my $DOT                    => q{.};
 Readonly my $EMPTY_STR              => q{};
