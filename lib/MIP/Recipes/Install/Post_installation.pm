@@ -246,13 +246,13 @@ sub update_config {
 
 ## Function : Write installation check oneliner to open filehandle
 ## Returns  :
-## Arguments: $env_name_href              => Program environment name hash {REF}
-##          : $FILEHANDLE                 => open filehandle
-##          : $installations_ref          => Array with installations {REF}
-##          : $log                        => Log
-##          : $pipeline                   => Pipeline
-##          : $update_config              => Path to config to update
-##          : $write_config               => Create new config from template
+## Arguments: $env_name_href      => Program environment name hash {REF}
+##          : $FILEHANDLE         => open filehandle
+##          : $installations_ref  => Array with installations {REF}
+##          : $log                => Log
+##          : $pipeline           => Pipeline
+##          : $update_config      => Path to config to update
+##          : $write_config       => Create new config from template
 
     my ($arg_href) = @_;
 
@@ -308,7 +308,7 @@ sub update_config {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Return if no config options
-    return if ( ( not $update_config ) and ( not $write_config ) );
+    return if ( not $update_config ) and ( not $write_config );
 
     ## map installation to bash paramter
     my %installation_outcome = map { $_ => q{$} . uc $_ } @{$installations_ref};
@@ -332,13 +332,18 @@ q{MIP will not attempt to update config as the specified path does not exist.}
         }
 
         ## Isolate filename
-        my ( $filename, $dirs, $suffix ) = fileparse( $update_config, qr/\.y[a?]ml$/xms);
+        my ( $filename, $dirs, $suffix ) = fileparse( $update_config, qr/\.y[a?]ml/xms );
 
-        ## Match date fortmat YYYY-MM... | YY-MM... | YYMMDD
-        my $date_regex = qr/(?:\d\d\d?\d?\d?\d?)-?(?:\d?\d?).*/xms;
+        ## Match date format YYYY-MM... | YY-MM... | YYMMDD...
+        my $date_regex = qr{
+			(?:\d\d\d?\d?\d?\d?) # match YYYY | YY | YYMMDD
+			-?                   # optionally match -
+			(?:\d?\d?)           # optionally match MM 
+			.*                   # match any remaining part
+		}xms;
 
         ## Replace potential dates
-        $filename =~ s/_$date_regex/_$time_stamp/;
+        $filename =~ s/_$date_regex/_$time_stamp/xms;
         $load_config_path = $update_config;
         $save_config_path = catfile( $dirs, $filename . $suffix );
         $log->info( q{Writing instructions to update config: } . $save_config_path );
@@ -436,7 +441,7 @@ q{MIP will not attempt to update config as the specified path does not exist.}
 
             say {$FILEHANDLE} $success_check . $NEWLINE;
         }
-        else {
+        if ( not $config_environment{$config_env_name}{installation} ) {
             $log->warn(
 qq{Automatic update of $load_config_path not possible. The config lacks information linking it to a MIP installation.}
             );
@@ -457,7 +462,7 @@ qq{Automatic update of $load_config_path not possible. The config lacks informat
         say {$FILEHANDLE}
           q{## Remove copied template config if no installation was succesful};
 
-        #build_cleanup_check
+        # build_cleanup_check
         my $rm_temp_config = join $SPACE,
           gnu_rm(
             {

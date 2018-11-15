@@ -177,6 +177,15 @@ sub mip_install {
 
     $log->info( q{Writing install instructions to:} . $SPACE . $file_name_path );
 
+    ## Source conda
+    if ( not $parameter{sbatch_mode} ) {
+        say {$FILEHANDLE} q{## Source conda};
+        say {$FILEHANDLE} q{source}
+          . $SPACE
+          . catfile( $parameter{conda_dir_path}, qw{ etc profile.d conda.sh } )
+          . $NEWLINE;
+    }
+
     ## Loop over the selected installations
     foreach my $installation ( @{ $parameter{installations} } ) {
         my $env_name = $parameter{environment_name}{$installation};
