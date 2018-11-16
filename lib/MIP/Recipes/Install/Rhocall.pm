@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_rhocall };
@@ -231,9 +231,10 @@ sub install_rhocall {
     print {$FILEHANDLE} $NEWLINE;
     pip_install(
         {
-            editable   => $DOT,
-            FILEHANDLE => $FILEHANDLE,
-            quiet      => $quiet,
+            editable      => $DOT,
+            FILEHANDLE    => $FILEHANDLE,
+            python_module => 1,
+            quiet         => $quiet,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
