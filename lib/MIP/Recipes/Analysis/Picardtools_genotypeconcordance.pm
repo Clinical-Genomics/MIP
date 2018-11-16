@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_genotypeconcordance };
@@ -34,6 +34,7 @@ Readonly my $ASTERISK   => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
+Readonly my $SEMICOLON  => q{;};
 Readonly my $UNDERSCORE => q{_};
 
 sub analysis_picardtools_genotypeconcordance {
@@ -41,12 +42,12 @@ sub analysis_picardtools_genotypeconcordance {
 ## Function : Compare metrics for this analysis run with the NIST reference dataset.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -151,8 +152,10 @@ sub analysis_picardtools_genotypeconcordance {
     use MIP::Program::Interval::Picardtools qw{ picardtools_intervallisttools };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_norm bcftools_rename_vcf_samples bcftools_stats bcftools_rename_vcf_samples };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_selectvariants };
+    use MIP::Program::Variantcalling::Gatk
+      qw{ gatk_indexfeaturefile gatk_selectvariants };
     use MIP::Program::Variantcalling::Picardtools qw{ picardtools_genotypeconcordance };
+    use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core_rio };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Return if not nist_id
@@ -279,21 +282,12 @@ sub analysis_picardtools_genotypeconcordance {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Generate ".idx" for downstream Picard by failling this process
-    say {$FILEHANDLE}
-      q{## Generate '.idx' for downstream Picard by failling this process};
-
-    gatk_selectvariants(
+    ## Index VCF
+    say {$FILEHANDLE} q{## GATK IndexFeatureFile};
+    gatk_indexfeaturefile(
         {
-            FILEHANDLE           => $FILEHANDLE,
-            infile_path          => $nist_file_path . $DOT . q{vcf},
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx2g},
-            outfile_path         => $nist_file_path . q{XXX.vcf},
-            referencefile_path   => $referencefile_path,
-            sample_names_ref     => [ $sample_id . q{XXX} ],
-            temp_directory       => $temp_directory,
-            verbosity            => $active_parameter_href->{gatk_logging_level},
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $nist_file_path . $DOT . q{vcf},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -364,6 +358,27 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
 
     ### MIP data
     my $base_file_path = $outfile_path_prefix . $UNDERSCORE . $sample_id;
+
+    ## Left align, normalize and split allels
+    say {$FILEHANDLE} q{## Normalize and decompose};
+
+    my $norm_outfile_path = $base_file_path . $UNDERSCORE . q{norm} . $outfile_suffix;
+    analysis_vt_core_rio(
+        {
+            active_parameter_href => $active_parameter_href,
+            cmd_break             => $SEMICOLON,
+            decompose             => 1,
+            FILEHANDLE            => $FILEHANDLE,
+            gnu_sed               => 1,
+            infile_path           => $infile_path,
+            instream              => 0,
+            normalize             => 1,
+            outfile_path          => $norm_outfile_path,
+            uniq                  => 1,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
     ## GATK SelectVariants
     say {$FILEHANDLE} q{## GATK SelectVariants};
 
@@ -371,7 +386,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
     gatk_selectvariants(
         {
             FILEHANDLE           => $FILEHANDLE,
-            infile_path          => $infile_path,
+            infile_path          => $norm_outfile_path,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx2g},
             outfile_path         => $select_outfile_path,
@@ -383,30 +398,16 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Left align, normalize and split allels
-    say {$FILEHANDLE} q{## bcftools norm};
-
-    my $norm_outfile_path = $base_file_path . $UNDERSCORE . q{norm} . $outfile_suffix;
-    bcftools_norm(
-        {
-            FILEHANDLE     => $FILEHANDLE,
-            infile_path    => $select_outfile_path,
-            multiallelic   => q{-},
-            outfile_path   => $norm_outfile_path,
-            reference_path => $referencefile_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
     ## Modify since different ref genomes
     say {$FILEHANDLE} q{## Modify since different ref genomes};
-    my $reformat_outfile_path = $base_file_path . $UNDERSCORE . q{norm_refrm.vcf};
+    my $reformat_outfile_path =
+      $base_file_path . $UNDERSCORE . q{norm_refrm} . $outfile_suffix;
 
     print {$FILEHANDLE}
-q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig=<ID=hs37d5,length=35477943>/ || $_=~/##contig=<ID=GL\d+/) {print $_}' ?;
+q?perl -nae 'unless($_=~/##contig=<ID=NC_007605/ || $_=~/##contig=<ID=hs37d5/ || $_=~/##contig=<ID=GL\d+/) {print $_}' ?;
 
     ## Infile
-    print {$FILEHANDLE} $norm_outfile_path . $SPACE;
+    print {$FILEHANDLE} $select_outfile_path . $SPACE;
 
     ## Outfile
     print {$FILEHANDLE} q{>} . $SPACE . $reformat_outfile_path . $SPACE;
@@ -423,21 +424,12 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Generate ".idx" for downstream Picard by failling this process
-    say {$FILEHANDLE}
-      q{## Generate '.idx' for downstream Picard by failling this process};
-
-    gatk_selectvariants(
+    ## Index VCF
+    say {$FILEHANDLE} q{## GATK IndexFeatureFile};
+    gatk_indexfeaturefile(
         {
-            FILEHANDLE           => $FILEHANDLE,
-            infile_path          => $reformat_outfile_path,
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx2g},
-            outfile_path         => $reformat_outfile_path . q{XXX.vcf},
-            referencefile_path   => $referencefile_path,
-            sample_names_ref     => [ $sample_id . q{XXX} ],
-            temp_directory       => $temp_directory,
-            verbosity            => $active_parameter_href->{gatk_logging_level},
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $reformat_outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
