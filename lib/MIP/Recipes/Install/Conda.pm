@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -523,13 +523,8 @@ sub finish_conda_package_install {
         ## Check and if required add the vertebrate mitochondrial codon table to snpeff config
         say {$FILEHANDLE} q{## Custom SnpEff solutions};
 
-        ## Get the full version, including patch for snpeff
-        my $version = _get_full_snpeff_version(
-            {
-                log            => $log,
-                snpeff_version => $conda_packages_href->{snpeff},
-            }
-        );
+        ## Get the full version, including patch
+        my $version = $conda_packages_href->{snpeff} =~ tr/=/-/r;
 
       SNPEFF_GENOME_VERSION:
         foreach my $genome_version ( @{$snpeff_genome_versions_ref} ) {
@@ -914,73 +909,6 @@ sub get_conda_dir_path {
     }
 
     return $conda_dir_path;
-}
-
-sub _get_full_snpeff_version {
-
-## Function  : Get the snpeff version together with patch that are to be installed via Conda
-## Returns   : $version
-## Arguments : $log             => Log
-##           : $snpeff_version  => Main snpeff version number
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $snpeff_version;
-    my $log;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        snpeff_version => {
-            defined     => 1,
-            required    => 1,
-            store       => \$snpeff_version,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use List::MoreUtils qw{ first_index };
-
-    ## Store shell query
-    my $command =
-
-      # Get the snpeff version that will be installed
-      qq{conda search -c bioconda -c conda-forge --spec snpeff=$snpeff_version}
-
-      # Isolate the version with the latest sub patch
-      . q{ | tail -1 };
-
-    ## Capture output in string
-    my $snpeff_search_output;
-
-    run(
-        command => $command,
-        buffer  => \$snpeff_search_output,
-    );
-
-    my @snpeff_array = split $SPACE, $snpeff_search_output;
-
-    ## Get the index of the element matching the snpeff version
-    my $version_index = first_index { m/$snpeff_version/xms } @snpeff_array;
-
-    ## Concatenate the version and sub patch based on their indexes in the array
-    my $version =
-      $snpeff_array[$version_index] . q{-} . $snpeff_array[ $version_index + 1 ];
-
-    ## Something went wrong
-    if ( not $version ) {
-
-        $log->logcroak(
-            q{Could not find the snpeff version and subpatch from string: }
-              . $snpeff_search_output );
-    }
-    return $version;
 }
 
 1;
