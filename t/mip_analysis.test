@@ -128,13 +128,11 @@ if ( exists $active_parameter{pedigree_file} ) {
         my $sample_id = $pedigree_sample_href->{sample_id};
 
         ## Phenotype
-        push
-          @{ $parameter{cache}{ $pedigree_sample_href->{phenotype} }
-          }, $sample_id;
+        push @{ $parameter{cache}{ $pedigree_sample_href->{phenotype} } },
+          $sample_id;
 
         ## Sex
-        push @{ $parameter{cache}{ $pedigree_sample_href->{sex} } },
-          $sample_id;
+        push @{ $parameter{cache}{ $pedigree_sample_href->{sex} } }, $sample_id;
     }
 }
 
@@ -467,7 +465,7 @@ sub read_infile_vcf {
                 {
                     vcf_header_href     => \%vcf_header,
                     vcfparser_data_href => $vcfparser_data_href,
-                    vcfparser_mode      => $active_parameter_href->{vcfparser_ar},
+                    vcfparser_mode => $active_parameter_href->{vcfparser_ar},
                 }
             );
 
@@ -1275,31 +1273,16 @@ sub _test_frequency_filter_in_vcf_header {
 
 ## Function : Test if freuqency filter info keys are present in vcf header
 ## Returns  :
-## Arguments: $frequency_genmod_filter       => Vt genmod filter has been used or not
-##          : $frequency_genmod_filter_1000g => Vt genmod filter 1000G has been used or not
-##          : $frequency_filter_mode         => Frequency filter has been used or not
+## Arguments: $frequency_filter_mode         => Frequency filter has been used or not
 ##          : $vcf_header_href               => Vcf header info
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $frequency_genmod_filter;
-    my $frequency_genmod_filter_1000g;
     my $frequency_filter_mode;
     my $vcf_header_href;
 
     my $tmpl = {
-        frequency_genmod_filter => {
-            allow       => qr/ ^\d+$ /sxm,
-            defined     => 1,
-            required    => 1,
-            store       => \$frequency_genmod_filter,
-            strict_type => 1,
-        },
-        frequency_genmod_filter_1000g => {
-            store       => \$frequency_genmod_filter_1000g,
-            strict_type => 1,
-        },
         frequency_filter_mode => {
             allow       => qr/ ^\d+$ /sxm,
             defined     => 1,
@@ -1321,14 +1304,8 @@ sub _test_frequency_filter_in_vcf_header {
     ## Frequency filter has been used
     if ($frequency_filter_mode) {
 
-        if ($frequency_genmod_filter) {
-
-            if ($frequency_genmod_filter_1000g) {
-
-                ok( defined $vcf_header_href->{INFO}{q{1000GAF}},
-                    q{Genmod filter: 1000GAF key} );
-            }
-        }
+        ok( defined $vcf_header_href->{INFO}{q{GNOMADAF_POPMAX}},
+            q{Genmod filter: GNOMADAF_POPMAX key} );
     }
     return;
 }
