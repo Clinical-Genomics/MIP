@@ -17,6 +17,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -24,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,9 +35,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -45,17 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Package_manager::Pip} => [qw{ pip_install }],
-        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
+        q{MIP::Language::Python} => [qw{ python_core }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Package_manager::Pip qw{ pip_install };
+use MIP::Language::Python qw{ python_core };
 
-diag(   q{Test pip_install from Pip.pm v}
-      . $MIP::Package_manager::Pip::VERSION
+diag(   q{Test python_core from Python.pm v}
+      . $MIP::Language::Python::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,58 +64,35 @@ diag(   q{Test pip_install from Pip.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ pip install };
+my @function_base_commands = qw{ python };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
 );
 
 my %specific_argument = (
-    editable => {
-        input           => catdir(qw{ test path }),
-        expected_output => q{--editable test/path},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => \@function_base_commands,
-    },
-    packages_ref => {
-        inputs_ref      => [qw{ test_package_1 test_package_2 }],
-        expected_output => q{test_package_1 test_package_2},
-    },
-    quiet => {
+    command_mode => {
         input           => 1,
-        expected_output => q{--quiet},
+        expected_output => q{-c},
     },
-    requirement => {
-        input           => q{test_file.txt},
-        expected_output => q{--requirement test_file.txt},
+    module_mode => {
+        input           => 1,
+        expected_output => q{-m},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&pip_install;
+my $module_function_cref = \&python_core;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
+
     my @commands = test_function(
         {
             argument_href              => $argument_href,
@@ -126,9 +103,18 @@ foreach my $argument_href (@arguments) {
     );
 }
 
-## When given the python_module option
-my @commands = pip_install( { python_module => 1, } );
-## Then prepend python -m to base command
-is( $commands[0], q{python -m}, q{Argument: python_module} );
+## When supplying mutually exclusive options
+my $is_ok = trap {
+    python_core(
+        {
+            command_mode => 1,
+            module_mode  => 1,
+        }
+      )
+};
+
+## Then Croak and exit
+is( $trap->leaveby, q{die}, q{Exit if mutually exclusive options given} );
+like( $trap->die, qr/^Mutually\s+exclusive/xms, q{Throw error} );
 
 done_testing();

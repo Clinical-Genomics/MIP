@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vcf2cytosure };
@@ -160,8 +160,8 @@ sub install_vcf2cytosure {
     git_clone(
         {
             FILEHANDLE  => $FILEHANDLE,
-            quiet       => $quiet,
             outdir_path => $vcf2cytosure_dir,
+            quiet       => $quiet,
             url         => q{https://github.com/NBISweden/vcf2cytosure.git},
             verbose     => $verbose,
         }
@@ -182,10 +182,11 @@ sub install_vcf2cytosure {
     say {$FILEHANDLE} q{## Install};
     pip_install(
         {
-            editable   => $DOT,
-            FILEHANDLE => $FILEHANDLE,
-            quiet      => $quiet,
-            verbose    => $verbose,
+            editable      => $DOT,
+            FILEHANDLE    => $FILEHANDLE,
+            python_module => 1,
+            quiet         => $quiet,
+            verbose       => $verbose,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
