@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.07;
+our $VERSION = 1.08;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -914,7 +914,7 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     option(
         q{sv_vcfanno_config} => (
             cmd_aliases   => [qw{ svcvac }],
-            documentation => q{VcfAnno toml config},
+            documentation => q{Sv vcfanno toml config},
             is            => q{rw},
             isa           => Str,
         )
@@ -1650,43 +1650,22 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{frequency_genmod_filter} => (
-            cmd_aliases   => [qw{ fqfgmf }],
-            documentation => q{Remove common variants from vcf file},
+        q{fqf_vcfanno_config} => (
+            cmd_aliases   => [qw{ fqfcvac }],
+            documentation => q{Frequency vcfanno toml config},
             is            => q{rw},
-            isa           => Bool,
+            isa           => Str,
         )
     );
 
     option(
-        q{frequency_genmod_filter_max_af} => (
-            cmd_aliases   => [qw{ fqfmaf }],
-            cmd_flag      => q{freq_genmod_fil_maf},
-            documentation => q{Annotate MAX_AF from reference},
-            is            => q{rw},
-            isa           => Num,
-        )
-    );
-
-    option(
-        q{frequency_genmod_filter_threshold} => (
+        q{fqf_bcftools_filter_threshold} => (
             cmd_aliases   => [qw{ fqfgft }],
             cmd_flag      => q{freq_genmod_fil_trh},
             cmd_tags      => [q{Default: 0.10}],
             documentation => q{Threshold for filtering variants},
             is            => q{rw},
             isa           => Num,
-        )
-    );
-
-    option(
-        q{frequency_genmod_filter_1000g} => (
-            cmd_aliases   => [qw{ fqfgfr }],
-            cmd_flag      => q{freq_genmod_fil_1000g},
-            cmd_tags      => [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
-            documentation => q{Genmod annotate 1000G reference},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 

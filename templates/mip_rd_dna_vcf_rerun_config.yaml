@@ -13,7 +13,6 @@ load_env:
    mip:
    method: conda
   mip_travis_py3:
-   frequency_filter:
    genmod:
    method: conda
    rankvariant:
@@ -37,6 +36,7 @@ outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
 outscript_dir: cluster_constant_path!/case_id!/analysis_constant_path!/scripts
 sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 ## References
+fqf_vcfanno_config: GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml
 genmod_annotate_cadd_files:
   - GRCh37_cadd_whole_genome_snvs_ge10_-v1.3-.tsv.gz
   - GRCh37_cadd_exac_r0.3_-v1.3-.tsv.gz
@@ -64,7 +64,6 @@ sv_vcfanno_lua: vcfanno_custom_-v1.0-.lua
 ### Analysis
 ## Programs
 ## Parameters
-frequency_genmod_filter: 1
 gatk_path: cluster_constant_path!
 genmod_annotate_regions: 1
 genmod_models_whole_gene: 1

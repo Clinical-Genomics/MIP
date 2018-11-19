@@ -5,7 +5,6 @@ decompose_normalize_references:
    - mip
   data_type: ARRAY
   default:
-   - frequency_genmod_filter_1000g
    - snpsift_annotation_files
   element_separator: ,
   type: mip
@@ -483,34 +482,22 @@ frequency_filter:
   file_tag: _frqf
   outfile_suffix: ".vcf"
   program_executables:
-   - genmod
+   - bcftools
+   - vcfanno
   type: recipe
-frequency_genmod_filter:
+fqf_vcfanno_config:
   associated_recipe:
    - frequency_filter
   data_type: SCALAR
-  default: 0
-  type: recipe_argument
-frequency_genmod_filter_max_af:
-  associated_recipe:
-   - frequency_filter
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
-frequency_genmod_filter_threshold:
+  exists_check: file
+  reference: reference_dir
+  type: path
+fqf_bcftools_filter_threshold:
   associated_recipe:
    - frequency_filter
   data_type: SCALAR
   default: 0.10
   type: recipe_argument
-frequency_genmod_filter_1000g:
-  associated_recipe:
-   - frequency_filter
-  data_type: SCALAR
-  default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
-  exists_check: file
-  reference: reference_dir
-  type: path
 ## VEP
 varianteffectpredictor:
   analysis_mode: case
