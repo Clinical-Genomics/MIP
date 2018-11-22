@@ -1403,7 +1403,7 @@ fqf_bcftools_filter_threshold:
   associated_recipe:
    - frequency_filter
   data_type: SCALAR
-  default: 0.10
+  default: 0.40
   type: recipe_argument
 gatk_variantevalall:
   analysis_mode: sample
