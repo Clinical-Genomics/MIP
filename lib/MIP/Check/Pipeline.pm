@@ -133,7 +133,8 @@ sub check_rd_dna {
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Get::File qw{ get_select_file_contigs };
-    use MIP::Parse::Parameter qw{ parse_infiles parse_prioritize_variant_callers };
+    use MIP::Parse::Parameter
+      qw{ parse_infiles parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters
@@ -250,19 +251,13 @@ sub check_rd_dna {
         }
     );
 
-    ## Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
-    if (    $active_parameter_href->{sv_combinevariantcallsets} > 0
-        and $active_parameter_href->{sv_vcfanno} > 0 )
-    {
-
-        check_vcfanno_toml(
-            {
-                log               => $log,
-                vcfanno_file_freq => $active_parameter_href->{sv_vcfanno_config_file},
-                vcfanno_file_toml => $active_parameter_href->{sv_vcfanno_config},
-            }
-        );
-    }
+    ## Parse parameters with TOML config files
+    parse_toml_config_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+        }
+    );
 
     check_snpsift_keys(
         {

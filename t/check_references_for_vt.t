@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -66,6 +66,10 @@ diag(   q{Test check_references_for_vt from Reference.pm v}
 my $log = test_log();
 
 my %active_parameter_test = (
+    fqf_vcfanno_config => catfile(
+        $Bin, qw{ data references GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml }
+    ),
+    frequency_filter                   => 1,
     gatk_baserecalibration             => 1,
     gatk_baserecalibration_known_sites => [
         catfile( $Bin, qw{ data references GRCh37_dbsnp_-138-.vcf } ),
@@ -91,6 +95,10 @@ my %active_parameter_test = (
 );
 
 my %parameter_test = (
+    fqf_vcfanno_config => {
+        associated_recipe => [qw{ frequency_filter }],
+        data_type         => q{SCALAR},
+    },
     gatk_baserecalibration_known_sites => {
         associated_recipe => [qw{ gatk_baserecalibration }],
         data_type         => q{ARRAY},
@@ -104,7 +112,7 @@ my %parameter_test = (
 );
 
 my @vt_references_test =
-  qw{ gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp snpsift_annotation_files};
+  qw{ fqf_vcfanno_config gatk_baserecalibration_known_sites gatk_varianteval_dbsnp gatk_varianteval_dbsnp snpsift_annotation_files};
 
 my @refs_to_process = check_references_for_vt(
     {

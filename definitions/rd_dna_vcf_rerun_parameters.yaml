@@ -5,7 +5,9 @@ decompose_normalize_references:
    - mip
   data_type: ARRAY
   default:
+   - fqf_vcfanno_config
    - snpsift_annotation_files
+   - sv_vcfanno_config
   element_separator: ,
   type: mip
 gatk_logging_level:

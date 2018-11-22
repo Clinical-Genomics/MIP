@@ -498,6 +498,12 @@ sub check_references_for_vt {
     ## Avoid checking the same reference multiple times
     my %seen;
 
+    ## TOML parameters
+    my %toml = (
+        fqf_vcfanno_config => 1,
+        sv_vcfanno_config  => 1,
+    );
+
   PARAMETER_NAME:
     foreach my $parameter_name ( @{$vt_references_ref} ) {
 
@@ -516,6 +522,18 @@ sub check_references_for_vt {
 
                 my $annotation_file = $active_parameter_href->{$parameter_name};
 
+                ## Special case for toml configs (annotation file path recorded inside file parameter)
+                if ( defined $toml{$parameter_name} ) {
+
+                    _parse_vcfanno_toml_path(
+                        {
+                            log                       => $log,
+                            seen_href                 => \%seen,
+                            toml_file_path            => $annotation_file,
+                            to_process_references_ref => \@to_process_references,
+                        }
+                    );
+                }
                 if ( not exists $seen{$annotation_file} ) {
 
                     ## Check if vt has processed references using regexp
@@ -576,6 +594,77 @@ sub check_references_for_vt {
         }
     }
     return uniq(@to_process_references);
+}
+
+sub _parse_vcfanno_toml_path {
+
+## Function : Parse TOML config for path to check with vt
+## Returns  :
+## Arguments: $log                       => Log object
+##          : $seen_href                 => Avoid checking the same reference multiple times
+##          : $toml_file_path            => Toml config file path
+##          : $to_process_references_ref => Store references to process later
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $seen_href;
+    my $toml_file_path;
+    my $to_process_references_ref;
+
+    my $tmpl = {
+        log       => { store => \$log, },
+        seen_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$seen_href,
+            strict_type => 1,
+        },
+        to_process_references_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$to_process_references_ref,
+            strict_type => 1,
+        },
+        toml_file_path => {
+            default     => 1,
+            store       => \$toml_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Toml qw{ load_toml };
+
+    my %vcfanno_config = load_toml( { toml_file_path => $toml_file_path, } );
+
+    ## Add config parameter to avoid vt check of toml config path
+    $seen_href->{$toml_file_path} = undef;
+
+  ANNOTATION:
+    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+
+        ## Annotation file path to check
+        my $annotation_file_path = $annotation_href->{file};
+
+        if ( not exists $seen_href->{$annotation_file_path} ) {
+
+            ## Check if vt has processed references using regexp
+            my @checked_references = check_if_processed_by_vt(
+                {
+                    log                 => $log,
+                    reference_file_path => $annotation_file_path,
+                }
+            );
+            push @{$to_process_references_ref}, @checked_references;
+        }
+        $seen_href->{$annotation_file_path} = undef;
+    }
+    return;
 }
 
 1;
