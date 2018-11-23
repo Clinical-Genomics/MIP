@@ -386,8 +386,8 @@ sub analysis_sv_annotate {
                 infile_path => $temp_outfile_path_prefix
                   . $alt_file_tag
                   . $outfile_suffix,
-                stderrfile_path      => $stderrfile_path,
-                toml_configfile_path => $active_parameter_href->{fqf_vcfanno_config},
+                stderrfile_path_append => $stderrfile_path,
+                toml_configfile_path   => $active_parameter_href->{fqf_vcfanno_config},
             }
         );
         print {$FILEHANDLE} $PIPE . $SPACE;
