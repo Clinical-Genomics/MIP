@@ -1,6 +1,9 @@
 language: perl
 perl:
   - "5.26"
+language: python
+python:
+  - "3.6"
 sudo: required
  
 before_install:
@@ -13,11 +16,11 @@ before_install:
   - cd -
 
 ## Install conda
-  - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+  - wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
-#  - "\. $HOME/miniconda/etc/profile.d/conda.sh"
-#  - conda activate base
-  - export PATH="$HOME/miniconda/bin:$PATH"
+  - "\. $HOME/miniconda/etc/profile.d/conda.sh"
+  - conda activate base
+#  - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
@@ -45,7 +48,7 @@ install:
 
 script:
 ## Test MIP rd_dna
-  - source activate mip_travis
+  - conda activate mip_travis
   - cd /lib/x86_64-linux-gnu
   - sudo ln -s "$ROOTSYS"/lib/*so .
   - cd -
