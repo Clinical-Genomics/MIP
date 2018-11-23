@@ -828,15 +828,6 @@ sv_vcfanno_config:
   exists_check: file
   reference: reference_dir
   type: path
-sv_vcfanno_config_file:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz
-  exists_check: file
-  reference: reference_dir
-  type: path
-  type: recipe_argument
 sv_vcfanno_lua:
   associated_recipe:
    - sv_annotate
@@ -1396,6 +1387,7 @@ frequency_filter:
 fqf_vcfanno_config:
   associated_recipe:
    - frequency_filter
+   - sv_annotate
   data_type: SCALAR
   exists_check: file
   reference: reference_dir

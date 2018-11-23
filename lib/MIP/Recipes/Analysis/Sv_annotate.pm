@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -32,19 +32,20 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $COLON      => q{:};
-Readonly my $DASH       => q{-};
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $PIPE       => q{|};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
+Readonly my $ASTERISK     => q{*};
+Readonly my $COLON        => q{:};
+Readonly my $DASH         => q{-};
+Readonly my $DOT          => q{.};
+Readonly my $DOUBLE_QUOTE => q{"};
+Readonly my $EMPTY_STR    => q{};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $PIPE         => q{|};
+Readonly my $SPACE        => q{ };
+Readonly my $UNDERSCORE   => q{_};
 
 sub analysis_sv_annotate {
 
-## Function : Annotate SV
+## Function : Annotate structural variants
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -149,14 +150,13 @@ sub analysis_sv_annotate {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_view bcftools_annotate bcftools_view_and_index_vcf };
-    use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate genmod_filter };
+      qw{ bcftools_annotate bcftools_filter bcftools_view bcftools_view_and_index_vcf };
+    use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate };
     use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_query };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
     use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
-    use MIP::Script::Setup_script
-      qw{ setup_script write_return_to_environment write_source_environment_command };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
@@ -249,6 +249,7 @@ sub analysis_sv_annotate {
     ## Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) =
       splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
+    my $stderrfile_path = $recipe_info_path . $DOT . q{stderr.txt};
 
     ### SHELL:
 
@@ -378,58 +379,44 @@ sub analysis_sv_annotate {
     ## Remove common variants
     if ( $active_parameter_href->{sv_genmod_filter} ) {
 
-        my @program_source_commands = get_package_source_env_cmds(
-            {
-                active_parameter_href => $active_parameter_href,
-                package_name          => q{genmod},
-            }
-        );
-
-        write_source_environment_command(
-            {
-                FILEHANDLE                      => $FILEHANDLE,
-                source_environment_commands_ref => \@program_source_commands,
-            }
-        );
-
         say {$FILEHANDLE} q{## Remove common variants};
-        genmod_annotate(
+        vcfanno(
             {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => $temp_outfile_path_prefix
                   . $alt_file_tag
                   . $outfile_suffix,
-                outfile_path         => catfile( dirname( devnull() ), q{stdout} ),
-                temp_directory_path  => $temp_directory,
-                thousand_g_file_path => $active_parameter_href->{sv_genmod_filter_1000g},
-                verbosity            => q{v},
+                stderrfile_path      => $stderrfile_path,
+                toml_configfile_path => $active_parameter_href->{fqf_vcfanno_config},
             }
         );
         print {$FILEHANDLE} $PIPE . $SPACE;
 
         ## Update file tag
-        $alt_file_tag .= $UNDERSCORE . q{genmod_filter};
+        $alt_file_tag .= $UNDERSCORE . q{bcftools_filter};
 
-        genmod_filter(
+        ## Build the exclude filter command
+        my $exclude_filter = _build_bcftools_filter(
+            {
+                vcfanno_file_toml => $active_parameter_href->{fqf_vcfanno_config},
+                fqf_bcftools_filter_threshold =>
+                  $active_parameter_href->{fqf_bcftools_filter_threshold},
+            }
+        );
+
+        bcftools_filter(
             {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $DASH,
                 outfile_path => $temp_outfile_path_prefix
                   . $alt_file_tag
                   . $outfile_suffix,
-                threshold => $active_parameter_href->{sv_genmod_filter_threshold},
-                verbosity => q{v},
+                output_type            => q{v},
+                stderrfile_path_append => $stderrfile_path,
+                exclude                => $exclude_filter,
             }
         );
-        print {$FILEHANDLE} $NEWLINE;
-
-        write_return_to_environment(
-            {
-                active_parameter_href => $active_parameter_href,
-                FILEHANDLE            => $FILEHANDLE,
-            }
-        );
-        print {$FILEHANDLE} $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     ## Annotate 1000G structural variants
@@ -551,6 +538,56 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
         );
     }
     return;
+}
+
+sub _build_bcftools_filter {
+
+## Function : Build the exclude filter command
+## Returns  :
+## Arguments: $fqf_bcftools_filter_threshold => Exclude variants with frequency above filter threshold
+##          : $vcfanno_file_toml             => Toml config file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $fqf_bcftools_filter_threshold;
+    my $vcfanno_file_toml;
+
+    my $tmpl = {
+        fqf_bcftools_filter_threshold => {
+            defined     => 1,
+            required    => 1,
+            store       => \$fqf_bcftools_filter_threshold,
+            strict_type => 1,
+        },
+        vcfanno_file_toml => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfanno_file_toml,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Toml qw{ load_toml };
+
+    my %vcfanno_config = load_toml( { toml_file_path => $vcfanno_file_toml, } );
+
+    my $exclude_filter;
+    my $threshold = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;
+
+  ANNOTATION:
+    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+
+        $exclude_filter =
+            $DOUBLE_QUOTE
+          . q{INFO/}
+          . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{ $annotation_href->{names} } )
+          . $threshold
+          . $DOUBLE_QUOTE;
+    }
+    return $exclude_filter;
 }
 
 1;

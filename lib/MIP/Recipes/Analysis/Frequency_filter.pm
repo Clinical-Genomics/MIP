@@ -276,13 +276,14 @@ sub analysis_frequency_filter {
         );
         print {$XARGSFILEHANDLE} $PIPE . $SPACE;
 
-        ## Build frequency exclude filter
-        # INFO field
-        my $exclude_filter = $DOUBLE_QUOTE . q{INFO/GNOMADAF_POPMAX > };
-
-        # Frequency cut-off
-        $exclude_filter .=
-          $active_parameter_href->{fqf_bcftools_filter_threshold} . $DOUBLE_QUOTE;
+        ## Build the exclude filter command
+        my $exclude_filter = _build_bcftools_filter(
+            {
+                vcfanno_file_toml => $active_parameter_href->{fqf_vcfanno_config},
+                fqf_bcftools_filter_threshold =>
+                  $active_parameter_href->{fqf_bcftools_filter_threshold},
+            }
+        );
 
         bcftools_filter(
             {
@@ -326,6 +327,56 @@ sub analysis_frequency_filter {
         );
     }
     return;
+}
+
+sub _build_bcftools_filter {
+
+## Function : Build the exclude filter command
+## Returns  :
+## Arguments: $fqf_bcftools_filter_threshold => Exclude variants with frequency above filter threshold
+##          : $vcfanno_file_toml             => Toml config file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $fqf_bcftools_filter_threshold;
+    my $vcfanno_file_toml;
+
+    my $tmpl = {
+        fqf_bcftools_filter_threshold => {
+            defined     => 1,
+            required    => 1,
+            store       => \$fqf_bcftools_filter_threshold,
+            strict_type => 1,
+        },
+        vcfanno_file_toml => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfanno_file_toml,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Toml qw{ load_toml };
+
+    my %vcfanno_config = load_toml( { toml_file_path => $vcfanno_file_toml, } );
+
+    my $exclude_filter;
+    my $threshold = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;
+
+  ANNOTATION:
+    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+
+        $exclude_filter =
+            $DOUBLE_QUOTE
+          . q{INFO/}
+          . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{ $annotation_href->{names} } )
+          . $threshold
+          . $DOUBLE_QUOTE;
+    }
+    return $exclude_filter;
 }
 
 1;

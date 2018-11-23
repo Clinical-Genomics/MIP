@@ -167,7 +167,7 @@ sub _build_usage {
             cmd_aliases => [qw{ dnr }],
             cmd_flag    => q{dec_norm_ref},
             cmd_tags    => [
-q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config_file, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
+q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
             ],
             documentation => q{Set the references to be decomposed and normalized},
             is            => q{rw},
@@ -915,16 +915,6 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
         q{sv_vcfanno_config} => (
             cmd_aliases   => [qw{ svcvac }],
             documentation => q{Sv vcfanno toml config},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{sv_vcfanno_config_file} => (
-            cmd_aliases   => [qw{ svcvacf }],
-            cmd_tags      => [q{Default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz}],
-            documentation => q{Annotation file within vcfAnno config toml file},
             is            => q{rw},
             isa           => Str,
         )
