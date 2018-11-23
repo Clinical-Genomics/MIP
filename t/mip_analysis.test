@@ -281,7 +281,7 @@ sub test_modules {
 
     use Log::Log4perl;
     ## Creates log
-    my $log_file = catdir( dirname($Bin), qw{ templates mip_config.yaml } );
+    my $log_file = catdir( dirname($Bin), qw{ templates mip_rd_dna_config.yaml } );
     ok( -f $log_file,
         q{Log::Log4perl: File=} . $log_file . q{in MIP directory} );
 

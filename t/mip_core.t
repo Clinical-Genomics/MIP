@@ -171,7 +171,7 @@ sub build_usage {
 
     return <<"END_USAGE";
  $program_name [options]
-    -c/--config_file YAML config file for analysis parameters (defaults to ../templates/mip_config.yaml")
+    -c/--config_file YAML config file for analysis parameters (defaults to ../templates/mip_rd_dna_config.yaml")
     -vb/--verbose Verbose
     -h/--help Display this help message
     -v/--version Display version

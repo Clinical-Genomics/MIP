@@ -38,7 +38,7 @@ In `lib/MIP/Cli/Mip/Install/[PIPELINE]`:
 
 1. Add the environment to the `load_env` option:
 
-In `templates/mip_config.yaml`:
+In `templates/mip_[PIPELINE]_config.yaml`:
 ```Yaml
 load_env:
   mip_travis_[ENV_NAME]:
