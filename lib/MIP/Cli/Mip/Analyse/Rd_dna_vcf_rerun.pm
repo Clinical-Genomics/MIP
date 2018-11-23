@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -161,7 +161,7 @@ sub _build_usage {
             cmd_aliases => [qw{ dnr }],
             cmd_flag    => q{dec_norm_ref},
             cmd_tags    => [
-q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config_file, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
+q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
             ],
             documentation => q{Set the references to be decomposed and normalized},
             is            => q{rw},
@@ -327,16 +327,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         q{sv_vcfanno_config} => (
             cmd_aliases   => [qw{ svcvac }],
             documentation => q{VcfAnno toml config},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{sv_vcfanno_config_file} => (
-            cmd_aliases   => [qw{ svcvacf }],
-            cmd_tags      => [q{Default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz}],
-            documentation => q{Annotation file within vcfAnno config toml file},
             is            => q{rw},
             isa           => Str,
         )
@@ -677,43 +667,22 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{frequency_genmod_filter} => (
-            cmd_aliases   => [qw{ fqfgmf }],
-            documentation => q{Remove common variants from vcf file},
+        q{fqf_vcfanno_config} => (
+            cmd_aliases   => [qw{ fqfcvac }],
+            documentation => q{Frequency vcfanno toml config},
             is            => q{rw},
-            isa           => Bool,
+            isa           => Str,
         )
     );
 
     option(
-        q{frequency_genmod_filter_max_af} => (
-            cmd_aliases   => [qw{ fqfmaf }],
-            cmd_flag      => q{freq_genmod_fil_maf},
-            documentation => q{Annotate MAX_AF from reference},
-            is            => q{rw},
-            isa           => Num,
-        )
-    );
-
-    option(
-        q{frequency_genmod_filter_threshold} => (
+        q{fqf_bcftools_filter_threshold} => (
             cmd_aliases   => [qw{ fqfgft }],
             cmd_flag      => q{freq_genmod_fil_trh},
             cmd_tags      => [q{Default: 0.10}],
             documentation => q{Threshold for filtering variants},
             is            => q{rw},
             isa           => Num,
-        )
-    );
-
-    option(
-        q{frequency_genmod_filter_1000g} => (
-            cmd_aliases   => [qw{ fqfgfr }],
-            cmd_flag      => q{freq_genmod_fil_1000g},
-            cmd_tags      => [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
-            documentation => q{Genmod annotate 1000G reference},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 

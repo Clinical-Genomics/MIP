@@ -5,11 +5,11 @@ decompose_normalize_references:
    - mip
   data_type: ARRAY
   default:
+   - fqf_vcfanno_config
    - gatk_baserecalibration_known_sites
    - gatk_haplotypecaller_snp_known_set
    - gatk_variantrecalibration_resource_indel
-   - frequency_genmod_filter_1000g
-   - sv_vcfanno_config_file
+   - sv_vcfanno_config
    - gatk_varianteval_gold
    - gatk_varianteval_dbsnp
    - snpsift_annotation_files
@@ -828,15 +828,6 @@ sv_vcfanno_config:
   exists_check: file
   reference: reference_dir
   type: path
-sv_vcfanno_config_file:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz
-  exists_check: file
-  reference: reference_dir
-  type: path
-  type: recipe_argument
 sv_vcfanno_lua:
   associated_recipe:
    - sv_annotate
@@ -1390,34 +1381,23 @@ frequency_filter:
   file_tag: _frqf
   outfile_suffix: ".vcf"
   program_executables:
-   - genmod
+   - bcftools
+   - vcfanno
   type: recipe
-frequency_genmod_filter:
+fqf_vcfanno_config:
   associated_recipe:
    - frequency_filter
+   - sv_annotate
   data_type: SCALAR
-  default: 0
-  type: recipe_argument
-frequency_genmod_filter_max_af:
-  associated_recipe:
-   - frequency_filter
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
-frequency_genmod_filter_threshold:
-  associated_recipe:
-   - frequency_filter
-  data_type: SCALAR
-  default: 0.10
-  type: recipe_argument
-frequency_genmod_filter_1000g:
-  associated_recipe:
-   - frequency_filter
-  data_type: SCALAR
-  default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
   exists_check: file
   reference: reference_dir
   type: path
+fqf_bcftools_filter_threshold:
+  associated_recipe:
+   - frequency_filter
+  data_type: SCALAR
+  default: 0.40
+  type: recipe_argument
 gatk_variantevalall:
   analysis_mode: sample
   associated_recipe:

@@ -44,17 +44,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Path}    => [qw{ check_vcfanno_toml }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Parse::Parameter} => [qw{ parse_toml_config_parameters }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Path qw{ check_vcfanno_toml };
+use MIP::Parse::Parameter qw{ parse_toml_config_parameters };
 
-diag(   q{Test check_vcfanno_toml from Path.pm v}
-      . $MIP::Check::Path::VERSION
+diag(   q{Test parse_toml_config_parameters from Parameter.pm v}
+      . $MIP::Parse::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,38 +66,21 @@ diag(   q{Test check_vcfanno_toml from Path.pm v}
 my $log = test_log();
 
 ## Given a toml config file
-my $fqf_vcfanno_config =
-  catfile( $Bin,
-    qw{ data references GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml  } );
+my %active_parameter = (
+    frequency_filter   => 1,
+    fqf_vcfanno_config => catfile(
+        $Bin, qw{ data references GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml  }
+    ),
+);
 
-my $is_ok = check_vcfanno_toml(
+my $is_ok = parse_toml_config_parameters(
     {
-        log               => $log,
-        parameter_name    => q{fqf_vcfanno_config},
-        vcfanno_file_toml => $fqf_vcfanno_config,
+        log                   => $log,
+        active_parameter_href => \%active_parameter,
     }
 );
 
 ## Then return true
-ok( $is_ok, q{Passed check for toml file} );
-
-## Given a tomlconfig file, when mandatory features are absent
-my $faulty_fqf_vcfanno_config_file = catfile( $Bin,
-    qw{ data references GRCh37_frequency_vcfanno_filter_config_bad_data_-v1.0-.toml } );
-
-trap {
-    check_vcfanno_toml(
-        {
-            log               => $log,
-            parameter_name    => q{fqf_vcfanno_config},
-            vcfanno_file_toml => $faulty_fqf_vcfanno_config_file,
-        }
-      )
-};
-
-## Then exit and throw FATAL log message
-ok( $trap->exit, q{Exit if the record does not match} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message for non matching reference} );
+ok( $is_ok, q{Passed parsing for toml file} );
 
 done_testing();

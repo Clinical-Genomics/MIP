@@ -10,7 +10,8 @@ requires qw{ Clone 0.39 };                          # MIP
 requires qw{ Data::Diver 1.0101 };                  # MIP
 requires qw{ Data::Printer 0.40 };                  # MIP
 requires qw{ DB_File 1.840 };                       # STAR-Fusion
-requires 'DBD::mysql', '== 4.043';                  # VEP
+#requires 'DBD::mysql', '== 4.043';                  # VEP
+requires qw{ DBD::mysql 4.049 };                     # VEP
 requires qw{ DBI 1.637 };                           # VEP
 requires qw{ DB_File 1.840 };                       # STAR-Fusion
 requires qw{ Email::Valid 1.202 };                  # MIP
@@ -40,6 +41,7 @@ requires qw{ Sereal::Encoder 4.004 };               # VEP
 requires qw{ Set::IntervalTree 0.11};               # MIP
 requires qw{ Test::Trap };                          # MIP
 requires qw{ Text::WagnerFischer 0.04 };            # MIP
+requires qw{ TOML::Parser 0.91 };                   # MIP
 requires qw{ Try::Tiny 0.28 };                      # MIP
 requires qw{ URI::Escape 3.31 };                    # STAR-Fusion
 requires qw{ YAML 1.24 };                           # MIP

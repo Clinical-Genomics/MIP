@@ -13,6 +13,7 @@ use utf8;
 
 ## CPANM
 use autodie;
+use List::MoreUtils qw{ any };
 use Readonly;
 
 BEGIN {
@@ -398,7 +399,7 @@ sub check_parameter_files {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Holds all set parameter for analysis
 ##          : $associated_recipes_ref  => The parameters recipe(s) {REF}
-##          : $case_id               => The case_id
+##          : $case_id                 => The case_id
 ##          : $log                     => Log object to write to
 ##          : $parameter_exists_check  => Check if intendend file exists in reference directory
 ##          : $parameter_href          => Holds all parameters
@@ -595,17 +596,17 @@ sub check_target_bed_file_suffix {
 
 sub check_vcfanno_toml {
 
-## Function : Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
+## Function : Check that the supplied vcfanno toml config has mandatory keys and file exists for annotation array
 ## Returns  :
 ## Arguments: $log               => Log object
-##          : $vcfanno_file_freq => Frequency file recorded inside toml file
+##          : $parameter_name    => Name of parameter
 ##          : $vcfanno_file_toml => Toml config file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $log;
-    my $vcfanno_file_freq;
+    my $parameter_name;
     my $vcfanno_file_toml;
 
     my $tmpl = {
@@ -614,10 +615,10 @@ sub check_vcfanno_toml {
             required => 1,
             store    => \$log,
         },
-        vcfanno_file_freq => {
+        parameter_name => {
             defined     => 1,
             required    => 1,
-            store       => \$vcfanno_file_freq,
+            store       => \$parameter_name,
             strict_type => 1,
         },
         vcfanno_file_toml => {
@@ -630,38 +631,40 @@ sub check_vcfanno_toml {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    use MIP::File::Format::Toml qw{ load_toml };
 
-    open $FILEHANDLE, q{<}, $vcfanno_file_toml
-      or $log->logdie( q{Cannot open '} . $vcfanno_file_toml . q{': } . $OS_ERROR );
+    my %vcfanno_config = load_toml( { toml_file_path => $vcfanno_file_toml, } );
 
-  LINE:
-    while (<$FILEHANDLE>) {
+    my @vcfanno_features = qw{ file fields ops };
+    my $err_msg = q{ is not defined or empty vcfanno toml features. Please check file: }
+      . $vcfanno_file_toml;
+  ANNOTATION:
+    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
-        ## Remove newline
-        chomp;
+      FEATURE:
+        foreach my $feature (@vcfanno_features) {
 
-        my ($file_path_freq) = /^file="(\S+)"/sxm;
+            ## Check mandatory feature keys for vcfanno
+            if ( not defined $annotation_href->{$feature} ) {
 
-        next LINE if ( not $file_path_freq );
-
-        if ( $file_path_freq ne $vcfanno_file_freq ) {
-
-            $log->fatal( q{The supplied vcfanno_config_file: }
-                  . $vcfanno_file_freq
-                  . q{ does not match record 'file=}
-                  . $file_path_freq
-                  . q{' in the sv_vcfanno_config file: }
-                  . $vcfanno_file_toml );
-            exit 1;
+                $log->fatal( q{Feature: } . $feature . $err_msg );
+                exit 1;
+            }
         }
-        else {
-            close $FILEHANDLE;
-            return 1;
-        }
+
+        ## Check path object exists
+        check_filesystem_objects_and_index_existance(
+            {
+                log            => $log,
+                object_name    => q{file},
+                object_type    => q{file},
+                parameter_href => {},
+                parameter_name => $parameter_name,
+                path           => $annotation_href->{file},
+            }
+        );
     }
-    return;
+    return 1;
 }
 
 sub _check_program_executables {

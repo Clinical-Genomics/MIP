@@ -5,8 +5,9 @@ decompose_normalize_references:
    - mip
   data_type: ARRAY
   default:
-   - frequency_genmod_filter_1000g
+   - fqf_vcfanno_config
    - snpsift_annotation_files
+   - sv_vcfanno_config
   element_separator: ,
   type: mip
 gatk_logging_level:
@@ -196,15 +197,6 @@ sv_vcfanno_config:
   exists_check: file
   reference: reference_dir
   type: path
-sv_vcfanno_config_file:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz
-  exists_check: file
-  reference: reference_dir
-  type: path
-  type: recipe_argument
 sv_vcfanno_lua:
   associated_recipe:
    - sv_annotate
@@ -483,34 +475,23 @@ frequency_filter:
   file_tag: _frqf
   outfile_suffix: ".vcf"
   program_executables:
-   - genmod
+   - bcftools
+   - vcfanno
   type: recipe
-frequency_genmod_filter:
+fqf_vcfanno_config:
   associated_recipe:
    - frequency_filter
+   - sv_annotate
   data_type: SCALAR
-  default: 0
-  type: recipe_argument
-frequency_genmod_filter_max_af:
-  associated_recipe:
-   - frequency_filter
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
-frequency_genmod_filter_threshold:
+  exists_check: file
+  reference: reference_dir
+  type: path
+fqf_bcftools_filter_threshold:
   associated_recipe:
    - frequency_filter
   data_type: SCALAR
   default: 0.10
   type: recipe_argument
-frequency_genmod_filter_1000g:
-  associated_recipe:
-   - frequency_filter
-  data_type: SCALAR
-  default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
-  exists_check: file
-  reference: reference_dir
-  type: path
 ## VEP
 varianteffectpredictor:
   analysis_mode: case
