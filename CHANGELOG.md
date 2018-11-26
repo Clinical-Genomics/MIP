@@ -42,6 +42,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - vcf_rerun_reformat
 
 **References**
+- clinvar: 20180429 -> 20181028
 - dbnsfp: v2.9 -> v3.5a (GRCh37)
 - GRCh37_gatk_merged_reference_samples.txt
 - GRCh37_mip_sv_svdb_export_-2018-10-09-.vcf
