@@ -15,8 +15,8 @@ reference:
     - phase3_v8.20130502
   clinvar:
     - 20171029
-    - 20180128
     - 20180429
+    - 20181028
   1000g_omni:
     - 2.5
   1000g_indels:
@@ -112,18 +112,18 @@ clinvar:
       outfile_bgzip_command: 'bgzip GRCh37_clinvar_reformat_-2017-10-29-.vcf'
       outfile_tabix_command: 'tabix -p vcf GRCh37_clinvar_reformat_-2017-10-29-.vcf.gz'
       url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2017/
-    20180128:
-      file: clinvar_20180128.vcf.gz
-      file_check: clinvar_20180128.vcf.gz.md5
-      file_index: clinvar_20180128.vcf.gz.tbi
-      outfile: GRCh37_clinvar_-2018-01-28-.vcf.gz
-      outfile_check: GRCh37_clinvar_-2018-01-28-.vcf.gz.md5
-      outfile_index: GRCh37_clinvar_-2018-01-28-.vcf.gz.tbi
+    20181028:
+      file: clinvar_20181028.vcf.gz
+      file_check: clinvar_20181028.vcf.gz.md5
+      file_index: clinvar_20181028.vcf.gz.tbi
+      outfile: GRCh37_clinvar_-2018-10-28-.vcf.gz
+      outfile_check: GRCh37_clinvar_-2018-10-28-.vcf.gz.md5
+      outfile_index: GRCh37_clinvar_-2018-10-28-.vcf.gz.tbi
       outfile_check_method: md5sum
-      outfile_reformat_command: "perl -e ' print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} ' > header_lines.txt; bcftools annotate -h header_lines.txt GRCh37_clinvar_-2018-01-28-.vcf.gz | perl -nae ' if($_=~/^#/) { print $_;} else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] }' > GRCh37_clinvar_reformat_-2018-01-28-.vcf"
-      outfile_bgzip_command: 'bgzip GRCh37_clinvar_reformat_-2018-01-28-.vcf'
-      outfile_tabix_command: 'tabix -p vcf GRCh37_clinvar_reformat_-2018-01-28-.vcf.gz'
-      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2018/
+      outfile_reformat_command: "perl -e ' print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} ' > header_lines.txt; bcftools annotate -h header_lines.txt GRCh37_clinvar_-2018-10-28-.vcf.gz | perl -nae ' if($_=~/^#/) { print $_;} else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] }' > GRCh37_clinvar_reformat_-2018-10-28-.vcf"
+      outfile_bgzip_command: 'bgzip GRCh37_clinvar_reformat_-2018-10-28-.vcf'
+      outfile_tabix_command: 'tabix -p vcf GRCh37_clinvar_reformat_-2018-10-28-.vcf.gz'
+      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
     20180429:
       file: clinvar_20180429.vcf.gz
       file_check: clinvar_20180429.vcf.gz.md5

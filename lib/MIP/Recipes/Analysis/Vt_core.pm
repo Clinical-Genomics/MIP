@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Vt_core;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -20,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt_core analysis_vt_core_rio };
@@ -44,7 +45,7 @@ sub analysis_vt_core {
 ##          : $contig                  => The contig to extract {OPTIONAL, REF}
 ##          : $core_number             => The number of cores to allocate
 ##          : $decompose               => Vt program decompose for splitting multiallelic variants
-##          : $case_id               => The case ID
+##          : $case_id                 => The case ID
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
@@ -55,8 +56,8 @@ sub analysis_vt_core {
 ##          : $normalize               => Vt program normalize for normalizing to reference used in analysis
 ##          : $outfile_path            => Outfile path
 ##          : $parameter_href          => Hash with paremters from yaml file {REF}
-##          : $recipe_directory       => Program directory to write to in sbatch script
-##          : $recipe_name            => Program name
+##          : $recipe_directory        => Program directory to write to in sbatch script
+##          : $recipe_name             => Program name
 ##          : $tabix                   => Index compressed output using tabix
 ##          : $uniq                    => Vt program uniq for removing variant duplication that appear later in file
 ##          : $xargs_file_path_prefix  => The xargs sbatch script file name {OPTIONAL}
@@ -176,7 +177,7 @@ sub analysis_vt_core {
         parameter_href => { default => {}, strict_type => 1, store => \$parameter_href },
         recipe_directory =>
           { default => q{vt}, strict_type => 1, store => \$recipe_directory },
-        recipe_name => { default => q{vt}, strict_type => 1, store => \$recipe_name },
+        recipe_name => { default => q{vt_ar}, strict_type => 1, store => \$recipe_name },
         tabix       => {
             default     => 0,
             allow       => [ undef, 0, 1 ],
@@ -194,6 +195,7 @@ sub analysis_vt_core {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Processmanagement::Slurm_processes
@@ -204,6 +206,8 @@ sub analysis_vt_core {
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose vt_normalize vt_uniq };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    ### PREPROCESSING:
+
     ## Constants
     Readonly my $MAX_RANDOM_NUMBER => 10_000;
     Readonly my $PROCESS_TIME      => 20;
@@ -212,13 +216,20 @@ sub analysis_vt_core {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Set MIP recipe name
+    my $job_id_chain = get_recipe_attributes(
+        {
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            attribute      => q{chain},
+        }
+    );
     my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Alias
-    my $job_id_chain = $parameter_href->{$recipe_name}{chain};
-
-    my $file_path;
-    my $recipe_info_path;
+    my ( $cn, $time, @source_environment_cmds ) = get_recipe_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
 
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
@@ -227,17 +238,18 @@ sub analysis_vt_core {
     $FILEHANDLE = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
-    ( $file_path, $recipe_info_path ) = setup_script(
+    my ( $file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $case_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $PROCESS_TIME,
-            recipe_name           => $recipe_name,
-            recipe_directory      => $recipe_directory,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $case_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $PROCESS_TIME,
+            recipe_name                     => $recipe_name,
+            recipe_directory                => $recipe_directory,
+            source_environment_commands_ref => \@source_environment_cmds,
         }
     );
 
