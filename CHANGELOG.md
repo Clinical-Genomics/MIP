@@ -27,6 +27,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - One case one Multiqc report Fix https://github.com/Clinical-Genomics/MIP/issues/515
 - Added exclude contig option. Fix https://github.com/Clinical-Genomics/MIP/issues/509.
 - Add UCSC genomicsSuperDups to annoation and rank model. Fix https://github.com/Clinical-Genomics/MIP/issues/574
+- Switched to using conda instead of source with conda e.g. "conda activate [ENV]" instead of "source activate [ENV]
 
 **New Pipeline**
 - rna
