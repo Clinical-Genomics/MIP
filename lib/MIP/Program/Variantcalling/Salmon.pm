@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ salmon_index salmon_quant };
@@ -121,7 +121,7 @@ sub salmon_quant {
 ## Arguments : $FILEHANDLE             => Filehandle to write to
 ##           : $gc_bias                => Correct for GC-bias
 ##           : $index_path             => Path to the index folder
-##           : $lib                    => Library visit the salmon website for more  info
+##           : $libi_type              => Library visit the salmon website for more  info
 ##           : $outfile_path           => The path of the  output directory
 ##           : $read_1_fastq_path      => Read 1 Fastq path
 ##           : $read_2_fastq_path      => Read 2 Fastq path
@@ -162,7 +162,8 @@ sub salmon_quant {
             strict_type => 1,
         },
         lib_type => {
-            default     => q{ISF},
+            allow       => [qw{ A ISF ISR MSF MSR OSR OSF }],
+            default     => q{A},
             store       => \$lib_type,
             strict_type => 1,
         },
