@@ -16,7 +16,7 @@ disable_env_check: 0
 emip:
   conda:
     bcftools: 1.8
-    bioconductor-deseq2:
+    bioconductor-deseq2: 1.18.1
     bioconductor-tximport:
     fastqc: 0.11.4
     gatk4: 4.0
