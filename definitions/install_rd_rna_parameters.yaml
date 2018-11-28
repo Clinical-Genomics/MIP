@@ -128,9 +128,6 @@ program_test_command:
   bootstrapann:
     execution: 'BootstrapAnn.py --help'
     path: 'BootstrapAnn.py'
-  cufflinks:
-    execution: 
-    path: 'cufflinks'
   fastqc:
     execution: 'fastqc --version'
     path: 'fastqc'
@@ -192,7 +189,8 @@ program_test_command:
     execution: 'stringtie --version'
     path: 'stringtie'
 
-# Programs that needs to be installed with pyhton 3, only touch if you know what you're doing
+# Programs that needs to be installed with pyhton 3,
+# only touch if you know what you're doing
 python3_programs: []
 
 # Supress output, both when generating the install script and running it
