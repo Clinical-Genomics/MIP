@@ -1722,21 +1722,43 @@ nist_high_confidence_call_set:
   exists_check: file
   reference: reference_dir
   type: path
-nist_high_confidence_call_set_bed:
+nist_call_set_vcf:
   associated_recipe:
    - rtg_vcfeval
    - evaluation
-  default: GRCh37_nist_hg001_-na12878_v2.19-.bed
-  data_type: SCALAR
-  exists_check: file
-  reference: reference_dir
-  type: path
+  default:
+   2.19:
+    NA12878: GRCh37_nist_hg001_-na12878_v2.19-.vcf
+   3.3.2:
+    NA12878: GRCh37_nist_hg001_-na12878_v3.3.2-.vcf
+  data_type: HASH
+  type: recipe_argument
+nist_call_set_bed:
+  associated_recipe:
+   - rtg_vcfeval
+   - evaluation
+  default: 
+   2.19: 
+    NA12878: GRCh37_nist_hg001_-na12878_v2.19-.bed
+   3.3.2:
+    NA12878: GRCh37_nist_hg001_-na12878_v3.3.2-.bed
+  data_type: HASH
+  type: recipe_argument
 nist_id:
   associated_recipe:
    - rtg_vcfeval
    - evaluation
-  data_type: SCALAR
-  default: NA12878
+  data_type: HASH
+  type: recipe_argument
+nist_versions:
+  associated_recipe:
+   - rtg_vcfeval
+   - evaluation
+  data_type: ARRAY
+  default:
+   - 2.19
+   - 3.3.2
+  element_separator: ,
   type: recipe_argument
 ## RankVariant
 rankvariant:

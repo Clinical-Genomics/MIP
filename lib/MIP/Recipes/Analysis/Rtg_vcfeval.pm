@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -39,12 +39,12 @@ sub analysis_rtg_vcfeval {
 ## Function : Evaluation of vcf variants using rtg
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -146,7 +146,7 @@ sub analysis_rtg_vcfeval {
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Return if not a nist_id sample
-    return if ( not $sample_id =~ /$active_parameter_href->{nist_id}/sxm );
+    return if ( not exists $active_parameter_href->{nist_id}{$sample_id} );
 
     ### PREPROCESSING:
 
@@ -175,8 +175,9 @@ sub analysis_rtg_vcfeval {
             attribute      => q{chain},
         }
     );
-    my $nist_id     = $active_parameter_href->{nist_id};
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my $nist_id       = $active_parameter_href->{nist_id}{$sample_id};
+    my @nist_versions = @{ $active_parameter_href->{nist_versions} };
+    my $recipe_mode   = $active_parameter_href->{$recipe_name};
     my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
@@ -209,8 +210,6 @@ sub analysis_rtg_vcfeval {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    my $nist_file_path = catfile( $temp_directory, q{nist} );
-
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
@@ -228,63 +227,88 @@ sub analysis_rtg_vcfeval {
     );
 
     ### SHELL:
-
-    say {$FILEHANDLE} q{## Adding sample name to baseline calls};
-    bcftools_rename_vcf_samples(
-        {
-            FILEHANDLE => $FILEHANDLE,
-            index      => 1,
-            index_type => q{tbi},
-            infile     => $active_parameter_href->{nist_high_confidence_call_set},
-            outfile_path_prefix => $nist_file_path . $UNDERSCORE . q{refrm},
-            output_type         => q{z},
-            temp_directory      => $temp_directory,
-            sample_ids_ref      => [$nist_id],
-        }
-    );
-
-    say {$FILEHANDLE} q{## Compressing and indexing sample calls};
-    bcftools_view_and_index_vcf(
-        {
-            FILEHANDLE          => $FILEHANDLE,
-            index               => 1,
-            index_type          => q{tbi},
-            infile_path         => $infile_path,
-            outfile_path_prefix => $outfile_path_prefix,
-            output_type         => q{z},
-        }
-    );
-
-    say {$FILEHANDLE} q{## Remove potential old Rtg vcfeval outdir};
     my $rtg_outdirectory_path = catfile( $outdir_path_prefix, $sample_id );
-    gnu_rm(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            force       => 1,
-            infile_path => $rtg_outdirectory_path,
-            recursive   => 1,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Rtg vcfeval};
-    rtg_vcfeval(
-        {
-            baselinefile_path => $nist_file_path . $UNDERSCORE . q{refrm.vcf.gz},
-            callfile_path     => $outfile_path_prefix . $DOT . q{vcf.gz},
-            eval_region_file_path =>
-              $active_parameter_href->{nist_high_confidence_call_set_bed},
-            FILEHANDLE           => $FILEHANDLE,
-            outputdirectory_path => $rtg_outdirectory_path,
-            sample_id            => $nist_id,
-            sdf_template_file_path =>
-              $active_parameter_href->{rtg_vcfeval_reference_genome}
-              . $file_info_href->{rtg_vcfeval_reference_genome}[0]
-            ,    # Only one directory for sdf
-        }
-    );
+  NIST_VERSION:
+    foreach my $nist_version (@nist_versions) {
 
-    ## Close FILEHANDLES
+        ## Skip this nist version if no supported nist_id
+        next NIST_VERSION
+          if (
+            not
+            exists $active_parameter_href->{nist_call_set_vcf}{$nist_version}{$nist_id} );
+
+        say {$FILEHANDLE} q{### Processing NIST ID: }
+          . $nist_id
+          . q{ reference version: }
+          . $nist_version;
+
+        my $nist_file_path =
+          catfile( $temp_directory, q{nist} . $UNDERSCORE . $nist_version );
+        my $nist_vcf_file_path =
+          $active_parameter_href->{nist_call_set_vcf}{$nist_version}{$nist_id};
+        my $nist_bed_file_path =
+          $active_parameter_href->{nist_call_set_bed}{$nist_version}{$nist_id};
+
+        say {$FILEHANDLE} q{## Adding sample name to baseline calls};
+        bcftools_rename_vcf_samples(
+            {
+                FILEHANDLE          => $FILEHANDLE,
+                index               => 1,
+                index_type          => q{tbi},
+                infile              => $nist_vcf_file_path,
+                outfile_path_prefix => $nist_file_path . $UNDERSCORE . q{refrm},
+                output_type         => q{z},
+                temp_directory      => $temp_directory,
+                sample_ids_ref      => [$sample_id],
+            }
+        );
+
+        say {$FILEHANDLE} q{## Compressing and indexing sample calls};
+        bcftools_view_and_index_vcf(
+            {
+                FILEHANDLE          => $FILEHANDLE,
+                index               => 1,
+                index_type          => q{tbi},
+                infile_path         => $infile_path,
+                outfile_path_prefix => $outfile_path_prefix,
+                output_type         => q{z},
+            }
+        );
+
+        say {$FILEHANDLE} q{## Remove potential old Rtg vcfeval outdir};
+        my $nist_version_rtg_outdirectory_path =
+          catfile( $outdir_path_prefix, $sample_id, $nist_version );
+        gnu_rm(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                force       => 1,
+                infile_path => $nist_version_rtg_outdirectory_path,
+                recursive   => 1,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+
+        say {$FILEHANDLE} q{## Rtg vcfeval};
+        rtg_vcfeval(
+            {
+                baselinefile_path     => $nist_file_path . $UNDERSCORE . q{refrm.vcf.gz},
+                callfile_path         => $outfile_path_prefix . $DOT . q{vcf.gz},
+                eval_region_file_path => $nist_bed_file_path,
+                FILEHANDLE            => $FILEHANDLE,
+                outputdirectory_path  => $nist_version_rtg_outdirectory_path,
+                sample_id             => $sample_id,
+                sdf_template_file_path =>
+                  $active_parameter_href->{rtg_vcfeval_reference_genome}
+                  . $file_info_href->{rtg_vcfeval_reference_genome}[0]
+                ,    # Only one directory for sdf
+            }
+        );
+
+        say {$FILEHANDLE} $NEWLINE;
+    }
+
+    ## Close FILEHANDLE
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
     if ( $recipe_mode == 1 ) {

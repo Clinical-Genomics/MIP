@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.08;
+our $VERSION = 1.09;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -2056,34 +2056,42 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
     );
 
     option(
-        q{nist_high_confidence_call_set} => (
-            cmd_aliases   => [qw{ evlnhc }],
-            cmd_flag      => q{nist_hc_call_s},
-            cmd_tags      => [q{Default: GRCh37_nist_hg001_-na12878_v2.19-.vcf}],
-            documentation => q{NIST high-confidence variant calls},
+        q{nist_call_set_vcf} => (
+            cmd_aliases   => [qw{ nist_csv }],
+            cmd_tags      => [q{Nist call set vcf information hash}],
+            documentation => q{NIST high-confidence variant calls vcf},
             is            => q{rw},
-            isa           => Str,
+            isa           => HashRef,
         )
     );
 
     option(
-        q{nist_high_confidence_call_set_bed} => (
-            cmd_aliases   => [qw{ evlnil }],
-            cmd_flag      => q{nist_hc_call_sb},
-            cmd_tags      => [q{Default: GRCh37_nist_hg001_-na12878_v2.19-.bed}],
-            documentation => q{NIST high-confidence variant calls interval list},
+        q{nist_call_set_bed} => (
+            cmd_aliases   => [qw{ nist_csb }],
+            cmd_tags      => [q{Nist call set bed information hash}],
+            documentation => q{NIST high-confidence variant calls bed},
             is            => q{rw},
-            isa           => Str,
+            isa           => HashRef,
         )
     );
 
     option(
         q{nist_id} => (
-            cmd_aliases   => [qw{ evlnid }],
-            cmd_tags      => [q{Default: NA12878}],
-            documentation => q{NIST high-confidence sample_id},
+            cmd_aliases   => [qw{ nist_id }],
+            cmd_tags      => [q{sample_id=nist_id}],
+            documentation => q{Map sample_id to nist_id},
             is            => q{rw},
-            isa           => Str,
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{nist_versions} => (
+            cmd_aliases   => [qw{ nist_versions }],
+            cmd_tags      => [q{Default: [2.19, 3.3.2]}],
+            documentation => q{Map sample_id to nist_id},
+            is            => q{rw},
+            isa           => ArrayRef,
         )
     );
 
