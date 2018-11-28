@@ -37,7 +37,7 @@ sub stringtie {
 
 ## Function : Perl wrapper for StringTie. Based on version 1.3.4.
 ## Returns  : @commands
-##          : $cov_ref_transcripts_outfile_path => Fully covered reference transcripts
+## Arguments: $cov_ref_transcripts_outfile_path => Fully covered reference transcripts
 ##          : $FILEHANDLE                       => Filehandle to write to
 ##          : $gene_abundance_outfile_path      => Gene aboundances
 ##          : $gtf_reference_path               => Input GTF refrence file
