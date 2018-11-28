@@ -220,7 +220,7 @@ recipe_time:
     delly_call: 10
     delly_reformat: 7
     endvariantannotationblock: 2
-    evaluation: 1
+    evaluation: 3
     expansionhunter: 2
     fastqc_ar: 10
     freebayes_ar: 30
