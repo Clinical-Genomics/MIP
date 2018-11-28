@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -406,15 +406,6 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
             documentation => q{Quantify transcripts using salmon},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-    option(
-        q{salmon_rna_lib_configuration} => (
-            cmd_aliases   => [qw{ sqt_bob }],
-            cmd_tags      => [q{Default: ISF}],
-            documentation => q{Library orientation and strandedness},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 
