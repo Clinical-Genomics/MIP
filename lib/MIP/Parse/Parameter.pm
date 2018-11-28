@@ -4,6 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -13,6 +14,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::Util qw{ any };
 use Readonly;
 
 BEGIN {
@@ -21,13 +23,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ parse_infiles parse_prioritize_variant_callers parse_start_with_recipe parse_toml_config_parameters };
+      qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_start_with_recipe parse_toml_config_parameters };
 
 }
+
+## Constants
+Readonly my $SPACE => q{ };
 
 sub parse_infiles {
 
@@ -127,6 +132,105 @@ sub parse_infiles {
             $log->info( qq{\t\t}, $file );
         }
     }
+    return 1;
+}
+
+sub parse_nist_parameters {
+
+## Function : Parse nist parameters. Check and add reference directory to file_names.
+## Returns  : 1
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $log                   => Log object
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Parameter qw{ check_nist_file_exists
+      check_nist_file_name
+      check_nist_nist_id
+      check_nist_sample_id
+      check_nist_version
+    };
+    use MIP::Set::Parameter qw{ set_nist_file_name_path };
+
+    # Unpack
+    my %nist_id         = %{ $active_parameter_href->{nist_id} };
+    my @nist_parameters = (qw{ nist_call_set_vcf nist_call_set_bed });
+
+    ## Check nist_ids contain supplied sample_ids
+    check_nist_sample_id(
+        {
+            log            => $log,
+            nist_id_href   => \%nist_id,
+            sample_ids_ref => $active_parameter_href->{sample_ids},
+        }
+    );
+
+    ## Check nist_ids contain supplied nist_id in nist parameter
+    check_nist_nist_id(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            nist_id_href          => \%nist_id,
+            nist_parameters_ref   => \@nist_parameters,
+        }
+    );
+
+    ## Check nist_versions contain supplied nist_version in nist parameters
+    check_nist_version(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            nist_parameters_ref   => \@nist_parameters,
+        }
+    );
+
+    ## Check nist file name is defined in nist parameters
+    check_nist_file_name(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            nist_parameters_ref   => \@nist_parameters,
+        }
+    );
+
+    ## Set nist file name path by adding reference directory
+    set_nist_file_name_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            nist_parameters_ref   => \@nist_parameters,
+        }
+    );
+
+    ## Check nist file path exists
+    check_nist_file_exists(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
+            nist_parameters_ref   => \@nist_parameters,
+        }
+    );
+
     return 1;
 }
 

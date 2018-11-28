@@ -128,13 +128,12 @@ sub check_rd_dna {
       check_snpsift_keys
       check_vep_custom_annotation
       check_vep_directories };
-    use MIP::Check::Path
-      qw{ check_gatk_sample_map_paths check_target_bed_file_suffix check_vcfanno_toml };
+    use MIP::Check::Path qw{ check_gatk_sample_map_paths check_target_bed_file_suffix };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Get::File qw{ get_select_file_contigs };
     use MIP::Parse::Parameter
-      qw{ parse_infiles parse_prioritize_variant_callers parse_toml_config_parameters };
+      qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_toml_config_parameters };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters
@@ -238,7 +237,7 @@ sub check_rd_dna {
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
-            parameter_names_ref   => [qw{ infile_dirs exome_target_bed }],
+            parameter_names_ref   => [qw{ exome_target_bed infile_dirs }],
             sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
         }
     );
@@ -266,6 +265,13 @@ sub check_rd_dna {
               \%{ $active_parameter_href->{snpsift_annotation_files} },
             snpsift_annotation_outinfo_key_href =>
               \%{ $active_parameter_href->{snpsift_annotation_outinfo_key} },
+        }
+    );
+
+    parse_nist_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            log                   => $log,
         }
     );
 

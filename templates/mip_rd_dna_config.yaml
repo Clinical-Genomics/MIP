@@ -102,6 +102,8 @@ gatk_variantrecalibration_indel_max_gaussians: 1
 gatk_combinevariantcallsets_bcf_file: 1
 genmod_annotate_regions: 1
 genmod_models_whole_gene: 1
+nist_id:
+  ADM1059A3: NA12878 
 markduplicates_picardtools_markduplicates: 1
 picardtools_path: cluster_constant_path!
 snpeff_ann: 1

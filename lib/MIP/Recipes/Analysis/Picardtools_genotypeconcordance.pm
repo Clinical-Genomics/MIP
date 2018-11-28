@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_genotypeconcordance };
@@ -158,8 +158,8 @@ sub analysis_picardtools_genotypeconcordance {
     use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core_rio };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ## Return if not nist_id
-    return if ( not $sample_id =~ /$active_parameter_href->{nist_id}/sxm );
+    ## Return if not a nist_id sample
+    return if ( not exists $active_parameter_href->{nist_id}{$sample_id} );
 
     ### PREPROCESSING:
 
@@ -188,7 +188,8 @@ sub analysis_picardtools_genotypeconcordance {
             attribute      => q{chain},
         }
     );
-    my $nist_id            = $active_parameter_href->{nist_id};
+    my $nist_id            = $active_parameter_href->{nist_id}{$sample_id};
+    my @nist_versions      = @{ $active_parameter_href->{nist_versions} };
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
@@ -227,257 +228,271 @@ sub analysis_picardtools_genotypeconcordance {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $case_id,
-            error_trap   => 0,             # Special case to allow "vcf.idx" to be created
-            FILEHANDLE   => $FILEHANDLE,
-            job_id_href  => $job_id_href,
-            log          => $log,
-            process_time => $time,
-            recipe_directory => $recipe_name,
-            recipe_name      => $recipe_name,
-            set_errexit => 0,              # Special case to allow "vcf.idx" to be created
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $case_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            process_time                    => $time,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
             temp_directory                  => $temp_directory,
         }
     );
 
-    my $nist_file_path = catfile( $temp_directory, q{NIST} );
+  NIST_VERSION:
+    foreach my $nist_version (@nist_versions) {
 
-    ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
-    bcftools_rename_vcf_samples(
-        {
-            FILEHANDLE => $FILEHANDLE,
-            index      => 0,
-            infile     => $active_parameter_href->{nist_high_confidence_call_set},
-            outfile_path_prefix => $nist_file_path . $UNDERSCORE . q{refrm},
-            output_type         => q{v},
-            temp_directory      => $temp_directory,
-            sample_ids_ref      => [ $nist_id . q{-NIST} ],
-        }
-    );
+        ## Skip this nist version if no supported nist_id
+        next NIST_VERSION
+          if (
+            not
+            exists $active_parameter_href->{nist_call_set_vcf}{$nist_version}{$nist_id} );
 
-    ## Modify since different ref genomes
-    say {$FILEHANDLE} q{## Modify since different ref genomes};
+        say {$FILEHANDLE} q{### Processing NIST ID: }
+          . $nist_id
+          . q{ reference version: }
+          . $nist_version;
 
-    ## Do not print GL contigs
-    print {$FILEHANDLE} q?perl -nae 'unless($_=~/##contig=<ID=GL\d+/) {print $_}' ?;
+        my $nist_file_path =
+          catfile( $temp_directory, q{nist} . $UNDERSCORE . $nist_version );
+        my $nist_vcf_file_path =
+          $active_parameter_href->{nist_call_set_vcf}{$nist_version}{$nist_id};
+        my $nist_bed_file_path =
+          $active_parameter_href->{nist_call_set_bed}{$nist_version}{$nist_id};
 
-    ## Infile
-    print {$FILEHANDLE} $nist_file_path . $UNDERSCORE . q{refrm.vcf} . $SPACE;
+        ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
+        bcftools_rename_vcf_samples(
+            {
+                FILEHANDLE          => $FILEHANDLE,
+                index               => 0,
+                infile              => $nist_vcf_file_path,
+                outfile_path_prefix => $nist_file_path . $UNDERSCORE . q{refrm},
+                output_type         => q{v},
+                temp_directory      => $temp_directory,
+                sample_ids_ref      => [ $sample_id . q{-NIST} ],
+            }
+        );
 
-    ## Outfile
-    print {$FILEHANDLE} q{>} . $SPACE . $nist_file_path . $DOT . q{vcf} . $SPACE;
-    say   {$FILEHANDLE} $NEWLINE;
+        ## Modify since different ref genomes
+        say {$FILEHANDLE} q{## Modify since different ref genomes};
 
-    ## Bcftools stats
-    say {$FILEHANDLE} q{## bcftools stats};
-    bcftools_stats(
-        {
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $nist_file_path . $DOT . q{vcf},
-            stdoutfile_path => $nist_file_path . $DOT . q{vcf.stats},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        ## Do not print GL contigs
+        print {$FILEHANDLE} q?perl -nae 'unless($_=~/##contig=<ID=GL\d+/) {print $_}' ?;
 
-    ## Index VCF
-    say {$FILEHANDLE} q{## GATK IndexFeatureFile};
-    gatk_indexfeaturefile(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $nist_file_path . $DOT . q{vcf},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        ## Infile
+        print {$FILEHANDLE} $nist_file_path . $UNDERSCORE . q{refrm.vcf} . $SPACE;
 
-    ## Create .interval_list file from NIST union bed
-    say {$FILEHANDLE} q{## Prepare .interval_list file from NIST union bed}, $NEWLINE;
+        ## Outfile
+        print {$FILEHANDLE} q{>} . $SPACE . $nist_file_path . $DOT . q{vcf} . $SPACE;
+        say   {$FILEHANDLE} $NEWLINE;
 
-    my $genome_dict_file_path = catfile( $temp_directory,
-        $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} );
-    ## Do not print contigs
-    print {$FILEHANDLE}
-      q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/ || $_=~/GL\d+/) {print $_}' ?;
-    print {$FILEHANDLE}
-      catfile( $reference_dir,
-        $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} )
-      . $SPACE;
-    print {$FILEHANDLE} q{>} . $SPACE . $genome_dict_file_path . $SPACE;
-    say   {$FILEHANDLE} $NEWLINE;
+        ## Bcftools stats
+        say {$FILEHANDLE} q{## bcftools stats};
+        bcftools_stats(
+            {
+                FILEHANDLE      => $FILEHANDLE,
+                infile_path     => $nist_file_path . $DOT . q{vcf},
+                stdoutfile_path => $nist_file_path . $DOT . q{vcf.stats},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
-    gnu_cat(
-        {
-            FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => [
-                $genome_dict_file_path,
-                $active_parameter_href->{nist_high_confidence_call_set_bed}
-            ],
-            outfile_path => $nist_file_path . $DOT . q{bed.dict_body},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        ## Index VCF
+        say {$FILEHANDLE} q{## GATK IndexFeatureFile};
+        gatk_indexfeaturefile(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $nist_file_path . $DOT . q{vcf},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
-    say {$FILEHANDLE}
-      q{## Remove target annotations, 'track', 'browse' and keep only 5 columns};
-    print {$FILEHANDLE}
+        ## Create .interval_list file from NIST union bed
+        say {$FILEHANDLE} q{## Prepare .interval_list file from NIST union bed}, $NEWLINE;
+
+        my $genome_dict_file_path = catfile( $temp_directory,
+            $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} );
+        ## Do not print contigs
+        print {$FILEHANDLE}
+q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/ || $_=~/GL\d+/) {print $_}' ?;
+        print {$FILEHANDLE}
+          catfile( $reference_dir,
+            $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} )
+          . $SPACE;
+        print {$FILEHANDLE} q{>} . $SPACE . $genome_dict_file_path . $SPACE;
+        say   {$FILEHANDLE} $NEWLINE;
+
+        gnu_cat(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                infile_paths_ref => [ $genome_dict_file_path, $nist_bed_file_path, ],
+                outfile_path     => $nist_file_path . $DOT . q{bed.dict_body},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+
+        say {$FILEHANDLE}
+          q{## Remove target annotations, 'track', 'browse' and keep only 5 columns};
+        print {$FILEHANDLE}
 q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^browser/) {} else {print @F[0], "\t", (@F[1] + 1), "\t", @F[2], "\t", "+", "\t", "-", "\n";}' ?;
-    ## Infile
-    print {$FILEHANDLE} $nist_file_path . $DOT . q{bed.dict_body} . $SPACE;
+        ## Infile
+        print {$FILEHANDLE} $nist_file_path . $DOT . q{bed.dict_body} . $SPACE;
 
-    ## Remove unnecessary info and reformat
-    print {$FILEHANDLE} q{>}
-      . $SPACE
-      . $nist_file_path
-      . $DOT
-      . q{bed.dict_body_col_5.interval_list}
-      . $SPACE;
-    say {$FILEHANDLE} $NEWLINE;
+        ## Remove unnecessary info and reformat
+        print {$FILEHANDLE} q{>}
+          . $SPACE
+          . $nist_file_path
+          . $DOT
+          . q{bed.dict_body_col_5.interval_list}
+          . $SPACE;
+        say {$FILEHANDLE} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Create }
-      . $active_parameter_href->{nist_high_confidence_call_set_bed}
-      . $DOT
-      . q{interval_list};
+        say {$FILEHANDLE} q{## Create } . $nist_bed_file_path . $DOT . q{interval_list};
 
-    picardtools_intervallisttools(
-        {
-            FILEHANDLE => $FILEHANDLE,
-            infile_paths_ref =>
-              [ $nist_file_path . $DOT . q{bed.dict_body_col_5.interval_list} ],
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx2g},
-            outfile_path         => $nist_file_path . $DOT . q{bed.interval_list},
-            referencefile_path   => $referencefile_path,
-            temp_directory       => $active_parameter_href->{temp_directory},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        picardtools_intervallisttools(
+            {
+                FILEHANDLE => $FILEHANDLE,
+                infile_paths_ref =>
+                  [ $nist_file_path . $DOT . q{bed.dict_body_col_5.interval_list} ],
+                java_jar =>
+                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx2g},
+                outfile_path         => $nist_file_path . $DOT . q{bed.interval_list},
+                referencefile_path   => $referencefile_path,
+                temp_directory       => $active_parameter_href->{temp_directory},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
-    ### MIP data
-    my $base_file_path = $outfile_path_prefix . $UNDERSCORE . $sample_id;
+        ### MIP data
+        my $base_file_path =
+          $outfile_path_prefix . $UNDERSCORE . $sample_id . $UNDERSCORE . $nist_version;
 
-    ## Left align, normalize and split allels
-    say {$FILEHANDLE} q{## Normalize and decompose};
+        ## Left align, normalize and split allels
+        say {$FILEHANDLE} q{## Normalize and decompose};
 
-    my $norm_outfile_path = $base_file_path . $UNDERSCORE . q{norm} . $outfile_suffix;
-    analysis_vt_core_rio(
-        {
-            active_parameter_href => $active_parameter_href,
-            cmd_break             => $SEMICOLON,
-            decompose             => 1,
-            FILEHANDLE            => $FILEHANDLE,
-            gnu_sed               => 1,
-            infile_path           => $infile_path,
-            instream              => 0,
-            normalize             => 1,
-            outfile_path          => $norm_outfile_path,
-            uniq                  => 1,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        my $norm_outfile_path = $base_file_path . $UNDERSCORE . q{norm} . $outfile_suffix;
+        analysis_vt_core_rio(
+            {
+                active_parameter_href => $active_parameter_href,
+                cmd_break             => $SEMICOLON,
+                decompose             => 1,
+                FILEHANDLE            => $FILEHANDLE,
+                gnu_sed               => 1,
+                infile_path           => $infile_path,
+                instream              => 0,
+                normalize             => 1,
+                outfile_path          => $norm_outfile_path,
+                uniq                  => 1,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
-    ## GATK SelectVariants
-    say {$FILEHANDLE} q{## GATK SelectVariants};
+        ## GATK SelectVariants
+        say {$FILEHANDLE} q{## GATK SelectVariants};
 
-    my $select_outfile_path = $base_file_path . $outfile_suffix;
-    gatk_selectvariants(
-        {
-            FILEHANDLE           => $FILEHANDLE,
-            infile_path          => $norm_outfile_path,
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx2g},
-            outfile_path         => $select_outfile_path,
-            referencefile_path   => $referencefile_path,
-            sample_names_ref     => [$sample_id],
-            temp_directory       => $temp_directory,
-            verbosity            => $active_parameter_href->{gatk_logging_level},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        my $select_outfile_path = $base_file_path . $outfile_suffix;
+        gatk_selectvariants(
+            {
+                FILEHANDLE           => $FILEHANDLE,
+                infile_path          => $norm_outfile_path,
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx2g},
+                outfile_path         => $select_outfile_path,
+                referencefile_path   => $referencefile_path,
+                sample_names_ref     => [$sample_id],
+                temp_directory       => $temp_directory,
+                verbosity            => $active_parameter_href->{gatk_logging_level},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
-    ## Modify since different ref genomes
-    say {$FILEHANDLE} q{## Modify since different ref genomes};
-    my $reformat_outfile_path =
-      $base_file_path . $UNDERSCORE . q{norm_refrm} . $outfile_suffix;
+        ## Modify since different ref genomes
+        say {$FILEHANDLE} q{## Modify since different ref genomes};
+        my $reformat_outfile_path =
+          $base_file_path . $UNDERSCORE . q{norm_refrm} . $outfile_suffix;
 
-    print {$FILEHANDLE}
+        print {$FILEHANDLE}
 q?perl -nae 'unless($_=~/##contig=<ID=NC_007605/ || $_=~/##contig=<ID=hs37d5/ || $_=~/##contig=<ID=GL\d+/) {print $_}' ?;
 
-    ## Infile
-    print {$FILEHANDLE} $select_outfile_path . $SPACE;
+        ## Infile
+        print {$FILEHANDLE} $select_outfile_path . $SPACE;
 
-    ## Outfile
-    print {$FILEHANDLE} q{>} . $SPACE . $reformat_outfile_path . $SPACE;
-    say   {$FILEHANDLE} $NEWLINE;
+        ## Outfile
+        print {$FILEHANDLE} q{>} . $SPACE . $reformat_outfile_path . $SPACE;
+        say   {$FILEHANDLE} $NEWLINE;
 
-    ## BcfTools Stats
-    say {$FILEHANDLE} q{## bcftools stats};
-    bcftools_stats(
-        {
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $reformat_outfile_path,
-            stdoutfile_path => $reformat_outfile_path . $DOT . q{stats},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        ## BcfTools Stats
+        say {$FILEHANDLE} q{## bcftools stats};
+        bcftools_stats(
+            {
+                FILEHANDLE      => $FILEHANDLE,
+                infile_path     => $reformat_outfile_path,
+                stdoutfile_path => $reformat_outfile_path . $DOT . q{stats},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
-    ## Index VCF
-    say {$FILEHANDLE} q{## GATK IndexFeatureFile};
-    gatk_indexfeaturefile(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $reformat_outfile_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        ## Index VCF
+        say {$FILEHANDLE} q{## GATK IndexFeatureFile};
+        gatk_indexfeaturefile(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $reformat_outfile_path,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
-    say {$FILEHANDLE}
-      q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
-    picardtools_genotypeconcordance(
-        {
-            call_sample          => $sample_id,
-            FILEHANDLE           => $FILEHANDLE,
-            infile_path          => $reformat_outfile_path,
-            intervals_ref        => [ $nist_file_path . $DOT . q{bed.interval_list} ],
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            memory_allocation    => q{Xmx2g},
-            min_depth            => 10,
-            min_genotype_quality => 20,
-            outfile_prefix_path  => $base_file_path . $UNDERSCORE . q{bed},
-            referencefile_path   => $referencefile_path,
-            temp_directory       => $active_parameter_href->{temp_directory},
-            truth_file_path      => $nist_file_path . $DOT . q{vcf},
-            truth_sample         => $nist_id . q{-NIST},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        say {$FILEHANDLE}
+          q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
+        picardtools_genotypeconcordance(
+            {
+                call_sample          => $sample_id,
+                FILEHANDLE           => $FILEHANDLE,
+                infile_path          => $reformat_outfile_path,
+                intervals_ref        => [ $nist_file_path . $DOT . q{bed.interval_list} ],
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                java_jar =>
+                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                memory_allocation    => q{Xmx2g},
+                min_depth            => 10,
+                min_genotype_quality => 20,
+                outfile_prefix_path  => $base_file_path . $UNDERSCORE . q{bed},
+                referencefile_path   => $referencefile_path,
+                temp_directory       => $active_parameter_href->{temp_directory},
+                truth_file_path      => $nist_file_path . $DOT . q{vcf},
+                truth_sample         => $sample_id . q{-NIST},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Picard GenotypeConcordance - Genome - good quality};
-    picardtools_genotypeconcordance(
-        {
-            call_sample          => $sample_id,
-            FILEHANDLE           => $FILEHANDLE,
-            infile_path          => $reformat_outfile_path,
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            memory_allocation    => q{Xmx2g},
-            min_depth            => 10,
-            min_genotype_quality => 20,
-            outfile_prefix_path  => $base_file_path,
-            referencefile_path   => $referencefile_path,
-            truth_file_path      => $nist_file_path . $DOT . q{vcf},
-            truth_sample         => $nist_id . q{-NIST},
-            temp_directory       => $active_parameter_href->{temp_directory},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        say {$FILEHANDLE} q{## Picard GenotypeConcordance - Genome - good quality};
+        picardtools_genotypeconcordance(
+            {
+                call_sample          => $sample_id,
+                FILEHANDLE           => $FILEHANDLE,
+                infile_path          => $reformat_outfile_path,
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                java_jar =>
+                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                memory_allocation    => q{Xmx2g},
+                min_depth            => 10,
+                min_genotype_quality => 20,
+                outfile_prefix_path  => $base_file_path,
+                referencefile_path   => $referencefile_path,
+                truth_file_path      => $nist_file_path . $DOT . q{vcf},
+                truth_sample         => $sample_id . q{-NIST},
+                temp_directory       => $active_parameter_href->{temp_directory},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
+    }
+    ## Close FILEHANDLE
     close $FILEHANDLE;
 
     if ( $recipe_mode == 1 ) {
