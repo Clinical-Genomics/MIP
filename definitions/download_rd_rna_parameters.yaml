@@ -28,6 +28,7 @@ transcript_annotation:
       file: gencode.v29lift37.annotation.gtf.gz
       outfile: GRCh37_gencode_annotation_-v29-.gtf.gz
       outfile_decompress: gzip
+      outfile_reformat_command: "perl -nae ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(chrM)/MT/g; print $_;}' GRCh37_gencode_annotation_-v29-.gtf | perl -nae ' if($_=~/^#/) { print $_; } else {$_ =~ s/^chr(.+)/$1/g; print $_; }' > GRCh37_gencode_annotation_reformat_-v29-.gtf" 
       url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/
 CTAT_resource_lib:
   grch37:

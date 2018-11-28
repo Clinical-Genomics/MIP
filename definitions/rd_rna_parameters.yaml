@@ -36,7 +36,7 @@ transcript_annotation:
    - star_aln
    - star_fusion
   data_type: SCALAR
-  default: GRCh37_gencode_annotation_-v29-.gtf
+  default: GRCh37_gencode_annotation_reformat_-v29-.gtf
   exists_check: file
   reference: reference_dir
   type: path
@@ -321,6 +321,7 @@ markduplicates:
   file_tag: _md
   outfile_suffix: ".bam"
   program_executables:
+   - picard
    - sambamba
   type: recipe
 markduplicates_picardtools_markduplicates:
