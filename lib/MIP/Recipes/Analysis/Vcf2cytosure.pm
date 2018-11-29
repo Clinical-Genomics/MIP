@@ -319,6 +319,7 @@ sub analysis_vcf2cytosure {
         {
             coverage_file   => q{Na},
             FILEHANDLE      => $FILEHANDLE,
+	 sex => q{male},
             stderrfile_path => $stderrfile_path,
             vcf_infile_path => q{Na},
             version         => 1,
