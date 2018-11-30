@@ -182,12 +182,6 @@ salmon_quant:
   program_executables:
    - salmon
   type: recipe
-salmon_rna_lib_configuration:
-  associated_recipe:
-   - salmon_quant
-  data_type: SCALAR
-  default: ISF
-  type: recipe_argument
 salmon_quant_reference_genome:
   associated_recipe:
    - salmon_quant
