@@ -855,31 +855,11 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{sv_genmod_filter} => (
+        q{sv_frequency_filter} => (
             cmd_aliases   => [qw{ svcgmf }],
             documentation => q{Remove common structural variants from vcf},
             is            => q{rw},
             isa           => Bool,
-        )
-    );
-
-    option(
-        q{sv_genmod_filter_threshold} => (
-            cmd_aliases   => [qw{ svcgft }],
-            cmd_tags      => [q{Default: 0.10}],
-            documentation => q{Threshold for filtering structural variants},
-            is            => q{rw},
-            isa           => Num,
-        )
-    );
-
-    option(
-        q{sv_genmod_filter_1000g} => (
-            cmd_aliases   => [qw{ svcgfr }],
-            cmd_tags      => [q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz}],
-            documentation => q{Genmod annotate structural variants from 1000G reference},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 

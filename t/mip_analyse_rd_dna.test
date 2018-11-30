@@ -39,11 +39,14 @@ my $conda_path = catdir( dirname($Bin), qw{ t data modules miniconda} );
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data} );
 my $config_file = catfile( dirname($Bin), qw{ templates mip_rd_dna_config.yaml } );
 my $mip_path    = catfile( dirname($Bin), q{mip} );
+my $travis;
+my @travis_parameters = (qw{ --fqf_vcfanno_config }, catdir( dirname($Bin), qw{ t data references GRCh37_frequency_vcfanno_filter_config_travis-v1.0-.toml }) );
 
 ### User Options
 GetOptions(
 
     q{c|config_file:s} => \$config_file,
+	   q{t|travis} => \$travis,
 
     ## Display help text
     q{h|help} => sub {
@@ -112,6 +115,12 @@ my $cmds_ref = [
     ),
     qw{ --rio --dra --svv 0 --vb },
 ];
+
+
+## Add travis specific commands
+if ($travis) {
+  $cmds_ref = [@{$cmds_ref}, @travis_parameters];
+}
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
   run( command => $cmds_ref, verbose => $VERBOSE );

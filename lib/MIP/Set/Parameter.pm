@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -319,7 +319,7 @@ sub set_default_to_active_parameter {
       if ( exists $only_wgs{$parameter_name}
         && $consensus_analysis_type =~ / wgs /xsm );
 
-    ## Check all recipess that use parameter
+    ## Check all recipes that use parameter
   ASSOCIATED_RECIPE:
     foreach my $associated_recipe ( @{$associated_recipes_ref} ) {
 
@@ -356,6 +356,9 @@ sub set_default_to_active_parameter {
             return
               if ( exists $parameter_href->{$parameter_name}{mandatory}
                 && $parameter_href->{$parameter_name}{mandatory} eq q{no} );
+
+            next ASSOCIATED_RECIPE
+              if ( not $active_parameter_href->{$associated_recipe} );
 
             ## Mandatory parameter not supplied
             $log->fatal( q{Supply '-}

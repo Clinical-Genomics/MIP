@@ -775,26 +775,12 @@ sv_bcftools_view_filter:
   data_type: SCALAR
   default: 0
   type: recipe_argument
-sv_genmod_filter:
+sv_frequency_filter:
   associated_recipe:
    - sv_annotate
   data_type: SCALAR
   default: 0
   type: recipe_argument
-sv_genmod_filter_threshold:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  default: 0.10
-  type: recipe_argument
-sv_genmod_filter_1000g:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
-  exists_check: file
-  reference: reference_dir
-  type: path
 sv_svdb_query:
   associated_recipe:
    - sv_annotate

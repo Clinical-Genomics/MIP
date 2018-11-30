@@ -81,7 +81,7 @@ snpsift_dbnsfp_annotations:
   - phastCons100way_vertebrate
 sv_bcftools_view_filter: 1
 sv_genmod_annotate_regions: 1
-sv_genmod_filter: 1
+sv_frequency_filter: 1
 sv_genmod_models_case_type: cmms
 sv_rankvariant_binary_file: 1
 sv_svdb_query: 1

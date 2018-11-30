@@ -119,7 +119,7 @@ snpsift_dbnsfp_annotations:
 sv_bcftools_view_filter: 1
 sv_combinevariantcallsets_bcf_file: 1
 sv_genmod_annotate_regions: 1
-sv_genmod_filter: 1
+sv_frequency_filter: 1
 sv_genmod_models_case_type: cmms
 sv_svdb_merge_prioritize: manta,delly,cnvnator,tiddit
 sv_svdb_query: 1

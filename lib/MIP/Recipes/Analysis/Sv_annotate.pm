@@ -377,7 +377,7 @@ sub analysis_sv_annotate {
     }
 
     ## Remove common variants
-    if ( $active_parameter_href->{sv_genmod_filter} ) {
+    if ( $active_parameter_href->{sv_frequency_filter} ) {
 
         say {$FILEHANDLE} q{## Remove common variants};
         vcfanno(
