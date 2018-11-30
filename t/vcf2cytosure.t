@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.2;
 
 ## Constants
 Readonly my $COMMA         => q{,};
@@ -48,11 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -131,6 +127,10 @@ my %required_argument = (
           . $SPACE
           . catfile(qw{ path_to_tiddit_outfiles prefix.tab }),
     },
+    sex => {
+        input           => q{male},
+        expected_output => q{--sex male},
+    },
     vcf_infile_path => {
         input           => q{path_to_sample_SVs.vcf},
         expected_output => q{path_to_sample_SVs.vcf},
@@ -153,6 +153,10 @@ my %specific_argument = (
     outfile_path => {
         input           => q{path_to_vcf2cytosure_cgh_files},
         expected_output => q{--out path_to_vcf2cytosure_cgh_files},
+    },
+    sex => {
+        input           => q{male},
+        expected_output => q{--sex male},
     },
     variant_size => {
         input           => $VARIANT_SIZE,

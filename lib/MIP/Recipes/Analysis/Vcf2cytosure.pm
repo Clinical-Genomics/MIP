@@ -45,12 +45,12 @@ sub analysis_vcf2cytosure {
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $bin_size                => Bin size
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
@@ -140,7 +140,8 @@ sub analysis_vcf2cytosure {
 
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_parameters };
+    use MIP::Get::Parameter
+      qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_parameters };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
@@ -318,6 +319,7 @@ sub analysis_vcf2cytosure {
         {
             coverage_file   => q{Na},
             FILEHANDLE      => $FILEHANDLE,
+	 sex => q{male},
             stderrfile_path => $stderrfile_path,
             vcf_infile_path => q{Na},
             version         => 1,
@@ -391,11 +393,21 @@ sub analysis_vcf2cytosure {
         each @{ $active_parameter_href->{sample_ids} } )
     {
 
+        # Get parameter
+        my $sample_id_sex = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{sex},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
         vcf2cytosure_convert(
             {
                 coverage_file   => $vcf2cytosure_file_info{$sample_id}{in}{q{.tab}},
                 FILEHANDLE      => $FILEHANDLE,
                 outfile_path    => $outfile_path{$sample_id},
+                sex             => $sample_id_sex,
                 vcf_infile_path => $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}},
             }
         );

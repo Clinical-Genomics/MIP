@@ -71,6 +71,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - samtools: 1.6 -> 1.9-h8ee4bcc_1
 - svdb: 1.1.2 -> 1.3.0-py27h7eb728f_0
 - tiddit: 2.2.5 -> 2.3.1
+- vcf2cytosure: 0.3.0 -> 0.4.2
 - vcfanno: 0.1.0 -> 0.3.1-0
 - vep: 91 -> 94.4
 
