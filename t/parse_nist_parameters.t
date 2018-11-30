@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -73,6 +73,7 @@ my %active_parameter = (
     nist_id       => { sample_1 => q{NA12878}, },
     nist_versions => [qw{ 3.3.2 }],
     reference_dir => catdir( $Bin, qw{ data references } ),
+    rtg_vcfeval   => 1,
     sample_ids    => [qw{ sample_1 }],
 );
 

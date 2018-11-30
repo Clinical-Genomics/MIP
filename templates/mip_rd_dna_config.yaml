@@ -19,11 +19,13 @@ load_env:
     method: conda
   mip_travis_py3:  
     chanjo_sexcheck:
+    expansionhunter:
     genmod:
     installation: epy3
     method: conda
     multiqc_ar:
     rankvariant:
+    stranger:
     sv_rankvariant:
     variant_integrity_ar:
   mip_travis_delly:

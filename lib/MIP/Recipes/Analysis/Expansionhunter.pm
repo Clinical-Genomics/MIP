@@ -4,6 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -146,6 +147,7 @@ sub analysis_expansionhunter {
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_rename_vcf_samples bcftools_view };
     use MIP::Program::Variantcalling::Expansionhunter qw{ expansionhunter };
+    use MIP::Program::Variantcalling::Stranger qw{ stranger };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
     use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
@@ -395,13 +397,40 @@ sub analysis_expansionhunter {
     );
     say {$FILEHANDLE} $NEWLINE;
 
+    @program_source_commands = get_package_source_env_cmds(
+        {
+            active_parameter_href => $active_parameter_href,
+            package_name          => q{stranger},
+        }
+    );
+
+    write_source_environment_command(
+        {
+            FILEHANDLE                      => $FILEHANDLE,
+            source_environment_commands_ref => \@program_source_commands,
+        }
+    );
+    say {$FILEHANDLE} q{## Stranger annotation};
+
+    my $stranger_outfile_path =
+      $temp_outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt_ann} . $temp_file_suffix;
+    stranger(
+        {
+            FILEHANDLE      => $FILEHANDLE,
+            infile_path     => $vt_temp_outfile_path,
+            stdoutfile_path => $stranger_outfile_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
     say {$FILEHANDLE} q{## Adding sample id instead of file prefix};
+
     bcftools_rename_vcf_samples(
         {
             FILEHANDLE          => $FILEHANDLE,
             index               => 1,
             index_type          => q{csi},
-            infile              => $vt_temp_outfile_path,
+            infile              => $stranger_outfile_path,
             outfile_path_prefix => $outfile_path_prefix,
             output_type         => q{z},
             temp_directory      => $temp_directory,

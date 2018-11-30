@@ -43,9 +43,6 @@ emip:
   shell:
     bedtools:
       version: 2.25.0
-    expansionhunter:
-      conda_dependency:
-      version: 2.5.5
     mip_scripts:
       version: Your current MIP version
     picard:
@@ -138,8 +135,12 @@ epy3:
     chanjo: 4.2.0
     genmod: 3.7.3
     multiqc: 1.6
+    stranger: 0.3
     variant_integrity: 0.0.4
   shell:
+    expansionhunter:
+      conda_dependency:
+      version: 2.5.5
     sambamba: 0.6.1
 
 ## Tiddit env spec
@@ -331,6 +332,9 @@ program_test_command:
   snpsift:
     execution:
     path: 'SnpSift'
+  stranger:
+    execution: 'stranger --version'
+    path: 'stranger'
   svdb:
     execution: 'svdb'
     path: 'svdb'

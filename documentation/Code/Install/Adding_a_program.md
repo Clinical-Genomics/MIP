@@ -28,8 +28,8 @@ In `lib/MIP/Cli/Mip/Install/[PIPELINE]`:
 In `t/data/modules/miniconda/envs/`:
 ```
 $ mkdir -p mip_travis_[ENV_NAME]
-$ touch bin/[PROGRAM_EXECUTABLE]
-$ chmod a+x bin/[PROGRAM_EXECUTABLE]
+$ touch mip_travis_[ENV_NAME]/bin/[PROGRAM_EXECUTABLE]
+$ chmod a+x mip_travis_[ENV_NAME]/bin/[PROGRAM_EXECUTABLE]
 ```
 ## Add installation tests
 Add a path and execution test to `definitions/install_[PIPELINE]_parameters.yaml`.

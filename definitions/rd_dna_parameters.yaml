@@ -679,6 +679,7 @@ expansionhunter:
   outfile_suffix: ".vcf.gz"
   program_executables:
    - ExpansionHunter
+   - stranger
   recipe_type: repeats_variant_callers
   type: recipe
 expansionhunter_repeat_specs_dir:

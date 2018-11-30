@@ -210,6 +210,7 @@ sub _build_usage {
                 snpeff            => Optional [Str],
                 snpeff            => Optional [Str],
                 snpsift           => Optional [Str],
+                stranger          => Optional [Str],
                 svdb              => Optional [Str],
                 tiddit            => Optional [Str],
                 variant_integrity => Optional [Str],
@@ -272,7 +273,7 @@ sub _build_usage {
                           freebayes gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
-                          scikit-learn snpeff snpsift svdb tiddit
+                          scikit-learn snpeff snpsift stranger svdb tiddit
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),
@@ -306,7 +307,7 @@ sub _build_usage {
                           freebayes gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
-                          scikit-learn snpeff snpsift svdb tiddit
+                          scikit-learn snpeff snpsift stranger svdb tiddit
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),

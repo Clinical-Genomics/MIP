@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.09;
+our $VERSION = 1.010;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
