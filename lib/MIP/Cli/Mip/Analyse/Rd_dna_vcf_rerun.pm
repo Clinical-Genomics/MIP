@@ -658,7 +658,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     option(
         q{fqf_bcftools_filter_threshold} => (
             cmd_aliases   => [qw{ fqfgft }],
-            cmd_flag      => q{freq_genmod_fil_trh},
+            cmd_flag      => q{freq_bcftools_fil_trh},
             cmd_tags      => [q{Default: 0.10}],
             documentation => q{Threshold for filtering variants},
             is            => q{rw},
