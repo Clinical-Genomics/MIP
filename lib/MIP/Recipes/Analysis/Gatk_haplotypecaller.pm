@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.010;
+    our $VERSION = 1.011;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
@@ -46,12 +46,12 @@ sub analysis_gatk_haplotypecaller {
 ## Function : Gatk haplotypecaller analysis recipe
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -382,9 +382,12 @@ sub analysis_gatk_haplotypecaller {
 
     ## GATK GatherVcfsCloud
     my @contig_vcf_paths;
+  CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs} } ) {
+
         push @contig_vcf_paths, $temp_outfile_path{$contig};
     }
+
     gatk_gathervcfscloud(
         {
             FILEHANDLE           => $FILEHANDLE,
@@ -418,6 +421,7 @@ sub analysis_gatk_haplotypecaller {
         ## Collect QC metadata info for later use
         add_recipe_outfile_to_sample_info(
             {
+                infile           => basename($concat_vcf_path),
                 path             => $concat_vcf_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,

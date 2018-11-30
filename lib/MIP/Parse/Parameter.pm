@@ -173,6 +173,10 @@ sub parse_nist_parameters {
     };
     use MIP::Set::Parameter qw{ set_nist_file_name_path };
 
+    return
+      if (  not $active_parameter_href->{rtg_vcfeval}
+        and not $active_parameter_href->{evaluation} );
+
     # Unpack
     my %nist_id         = %{ $active_parameter_href->{nist_id} };
     my @nist_parameters = (qw{ nist_call_set_vcf nist_call_set_bed });

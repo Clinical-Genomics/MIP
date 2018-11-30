@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
@@ -44,12 +44,12 @@ sub analysis_sv_combinevariantcallsets {
 ## Function : CombineVariants to combine all structural variants call from different callers
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory {REF}
@@ -366,7 +366,7 @@ sub analysis_sv_combinevariantcallsets {
         add_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
-                recipe_name      => q{svdb},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
