@@ -127,6 +127,7 @@ epeddy:
 # Python 3 environment spec
 epy3:
   conda:
+    bcftools: 1.9=h4da6232_0
     pip:
     python: 3.6
     sambamba: 0.6.8=h682856c_0

@@ -954,14 +954,23 @@ sub _get_default_repeat_specs_dir_path {
 
 ## Function : Return the path to the repeat specs directory in the Expansionhunter directory
 ## Returns  : $repeat_specs_dir_path
-## Arguments: $reference_genome_path => Path to the reference genome used
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $reference_genome_path => Path to the reference genome used
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $active_parameter_href;
     my $reference_genome_path;
 
     my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
         reference_genome_path => {
             defined     => 1,
             required    => 1,
@@ -976,12 +985,23 @@ sub _get_default_repeat_specs_dir_path {
     use File::Basename qw{ fileparse };
     use File::Find::Rule;
     use IPC::Cmd qw{ can_run };
+    use MIP::Get::Parameter qw{ get_dynamic_conda_path };
 
     ## Path to set
     my $repeat_specs_dir_path;
 
-    ## Get path to binary
-    my $expansionhunter_bin_path = can_run(q{ExpansionHunter});
+    my $binary      = q{ExpansionHunter};
+    my $recipe_name = q{expansionhunter};
+
+    ## Search for binary in PATH in any MIP conda env defined by config
+    ## or conda base
+    my $expansionhunter_bin_path = get_dynamic_conda_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            bin_file              => $binary,
+            environment_key       => $recipe_name,
+        }
+    );
 
     ## Return if path not found,
     ## MIP requires a defined variable in order to flag that it can't find the dir
@@ -994,7 +1014,7 @@ sub _get_default_repeat_specs_dir_path {
 
     ## Get the path to the repeat specs dirs
     my @expansionhunter_dirs = File::Spec->splitdir($expansionhunter_bin_path);
-    splice @expansionhunter_dirs, $MINUS_TWO;
+    splice @expansionhunter_dirs, $MINUS_ONE;
     my $parent_repeat_specs_dir_path =
       catdir( @expansionhunter_dirs, qw{ data repeat-specs } );
 
@@ -1368,6 +1388,7 @@ sub _set_expansionhunter_repeat_specs_dir {
     $active_parameter_href->{expansionhunter_repeat_specs_dir} =
       _get_default_repeat_specs_dir_path(
         {
+            active_parameter_href => $active_parameter_href,
             reference_genome_path => $active_parameter_href->{human_genome_reference},
         }
       );
