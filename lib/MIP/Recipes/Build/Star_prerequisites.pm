@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_star_prerequisites };
@@ -152,8 +152,7 @@ sub build_star_prerequisites {
     use MIP::Get::Parameter qw{ get_recipe_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Star qw{ star_genome_generate };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
@@ -163,7 +162,7 @@ sub build_star_prerequisites {
     Readonly my $NUMBER_OF_CORES   => $active_parameter_href->{max_cores_per_node};
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
     Readonly my $PROCESSING_TIME   => 3;
-    Readonly my $READ_LENGTH       => 150;
+    Readonly my $READ_LENGTH       => 100;
 
     ## Set recipe mode
     my $recipe_mode = $active_parameter_href->{$recipe_name};

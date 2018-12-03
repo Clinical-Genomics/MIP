@@ -12,6 +12,8 @@ CHAIN_ALL:
    - CHAIN_MAIN:
       - star_aln
       - picardtools_mergesamfiles
+      - CHAIN_STRINGTIE:
+         - stringtie_ar
       - markduplicates
       - CHAIN_RSEQC:
          - rseqc
