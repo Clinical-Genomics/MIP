@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rio };
@@ -152,7 +152,8 @@ sub analysis_markduplicates {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_flagstat sambamba_markdup };
-    use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
+    use MIP::Program::Alignment::Picardtools
+      qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record
@@ -432,8 +433,27 @@ sub analysis_markduplicates {
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
+    ## Gather bam files in contig order
+    my @gather_infile_paths =
+      map { $temp_outfile_path{$_} } @{ $file_info_href->{contigs} };
+    picardtools_gatherbamfiles(
+        {
+            create_index     => q{true},
+            FILEHANDLE       => $FILEHANDLE,
+            infile_paths_ref => \@gather_infile_paths,
+            java_jar =>
+              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx4g},
+            outfile_path         => $temp_file_path_prefix . $outfile_suffix,
+            referencefile_path   => $referencefile_path,
+            temp_directory       => $temp_directory,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
     ## Copies file from temporary directory. Per contig
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
+    say {$FILEHANDLE} q{## Copy contig files from temporary directory};
     ($xargs_file_counter) = xargs_migrate_contig_files(
         {
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
@@ -449,6 +469,19 @@ sub analysis_markduplicates {
             xargs_file_counter => $xargs_file_counter,
         }
     );
+
+    ## Copies file from temporary directory.
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
+    migrate_file(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $temp_file_path_prefix
+              . substr( $outfile_suffix, 0, 2 )
+              . $ASTERISK,
+            outfile_path => $outdir_path_prefix,
+        }
+    );
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Close FILEHANDLES
     close $XARGSFILEHANDLE;
