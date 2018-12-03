@@ -7,7 +7,8 @@ conda_path:
    - mip
   data_type: SCALAR
   mandatory: no
-  type: mip
+  type: path
+  update_path: absolute_path
 bash_set_errexit:
   associated_recipe:
    - mip
