@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -792,6 +792,28 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             documentation => q{Format and fields of sacct output},
             is            => q{rw},
             isa           => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{stringtie} => (
+            cmd_aliases   => [qw{ strg }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Assemble alignments using StringTie},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{library_type} => (
+            cmd_aliases   => [qw{ lt }],
+            cmd_flag      => q{library_type},
+            cmd_tags      => [q{Default: reverse_stranded}],
+            documentation => q{Strandedness of library},
+            is            => q{rw},
+            isa =>
+              ArrayRef [ enum( [qw{ unstranded forward_stranded reverse_stranded }] ), ],
         )
     );
 
