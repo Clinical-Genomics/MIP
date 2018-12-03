@@ -137,7 +137,7 @@ sub stringtie {
     if ( $library_type and $library_type eq q{forward_stranded} ) {
         push @commands, q{--fr};
     }
-    elsif ( $library_type and $library_type eq q{reverese_stranded} ) {
+    elsif ( $library_type and $library_type eq q{reverse_stranded} ) {
         push @commands, q{--rf};
     }
 
