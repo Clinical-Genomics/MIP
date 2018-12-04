@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,6 +62,18 @@ diag(   q{Test check_vep_custom_annotation from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 my $log = test_log();
+
+## Given a undefined vep_custom_annotation
+my %vep_custom_ann_undef;
+my $is_not_ok = check_vep_custom_annotation(
+    {
+        log                 => $log,
+        vep_custom_ann_href => \%vep_custom_ann_undef,
+    }
+);
+
+## Then there is nothing to check - return false
+is( $is_not_ok, 0, q{Nothing to check} );
 
 ## Given a valid annotation
 my %vep_custom_ann = (
@@ -109,6 +121,7 @@ my %vep_custom_ann_not_valid_option = (
         annotation_type          => q{not_an_annotation_type},
         force_report_coordinates => q{not_a_boolean},
         file_type                => q{not_allowed_file_type},
+        key                      => q{genomic_superdups_frac_match},
     },
 );
 trap {
@@ -121,8 +134,12 @@ trap {
 };
 
 ## Then exit and throw FATAL log message
-is( $trap->leaveby, q{die}, q{Exit if not valid options for annotation } );
-like( $trap->die, qr/Could\s+not\s+parse/xms, q{Not valid options for annotation} );
+ok( $trap->exit, q{Exit if not valid options value for annotation } );
+like(
+    $trap->stderr,
+    qr/has\s+a\s+not\s+allowed\s+option/xms,
+    q{Not valid options for annotation}
+);
 
 ## Given valid options except path option
 my %vep_custom_ann_bad_path = (
@@ -146,5 +163,31 @@ trap {
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if path does not exist for annotation } );
 like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message if no path} );
+
+## Given a missing key option
+my %vep_custom_ann_bad_key = (
+    genomic_superdups_frac_match => {
+        annotation_type          => q{overlap},
+        force_report_coordinates => 0,
+        file_type                => q{bed},
+        path                     => catfile( $Bin, qw{ not a path } ),
+    },
+);
+trap {
+    check_vep_custom_annotation(
+        {
+            log                 => $log,
+            vep_custom_ann_href => \%vep_custom_ann_bad_key,
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if key does not exist for annotation } );
+like(
+    $trap->stderr,
+    qr/lacks\s+required\s+option/xms,
+    q{Throw fatal log message if no key for annotation}
+);
 
 done_testing();

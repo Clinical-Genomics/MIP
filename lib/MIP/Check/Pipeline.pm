@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_rd_dna check_rd_rna check_rd_dna_vcf_rerun };
@@ -211,15 +211,12 @@ sub check_rd_dna {
     );
 
     ## Check VEP custom annotations options
-    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
-
-        check_vep_custom_annotation(
-            {
-                log                 => $log,
-                vep_custom_ann_href => $active_parameter_href->{vep_custom_annotation},
-            }
-        );
-    }
+    check_vep_custom_annotation(
+        {
+            log                 => $log,
+            vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
+        }
+    );
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
