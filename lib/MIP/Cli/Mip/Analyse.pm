@@ -2,6 +2,9 @@ package MIP::Cli::Mip::Analyse;
 
 use 5.026;
 use Carp;
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -15,7 +18,13 @@ use MooseX::App::Command;
 use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
-our $VERSION = 1.04;
+## MIPs lib/
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Cli::Utils qw{ run }
+  ;    # MooseX::App required sub. Called internally by MooseX::App
+
+# Set the version for version checking
+our $VERSION = 1.05;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -28,12 +37,12 @@ command_usage(q{analyse <pipeline>});
 ## Define, check and get Cli supplied parameters
 _build_usage();
 
-sub run {
-    my ($arg_href) = @_;
+#sub run {
+#    my ($arg_href) = @_;
 
-    say {*STDERR} q{Please choose an subcommand to start the analysis};
-    return;
-}
+#    say {*STDERR} q{Please choose an subcommand to start the analysis};
+#    return;
+#}
 
 sub _build_usage {
 

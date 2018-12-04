@@ -2,6 +2,9 @@ package MIP::Cli::Mip::Install;
 
 use 5.026;
 use Carp;
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -14,7 +17,12 @@ use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 
-our $VERSION = 1.02;
+## MIPs lib/
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Cli::Utils qw{ run }
+  ;    # MooseX::App required sub. Called internally by MooseX::App
+
+our $VERSION = 1.03;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -26,14 +34,6 @@ command_usage(q{install <pipeline>});
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
-
-sub run {
-    my ($arg_href) = @_;
-
-    say {*STDERR}
-      q{Please choose a pipeline to start generation of the installation script};
-    return;
-}
 
 sub _build_usage {
 
