@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.011;
+    our $VERSION = 1.012;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
@@ -280,6 +280,7 @@ sub analysis_gatk_haplotypecaller {
             fam_file_path         => $fam_file_path,
             FILEHANDLE            => $FILEHANDLE,
             parameter_href        => $parameter_href,
+            log                   => $log,
             sample_info_href      => $sample_info_href,
         }
     );

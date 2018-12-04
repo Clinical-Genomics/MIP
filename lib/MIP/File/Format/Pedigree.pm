@@ -26,7 +26,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -52,6 +52,7 @@ sub create_fam_file {
 ##          : $fam_file_path         => Case file path
 ##          : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
 ##          : $include_header        => Wether to include header ("1") or not ("0")
+##          : $log                   => Log object
 ##          : $parameter_href        => Hash with paremters from yaml file {REF}
 ##          : $sample_info_href      => Info on samples and case hash {REF}
 
@@ -61,6 +62,7 @@ sub create_fam_file {
     my $active_parameter_href;
     my $fam_file_path;
     my $FILEHANDLE;
+    my $log;
     my $parameter_href;
     my $sample_info_href;
 
@@ -103,6 +105,11 @@ sub create_fam_file {
             store       => \$include_header,
             strict_type => 1,
         },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
         parameter_href => {
             default     => {},
             store       => \$parameter_href,
@@ -118,9 +125,6 @@ sub create_fam_file {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my @fam_headers = ( q{#family_id}, qw{ sample_id father mother sex phenotype } );
 
@@ -491,6 +495,7 @@ sub parse_yaml_pedigree_file {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $file_path             => Pedigree file path
+##          : $log                   => Log object
 ##          : $parameter_href        => Parameter hash {REF}
 ##          : $pedigree_href         => Pedigree hash {REF}
 ##          : $sample_info_href      => Info on samples and case hash {REF}
@@ -500,6 +505,7 @@ sub parse_yaml_pedigree_file {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_path;
+    my $log;
     my $parameter_href;
     my $pedigree_href;
     my $sample_info_href;
@@ -517,6 +523,11 @@ sub parse_yaml_pedigree_file {
             required    => 1,
             store       => \$file_path,
             strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
         },
         parameter_href => {
             default     => {},
@@ -548,9 +559,6 @@ sub parse_yaml_pedigree_file {
     use MIP::Get::Parameter qw{ get_capture_kit get_user_supplied_info };
     use MIP::Set::Pedigree
       qw{ set_active_parameter_pedigree_keys set_pedigree_capture_kit_info set_pedigree_case_info set_pedigree_phenotype_info set_pedigree_sample_info set_pedigree_sex_info };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Use to collect which sample_ids have used a certain capture_kit
     my $case_id = $pedigree_href->{case};
@@ -683,7 +691,7 @@ sub parse_yaml_pedigree_file {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub reload_previous_pedigree_info {

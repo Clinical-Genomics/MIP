@@ -285,6 +285,7 @@ sub mip_analyse {
             {
                 active_parameter_href => \%active_parameter,
                 file_path             => $active_parameter{pedigree_file},
+                log                   => $log,
                 parameter_href        => \%parameter,
                 pedigree_href         => \%pedigree,
                 sample_info_href      => \%sample_info,
@@ -678,14 +679,15 @@ sub mip_analyse {
 ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
-            parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
-            sample_info_href      => \%sample_info,
             execution_mode        => q{system},
             fam_file_path         => catfile(
                 $active_parameter{outdata_dir}, $active_parameter{case_id},
-                $active_parameter{case_id} . '.fam'
+                $active_parameter{case_id} . $DOT . q{fam}
             ),
+            log              => $log,
+            parameter_href   => \%parameter,
+            sample_info_href => \%sample_info,
         }
     );
 

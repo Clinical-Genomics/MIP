@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -133,6 +133,7 @@ sub analysis_gatk_variantrecalibration_wes {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Delete::List qw{ delete_contig_elements };
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
@@ -245,6 +246,7 @@ sub analysis_gatk_variantrecalibration_wes {
             execution_mode        => q{system},
             fam_file_path         => $fam_file_path,
             FILEHANDLE            => $FILEHANDLE,
+            log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
         }
@@ -698,6 +700,7 @@ sub analysis_gatk_variantrecalibration_wgs {
             execution_mode        => q{system},
             fam_file_path         => $fam_file_path,
             FILEHANDLE            => $FILEHANDLE,
+            log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
         }

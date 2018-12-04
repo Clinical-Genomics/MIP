@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -40,12 +40,12 @@ sub analysis_gatk_genotypegvcfs {
 ## Function : GATK GenoTypeGVCFs.
 ## Returns  :
 ## Arguments: $active_parameter_href    => Active parameters for this analysis hash {REF}
-##          : $case_id                => Family id
+##          : $case_id                  => Family id
 ##          : $file_info_href           => File info hash {REF}
 ##          : $infile_lane_prefix_href  => Infile(s) without the ".ending"
 ##          : $job_id_href              => Job id hash {REF}
 ##          : $parameter_href           => Parameter hash {REF}
-##          : $recipe_name             => Program name
+##          : $recipe_name              => Program name
 ##          : $sample_info_href         => Info on samples and case hash {REF}
 ##          : $temp_directory           => Temporary directory
 
@@ -194,6 +194,7 @@ sub analysis_gatk_genotypegvcfs {
             execution_mode        => q{system},
             fam_file_path         => $fam_file_path,
             FILEHANDLE            => $FILEHANDLE,
+            log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
         }

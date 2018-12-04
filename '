@@ -15,9 +15,9 @@ max_cores_per_node: 16
 picardtools_path: a_test_path
 project_id: wamdu
 sample_ids:
-  - ADM1059A1
-  - ADM1059A2
-  - ADM1059A3
+  - sample-1
+  - sample-2
+  - sample-3
 slurm_quality_of_service: low
 load_env:
   test:
