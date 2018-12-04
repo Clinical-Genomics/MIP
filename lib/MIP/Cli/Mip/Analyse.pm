@@ -216,7 +216,7 @@ sub _build_usage {
     );
 
     option(
-        q{print_recipes} => (
+        q{print_recipe} => (
             cmd_aliases   => [qw{ pr }],
             documentation => q{Print all recipes that are supported},
             is            => q{rw},

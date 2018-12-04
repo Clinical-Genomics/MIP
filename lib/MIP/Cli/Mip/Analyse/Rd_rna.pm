@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -80,17 +80,15 @@ sub run {
         );
     }
 
-    ## Print recipes and exit
-    if ( $active_parameter{print_recipes} ) {
-
-        print_recipe(
-            {
-                define_parameters_files_ref => \@definition_files,
-                parameter_href              => \%parameter,
-                print_recipe_mode           => $active_parameter{print_recipe_mode},
-            }
-        );
-    }
+    ## Print recipes if requested and exit
+    print_recipe(
+        {
+            define_parameters_files_ref => \@definition_files,
+            parameter_href              => \%parameter,
+            print_recipe                => $active_parameter{print_recipe},
+            print_recipe_mode           => $active_parameter{print_recipe_mode},
+        }
+    );
 
     my %dependency_tree = load_yaml(
         {
@@ -98,7 +96,7 @@ sub run {
         }
     );
 
-    ## Sets chain id to parameters hash from the dependency tree
+## Sets chain id to parameters hash from the dependency tree
     get_dependency_tree_chain(
         {
             dependency_tree_href => \%dependency_tree,
@@ -106,7 +104,7 @@ sub run {
         }
     );
 
-    ## Order recipes - Parsed from initiation file
+## Order recipes - Parsed from initiation file
     get_dependency_tree_order(
         {
             dependency_tree_href => \%dependency_tree,
@@ -114,9 +112,9 @@ sub run {
         }
     );
 
-    ### To write parameters and their values to log in logical order
-    ### Actual order of parameters in definition parameters file(s) does not matter
-    ## Adds the order of first level keys from yaml files to array
+### To write parameters and their values to log in logical order
+### Actual order of parameters in definition parameters file(s) does not matter
+## Adds the order of first level keys from yaml files to array
     my @order_parameters;
     foreach my $define_parameters_file (@definition_files) {
 
@@ -128,7 +126,7 @@ sub run {
           );
     }
 
-    ## File info hash
+## File info hash
     my %file_info = (
 
         fusion_filter_reference_genome      => [qw{ _fusion_filter_genome_dir }],
