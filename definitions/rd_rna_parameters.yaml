@@ -36,6 +36,7 @@ transcript_annotation:
    - star_aln
    - star_fusion
    - stringtie_ar
+   - gffcompare_ar
   data_type: SCALAR
   default: GRCh37_gencode_annotation_reformat_-v29-.gtf
   exists_check: file

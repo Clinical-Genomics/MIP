@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Gffcompare;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -133,7 +134,7 @@ sub analysis_gffcompare {
             strict_type => 1,
         },
         xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             default     => 0,
             store       => \$xargs_file_counter,
             strict_type => 1,
@@ -177,13 +178,13 @@ sub analysis_gffcompare {
     ## GffCompare can take multiple inputs. Add input gtfs as necessary
     my @infile_paths = ($infile_path);
 
-    my %rec_atr = get_recipe_attributes(
+    my %recipe_attribute = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
         }
     );
-    my $job_id_chain        = $rec_atr{chain};
+    my $job_id_chain        = $recipe_attribute{chain};
     my $recipe_mode         = $active_parameter_href->{$recipe_name};
     my $annotationfile_path = $active_parameter_href->{transcript_annotation};
     my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
