@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Stringtie;
+package MIP::Recipes::Analysis::Gffcompare;
 
 use 5.026;
 use Carp;
@@ -22,10 +22,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_stringtie };
+    our @EXPORT_OK = qw{ analysis_gffcompare };
 
 }
 
@@ -35,9 +35,9 @@ Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
 
-sub analysis_stringtie {
+sub analysis_gffcompare {
 
-## Function : Assemble RNA-seq alignments using StringTie.
+## Function : Compare assembled gtf files to a refrence using GffCompare.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -145,10 +145,10 @@ sub analysis_stringtie {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
-    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Stringtie qw{ stringtie };
+    use MIP::Program::Variantcalling::Gffcompare qw{ gffcompare };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
 
@@ -169,13 +169,14 @@ sub analysis_stringtie {
             temp_directory => $temp_directory,
         }
     );
-    my $infile_name_prefix      = $io{in}{file_name_prefix};
-    my $infile_path_prefix      = $io{in}{file_path_prefix};
-    my $infile_suffix           = $io{in}{file_suffix};
-    my $infile_name             = $infile_name_prefix . $infile_suffix;
-    my $infile_path             = $infile_path_prefix . $infile_suffix;
-    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_name        = $infile_name_prefix . $infile_suffix;
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
+
+    ## GffCompare can take multiple inputs. Add input gtfs as necessary
+    my @infile_paths = ($infile_path);
 
     my %recipe_attribute = get_recipe_attributes(
         {
@@ -210,10 +211,8 @@ sub analysis_stringtie {
             }
         )
     );
-    my $outdir_path         = $io{out}{dir_path};
     my $outfile_path        = ${ $io{out}{file_paths} }[0];
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -238,33 +237,31 @@ sub analysis_stringtie {
 
     ### SHELL:
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy bam file(s) to temporary directory};
-    migrate_file(
+    ## GFFcompare
+    say {$FILEHANDLE} q{## GffCompare};
+    gffcompare(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $infile_path_prefix
-              . substr( $infile_suffix, 0, 2 )
-              . $ASTERISK,
-            outfile_path => $temp_directory,
+            FILEHANDLE           => $FILEHANDLE,
+            genome_sequence_path => $active_parameter_href->{human_genome_reference},
+            gtf_reference_path   => $active_parameter_href->{transcript_annotation},
+            ignore_non_overlapping_ref => 1,
+            infile_paths_ref           => \@infile_paths,
+            outfile_path_prefix        => $outfile_path_prefix,
         }
     );
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
+    say {$FILEHANDLE} $NEWLINE;
 
-    ## StringTie
-    say {$FILEHANDLE} q{## StringTie};
-    stringtie(
+    ## Rename main output file
+    say {$FILEHANDLE} q{## Rename main GTF output};
+    my $gff_output_path = $outfile_path_prefix . $DOT . q{annotated.gtf};
+    if ( scalar @infile_paths > 1 ) {
+        $gff_output_path = $outfile_path_prefix . $DOT . q{combined.gtf};
+    }
+    gnu_mv(
         {
-            cov_ref_transcripts_outfile_path => $outfile_path_prefix
-              . q{_cov_refs}
-              . $outfile_suffix,
-            FILEHANDLE                  => $FILEHANDLE,
-            gene_abundance_outfile_path => $outfile_path_prefix . q{_gene_abound.txt},
-            gtf_reference_path => $active_parameter_href->{transcript_annotation},
-            infile_path        => $temp_infile_path,
-            library_type       => $active_parameter_href->{library_type},
-            outfile_path       => $outfile_path,
-            threads            => $core_number,
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => $gff_output_path,
+            outfile_path => $outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -288,7 +285,7 @@ sub analysis_stringtie {
         submit_recipe(
             {
                 case_id                 => $case_id,
-                dependency_method       => q{sample_to_sample},
+                dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
