@@ -747,15 +747,12 @@ sub check_rd_dna_vcf_rerun {
     );
 
     ## Check VEP custom annotations options
-    if ( exists $active_parameter_href->{vep_custom_annotation} ) {
-
-        check_vep_custom_annotation(
-            {
-                log                 => $log,
-                vep_custom_ann_href => $active_parameter_href->{vep_custom_annotation},
-            }
-        );
-    }
+    check_vep_custom_annotation(
+        {
+            log                 => $log,
+            vep_custom_ann_href => \%{ $active_parameter_href->{vep_custom_annotation} },
+        }
+    );
 
     check_snpsift_keys(
         {
