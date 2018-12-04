@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -489,16 +489,18 @@ sub get_vcf_parser_analysis_suffix {
 
 sub print_recipe {
 
-## Function : Print all supported recipes in '-prm' mode and then exit
+## Function : Print all supported recipes in '-prm' mode if requested and then exit
 ## Returns  :
 ## Arguments: $define_parameters_files_ref => MIPs define parameters file
 ##          : $parameter_href              => Parameter hash {REF}
+##          : $print_recipe                => Print recipes switch
 ##          : $print_recipe_mode           => Mode to run recipes in
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
+    my $print_recipe;
 
     ## Default(s)
     my $define_parameters_files_ref;
@@ -517,6 +519,12 @@ sub print_recipe {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        print_recipe => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$print_recipe,
+            strict_type => 1,
+        },
         print_recipe_mode => {
             allow => [ undef, 0, 1, 2 ],
             default => $arg_href->{print_recipe_mode} //= 2,
@@ -529,6 +537,9 @@ sub print_recipe {
 
     use MIP::File::Format::Yaml qw{ order_parameter_names };
     use MIP::Set::Parameter qw{ set_cache };
+
+    ## Do not print
+    return if ( not $print_recipe );
 
     set_cache(
         {

@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -82,17 +82,15 @@ sub run {
         );
     }
 
-    ## Print recipes and exit
-    if ( $active_parameter{print_recipes} ) {
-
-        print_recipe(
-            {
-                define_parameters_files_ref => \@definition_files,
-                parameter_href              => \%parameter,
-                print_recipe_mode           => $active_parameter{print_recipe_mode},
-            }
-        );
-    }
+    ## Print recipes if requested and exit
+    print_recipe(
+        {
+            define_parameters_files_ref => \@definition_files,
+            parameter_href              => \%parameter,
+            print_recipe                => $active_parameter{print_recipe},
+            print_recipe_mode           => $active_parameter{print_recipe_mode},
+        }
+    );
 
     my %dependency_tree = load_yaml(
         {

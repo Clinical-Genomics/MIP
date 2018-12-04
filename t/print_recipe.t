@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,16 +62,31 @@ diag(   q{Test print_recipe from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a recipe
+## Given the option to not print recipes
 my %parameter = ( bwa_mem => { type => q{recipe} } );
+my $return = print_recipe(
+    {
+        define_parameters_files_ref =>
+          [ catfile( $Bin, qw{ data test_data define_parameters.yaml } ) ],
+        parameter_href    => \%parameter,
+        print_recipe_mode => 1,
+    }
+);
+
+## Do not print
+is( $return, undef, q{Do not print} );
+
+## Given a recipe and to print
+my %active_parameter = ( print_recipe => 1 );
 
 trap {
     print_recipe(
         {
-            parameter_href    => \%parameter,
-            print_recipe_mode => 1,
             define_parameters_files_ref =>
               [ catfile( $Bin, qw{ data test_data define_parameters.yaml } ) ],
+            parameter_href    => \%parameter,
+            print_recipe      => $active_parameter{print_recipe},
+            print_recipe_mode => 1,
         }
       )
 };

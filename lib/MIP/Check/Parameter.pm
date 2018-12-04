@@ -1776,7 +1776,9 @@ sub check_vep_custom_annotation {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Path qw { check_filesystem_objects_and_index_existance };
-    use Test::Trap;
+
+    ## Nothing to check
+    return 0 if ( not keys %{$vep_custom_ann_href} );
 
   ANN:
     while ( my ( $ann, $value_href ) = each %{$vep_custom_ann_href} ) {
@@ -1784,25 +1786,14 @@ sub check_vep_custom_annotation {
         my $err_msg = $ann . q{ Is not a hash ref for vep_custom_annotation};
         croak($err_msg) if ( ref $value_href ne q{HASH} );
 
-        ## Check the VEP custom annotations options are defined and with allowed values
-        trap {
-            _check_vep_custom_annotation_options(
-                {
-                    annotation_type          => $value_href->{annotation_type},
-                    file_type                => $value_href->{file_type},
-                    force_report_coordinates => $value_href->{force_report_coordinates},
-                    key                      => $value_href->{key},
-                }
-              )
-        };
-
-        if ( $trap->stderr ) {
-
-            $log->fatal(
-q{Malformed option for 'vep_custom_annotation' - please check your supplied options }
-            );
-            croak( $trap->stderr, $trap->die );
-        }
+        ## Check the VEP custom annotations options and that they have allowed values
+        _check_vep_custom_annotation_options(
+            {
+                annotation             => $ann,
+                custom_ann_option_href => $value_href,
+                log                    => $log,
+            }
+        );
 
         ## Check path object exists
         check_filesystem_objects_and_index_existance(
@@ -2224,40 +2215,89 @@ sub _check_vep_custom_annotation_options {
 
 ## Function : Check the VEP custom annotations options are defined and with allowed values
 ## Returns  :
-## Arguments: $annotation_type          => Type of annotation
-##          : $file_type                => Type of file
-##          : $force_report_coordinates => Force report coordinates
-##          : $key                      => Vcf INFO key
+## Arguments: $annotation             => Annotation
+##          : $custom_ann_option_href => Custom annotation options
+##          : $log                    => Log object
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $annotation_type;
-    my $file_type;
-    my $force_report_coordinates;
-    my $key;
+    my $annotation;
+    my $custom_ann_option_href;
+    my $log;
 
     my $tmpl = {
-        annotation_type => {
-            allow => [ undef, qw{ exact overlap } ],
-            store => \$annotation_type,
+        annotation => {
+            defined     => 1,
+            required    => 1,
+            store       => \$annotation,
+            strict_type => 1,
         },
-        file_type => {
-            allow => [ undef, qw{ bed gff gtf vcf bigwig } ],
-            store => \$file_type,
+        custom_ann_option_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$custom_ann_option_href,
+            strict_type => 1,
         },
-        force_report_coordinates => {
-            allow => [ undef, 0, 1 ],
-            store => \$force_report_coordinates,
-        },
-        key => {
+        log => {
             defined  => 1,
             required => 1,
-            store    => \$key,
+            store    => \$log,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %check_vep_annotations = (
+        annotation_type          => { allow => [qw{ exact overlap }], },
+        file_type                => { allow => [qw{ bed gff gtf vcf bigwig }], },
+        force_report_coordinates => { allow => [ 0, 1 ], },
+    );
+
+    ## Check required keys
+    my @required_options = (qw{ key });
+  REQ_OPTION:
+    foreach my $required_option (@required_options) {
+
+        if (   not exists $custom_ann_option_href->{$required_option}
+            or not defined $custom_ann_option_href->{$required_option} )
+        {
+
+            $log->fatal( q{Vep custom annotation option hash: }
+                  . $annotation
+                  . q{ lacks required option }
+                  . $required_option );
+            exit 1;
+        }
+    }
+
+    ## Check allowed options for annotation
+  OPTION:
+    foreach my $option ( keys %{$custom_ann_option_href} ) {
+
+        ## Allow anything defined
+        next OPTION if ( $option eq q{key} );
+
+        next OPTION if ( $option eq q{path} );
+
+        next OPTION
+          if (
+            any { $_ eq $custom_ann_option_href->{$option} }
+            @{ $check_vep_annotations{$option}{allow} }
+          );
+
+        $log->fatal( q{Vep custom annotation option hash: }
+              . $annotation
+              . q{ has a not allowed option value '}
+              . $option . q{ => }
+              . $custom_ann_option_href->{$option} );
+        $log->fatal(
+            q{Allowed options are: } . join $SPACE,
+            @{ $check_vep_annotations{$option}{allow} }
+        );
+        exit 1;
+    }
 
     return 1;
 }
