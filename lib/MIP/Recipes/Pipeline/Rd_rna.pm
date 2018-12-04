@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rd_rna };
@@ -160,6 +160,7 @@ sub pipeline_rd_rna {
       qw{ analysis_gatk_splitncigarreads };
     use MIP::Recipes::Analysis::Gatk_variantfiltration
       qw{ analysis_gatk_variantfiltration };
+    use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
@@ -213,6 +214,7 @@ sub pipeline_rd_rna {
         gatk_haplotypecaller      => \&analysis_gatk_haplotypecaller,
         gatk_splitncigarreads     => \&analysis_gatk_splitncigarreads,
         gatk_variantfiltration    => \&analysis_gatk_variantfiltration,
+        gffcompare_ar             => \&analysis_gffcompare,
         markduplicates            => \&analysis_markduplicates,
         multiqc_ar                => \&analysis_multiqc,
         picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,

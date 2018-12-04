@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -632,7 +632,7 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
     );
 
     option(
-        q{pgatk_splitncigarrreads} => (
+        q{gatk_splitncigarrreads} => (
             cmd_aliases   => [qw{ gs }],
             cmd_flag      => q{gatk_splitncigarreads},
             cmd_tags      => [q{Analysis recipe switch}],
@@ -749,6 +749,16 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered SNPs},
             is  => q{rw},
             isa => Int,
+        )
+    );
+
+    option(
+        q{gffcompare} => (
+            cmd_aliases   => [qw{ gffcmp }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Compare RNA transcripts to reference using GffCompare},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 

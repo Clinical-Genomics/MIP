@@ -98,6 +98,7 @@ recipe_time:
     gatk_haplotypecaller: 2
     gatk_splitncigarreads: 5
     gatk_variantfiltration: 1
+    gffcompare_ar: 1
     gzip_fastq: 2
     markduplicates: 2
     multiqc_ar: 1
@@ -122,6 +123,7 @@ recipe_core_number:
     gatk_haplotypecaller: 16
     gatk_splitncigarreads: 16
     gatk_variantfiltration: 1
+    gffcompare_ar: 1
     gzip_fastq: 0
     multiqc_ar: 1
     markduplicates: 16
@@ -325,6 +327,18 @@ stringtie_ar:
   outfile_suffix: ".gtf"
   program_executables:
     - stringtie
+  type: recipe
+## GffCompare
+gffcompare_ar:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _gffcmp
+  outfile_suffix: ".gtf"
+  program_executables:
+    - gffcompare
   type: recipe
 ## Mark duplicates
 markduplicates:

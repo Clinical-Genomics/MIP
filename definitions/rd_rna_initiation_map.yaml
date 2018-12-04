@@ -14,12 +14,13 @@ CHAIN_ALL:
       - picardtools_mergesamfiles
       - CHAIN_STRINGTIE:
          - stringtie_ar
+         - gffcompare_ar
       - markduplicates
       - CHAIN_RSEQC:
          - rseqc
+   - CHAIN_MAIN:
       - gatk_splitncigarreads
       - gatk_baserecalibration
-   - CHAIN_MAIN:
       - gatk_haplotypecaller
       - gatk_variantfiltration
       - CHAIN_ASE:
