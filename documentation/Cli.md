@@ -7,14 +7,18 @@ $ mip
 ```
 
 This will show the usage, global parameters and all available commands and subcommands.
-There is currently two main commands:
-- Installation
+There is currently three main commands:
+- Installation  
   - rd_dna
-  - rna
+  - rd_rna
 - Analyse
   - rd_dna
-  - rna
+  - rd_rna
   - rd_dna_vcf_rerun
+- Download
+  - rd_dna
+  - rd_rna
+
 There are three levels of parameters:
 - Global
 - Commands
