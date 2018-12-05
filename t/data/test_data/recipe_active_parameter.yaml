@@ -7,7 +7,7 @@ email_types:
   - BEGIN
   - FAIL
 exome_target_bed:
-  GRCh37_agilent_sureselect_targets_cre_-v1-.bed: 'sample-1,sample-2'
+  GRCh37_agilent_sureselect_targets_cre_-v1-.bed: 'ADM1059A2,ADM1059A1'
 case_id: 643594-miptest
 human_genome_reference: human_genome.fasta
 java_use_large_pages: 1

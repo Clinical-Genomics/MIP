@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -45,8 +45,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Check::Parameter} => [qw{ check_sample_id_in_parameter_value }],
-        q{MIP::Test::Fixtures} =>
-          [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -67,9 +66,8 @@ diag(   q{Test check_sample_id_in_parameter_value from Pedigree.pm v}
 my $log = test_log();
 
 ## Given all samples in pedigree present in analysis
-my %active_parameter =
-  test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
-my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
+my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
+my %parameter        = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
 
 my $is_skipped = check_sample_id_in_parameter_value(
     {
@@ -85,7 +83,9 @@ my $is_skipped = check_sample_id_in_parameter_value(
 ok( $is_skipped, q{Skipped parameter} );
 
 ## Given a non-matching sample
-$active_parameter{sample_origin}{q{sample-1}} = q{not_a_sample};
+$active_parameter{sample_origin}{ADM1059A1} = q{ADM1059A1};
+$active_parameter{sample_origin}{ADM1059A2} = q{not_a_sample};
+$active_parameter{sample_origin}{ADM1059A3} = q{ADM1059A3};
 
 trap {
     check_sample_id_in_parameter_value(
@@ -101,12 +101,14 @@ trap {
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if the sample id has no match } );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message if the sample id has no match } );
+like(
+    $trap->stderr,
+    qr/Could \s+ not \s+ find \s+ matching \s+ sample_id/xms,
+    q{Throw fatal log message if the sample id has no match }
+);
 
 ## Given a missing sample
-$active_parameter{sample_origin}{q{sample-1}} = q{sample-1};
-pop @{ $active_parameter{sample_ids} };
+$active_parameter{sample_origin}{ADM1059A2} = undef;
 
 trap {
     check_sample_id_in_parameter_value(
@@ -122,7 +124,10 @@ trap {
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if the sample id cannot be found} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message if the sample id cannot be found } );
+like(
+    $trap->stderr,
+    qr/Could \s+ not \s+ find \s+ value/xms,
+    q{Throw fatal log message if the sample id cannot be found }
+);
 
 done_testing();

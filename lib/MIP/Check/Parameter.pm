@@ -1668,6 +1668,7 @@ sub check_sample_id_in_parameter_value {
                 );
                 exit 1;
             }
+            ## Check that sample_ids match
             if ( not any { $_ eq $sample_id_value } @{$sample_ids_ref} ) {
 
                 $log->fatal(
