@@ -1,15 +1,13 @@
 #!/usr/bin/env perl
 
-use 5.018;
-use Array::Utils qw{ array_diff };
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use open qw{ :encoding(UTF-8) :std };
-use File::Basename qw{ basename dirname };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
-use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
@@ -22,69 +20,34 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.00;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Get::Analysis}  => [qw{ get_dependency_tree }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Get::Analysis});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Get::Analysis qw{ get_dependency_tree };
@@ -98,114 +61,111 @@ diag(   q{Test get_dependency_tree from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Given an initiation map
 my %dependency_tree = (
-    initiation => [
-        q{program_0},
-        q{program_1},
+    CHAIN_ALL => [
+        q{recipe_12},
         {
-            CHAIN_0 => {
-                PARALLEL => [
-                    q{parallel_program_0},
-                    q{parallel_program_1},
-                    {
-                        parallel_program_2 =>
-                          [ q{parallel_program_2}, q{parallel_program_3}, ],
-                    },
-                ],
-            },
+            CHAIN_MAIN => [ qw{ recipe_0 }, ],
         },
-        q{program_2},
         {
-            CHAIN_1 => {
-                PARALLEL => [
-                    q{parallel_program_4},
-                    q{parallel_program_5},
-                    {
-                        parallel_program_6 =>
-                          [ q{parallel_program_6}, q{parallel_program_7}, ],
-                    },
-                ],
-            },
+            CHAIN_0 => [ qw{ recipe_1 }, ],
         },
-        q{program_3},
+        q{recipe_2},
+        {
+            CHAIN_MAIN => [
+                qw{ recipe_3 recipe_4 },
+                {
+                    CHAIN_1 => [qw{ recipe_5 }],
+                },
+                {
+                    CHAIN_2 => [
+                        {
+                            PARALLEL => [
+                                qw{ parallel_recipe_0 parallel_recipe_1 },
+                                {
+                                    PARALLEL_RECIPE_2 =>
+                                      [ qw{ parallel_recipe_2 parallel_recipe_3 }, ],
+                                },
+                            ],
+                        },
+                        qw{ recipe_6 recipe_7 },
+                    ],
+                },
+            ],
+        },
+        {
+            CHAIN_MAIN => [
+                {
+                    PARALLEL => [
+                        qw{ parallel_recipe_4 parallel_recipe_5 },
+                        {
+                            PARALLEL_RECIPE_6 =>
+                              [ qw{ parallel_recipe_6 parallel_recipe_7 }, ],
+                        },
+                    ],
+                },
+                qw{ recipe_8 recipe_9 },
+                {
+                    CHAIN_3 => [ qw{ recipe_10 }, ],
+                },
+            ],
+        },
+        q{recipe_11},
     ],
 );
-## Expected results from traversing the dependency tree
-my @expected_programs_0 =
-  qw{ program_0 program_1 parallel_program_0 parallel_program_1 parallel_program_2 parallel_program_3 program_2 parallel_program_4 parallel_program_5 parallel_program_6 parallel_program_7 program_3 };
-my @expected_parallel_programs_0 = qw{ parallel_program_0 program_2 program_3 };
-my @expected_parallel_programs_2 =
-  qw{ parallel_program_2 parallel_program_3 program_2 program_3 };
-my @expected_parallel_programs_3 = qw{ parallel_program_3 program_2 program_3 };
-my @expected_program_2 =
-  qw{ program_2 parallel_program_4 parallel_program_5 parallel_program_6 parallel_program_7 program_3 program_3};
-my @expected_parallel_programs_5 = qw{ parallel_program_5 program_3 };
-my @expected_program_3           = qw{ program_3 };
 
-## Tests to run
+## Expected results from traversing the dependency tree with different starting points
+my @expected_recipes_12 = qw{ recipe_12 recipe_2 recipe_11 };
+my @expected_recipes_0 =
+  qw{ recipe_0 recipe_1 recipe_2 recipe_3 recipe_4 recipe_5 parallel_recipe_0 parallel_recipe_1 parallel_recipe_2 parallel_recipe_3 recipe_6 recipe_7 parallel_recipe_4 parallel_recipe_5 parallel_recipe_6 parallel_recipe_7 recipe_8 recipe_9 recipe_10 recipe_11 };
+my @expected_recipes_1          = qw{ recipe_1 recipe_2 recipe_11 };
+my @expected_parallel_recipes_0 = qw{ parallel_recipe_0 recipe_6 recipe_7 recipe_11 };
+my @expected_parallel_recipes_2 =
+  qw{ parallel_recipe_2 parallel_recipe_3 recipe_6 recipe_7 recipe_11 };
+my @expected_parallel_recipes_3 = qw{ parallel_recipe_3 recipe_6 recipe_7 recipe_11 };
+my @expected_recipe_2           = qw{ recipe_2 recipe_11 };
+my @expected_parallel_recipes_5 =
+  qw{ parallel_recipe_5 recipe_8 recipe_9 recipe_10 recipe_11 };
+my @expected_recipe_11 = qw{ recipe_11 };
+
+## Define tests
 my %test = (
-    program_0          => \@expected_programs_0,
-    parallel_program_0 => \@expected_parallel_programs_0,
-    parallel_program_2 => \@expected_parallel_programs_2,
-    parallel_program_3 => \@expected_parallel_programs_3,
-    program_2          => \@expected_program_2,
-    parallel_program_5 => \@expected_parallel_programs_5,
-    program_3          => \@expected_program_3,
+    recipe_12         => \@expected_recipes_12,
+    recipe_0          => \@expected_recipes_0,
+    recipe_1          => \@expected_recipes_1,
+    parallel_recipe_0 => \@expected_parallel_recipes_0,
+    parallel_recipe_2 => \@expected_parallel_recipes_2,
+    parallel_recipe_3 => \@expected_parallel_recipes_3,
+    recipe_2          => \@expected_recipe_2,
+    parallel_recipe_5 => \@expected_parallel_recipes_5,
+    recipe_11         => \@expected_recipe_11,
 );
 
-## Test
-while ( my ( $test_key, $expected_programs_ref ) = each %test ) {
+## Run tests
+while ( my ( $test_key, $expected_recipes_ref ) = each %test ) {
 
-    my @start_with_programs;
-    my $is_program_found   = 0;
-    my $is_chain_found     = 0;
-    my $start_with_program = $test_key;
+    my @start_with_recipes;
+    my $is_recipe_found   = 0;
+    my $is_chain_found    = 0;
+    my $start_with_recipe = $test_key;
 
     get_dependency_tree(
         {
-            dependency_tree_href    => \%dependency_tree,
-            is_program_found_ref    => \$is_program_found,
-            is_chain_found_ref      => \$is_chain_found,
-            program                 => $start_with_program,
-            start_with_programs_ref => \@start_with_programs,
+            dependency_tree_href   => \%dependency_tree,
+            is_recipe_found_ref    => \$is_recipe_found,
+            is_chain_found_ref     => \$is_chain_found,
+            recipe                 => $start_with_recipe,
+            start_with_recipes_ref => \@start_with_recipes,
         }
     );
 
-    is( array_diff( @start_with_programs, @{$expected_programs_ref} ),
-        0, q{Start with } . $test_key );
+## Then match the expected result
+    is_deeply(
+        \@start_with_recipes,
+        \@{$expected_recipes_ref},
+        q{Start with } . $test_key
+    );
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}

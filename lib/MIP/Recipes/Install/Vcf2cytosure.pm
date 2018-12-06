@@ -1,5 +1,6 @@
 package MIP::Recipes::Install::Vcf2cytosure;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
@@ -21,13 +22,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vcf2cytosure };
 }
 
 ## Constants
+Readonly my $DASH    => q{-};
 Readonly my $DOT     => q{.};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
@@ -96,17 +98,21 @@ sub install_vcf2cytosure {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
-    use MIP::Package_manager::Pip qw{ pip_install };
-    use MIP::Versionmanager::Git qw{ git_clone };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+    use MIP::Package_manager::Pip qw{ check_pip_package pip_install };
+    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Program::Download::Wget qw{ wget };
 
     ## Unpack parameters
-    my $vcf2cytosure_version = $vcf2cytosure_parameters_href->{version};
+    my $program_version = $vcf2cytosure_parameters_href->{version};
+    my $program_url =
+      q{https://github.com/NBISweden/vcf2cytosure/archive/} . $program_version . q{.zip};
+
+    ## Set program specific parameters
+    my $program_name = q{vcf2cytosure};
 
     ## Retrieve logger object
     my $log = retrieve_log(
@@ -122,25 +128,34 @@ sub install_vcf2cytosure {
 
     say {$FILEHANDLE} q{### Install Vcf2cytosure};
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $vcf2cytosure_dir =
-      catdir( $conda_prefix_path, qw{ share vcf2cytosure } );
-    my $install_check = check_existing_installation(
+    ## Check if vcf2cytosure has been installed via pip
+    my $vcf2cytosure_status = check_pip_package(
         {
-            conda_environment      => $conda_environment,
-            conda_prefix_path      => $conda_prefix_path,
-            FILEHANDLE             => $FILEHANDLE,
-            log                    => $log,
-            noupdate               => $noupdate,
-            program_directory_path => $vcf2cytosure_dir,
-            program_name           => q{vcf2cytosure},
+            conda_environment => $conda_environment,
+            conda_prefix_path => $conda_prefix_path,
+            package           => $program_name,
+            version           => $program_version,
         }
     );
 
-    ## Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
+    ## Check if installation exists and is executable
+    if ( -x catfile( $conda_prefix_path, qw{ bin }, $program_name )
+        || $vcf2cytosure_status )
+    {
+        $log->info( $program_name
+              . q{ is already installed in the specified conda environment.} );
+
+        if ($noupdate) {
+
+            say {$FILEHANDLE} q{## }
+              . $program_name
+              . q{ is already installed, skippping reinstallation};
+            say {$FILEHANDLE} $NEWLINE;
+            return;
+        }
+        $log->warn(
+            q{This will overwrite the current } . $program_name . q{ installation.} );
+
     }
 
     ## Only activate conda environment if supplied by user
@@ -148,7 +163,7 @@ sub install_vcf2cytosure {
 
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
-        conda_source_activate(
+        conda_activate(
             {
                 env_name   => $conda_environment,
                 FILEHANDLE => $FILEHANDLE,
@@ -157,14 +172,40 @@ sub install_vcf2cytosure {
         say {$FILEHANDLE} $NEWLINE;
     }
 
+    ## Move to miniconda environment
+    say {$FILEHANDLE} q{## Move to conda environment};
+    gnu_cd(
+        {
+            directory_path => $conda_prefix_path,
+            FILEHANDLE     => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
     ## Download
-    say {$FILEHANDLE} q{## Download vcf2cytosure};
-    git_clone(
+    say {$FILEHANDLE} q{## Download} . $SPACE . $program_name;
+    my $program_zip_path =
+      catfile( $conda_prefix_path,
+        $program_name . $DASH . $program_version . $DOT . q{zip} );
+    wget(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            outfile_path => $program_zip_path,
+            quiet        => $quiet,
+            url          => $program_url,
+            verbose      => $verbose,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Extract
+    say {$FILEHANDLE} q{## Extract};
+    unzip(
         {
             FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => $program_zip_path,
             quiet       => $quiet,
-            outdir_path => $vcf2cytosure_dir,
-            url         => q{https://github.com/NBISweden/vcf2cytosure.git},
             verbose     => $verbose,
         }
     );
@@ -174,7 +215,7 @@ sub install_vcf2cytosure {
     say {$FILEHANDLE} q{## Move to vcf2cytosure directory};
     gnu_cd(
         {
-            directory_path => $vcf2cytosure_dir,
+            directory_path => $program_name . $DASH . $program_version,
             FILEHANDLE     => $FILEHANDLE,
         }
     );
@@ -184,10 +225,11 @@ sub install_vcf2cytosure {
     say {$FILEHANDLE} q{## Install};
     pip_install(
         {
-            editable   => $DOT,
-            FILEHANDLE => $FILEHANDLE,
-            quiet      => $quiet,
-            verbose    => $verbose,
+            editable      => $DOT,
+            FILEHANDLE    => $FILEHANDLE,
+            python_module => 1,
+            quiet         => $quiet,
+            verbose       => $verbose,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -204,8 +246,9 @@ sub install_vcf2cytosure {
 
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {
+
         say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_source_deactivate(
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }

@@ -1,5 +1,10 @@
 ## Log in tests
-When the sub routine you want to test requires a Log4perl object you can use this code recipe to quickly set up a test logger.
+When the sub routine you want to test requires a Log4perl object you can use this code recipe to quickly set up a test logger or just import an already prepared test log fixture using:
+
+```
+use MIP::Test::Fixtures qw{ test_log };
+my $log = test_log();
+```
 
 We are going to need a temporary file to write the log config to. Use the core perl module File::Temp to initiate a temporary file that will be automatically deleted when the process that initiated the file exists.
 

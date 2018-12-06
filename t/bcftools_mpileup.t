@@ -12,7 +12,7 @@ use Params::Check qw{ check allow last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
+use 5.026;
 
 ## CPANM
 use Modern::Perl qw{ 2014 };
@@ -102,12 +102,12 @@ diag(   q{Test bcftools_mpileup from Variantcalling::Bcftools.pm v}
 Readonly my $ADJUST_MAPPING_QUALITY => 45;
 
 ## Base arguments
-my $function_base_command = q{bcftools};
+my @function_base_commands = qw{ bcftools };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -127,7 +127,7 @@ my %required_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     infile_paths_ref => {
         inputs_ref      => [ catfile(qw{dir file_1}), catfile(qw{dir file_2}) ],
@@ -176,10 +176,10 @@ foreach my $argument_href (@arguments) {
 
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
         }
     );
 }

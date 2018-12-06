@@ -26,4 +26,9 @@ my @response = trap {
 ## Then return the path and warn
 is( $response[0], $test_path, q{Return ambiguous path} );
 like( $trap->stderr, qr/WARN/xms, q{Throw warning} );
+
+### Testing when croaking()
+## Then exit and throw FATAL log message
+is($trap->leaveby, q{die}, q{Exit if the path cannot be found});
+like( $trap->die, qr/ERROR_MSG/xms, q{Throw error} );
 ```

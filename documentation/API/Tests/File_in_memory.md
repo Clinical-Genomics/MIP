@@ -16,8 +16,12 @@ open $FILEHANDLE, q{>}, \$file_content
     . $SPACE
     . $OS_ERROR;
 
-# Close the filehandle
-    close $FILEHANDLE;
+## Write to file
+my $base_command = q{samtools};
+say {$FILEHANDLE} $base_command;
+
+## Close the filehandle 
+close $FILEHANDLE;
 ```
 
 Then you can use this as variable to access the content of the file, for instance:

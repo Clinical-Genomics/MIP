@@ -2,7 +2,7 @@
 
 ### Will test perl modules and some selected funtions as well as vcf keys both in header and body. Adjusts dynamically according to supplied config file.
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd qw{ abs_path };
@@ -61,7 +61,7 @@ Readonly my $TAB       => qq{\t};
 my ( $infile, $config_file );
 my ( %parameter, %active_parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = '2.0.0';
+our $VERSION = 2.03;
 
 if ( scalar @ARGV == 0 ) {
 
@@ -76,7 +76,7 @@ if ( scalar @ARGV == 0 ) {
 $infile      = $ARGV[0];
 $config_file = $ARGV[1];
 
-###User Options
+### User Options
 GetOptions(
 
     # Display help text
@@ -128,13 +128,11 @@ if ( exists $active_parameter{pedigree_file} ) {
         my $sample_id = $pedigree_sample_href->{sample_id};
 
         ## Phenotype
-        push
-          @{ $parameter{dynamic_parameter}{ $pedigree_sample_href->{phenotype} }
-          }, $sample_id;
+        push @{ $parameter{cache}{ $pedigree_sample_href->{phenotype} } },
+          $sample_id;
 
         ## Sex
-        push @{ $parameter{dynamic_parameter}{ $pedigree_sample_href->{sex} } },
-          $sample_id;
+        push @{ $parameter{cache}{ $pedigree_sample_href->{sex} } }, $sample_id;
     }
 }
 
@@ -181,7 +179,7 @@ else {
 }
 
 ## SV files
-if ( $infile =~ /_SV[.]/sxm ) {
+if ( $infile =~ /\/sv_\w+\//sxm ) {
 
 ## Reads infile in vcf format and parses annotations
     read_sv_infile_vcf(
@@ -209,7 +207,7 @@ else {
 }
 
 # Reached the end safely
-Test::More::done_testing();
+done_testing();
 
 ######################
 ####SubRoutines#######
@@ -271,7 +269,7 @@ sub test_modules {
     use YAML;
 
     my $yaml_file =
-      catdir( dirname($Bin), qw{ definitions define_parameters.yaml } );
+      catdir( dirname($Bin), qw{ definitions mip_parameters.yaml } );
     ok( -f $yaml_file, q{YAML: File=} . $yaml_file . q{in MIP directory} );
 
     ## Create an object
@@ -283,7 +281,7 @@ sub test_modules {
 
     use Log::Log4perl;
     ## Creates log
-    my $log_file = catdir( dirname($Bin), qw{ templates mip_config.yaml } );
+    my $log_file = catdir( dirname($Bin), qw{ templates mip_rd_dna_config.yaml } );
     ok( -f $log_file,
         q{Log::Log4perl: File=} . $log_file . q{in MIP directory} );
 
@@ -426,7 +424,7 @@ sub read_infile_vcf {
             if ($is_csq_found) {
 
                 ok(
-                    $active_parameter_href->{pvarianteffectpredictor},
+                    $active_parameter_href->{varianteffectpredictor},
                     q{VEP: CSQ in header and VEP should have been executed}
                 );
             }
@@ -443,7 +441,7 @@ sub read_infile_vcf {
             _test_vt_in_vcf_header(
                 {
                     vcf_header_href   => \%vcf_header,
-                    vt_mode           => $active_parameter_href->{pvt},
+                    vt_mode           => $active_parameter_href->{vt_ar},
                     vt_decompose_mode => $active_parameter_href->{vt_decompose},
                     vt_normalize_mode => $active_parameter_href->{vt_normalize},
                 }
@@ -452,12 +450,9 @@ sub read_infile_vcf {
             ## Test Frequency filter
             _test_frequency_filter_in_vcf_header(
                 {
-                    frequency_filter_mode =>
-                      $active_parameter_href->{pfrequency_filter},
-                    frequency_genmod_filter =>
-                      $active_parameter_href->{frequency_genmod_filter},
-                    frequency_genmod_filter_1000g =>
-                      $active_parameter_href->{frequency_genmod_filter_1000g},
+                    recipe_mode =>
+                      $active_parameter_href->{frequency_filter},
+		 toml_file_path            => $active_parameter_href->{fqf_vcfanno_config},
                     vcf_header_href => \%vcf_header,
                 }
             );
@@ -467,14 +462,14 @@ sub read_infile_vcf {
                 {
                     vcf_header_href     => \%vcf_header,
                     vcfparser_data_href => $vcfparser_data_href,
-                    vcfparser_mode      => $active_parameter_href->{pvcfparser},
+                    vcfparser_mode => $active_parameter_href->{vcfparser_ar},
                 }
             );
 
             ## Test snpeff
             _test_snpeff_in_vcf_header(
                 {
-                    snpeff_mode => $active_parameter_href->{psnpeff},
+                    snpeff_mode => $active_parameter_href->{snpeff},
                     snpsift_annotation_files_href =>
                       \%{ $active_parameter_href->{snpsift_annotation_files} },
                     snpsift_annotation_outinfo_key_href => \%{
@@ -493,12 +488,12 @@ sub read_infile_vcf {
                     genmod_annotate_cadd_files_ref =>
                       \@{ $active_parameter_href->{genmod_annotate_cadd_files}
                       },
-                    rankvariant_mode => $active_parameter_href->{prankvariant},
+                    rankvariant_mode => $active_parameter_href->{rankvariant},
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
                     spidex_file => $active_parameter_href->{spidex_file},
                     unaffected_samples_ref =>
-                      \@{ $parameter_href->{dynamic_parameter}{unaffected} },
+                      \@{ $parameter_href->{cache}{unaffected} },
                     vcf_header_href => \%vcf_header,
                 }
             );
@@ -714,7 +709,7 @@ sub read_sv_infile_vcf {
             if ($is_csq_found) {
 
                 ok(
-                    $active_parameter_href->{psv_varianteffectpredictor},
+                    $active_parameter_href->{sv_varianteffectpredictor},
                     q{VEP: CSQ in header and VEP should have been executed}
                 );
             }
@@ -727,17 +722,34 @@ sub read_sv_infile_vcf {
 
             ### Check Header now that we read all
 
-            ## Test Vt
+            ## Test vt
             _test_sv_combinevariantcallsets_in_vcf_header(
                 {
                     sv_combinevariantcallsets_mode =>
-                      $active_parameter_href->{psv_combinevariantcallsets},
-                    sv_genmod_filter =>
-                      $active_parameter_href->{sv_genmod_filter},
-                    sv_genmod_filter_1000g =>
-                      $active_parameter_href->{sv_genmod_filter_1000g},
+                      $active_parameter_href->{sv_combinevariantcallsets},
                     sv_vt_decompose_mode =>
                       $active_parameter_href->{sv_vt_decompose},
+                    vcf_header_href => \%vcf_header,
+                }
+            );
+
+	    ## Test sv_annotate vcf keys
+	    _test_sv_annotate_in_vcf_header(
+                {
+                    sv_annotate_mode =>
+                      $active_parameter_href->{sv_annotate},
+                    sv_frequency_filter =>
+                      $active_parameter_href->{sv_frequency_filter},
+                    vcf_header_href => \%vcf_header,
+                }
+            );
+
+	    ## Test Frequency filter
+            _test_frequency_filter_in_vcf_header(
+                {
+                    recipe_mode =>
+                      $active_parameter_href->{sv_annotate},
+		 toml_file_path            => $active_parameter_href->{fqf_vcfanno_config},
                     vcf_header_href => \%vcf_header,
                 }
             );
@@ -747,7 +759,7 @@ sub read_sv_infile_vcf {
                 {
                     vcf_header_href     => \%vcf_header,
                     vcfparser_data_href => $vcfparser_data_href,
-                    vcfparser_mode => $active_parameter_href->{psv_vcfparser},
+                    vcfparser_mode => $active_parameter_href->{sv_vcfparser},
                 }
             );
 
@@ -755,11 +767,11 @@ sub read_sv_infile_vcf {
             _test_rankvariants_in_vcf_header(
                 {
                     rankvariant_mode =>
-                      $active_parameter_href->{psv_rankvariant},
+                      $active_parameter_href->{sv_rankvariant},
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
                     unaffected_samples_ref =>
-                      \@{ $parameter_href->{dynamic_parameter}{unaffected} },
+                      \@{ $parameter_href->{cache}{unaffected} },
                     vcf_header_href => \%vcf_header,
                 }
             );
@@ -1130,35 +1142,33 @@ sub check_if_vep_csq_in_line {
     return;
 }
 
-sub _test_sv_combinevariantcallsets_in_vcf_header {
+sub _test_sv_annotate_in_vcf_header {
 
-## Function : Test if sv_combinevariantcallsets info keys are present in vcf header
+## Function : Test if sv_annotate info keys are present in vcf header
 ## Returns  :
-## Arguments: $sv_genmod_filter               => Genmod filter has been used or not
-##          : $sv_genmod_filter_1000g         => Genmod filter 1000G has been used or not
-##          : $sv_combinevariantcallsets_mode => sv_combinevariantcallsets has been used or not
-##          : $vcf_header_href                => Vcf header info
-##          : $sv_vt_decompose_mode           => Vt decompose has been used or not
+## Arguments: $sv_annotate_mode       => sv_annotate has been used or not
+##          : $sv_frequency_filter    => Frequency filter has been used or not
+##          : $vcf_header_href        => Vcf header info
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sv_genmod_filter;
-    my $sv_genmod_filter_1000g;
-    my $sv_vt_decompose_mode;
+    my $sv_annotate_mode;
+    my $sv_frequency_filter;
     my $vcf_header_href;
-    my $sv_combinevariantcallsets_mode;
 
     my $tmpl = {
-        sv_genmod_filter => {
-            allow       => qr/ ^\d+$ /sxm,
-            defined     => 1,
+        sv_annotate_mode => {
+            allow       => qr{ \A\d+\z }sxm,
             required    => 1,
-            store       => \$sv_genmod_filter,
+            store       => \$sv_annotate_mode,
             strict_type => 1,
         },
-        sv_genmod_filter_1000g => {
-            store       => \$sv_genmod_filter_1000g,
+        sv_frequency_filter => {
+            allow       => qr{ \A\d+\z }sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$sv_frequency_filter,
             strict_type => 1,
         },
         vcf_header_href => {
@@ -1168,16 +1178,52 @@ sub _test_sv_combinevariantcallsets_in_vcf_header {
             store       => \$vcf_header_href,
             strict_type => 1,
         },
-        sv_combinevariantcallsets_mode => {
-            allow       => qr/ ^\d+$ /sxm,
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## sv_annotate has been used
+    if ($sv_annotate_mode) {
+
+      return if (not $sv_frequency_filter);
+
+      ok( defined $vcf_header_href->{INFO}{q{1000GAF}},
+                    q{Vcfanno filter: 1000GAF key} );
+    }
+    return;
+}
+
+sub _test_sv_combinevariantcallsets_in_vcf_header {
+
+## Function : Test if sv_combinevariantcallsets info keys are present in vcf header
+## Returns  :
+## Arguments: $sv_combinevariantcallsets_mode => sv_combinevariantcallsets has been used or not
+##          : $vcf_header_href                => Vcf header info
+##          : $sv_vt_decompose_mode           => Vt decompose has been used or not
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sv_vt_decompose_mode;
+    my $vcf_header_href;
+    my $sv_combinevariantcallsets_mode;
+
+    my $tmpl = {
+        vcf_header_href => {
+            default     => {},
             defined     => 1,
+            required    => 1,
+            store       => \$vcf_header_href,
+            strict_type => 1,
+        },
+        sv_combinevariantcallsets_mode => {
+            allow       => qr{ \A\d+\z }sxm,
             required    => 1,
             store       => \$sv_combinevariantcallsets_mode,
             strict_type => 1,
         },
         sv_vt_decompose_mode => {
-            allow       => qr/ ^\d+$ /sxm,
-            defined     => 1,
+            allow       => qr{ \A\d+\z }sxm,
             required    => 1,
             store       => \$sv_vt_decompose_mode,
             strict_type => 1,
@@ -1189,19 +1235,10 @@ sub _test_sv_combinevariantcallsets_in_vcf_header {
     ## sv_combinevariantcallset has been used
     if ($sv_combinevariantcallsets_mode) {
 
-        if ($sv_vt_decompose_mode) {
+        return if (not $sv_vt_decompose_mode);
 
             ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
                 q{VTDecompose key: OLD_MULTIALLELIC} );
-        }
-        if ($sv_genmod_filter) {
-
-            if ($sv_genmod_filter_1000g) {
-
-                ok( defined $vcf_header_href->{INFO}{q{1000GAF}},
-                    q{Genmod filter: 1000GAF key} );
-            }
-        }
     }
     return;
 }
@@ -1232,21 +1269,21 @@ sub _test_vt_in_vcf_header {
             strict_type => 1,
         },
         vt_mode => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr{ \A\d+\z }sxm,
             defined     => 1,
             required    => 1,
             store       => \$vt_mode,
             strict_type => 1,
         },
         vt_decompose_mode => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr{ \A\d+\z }sxm,
             defined     => 1,
             required    => 1,
             store       => \$vt_decompose_mode,
             strict_type => 1,
         },
         vt_normalize_mode => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr{ \A\d+\z }sxm,
             defined     => 1,
             required    => 1,
             store       => \$vt_normalize_mode,
@@ -1277,36 +1314,28 @@ sub _test_frequency_filter_in_vcf_header {
 
 ## Function : Test if freuqency filter info keys are present in vcf header
 ## Returns  :
-## Arguments: $frequency_genmod_filter       => Vt genmod filter has been used or not
-##          : $frequency_genmod_filter_1000g => Vt genmod filter 1000G has been used or not
-##          : $frequency_filter_mode         => Frequency filter has been used or not
-##          : $vcf_header_href               => Vcf header info
+## Arguments: $recipe_mode     => Frequency filter has been used or not for recipe
+##          : $toml_file_path  => Toml config file path
+##          : $vcf_header_href => Vcf header info
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $frequency_genmod_filter;
-    my $frequency_genmod_filter_1000g;
-    my $frequency_filter_mode;
+    my $recipe_mode;
+    my $toml_file_path;
     my $vcf_header_href;
 
     my $tmpl = {
-        frequency_genmod_filter => {
-            allow       => qr/ ^\d+$ /sxm,
+        recipe_mode => {
+            allow       => qr{ \A\d+\z }sxm,
             defined     => 1,
             required    => 1,
-            store       => \$frequency_genmod_filter,
+            store       => \$recipe_mode,
             strict_type => 1,
         },
-        frequency_genmod_filter_1000g => {
-            store       => \$frequency_genmod_filter_1000g,
-            strict_type => 1,
-        },
-        frequency_filter_mode => {
-            allow       => qr/ ^\d+$ /sxm,
-            defined     => 1,
-            required    => 1,
-            store       => \$frequency_filter_mode,
+		toml_file_path => {
+            default     => 1,
+            store       => \$toml_file_path,
             strict_type => 1,
         },
         vcf_header_href => {
@@ -1320,18 +1349,25 @@ sub _test_frequency_filter_in_vcf_header {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Frequency filter has been used
-    if ($frequency_filter_mode) {
+    use MIP::File::Format::Toml qw{ load_toml };
 
-        if ($frequency_genmod_filter) {
+    my %vcfanno_config = load_toml( { toml_file_path => $toml_file_path, } );
 
-            if ($frequency_genmod_filter_1000g) {
+    ## Frequency filter has been used for recipe
+    if ($recipe_mode) {
 
-                ok( defined $vcf_header_href->{INFO}{q{1000GAF}},
-                    q{Genmod filter: 1000GAF key} );
-            }
-        }
+      ANNOTATION:
+    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+
+      VCF_KEY:
+      foreach my $names (@{$annotation_href->{names}}) {
+
+        ok( defined $vcf_header_href->{INFO}{$names},
+            q{Frequency filter: } . $names . q{ key} );
     }
+    }
+  }
+
     return;
 }
 
@@ -1359,7 +1395,7 @@ sub _test_vcfparser_in_vcf_header {
             strict_type => 1,
         },
         vcfparser_mode => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr{ \A\d+\z }sxm,
             defined     => 1,
             required    => 1,
             store       => \$vcfparser_mode,
@@ -1423,7 +1459,7 @@ sub _test_snpeff_in_vcf_header {
 
     my $tmpl = {
         snpeff_mode => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr{ \A\d+\z }sxm,
             defined     => 1,
             required    => 1,
             store       => \$snpeff_mode,
@@ -1550,7 +1586,7 @@ sub _test_rankvariants_in_vcf_header {
             strict_type => 1,
         },
         rankvariant_mode => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr{ \A\d+\z }sxm,
             defined     => 1,
             required    => 1,
             store       => \$rankvariant_mode,

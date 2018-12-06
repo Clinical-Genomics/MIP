@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ generate_contig_interval_file };
@@ -35,61 +35,61 @@ Readonly my $UNDERSCORE => q{_};
 sub generate_contig_interval_file {
 
 ## Function : Generate contig specific interval_list file
-## Returns  :
+## Returns  : %bed_file_path
 ## Arguments: $contigs_ref           => Contigs to split in file
 ##          : $exome_target_bed_file => Interval file to split
-##          : $reference_dir         => MIP reference directory
-##          : $outdirectory          => Outdirectory
 ##          : $file_ending           => File ending to add {Optional}
 ##          : $FILEHANDLE            => Filehandle to write to
 ##          : $max_cores_per_node    => Maximum core per node
+##          : $outdirectory          => Outdirectory
+##          : $reference_dir         => MIP reference directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $contigs_ref;
     my $exome_target_bed_file;
-    my $reference_dir;
-    my $outdirectory;
     my $file_ending;
     my $FILEHANDLE;
+    my $outdirectory;
+    my $reference_dir;
 
     ## Default(s)
     my $max_cores_per_node;
 
     my $tmpl = {
         contigs_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$contigs_ref,
+            strict_type => 1,
         },
         exome_target_bed_file => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$exome_target_bed_file,
-        },
-        reference_dir => {
-            required    => 1,
-            defined     => 1,
             strict_type => 1,
-            store       => \$reference_dir,
-        },
-        outdirectory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outdirectory,
         },
         file_ending => { strict_type => 1, store => \$file_ending },
         FILEHANDLE         => { store => \$FILEHANDLE, },
         max_cores_per_node => {
-            default     => 1,
             allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
+            default     => 1,
             store       => \$max_cores_per_node,
+            strict_type => 1,
+        },
+        outdirectory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outdirectory,
+            strict_type => 1,
+        },
+        reference_dir => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_dir,
+            strict_type => 1,
         },
     };
 
@@ -97,6 +97,7 @@ sub generate_contig_interval_file {
 
     use MIP::Processmanagement::Processes qw(print_wait);
 
+    my %bed_file_path;
     my $process_batches_count = 1;
 
     say {$FILEHANDLE} q{## Generate contig specific interval_list}, $NEWLINE;
@@ -114,25 +115,27 @@ sub generate_contig_interval_file {
         );
 
         ## Splits a target file into new contig specific target file
-        _split_interval_file_contigs(
+        my $contig_bed_file_path = _split_interval_file_contigs(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                indirectory  => $reference_dir,
-                outdirectory => $outdirectory,
-                infile       => basename($exome_target_bed_file),
-                contig       => $contig,
                 file_ending  => $file_ending,
+                contig       => $contig,
+                indirectory  => $reference_dir,
+                infile       => basename($exome_target_bed_file),
+                outdirectory => $outdirectory,
             }
         );
+        $bed_file_path{$contig} = [$contig_bed_file_path];
     }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
-    return;
+
+    return %bed_file_path;
 }
 
 sub _split_interval_file_contigs {
 
 ## Function : Splits a target file into new contig specific target file
-## Returns  :
+## Returns  : $outfile_path
 ## Arguments: $indirectory  => Indirectory
 ##          : $outdirectory => Outdirectory
 ##          : $infile       => Target file
@@ -176,6 +179,8 @@ sub _split_interval_file_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    my $outfile_path;
+
     ## The contig to split
     if ( defined $contig ) {
 
@@ -198,7 +203,7 @@ sub _split_interval_file_contigs {
         ## Infile
         print {$FILEHANDLE} catfile( $indirectory, $infile ) . $SPACE;
 
-        my $outfile_path =
+        $outfile_path =
           catfile( $outdirectory, $contig . $UNDERSCORE . $infile );
 
         ## If file ending
@@ -209,7 +214,7 @@ sub _split_interval_file_contigs {
         }
         say {$FILEHANDLE} q{>} . $SPACE . $outfile_path . $SPACE . $AMPERSAND;
     }
-    return;
+    return $outfile_path;
 }
 
 1;

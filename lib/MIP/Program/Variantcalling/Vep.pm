@@ -27,8 +27,7 @@ BEGIN {
     our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ variant_effect_predictor variant_effect_predictor_install };
+    our @EXPORT_OK = qw{ variant_effect_predictor variant_effect_predictor_install };
 }
 
 ## Constants
@@ -42,6 +41,7 @@ sub variant_effect_predictor {
 ## Arguments: $assembly                => Assembly version to use
 ##          : $buffer_size             => Sets the internal buffer size, corresponding to the number of variants that are read in to memory simultaneously
 ##          : $cache_directory         => VEP chache directory
+##          : $custom_annotations_ref  => Custom annotations {REF}
 ##          : $distance                => Modify the distance up and/or downstream between a variant and a transcript for which VEP will assign the upstream_gene_variant or downstream_gene_variant consequences
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $infile_path             => Infile path to read from
@@ -59,16 +59,11 @@ sub variant_effect_predictor {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $distance;
-    my $fork;
-    my $infile_format;
-    my $outfile_format;
-
     ## Flatten argument(s)
     my $assembly;
     my $buffer_size;
     my $cache_directory;
+    my $custom_annotations_ref;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
@@ -80,6 +75,12 @@ sub variant_effect_predictor {
     my $stderrfile_path_append;
     my $stdoutfile_path;
     my $vep_features_ref;
+
+    ## Default(s)
+    my $distance;
+    my $fork;
+    my $infile_format;
+    my $outfile_format;
 
     my $tmpl = {
         assembly => {
@@ -93,6 +94,11 @@ sub variant_effect_predictor {
         },
         cache_directory => {
             store       => \$cache_directory,
+            strict_type => 1,
+        },
+        custom_annotations_ref => {
+            default     => [],
+            store       => \$custom_annotations_ref,
             strict_type => 1,
         },
         distance => {
@@ -216,8 +222,12 @@ sub variant_effect_predictor {
     }
     if ( @{$plugins_ref} ) {
 
-        push @commands, q{--plugin} . $SPACE . join q{ --plugin },
-          @{$plugins_ref};
+        push @commands, q{--plugin} . $SPACE . join q{ --plugin }, @{$plugins_ref};
+    }
+    if ( @{$custom_annotations_ref} ) {
+
+        push @commands, q{--custom} . $SPACE . join q{ --custom },
+          @{$custom_annotations_ref};
     }
     if ( @{$vep_features_ref} ) {
 
@@ -296,8 +306,7 @@ sub variant_effect_predictor_install {
             store       => \$no_update,
             strict_type => 1,
         },
-        plugins_ref =>
-          { default => [], store => \$plugins_ref, strict_type => 1, },
+        plugins_ref => { default => [], store => \$plugins_ref, strict_type => 1, },
         species_ref => {
             default     => [qw{ homo_sapiens }],
             store       => \$species_ref,

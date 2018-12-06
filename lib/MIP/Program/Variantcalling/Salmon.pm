@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ salmon_index salmon_quant };
@@ -119,8 +119,9 @@ sub salmon_quant {
 ## Function  : Perl wrapper for Salmon quant, version 0.9.1.
 ## Returns   : @commands
 ## Arguments : $FILEHANDLE             => Filehandle to write to
+##           : $gc_bias                => Correct for GC-bias
 ##           : $index_path             => Path to the index folder
-##           : $lib                    => Library visit the salmon website for more  info
+##           : $libi_type              => Library visit the salmon website for more  info
 ##           : $outfile_path           => The path of the  output directory
 ##           : $read_1_fastq_path      => Read 1 Fastq path
 ##           : $read_2_fastq_path      => Read 2 Fastq path
@@ -133,6 +134,7 @@ sub salmon_quant {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
+    my $gc_bias;
     my $index_path;
     my $outfile_path;
     my $read_1_fastq_path;
@@ -149,6 +151,10 @@ sub salmon_quant {
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
+        gc_bias => {
+            store       => \$gc_bias,
+            strict_type => 1,
+        },
         index_path => {
             defined     => 1,
             required    => 1,
@@ -156,7 +162,8 @@ sub salmon_quant {
             strict_type => 1,
         },
         lib_type => {
-            default     => q{ISF},
+            allow       => [qw{ A ISF ISR MSF MSR OSR OSF }],
+            default     => q{A},
             store       => \$lib_type,
             strict_type => 1,
         },
@@ -178,7 +185,7 @@ sub salmon_quant {
             strict_type => 1,
         },
         read_files_command => {
-            default     => q{bunzip2},
+            default     => q{pigz -dc},
             store       => \$read_files_command,
             strict_type => 1,
         },
@@ -201,14 +208,18 @@ sub salmon_quant {
     ## Stores commands depending on input parameters
     my @commands = q{salmon quant};
 
+    if ($gc_bias) {
+        push @commands, q{--gcBias};
+    }
+
     push @commands, q{--index} . $SPACE . $index_path;
 
-    # Library type, defines if the library is stranded or not, and the orientation of the reads, according to the documentation http://salmon.readthedocs.io/en/latest/library_type.html
+# Library type, defines if the library is stranded or not, and the orientation of the reads, according to the documentation http://salmon.readthedocs.io/en/latest/library_type.html
     push @commands, q{--libType} . $SPACE . $lib_type;
 
     push @commands, q{--output} . $SPACE . $outfile_path;
 
-    # The input Fastq files, either single reads or paired. Salmon uses a bash command to stream the reads. Here, the default is <( bunzip2 file.fastq.gz )
+# The input Fastq files, either single reads or paired. Salmon uses a bash command to stream the reads. Here, the default is <( pigz -dc file.fastq.gz )
     push @commands,
         q{-1}
       . $SPACE . q{<(}

@@ -12,7 +12,7 @@ use Params::Check qw{ check allow last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
+use 5.026;
 
 ## CPANM
 use autodie;
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -100,11 +96,11 @@ diag(   q{Test update_dynamic_config_parameters from Update::Parameters.pm v}
 my %active_parameter = (
     cluster_constant_path  => catfile(qw{ root dir_1 dir_2 }),
     analysis_constant_path => q{analysis},
-    family_id              => q{family_1},
+    case_id                => q{case_1},
     pedigree_file =>
-      catfile(qw{ cluster_constant_path! family_id! family_id!_pedigree.yaml }),
+      catfile(qw{ cluster_constant_path! case_id! case_id!_pedigree.yaml }),
     sample_info_file => catfile(
-        qw{ cluster_constant_path! family_id! analysis_constant_path! family_id!_qc_sample_info.yaml }
+        qw{ cluster_constant_path! case_id! analysis_constant_path! case_id!_qc_sample_info.yaml }
     ),
 );
 
@@ -122,13 +118,12 @@ foreach my $parameter_name (@order_parameters) {
         }
     );
 }
-my $updated_pedigree_file =
-  catfile(qw{ root dir_1 dir_2 family_1 family_1_pedigree.yaml });
+my $updated_pedigree_file = catfile(qw{ root dir_1 dir_2 case_1 case_1_pedigree.yaml });
 is( $active_parameter{pedigree_file},
     $updated_pedigree_file, q{Updated pedigree file path} );
 
-my $updated_sample_info_file = catfile(
-    qw{ root dir_1 dir_2 family_1 analysis family_1_qc_sample_info.yaml });
+my $updated_sample_info_file =
+  catfile(qw{ root dir_1 dir_2 case_1 analysis case_1_qc_sample_info.yaml });
 is( $active_parameter{sample_info_file},
     $updated_sample_info_file, q{Updated sample_info_file path} );
 

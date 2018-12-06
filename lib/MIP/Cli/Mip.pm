@@ -16,7 +16,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib/
 use MIP::Cli::Mip;
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 ## Enable strict mode
 app_strict 1;
@@ -70,17 +70,6 @@ sub _build_usage {
     );
 
     option(
-        q{config_file} => (
-            cmd_aliases => [qw{ config c }],
-            documentation =>
-              q{File with configuration parameters in YAML format},
-            is       => q{rw},
-            isa      => Str,
-            required => 1,
-        )
-    );
-
-    option(
         q{log_file} => (
             cmd_aliases   => [qw{ log }],
             documentation => q{Log file},
@@ -102,7 +91,7 @@ sub _build_usage {
         q{temp_directory} => (
             cmd_aliases   => [qw{ tmd }],
             cmd_tags      => [q{Default: "/scratch/$SLURM_JOB_ID"}],
-            documentation => q{Set the temporary directory for all programs},
+            documentation => q{Set the temporary directory for all recipes},
             is            => q{rw},
             isa           => Str,
         )

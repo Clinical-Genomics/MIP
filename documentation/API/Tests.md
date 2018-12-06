@@ -1,7 +1,7 @@
 # Tests
 MIP uses the core perl module TEST::More, which is a framework for writing test.  All test scripts are located in the standard perl [t dir]. The entire test suite should be run prior to making a pull request. This is done by:
 ```Perl
-perl run_tests.t
+prove t -r -j 4
 ```
 
 ## Test structure
@@ -9,14 +9,18 @@ When applicable the tests should follow the structure [Given-When-Then]. An exam
 
 ## Sub routines
 Input parameters to each sub routine are validated via the core module validate params. Each sub routine should be accompanied by a test script checking the function of the sub routine.
+**Template**: [test.t] 
 
 ## Command modules
 Each command module in MIP must be accompanied by a test for each sub routine that controls whether the command module yields the expected output.
+**Template**: [test_commands.t]
 
 ## Recipes
-Are tested by using sbatch traps upon execution. MIP thus relies on the processes coded within the recipe to supply a correct error code when throwing errors. This is catched through the traps and propagated to the STDERR file of the entire process or the sub process that threw the error. Since each command sub routine in MIP can write to the unix standard stream it is possible to add a stderr log file for each command process that is executed within the recipe.
+Are tested by test scripts and using sbatch traps upon execution. MIP thus relies on the processes coded within the recipe to supply a correct error code when throwing errors. This is catched through the traps and propagated to the STDERR file of the entire process or the sub process that threw the error. Since each command sub routine in MIP can write to the unix standard stream it is possible to add a stderr log file for each command process that is executed within the recipe.
+**Template**: [test_recipe.t]
 
 ## Analysis
+Are tested by running ``mip_[PROCESS]_[PIPELINE].test both locally and with continous integration usin TRAVIS.
 MIP will check that all files that are supposed to be produced by an analysis exist and have a file size larger than zero. Furthermore, several key qc parameters are evaluated and existence off certain vcf key value pairs are checked using Test::Harness and the mip_analysis.t script. All this is done in the analysis recipe analysisrunstatus.
 
 ## Templates
@@ -29,6 +33,9 @@ This is a basic template for writing tests for modules with sub routines that do
 This template is intended for testing modules with sub routines that returns a `@commands` array, which consists of the base command followed by testable arguments. The arguments can be of three types either base, required or specific. The ´@command´ array is used by the test_function subroutine in the Commands module in order to control that the expected output is generated. Furthermore, the Commands module includes a test for writing to an already open filehandle.
 
 Three types of input arguments can be tested using this template. Each type is hold in a separate hash array (`%base_argument`, `%required_argument` and `%specific_argument`). The required arguments are always supplied to the test function, either by themselves or in conjunction with a base or specific argument. The testable arguments can either be a Scalar ($scalar) or an Array (@array).
+
+## test_recipe.t
+This is intended to test the code dependecies and compilation of the recipe and not the actual data output. 
 
 ## Using the templates
 Change all occurrences of barewords that are written in capital letters to the appropriate variable. Notable exceptions are the words MIP, USAGE and VERSION.
@@ -110,3 +117,6 @@ env_name => {
 [Given-When-Then]: https://www.agilealliance.org/glossary/gwt/#q=~(filters~(postType~(~'page~'post~'aa_book~'aa_event_session~'aa_experience_report~'aa_glossary~'aa_research_paper~'aa_video)~tags~(~'given*20when*20then))~searchTerm~'~sort~false~sortDirection~'asc~page~1)
 [here]: Tests/Exit_signals.md
 [code dir]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/code/
+[test_commands.t]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/code/test_commands.t
+[test_recipe.t]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/code/test_recipe.t
+[test.t]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/code/test.t

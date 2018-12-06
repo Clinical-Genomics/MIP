@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.2;
 
 ## Constants
 Readonly my $COMMA         => q{,};
@@ -48,11 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -101,12 +97,12 @@ diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{vcf2cytosure};
+my @function_base_commands = qw{ vcf2cytosure };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -131,6 +127,10 @@ my %required_argument = (
           . $SPACE
           . catfile(qw{ path_to_tiddit_outfiles prefix.tab }),
     },
+    sex => {
+        input           => q{male},
+        expected_output => q{--sex male},
+    },
     vcf_infile_path => {
         input           => q{path_to_sample_SVs.vcf},
         expected_output => q{path_to_sample_SVs.vcf},
@@ -154,6 +154,10 @@ my %specific_argument = (
         input           => q{path_to_vcf2cytosure_cgh_files},
         expected_output => q{--out path_to_vcf2cytosure_cgh_files},
     },
+    sex => {
+        input           => q{male},
+        expected_output => q{--sex male},
+    },
     variant_size => {
         input           => $VARIANT_SIZE,
         expected_output => q{--size} . $SPACE . $VARIANT_SIZE,
@@ -174,11 +178,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            do_test_base_command   => 1,
-            function_base_command  => $function_base_command,
-            module_function_cref   => $module_function_cref,
-            required_argument_href => \%required_argument,
+            argument_href              => $argument_href,
+            do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

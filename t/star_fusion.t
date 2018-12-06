@@ -1,89 +1,53 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use open qw{ :encoding(UTF-8) :std };
-use File::Basename qw{ basename dirname };
+use File::Basename qw{ dirname  };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
-use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie qw { :all };
+use autodie qw{ :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Program::Variantcalling::Star_fusion} => [qw{ star_fusion }],
+        q{MIP::Test::Fixtures}                       => [qw{ test_standard_cli }],
+    );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Star_fusion});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
@@ -99,10 +63,11 @@ diag(   q{Test star_fusion from Star_fusion.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
+Readonly my $CPU           => 8;
 Readonly my $READ_LENGTH   => 150;
 Readonly my $THREAD_NUMBER => 16;
 
-my $function_base_command = q{STAR-Fusion};
+my @function_base_commands = qw{ STAR-Fusion };
 
 my %base_argument = (
     stdoutfile_path => {
@@ -119,7 +84,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -130,12 +95,10 @@ my %required_argument = (
           . $SPACE
           . catfile(qw{ dir genome_lib_dir_path }),
     },
-
     sjdb_path => {
         input           => catfile(qw{ dir junctions.tab }),
         expected_output => q{-J} . $SPACE . catfile(qw{ dir junctions.tab }),
     },
-
     output_directory_path => {
         input           => catfile(qw{ dir }),
         expected_output => q{--output_dir} . $SPACE . catfile(qw{ dir }),
@@ -143,18 +106,26 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    cpu => {
+        input           => $CPU,
+        expected_output => q{--CPU} . $SPACE . $CPU,
+    },
     genome_lib_dir_path => {
         input           => catfile(qw{ dir genome_lib_dir_path }),
         expected_output => q{--genome_lib_dir}
           . $SPACE
           . catfile(qw{ dir genome_lib_dir_path }),
     },
-
+    samples_file_path => {
+        input           => catfile(qw{ dir samples_file.txt }),
+        expected_output => q{--samples_file}
+          . $SPACE
+          . catfile(qw{ dir samples_file.txt }),
+    },
     sjdb_path => {
         input           => catfile(qw{ dir junctions.tab }),
         expected_output => q{-J} . $SPACE . catfile(qw{ dir junctions.tab }),
     },
-
     output_directory_path => {
         input           => catfile(qw{ dir }),
         expected_output => q{--output_dir} . $SPACE . catfile(qw{ dir }),
@@ -169,46 +140,13 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

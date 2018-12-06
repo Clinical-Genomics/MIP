@@ -27,13 +27,13 @@ MIP has been in use in the clinical production at the Clinical Genomics facility
 ## Example Usage
 
 ```Bash
-$ mip analyse rare_disease --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [family_id_pedigree.yaml]
+$ mip analyse rare_disease --case_id [case_id] --bwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [case_id_pedigree.yaml]
 ```
 
 ## Features
 
 * Installation
-  * Simple automated install of all programs using conda/SHELL via supplied install script
+  * Simple automated install of all programs using conda/SHELL via supplied install application
   * Downloads and prepares references in the installation process
   * Handle conflicting tool dependencies
 * Autonomous
@@ -43,26 +43,25 @@ $ mip analyse rare_disease --family_id [family_id] --pbwa_mem 1 --config_file [m
   * Splits and merges files/contigs for samples and families when relevant
 * Automatic
   * A minimal amount of hands-on time
-  * Tracks and executes all module without manual intervention
+  * Tracks and executes all recipes without manual intervention
   * Creates internal queues at nodes to optimize processing
   * Minimal IO between nodes and login node
 * Flexible:
-  * Design your own workflow by turning on/off relevant modules
+  * Design your own workflow by turning on/off relevant recipes
   * Restart an analysis from anywhere in your workflow
-  * Process one, or multiple samples using the module\(s\) of your choice
+  * Process one, or multiple samples using the recipe\(s\) of your choice
   * Supply parameters on the command line, in a pedigree.yaml file or via config files
   * Simulate your analysis before performing it
-  * Redirect each modules analysis process to a temporary directory \(@nodes or @login\)
-  * Limit a run to a specific set of genomic intervals
+  * Redirect each recipe analysis process to a temporary directory \(@nodes or @login\)
+  * Limit a run to a specific set of genomic intervals or chromosomes
   * Use multiple variant callers for both snv, indels and SV
   * Use multiple annotation programs
   * Optionally split data into clinical variants and research variants
 * Fast
   * Analyses an exome trio in approximately 4 h
   * Analyses a genome in approximately 21 h
-  * Rapid mode analyzes a WGS sample in approximately 4 h using a data reduction and parallelization scheme
 * Traceability
-  * Track the status of each modules through dynamically updated status logs
+  * Track the status of each recipe through dynamically updated status logs
   * Recreate your analysis from the MIP log or generated config files
   * Log sample meta-data and sequence meta-data
   * Log version numbers of softwares and databases
@@ -74,7 +73,7 @@ $ mip analyse rare_disease --family_id [family_id] --pbwa_mem 1 --config_file [m
   * Transcript level annotation
     * Separate pathogenic transcripts for correct downstream annotation
   * Annotate all alleles for a position
-    * Split multi-allelic records into single records to ease annotation
+    * Split multi-allelic records into single records to facilitate annotation
     * Left align and trim variants to normalise them prior to annotation
   * Extracts QC-metrics and stores them in YAML format
   * Annotate coverage across genetic regions via Sambamba and Chanjo
@@ -91,7 +90,7 @@ $ mip analyse rare_disease --family_id [family_id] --pbwa_mem 1 --config_file [m
 MIP is written in perl and therefore requires that perl is installed on your OS.
 
 #### Prerequisites
-* [Perl], version 5.22.0 or above
+* [Perl], version 5.26.0 or above
 * [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
 * [Miniconda]
 
@@ -105,7 +104,7 @@ Below are instructions for installing MIP for analysis of rare diseases. Install
 $ git clone https://github.com/Clinical-Genomics/MIP.git
 $ cd MIP
 ```
-##### 2.Install required modules from cpan
+##### 2.Install required perl modules from cpan
 
 ```Bash
 $ cd definitions
@@ -119,20 +118,21 @@ $ cd -
 $ perl t/mip_install.test
 ```
 
-##### 4.Create the install instructions for MIP  
+##### 4.Create the install instructions for MIP
 ```Bash
-$ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --installations full --environment_name emip=MIP
+$ perl mip install rare_disease --installations full --environment_name emip=MIP
 ```
-This will generate a batch script called "mip.sh" in your working directory.
+This will generate a bash script called "mip.sh" in your working directory.
 
-  ###### *Note:*  
-  The batch script will attempt to install the MIP dependencies in a conda environment called MIP. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:  
+###### *Note:*
+  The batch script will attempt to install the MIP dependencies in a conda environment called MIP. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:
   * MIP's base environment (named MIP in the example above)
   * MIP_cnvnator
+  * MIP_delly
+  * MIP_freebayes
   * MIP_peddy
   * MIP_py3
-  * MIP_svdb
-  * MIP_vep  
+  * MIP_vep
 
 It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.   
 
@@ -146,12 +146,12 @@ $ bash mip.sh
 ```
 A conda environment will be created where MIP with most of its dependencies will be installed.
 
-  ###### *Note:*  
-  - Some references are quite large and will take time to download. You might want to run this using screen or tmux.
+###### *Note:*
+  Some references are quite large and will take time to download. You might want to run this using screen or tmux. Alternatively, the installation script can be submitted as a sbatch job if the flag ``--sbatch_mode`` is used when generating the installation script.
 
 ##### 6.Test your MIP installation (optional)
 
-Make sure to activate your conda environment if that option was used above.  
+Make sure to activate your conda environment if that option was used above.
 
 ```Bash
 $ prove t -r
@@ -159,74 +159,36 @@ $ perl t/mip_analyse_rare_disease.test
 ```
 
 ###### When setting up your analysis config file
-  In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator, SVDB and VEP in each own, with some extra initialization:
+  In your config yaml file or on the command line you will have to supply the ``load_env`` parameter to activate the environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator and VEP in each own, with some extra initialization:
 
   ```Yml
-  program_source_environment_command:
-    genmod:
-     - source
-     - activate
-     - MIP_py3
-  module_source_environment_command:
-    pchanjo_sexcheck:
-     - source
-     - activate
-     - MIP_py3
-    pcnvnator:
-     - LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH;
-     - export
-     - LD_LIBRARY_PATH;
-     - source
-     - [CONDA_PATH]/envs/MIP_cnvnator/root/bin/thisroot.sh;
-     - source
-     - activate
-     - MIP_cnvnator
-    pmultiqc:
-     - source
-     - activate
-     - MIP_py3
-    ppeddy:
-     - source
-     - activate
-     - MIP_peddy
-    prankvariant:
-     - source
-     - activate
-     - MIP_py3
-    psv_rankvariant:
-     - source
-     - activate
-     - MIP_py3
-    psv_combinevariantcallsets:
-     - source
-     - activate
-     - MIP_svdb
-    psv_varianteffectpredictor:
-     - LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH;
-     - export
-     - LD_LIBRARY_PATH;
-     - source
-     - activate
-     - MIP_vep
-    pvarianteffectpredictor:
-     - LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH;
-     - export
-     - LD_LIBRARY_PATH;
-     - source
-     - activate
-     - MIP_vep
-    pvariant_integrity:
-     - source
-     - activate
-     - MIP_py3
-  source_main_environment_commands:
-    - source
-    - activate
-    - MIP
+  load_env:
+    MIP:
+     mip:
+     method: conda
+    MIP_py3:
+     chanjo_sexcheck:
+     genmod:
+     method: conda
+     multiqc_ar:
+     rankvariant:
+     sv_rankvariant:
+     variant_integrity_ar:
+    MIP_cnvnator:
+     cnvnator_ar: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/MIP_cnvnator/root/bin/thisroot.sh;"
+     method: conda
+    MIP_delly:
+     delly_call:
+     delly_reformat:
+     method: conda
+    MIP_peddy:
+     peddy_ar:
+     method: conda
+    MIP_vep:
+     sv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
+     varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
+     method: conda
   ```
-
-  MIP will execute this on the node before executing the program and then revert to the ``--source_main_environment_command`` if set. Otherwise ``source deactivate`` is used to return to the conda root environment.
-
 
 ### Usage
 
@@ -235,7 +197,7 @@ MIP is called from the command line and takes input from the command line \(prec
 Lists are supplied as repeated flag entries on the command line or in the config using the yaml format for arrays.  
 Only flags that will actually be used needs to be specified and MIP will check that all required parameters are set before submitting to SLURM.
 
-Program parameters always begins with "p" followed by a capital letter. Program parameters can be set to "0" \(=off\), "1" \(=on\) and "2" \(=dry run mode\). Any progam can be set to dry run mode and MIP will create sbatch scripts, but not submit them to SLURM. MIP can be restarted from any module, but you need to supply previous dependent programs in dry run mode to ensure proper file handling.
+Recipe parameters can be set to "0" \(=off\), "1" \(=on\) and "2" \(=dry run mode\). Any recipe can be set to dry run mode and MIP will create sbatch scripts, but not submit them to SLURM. MIP can be restarted from any recipe, but you need to supply previous dependent recipes in dry run mode to ensure proper file handling.
 
 MIP will overwrite data files when reanalyzing, but keeps all "versioned" sbatch scripts for traceability.
 
@@ -243,10 +205,10 @@ You can always supply `perl mip.pl --help` to list all available parameters and 
 
 Example usage:
 ```Bash
-$ mip analyse rare_disease -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --pbwa_mem 2 -c 3_config.yaml
+$ mip analyse rare_disease -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
 ```
 
-This will analyse family 3 using 3 individuals from that family and begin the analysis with programs after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
+This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
 
 #### Input
 
@@ -263,7 +225,7 @@ All references and template files should be placed directly in the reference dir
 
 #### Output
 
-Analyses done per individual is found in each sample_id directory and analyses done including all samples can be found in the family directory.
+Analyses done per individual is found in each sample_id directory and analyses done including all samples can be found in the case directory.
 
 ##### Sbatch Scripts
 
@@ -271,10 +233,9 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 
 ##### Data
 
-MIP will place any generated datafiles in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each program is written in the program/info directory prior to alignment and in the aligner/info directory post alignment.
+MIP will place any generated datafiles in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each recipe is written in the recipe/info directory.
 
 [Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_config.yaml
-[CPAN]: https://www.cpan.org/
 [Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/aggregated_master.txt
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml

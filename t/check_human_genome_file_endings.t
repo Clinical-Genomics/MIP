@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -136,7 +136,8 @@ set_human_genome_reference_features(
         file_info_href => \%file_info,
         human_genome_reference =>
           basename( $active_parameter{human_genome_reference} ),
-        log => $log,
+        log            => $log,
+        parameter_href => \%parameter,
     }
 );
 

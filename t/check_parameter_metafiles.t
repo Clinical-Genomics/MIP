@@ -1,14 +1,13 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use open qw{ :encoding(UTF-8) :std };
-use File::Basename qw{ basename dirname };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
-use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
@@ -21,72 +20,36 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::File::Format::Yaml qw{ load_yaml };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
+
+    use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
+        q{MIP::Check::Reference}   => [qw{ check_parameter_metafiles }],
         q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
-        q{MIP::Script::Utils}      => [qw{ help }],
+        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
     );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Check::Reference});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Check::Reference qw{ check_parameter_metafiles };
@@ -103,7 +66,7 @@ diag(   q{Test check_parameter_metafiles from Reference.pm v}
 my %parameter = load_yaml(
     {
         yaml_file => catfile(
-            dirname($Bin), qw{ definitions rare_disease_parameters.yaml}
+            dirname($Bin), qw{ definitions rd_dna_parameters.yaml}
         ),
     }
 );
@@ -114,8 +77,7 @@ my %file_info = (
     # BWA human genome reference file endings
     bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
 
-    exome_target_bed =>
-      [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
+    exome_target_bed => [qw{ .interval_list .pad100.interval_list }],
 
     # Human genome meta files
     human_genome_reference_file_endings => [qw{ .dict .fai }],
@@ -178,7 +140,7 @@ is( $parameter{$parameter_name}{build_file},
             qw{ data references GRCh37_agilent_sureselect_targets_cre_-v1-.bed }
         ) => q{sample1},
     },
-    ppicardtools_collecthsmetrics => 1,
+    picardtools_collecthsmetrics => 1,
 );
 
 check_parameter_metafiles(
@@ -215,7 +177,7 @@ q{Set build file switch for hash parameter reference with mixed existence to 1}
 $active_parameter{bwa_build_reference} = 1;
 $active_parameter{human_genome_reference} =
   catfile( $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.fasta } );
-$active_parameter{pbwa_mem} = 1;
+$active_parameter{bwa_mem} = 1;
 
 check_parameter_metafiles(
     {
@@ -251,36 +213,3 @@ q{Active parameter, no existing file and active associated program for scalar pa
 );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}

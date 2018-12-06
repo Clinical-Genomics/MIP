@@ -1,5 +1,6 @@
 package MIP::Recipes::Install::PROGRAM;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
@@ -27,6 +28,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $DASH    => q{-};
 Readonly my $DOT     => q{.};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
@@ -121,13 +123,22 @@ sub install_PROGRAM {
     use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_rm };
     use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Compression::Zip qw{ unzip };
 
     ## Unpack parameters
-    my $PROGRAM_version = $PROGRAM_parameters_href->{version};
+    my $program_version = $PROGRAM_parameters_href->{version};
+
+    ## Set program specific parameters
+    my $program_name = q{PROGRAM};
+    my $program_directory_path =
+      catdir( $conda_prefix_path, q{share}, $program_name . $DASH . $program_version );
+    my $executable  = q{PROGRAM_EXECUTABLE};
+    my $program_url = q{https://};
+
+    ## Store original working directory
+    my $pwd = cwd();
 
     ## Retrieve logger object
     my $log = retrieve_log(
@@ -138,14 +149,9 @@ sub install_PROGRAM {
         }
     );
 
-    ## Store original working directory
-    my $pwd = cwd();
-
-    say {$FILEHANDLE} q{### Install PROGRAM};
+    say {$FILEHANDLE} q{### Install} . $SPACE . $program_name;
 
     ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $PROGRAM_dir =
-      catdir( $conda_prefix_path, q{PROGRAM} . $PROGRAM_version );
     my $install_check = check_existing_installation(
         {
             conda_environment      => $conda_environment,
@@ -153,8 +159,8 @@ sub install_PROGRAM {
             FILEHANDLE             => $FILEHANDLE,
             log                    => $log,
             noupdate               => $noupdate,
-            program_directory_path => $PROGRAM_dir,
-            program_name           => q{PROGRAM},
+            program_directory_path => $program_directory_path,
+            program_name           => $program_name,
         }
     );
 
@@ -168,7 +174,7 @@ sub install_PROGRAM {
     if ($conda_environment) {
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
-        conda_source_activate(
+        conda_activate(
             {
                 env_name   => $conda_environment,
                 FILEHANDLE => $FILEHANDLE,
@@ -178,19 +184,17 @@ sub install_PROGRAM {
     }
 
     ## Download
-    say {$FILEHANDLE} q{## Download PROGRAM};
-    my $url = q{https://};
-    my $PROGRAM_zip_path =
+    say {$FILEHANDLE} q{## Download} . $SPACE . $program_name;
+    my $program_zip_path =
       catfile( $conda_prefix_path,
-        q{PROGRAM-} . $PROGRAM_version . $DOT . q{zip} );
+        $program_name . $DASH . $program_version . $DOT . q{zip} );
     wget(
         {
             FILEHANDLE   => $FILEHANDLE,
-            outfile_path => $PROGRAM_zip_path,
+            outfile_path => $program_zip_path,
             quiet        => $quiet,
-            url          => $url,
+            url          => $program_url,
             verbose      => $verbose,
-
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -201,7 +205,7 @@ sub install_PROGRAM {
         {
             FILEHANDLE  => $FILEHANDLE,
             force       => 1,
-            infile_path => $PROGRAM_zip_path,
+            infile_path => $program_zip_path,
             quiet       => $quiet,
             verbose     => $verbose,
         }
@@ -209,10 +213,10 @@ sub install_PROGRAM {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Move to PROGRAM directory
-    say {$FILEHANDLE} q{## Move to PROGRAM directory};
+    say {$FILEHANDLE} q{## Move to} . $SPACE . $program_name . $SPACE . q{directory};
     gnu_cd(
         {
-            directory_path => q{PROGRAM-} . $PROGRAM_version,
+            directory_path => $program_directory_path,
             FILEHANDLE     => $FILEHANDLE,
         }
     );
@@ -228,19 +232,19 @@ sub install_PROGRAM {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Change mode to executable
-    my $file_path =
-      catfile( $conda_prefix_path, q{PROGRAM-} . $version, $PROGRAM_BINARY );
+    my $file_path = catfile( $program_directory_path, $program_executable );
     gnu_chmod(
         {
             FILEHANDLE => $FILEHANDLE,
-            file_path  => $file_path permission => q{a+x},
+            file_path  => $file_path,
+            permission => q{a+x},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Make available from conda environment
     say {$FILEHANDLE} q{## Make available from conda environment};
-    my $link_path = catfile( $conda_prefix_path, qw{ bin PROGRAM_BINARY } );
+    my $link_path = catfile( $conda_prefix_path, q{bin}, $program_executable );
     gnu_ln(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -258,7 +262,7 @@ sub install_PROGRAM {
         {
             FILEHANDLE  => $FILEHANDLE,
             force       => 1,
-            infile_path => $PROGRAM_zip_path,
+            infile_path => $program_zip_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -276,7 +280,7 @@ sub install_PROGRAM {
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {
         say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_source_deactivate(
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }

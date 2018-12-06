@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -35,8 +35,8 @@ sub check_founder_id {
 ## Function : Check that founder_ids are included in the pedigree info
 ## Returns  :
 ## Arguments: $active_sample_ids_ref => Array of pedigree samples {REF}
-##          : $log                     => Log object
-##          : $pedigree_href           => Pedigree info {REF}
+##          : $log                   => Log object
+##          : $pedigree_href         => Pedigree info {REF}
 
     my ($arg_href) = @_;
 
@@ -92,7 +92,7 @@ sub check_founder_id {
 
 sub check_pedigree_mandatory_key {
 
-## Function : Check that the pedigree family mandatory keys are present
+## Function : Check that the pedigree case mandatory keys are present
 ## Returns  :
 ## Arguments: $file_path     => Pedigree file path
 ##          : $log           => Log object
@@ -124,13 +124,13 @@ sub check_pedigree_mandatory_key {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @mandatory_family_keys = qw{ family samples };
+    my @mandatory_case_keys   = qw{ case samples };
     my @mandatory_sample_keys = qw{ sample_id father mother sex phenotype };
 
     ### Family
-    ## Check mandatory family keys
+    ## Check mandatory case keys
   MANDATORY_KEY:
-    foreach my $key (@mandatory_family_keys) {
+    foreach my $key (@mandatory_case_keys) {
 
         next MANDATORY_KEY if ( exists $pedigree_href->{$key} );
 
@@ -147,7 +147,7 @@ sub check_pedigree_mandatory_key {
   SAMPLE_KEY:
     foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
 
-        ## Check that we find mandatory family keys
+        ## Check that we find mandatory sample keys
       MANDATORY_KEY:
         foreach my $key (@mandatory_sample_keys) {
 
@@ -199,9 +199,8 @@ sub check_pedigree_sample_allowed_values {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my %allowed_values = (
-        analysis_type => [qw{ wes wgs wts cancer}],
+        analysis_type => [qw{ wes wgs vrn wts }],
         phenotype     => [qw{ affected unaffected unknown }],
-        sample_origin => [qw{ normal tumor }],
         sex           => [qw{ female male other unknown }],
     );
 

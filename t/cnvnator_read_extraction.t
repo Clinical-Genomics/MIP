@@ -3,7 +3,7 @@
 use Modern::Perl qw{ 2014 };
 use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.026;    #Require at least perl 5.18
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -96,7 +96,7 @@ diag(   q{Test cnvnator_read_extraction from Cnvnator v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{cnvnator};
+my @function_base_commands = qw{ cnvnator };
 
 my %base_argument = (
     stderrfile_path => {
@@ -105,7 +105,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     stdoutfile_path => {
         input           => q{stdoutfile_path.test},
@@ -124,7 +124,7 @@ my %required_argument = (
 
 my %specific_argument = (
     regions_ref => {
-        inputs_ref => [qw{ 1 2 3 }],
+        inputs_ref      => [qw{ 1 2 3 }],
         expected_output => q{-chrom 1 2 3},
     },
     unique => {
@@ -143,11 +143,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

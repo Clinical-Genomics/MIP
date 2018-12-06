@@ -32,7 +32,7 @@ sub write_mip_config {
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $log                   => Log object
 ##          : $remove_keys_ref       => Keys to remove before writing to file {REF}
-##          : $sample_info_href      => Info on samples and family hash {REF}
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 

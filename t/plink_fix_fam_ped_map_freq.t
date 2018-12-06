@@ -12,7 +12,7 @@ use Params::Check qw{ check allow last_error };
 use Test::More;
 use warnings qw{ FATAL utf8 };
 use utf8;
-use 5.018;
+use 5.026;
 
 ## CPANM
 use autodie;
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -99,12 +95,12 @@ diag(   q{Test plink_fix_fam_ped_map_freq from Plink.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{plink2};
+my @function_base_commands = qw{ plink2 };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -116,22 +112,22 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     binary_fileset_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--bfile}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     fam_file_path => {
-        input => catfile(qw{ outfamily_file_directory family_id .fam }),
+        input           => catfile(qw{ outcase_file_directory case_id .fam }),
         expected_output => q{--fam}
           . $SPACE
-          . catfile(qw{ outfamily_file_directory family_id .fam }),
+          . catfile(qw{ outcase_file_directory case_id .fam }),
     },
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
 );
 
@@ -141,16 +137,16 @@ my %specific_argument = (
         expected_output => q{--allow-no-sex},
     },
     binary_fileset_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--bfile}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     fam_file_path => {
-        input => catfile(qw{ outfamily_file_directory family_id .fam }),
+        input           => catfile(qw{ outcase_file_directory case_id .fam }),
         expected_output => q{--fam}
           . $SPACE
-          . catfile(qw{ outfamily_file_directory family_id .fam }),
+          . catfile(qw{ outcase_file_directory case_id .fam }),
     },
     freqx => {
         input           => 1,
@@ -161,10 +157,10 @@ my %specific_argument = (
         expected_output => q{--make-just-fam},
     },
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     recode => {
         input           => 1,
@@ -182,11 +178,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

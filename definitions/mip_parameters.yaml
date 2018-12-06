@@ -3,56 +3,57 @@
 ## Enable MIP
 ## Bash
 conda_path:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   mandatory: no
-  type: mip
+  type: path
+  update_path: absolute_path
 bash_set_errexit:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 0
   type: mip
 bash_set_nounset:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 0
   type: mip
 bash_set_pipefail:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 0
   type: mip
 config_file:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 0
   type: path
   update_path: absolute_path
 log_file:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   type: path
   update_path: absolute_path
 mip:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
   type: mip
 temp_directory:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: /scratch/$SLURM_JOB_ID
   type: path
 verbose:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 0

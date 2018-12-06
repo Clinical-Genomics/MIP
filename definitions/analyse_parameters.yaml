@@ -1,42 +1,42 @@
 ---
 ## Version: 1.0.0
 analysis_constant_path:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: analysis
   type: path
 analysis_type:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: HASH
   type: mip
 cluster_constant_path:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   type: path
 config_file_analysis:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 0
   type: path
   update_path: absolute_path
 dry_run_all:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   mandatory: no
   type: mip
 email:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   mandatory: no
   type: mip
 email_types:
-  associated_program:
+  associated_recipe:
    - mip
   element_separator: ","
   data_type: ARRAY
@@ -44,123 +44,116 @@ email_types:
   default:
    - FAIL
   type: mip
-expected_coverage:
-  associated_program:
+exclude_contigs:
+  associated_recipe:
    - mip
-  data_type: HASH
+  element_separator: ,
+  data_type: ARRAY
   mandatory: no
   type: mip
-family_id:
-  associated_program:
+case_id:
+  associated_recipe:
    - mip
   data_type: SCALAR
   type: mip
-infile_dirs:
-  associated_program:
-   - mip
-  exists_check: directory
-  data_type: HASH
-  type: path
-  update_path: absolute_path
 node_ram_memory:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 128
   type: mip
 max_cores_per_node:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 16
   type: mip
-module_source_environment_command:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 outdata_dir:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   type: path
   update_path: absolute_path
 outscript_dir:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   type: path
   update_path: absolute_path
 pedigree_file:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   type: path
   update_path: absolute_path
 platform:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: ILLUMINA
   type: mip
-print_program_mode:
-  associated_program:
+print_recipe:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+print_recipe_mode:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 2
   type: mip
-program_source_environment_command:
-  associated_program:
+load_env:
+  associated_recipe:
    - mip
   data_type: HASH
   mandatory: no
   type: mip
 project_id:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   type: mip
 reference_dir:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   exists_check: directory
   type: path
   update_path: absolute_path
 sample_ids:
-  associated_program:
+  associated_recipe:
    - mip
   element_separator: ,
   data_type: ARRAY
   type: mip
 sample_info_file:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   type: path
   update_path: absolute_path
 slurm_quality_of_service:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: normal
   type: mip
-source_main_environment_commands:
-  associated_program:
-   - mip
-  element_separator: " "
-  data_type: ARRAY
-  mandatory: no
-  type: mip
-start_with_program:
-  associated_program:
+start_with_recipe:
+  associated_recipe:
    - mip
   data_type: SCALAR
   mandatory: no
   type: mip
+submission_profile:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: slurm
+  type: mip
 supported_capture_kit:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: HASH
   default:
@@ -175,46 +168,3 @@ supported_capture_kit:
     latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
   type: mip
 ### Programs
-psplit_fastq_file:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  infile_suffix: ".fastq"
-  outfile_suffix: ".fastq.gz"
-  program_name_path:
-   - pigz
-   - split
-  type: program
-split_fastq_file_read_batch:
-  associated_program:
-   - psplit_fastq_file
-  data_type: SCALAR
-  default: 25000000
-  type: program_argument
-## Gzip
-pgzip_fastq:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 1
-  file_tag: nofile_tag
-  infile_suffix: ".fastq"
-  program_name_path:
-   - gzip
-  type: program
-## FastQC
-pfastqc:
-  associated_program:
-   - mip
-  chain: RawSeqQC
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  infile_suffix: ".fastq"
-  program_name_path:
-   - fastqc
-  type: program

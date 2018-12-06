@@ -31,7 +31,7 @@ Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 
 sub install_star_fusion {
 

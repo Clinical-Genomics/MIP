@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -109,8 +109,12 @@ my @infiles = get_files(
     }
 );
 
-my @expected_files =
-  qw{ 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_2.fastq.gz };
+my @expected_files = qw{ 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz
+  1_161011_TestFilev2_ADM1059A1_TCCGGAGA_2.fastq.gz
+  2_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz
+  2_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz
+  7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz
+  8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz };
 
 ## Then skip sub dir
 is_deeply( \@infiles, \@expected_files,
@@ -132,8 +136,16 @@ is_deeply( \@infiles, \@expected_files, q{Found all files recursively} );
 ## Given an infile directory, when applying no rules
 @infiles = get_files( { file_directory => $infile_directory, } );
 
-my @expected_file_objects =
-  qw{ fastq 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_2.fastq.gz original_fastq_files test.fastq.gz test.txt };
+my @expected_file_objects = qw{ fastq
+  1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz
+  1_161011_TestFilev2_ADM1059A1_TCCGGAGA_2.fastq.gz
+  2_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz
+  2_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz
+  7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz
+  8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz
+  original_fastq_files
+  test.fastq.gz
+  test.txt };
 
 ## Then find all files and dir recursively
 is_deeply( \@infiles, \@expected_file_objects,

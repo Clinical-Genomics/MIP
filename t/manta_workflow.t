@@ -3,7 +3,7 @@
 use Modern::Perl qw{ 2014 };
 use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.026;    #Require at least perl 5.18
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -140,12 +140,16 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => catfile( $required_argument{outdirectory_path}{expected_output},
-              $function_base_command ),
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => [
+                catfile(
+                    $required_argument{outdirectory_path}{expected_output},
+                    $function_base_command
+                )
+            ],
+            do_test_base_command => 1,
         }
     );
 }

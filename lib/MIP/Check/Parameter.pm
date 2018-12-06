@@ -1,5 +1,6 @@
 package MIP::Check::Parameter;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use File::Spec::Functions qw{ catdir catfile };
@@ -15,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 use autodie;
 use Email::Valid;
 use Readonly;
-use List::MoreUtils qw { any };
+use List::MoreUtils qw { all any };
 
 BEGIN {
 
@@ -23,25 +24,35 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_allowed_array_values
       check_allowed_temp_directory
-      check_aligner
       check_cmd_config_vs_definition_file
       check_email_address
       check_gzipped
+      check_load_env_packages
+      check_infile_contain_sample_id
       check_infiles
+      check_mutually_exclusive_parameters
+      check_nist_file_exists
+      check_nist_file_name
+      check_nist_nist_id
+      check_nist_sample_id
+      check_nist_version
       check_parameter_hash
-      check_pprogram_exists_in_hash
       check_prioritize_variant_callers
-      check_program_mode
+      check_recipe_exists_in_hash
+      check_recipe_mode
+      check_recipe_name
       check_sample_ids
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
+      check_sample_id_in_parameter_value
       check_snpsift_keys
+      check_vep_custom_annotation
       check_vep_directories
     };
 }
@@ -156,116 +167,6 @@ sub check_allowed_temp_directory {
     return 1;
 }
 
-sub check_aligner {
-
-## Function : Check that the correct number of aligners is used in MIP and sets the outaligner_dir flag accordingly.
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
-##          : $log                   => Log object
-##          : $outaligner_dir        => Outaligner_dir used in the analysis
-##          : $parameter_href        => Parameter hash {REF}
-##          : $verbose               => Verbosity level
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $broadcasts_ref;
-    my $log;
-    my $parameter_href;
-
-    ## Default(s)
-    my $outaligner_dir;
-    my $verbose;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        broadcasts_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$broadcasts_ref,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        verbose => {
-            default     => 0,
-            store       => \$verbose,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %aligner;
-
-  ALIGNER:
-    foreach my $aligner ( @{ $parameter_href->{dynamic_parameter}{aligners} } )
-    {
-
-        ## Active aligner
-        if ( $active_parameter_href->{$aligner} ) {
-
-            # Increment aligner count
-            $aligner{total_active_aligner_count}++;
-
-            # Store aligner
-            push @{ $aligner{active_aligners} }, $aligner;
-
-            # Set active aligner for downstream use
-            $parameter_href->{active_aligner} = $aligner;
-
-            if ( not defined $outaligner_dir ) {
-
-                # Set outaligner_dir parameter depending on active aligner
-                $active_parameter_href->{outaligner_dir} = $outaligner_dir =
-                  $parameter_href->{$aligner}{outdir_name};
-
-                next ALIGNER if ( not $verbose );
-
-                my $info = q{Set outaligner_dir to: } . $outaligner_dir;
-
-                ## Add info to broadcasts
-                push @{$broadcasts_ref}, $info;
-            }
-        }
-    }
-
-    if ( exists $aligner{total_active_aligner_count}
-        and $aligner{total_active_aligner_count} > 1 )
-    {
-
-        $log->fatal( q{You have activate more than 1 aligner: }
-              . join( q{, }, @{ $aligner{active_aligners} } )
-              . q{. MIP currently only supports 1 aligner per analysis.} );
-        exit 1;
-    }
-    return;
-}
-
 sub check_cmd_config_vs_definition_file {
 
 ## Function : Compare keys from config and cmd with definitions file
@@ -299,7 +200,7 @@ sub check_cmd_config_vs_definition_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my @allowed_unique_keys =
-      ( q{vcfparser_outfile_count}, $active_parameter_href->{family_id} );
+      ( q{vcfparser_outfile_count}, $active_parameter_href->{case_id} );
     my @unique;
 
   ACTIVE_PARAMETER:
@@ -317,10 +218,10 @@ sub check_cmd_config_vs_definition_file {
         ## Do not print if allowed_unique_keys that have been created dynamically from previous runs
         if ( not any { $_ eq $unique_key } @allowed_unique_keys ) {
 
-            croak(  q{Found illegal key: }
-                  . $unique_key
-                  . q{ in config file or command line that is not defined in define_parameters.yaml}
-            );
+            say {*STDERR} q{Found illegal key: }
+              . $unique_key
+              . q{ in config file or command line that is not defined in define_parameters.yaml};
+            croak();
         }
     }
     return;
@@ -341,7 +242,6 @@ sub check_email_address {
 
     my $tmpl = {
         email => {
-            defined     => 1,
             required    => 1,
             store       => \$email,
             strict_type => 1,
@@ -354,6 +254,8 @@ sub check_email_address {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $email );
 
     ## Check syntax and mail host
     my $address = Email::Valid->address(
@@ -368,7 +270,7 @@ sub check_email_address {
               . Email::Valid->details() );
         exit 1;
     }
-    return;
+    return 1;
 }
 
 sub check_gzipped {
@@ -400,6 +302,140 @@ sub check_gzipped {
         $file_compression_status = 1;
     }
     return $file_compression_status;
+}
+
+sub check_load_env_packages {
+
+## Function : Check that package name name are included in MIP as either "mip", "recipe" or "program_executables"
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Allowed packages/keywords in load_env section of  config
+    my @allowed_packages = (
+        @{ $parameter_href->{cache}{program_executables} },
+        qw{ installation method mip }
+    );
+
+  ENV:
+    foreach my $env ( keys %{ $active_parameter_href->{load_env} } ) {
+
+      PACKAGE:
+        foreach my $package ( keys %{ $active_parameter_href->{load_env}{$env} } ) {
+
+            ## is program executable, installation, method or MIP main
+            next PACKAGE if ( any { $_ eq $package } @allowed_packages );
+
+            ## is recipe
+            next PACKAGE if ( exists $parameter_href->{$package} );
+
+            my $err_msg =
+                q{Could not find load_env package: '}
+              . $package
+              . q{' in MIP as either recipe or program_executables};
+            croak($err_msg);
+        }
+    }
+    return 1;
+}
+
+sub check_infile_contain_sample_id {
+
+## Function : Check that the sample_id provided and sample_id in infile name match.
+## Returns  :
+## Arguments: $infile_name      => Infile name
+##          : $infile_sample_id => Sample_id collect with regexp from infile
+##          : $log              => Log object
+##          : $sample_id        => Sample id from user
+##          : $sample_ids_ref   => Sample ids from user
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_name;
+    my $infile_sample_id;
+    my $log;
+    my $sample_id;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        infile_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_name,
+            strict_type => 1,
+        },
+        infile_sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_sample_id,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Track seen sample ids
+    my %seen;
+
+    ## Increment for all sample ids
+    map { $seen{$_}++ } ( @{$sample_ids_ref}, $infile_sample_id );
+
+    if ( not $seen{$infile_sample_id} > 1 ) {
+
+        $log->fatal( $sample_id
+              . q{ supplied and sample_id }
+              . $infile_sample_id
+              . q{ found in file : }
+              . $infile_name
+              . q{ does not match. Please rename file to match sample_id: }
+              . $sample_id );
+        exit 1;
+    }
+    return 1;
 }
 
 sub check_infiles {
@@ -468,7 +504,403 @@ sub check_infiles {
               . q{ in supplied infile: }
               . catfile( $infile_directory, $infile ) );
         $log->fatal(
-q{Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
+q{Check that: '--sample_ids' and '--infile_dirs' contain the same sample_id and that the filename of the infile contains the sample_id.},
+        );
+        exit 1;
+    }
+    return 1;
+}
+
+sub check_mutually_exclusive_parameters {
+
+## Function : Check mutually exclusive parameters and croak if mutually enabled
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $log                   => Log object
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Mutually exclusive parameters
+    my %mutally_exclusive_params =
+      ( markduplicates_picardtools_markduplicates =>
+          [qw{ markduplicates_sambamba_markdup }] );
+
+  PARAMETER:
+    while ( my ( $parameter, $exclusive_parameters_ref ) =
+        each %mutally_exclusive_params )
+    {
+
+        # Not active parameter no need to check
+        next PARAMETER if ( not $active_parameter_href->{$parameter} );
+
+      EXCLUSIVE_PARAM:
+        foreach my $exclusive_parameter ( @{$exclusive_parameters_ref} ) {
+
+            # Not active exclusive aprameter no need to check
+            next EXCLUSIVE_PARAM
+              if ( not $active_parameter_href->{$exclusive_parameter} );
+
+            $log->fatal(
+qq{Enable either $parameter or $exclusive_parameter as they are mutually exclusive}
+            );
+            exit 1;
+        }
+    }
+    return 1;
+}
+
+sub check_nist_file_exists {
+
+## Function : Check nist file path exists
+## Returns  : 1
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $log                   => Log object
+##          : $nist_parameters_ref   => Nist parameters to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $nist_parameters_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        nist_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_parameters_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Path qw { check_filesystem_objects_and_index_existance };
+
+  NIST_PARAMETER:
+    foreach my $nist_parameter ( @{$nist_parameters_ref} ) {
+
+        # Alias
+        my $nist_href = \%{ $active_parameter_href->{$nist_parameter} };
+
+      NIST_VERSION:
+        foreach my $nist_version ( keys %{$nist_href} ) {
+
+          NIST_FILE:
+            while ( my ( $nist_id, $file_path ) = each %{ $nist_href->{$nist_version} } )
+            {
+                ## Check path object exists
+                check_filesystem_objects_and_index_existance(
+                    {
+                        log            => $log,
+                        object_name    => ( join q{=>}, ( $nist_version, $nist_id ) ),
+                        object_type    => q{file},
+                        parameter_href => {},
+                        parameter_name => $nist_parameter,
+                        path           => $file_path,
+                    }
+                );
+
+            }
+        }
+    }
+    return 1;
+}
+
+sub check_nist_file_name {
+
+## Function : Check nist file name is defined in nist parameters
+## Returns  : 1
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $log                   => Log object
+##          : $nist_parameters_ref   => Nist parameters to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $nist_parameters_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        nist_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_parameters_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  NIST_PARAMETER:
+    foreach my $nist_parameter ( @{$nist_parameters_ref} ) {
+
+        # Alias
+        my $nist_href = \%{ $active_parameter_href->{$nist_parameter} };
+
+      NIST_VERSION:
+        foreach my $nist_version ( keys %{$nist_href} ) {
+
+          NIST_FILE:
+            while ( my ( $nist_id, $file_name ) = each %{ $nist_href->{$nist_version} } )
+            {
+
+                ## Require that a file name is defined
+                next NIST_FILE if ( defined $file_name );
+
+                $log->fatal(
+                    q{Please supply a file name for option: } . join q{=>},
+                    ( $nist_parameter, $nist_version, $nist_id )
+                );
+                exit 1;
+
+            }
+        }
+    }
+    return 1;
+}
+
+sub check_nist_nist_id {
+
+## Function : Check nist_ids contain supplied nist_id in nist parameters
+## Returns  : 1
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $log                   => Log object
+##          : $nist_id_href          => Nist ids
+##          : $nist_parameters_ref   => Nist parameters to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $nist_id_href;
+    my $nist_parameters_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        nist_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_id_href,
+            strict_type => 1,
+        },
+        nist_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_parameters_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %seen;
+
+  NIST_ID:
+    while ( my ( $sample_id, $nist_id ) = each %{$nist_id_href} ) {
+
+      NIST_PARAMETER:
+        foreach my $nist_parameter ( @{$nist_parameters_ref} ) {
+
+            # Alias
+            my $nist_href = \%{ $active_parameter_href->{$nist_parameter} };
+
+          NIST_VERSION:
+            foreach my $nist_version ( keys %{$nist_href} ) {
+
+                next NIST_VERSION if ( not exists $nist_href->{$nist_version}{$nist_id} );
+                $seen{$nist_id}++;
+            }
+        }
+        next NIST_ID if ( $seen{$nist_id} );
+
+        $log->fatal(
+            q{Supplied nist id: }
+              . $nist_id
+              . q{ for option --nist_id is not a defined nist_id supplied nist options: }
+              . join $SPACE,
+            @{$nist_parameters_ref}
+        );
+        exit 1;
+    }
+    return 1;
+}
+
+sub check_nist_sample_id {
+
+## Function : Check nist_ids contain supplied sample_ids
+## Returns  : 1
+## Arguments: $log            => Log object
+##          : $nist_id_href   => Nist ids
+##          : $sample_ids_ref => Sample ids
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $nist_id_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        nist_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_id_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  SAMPLE_ID:
+    while ( my ( $sample_id, $nist_id ) = each %{$nist_id_href} ) {
+
+        ## Find supplied sample id
+        next SAMPLE_ID if ( any { $_ eq $sample_id } @{$sample_ids_ref} );
+
+        $log->fatal(
+            q{Supplied sample id for option --nist_id }
+              . q{ is not a supplied sample id: }
+              . join $SPACE,
+            @{$sample_ids_ref}
+        );
+        exit 1;
+    }
+    return 1;
+}
+
+sub check_nist_version {
+
+## Function : Check nist_versions contain supplied nist_version in nist parameters
+## Returns  : 1
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $log                   => Log object
+##          : $nist_parameters_ref   => Nist parameters to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $nist_parameters_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        nist_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$nist_parameters_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Unpack
+    my @nist_versions = @{ $active_parameter_href->{nist_versions} };
+
+  NIST_PARAMETER:
+    foreach my $nist_parameter ( @{$nist_parameters_ref} ) {
+
+        # Alias
+        my $nist_href = \%{ $active_parameter_href->{$nist_parameter} };
+
+        ## Check that version exists in nist hashes
+        next NIST_PARAMETER if ( all { exists $nist_href->{$_} } @nist_versions );
+
+        $log->fatal(
+            q{One or more nist versions }
+              . ( join $SPACE, @nist_versions )
+              . q{ does not exist in: }
+              . join $SPACE,
+            @{$nist_parameters_ref}
         );
         exit 1;
     }
@@ -545,16 +977,16 @@ sub check_parameter_hash {
             }
         );
     }
-    return;
+    return 1;
 }
 
-sub check_pprogram_exists_in_hash {
+sub check_recipe_exists_in_hash {
 
-## Function : Test if parameter "mip_program name" from query parameter exists truth hash
+## Function : Test if parameter "recipe name" from query parameter exists in truth hash
 ## Returns  :
 ## Arguments: $log            => Log object
 ##          : $parameter_name => Parameter name
-##          : $query_ref      => Query (ARRAY|HASH) {REF}
+##          : $query_ref      => Query (ARRAY|HASH|SCALAR) {REF}
 ##          : $truth_href     => Truth hash {REF}
 
     my ($arg_href) = @_;
@@ -571,9 +1003,8 @@ sub check_pprogram_exists_in_hash {
             required => 1,
             store    => \$log,
         },
-        parameter_name =>
-          { defined => 1, required => 1, store => \$parameter_name, },
-        truth_href => {
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+        truth_href     => {
             default     => {},
             defined     => 1,
             required    => 1,
@@ -589,38 +1020,96 @@ sub check_pprogram_exists_in_hash {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $error_msg =
-      qq{$SINGLE_QUOTE - Does not exist as module program parameter in MIP};
+    my $error_msg = qq{$SINGLE_QUOTE - Does not exist as recipe parameter in MIP};
 
     if ( ref $query_ref eq q{HASH} ) {
 
-      PROGRAM_NAME:
-        foreach my $mip_program_name ( keys %{$query_ref} ) {
+      RECIPE_NAME:
+        foreach my $recipe_name ( keys %{$query_ref} ) {
 
-            next PROGRAM_NAME if ( exists $truth_href->{$mip_program_name} );
+            next RECIPE_NAME if ( exists $truth_href->{$recipe_name} );
 
-            $log->fatal( $parameter_name
-                  . qq{ key $SINGLE_QUOTE}
-                  . $mip_program_name
-                  . $error_msg );
+            $log->fatal(
+                $parameter_name . qq{ key $SINGLE_QUOTE} . $recipe_name . $error_msg );
             exit 1;
         }
     }
     if ( ref $query_ref eq q{ARRAY} ) {
 
-      PROGRAM_NAME:
-        foreach my $mip_program_name ( @{$query_ref} ) {
+      RECIPE_NAME:
+        foreach my $recipe_name ( @{$query_ref} ) {
 
-            next PROGRAM_NAME if ( exists $truth_href->{$mip_program_name} );
+            next RECIPE_NAME if ( exists $truth_href->{$recipe_name} );
 
             $log->fatal( $parameter_name
                   . qq{ element $SINGLE_QUOTE}
-                  . $mip_program_name
+                  . $recipe_name
                   . $error_msg );
             exit 1;
         }
     }
+    if ( ref $query_ref eq q{SCALAR} ) {
+
+        return if ( exists $truth_href->{$parameter_name} );
+
+        $log->fatal(
+            $parameter_name . qq{ element $SINGLE_QUOTE} . $parameter_name . $error_msg );
+        exit 1;
+    }
     return;
+}
+
+sub check_recipe_name {
+
+## Function : Check that recipe name and program name are not identical
+## Returns  :
+## Arguments: $parameter_href   => Parameter hash {REF}
+##          : $recipe_names_ref => Recipe names {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $recipe_names_ref;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_names_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_names_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %program_name;
+
+  RECIPE:
+    foreach my $recipe ( @{$recipe_names_ref} ) {
+
+        next RECIPE if ( not exists $parameter_href->{$recipe}{program_executables} );
+
+        foreach my $program ( @{ $parameter_href->{$recipe}{program_executables} } ) {
+
+            $program_name{$program} = undef;
+        }
+        if ( exists $program_name{$recipe} ) {
+
+            my $err_msg =
+qq{Identical names for recipe and program: $recipe. Recipes cannot be names as program binaries };
+            croak($err_msg);
+        }
+    }
+    return 1;
 }
 
 sub check_prioritize_variant_callers {
@@ -689,16 +1178,15 @@ sub check_prioritize_variant_callers {
   CALLER:
     foreach my $variant_caller ( @{$variant_callers_ref} ) {
 
-        my $variant_caller_alias =
-          $parameter_href->{$variant_caller}{outdir_name};
+        ## Only use first part of name
+        my ($variant_caller_alias) = split /_/sxm, $variant_caller;
         push @variant_caller_aliases, $variant_caller_alias;
 
-        ## Only active programs
+        ## Only active recipes
         if ( $active_parameter_href->{$variant_caller} ) {
 
             ## If variant caller alias is not part of priority order names
-            if ( not any { $_ eq $variant_caller_alias } @priority_order_names )
-            {
+            if ( not any { $_ eq $variant_caller_alias } @priority_order_names ) {
 
                 $log->fatal( $parameter_name
                       . q{ does not contain active variant caller: '}
@@ -708,7 +1196,7 @@ sub check_prioritize_variant_callers {
             }
         }
         else {
-            ## Only NOT active programs
+            ## Only NOT active recipes
 
             ## If variant caller alias is part of priority order names
             if ( any { $_ eq $variant_caller_alias } @priority_order_names ) {
@@ -740,9 +1228,9 @@ sub check_prioritize_variant_callers {
     return 1;
 }
 
-sub check_program_mode {
+sub check_recipe_mode {
 
-## Function : Check correct value for program mode in MIP.
+## Function : Check correct value for recipe mode in MIP.
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $log                   => Log object
@@ -782,20 +1270,23 @@ sub check_program_mode {
     ## Set allowed values
     my %is_allowed = map { $_ => 1 } ( 0 .. 2 );
 
-  PROGRAM:
-    foreach my $program ( @{ $parameter_href->{dynamic_parameter}{program} } ) {
+  RECIPE:
+    foreach my $recipe ( @{ $parameter_href->{cache}{recipe} } ) {
+
+        my $err_msg = q{Recipe: } . $recipe . q{ does not exist in %active_parameters};
+        croak($err_msg) if ( not exists $active_parameter_href->{$recipe} );
 
         ## Alias
-        my $program_mode = $active_parameter_href->{$program};
+        my $recipe_mode = $active_parameter_href->{$recipe};
 
-        next PROGRAM if ( $is_allowed{$program_mode} );
+        next RECIPE if ( $is_allowed{$recipe_mode} );
 
         #If not an allowed value in active parameters
         $log->fatal(
             $SINGLE_QUOTE
-              . $active_parameter_href->{$program}
-              . q{' Is not an allowed mode for program '--}
-              . $program
+              . $active_parameter_href->{$recipe}
+              . q{' Is not an allowed mode for recipe '--}
+              . $recipe
               . q{'. Set to: }
               . join $PIPE,
             ( sort keys %is_allowed )
@@ -807,16 +1298,16 @@ sub check_program_mode {
 
 sub check_sample_ids {
 
-## Function : Test that the family_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
+## Function : Test that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
 ## Returns  :
-## Arguments: $family_id      => Family id
+## Arguments: $case_id      => Family id
 ##          : $log            => Log object
 ##          : $sample_ids_ref => Sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $family_id;
+    my $case_id;
     my $log;
     my $sample_ids_ref;
 
@@ -833,10 +1324,10 @@ sub check_sample_ids {
             store       => \$sample_ids_ref,
             strict_type => 1,
         },
-        family_id => {
+        case_id => {
             defined     => 1,
             required    => 1,
-            store       => \$family_id,
+            store       => \$case_id,
             strict_type => 1,
         },
     };
@@ -859,14 +1350,13 @@ sub check_sample_ids {
         $seen{$sample_id}++;
 
         ## Family_id cannot be the same as sample_id
-        if ( $family_id eq $sample_id ) {
+        if ( $case_id eq $sample_id ) {
 
             $log->fatal( q{Family_id: }
-                  . $family_id
+                  . $case_id
                   . q{ equals sample_id: }
                   . $sample_id
-                  . q{. Please make sure that the family_id and sample_id(s) are unique.}
-            );
+                  . q{. Please make sure that the case_id and sample_id(s) are unique.} );
             exit 1;
         }
         ## Check for unique sample_ids
@@ -956,9 +1446,8 @@ sub check_sample_id_in_hash_parameter {
         foreach my $sample_id ( @{$sample_ids_ref} ) {
 
             ## Unpack
-            my $sample_id_value =
-              $active_parameter_href->{$parameter_name}{$sample_id};
-            my $is_mandatory = $parameter_href->{$parameter_name}{mandatory};
+            my $sample_id_value = $active_parameter_href->{$parameter_name}{$sample_id};
+            my $is_mandatory    = $parameter_href->{$parameter_name}{mandatory};
 
             ## Check that a value exists
             if ( not defined $sample_id_value ) {
@@ -1039,8 +1528,7 @@ sub check_sample_id_in_hash_parameter_path {
         my %seen;
 
       SAMPLE_STR:
-        foreach my $sample_id_str (
-            keys %{ $active_parameter_href->{$parameter_name} } )
+        foreach my $sample_id_str ( keys %{ $active_parameter_href->{$parameter_name} } )
         {
 
             ## Get sample ids for parameter
@@ -1086,6 +1574,113 @@ sub check_sample_id_in_hash_parameter_path {
                       . join $COMMA
                       . $SPACE,
                     ( keys %seen ),
+                );
+                exit 1;
+            }
+        }
+    }
+    return 1;
+}
+
+sub check_sample_id_in_parameter_value {
+
+## Function : Check sample_id provided in hash parameter value is included in the analysis
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $log                   => Log object
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_names_ref   => Parameter name list {REF}
+##          : $sample_ids_ref        => Array to loop in for parameter {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $parameter_names_ref;
+    my $parameter_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_names_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_names_ref,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  PARAMETER:
+    foreach my $parameter_name ( @{$parameter_names_ref} ) {
+
+        ## Skip undef parameters in current analysis
+        next PARAMETER
+          if ( not defined $active_parameter_href->{$parameter_name} );
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+            ## Unpack
+            my $sample_id_value = $active_parameter_href->{$parameter_name}{$sample_id};
+
+            ## Check that a value exists
+            if ( not defined $sample_id_value ) {
+
+                $log->fatal(
+                    q{Could not find value for }
+                      . $sample_id
+                      . q{ for parameter '--}
+                      . $parameter_name
+                      . $SINGLE_QUOTE
+                      . q{. Provided sample_ids for parameter are: }
+                      . join $COMMA
+                      . $SPACE,
+                    ( keys %{ $active_parameter_href->{$parameter_name} } )
+                );
+                exit 1;
+            }
+            ## Check that sample_ids match
+            if ( not any { $_ eq $sample_id_value } @{$sample_ids_ref} ) {
+
+                $log->fatal(
+                    q{Could not find matching sample_id in analysis for }
+                      . $sample_id_value
+                      . q{ for parameter '--}
+                      . $parameter_name
+                      . $SINGLE_QUOTE
+                      . q{. Provided sample_ids for analysis are: }
+                      . join $COMMA
+                      . $SPACE,
+                    @{$sample_ids_ref}
                 );
                 exit 1;
             }
@@ -1144,12 +1739,74 @@ sub check_snpsift_keys {
               . $file
               . q{ does not match any file in '--snpsift_annotation_files'} );
         $log->fatal(
-            q{Supplied snpsift_annotation_files files:}
-              . $NEWLINE
-              . join $NEWLINE,
-            keys %{$snpsift_annotation_files_href}
-        );
+            q{Supplied snpsift_annotation_files files:} . $NEWLINE . join $NEWLINE,
+            keys %{$snpsift_annotation_files_href} );
         exit 1;
+    }
+    return 1;
+}
+
+sub check_vep_custom_annotation {
+
+## Function : Check VEP custom annotations options
+## Returns  :
+## Arguments: $log                 => Log object
+##          : $vep_custom_ann_href => VEP custom annotation {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $vep_custom_ann_href;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        vep_custom_ann_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_custom_ann_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Path qw { check_filesystem_objects_and_index_existance };
+
+    ## Nothing to check
+    return 0 if ( not keys %{$vep_custom_ann_href} );
+
+  ANN:
+    while ( my ( $ann, $value_href ) = each %{$vep_custom_ann_href} ) {
+
+        my $err_msg = $ann . q{ Is not a hash ref for vep_custom_annotation};
+        croak($err_msg) if ( ref $value_href ne q{HASH} );
+
+        ## Check the VEP custom annotations options and that they have allowed values
+        _check_vep_custom_annotation_options(
+            {
+                annotation             => $ann,
+                custom_ann_option_href => $value_href,
+                log                    => $log,
+            }
+        );
+
+        ## Check path object exists
+        check_filesystem_objects_and_index_existance(
+            {
+                log            => $log,
+                object_name    => $ann,
+                object_type    => q{file},
+                parameter_href => {},
+                parameter_name => q{vep_custom_annotation},
+                path           => $value_href->{path},
+            }
+        );
     }
     return 1;
 }
@@ -1195,8 +1852,7 @@ sub check_vep_directories {
     use Cwd qw{ abs_path };
 
     ## Get VEP version from file
-    my $vep_version_file =
-      catfile( $vep_directory_path, $DOT . q{version}, q{ensembl} );
+    my $vep_version_file = catfile( $vep_directory_path, $DOT . q{version}, q{ensembl} );
     open my $vep_version_fh, q{<}, $vep_version_file;
     my $vep_version_line = <$vep_version_fh>;
     close $vep_version_fh;
@@ -1213,8 +1869,7 @@ q{Could not retrieve VEP version. Skipping checking that VEP api and cache match
     }
 
     ## Get absolute path to VEP cache as it is commonly linked
-    my $vep_cache_dir_path =
-      abs_path( catdir( $vep_directory_cache, q{homo_sapiens} ) );
+    my $vep_cache_dir_path = abs_path( catdir( $vep_directory_cache, q{homo_sapiens} ) );
 
     ## Get folders in cache directory
     # Build rule
@@ -1301,14 +1956,15 @@ sub _check_parameter_mandatory_keys_exits {
             ## Mandatory key exists
             if ( not exists $parameter_href->{$parameter}{$mandatory_key} ) {
 
-                croak(  q{Missing mandatory key: '}
-                      . $mandatory_key
-                      . q{' for parameter: '}
-                      . $parameter
-                      . q{' in file: '}
-                      . $file_path
-                      . $SINGLE_QUOTE
-                      . $NEWLINE );
+                say {*STDERR} q{Missing mandatory key: '}
+                  . $mandatory_key
+                  . q{' for parameter: '}
+                  . $parameter
+                  . q{' in file: '}
+                  . $file_path
+                  . $SINGLE_QUOTE
+                  . $NEWLINE;
+                croak();
             }
         }
     }
@@ -1415,8 +2071,7 @@ sub _check_parameter_values {
             store       => \$file_path,
             strict_type => 1,
         },
-        key =>
-          { defined => 1, required => 1, store => \$key, strict_type => 1, },
+        key      => { defined => 1, required => 1, store => \$key, strict_type => 1, },
         key_href => {
             default     => {},
             required    => 1,
@@ -1446,20 +2101,21 @@ sub _check_parameter_values {
 
         if ( not( any { $_ eq $value } @{ $key_href->{$key}{values} } ) ) {
 
-            croak(  q{Found illegal value '}
-                  . $value
-                  . q{' for parameter: '}
-                  . $parameter
-                  . q{' in key: '}
-                  . $key
-                  . q{' in file: '}
-                  . $file_path
-                  . $SINGLE_QUOTE
-                  . $NEWLINE
-                  . q{Allowed entries: '}
-                  . join( q{', '}, @{ $key_href->{$key}{values} } )
-                  . $SINGLE_QUOTE
-                  . $NEWLINE );
+            say {*STDERR} q{Found illegal value '}
+              . $value
+              . q{' for parameter: '}
+              . $parameter
+              . q{' in key: '}
+              . $key
+              . q{' in file: '}
+              . $file_path
+              . $SINGLE_QUOTE
+              . $NEWLINE
+              . q{Allowed entries: '}
+              . join( q{', '}, @{ $key_href->{$key}{values} } )
+              . $SINGLE_QUOTE
+              . $NEWLINE;
+            croak();
         }
     }
     return;
@@ -1473,7 +2129,7 @@ sub _check_parameter_data_type {
 ##          : $key            => Hash with non key
 ##          : $key_href       => Hash with key {REF}
 ##          : $parameter      => Parameter
-##          : $parameter_href => Hash with paremters from yaml file {REF}
+##          : $parameter_href => Hash with parameters from yaml file {REF}
 
     my ($arg_href) = @_;
 
@@ -1491,8 +2147,7 @@ sub _check_parameter_data_type {
             store       => \$file_path,
             strict_type => 1,
         },
-        key =>
-          { defined => 1, required => 1, store => \$key, strict_type => 1, },
+        key      => { defined => 1, required => 1, store => \$key, strict_type => 1, },
         key_href => {
             default     => {},
             required    => 1,
@@ -1524,24 +2179,9 @@ sub _check_parameter_data_type {
         ## Wrong data_type
         if ( not $data_type eq $key_href->{$key}{key_data_type} ) {
 
-            croak(  q{Found '}
-                  . $data_type
-                  . q{' but expected datatype '}
-                  . $key_href->{$key}{key_data_type}
-                  . q{' for parameter: '}
-                  . $parameter
-                  . q{' in key: '}
-                  . $key
-                  . q{' in file: '}
-                  . $file_path
-                  . $SINGLE_QUOTE
-                  . $NEWLINE );
-        }
-    }
-    elsif ( $key_href->{$key}{key_data_type} ne q{SCALAR} ) {
-
-        ## Wrong data_type
-        croak(  q{Found 'SCALAR' but expected datatype '}
+            say {*STDERR} q{Found '}
+              . $data_type
+              . q{' but expected datatype '}
               . $key_href->{$key}{key_data_type}
               . q{' for parameter: '}
               . $parameter
@@ -1550,9 +2190,117 @@ sub _check_parameter_data_type {
               . q{' in file: '}
               . $file_path
               . $SINGLE_QUOTE
-              . $NEWLINE );
+              . $NEWLINE;
+            croak();
+        }
+    }
+    elsif ( $key_href->{$key}{key_data_type} ne q{SCALAR} ) {
+
+        ## Wrong data_type
+        say {*STDERR} q{Found 'SCALAR' but expected datatype '}
+          . $key_href->{$key}{key_data_type}
+          . q{' for parameter: '}
+          . $parameter
+          . q{' in key: '}
+          . $key
+          . q{' in file: '}
+          . $file_path
+          . $SINGLE_QUOTE
+          . $NEWLINE;
+        croak();
     }
     return;
+}
+
+sub _check_vep_custom_annotation_options {
+
+## Function : Check the VEP custom annotations options are defined and with allowed values
+## Returns  :
+## Arguments: $annotation             => Annotation
+##          : $custom_ann_option_href => Custom annotation options
+##          : $log                    => Log object
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $annotation;
+    my $custom_ann_option_href;
+    my $log;
+
+    my $tmpl = {
+        annotation => {
+            defined     => 1,
+            required    => 1,
+            store       => \$annotation,
+            strict_type => 1,
+        },
+        custom_ann_option_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$custom_ann_option_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %check_vep_annotations = (
+        annotation_type          => { allow => [qw{ exact overlap }], },
+        file_type                => { allow => [qw{ bed gff gtf vcf bigwig }], },
+        force_report_coordinates => { allow => [ 0, 1 ], },
+    );
+
+    ## Check required keys
+    my @required_options = (qw{ key });
+  REQ_OPTION:
+    foreach my $required_option (@required_options) {
+
+        if (   not exists $custom_ann_option_href->{$required_option}
+            or not defined $custom_ann_option_href->{$required_option} )
+        {
+
+            $log->fatal( q{Vep custom annotation option hash: }
+                  . $annotation
+                  . q{ lacks required option }
+                  . $required_option );
+            exit 1;
+        }
+    }
+
+    ## Check allowed options for annotation
+  OPTION:
+    foreach my $option ( keys %{$custom_ann_option_href} ) {
+
+        ## Allow anything defined
+        next OPTION if ( $option eq q{key} );
+
+        next OPTION if ( $option eq q{path} );
+
+        next OPTION
+          if (
+            any { $_ eq $custom_ann_option_href->{$option} }
+            @{ $check_vep_annotations{$option}{allow} }
+          );
+
+        $log->fatal( q{Vep custom annotation option hash: }
+              . $annotation
+              . q{ has a not allowed option value '}
+              . $option . q{ => }
+              . $custom_ann_option_href->{$option} );
+        $log->fatal(
+            q{Allowed options are: } . join $SPACE,
+            @{ $check_vep_annotations{$option}{allow} }
+        );
+        exit 1;
+    }
+
+    return 1;
 }
 
 1;

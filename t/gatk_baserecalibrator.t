@@ -1,90 +1,48 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ dirname  };
 use File::Spec::Functions qw{ catdir catfile };
-use Getopt::Long;
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.03;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
-
-### Check all internal dependency modules and imports
+    use MIP::Test::Fixtures qw{ test_import };
+    ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
+    my %perl_module = ( q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
 
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
-
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Program::Alignment::Gatk});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Alignment::Gatk qw{ gatk_baserecalibrator };
@@ -100,7 +58,7 @@ diag(   q{Test gatk_baserecalibrator from Alignment::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{--analysis_type BaseRecalibrator};
+my @function_base_commands = qw{ gatk BaseRecalibrator };
 
 my %base_argument = (
     stderrfile_path => {
@@ -109,69 +67,54 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    known_alleles_ref => {
+    infile_path => {
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--input } . catfile(qw{ dir infile.bam }),
+    },
+    known_sites_ref => {
         inputs_ref => [
             qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
         ],
         expected_output =>
-q{--knownSites GRCh37_1000g_indels_-phase1-.vcf --knownSites GRCh37_mills_and_1000g_indels_-gold_standard-.vcf },
-    },
-    covariates_ref => {
-        inputs_ref => [qw{ ReadGroupCovariate ContextCovariate }],
-        expected_output =>
-          q{--covariate ReadGroupCovariate --covariate ContextCovariate},
-    },
-    referencefile_path => {
-        input           => catfile(qw{reference_dir human_genome_build.fasta }),
-        expected_output => q{--reference_sequence}
-          . catfile(qw{reference_dir human_genome_build.fasta }),
-    },
-    infile_path => {
-        input           => catfile(qw{ dir infile.bam }),
-        expected_output => q{--input_file } . catfile(qw{ dir infile.bam }),
+q{--known-sites GRCh37_1000g_indels_-phase1-.vcf --known-sites GRCh37_mills_and_1000g_indels_-gold_standard-.vcf},
     },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
-        expected_output => q{--input_file } . catfile(qw{ dir infile.bam }),
+        expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
+    },
+    referencefile_path => {
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference }
+          . catfile(qw{reference_dir human_genome_build.fasta }),
     },
 );
 
 my %specific_argument = (
-    known_alleles_ref => {
+    infile_path => {
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--input } . catfile(qw{ dir infile.bam }),
+    },
+    known_sites_ref => {
         inputs_ref => [
             qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
         ],
         expected_output =>
-q{--knownSites GRCh37_1000g_indels_-phase1-.vcf --knownSites GRCh37_mills_and_1000g_indels_-gold_standard-.vcf},
+q{--known-sites GRCh37_1000g_indels_-phase1-.vcf --known-sites GRCh37_mills_and_1000g_indels_-gold_standard-.vcf},
     },
-    covariates_ref => {
-        inputs_ref => [qw{ ReadGroupCovariate ContextCovariate }],
-        expected_output =>
-          q{--covariate ReadGroupCovariate --covariate ContextCovariate},
+    outfile_path => {
+        input           => catfile(qw{ dir outfile.bam }),
+        expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
     },
     intervals_ref => {
         inputs_ref      => [qw{ chr1 chr2}],
         expected_output => q{--intervals chr1 --intervals chr2},
-    },
-    referencefile_path => {
-        input           => catfile(qw{reference_dir human_genome_build.fasta }),
-        expected_output => q{--reference_sequence }
-          . catfile(qw{ reference_dir human_genome_build.fasta }),
-    },
-    infile_path => {
-        input           => catfile(qw{ dir infile.bam }),
-        expected_output => q{--input_file } . catfile(qw{ dir infile.bam }),
-    },
-    outfile_path => {
-        input           => catfile(qw{ dir outfile.bam }),
-        expected_output => q{--out } . catfile(qw{ dir outfile.bam }),
     },
 );
 
@@ -185,46 +128,14 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            base_commands_index        => 1,
+            do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}
