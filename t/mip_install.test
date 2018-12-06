@@ -138,13 +138,9 @@ GetOptions(
 ok( can_run(q{conda}), q{Checking can run of conda binary} );
 
 ## Pipeline installations to test
-my %config_file = (
-    rare_disease => q{install_rare_disease_parameters.yaml},
-    rna          => q{install_rna_parameters.yaml},
-);
 my %install_file = (
-    rare_disease => q{Rare_disease.pm},
-    rna          => q{Rna.pm},
+    rd_dna => q{Rd_dna.pm},
+    rd_rna          => q{Rd_rna.pm},
 );
 
 foreach my $pipeline ( keys %install_file ) {
@@ -158,12 +154,9 @@ foreach my $pipeline ( keys %install_file ) {
     );
 
     ## Test execution of install script
-    my $config_path =
-      catfile( dirname($Bin), q{definitions}, $config_file{$pipeline} );
     my $cmds_ref = [
         q{perl}, catfile( dirname($Bin), q{mip} ),
-        q{install}, $pipeline, q{--config_file}, $config_path,
-        qw{--installation full --dec }
+        q{install}, $pipeline, qw{--installation full --dec }
     ];
     if ($conda_dir_path) {
 

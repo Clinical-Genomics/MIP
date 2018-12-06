@@ -1,5 +1,6 @@
 package MIP::Gnu::Coreutils;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -34,7 +35,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -295,8 +296,7 @@ sub gnu_cp {
 
     ## Preserve the specified attributes
     if ( @{$preserve_attributes_ref} ) {
-        push @commands,
-          q{--preserve=} . join $COMMA, @{$preserve_attributes_ref};
+        push @commands, q{--preserve=} . join $COMMA, @{$preserve_attributes_ref};
     }
 
     elsif ($preserve) {
@@ -413,8 +413,7 @@ sub gnu_echo {
     }
 
     ## Strings
-    push @commands,
-      $DOUBLE_QUOTE . join( $EMPTY_STR, @{$strings_ref} ) . $DOUBLE_QUOTE;
+    push @commands, $DOUBLE_QUOTE . join( $EMPTY_STR, @{$strings_ref} ) . $DOUBLE_QUOTE;
 
     ## Outfile
     if ($outfile_path) {
@@ -1129,8 +1128,7 @@ sub gnu_sort {
 
     ## Options
     if ( @{$keys_ref} ) {
-        push @commands, q{--key} . $SPACE . join $SPACE . q{--key} . $SPACE,
-          @{$keys_ref};
+        push @commands, q{--key} . $SPACE . join $SPACE . q{--key} . $SPACE, @{$keys_ref};
     }
 
     ## Infile

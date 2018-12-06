@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -123,10 +123,11 @@ sub install_mip_scripts {
     my %mip_sub_script = (
         utility_scripts =>
           [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
-        t => [
-            qw{ mip_install.test mip_analyse_rare_disease.test mip_core.t mip_analysis.test }
+        t =>
+          [qw{ mip_install.test mip_analyse_rd_dna.test mip_core.t mip_analysis.test }],
+        templates => [
+            qw{ mip_rd_dna_config.yaml mip_rd_dna_vcf_rerun_config.yaml mip_rd_rna_config.yaml }
         ],
-        templates => [qw{ mip_config.yaml }],
     );
 
     my @mip_directories = qw{ lib t definitions };
@@ -136,11 +137,10 @@ sub install_mip_scripts {
     ## Check if installation exists and is executable
     # mip is proxy for all mip scripts
     if ( -x catfile( $conda_prefix_path, qw{ bin mip } ) ) {
-        $log->info(
-            q{MIP is already installed in the specified conda environment.});
+        $log->info(q{MIP is already installed in the specified conda environment.});
+
         if ($noupdate) {
-            say {$FILEHANDLE}
-              q{## MIP is already installed, skippping installation};
+            say {$FILEHANDLE} q{## MIP is already installed, skippping installation};
             say {$FILEHANDLE} $NEWLINE;
             return;
         }
@@ -186,7 +186,7 @@ sub install_mip_scripts {
 
     ## Copy mip scripts and sub scripts to conda env and make executable
     say {$FILEHANDLE}
-q{## Copy mip scripts and subdirectory scripts to conda env and make executable};
+      q{## Copy mip scripts and subdirectory scripts to conda env and make executable};
 
   SCRIPT:
     foreach my $script (@mip_scripts) {
@@ -194,16 +194,14 @@ q{## Copy mip scripts and subdirectory scripts to conda env and make executable}
         my $script_no_ending = fileparse( $script, qr/\.[^.]*/xms );
         gnu_cp(
             {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => catfile( $Bin, $script ),
-                outfile_path =>
-                  catdir( $conda_prefix_path, q{bin}, $script_no_ending ),
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => catfile( $Bin, $script ),
+                outfile_path => catdir( $conda_prefix_path, q{bin}, $script_no_ending ),
             }
         );
         print {$FILEHANDLE} $NEWLINE;
 
-        my $file_path =
-          catfile( $conda_prefix_path, q{bin}, $script_no_ending );
+        my $file_path = catfile( $conda_prefix_path, q{bin}, $script_no_ending );
         gnu_chmod(
             {
                 file_path  => $file_path,
@@ -222,16 +220,14 @@ q{## Copy mip scripts and subdirectory scripts to conda env and make executable}
 
             gnu_cp(
                 {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => catfile( $Bin, $directory, $script ),
-                    outfile_path =>
-                      catdir( $conda_prefix_path, q{bin}, $directory ),
+                    FILEHANDLE   => $FILEHANDLE,
+                    infile_path  => catfile( $Bin, $directory, $script ),
+                    outfile_path => catdir( $conda_prefix_path, q{bin}, $directory ),
                 }
             );
             print {$FILEHANDLE} $NEWLINE;
 
-            my $file_path =
-              catfile( $conda_prefix_path, q{bin}, $directory, $script );
+            my $file_path = catfile( $conda_prefix_path, q{bin}, $directory, $script );
             gnu_chmod(
                 {
                     FILEHANDLE => $FILEHANDLE,

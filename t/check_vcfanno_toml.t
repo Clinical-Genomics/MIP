@@ -1,18 +1,16 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname };
+use File::Basename qw{ dirname };
+use File::Path qw{ rmtree };
 use File::Spec::Functions qw{ catdir catfile };
-use File::Temp;
 use FindBin qw{ $Bin };
-use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
-use Test::Trap;
 use utf8;
 use warnings qw{ FATAL utf8 };
 
@@ -20,79 +18,43 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Log::MIP_log4perl qw{ initiate_logger };
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
+
+    use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
-        q{MIP::Script::Utils}     => [qw{ help }],
+        q{MIP::Check::Path}    => [qw{ check_vcfanno_toml }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Unix::System}   => [qw{ system_cmd_call }],
     );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Check::Path});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Check::Path qw{ check_vcfanno_toml };
+use MIP::Unix::System qw{ system_cmd_call };
 
 diag(   q{Test check_vcfanno_toml from Path.pm v}
       . $MIP::Check::Path::VERSION
@@ -103,45 +65,60 @@ diag(   q{Test check_vcfanno_toml from Path.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Create temp logger
-my $test_dir = File::Temp->newdir();
-my $test_log_path = catfile( $test_dir, q{test.log} );
-
 ## Creates log object
-my $log = initiate_logger(
-    {
-        file_path => $test_log_path,
-        log_name  => q{TEST},
-    }
-);
+my $log = test_log();
 
-## Given a frequency file and toml file, when matching records
-my $sv_vcfanno_config_file =
-  catfile(qw{ / home travis build Clinical-Genomics MIP t data references GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz });
+## Replace file path depending on location - required for TRAVIS
+my $test_reference_dir = catfile( $Bin, qw{ data references } );
 
-my $sv_vcfanno_config =
-  catfile( $Bin, qw{ data references GRCh37_vcfanno_config_-v1.0-.toml  } );
+### Prepare temporary file for testing
+my $fqf_vcfanno_config =
+  catfile( $test_reference_dir,
+    qw{ GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml  } );
 
+# For the actual test
+my $test_fqf_vcfanno_config = catfile( $test_reference_dir,
+    qw{ GRCh37_frequency_vcfanno_filter_config_test_check_toml_-v1.0-.toml  } );
+
+my $file_path = catfile( $test_reference_dir, q{GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz} );
+
+## Replace line starting with "file=" with dynamic file path
+my $parse_path =
+    q?perl -nae 'chomp;if($_=~/file=/) {say STDOUT q{file="?
+  . $file_path
+  . q?"};} else {say STDOUT $_}' ?;
+
+## Parse original file and create new config for test
+my $command_string = join $SPACE,
+  ( $parse_path, $fqf_vcfanno_config, q{>}, $test_fqf_vcfanno_config );
+
+my %return = system_cmd_call( { command_string => $command_string, } );
+
+## Given a toml config file with a file path
 my $is_ok = check_vcfanno_toml(
     {
         log               => $log,
-        vcfanno_file_freq => $sv_vcfanno_config_file,
-        vcfanno_file_toml => $sv_vcfanno_config,
+        parameter_name    => q{fqf_vcfanno_config},
+        vcfanno_file_toml => $test_fqf_vcfanno_config,
     }
 );
 
-## Then all is ok
-ok( $is_ok, q{Found frequency file within toml file} );
+## Then return true
+ok( $is_ok, q{Passed check for toml file} );
 
-## Given a frequency file and toml file, when records do not match
-$sv_vcfanno_config_file = catfile(qw{ a test dir for file not matching });
+## Clean-up
+rmtree($test_fqf_vcfanno_config);
+
+## Given a toml config file, when mandatory features are absent
+my $faulty_fqf_vcfanno_config_file = catfile( $Bin,
+    qw{ data references GRCh37_frequency_vcfanno_filter_config_bad_data_-v1.0-.toml } );
 
 trap {
     check_vcfanno_toml(
         {
             log               => $log,
-            vcfanno_file_freq => $sv_vcfanno_config_file,
-            vcfanno_file_toml => $sv_vcfanno_config,
+            parameter_name    => q{fqf_vcfanno_config},
+            vcfanno_file_toml => $faulty_fqf_vcfanno_config_file,
         }
       )
 };
@@ -152,36 +129,3 @@ like( $trap->stderr, qr/FATAL/xms,
     q{Throw fatal log message for non matching reference} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}

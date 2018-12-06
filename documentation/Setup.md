@@ -5,13 +5,13 @@ The permanent filename should follow the following format:
 
 ``{LANE}_{DATE}_{FLOW-CELL}_{SAMPLE-ID}_{BARCODE-SEQ}_{DIRECTION 1/2}.fastq[.qz]``
 
-Where some types or formats are required some each element:
+Where some types or formats are required for each element:
 - LANE = Integer
 - DATE = YYMMDD
 - BARCODE-SEQ = A, C, G, T or integer
 - DIRECTION = 1 or 2
 
-The `familyID` and `sampleID(s)` needs to be unique and the sample id supplied should be equal to the {SAMPLE_ID} in the filename.
+The `caseID` and `sampleID(s)` needs to be unique and the sample id supplied should be equal to the {SAMPLE_ID} in the filename.
 Underscore cannot be part of any element in the file name as this is used as the seperator for each element.
 
 However, MIP will except filenames in other formats as long as the filename contains the sample id and the mandatory information can be collected from the fastq header.
@@ -24,11 +24,13 @@ MIP requires pedigree information recorded in a pedigree.yaml file and a config 
 
 ## Dependencies
 Make sure you have installed all dependencies and that they are in your ``$PATH``.
-You only need to install the dependencies that are required for the modules that you want to run. If you have not installed a dependency for a module, MIP will tell you what dependencies you need to install (or add to your ``$PATH``) and exit. MIP comes with an install script, which will install all necessary programs to execute models in MIP via bioconda and/or $SHELL.
+You only need to install the dependencies that are required for the recipes that you want to run. If you have not installed a dependency for a module, MIP will tell you what dependencies you need to install (or add to your ``$PATH``) and exit. MIP comes with an install application, which will install all necessary programs to execute models in MIP via bioconda and/or $SHELL.
 
 ### **Programs**
 
 - Simple Linux Utility for Resource Management ([SLURM]) (version: 2.6.0)
+
+#### **Pipeline: Rare disease**
 - [Bcftools] (version: 1.6)
 - [BedTools] (version: 2.26.0)
 - [BWA] (version: 0.7.15)
@@ -61,7 +63,9 @@ The version number after the software name are tested for compatibility with MIP
 
 ### Databases/References
 
-MIP can build/download many program prerequisites automatically via the mip_install script using flag ``--reference_dir [reference_dir]``, which will use the MIP script ``download_reference.pl``.
+MIP can download many program prerequisites automatically via the mip download application ``mip download [PIPELINE]``.
+
+MIP will build references and meta files (if required) prior to starting an analysis pipeline ``mip analyse [PIPELINE]``.
 
 ### **Automatic Build:**
 
@@ -72,12 +76,15 @@ Human Genome Reference Meta Files:
 BWA:
  1. The BWA index of the human genome.
 
+Star:
+ 1. Star index files of the human genome
+
 #### *Note*
-If you do not supply these parameters (Bwa) MIP will create these from scratch using the supplied human reference genom as template.
+If you do not supply these parameters (Bwa/Star) MIP will create these from scratch using the supplied human reference genom as template.
 
 Capture target files:
  1. The "infile_list" and .pad100.infile_list files used in ``ppicardtoolscollecthsmetrics``.
- 2. The ".pad100.interval_list" file used by some GATK modules.
+ 2. The ".pad100.interval_list" file used by some GATK recipes.
 
 #### *Note*
 If you do not supply these parameters MIP will create these from scratch using the supplied "latest" supported capture kit ".bed" file and the supplied human reference genome as template.

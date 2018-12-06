@@ -1,5 +1,6 @@
 package MIP::Check::Unix;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use File::Spec::Functions qw{ catfile };
@@ -17,10 +18,10 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{check_binary_in_path};
+    our @EXPORT_OK = qw{ check_binary_in_path };
 }
 
 sub check_binary_in_path {
@@ -63,7 +64,7 @@ sub check_binary_in_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{get_dynamic_conda_path};
+    use MIP::Get::Parameter qw{ get_dynamic_conda_path };
 
     ## Search for binary in PATH in any MIP conda env defined by config
     ## or conda base
@@ -108,7 +109,7 @@ sub check_binary_in_path {
             log    => $log,
         }
     );
-    return;
+    exit 1;
 }
 
 sub _check_binary_broadcast_fail {
@@ -147,7 +148,7 @@ sub _check_binary_broadcast_fail {
 
         say {*STDERR} q{Could not detect } . $binary . q{ in PATH};
     }
-    exit 1;
+    return;
 }
 
 sub _check_binary_broadcast_pass {

@@ -1,9 +1,11 @@
 package MIP::Recipes::Install::Vep;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use List::MoreUtils qw{ any };
 use open qw{ :encoding(UTF-8) :std };
@@ -21,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -35,7 +37,7 @@ Readonly my $SPACE   => q{ };
 sub install_vep {
 
 ## Function : Install varianteffectpredictor
-## Returns  : ""
+## Returns  :
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
@@ -100,20 +102,21 @@ sub install_vep {
     use MIP::Gnu::Bash qw{ gnu_cd gnu_unset };
     use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_rm };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Variantcalling::Vep
-      qw{ variant_effect_predictor_install };
+    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor_install };
     use MIP::Versionmanager::Git qw{ git_checkout git_clone };
 
     ## Unpack parameters
+    # Assembly names to use during --AUTO
+    my @assemblies = @{ $vep_parameters_href->{vep_assemblies} };
+
     # Plugins
     my @plugins = @{ $vep_parameters_href->{vep_plugins} };
 
-    # Assembly names to use during --AUTO
-    my @assemblies = @{ $vep_parameters_href->{vep_assemblies} };
+    # Species names to use during --AUTO
+    my @species = @{ $vep_parameters_href->{vep_species} };
 
     # Vep version
     my $vep_version = $vep_parameters_href->{version};
@@ -168,10 +171,10 @@ sub install_vep {
                 program_name           => q{VEP-api},
             }
         );
-        print $FILEHANDLE $NEWLINE;
+        print {$FILEHANDLE} $NEWLINE;
     }
 
-  # Return if all the directories is found and a noupdate flag has been provided
+    # Return if all the directories is found and a noupdate flag has been provided
     if ($install_check) {
         ## Skip api installation but continue with rest
         $auto =~ s/[al]//gxms;
@@ -185,7 +188,7 @@ sub install_vep {
 
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
-        conda_source_activate(
+        conda_activate(
             {
                 env_name   => $conda_environment,
                 FILEHANDLE => $FILEHANDLE,
@@ -222,10 +225,10 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
     }
 
     ## Set LD_LIBRARY_PATH for VEP installation
-    say $FILEHANDLE q{LD_LIBRARY_PATH=}
+    say {$FILEHANDLE} q{LD_LIBRARY_PATH=}
       . $conda_prefix_path
       . q{/lib/:$LD_LIBRARY_PATH};
-    say $FILEHANDLE q{export LD_LIBRARY_PATH} . $NEWLINE;
+    say {$FILEHANDLE} q{export LD_LIBRARY_PATH} . $NEWLINE;
 
     ## Download VEP
     if ( $auto =~ m/[al]/xms ) {
@@ -282,7 +285,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
             cache_directory => $cache_directory,
             FILEHANDLE      => $FILEHANDLE,
             plugins_ref     => \@plugins,
-            species_ref     => [qw{ homo_sapiens }],
+            species_ref     => \@species,
             version         => $vep_version,
         }
     );
@@ -304,8 +307,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
         for my $assembly_version ( 1 .. $NUMBER_OF_ASSEMBLIES ) {
             ## Skip first assembly since it is already installed above
 
-            say {$FILEHANDLE}
-              q{## Install additional VEP cache assembly version};
+            say {$FILEHANDLE} q{## Install additional VEP cache assembly version};
 
             variant_effect_predictor_install(
                 {
@@ -314,7 +316,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
                     cache_directory => $cache_directory,
                     cache_version   => $vep_version,
                     FILEHANDLE      => $FILEHANDLE,
-                    species_ref     => [qw{ homo_sapiens }],
+                    species_ref     => \@species,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -325,16 +327,17 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
     if ( @plugins && $auto =~ m/p/xms ) {
 
         if ( any { $_ eq q{MaxEntScan} } @plugins ) {
+
             ## Add MaxEntScan required text file
             say {$FILEHANDLE} q{## Add MaxEntScan required text file};
+            my $maxent_file_path = catfile( $vep_plugin_dir, q{fordownload.tar.gz} );
             wget(
                 {
-                    FILEHANDLE => $FILEHANDLE,
-                    outfile_path =>
-                      catfile( $vep_plugin_dir, q{fordownload.tar.gz} ),
-                    quiet => $quiet,
+                    FILEHANDLE   => $FILEHANDLE,
+                    outfile_path => $maxent_file_path,
+                    quiet        => $quiet,
                     url =>
-q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
+                      q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
                     verbose => $verbose,
                 }
             );
@@ -343,11 +346,11 @@ q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
             # Unpack
             tar(
                 {
-                    extract     => 1,
-                    FILEHANDLE  => $FILEHANDLE,
-                    filter_gzip => 1,
-                    file_path =>
-                      catfile( $vep_plugin_dir, q{fordownload.tar.gz} ),
+                    extract           => 1,
+                    outdirectory_path => dirname($maxent_file_path),
+                    FILEHANDLE        => $FILEHANDLE,
+                    filter_gzip       => 1,
+                    file_path => catfile( $vep_plugin_dir, q{fordownload.tar.gz} ),
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -356,10 +359,9 @@ q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
             say {$FILEHANDLE} q{## Clean up};
             gnu_rm(
                 {
-                    FILEHANDLE => $FILEHANDLE,
-                    force      => 1,
-                    infile_path =>
-                      catfile( $vep_plugin_dir, q{fordownload.tar.gz} ),
+                    FILEHANDLE  => $FILEHANDLE,
+                    force       => 1,
+                    infile_path => catfile( $vep_plugin_dir, q{fordownload.tar.gz} ),
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -371,12 +373,27 @@ q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
             say {$FILEHANDLE} q{## Add LofTool required text file};
             wget(
                 {
-                    FILEHANDLE => $FILEHANDLE,
-                    outfile_path =>
-                      catfile( $vep_plugin_dir, q{LoFtool_scores.txt} ),
-                    quiet => $quiet,
+                    FILEHANDLE   => $FILEHANDLE,
+                    outfile_path => catfile( $vep_plugin_dir, q{LoFtool_scores.txt} ),
+                    quiet        => $quiet,
                     url =>
 q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt},
+                    verbose => $verbose,
+                }
+            );
+            say {$FILEHANDLE} $NEWLINE;
+        }
+        if ( any { $_ eq q{ExACpLI} } @plugins ) {
+
+            ## Add ExACpLI required text file
+            say {$FILEHANDLE} q{## Add pLI required value file};
+            wget(
+                {
+                    FILEHANDLE   => $FILEHANDLE,
+                    outfile_path => catfile( $vep_plugin_dir, q{ExACpLI_values.txt} ),
+                    quiet        => $quiet,
+                    url =>
+q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.txt},
                     verbose => $verbose,
                 }
             );
@@ -425,7 +442,7 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.tx
     if ($conda_environment) {
 
         say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_source_deactivate(
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }

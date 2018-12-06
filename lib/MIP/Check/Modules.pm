@@ -1,5 +1,6 @@
 package MIP::Check::Modules;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -68,14 +69,14 @@ sub check_perl_modules {
             require $module;
         }
         catch {
-            croak(  q{NOTE: }
-                  . $module
-                  . q{ not installed - Please install to run }
-                  . $program_name . qq{\n}
-                  . q{NOTE: Aborting!} );
+            say {*STDERR} q{FATAL: }
+              . $module
+              . q{ not installed - Please install to run }
+              . $program_name . qq{\n};
+            croak(q{NOTE: Aborting!});
         };
     }
-    return;
+    return 1;
 }
 
 sub parse_cpan_file {

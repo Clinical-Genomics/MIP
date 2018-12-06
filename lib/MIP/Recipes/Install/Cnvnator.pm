@@ -101,8 +101,7 @@ sub install_cnvnator {
     use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mv gnu_rm};
     use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Program::Compression::Zip qw{ unzip };
     use MIP::Program::Download::Wget qw{ wget };
@@ -111,9 +110,8 @@ sub install_cnvnator {
     use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
     ## Unpack parameters
-    my $cnvnator_version = $cnvnator_parameters_href->{version};
-    my $cnvnator_root_binary =
-      $cnvnator_parameters_href->{cnvnator_root_binary};
+    my $cnvnator_version     = $cnvnator_parameters_href->{version};
+    my $cnvnator_root_binary = $cnvnator_parameters_href->{cnvnator_root_binary};
 
     ## Retrieve logger object
     my $log = retrieve_log(
@@ -182,14 +180,14 @@ sub install_cnvnator {
     ## Only activate conda environment if supplied by user
     if ($conda_environment) {
         ## Activate conda environment
-        say $FILEHANDLE q{## Activate conda environment};
-        conda_source_activate(
+        say {$FILEHANDLE} q{## Activate conda environment};
+        conda_activate(
             {
                 FILEHANDLE => $FILEHANDLE,
                 env_name   => $conda_environment,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     ## Creating temporary install directory
@@ -206,8 +204,7 @@ sub install_cnvnator {
       . $cnvnator_version
       . $DOT . q{zip};
     my $cnvnator_zip_path =
-      catfile( $temp_dir_path,
-        q{CNVnator_v} . $cnvnator_version . $DOT . q{zip} );
+      catfile( $temp_dir_path, q{CNVnator_v} . $cnvnator_version . $DOT . q{zip} );
     wget(
         {
             url          => $cnvnator_url,
@@ -234,11 +231,8 @@ sub install_cnvnator {
 
     ## Move to CNVnator directory
     say {$FILEHANDLE} q{## Move to CNVnator directory};
-    my $cnvnator_configure_path = catdir(
-        $temp_dir_path,
-        q{CNVnator_v} . $cnvnator_version,
-        qw{ src samtools }
-    );
+    my $cnvnator_configure_path =
+      catdir( $temp_dir_path, q{CNVnator_v} . $cnvnator_version, qw{ src samtools } );
     gnu_cd(
         {
             directory_path => $cnvnator_configure_path,
@@ -270,7 +264,7 @@ sub install_cnvnator {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Get make command
-    my @make_commands = gnu_make({});
+    my @make_commands = gnu_make( {} );
     ## Add no parallel support argument to make command
     push @make_commands, q{OMP=no};
     unix_write_to_file(
@@ -284,8 +278,7 @@ sub install_cnvnator {
 
     ## Make available from conda environment
     say {$FILEHANDLE} q{## Move to conda environment};
-    my $cnvnator_path =
-      catdir( $temp_dir_path, q{CNVnator_v} . $cnvnator_version );
+    my $cnvnator_path = catdir( $temp_dir_path, q{CNVnator_v} . $cnvnator_version );
     gnu_mv(
         {
             infile_path  => $cnvnator_path,
@@ -338,13 +331,13 @@ sub install_cnvnator {
 
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {
-        say $FILEHANDLE q{## Deactivate conda environment};
-        conda_source_deactivate(
+        say {$FILEHANDLE} q{## Deactivate conda environment};
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     print {$FILEHANDLE} $NEWLINE;

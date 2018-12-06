@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -19,6 +19,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -27,7 +28,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -47,11 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -115,7 +112,7 @@ my $log = initiate_logger(
 );
 
 my %pedigree = (
-    family  => q{family_1},
+    case    => q{case_1},
     samples => [
         {
             analysis_type => q{wes},
@@ -123,7 +120,6 @@ my %pedigree = (
             mother        => 0,
             phenotype     => q{affected},
             sample_id     => q{sample_1},
-            sample_origin => q{normal},
             sex           => q{female},
         },
         {
@@ -132,7 +128,6 @@ my %pedigree = (
             mother        => 0,
             phenotype     => q{unaffected},
             sample_id     => q{sample_2},
-            sample_origin => q{tumor},
             sex           => q{male},
         },
         {
@@ -144,7 +139,7 @@ my %pedigree = (
             sex           => q{other},
         },
         {
-            analysis_type => q{cancer},
+            analysis_type => q{wgs},
             father        => q{sample_1},
             mother        => q{sample_2},
             phenotype     => q{unknown},
@@ -153,7 +148,8 @@ my %pedigree = (
         },
     ],
 );
-my $success = check_pedigree_mandatory_key(
+##Given all mandatory keys
+my $is_ok = check_pedigree_mandatory_key(
     {
         file_path     => $Bin,
         log           => $log,
@@ -161,7 +157,47 @@ my $success = check_pedigree_mandatory_key(
     }
 );
 
-is( $success, 1, q{Found all mandatory keys in pedigree yaml file} );
+## Then return true
+ok( $is_ok, q{Found all mandatory keys in pedigree yaml file} );
+
+## Given a missing mandatory case key
+delete $pedigree{case};
+
+trap {
+    check_pedigree_mandatory_key(
+        {
+            file_path     => $Bin,
+            log           => $log,
+            pedigree_href => \%pedigree,
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if mandatory case key cannot be found} );
+like( $trap->stderr, qr/FATAL/xms,
+    q{Throw fatal log message if mandatory case key cannot be found} );
+
+# Reinitialize key
+$pedigree{case} = q{case_1};
+
+## Given a missing mandatory sample key
+delete $pedigree{samples}[0]{phenotype};
+
+trap {
+    check_pedigree_mandatory_key(
+        {
+            file_path     => $Bin,
+            log           => $log,
+            pedigree_href => \%pedigree,
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if mandatory sample key cannot be found} );
+like( $trap->stderr, qr/FATAL/xms,
+    q{Throw fatal log message if mandatory sample key cannot be found} );
 
 done_testing();
 

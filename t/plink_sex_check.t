@@ -12,7 +12,7 @@ use Params::Check qw{ check allow last_error };
 use Test::More;
 use warnings qw{ FATAL utf8 };
 use utf8;
-use 5.018;
+use 5.026;
 
 ## CPANM
 use autodie;
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -99,7 +95,7 @@ diag(   q{Test plink_sex_check from MIP::Program::Variantcalling::Plink v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{plink2};
+my @function_base_commands = qw{ plink2 };
 
 my %base_argument = (
     stderrfile_path => {
@@ -108,7 +104,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -116,59 +112,59 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     binary_fileset_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--bfile}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     extract_file => {
-        input => catfile(qw{ temp_directory family_id _data.prune.in }),
+        input           => catfile(qw{ temp_directory case_id _data.prune.in }),
         expected_output => q{--extract}
           . $SPACE
-          . catfile(qw{ temp_directory family_id _data.prune.in }),
+          . catfile(qw{ temp_directory case_id _data.prune.in }),
     },
     read_freqfile_path => {
-        input           => catfile(qw{ temp_directory family_id _data.frqx }),
+        input           => catfile(qw{ temp_directory case_id _data.frqx }),
         expected_output => q{--read-freq}
           . $SPACE
-          . catfile(qw{ temp_directory family_id _data.frqx }),
+          . catfile(qw{ temp_directory case_id _data.frqx }),
     },
 );
 
 my %specific_argument = (
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     binary_fileset_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory $case_id _data }),
         expected_output => q{--bfile}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory $case_id _data }),
     },
     sex_check_min_f => {
         input           => q{0.2 0.75},
         expected_output => q{0.2 0.75},
     },
     extract_file => {
-        input => catfile(qw{ temp_directory family_id _data.prune.in }),
+        input           => catfile(qw{ temp_directory case_id _data.prune.in }),
         expected_output => q{--extract}
           . $SPACE
-          . catfile(qw{ temp_directory family_id _data.prune.in }),
+          . catfile(qw{ temp_directory case_id _data.prune.in }),
     },
     read_freqfile_path => {
-        input           => catfile(qw{ temp_directory family_id _data.frqx }),
+        input           => catfile(qw{ temp_directory case_id _data.frqx }),
         expected_output => q{--read-freq}
           . $SPACE
-          . catfile(qw{ temp_directory family_id _data.frqx }),
+          . catfile(qw{ temp_directory case_id _data.frqx }),
     },
 );
 
@@ -182,11 +178,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

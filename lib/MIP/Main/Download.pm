@@ -1,6 +1,6 @@
 package MIP::Main::Download;
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw( :full :short );
 use Cwd;
@@ -41,7 +41,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{0.0.4};
+    our $VERSION = q{0.0.5};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -81,8 +81,8 @@ sub mip_download {
         my $date_time       = localtime;
         my $date_time_stamp = $date_time->datetime;
 
-        $parameter{log_file} = catfile(
-            q{mip_donwload} . $UNDERSCORE . $date_time_stamp . $DOT . q{log} );
+        $parameter{log_file} =
+          catfile( q{mip_donwload} . $UNDERSCORE . $date_time_stamp . $DOT . q{log} );
     }
 
     ## Initiate logger
@@ -92,8 +92,7 @@ sub mip_download {
             log_name  => q{mip_download},
         }
     );
-    $log->info(
-        q{Writing log messages to} . $COLON . $SPACE . $parameter{log_file} );
+    $log->info( q{Writing log messages to} . $COLON . $SPACE . $parameter{log_file} );
 
 ## Set parameter default
     if ( not $parameter{reference_dir} ) {
@@ -120,8 +119,8 @@ sub mip_download {
     my $bash_file_path = catfile( cwd(), q{download_reference} . $DOT . q{sh} );
 
     open $FILEHANDLE, '>', $bash_file_path
-      or $log->logdie(
-        q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . "\n" );
+      or
+      $log->logdie( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . "\n" );
 
     # Install temp directory
     my $temp_dir = create_temp_dir( {} );
@@ -239,8 +238,7 @@ sub build_reference_install_recipe {
     say {$FILEHANDLE} $NEWLINE;
 
   REFERENCE:
-    while ( my ( $reference_id, $versions_ref ) =
-        each %{ $parameter_href->{reference} } )
+    while ( my ( $reference_id, $versions_ref ) = each %{ $parameter_href->{reference} } )
     {
 
         ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
@@ -259,21 +257,18 @@ sub build_reference_install_recipe {
         foreach my $reference_version (@reference_versions) {
 
           GENOME_VERSION:
-            foreach my $genome_version (
-                @{ $parameter_href->{reference_genome_versions} } )
+            foreach
+              my $genome_version ( @{ $parameter_href->{reference_genome_versions} } )
             {
 
                 ## Standardize case
                 $genome_version = lc $genome_version;
 
                 my $reference_href =
-                  $parameter_href->{$reference_id}{$genome_version}
-                  {$reference_version};
+                  $parameter_href->{$reference_id}{$genome_version}{$reference_version};
 
                 next GENOME_VERSION
-                  if (
-                    not
-                    exists $parameter_href->{$reference_id}{$genome_version} );
+                  if ( not exists $parameter_href->{$reference_id}{$genome_version} );
 
                 next GENOME_VERSION
                   if (
@@ -400,10 +395,9 @@ sub reference_install_recipe {
           if ( not exists $reference_href->{$key} );
 
         ## Install reference
-        my $file    = $reference_href->{$key};
-        my $outfile = $reference_href->{ q{out} . $key };
-        my $outfile_path =
-          catfile( $parameter_href->{reference_dir}, $outfile );
+        my $file         = $reference_href->{$key};
+        my $outfile      = $reference_href->{ q{out} . $key };
+        my $outfile_path = catfile( $parameter_href->{reference_dir}, $outfile );
 
         download(
             {
@@ -418,13 +412,11 @@ sub reference_install_recipe {
         ## Check if file needs to be decompress and write decompression if so
         decompress_file(
             {
-                parameter_href  => $parameter_href,
-                FILEHANDLE      => $FILEHANDLE,
-                outfile_path    => $outfile_path,
-                file_decompress => $reference_href->{ q{out}
-                      . $key
-                      . $UNDERSCORE
-                      . q{decompress} },
+                parameter_href => $parameter_href,
+                FILEHANDLE     => $FILEHANDLE,
+                outfile_path   => $outfile_path,
+                file_decompress =>
+                  $reference_href->{ q{out} . $key . $UNDERSCORE . q{decompress} },
             }
         );
 
@@ -477,17 +469,15 @@ sub download {
             strict_type => 1,
             store       => \$parameter_href,
         },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-        url =>
-          { required => 1, defined => 1, strict_type => 1, store => \$url },
+        FILEHANDLE => { required => 1, defined => 1, store       => \$FILEHANDLE },
+        url        => { required => 1, defined => 1, strict_type => 1, store => \$url },
         outfile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$outfile_path
         },
-        file_id =>
-          { required => 1, defined => 1, strict_type => 1, store => \$file_id },
+        file_id => { required => 1, defined => 1, strict_type => 1, store => \$file_id },
         program => {
             default     => q{wget},
             allow       => [qw{ wget }],
@@ -609,6 +599,7 @@ sub decompress_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Program::Compression::Gzip qw{ gzip };
+    use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Program::Compression::Zip qw{ unzip };
 
     return if ( not defined $outfile_path );
@@ -646,6 +637,21 @@ sub decompress_file {
                 FILEHANDLE  => $FILEHANDLE,
             }
         );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+
+    if ( defined $file_decompress && $file_decompress eq q{tar} ) {
+
+        tar(
+            {
+                extract           => 1,
+                filter_gzip       => 1,
+                file_path         => $outfile_path,
+                outdirectory_path => $parameter_href->{reference_dir},
+                FILEHANDLE        => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
     }
     return;
 }
@@ -675,9 +681,8 @@ sub check_file {
             strict_type => 1,
             store       => \$outfile_path,
         },
-        outfile_path_check =>
-          { strict_type => 1, store => \$outfile_path_check, },
-        check_method => { strict_type => 1, store => \$check_method, },
+        outfile_path_check => { strict_type => 1, store => \$outfile_path_check, },
+        check_method       => { strict_type => 1, store => \$check_method, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -881,7 +886,7 @@ sub write_post_processing_command {
 
     my ($arg_href) = @_;
 
-## Flatten argument(s)
+    ## Flatten argument(s)
     my $reference_href;
     my $FILEHANDLE;
 

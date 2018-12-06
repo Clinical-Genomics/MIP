@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -47,11 +47,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -90,8 +86,7 @@ BEGIN {
 use MIP::Processmanagement::Processes
   qw{add_parallel_job_id_to_sample_id_dependency_tree};
 
-diag(
-    q{Test add_parallel_job_id_to_sample_id_dependency_tree from Processes.pm v}
+diag(   q{Test add_parallel_job_id_to_sample_id_dependency_tree from Processes.pm v}
       . $MIP::Processmanagement::Processes::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -103,7 +98,7 @@ diag(
 ## Base arguments
 my $sample_id           = q{sample1};
 my $path                = q{MAIN};
-my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
+my $case_id_chain_key   = q{case1} . $UNDERSCORE . $path;
 my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 my $chain_key_parallel  = q{parallel};
 
@@ -114,11 +109,11 @@ my %infile_lane_prefix = (
 );
 
 my %job_id = (
-    $family_id_chain_key => {
+    $case_id_chain_key => {
         $sample_id_chain_key => [qw{job_id_1 job_id_2}],
         q{sample2_MAIN}      => [qw{job_id_3}],
         q{sample3_MAIN}      => [qw{job_id_4 job_id_5}],
-        $family_id_chain_key => [qw{job_id_6}],
+        $case_id_chain_key   => [qw{job_id_6}],
     },
 );
 
@@ -127,14 +122,14 @@ add_parallel_job_id_to_sample_id_dependency_tree(
     {
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
-        family_id_chain_key     => $family_id_chain_key,
+        case_id_chain_key       => $case_id_chain_key,
         sample_id_chain_key     => $sample_id_chain_key,
         path                    => $path,
         sample_id               => $sample_id,
     }
 );
 my $no_parallel_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
+  @{ $job_id{$case_id_chain_key}{$sample_id_chain_key} };
 is( $no_parallel_push_result, q{job_id_1 job_id_2}, q{No parallel job_id} );
 
 ### Previous parallel jobs
@@ -151,7 +146,7 @@ while ( my ($infile_index) = each @{ $infile_lane_prefix{$sample_id} } ) {
       . $path
       . $infile_index;
 
-    push @{ $job_id{$family_id_chain_key}{$chain_key_parallel_job} },
+    push @{ $job_id{$case_id_chain_key}{$chain_key_parallel_job} },
       q{job_id_} . $infile_index;
 }
 
@@ -159,7 +154,7 @@ add_parallel_job_id_to_sample_id_dependency_tree(
     {
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
-        family_id_chain_key     => $family_id_chain_key,
+        case_id_chain_key       => $case_id_chain_key,
         sample_id_chain_key     => $sample_id_chain_key,
         path                    => $path,
         sample_id               => $sample_id,
@@ -167,7 +162,7 @@ add_parallel_job_id_to_sample_id_dependency_tree(
 );
 
 my $parallel_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
+  @{ $job_id{$case_id_chain_key}{$sample_id_chain_key} };
 is(
     $parallel_push_result,
     q{job_id_1 job_id_2 job_id_0 job_id_1},

@@ -1,14 +1,14 @@
 package MIP::Program::Variantcalling::Freebayes;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use Readonly;
@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ freebayes_calling };
@@ -36,53 +36,60 @@ sub freebayes_calling {
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
 
-## Arguments: $infile_paths_ref           => Infile paths {REF}
+## Arguments: $apply_standard_filter      => Use stringent input base and mapping quality filters. Equivalent to -m 30 -q 20 -R 0 -S 0
+##          : $calculate_genotype_quality => Calculate the marginal probability of genotypes and report as GQ in each sample field in the VCF output
+##          : $FILEHANDLE                 => Filehandle to write to
+##          : $infile_paths_ref           => Infile paths {REF}
 ##          : $referencefile_path         => Reference sequence file
 ##          : $stdoutfile_path            => Stdoutfile path
 ##          : $stderrfile_path            => Stderrfile path
-##          : $FILEHANDLE                 => Filehandle to write to
-##          : $apply_standard_filter      => Use stringent input base and mapping quality filters. Equivalent to -m 30 -q 20 -R 0 -S 0
-##          : $calculate_genotype_quality => Calculate the marginal probability of genotypes and report as GQ in each sample field in the VCF output
-
+##          : $use_best_n_alleles         => Reduce the number of alleles that are considered,
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $apply_standard_filter;
+    my $calculate_genotype_quality;
+    my $FILEHANDLE;
     my $infile_paths_ref;
     my $referencefile_path;
     my $stdoutfile_path;
     my $stderrfile_path;
-    my $FILEHANDLE;
-    my $apply_standard_filter;
-    my $calculate_genotype_quality;
+    my $use_best_n_alleles;
 
     my $tmpl = {
         infile_paths_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_paths_ref,
             strict_type => 1,
-            store       => \$infile_paths_ref
         },
         referencefile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$referencefile_path,
             strict_type => 1,
-            store       => \$referencefile_path
         },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        FILEHANDLE            => { store => \$FILEHANDLE },
+        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        FILEHANDLE      => { store => \$FILEHANDLE, },
         apply_standard_filter => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$apply_standard_filter,
             strict_type => 1,
-            store       => \$apply_standard_filter
         },
         calculate_genotype_quality => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$calculate_genotype_quality,
             strict_type => 1,
-            store       => \$calculate_genotype_quality
+        },
+        use_best_n_alleles => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => 4,
+            store       => \$use_best_n_alleles,
+            strict_type => 1,
         },
     };
 
@@ -94,7 +101,7 @@ sub freebayes_calling {
     ## Options
     if ($apply_standard_filter) {
 
-        #Equivalent to -m 30 -q 20 -R 0 -S 0
+        # Equivalent to -m 30 -q 20 -R 0 -S 0
         push @commands, q{--standard-filters};
     }
 
@@ -103,11 +110,10 @@ sub freebayes_calling {
         push @commands, q{--genotype-qualities};
     }
 
-    if ($referencefile_path) {
+    push @commands, q{--use-best-n-alleles} . $SPACE . $use_best_n_alleles;
 
-        #Reference sequence file
-        push @commands, q{--fasta-reference} . $SPACE . $referencefile_path;
-    }
+    # Reference sequence file
+    push @commands, q{--fasta-reference} . $SPACE . $referencefile_path;
 
     ## Infile
     push @commands, join $SPACE, @{$infile_paths_ref};
@@ -115,21 +121,19 @@ sub freebayes_calling {
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path => $stdoutfile_path,
             stderrfile_path => $stderrfile_path,
+            stdoutfile_path => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
-
     return @commands;
-
 }
 
 1;

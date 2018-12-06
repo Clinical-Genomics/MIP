@@ -1,19 +1,20 @@
 package MIP::IO::Files;
 
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use FindBin qw{ $Bin };
+use File::Basename qw{ basename dirname fileparse };
+use File::Spec::Functions qw{ catdir catfile splitpath };
 use strict;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use autodie;
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile splitpath };
-use FindBin qw{ $Bin };
-use File::Basename qw{ dirname };
 
-##CPANM
+## CPANM
+use autodie;
 use Readonly;
 
 ## MIPs lib/
@@ -26,17 +27,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ migrate_file migrate_files xargs_migrate_contig_files };
+    our @EXPORT_OK = qw{ migrate_file migrate_files xargs_migrate_contig_files };
 
 }
 
-##Constants
+## Constants
 Readonly my $AMPERSAND  => q{&};
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK   => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
 Readonly my $NEWLINE    => qq{\n};
@@ -47,56 +47,56 @@ sub migrate_files {
 
 ## Function : Copies files from source to destination.
 ## Returns  :
-## Arguments: $infiles_ref  => Array of files to copy {REF}
-##          : $outfile_path => Outfile path
+## Arguments: $core_number  => The number of cores that can be used
 ##          : $FILEHANDLE   => Filehandle to write to
-##          : $indirectory  => The directory for the files to be copied
-##          : $core_number  => The number of cores that can be used
 ##          : $file_ending  => File ending for infiles
+##          : $infiles_ref  => Array of files to copy {REF}
+##          : $indirectory  => The directory for the files to be copied
+##          : $outfile_path => Outfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infiles_ref;
-    my $outfile_path;
+    my $core_number;
     my $FILEHANDLE;
     my $indirectory;
-    my $core_number;
+    my $infiles_ref;
+    my $outfile_path;
 
     ## Default(s)
     my $file_ending;
 
     my $tmpl = {
-        infiles_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$infiles_ref
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        FILEHANDLE  => { required => 1, defined => 1, store => \$FILEHANDLE },
-        indirectory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$indirectory
-        },
         core_number => {
-            default     => 1,
             allow       => qr/ ^\d+$ /xsm,
+            default     => 1,
+            store       => \$core_number,
             strict_type => 1,
-            store       => \$core_number
         },
+        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
         file_ending => {
             default     => $EMPTY_STR,
+            store       => \$file_ending,
             strict_type => 1,
-            store       => \$file_ending
+        },
+        indirectory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$indirectory,
+            strict_type => 1,
+        },
+        infiles_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infiles_ref,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
         },
     };
 
@@ -113,10 +113,10 @@ sub migrate_files {
 
         $process_batches_count = print_wait(
             {
-                process_counter       => $file_index,
+                FILEHANDLE            => $FILEHANDLE,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
+                process_counter       => $file_index,
             }
         );
 
@@ -141,6 +141,7 @@ sub migrate_file {
 ## Arguments: $FILEHANDLE      => Filehandle to write to
 ##          : $infile_path     => Infile path
 ##          : $outfile_path    => Outfile path
+##          : $recursive       => Copy directories recursively
 ##          : $stderrfile_path => Stderrfile path
 ##          : $xargs           => Use xargs if defined {Optional}
 
@@ -153,22 +154,31 @@ sub migrate_file {
     my $stderrfile_path;
     my $xargs;
 
+    ## Default(s)
+    my $recursive;
+
     my $tmpl = {
-        FILEHANDLE  => { required => 1, defined => 1, store => \$FILEHANDLE },
+        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
         outfile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
             strict_type => 1,
-            store       => \$outfile_path
         },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        xargs           => { strict_type => 1, store => \$xargs },
+        recursive => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$recursive,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        xargs           => { store => \$xargs,           strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -176,13 +186,14 @@ sub migrate_file {
     use MIP::Gnu::Coreutils qw{ gnu_cp };
 
     ## Split relative infile_path to file(s)
-    my ( $infile_path_volume, $infile_path_directory, $infile_path_file_name )
-      = splitpath($infile_path);
+    my ( $infile_path_volume, $infile_path_directory, $infile_path_file_name ) =
+      splitpath($infile_path);
 
     gnu_cp(
         {
             FILEHANDLE      => $FILEHANDLE,
             preserve        => 1,
+            recursive       => $recursive,
             infile_path     => $infile_path,
             outfile_path    => $outfile_path,
             stderrfile_path => $stderrfile_path,
@@ -204,85 +215,84 @@ sub xargs_migrate_contig_files {
 ## Function : Migrates file(s) to or from temporary directory (depending on supplied arguments) using xargs.
 ## Returns  : $xargs_file_counter
 ## Arguments: $contigs_ref        => Contigs to iterate over {REF}
-##          : $FILEHANDLE         => Sbatch filehandle to write to
-##          : $XARGSFILEHANDLE    => XARGS filehandle to write to
-##          : $file_path          => File name
-##          : $temp_directory     => Temporary directory
-##          : $program_info_path  => The program info path
-##          : $infile             => Infile name without ending attached
-##          : $indirectory        => In directory
-##          : $outfile            => OutFile name without ending attached
-##          : $outdirectory       => Out directory
 ##          : $core_number        => The number of cores to use
-##          : $first_command      => The inital command
-##          : $xargs_file_counter => The xargs file counter
+##          : $FILEHANDLE         => Sbatch filehandle to write to
 ##          : $file_ending        => File ending
+##          : $file_path          => File name
+##          : $first_command      => The inital command
+##          : $indirectory        => In directory
+##          : $infile             => Infile name without suffix attached
+##          : $outdirectory       => Outdirectory
+##          : $outfile            => Outfile name without suffix attached
+##          : $recipe_info_path   => Recipe info path
+##          : $temp_directory     => Temporary directory
+##          : $XARGSFILEHANDLE    => XARGS filehandle to write to
+##          : $xargs_file_counter => Xargs file counter
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $contigs_ref;
     my $FILEHANDLE;
-    my $XARGSFILEHANDLE;
     my $file_path;
-    my $temp_directory;
-    my $program_info_path;
-    my $infile;
-    my $indirectory;
-    my $outfile;
-    my $outdirectory;
     my $first_command;
+    my $indirectory;
+    my $infile;
+    my $outdirectory;
+    my $outfile;
+    my $recipe_info_path;
+    my $temp_directory;
+    my $XARGSFILEHANDLE;
 
     ## Default(s)
+    my $core_number;
     my $file_ending;
     my $xargs_file_counter;
-    my $core_number;
 
     my $tmpl = {
         contigs_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-        XARGSFILEHANDLE =>
-          { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
-        file_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
-            store       => \$file_path
-        },
-        temp_directory => {
             required    => 1,
-            defined     => 1,
+            store       => \$contigs_ref,
             strict_type => 1,
-            store       => \$temp_directory
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        infile            => { strict_type => 1, store => \$infile },
-        indirectory       => { strict_type => 1, store => \$indirectory },
-        outfile           => { strict_type => 1, store => \$outfile },
-        outdirectory      => { strict_type => 1, store => \$outdirectory },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$xargs_file_counter
         },
         core_number => {
-            default     => 1,
             allow       => qr/ ^\d+$ /xsm,
+            default     => 1,
+            store       => \$core_number,
             strict_type => 1,
-            store       => \$core_number
         },
-        first_command => { strict_type => 1, store => \$first_command },
-        file_ending   => {
-            default     => $DOT . q{vcf} . $ASTERIX,
+        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE },
+        file_ending => {
+            default     => $DOT . q{vcf} . $ASTERISK,
+            store       => \$file_ending,
             strict_type => 1,
-            store       => \$file_ending
+        },
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        first_command    => { store => \$first_command,    strict_type => 1, },
+        indirectory      => { store => \$indirectory,      strict_type => 1, },
+        infile           => { store => \$infile,           strict_type => 1, },
+        outdirectory     => { store => \$outdirectory,     strict_type => 1, },
+        outfile          => { store => \$outfile,          strict_type => 1, },
+        recipe_info_path => { store => \$recipe_info_path, strict_type => 1, },
+        temp_directory   => {
+            defined     => 1,
+            required    => 1,
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        XARGSFILEHANDLE => { defined => 1, required => 1, store => \$XARGSFILEHANDLE, },
+        xargs_file_counter => {
+            allow       => qr/ ^\d+$ /xsm,
+            default     => 0,
+            store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -293,13 +303,13 @@ sub xargs_migrate_contig_files {
     ## Create file commands for xargs
     ( $xargs_file_counter, my $xargs_file_path_prefix ) = xargs_command(
         {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
             core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
+            FILEHANDLE         => $FILEHANDLE,
+            file_path          => $file_path,
             first_command      => $first_command,
+            recipe_info_path   => $recipe_info_path,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargs_file_counter => $xargs_file_counter,
         }
     );
 
@@ -312,8 +322,8 @@ sub xargs_migrate_contig_files {
         if ( defined $infile ) {
 
             ## Get parameters
-            my $infile_path = catfile( $indirectory,
-                $infile . $UNDERSCORE . $contig . $file_ending );
+            my $infile_path =
+              catfile( $indirectory, $infile . $DOT . $contig . $file_ending );
 
             ## Copy file(s) to temporary directory.
             migrate_file(
@@ -321,24 +331,24 @@ sub xargs_migrate_contig_files {
                     FILEHANDLE      => $XARGSFILEHANDLE,
                     infile_path     => $infile_path,
                     outfile_path    => $temp_directory,
-                    xargs           => q{xargs},
                     stderrfile_path => $stderrfile_path,
+                    xargs           => q{xargs},
                 }
             );
         }
         if ( defined $outfile && defined $outdirectory ) {
 
             ## Get parameters
-            my $infile_path = catfile( $temp_directory,
-                $outfile . $UNDERSCORE . $contig . $file_ending );
+            my $infile_path =
+              catfile( $temp_directory, $outfile . $DOT . $contig . $file_ending );
             ## Copy file(s) from temporary directory.
             migrate_file(
                 {
+                    FILEHANDLE      => $XARGSFILEHANDLE,
                     infile_path     => $infile_path,
                     outfile_path    => $outdirectory,
-                    FILEHANDLE      => $XARGSFILEHANDLE,
-                    xargs           => q{xargs},
                     stderrfile_path => $stderrfile_path,
+                    xargs           => q{xargs},
                 }
             );
         }

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -19,6 +19,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -119,13 +120,11 @@ my %pedigree = (
         {
             analysis_type => q{wes},
             phenotype     => q{affected},
-            sample_origin => q{normal},
             sex           => q{female},
         },
         {
             analysis_type => q{wgs},
             phenotype     => q{unaffected},
-            sample_origin => q{tumor},
             sex           => q{male},
         },
         {
@@ -134,13 +133,15 @@ my %pedigree = (
             sex           => q{other},
         },
         {
-            analysis_type => q{cancer},
+            analysis_type => q{wgs},
             phenotype     => q{unknown},
             sex           => q{unknown},
         },
     ],
 );
-my $success = check_pedigree_sample_allowed_values(
+
+## Given allowed values in pedigree file
+my $is_ok = check_pedigree_sample_allowed_values(
     {
         file_path     => $Bin,
         log           => $log,
@@ -148,7 +149,26 @@ my $success = check_pedigree_sample_allowed_values(
     }
 );
 
-is( $success, 1, q{Only allowed values in pedigree yaml file} );
+## Then return true
+ok( $is_ok, q{Only allowed values in pedigree yaml file} );
+
+## Given a not allowed value in pedigree file
+$pedigree{samples}[0]{analysis_type} = q{How rude};
+
+trap {
+    check_pedigree_sample_allowed_values(
+        {
+            file_path     => $Bin,
+            log           => $log,
+            pedigree_href => \%pedigree,
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if not sample allowed value is found} );
+like( $trap->stderr, qr/FATAL/xms,
+    q{Throw fatal log message if not sample allowed value is found} );
 
 done_testing();
 

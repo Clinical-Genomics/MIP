@@ -1,0 +1,30 @@
+CHAIN_ALL:
+   - CHAIN_MAIN:
+   - gzip_fastq
+# Parallel chains (branch)
+   - CHAIN_FASTQ:
+      - fastqc
+   - CHAIN_DE:
+      - salmon_quant
+      - blobfish
+   - CHAIN_FUSION:
+      - star_fusion
+   - CHAIN_MAIN:
+      - star_aln
+      - picardtools_mergesamfiles
+      - CHAIN_STRINGTIE:
+         - stringtie_ar
+         - gffcompare_ar
+      - markduplicates
+      - CHAIN_RSEQC:
+         - rseqc
+   - CHAIN_MAIN:
+      - gatk_splitncigarreads
+      - gatk_baserecalibration
+      - gatk_haplotypecaller
+      - gatk_variantfiltration
+      - CHAIN_ASE:
+         - gatk_asereadcounter
+         - bootstrapann
+   - multiqc_ar
+   - sacct

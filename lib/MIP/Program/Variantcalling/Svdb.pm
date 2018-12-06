@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ svdb_merge svdb_query };
@@ -41,6 +41,7 @@ sub svdb_merge {
 ##          : $notag                  => Do not add the the VARID and set entries to the info field
 ##          : $outfile_path           => Outfile path
 ##          : $priority               => Priority order of structural variant calls
+##          : $same_order             => Across all input vcf files, the order of the sample columns are the same
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -53,33 +54,35 @@ sub svdb_merge {
     my $notag;
     my $outfile_path;
     my $priority;
+    my $same_order;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE       => { store => \$FILEHANDLE },
+        FILEHANDLE       => { store => \$FILEHANDLE, },
         infile_paths_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_paths_ref,
             strict_type => 1,
-            store       => \$infile_paths_ref
         },
-        notag           => { strict_type => 1, store => \$notag },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        priority        => { strict_type => 1, store => \$priority },
+        notag           => { store => \$notag,        strict_type => 1, },
+        outfile_path    => { store => \$outfile_path, strict_type => 1, },
+        priority        => { store => \$priority,     strict_type => 1, },
+        same_order      => { store => \$same_order,   strict_type => 1, },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
     };
 
@@ -98,6 +101,11 @@ sub svdb_merge {
 
         ## Do not tag variant with origin file
         push @commands, q{--notag};
+    }
+    if ($same_order) {
+
+        ## Same sample order across vcf files
+        push @commands, q{--same_order};
     }
 
     ## Infile

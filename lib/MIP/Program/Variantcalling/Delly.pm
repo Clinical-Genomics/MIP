@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ delly_call delly_filter delly_merge };
@@ -33,11 +33,14 @@ Readonly my $SPACE => q{ };
 
 sub delly_call {
 
-## Function : Perl wrapper for writing Delly call recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.6.
+## Function : Perl wrapper for writing Delly call recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.8.
 ## Returns  : @commands
 ## Arguments: $exclude_file_path      => File with regions to exclude
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $genotypefile_path      => Input VCF/BCF file for re-genotyping
+##          : $mad_cutoff             => Insert size cutoff, median+s*MAD (deletions only)
+##          : $mapping_qual           => Minimum paired-end mapping quality
+##          : $no_small_indel         => No small indel calling
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
 ##          : $referencefile_path     => Reference sequence file
@@ -52,6 +55,9 @@ sub delly_call {
     my $exclude_file_path;
     my $FILEHANDLE;
     my $genotypefile_path;
+    my $mad_cutoff;
+    my $mapping_qual;
+    my $no_small_indel;
     my $infile_path;
     my $outfile_path;
     my $referencefile_path;
@@ -60,45 +66,65 @@ sub delly_call {
     my $stdoutfile_path;
     my $sv_type;
 
+    ## Constants
+    Readonly my $MIN_MAP_QUAL       => q{20};
+    Readonly my $INSERT_SIZE_CUTOFF => q{15};
+
     my $tmpl = {
         exclude_file_path =>
-          { strict_type => 1, store => \$exclude_file_path, },
+          { store => \$exclude_file_path, strict_type => 1, },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
         genotypefile_path =>
-          { strict_type => 1, store => \$genotypefile_path, },
-        infile_path => {
-            required    => 1,
-            defined     => 1,
+          { store => \$genotypefile_path, strict_type => 1, },
+        mad_cutoff => {
+            allow       => [ undef, qr/^\d+$/ ],
+            default     => $INSERT_SIZE_CUTOFF,
+            store       => \$mad_cutoff,
             strict_type => 1,
-            store       => \$infile_path,
         },
-        outfile_path       => { strict_type => 1, store => \$outfile_path, },
-        referencefile_path => {
-            required    => 1,
-            defined     => 1,
+        mapping_qual => {
+            allow       => [ undef, qr/^\d+$/ ],
+            default     => $MIN_MAP_QUAL,
+            store       => \$mapping_qual,
             strict_type => 1,
+        },
+        no_small_indel => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$no_small_indel,
+            strict_type => 1,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path       => { store => \$outfile_path, strict_type => 1, },
+        referencefile_path => {
+            defined     => 1,
+            required    => 1,
             store       => \$referencefile_path,
+            strict_type => 1,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
         sv_type => {
-            required    => 1,
-            defined     => 1,
             allow       => [qw{ DEL DUP INV INS TRA }],
-            strict_type => 1,
             store       => \$sv_type,
+            strict_type => 1,
         },
     };
 
@@ -111,6 +137,15 @@ sub delly_call {
     if ($sv_type) {
 
         push @commands, q{--type} . $SPACE . $sv_type;
+    }
+
+    push @commands, q{--map-qual} . $SPACE . $mapping_qual;
+
+    push @commands, q{--mad-cutoff} . $SPACE . $mad_cutoff;
+
+    if ($no_small_indel) {
+
+        push @commands, q{--noindels};
     }
 
     if ($exclude_file_path) {
@@ -161,7 +196,7 @@ sub delly_call {
 
 sub delly_merge {
 
-## Function : Perl wrapper for writing Delly merge recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.6.
+## Function : Perl wrapper for writing Delly merge recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.8.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $infile_paths_ref       => Infile paths {REF}
@@ -221,8 +256,6 @@ sub delly_merge {
             store       => \$stdoutfile_path,
         },
         sv_type => {
-            required    => 1,
-            defined     => 1,
             allow       => [qw{ DEL DUP INV INS TRA }],
             strict_type => 1,
             store       => \$sv_type,

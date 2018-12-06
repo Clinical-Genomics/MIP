@@ -47,7 +47,7 @@ sub xargs_command {
 ##         : $java_jar             => Java jar
 ##         : $java_use_large_pages => Use java large pages {REF}
 ##         : $memory_allocation    => Memory allocation for java
-##         : $program_info_path    => Program info path
+##         : $recipe_info_path    => Program info path
 ##         : $XARGSFILEHANDLE      => XARGS filehandle to write to
 ##         : $temp_directory       => Redirect tmp files to java temp {Optional}
 ##         : $xargs_file_counter   => Xargs file counter
@@ -62,7 +62,7 @@ sub xargs_command {
     my $java_jar;
     my $java_use_large_pages;
     my $memory_allocation;
-    my $program_info_path;
+    my $recipe_info_path;
     my $XARGSFILEHANDLE;
     my $temp_directory;
 
@@ -92,10 +92,9 @@ sub xargs_command {
             store       => \$java_use_large_pages
         },
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
+        recipe_info_path  => { strict_type => 1, store => \$recipe_info_path },
         temp_directory    => { strict_type => 1, store => \$temp_directory },
-        XARGSFILEHANDLE =>
-          { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
+        XARGSFILEHANDLE => { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -124,9 +123,9 @@ sub xargs_command {
     my $xargs_file_path_prefix;
 
     ## Check if there is a xargs_file_path_prefix to concatenate
-    if ( defined $program_info_path ) {
+    if ( defined $recipe_info_path ) {
 
-        $xargs_file_path_prefix = $program_info_path . $xargs_file_number;
+        $xargs_file_path_prefix = $recipe_info_path . $xargs_file_number;
     }
 
     ## Read xargs command file
@@ -171,10 +170,8 @@ sub xargs_command {
 
     # Open xargs file for writing
     open $XARGSFILEHANDLE, q{>}, $xargs_file_path
-      or $log->logdie( q{Cannot write to '}
-          . $xargs_file_path . q{' :}
-          . $OS_ERROR
-          . $NEWLINE x 2 );
+      or $log->logdie(
+        q{Cannot write to '} . $xargs_file_path . q{' :} . $OS_ERROR . $NEWLINE x 2 );
 
 # Increment to not overwrite xargs file with next call (if used) and $xargs_file_path_prefix
     $xargs_file_counter++;

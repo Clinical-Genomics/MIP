@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ variant_integrity_mendel variant_integrity_father };
@@ -39,63 +39,58 @@ Readonly my $DASH  => q{-};
 
 sub variant_integrity_mendel {
 
-## variant_integrity_mendel
-
 ## Function : Perl wrapper for writing Variant_integrity mendel recipe to $FILEHANDLE or return commands array. Based on Variant_integrity 3.7.0.
-## Returns  : "@commands"
-
-## Arguments: $infile_path, $family_file, $outfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $verbosity, $family_type
+## Returns  : @commands
+## Arguments: $case_file              => Family file
+##          : $case_type              => Setup of family file
+##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
-##          : $family_file            => Family file
 ##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $FILEHANDLE             => Filehandle to write to
 ##          : $verbosity              => Increase output verbosity
-##          : $family_type            => Setup of family file
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $case_file;
+    my $case_type;
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
 
     ## Default(s)
     my $verbosity;
 
-    ## Flatten argument(s)
-    my $infile_path;
-    my $family_file;
-    my $outfile_path;
-    my $stderrfile_path;
-    my $stderrfile_path_append;
-    my $FILEHANDLE;
-    my $family_type;
-
     my $tmpl = {
-
-        infile_path => {
-            required    => 1,
+        case_file => {
             defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        family_file => {
             required    => 1,
-            defined     => 1,
+            store       => \$case_file,
             strict_type => 1,
-            store       => \$family_file
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE  => { store => \$FILEHANDLE },
-        family_type => {
+        case_type => {
             allow       => [qw{ ped alt cmms mip }],
+            store       => \$case_type,
             strict_type => 1,
-            store       => \$family_type
         },
-        verbosity => {
-            allow       => qr/^\w+$/,
+        FILEHANDLE  => { store => \$FILEHANDLE, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$verbosity
+        },
+        outfile_path    => { store => \$outfile_path,    strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        verbosity => {
+            allow       => qr{ \A\w+\z }sxm,
+            store       => \$verbosity,
+            strict_type => 1,
         },
     };
 
@@ -110,14 +105,14 @@ sub variant_integrity_mendel {
         push @commands, $DASH . $verbosity;
     }
 
-    if ($family_file) {
+    if ($case_file) {
 
-        push @commands, q{--family_file} . $SPACE . $family_file;
+        push @commands, q{--family_file} . $SPACE . $case_file;
     }
 
-    if ($family_type) {
+    if ($case_type) {
 
-        push @commands, q{--family_type} . $SPACE . $family_type;
+        push @commands, q{--family_type} . $SPACE . $case_type;
     }
 
     if ($outfile_path) {
@@ -144,9 +139,9 @@ sub variant_integrity_mendel {
 
     unix_write_to_file(
         {
+            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
 
@@ -155,61 +150,58 @@ sub variant_integrity_mendel {
 
 sub variant_integrity_father {
 
-## variant_integrity_father
-
 ## Function : Perl wrapper for writing Variant_integrity father recipe to $FILEHANDLE or return commands array. Based on Variant_integrity 3.7.0.
-## Returns  : "@commands"
-## Arguments: $infile_path, $family_file, $outfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $verbosity, $family_type
+## Returns  : @commands
+## Arguments: $case_file              => Family file
+##          : $case_type              => Setup of family file
+##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
-##          : $family_file            => Family file
 ##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $FILEHANDLE             => Filehandle to write to
 ##          : $verbosity              => Increase output verbosity
-##          : $family_type            => Setup of family file
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $case_file;
+    my $case_type;
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
 
     ## Default(s)
     my $verbosity;
 
-    ## Flatten argument(s)
-    my $infile_path;
-    my $family_file;
-    my $outfile_path;
-    my $stderrfile_path;
-    my $stderrfile_path_append;
-    my $FILEHANDLE;
-    my $family_type;
-
     my $tmpl = {
-        infile_path => {
-            required    => 1,
+        case_file => {
             defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        family_file => {
             required    => 1,
-            defined     => 1,
+            store       => \$case_file,
             strict_type => 1,
-            store       => \$family_file
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE  => { store => \$FILEHANDLE },
-        family_type => {
+        case_type => {
             allow       => [qw{ ped alt cmms mip }],
+            store       => \$case_type,
             strict_type => 1,
-            store       => \$family_type
         },
-        verbosity => {
-            allow       => qr/^\w+$/,
+        FILEHANDLE  => { store => \$FILEHANDLE, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$verbosity
+        },
+        outfile_path    => { store => \$outfile_path,    strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        verbosity => {
+            allow       => qr{ \A\w+\z }sxm,
+            store       => \$verbosity,
+            strict_type => 1,
         },
     };
 
@@ -224,14 +216,14 @@ sub variant_integrity_father {
         push @commands, $DASH . $verbosity;
     }
 
-    if ($family_file) {
+    if ($case_file) {
 
-        push @commands, q{--family_file} . $SPACE . $family_file;
+        push @commands, q{--family_file} . $SPACE . $case_file;
     }
 
-    if ($family_type) {
+    if ($case_type) {
 
-        push @commands, q{--family_type} . $SPACE . $family_type;
+        push @commands, q{--family_type} . $SPACE . $case_type;
     }
 
     if ($outfile_path) {

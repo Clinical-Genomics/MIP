@@ -60,11 +60,11 @@ sub update_to_absolute_path {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Set::File qw{ set_absolute_path };
-    use MIP::Set::Parameter qw{ set_dynamic_parameter };
+    use MIP::Set::Parameter qw{ set_cache };
 
     ## Adds dynamic aggregate information from definitions to parameter hash
     # Collect all path that should be made absolute
-    set_dynamic_parameter(
+    set_cache(
         {
             parameter_href => $parameter_href,
             aggregates_ref => [q{update_path:absolute_path}],
@@ -72,15 +72,12 @@ sub update_to_absolute_path {
     );
 
   DYNAMIC_PARAMETER:
-    foreach my $parameter_name (
-        @{ $parameter_href->{dynamic_parameter}{absolute_path} } )
-    {
+    foreach my $parameter_name ( @{ $parameter_href->{cache}{absolute_path} } ) {
 
         ## If array
         if ( ref $active_parameter_href->{$parameter_name} eq q{ARRAY} ) {
 
-            foreach my $parameter_value (
-                @{ $active_parameter_href->{$parameter_name} } )
+            foreach my $parameter_value ( @{ $active_parameter_href->{$parameter_name} } )
             {
 
                 $parameter_value = set_absolute_path(

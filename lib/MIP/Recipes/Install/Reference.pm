@@ -4,6 +4,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -19,14 +20,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_genome_references };
 }
 
 ## Constants
-Readonly my $NEWLINE => qq{\n};
+Readonly my $DOT        => q{.};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $UNDERSCORE => q{_};
 
 sub download_genome_references {
 
@@ -35,6 +38,7 @@ sub download_genome_references {
 ## Arguments: $conda_environment             => Conda environment
 ##          : $conda_prefix_path             => Conda prefix path
 ##          : $FILEHANDLE                    => Filehandle to write to
+##          : $pipeline                      => Pipeline for which to download references
 ##          : $quiet                         => Be quiet
 ##          : $reference_dir_path            => Path to reference directory
 ##          : $reference_genome_versions_ref => Array with genome versions to download {REF}
@@ -46,6 +50,7 @@ sub download_genome_references {
     my $conda_environment;
     my $conda_prefix_path;
     my $FILEHANDLE;
+    my $pipeline;
     my $quiet;
     my $reference_dir_path;
     my $reference_genome_versions_ref;
@@ -66,6 +71,13 @@ sub download_genome_references {
             defined  => 1,
             required => 1,
             store    => \$FILEHANDLE,
+        },
+        pipeline => {
+            allow       => [qw{ rare_disease rna }],
+            defined     => 1,
+            required    => 1,
+            store       => \$pipeline,
+            strict_type => 1,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
@@ -97,8 +109,7 @@ sub download_genome_references {
     ## Modules
     use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Download::Download_reference qw{ download_reference };
 
     ## Retrieve logger object
@@ -118,7 +129,7 @@ sub download_genome_references {
 
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
-        conda_source_activate(
+        conda_activate(
             {
                 env_name   => $conda_environment,
                 FILEHANDLE => $FILEHANDLE,
@@ -127,10 +138,22 @@ sub download_genome_references {
         say {$FILEHANDLE} $NEWLINE;
     }
 
+    ## Set path to config file
+    my $config_file_path = catfile( $Bin, q{definitions},
+            q{download}
+          . $UNDERSCORE
+          . $pipeline
+          . $UNDERSCORE
+          . q{parameters}
+          . $DOT
+          . q{yaml} );
+
     say {$FILEHANDLE} q{## Generate shell script for reference download};
     download_reference(
         {
             FILEHANDLE                    => $FILEHANDLE,
+            config_file_path              => $config_file_path,
+            pipeline                      => $pipeline,
             reference_dir_path            => $reference_dir_path,
             reference_genome_versions_ref => $reference_genome_versions_ref,
         }
@@ -155,7 +178,7 @@ sub download_genome_references {
     if ($conda_environment) {
 
         say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_source_deactivate(
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }

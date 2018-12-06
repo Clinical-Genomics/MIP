@@ -44,7 +44,6 @@ sub install_tiddit {
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
 
-
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
@@ -55,7 +54,6 @@ sub install_tiddit {
     my $quiet;
     my $tiddit_parameters_href;
     my $verbose;
-
 
     my $tmpl = {
         conda_environment => {
@@ -107,8 +105,7 @@ sub install_tiddit {
     use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Compression::Zip qw{ unzip };
     use MIP::Program::Download::Wget qw{ wget };
 
@@ -152,14 +149,14 @@ sub install_tiddit {
     ## Only activate conda environment if supplied by user
     if ($conda_environment) {
         ## Activate conda environment
-        say $FILEHANDLE q{## Activate conda environment};
-        conda_source_activate(
+        say {$FILEHANDLE} q{## Activate conda environment};
+        conda_activate(
             {
                 env_name   => $conda_environment,
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     ## Move to miniconda environment
@@ -177,8 +174,7 @@ sub install_tiddit {
         q{https://github.com/J35P312/TIDDIT/archive/TIDDIT-}
       . $tiddit_version
       . $DOT . q{zip};
-    my $tiddit_zip_path =
-      catfile( q{TIDDIT-} . $tiddit_version . $DOT . q{zip} );
+    my $tiddit_zip_path = catfile( q{TIDDIT-} . $tiddit_version . $DOT . q{zip} );
     wget(
         {
             FILEHANDLE   => $FILEHANDLE,
@@ -270,11 +266,8 @@ sub install_tiddit {
 
     ## Make available from conda environment
     say {$FILEHANDLE} q{## Make available from conda environment};
-    my $target_path = catfile(
-        $conda_prefix_path,
-        q{TIDDIT-TIDDIT-} . $tiddit_version,
-        qw{ TIDDIT.py }
-    );
+    my $target_path =
+      catfile( $conda_prefix_path, q{TIDDIT-TIDDIT-} . $tiddit_version, qw{ TIDDIT.py } );
     my $link_path = catfile( $conda_prefix_path, qw{ bin TIDDIT.py } );
     gnu_ln(
         {
@@ -309,13 +302,13 @@ sub install_tiddit {
 
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {
-        say $FILEHANDLE q{## Deactivate conda environment};
-        conda_source_deactivate(
+        say {$FILEHANDLE} q{## Deactivate conda environment};
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     print {$FILEHANDLE} $NEWLINE;

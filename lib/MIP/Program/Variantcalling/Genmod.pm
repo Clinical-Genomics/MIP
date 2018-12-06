@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Genmod;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -14,8 +15,6 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Script::Setup_script
-  qw{ write_return_to_conda_environment write_source_environment_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -43,13 +42,10 @@ sub genmod_annotate {
 ## Arguments: $annotate_region                      => Annotate what regions a variant belongs to
 ##          : $append_stderr_info                   => Append stderr info to file
 ##          : $cadd_file_paths_ref                  => Specify the path to a bgzipped cadd file (with index) with variant scores
-##          : $deactive_program_source              => Deactivate program specific environment
 ##          : $FILEHANDLE                           => Filehandle to write to
 ##          : $infile_path                          => Infile path to read from
 ##          : $max_af                               => If the MAX AF should be annotated
 ##          : $outfile_path                         => Outfile path to write to
-##          : $program_source_commands_ref          => Program specific source environment commmand
-##          : $source_main_environment_commands_ref => Source main environment command {REF}
 ##          : $spidex_file_path                     => Specify the path to a bgzipped tsv file (with index) with spidex information
 ##          : $stderrfile_path                      => Stderrfile path
 ##          : $stderrfile_path_append               => Append stderr info to file path
@@ -62,12 +58,9 @@ sub genmod_annotate {
 
     ## Flatten argument(s)
     my $cadd_file_paths_ref;
-    my $deactive_program_source;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
-    my $program_source_commands_ref;
-    my $source_main_environment_commands_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -96,11 +89,6 @@ sub genmod_annotate {
         },
         cadd_file_paths_ref =>
           { default => [], strict_type => 1, store => \$cadd_file_paths_ref, },
-        deactive_program_source => {
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$deactive_program_source
-        },
         FILEHANDLE  => { store => \$FILEHANDLE, },
         infile_path => {
             required    => 1,
@@ -114,17 +102,7 @@ sub genmod_annotate {
             strict_type => 1,
             store       => \$max_af,
         },
-        outfile_path => { strict_type => 1, store => \$outfile_path, },
-        program_source_commands_ref => {
-            default     => [],
-            store       => \$program_source_commands_ref,
-            strict_type => 1,
-        },
-        source_main_environment_commands_ref => {
-            default     => [],
-            strict_type => 1,
-            store       => \$source_main_environment_commands_ref,
-        },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -137,12 +115,10 @@ sub genmod_annotate {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
-        spidex_file_path => { strict_type => 1, store => \$spidex_file_path, },
-        temp_directory_path =>
-          { strict_type => 1, store => \$temp_directory_path, },
-        thousand_g_file_path =>
-          { strict_type => 1, store => \$thousand_g_file_path, },
-        verbosity => {
+        spidex_file_path     => { strict_type => 1, store => \$spidex_file_path, },
+        temp_directory_path  => { strict_type => 1, store => \$temp_directory_path, },
+        thousand_g_file_path => { strict_type => 1, store => \$thousand_g_file_path, },
+        verbosity            => {
             allow       => qr/ ^\w+$ /sxm,
             strict_type => 1,
             store       => \$verbosity,
@@ -151,19 +127,8 @@ sub genmod_annotate {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Write source program specific environment
-    if ( @{$program_source_commands_ref} ) {
-
-        write_source_environment_command(
-            {
-                FILEHANDLE                      => $FILEHANDLE,
-                source_environment_commands_ref => $program_source_commands_ref,
-            }
-        );
-    }
-
     ## Genmod annotate
-    my @commands = q{genmod};
+    my @commands = qw{ genmod };
 
     ## Options
     if ($verbosity) {
@@ -226,18 +191,6 @@ sub genmod_annotate {
         }
     );
 
-    if ($deactive_program_source) {
-
-        say {$FILEHANDLE} $NEWLINE;
-        write_return_to_conda_environment(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                source_main_environment_commands_ref =>
-                  $source_main_environment_commands_ref,
-            }
-        );
-    }
-
     return @commands;
 }
 
@@ -293,9 +246,8 @@ sub genmod_compound {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
-        temp_directory_path =>
-          { strict_type => 1, store => \$temp_directory_path },
-        thread_number => {
+        temp_directory_path => { strict_type => 1, store => \$temp_directory_path },
+        thread_number       => {
             default     => 0,
             allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
@@ -317,7 +269,7 @@ sub genmod_compound {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Genmod compound
-    my @commands = q{genmod};
+    my @commands = qw{ genmod };
 
     ## Options
     if ($verbosity) {
@@ -372,11 +324,8 @@ sub genmod_filter {
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE                           => Filehandle to write to
 
-##          : $deactive_program_source              => Deactivate program specific environment
 ##          : $infile_path                          => Infile path to read from
 ##          : $outfile_path                         => Outfile path to write to
-##          : $program_source_commands_ref          => Program specific source environment commmand
-##          : $source_main_environment_commands_ref => Source main environment command {REF}
 ##          : $stderrfile_path                      => Stderrfile path
 ##          : $stderrfile_path_append               => Append stderr info to file path
 ##          : $stdoutfile_path                      => Stdoutfile path
@@ -387,11 +336,8 @@ sub genmod_filter {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $deactive_program_source;
     my $infile_path;
     my $outfile_path;
-    my $program_source_commands_ref;
-    my $source_main_environment_commands_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -402,11 +348,6 @@ sub genmod_filter {
     my $verbosity;
 
     my $tmpl = {
-        deactive_program_source => {
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$deactive_program_source
-        },
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
             required    => 1,
@@ -414,17 +355,7 @@ sub genmod_filter {
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
-        program_source_commands_ref => {
-            default     => [],
-            store       => \$program_source_commands_ref,
-            strict_type => 1,
-        },
-        source_main_environment_commands_ref => {
-            default     => [],
-            strict_type => 1,
-            store       => \$source_main_environment_commands_ref,
-        },
+        outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -451,19 +382,8 @@ sub genmod_filter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Write source program specific environment
-    if ( @{$program_source_commands_ref} ) {
-
-        write_source_environment_command(
-            {
-                FILEHANDLE                      => $FILEHANDLE,
-                source_environment_commands_ref => $program_source_commands_ref,
-            }
-        );
-    }
-
     ## Genmod filter
-    my @commands = q{genmod};
+    my @commands = qw{ genmod };
 
     ## Options
     if ($verbosity) {
@@ -502,17 +422,6 @@ sub genmod_filter {
         }
     );
 
-    if ($deactive_program_source) {
-
-        say {$FILEHANDLE} $NEWLINE;
-        write_return_to_conda_environment(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                source_main_environment_commands_ref =>
-                  $source_main_environment_commands_ref,
-            }
-        );
-    }
     return @commands;
 }
 
@@ -520,8 +429,8 @@ sub genmod_models {
 
 ## Function : Perl wrapper for writing Genmod models recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
-## Arguments: $family_file                  => Family file
-##          : $family_type                  => Setup of family file
+## Arguments: $case_file                    => Family file
+##          : $case_type                    => Setup of family file
 ##          : $FILEHANDLE                   => Filehandle to write to
 ##          : $infile_path                  => Infile path to read from
 ##          : $outfile_path                 => Outfile path to write to
@@ -538,8 +447,8 @@ sub genmod_models {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $family_file;
-    my $family_type;
+    my $case_file;
+    my $case_type;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
@@ -556,16 +465,16 @@ sub genmod_models {
     my $whole_gene;
 
     my $tmpl = {
-        family_file => {
+        case_file => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$family_file
+            store       => \$case_file
         },
-        family_type => {
+        case_type => {
             allow       => [qw{ped alt cmms mip }],
             strict_type => 1,
-            store       => \$family_type
+            store       => \$case_type
         },
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
@@ -589,9 +498,8 @@ sub genmod_models {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
-        temp_directory_path =>
-          { strict_type => 1, store => \$temp_directory_path },
-        thread_number => {
+        temp_directory_path => { strict_type => 1, store => \$temp_directory_path },
+        thread_number       => {
             default     => 1,
             allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
@@ -619,7 +527,7 @@ sub genmod_models {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Genmod annotate
-    my @commands = q{genmod};
+    my @commands = qw{ genmod };
 
     ## Options
     if ($verbosity) {
@@ -633,17 +541,16 @@ sub genmod_models {
         push @commands, q{--temp_dir} . $SPACE . $temp_directory_path;
     }
 
-    ## Family file
-    push @commands, q{--family_file} . $SPACE . $family_file;
+    ## Case file
+    push @commands, q{--family_file} . $SPACE . $case_file;
 
-    if ($family_type) {
+    if ($case_type) {
 
-        push @commands, q{--family_type} . $SPACE . $family_type;
+        push @commands, q{--family_type} . $SPACE . $case_type;
     }
     if ($reduced_penetrance_file_path) {
 
-        push @commands,
-          q{--reduced_penetrance} . $SPACE . $reduced_penetrance_file_path;
+        push @commands, q{--reduced_penetrance} . $SPACE . $reduced_penetrance_file_path;
     }
     if ($thread_number) {
 
@@ -690,8 +597,8 @@ sub genmod_score {
 
 ## Function : Perl wrapper for writing Genmod score recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
-## Arguments: $family_file             => Family file
-##          : $family_type             => Setup of family file
+## Arguments: $case_file               => Family file
+##          : $case_type               => Setup of family file
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $infile_path             => Infile path to read from
 ##          : $outfile_path            => Outfile path to write to
@@ -706,8 +613,8 @@ sub genmod_score {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $family_file;
-    my $family_type;
+    my $case_file;
+    my $case_type;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
@@ -722,16 +629,16 @@ sub genmod_score {
     my $verbosity;
 
     my $tmpl = {
-        family_file => {
+        case_file => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$family_file
+            store       => \$case_file
         },
-        family_type => {
+        case_type => {
             allow       => [qw{ ped alt cmms mip }],
             strict_type => 1,
-            store       => \$family_type
+            store       => \$case_type
         },
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
@@ -765,9 +672,8 @@ sub genmod_score {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
-        temp_directory_path =>
-          { strict_type => 1, store => \$temp_directory_path },
-        verbosity => {
+        temp_directory_path => { strict_type => 1, store => \$temp_directory_path },
+        verbosity           => {
             allow       => qr/ ^\w+$ /sxm,
             strict_type => 1,
             store       => \$verbosity
@@ -776,8 +682,8 @@ sub genmod_score {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Genmod annotate
-    my @commands = q{genmod};
+    ## Genmod score
+    my @commands = qw{ genmod };
 
     ## Options
     if ($verbosity) {
@@ -792,12 +698,12 @@ sub genmod_score {
         push @commands, q{--temp_dir} . $SPACE . $temp_directory_path;
     }
 
-    ## Family file
-    push @commands, q{--family_file} . $SPACE . $family_file;
+    ## Case file
+    push @commands, q{--family_file} . $SPACE . $case_file;
 
-    if ($family_type) {
+    if ($case_type) {
 
-        push @commands, q{--family_type} . $SPACE . $family_type;
+        push @commands, q{--family_type} . $SPACE . $case_type;
     }
     if ($rank_result) {
 

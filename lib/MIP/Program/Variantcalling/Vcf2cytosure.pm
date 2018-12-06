@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Vcf2cytosure;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ vcf2cytosure_convert };
@@ -42,6 +43,7 @@ sub vcf2cytosure_convert {
 ##          : $frequency_tag          => Frequency tag of the info field
 ##          : $no_filter              => Disable any filtering
 ##          : $outfile_path           => Outfile path to write to
+##          : $sex                    => Sex of sample
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -55,6 +57,7 @@ sub vcf2cytosure_convert {
     my $coverage_file;
     my $FILEHANDLE;
     my $outfile_path;
+    my $sex;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -96,6 +99,13 @@ sub vcf2cytosure_convert {
         outfile_path => {
             strict_type => 1,
             store       => \$outfile_path,
+        },
+        sex => {
+            allow       => [qw{ female male }],
+            defined     => 1,
+            required    => 1,
+            store       => \$sex,
+            strict_type => 1,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -159,6 +169,8 @@ sub vcf2cytosure_convert {
     if ($no_filter) {
         push @commands, q{--no-filter};
     }
+
+    push @commands, q{--sex} . $SPACE . $sex;
 
     if ($outfile_path) {
 

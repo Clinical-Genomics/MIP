@@ -57,8 +57,8 @@ sub install_pip_packages {
             store    => \$FILEHANDLE,
         },
         pip_packages_href => {
-            default     => {},
-            store       => \$pip_packages_href,
+            default => {},
+            store   => \$pip_packages_href,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
@@ -75,8 +75,7 @@ sub install_pip_packages {
 
     ## Local modules
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Package_manager::Pip qw{ pip_install };
 
     ## Return if no packages are to be installed
@@ -96,12 +95,11 @@ sub install_pip_packages {
 
     ## Install PIP packages in conda environment
     if ($conda_env) {
-        say {$FILEHANDLE} q{## Install PIP packages in conda environment:}
-          . $SPACE
+        say {$FILEHANDLE} q{## Install PIP packages in conda environment:} . $SPACE
           . $conda_env;
 
         ## Activate conda environment
-        conda_source_activate(
+        conda_activate(
             {
                 env_name   => $conda_env,
                 FILEHANDLE => $FILEHANDLE,
@@ -134,7 +132,7 @@ sub install_pip_packages {
     ## Deactivate conda environment if conda_environment exists
     if ($conda_env) {
         say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_source_deactivate(
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }
@@ -193,8 +191,7 @@ sub _create_package_array {
                   . $SPACE
                   . $package_version;
             }
-            push @packages,
-              $package . $package_version_separator . $package_version;
+            push @packages, $package . $package_version_separator . $package_version;
         }
         else {
             push @packages, $package;
