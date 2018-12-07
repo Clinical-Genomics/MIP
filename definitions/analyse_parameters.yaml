@@ -165,6 +165,7 @@ supported_capture_kit:
     agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
     agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
     agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
-    latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
+    twist_wes.v1: genome_reference_source_version_twist_target_-1-.bed 
+    latest: genome_reference_source_version_twist_target_-1-.bed
   type: mip
 ### Programs
