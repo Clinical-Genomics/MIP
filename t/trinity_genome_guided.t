@@ -29,10 +29,11 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $COMMA              => q{,};
-Readonly my $NEWLINE            => qq{\n};
-Readonly my $SPACE              => q{ };
+Readonly my $COMMA               => q{,};
+Readonly my $NEWLINE             => qq{\n};
+Readonly my $SPACE               => q{ };
 Readonly my $MAX_INTRON_DISTANCE => 10_000;
+Readonly my $CPU                 => 16;
 
 ### User Options
 GetOptions(
@@ -126,22 +127,24 @@ my %base_argument = (
 my %required_argument = (
     infile_path => {
         input           => q{infile_path},
-        expected_output => q{infile_path},
+        expected_output => q{--genome_guided_bam infile_path},
     },
 );
 
 my %specific_argument = (
     infile_path => {
         input           => q{infile_path},
-        expected_output => q{infile_path},
+        expected_output => q{--genome_guided_bam infile_path},
     },
     max_intron_distance => {
         input           => $MAX_INTRON_DISTANCE,
-        expected_output => q{--genome_guided_max_intron} . $SPACE . $MAX_INTRON_DISTANCE,
+        expected_output => q{--genome_guided_max_intron}
+          . $SPACE
+          . $MAX_INTRON_DISTANCE,
     },
     number_cpu => {
         input           => $CPU,
-        expected_output => q{--CPU}  . $SPACE . $CPU,
+        expected_output => q{--CPU} . $SPACE . $CPU,
     },
     max_memory => {
         input           => $CPU,
