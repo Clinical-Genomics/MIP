@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -117,21 +117,8 @@ sub get_dependency_tree {
 
             $current_chain = $key;
         }
-        ## Call recursive
-        if ( ref $value eq q{HASH} ) {
 
-            get_dependency_tree(
-                {
-                    current_chain          => $current_chain,
-                    dependency_tree_href   => $value,
-                    is_recipe_found_ref    => $is_recipe_found_ref,
-                    is_chain_found_ref     => $is_chain_found_ref,
-                    recipe                 => $recipe,
-                    start_with_recipes_ref => $start_with_recipes_ref,
-                }
-            );
-        }
-        elsif ( ref $value eq q{ARRAY} ) {
+        if ( ref $value eq q{ARRAY} ) {
             ## Inspect element
 
           ELEMENT:

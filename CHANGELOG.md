@@ -27,12 +27,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - One case one Multiqc report Fix https://github.com/Clinical-Genomics/MIP/issues/515
 - Added exclude contig option. Fix https://github.com/Clinical-Genomics/MIP/issues/509.
 - Add UCSC genomicsSuperDups to annoation and rank model. Fix https://github.com/Clinical-Genomics/MIP/issues/574
-- Switched to using conda instead of source with conda e.g. "conda activate [ENV]" instead of "source activate [ENV]
+- Switched to using conda instead of source with conda e.g. "conda activate [ENV]" instead of "source activate [ENV]"
+- Switched 1000G phase3_v4_2013-05-02 to gnomad r2.0.1 as default for gatk_calculategenotypeposteriors_support_set option
+- Added switch to add all research variants to clinical file for MT. Required to display all MT variants in Scout clinical view as they are all deemed clinically relevant.
 
 **New Pipeline**
 - rna
 - rd_dna_vcf_rerun
-
 
 **New recipes**
 *Rd_dna*
@@ -41,6 +42,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 *rd_dna_vcf_rerun*
 - sv_vcf_rerun_reformat
 - vcf_rerun_reformat
+
+**Annotations**
+- genomic_superdups_frac_match
+- REVEL_rankscore
 
 **References**
 - clinvar: 20180429 -> 20181028
