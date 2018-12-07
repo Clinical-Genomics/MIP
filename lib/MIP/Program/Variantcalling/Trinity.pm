@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Trinity;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -34,16 +35,16 @@ Readonly my $SPACE => q{ };
 
 sub trinity_genome_guided {
 
-## Function : Perl wrapper for writing tiddit sv recipe to $FILEHANDLE or return commands array. Based on tiddit 1.0.2.
+## Function : Perl wrapper for writing Trinity genome guided asssembly recipe to $FILEHANDLE or return commands array.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                      => Filehandle to write to
-##          : $infile_path                     => Infile path
-##          : $max_intron_distance             => Maximum intron distance
-##          : $max_memory                      => Maximum memory (gigabytes)
-##          : $n_cpus                          => Number of CPU cores
-##          : $stderrfile_path                 => Stderrfile path
-##          : $stderrfile_path_append          => Append stderr info to file path
-##          : $stdoutfile_path                 => Stdoutfile path
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $max_intron_distance    => Maximum intron distance
+##          : $max_memory             => Maximum memory (gigabytes)
+##          : $number_cores           => Number of CPU cores
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -52,7 +53,7 @@ sub trinity_genome_guided {
     my $infile_path;
     my $max_intron_distance;
     my $max_memory;
-    my $n_cpu;
+    my $number_cpu;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -68,7 +69,7 @@ sub trinity_genome_guided {
         max_intron_distance => {
             allow       => qr/ ^\d+$ /sxm,
             default     => 10_000,
-            store       => \$minimum_number_supporting_pairs,
+            store       => \$max_intron_distance,
             strict_type => 1,
         },
         max_memory => {
@@ -76,8 +77,8 @@ sub trinity_genome_guided {
             store       => \$max_memory,
             strict_type => 1,
         },
-        n_cpu =>
-          { default => 16, store => \$outfile_path_prefix, strict_type => 1, },
+        number_cpu =>
+          { default => 16, store => \$number_cpu, strict_type => 1, },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -94,17 +95,20 @@ sub trinity_genome_guided {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## tiddit
+    ## Trinity
     my @commands = qw{ Trinity };
 
     ## Infile
     push @commands, q{--genome_guided_bam} . $SPACE . $infile_path;
+
     ## cpu
     push @commands,
       q{--genome_guided_max_intron} . $SPACE . $max_intron_distance;
+
     ## intron distance
-    push @commands, q{--CPU} . $SPACE . $n_cpu;
-    ## intron distance
+    push @commands, q{--CPU} . $SPACE . $number_cpu;
+
+    ## maximum memory
     push @commands, q{--max_memory} . $SPACE . $max_memory . q{G};
 
     push @commands,
