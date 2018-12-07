@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.010;
+our $VERSION = 1.11;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1021,6 +1021,16 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
+        q{sv_vcfparser_add_all_mt_var} => (
+            cmd_aliases   => [qw{ svvcpamt }],
+            cmd_flag      => q{sv_vcfparser_all_mt},
+            documentation => q{Add all MT variants in select vcf},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{sv_vcfparser_per_gene} => (
             cmd_aliases   => [qw{ svvcppg }],
             documentation => q{Keep only most severe consequence per gene},
@@ -1721,6 +1731,16 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Parse structural variants using vcfParser.pl},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{vcfparser_add_all_mt_var} => (
+            cmd_aliases   => [qw{ vcpamt }],
+            cmd_flag      => q{vcfparser_all_mt},
+            documentation => q{Add all MT variants in select vcf},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 

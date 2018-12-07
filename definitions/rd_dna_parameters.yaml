@@ -921,6 +921,12 @@ sv_vcfparser:
   file_tag: _parsed
   outfile_suffix: ".vcf"
   type: recipe
+sv_vcfparser_add_all_mt_var:
+  associated_recipe:
+   - sv_vcfparser
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 sv_vcfparser_range_feature_annotation_columns:
   associated_recipe:
    - sv_vcfparser
@@ -1518,6 +1524,12 @@ vcfparser_ar:
   file_tag: _parsed
   outfile_suffix: ".vcf"
   type: recipe
+vcfparser_add_all_mt_var:
+  associated_recipe:
+   - vcfparser_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 vcfparser_outfile_count:
   associated_recipe:
    - vcfparser_ar
