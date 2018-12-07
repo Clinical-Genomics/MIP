@@ -653,11 +653,15 @@ sub finish_bioconda_package_install {
     if ( $bioconda_packages_href->{gatk} ) {
         say {$FILEHANDLE} q{## Custom GATK solutions};
 
+        ## Strip build number from version
+        my $gatk_version = substr( $bioconda_packages_href->{gatk},
+            0, index( $bioconda_packages_href->{gatk}, q{=} ) );
+
         ## Download gatk .tar.bz2
         my $gatk_tar_path = gatk_download(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                gatk_version => $bioconda_packages_href->{gatk},
+                gatk_version => $gatk_version,
                 quiet        => $quiet,
                 verbose      => $verbose,
             }
