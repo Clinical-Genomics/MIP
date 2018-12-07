@@ -378,7 +378,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             cmd_flag      => q{sv_vcfparser_all_mt},
             documentation => q{Add all MT variants in select vcf},
             is            => q{rw},
-            isa           => Int,
+            isa           => Bool,
         )
     );
 
@@ -767,7 +767,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             cmd_flag      => q{vcfparser_all_mt},
             documentation => q{Add all MT variants in select vcf},
             is            => q{rw},
-            isa           => Int,
+            isa           => Bool,
         )
     );
 

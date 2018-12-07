@@ -40,7 +40,6 @@ Readonly my $EMPTY_STR    => q{};
 Readonly my $MITO_PADDING => 0;
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $SPACE        => q{ };
-Readonly my $SEMI_COLON   => q{;};
 Readonly my $UNDERSCORE   => q{_};
 
 sub analysis_mip_vcfparser {
