@@ -68,7 +68,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.6};
+our $VERSION = q{1.2.7};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -596,7 +596,7 @@ sub get_programs_for_installation {
     }
     if ( any { $_ eq q{tiddit} } @{ $parameter_href->{select_program} } ) {
         push @{ $parameter_href->{select_program} },
-          qw{ bcftools htslib cython gcc numpy scipy svdb };
+          qw{ bcftools cmake htslib cython gcc numpy scipy svdb };
     }
 
     ## Remove all programs except those selected for installation
