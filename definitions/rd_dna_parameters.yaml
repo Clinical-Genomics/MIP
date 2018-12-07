@@ -1193,7 +1193,7 @@ gatk_calculategenotypeposteriors_support_set:
   associated_recipe:
    - gatk_variantrecalibration
   data_type: SCALAR
-  default: GRCh37_1000g_sites_-phase3_v4_2013-05-02-.vcf.gz
+  default: GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz
   exists_check: file
   reference: reference_dir
   type: path
