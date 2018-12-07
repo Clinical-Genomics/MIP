@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -149,6 +149,7 @@ sub analysis_mip_vcfparser {
     use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
@@ -359,8 +360,21 @@ sub analysis_mip_vcfparser {
                 stdoutfile_path => $outfile_path{$contig},
             }
         );
+
         say {$XARGSFILEHANDLE} $NEWLINE;
+
+        ### Special case: replace all clinical mitochondrial variants with research mitochondrial variants
+        _add_all_mt_var_from_research_to_clinical(
+            {
+                add_all_mt_var => $active_parameter_href->{vcfparser_add_all_mt_var},
+                contig         => $contig,
+                FILEHANDLE     => $XARGSFILEHANDLE,
+                infile_path    => $outfile_path{$contig},
+                outfile_path   => $select_outfile,
+            }
+        );
     }
+    say {$XARGSFILEHANDLE} $NEWLINE;
 
     if ( $recipe_mode == 1 ) {
 
@@ -843,6 +857,7 @@ sub analysis_vcfparser_sv_wgs {
     use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
@@ -1042,8 +1057,21 @@ sub analysis_vcfparser_sv_wgs {
                 select_outfile                 => $select_outfile,
             }
         );
+
         say {$XARGSFILEHANDLE} $NEWLINE;
+
+        ### Special case: replace all clinical mitochondrial variants with research mitochondrial variants
+        _add_all_mt_var_from_research_to_clinical(
+            {
+                add_all_mt_var => $active_parameter_href->{sv_vcfparser_add_all_mt_var},
+                contig         => $contig,
+                FILEHANDLE     => $XARGSFILEHANDLE,
+                infile_path    => $vcfparser_outfile_path,
+                outfile_path   => $select_outfile,
+            }
+        );
     }
+    say {$XARGSFILEHANDLE} $NEWLINE;
 
   ANALYSIS_SUFFIXES:
     foreach my $analysis_suffix (@outfile_suffixes) {
@@ -1119,6 +1147,75 @@ sub analysis_vcfparser_sv_wgs {
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
+            }
+        );
+    }
+    return;
+}
+
+sub _add_all_mt_var_from_research_to_clinical {
+
+## Function : Replace all clinical mitochondrial variants with research mitochondrial variants
+## Returns  :
+## Arguments: $add_all_mt_var => Add all mt variants switch
+##          : $contig         => Contig {REF}
+##          : $FILEHANDLE     => Filehandle to write to
+##          : $infile_path    => File to copy from
+##          : $outfile_path   => File to replace
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $contig;
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfile_path;
+
+    ## Default(s)
+    my $add_all_mt_var;
+
+    my $tmpl = {
+        add_all_mt_var => {
+            allow       => qr{ \A\d+\z }sxm,
+            default     => 1,
+            store       => \$add_all_mt_var,
+            strict_type => 1,
+        },
+        contig => {
+            defined     => 1,
+            required    => 1,
+            store       => \$contig,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( $add_all_mt_var and $contig =~ / MT | M /sxm ) {
+
+        say {$FILEHANDLE} q{## Replacing clinical MT variants with research MT variants};
+        gnu_cp(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $infile_path,
+                outfile_path => $outfile_path,
             }
         );
     }
