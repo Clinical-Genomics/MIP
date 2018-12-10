@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_rd_dna check_rd_rna check_rd_dna_vcf_rerun };
@@ -337,6 +337,7 @@ sub check_rd_dna {
             exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
             file_info_href      => $file_info_href,
             found_male          => $active_parameter_href->{found_male},
+            log                 => $log,
         }
     );
 
@@ -571,6 +572,7 @@ sub check_rd_rna {
             exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
             file_info_href      => $file_info_href,
             found_male          => $active_parameter_href->{found_male},
+            log                 => $log,
         }
     );
 
@@ -799,6 +801,7 @@ sub check_rd_dna_vcf_rerun {
             exclude_contigs_ref => \@{ $active_parameter_href->{exclude_contigs} },
             file_info_href      => $file_info_href,
             found_male          => $active_parameter_href->{found_male},
+            log                 => $log,
         }
     );
 

@@ -164,6 +164,7 @@ sub delete_non_wes_contig {
 ## Arguments: $analysis_type_href => Analysis_type hash {REF}
 ##          : $contigs_ref        => Contigs array to update {REF}
 ##          : $contig_names_ref   => Contig names to remove {REF}
+##          : $log                => Log object
 
     my ($arg_href) = @_;
 
@@ -171,6 +172,7 @@ sub delete_non_wes_contig {
     my $analysis_type_href;
     my $contigs_ref;
     my $contig_names_ref;
+    my $log;
 
     my $tmpl = {
         analysis_type_href => {
@@ -201,6 +203,10 @@ sub delete_non_wes_contig {
             default     => [qw{ M MT }],
             store       => \$contig_names_ref,
             strict_type => 1,
+        },
+        log => {
+            required => 1,
+            store    => \$log,
         },
     };
 

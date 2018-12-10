@@ -16,16 +16,13 @@ use warnings qw{ FATAL utf8 };
 use List::MoreUtils qw { any };
 use Readonly;
 
-## MIPs lib/
-use MIP::Delete::List qw{ delete_male_contig };
-
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rd_dna_vcf_rerun };
@@ -40,16 +37,16 @@ sub pipeline_rd_dna_vcf_rerun {
 
 ## Function : Pipeline recipe for wes and or wgs data analysis.
 ## Returns  :
-## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
-##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
-##          : $file_info_href                  => File info hash {REF}
-##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                     => Job id hash {REF}
-##          : $log                             => Log object to write to
-##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
-##          : $order_recipes_ref               => Order of recipes
-##          : $parameter_href                  => Parameter hash {REF}
-##          : $sample_info_href                => Info on samples and case hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref          => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href          => File info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $log                     => Log object to write to
+##          : $order_parameters_ref    => Order of parameters (for structured output) {REF}
+##          : $order_recipes_ref       => Order of recipes
+##          : $parameter_href          => Parameter hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
