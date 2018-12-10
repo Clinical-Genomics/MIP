@@ -241,6 +241,7 @@ sub update_contigs_for_run {
             {
                 analysis_type_href => $analysis_type_href,
                 contigs_ref        => $array_ref,
+                log                => $log,
             }
         );
     }

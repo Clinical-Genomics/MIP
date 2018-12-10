@@ -85,6 +85,7 @@ update_contigs_for_run(
         exclude_contigs_ref => \@exclude_contigs,
         analysis_type_href  => \%{ $active_parameter{analysis_type} },
         found_male          => $found_male,
+        log                 => $log,
     }
 );
 
