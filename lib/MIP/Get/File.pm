@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -114,17 +114,16 @@ sub get_exom_target_bed_file {
             return $exome_target_bed_file;
         }
     }
-    if ( not defined $seen{$sample_id} ) {
+    ## Found exome target bed file for sample
+    return if ( $seen{$sample_id} );
 
-        $log->fatal(
-            q{Could not detect }
-              . $sample_id
-              . q{ in '-exome_target_bed' associated files in sub routine get_exom_target_bed_file},
-            $NEWLINE
-        );
-        exit 1;
-    }
-    return;
+    $log->fatal(
+        q{Could not detect }
+          . $sample_id
+          . q{ in '-exome_target_bed' associated files in sub routine get_exom_target_bed_file},
+        $NEWLINE
+    );
+    exit 1;
 }
 
 sub get_fastq_file_header_info {
