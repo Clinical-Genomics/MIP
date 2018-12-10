@@ -69,24 +69,25 @@ my @contigs = qw{ 1 2 3 4 MT};
 ## Define analysis type
 my %active_parameter = ( analysis_type => { sample_1 => q{wes}, }, );
 
-my @cleansed_contigs = delete_non_wes_contig(
+my @no_wes_contigs = delete_non_wes_contig(
     {
         analysis_type_href => \%{ $active_parameter{analysis_type} },
         contigs_ref        => \@contigs,
+        contig_names_ref   => [qw{ M MT }],
         log                => $log,
     }
 );
 
 ## Define expected outcome
-my @expected_contigs = qw{ 1 2 3 4 };
+my @expected_no_wes_contigs = qw{ 1 2 3 4 };
 
 ## Then remove the non wes contigs
-is_deeply( \@cleansed_contigs, \@expected_contigs, q{Removed non wes contigs} );
+is_deeply( \@no_wes_contigs, \@expected_no_wes_contigs, q{Removed non wes contigs} );
 
 ## Given contigs, when a non consensus type of run
 $active_parameter{analysis_type}{sample_2} = q{wgs};
 
-@cleansed_contigs = delete_non_wes_contig(
+my @has_wes_contigs = delete_non_wes_contig(
     {
         analysis_type_href => \%{ $active_parameter{analysis_type} },
         contigs_ref        => \@contigs,
@@ -95,9 +96,9 @@ $active_parameter{analysis_type}{sample_2} = q{wgs};
 );
 
 ## Define expected outcome
-@expected_contigs = qw{ 1 2 3 4 MT };
+my @expected_wes_contigs = qw{ 1 2 3 4 MT };
 
 ## Then remove the non wes contigs
-is_deeply( \@cleansed_contigs, \@expected_contigs, q{Did not remove non wes contigs} );
+is_deeply( \@has_wes_contigs, \@expected_wes_contigs, q{Did not remove non wes contigs} );
 
 done_testing();
