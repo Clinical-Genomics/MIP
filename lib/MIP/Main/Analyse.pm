@@ -294,9 +294,12 @@ sub mip_analyse {
     }
 
     # Detect if all samples has the same sequencing type and return consensus if reached
-    $parameter{cache}{consensus_analysis_type} =
-      get_overall_analysis_type(
-        { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
+    $parameter{cache}{consensus_analysis_type} = get_overall_analysis_type(
+        {
+            analysis_type_href => \%{ $active_parameter{analysis_type} },
+            log                => $log,
+        }
+    );
 
 ### Populate uninitilized active_parameters{parameter_name} with default from parameter
   PARAMETER:

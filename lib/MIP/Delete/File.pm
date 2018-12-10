@@ -1,5 +1,6 @@
 package MIP::Delete::File;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ delete_contig_files delete_files };
@@ -64,7 +65,7 @@ sub delete_contig_files {
             store       => \$core_number,
             strict_type => 1,
         },
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        FILEHANDLE        => { defined => 1, required => 1, store => \$FILEHANDLE, },
         file_elements_ref => {
             default     => [],
             defined     => 1,
@@ -115,11 +116,10 @@ sub delete_contig_files {
 
         gnu_rm(
             {
-                FILEHANDLE  => $FILEHANDLE,
-                force       => 1,
-                infile_path => catfile(
-                    $indirectory, $file_name . $DOT . $element . $file_ending
-                ),
+                FILEHANDLE => $FILEHANDLE,
+                force      => 1,
+                infile_path =>
+                  catfile( $indirectory, $file_name . $DOT . $element . $file_ending ),
             }
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE;

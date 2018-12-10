@@ -1,5 +1,6 @@
 package MIP::Update::Contigs;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -124,8 +125,7 @@ sub size_sort_select_file_contigs {
 
     ## Test if all contigs collected from select file was sorted by reference contig array
     if ( @sorted_contigs
-        and scalar @{ $file_info_href->{$hash_key_to_sort} } !=
-        scalar @sorted_contigs )
+        and scalar @{ $file_info_href->{$hash_key_to_sort} } != scalar @sorted_contigs )
     {
 
       SORT_ELEMENT:
@@ -158,6 +158,7 @@ sub update_contigs_for_run {
 ##          : $exclude_contigs_ref => Exclude contigs from analysis {REF}
 ##          : $file_info_href      => File info hash {REF}
 ##          : $found_male          => Male was included in the analysis
+##          : $log                 => Log object
 
     my ($arg_href) = @_;
 
@@ -166,6 +167,7 @@ sub update_contigs_for_run {
     my $exclude_contigs_ref;
     my $file_info_href;
     my $found_male;
+    my $log;
 
     my $tmpl = {
         analysis_type_href => {
@@ -194,6 +196,11 @@ sub update_contigs_for_run {
             required    => 1,
             store       => \$found_male,
             strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
         },
     };
 
@@ -234,6 +241,7 @@ sub update_contigs_for_run {
             {
                 analysis_type_href => $analysis_type_href,
                 contigs_ref        => $array_ref,
+                log                => $log,
             }
         );
     }

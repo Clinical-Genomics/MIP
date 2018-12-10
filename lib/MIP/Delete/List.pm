@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -164,6 +164,7 @@ sub delete_non_wes_contig {
 ## Arguments: $analysis_type_href => Analysis_type hash {REF}
 ##          : $contigs_ref        => Contigs array to update {REF}
 ##          : $contig_names_ref   => Contig names to remove {REF}
+##          : $log                => Log object
 
     my ($arg_href) = @_;
 
@@ -171,6 +172,7 @@ sub delete_non_wes_contig {
     my $analysis_type_href;
     my $contigs_ref;
     my $contig_names_ref;
+    my $log;
 
     my $tmpl = {
         analysis_type_href => {
@@ -202,6 +204,10 @@ sub delete_non_wes_contig {
             store       => \$contig_names_ref,
             strict_type => 1,
         },
+        log => {
+            required => 1,
+            store    => \$log,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -211,7 +217,11 @@ sub delete_non_wes_contig {
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
     my $consensus_analysis_type = get_overall_analysis_type(
-        { analysis_type_href => $analysis_type_href, } );
+        {
+            analysis_type_href => $analysis_type_href,
+            log                => $log,
+        }
+    );
 
     my @contigs = @{$contigs_ref};
 
