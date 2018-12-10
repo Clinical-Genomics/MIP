@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -211,7 +211,11 @@ sub delete_non_wes_contig {
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
     my $consensus_analysis_type = get_overall_analysis_type(
-        { analysis_type_href => $analysis_type_href, } );
+        {
+            analysis_type_href => $analysis_type_href,
+            log                => $log,
+        }
+    );
 
     my @contigs = @{$contigs_ref};
 

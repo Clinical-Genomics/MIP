@@ -381,11 +381,13 @@ sub get_overall_analysis_type {
 ## Function : Detect if all samples has the same sequencing type and return consensus or mixed
 ## Returns  : q{consensus} | q{mixed} - analysis_type
 ## Arguments: $analysis_type_href => Analysis_type hash {REF}
+##          : $log                => Log Object
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $analysis_type_href;
+    my $log;
 
     my $tmpl = {
         analysis_type_href => {
@@ -395,12 +397,13 @@ sub get_overall_analysis_type {
             store       => \$analysis_type_href,
             strict_type => 1,
         },
+        log => {
+            required => 1,
+            store    => \$log,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my @analysis_types = (qw{ wes wgs vrn wts });
 
@@ -513,9 +516,9 @@ sub print_recipe {
             strict_type => 1,
         },
         print_recipe_mode => {
-            allow => [ undef, 0, 1, 2 ],
-            default => $arg_href->{print_recipe_mode} //= 2,
-            store => \$print_recipe_mode,
+            allow       => [ undef, 0, 1, 2 ],
+            default     => $arg_href->{print_recipe_mode} //= 2,
+            store       => \$print_recipe_mode,
             strict_type => 1,
         },
     };
