@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -586,11 +586,15 @@ sub finish_conda_package_install {
     if ( $conda_packages_href->{gatk} ) {
         say {$FILEHANDLE} q{## Custom GATK solutions};
 
+        ## Strip build number from version string
+        my $gatk_version = substr( $conda_packages_href->{gatk},
+            0, index( $conda_packages_href->{gatk}, q{=} ) );
+
         ## Download gatk .tar.bz2
         my $gatk_tar_path = gatk_download(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                gatk_version => $conda_packages_href->{gatk},
+                gatk_version => $gatk_version,
                 quiet        => $quiet,
                 verbose      => $verbose,
             }
