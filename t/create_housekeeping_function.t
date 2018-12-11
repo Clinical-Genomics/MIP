@@ -5,10 +5,10 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname  };
-use File::Spec::Functions qw{ catfile catdir devnull };
+use File::Basename qw{ dirname };
+use File::Path qw{ remove_tree };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
-use Getopt::Long;
 use IPC::Cmd qw(can_run run);
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -17,84 +17,48 @@ use utf8;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie qw{ :all };
-use List::Util qw(any);
+use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Gnu::Coreutils qw(gnu_mkdir gnu_rm);
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.01;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
 Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
-
 BEGIN {
+
+    use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Gnu::Coreutils} => [qw(gnu_mkdir gnu_rm)],
-        q{MIP::Script::Utils}  => [qw{ help }],
+        q{MIP::Gnu::Bash}       => [qw{ gnu_set }],
+        q{MIP::Gnu::Coreutils}  => [qw{ gnu_mkdir }],
+        q{MIP::Language::Shell} => [qw{ build_shebang create_housekeeping_function }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = ('MIP::Language::Shell');
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Language::Shell qw{ build_shebang create_housekeeping_function };
 use MIP::Gnu::Bash qw{ gnu_set };
+use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 
 diag(   q{Test create_housekeeping_function from Shell.pm v}
       . $MIP::Language::Shell::VERSION
@@ -110,24 +74,32 @@ my $FILEHANDLE = IO::Handle->new();
 
 # Create housekeeping function test sbatch file
 my $bash_file_path = catfile( cwd(), q{test_create_housekeeping_function.sh} );
+my $log_file_path = catdir( cwd(), q{test_create_housekeeping_function} );
 
 # Install directory
 my $temp_dir = catdir( cwd(), q{.test_create_housekeeping_function} );
 
-# Open filehandle
+# Open filehandle for bash file
 open $FILEHANDLE, q{>}, $bash_file_path
-  or croak(
-    q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
+  or croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
+
+## Open filehandle for log file
+open my $LOG_FH, q{>}, $log_file_path . q{.status}
+  or croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
+
+say $LOG_FH q{Logging};
 
 ## Write to bash file
 _build_test_file_recipe(
     {
         bash_file_path => $bash_file_path,
         FILEHANDLE     => $FILEHANDLE,
+        log_file_path  => $log_file_path,
         temp_dir       => $temp_dir,
     }
 );
 close $FILEHANDLE;
+close $LOG_FH;
 
 ## Testing write to file
 ok( -e $bash_file_path, q{Create bash} );
@@ -135,11 +107,13 @@ ok( -e $bash_file_path, q{Create bash} );
 ok( can_run(q{bash}), q{Checking can run bash binary} );
 
 my $cmds_ref = [ q{bash}, $bash_file_path ];
-my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref )
-  = run( command => $cmds_ref, verbose => $VERBOSE );
+my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
+  run( command => $cmds_ref, verbose => $VERBOSE );
 
 ## Testing housekeeping function
 ok( !-d $temp_dir, q{Performed housekeeping} );
+
+remove_tree( $bash_file_path, $log_file_path . q{.status} );
 
 done_testing();
 
@@ -147,41 +121,13 @@ done_testing();
 ####SubRoutines#######
 ######################
 
-sub build_usage {
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}
-
 sub _build_test_file_recipe {
 
 ##Function : Builds the test file for testing the housekeeping function
 ##Returns  : ""
 ##Arguments: $bash_file_path => Test file to write recipe to
 ##         : $FILEHANDLE     => FILEHANDLE to write to
+##         : $log_file_path  => Log file path
 ##         : $temp_dir       => Temporary directory to use for test
 
     my ($arg_href) = @_;
@@ -189,12 +135,14 @@ sub _build_test_file_recipe {
     ## Flatten argument(s)
     my $bash_file_path;
     my $FILEHANDLE;
+    my $log_file_path;
     my $temp_dir;
 
     my $tmpl = {
-        bash_file_path => { required => 1, store => \$bash_file_path },
-        FILEHANDLE     => { required => 1, store => \$FILEHANDLE },
-        temp_dir       => { required => 1, store => \$temp_dir },
+        bash_file_path => { required => 1, store => \$bash_file_path, },
+        FILEHANDLE     => { required => 1, store => \$FILEHANDLE, },
+        log_file_path  => { required => 1, store => \$log_file_path, },
+        temp_dir       => { required => 1, store => \$temp_dir, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -229,16 +177,10 @@ sub _build_test_file_recipe {
     create_housekeeping_function(
         {
             FILEHANDLE         => $FILEHANDLE,
+            job_ids_ref        => [qw{job_id_test}],
+            log_file_path      => $log_file_path,
             remove_dir         => $temp_dir,
             trap_function_name => q{finish},
-        }
-    );
-
-    # Remove batch file to make clean exit
-    gnu_rm(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $bash_file_path,
         }
     );
     return;

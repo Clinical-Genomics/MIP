@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -197,29 +197,24 @@ q{It is also recommended that the parameter "process_time" has been set to an ap
 
         ## Get bash_file_name minus suffix and add time stamp.
         my $job_name =
-            fileparse( $file_name, qr/\.[^.]*/xms )
-          . $UNDERSCORE
-          . $date_time_stamp;
+          fileparse( $file_name, qr/\.[^.]*/xms ) . $UNDERSCORE . $date_time_stamp;
 
         ## Set STDERR/STDOUT paths
-        my $stderrfile_path =
-          catfile( cwd(), $job_name . $DOT . q{stderr.txt} );
-        my $stdoutfile_path =
-          catfile( cwd(), $job_name . $DOT . q{stdout.txt} );
+        my $stderrfile_path = catfile( cwd(), $job_name . $DOT . q{stderr.txt} );
+        my $stdoutfile_path = catfile( cwd(), $job_name . $DOT . q{stdout.txt} );
 
         slurm_build_sbatch_header(
             {
-                core_number     => $parameter_href->{core_number},
-                email           => $parameter_href->{email},
-                email_types_ref => $parameter_href->{email_types},
-                FILEHANDLE      => $FILEHANDLE,
-                job_name        => $job_name,
-                process_time    => $parameter_href->{process_time},
-                project_id      => $parameter_href->{project_id},
-                slurm_quality_of_service =>
-                  $parameter_href->{slurm_quality_of_service},
-                stderrfile_path => $stderrfile_path,
-                stdoutfile_path => $stdoutfile_path,
+                core_number              => $parameter_href->{core_number},
+                email                    => $parameter_href->{email},
+                email_types_ref          => $parameter_href->{email_types},
+                FILEHANDLE               => $FILEHANDLE,
+                job_name                 => $job_name,
+                process_time             => $parameter_href->{process_time},
+                project_id               => $parameter_href->{project_id},
+                slurm_quality_of_service => $parameter_href->{slurm_quality_of_service},
+                stderrfile_path          => $stderrfile_path,
+                stdoutfile_path          => $stdoutfile_path,
             }
         );
     }
@@ -270,25 +265,23 @@ sub build_shebang {
     my $separator;
 
     my $tmpl = {
-        FILEHANDLE    => { store => \$FILEHANDLE, },
         bash_bin_path => {
-            default => catfile(
-                dirname( dirname( devnull() ) ), qw{ usr bin env bash }
-            ),
-            allow       => qr/ ^\S+$ /sxm,
+            allow   => qr/ ^\S+$ /sxm,
+            default => catfile( dirname( dirname( devnull() ) ), qw{ usr bin env bash } ),
+            store   => \$bash_bin_path,
             strict_type => 1,
-            store       => \$bash_bin_path,
         },
+        FILEHANDLE         => { store => \$FILEHANDLE, },
         invoke_login_shell => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$invoke_login_shell,
+            strict_type => 1,
         },
         separator => {
             default     => $NEWLINE,
-            strict_type => 1,
             store       => \$separator,
+            strict_type => 1,
         },
     };
 
@@ -309,8 +302,8 @@ sub build_shebang {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $separator,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $separator,
         }
     );
     return @commands;
@@ -320,57 +313,56 @@ sub create_housekeeping_function {
 
 ## Function : Create housekeeping function which removes entire directory when finished
 ## Returns  :
-## Arguments: $job_ids_ref             => Job ids
-##          : $sacct_format_fields_ref => Format and fields of sacct output
+## Arguments: $FILEHANDLE              => Filehandle to write to
+##          : $job_ids_ref             => Job ids
 ##          : $log_file_path           => Log file to write job_id progress to {REF}
-##          : $FILEHANDLE              => Filehandle to write to
 ##          : $remove_dir              => Directory to remove when caught by trap function
+##          : $sacct_format_fields_ref => Format and fields of sacct output
 ##          : $trap_function_call      => Trap function call
-##          : $trap_signals_ref        => Array with signals to enable trap for {REF}
 ##          : $trap_function_name      => The trap function argument
+##          : $trap_signals_ref        => Array with signals to enable trap for {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_ids_ref;
-    my $sacct_format_fields_ref;
-    my $log_file_path;
     my $FILEHANDLE;
+    my $job_ids_ref;
+    my $log_file_path;
     my $remove_dir;
+    my $sacct_format_fields_ref;
 
     ## Default(s)
-    my $trap_signals_ref;
-    my $trap_function_name;
     my $trap_function_call;
+    my $trap_function_name;
+    my $trap_signals_ref;
 
     my $tmpl = {
-        job_ids_ref =>
-          { default => [], strict_type => 1, store => \$job_ids_ref, },
+        FILEHANDLE => { required => 1, store => \$FILEHANDLE, },
+        job_ids_ref => { default => [], store => \$job_ids_ref, strict_type => 1, },
+        log_file_path           => { store => \$log_file_path, strict_type => 1, },
+        remove_dir              => { store => \$remove_dir,    strict_type => 1, },
         sacct_format_fields_ref => {
             default     => [],
-            strict_type => 1,
             store       => \$sacct_format_fields_ref,
+            strict_type => 1,
         },
-        log_file_path      => { strict_type => 1, store => \$log_file_path, },
-        FILEHANDLE         => { required    => 1, store => \$FILEHANDLE, },
-        remove_dir         => { strict_type => 1, store => \$remove_dir, },
         trap_function_call => {
             default => q{$(}
               . $arg_href->{trap_function_name}
               . $SPACE
               . $arg_href->{remove_dir} . q{)},
-            strict_type => 1,
             store       => \$trap_function_call,
-        },
-        trap_signals_ref => {
-            default     => [qw{ EXIT TERM INT }],
             strict_type => 1,
-            store       => \$trap_signals_ref,
         },
         trap_function_name => {
             default     => q{finish},
             strict_type => 1,
             store       => \$trap_function_name,
+        },
+        trap_signals_ref => {
+            default     => [qw{ EXIT TERM INT }],
+            strict_type => 1,
+            store       => \$trap_signals_ref,
         },
     };
 
@@ -389,10 +381,10 @@ sub create_housekeeping_function {
 
         gnu_rm(
             {
-                infile_path => q{"$directory"},
-                force       => 1,
-                recursive   => 1,
                 FILEHANDLE  => $FILEHANDLE,
+                force       => 1,
+                infile_path => q{"$directory"},
+                recursive   => 1,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -407,10 +399,10 @@ sub create_housekeeping_function {
         ## and write to log file(.status)
         track_progress(
             {
-                job_ids_ref             => \@{$job_ids_ref},
-                sacct_format_fields_ref => \@{$sacct_format_fields_ref},
                 FILEHANDLE              => $FILEHANDLE,
+                job_ids_ref             => \@{$job_ids_ref},
                 log_file_path           => $log_file_path,
+                sacct_format_fields_ref => \@{$sacct_format_fields_ref},
             }
         );
     }
@@ -433,51 +425,50 @@ sub create_error_trap_function {
 
 ## Function : Create error handling function and trap
 ## Returns  :
-## Arguments: $job_ids_ref             => Job ids
-##          : $sacct_format_fields_ref => Format and fields of sacct output
+## Arguments: $FILEHANDLE              => Filehandle to write to
+##          : $job_ids_ref             => Job ids
 ##          : $log_file_path           => Log file to write job_id progress to {REF}
-##          : $FILEHANDLE              => Filehandle to write to
+##          : $sacct_format_fields_ref => Format and fields of sacct output
 ##          : $trap_function_call      => Trap function call
-##          : $trap_signals_ref        => Array with signals to enable trap for {REF}
 ##          : $trap_function_name      => The trap function argument
+##          : $trap_signals_ref        => Array with signals to enable trap for {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_ids_ref;
-    my $sacct_format_fields_ref;
-    my $log_file_path;
     my $FILEHANDLE;
+    my $job_ids_ref;
+    my $log_file_path;
+    my $sacct_format_fields_ref;
     my $trap_function_call;
 
     ## Default(s)
-    my $trap_signals_ref;
     my $trap_function_name;
+    my $trap_signals_ref;
 
     my $tmpl = {
-        job_ids_ref =>
-          { default => [], strict_type => 1, store => \$job_ids_ref, },
+        FILEHANDLE => { required => 1, store => \$FILEHANDLE, },
+        job_ids_ref => { default => [], store => \$job_ids_ref, strict_type => 1, },
+        log_file_path           => { strict_type => 1, store => \$log_file_path, },
         sacct_format_fields_ref => {
             default     => [],
-            strict_type => 1,
             store       => \$sacct_format_fields_ref,
+            strict_type => 1,
         },
-        log_file_path      => { strict_type => 1, store => \$log_file_path, },
-        FILEHANDLE         => { required    => 1, store => \$FILEHANDLE, },
         trap_function_call => {
             default     => q{$(error "$previous_command" "$?")},
-            strict_type => 1,
             store       => \$trap_function_call,
-        },
-        trap_signals_ref => {
-            default     => [qw{ ERR }],
             strict_type => 1,
-            store       => \$trap_signals_ref,
         },
         trap_function_name => {
             default     => q{error},
-            strict_type => 1,
             store       => \$trap_function_name,
+            strict_type => 1,
+        },
+        trap_signals_ref => {
+            default     => [qw{ ERR }],
+            store       => \$trap_signals_ref,
+            strict_type => 1,
         },
     };
 
@@ -498,10 +489,10 @@ sub create_error_trap_function {
         ## and write to log file(.status)
         track_progress(
             {
-                job_ids_ref             => \@{$job_ids_ref},
-                sacct_format_fields_ref => \@{$sacct_format_fields_ref},
                 FILEHANDLE              => $FILEHANDLE,
+                job_ids_ref             => \@{$job_ids_ref},
                 log_file_path           => $log_file_path,
+                sacct_format_fields_ref => \@{$sacct_format_fields_ref},
             }
         );
     }
@@ -516,8 +507,8 @@ sub create_error_trap_function {
     enable_trap(
         {
             FILEHANDLE         => $FILEHANDLE,
-            trap_signals_ref   => \@{$trap_signals_ref},
             trap_function_call => $trap_function_call,
+            trap_signals_ref   => \@{$trap_signals_ref},
         }
     );
     return;
@@ -542,8 +533,8 @@ sub clear_trap {
         FILEHANDLE       => { required => 1, store => \$FILEHANDLE, },
         trap_signals_ref => {
             default     => [qw{ ERR }],
-            strict_type => 1,
             store       => \$trap_signals_ref,
+            strict_type => 1,
         },
     };
 
@@ -557,9 +548,9 @@ sub clear_trap {
 
     gnu_trap(
         {
-            trap_signals_ref   => $trap_signals_ref,
-            trap_function_call => q{-},
             FILEHANDLE         => $FILEHANDLE,
+            trap_function_call => q{-},
+            trap_signals_ref   => $trap_signals_ref,
         }
     );
     gnu_trap( { FILEHANDLE => $FILEHANDLE, } );
@@ -620,41 +611,38 @@ sub track_progress {
 
 ## Function : Output SLURM info on each job via sacct command and write to log file(.status)
 ## Returns  :
-## Arguments: $job_ids_ref             => Job ids
-##          : $sacct_format_fields_ref => Format and fields of sacct output
+## Arguments: $FILEHANDLE              => Sbatch filehandle to write to
+##          : $job_ids_ref             => Job ids
 ##          : $log_file_path           => The log file {REF}
-##          : $FILEHANDLE              => Sbatch filehandle to write to
+##          : $sacct_format_fields_ref => Format and fields of sacct output
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $job_ids_ref;
     my $log_file_path;
-    my $FILEHANDLE;
 
     ## Default(s)
     my $sacct_format_fields_ref;
 
     my $tmpl = {
-        job_ids_ref =>
-          { default => [], strict_type => 1, store => \$job_ids_ref, },
+        FILEHANDLE  => { store   => \$FILEHANDLE, },
+        job_ids_ref => { default => [], store => \$job_ids_ref, strict_type => 1, },
+        log_file_path           => { store => \$log_file_path, strict_type => 1, },
         sacct_format_fields_ref => {
             default => [
-                'jobid',     'jobname%50', 'account', 'partition',
-                'alloccpus', 'TotalCPU',   'elapsed', 'start',
-                'end',       'state',      'exitcode'
+                qw{
+                  jobid jobname%50 account partition alloccpus TotalCPU elapsed start end state exitcode }
             ],
-            strict_type => 1,
             store       => \$sacct_format_fields_ref,
+            strict_type => 1,
         },
-        log_file_path => { strict_type => 1, store => \$log_file_path, },
-        FILEHANDLE => { store => \$FILEHANDLE, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Workloadmanager::Slurm
-      qw{ slurm_sacct slurm_reformat_sacct_output };
+    use MIP::Workloadmanager::Slurm qw{ slurm_sacct slurm_reformat_sacct_output };
 
     if ( @{$job_ids_ref} ) {
 
@@ -677,9 +665,9 @@ sub track_progress {
         slurm_reformat_sacct_output(
             {
                 commands_ref               => \@commands,
-                reformat_sacct_headers_ref => \@reformat_sacct_headers,
-                log_file_path              => $log_file_path,
                 FILEHANDLE                 => $FILEHANDLE,
+                log_file_path              => $log_file_path,
+                reformat_sacct_headers_ref => \@reformat_sacct_headers,
             }
         );
     }
@@ -699,10 +687,10 @@ sub quote_bash_variable {
 
     my $tmpl = {
         string_with_variable_to_quote => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$string_with_variable_to_quote,
+            strict_type => 1,
         },
     };
 
@@ -734,16 +722,16 @@ sub check_exist_and_move_file {
     my $tmpl = {
         FILEHANDLE         => { required => 1, store => \$FILEHANDLE, },
         intended_file_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$intended_file_path,
+            strict_type => 1,
         },
         temporary_file_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$temporary_file_path,
+            strict_type => 1,
         },
     };
 
@@ -758,8 +746,8 @@ sub check_exist_and_move_file {
     ## If other processes already has created file, remove temp file
     gnu_rm(
         {
-            infile_path => $temporary_file_path,
             FILEHANDLE  => $FILEHANDLE,
+            infile_path => $temporary_file_path,
         }
     );
     ## File has not been created by other processes
@@ -767,9 +755,9 @@ sub check_exist_and_move_file {
 
     gnu_mv(
         {
+            FILEHANDLE   => $FILEHANDLE,
             infile_path  => $temporary_file_path,
             outfile_path => $intended_file_path,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

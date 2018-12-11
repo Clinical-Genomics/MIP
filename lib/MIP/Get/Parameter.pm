@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -46,13 +46,12 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $COLON      => q{:};
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $MINUS_FOUR => -4;
-Readonly my $MINUS_ONE  => -1;
-Readonly my $MINUS_TWO  => -2;
-Readonly my $SPACE      => q{ };
+Readonly my $COLON     => q{:};
+Readonly my $DOT       => q{.};
+Readonly my $EMPTY_STR => q{};
+Readonly my $MINUS_ONE => -1;
+Readonly my $MINUS_TWO => -2;
+Readonly my $SPACE     => q{ };
 
 sub get_bin_file_path {
 
@@ -195,19 +194,11 @@ sub get_conda_path {
     ## Find path to conda bin
     my $conda_path = can_run(q{conda});
 
-    ## Split ditrs to array
+    ## Split dirs to array
     my @conda_path_dirs = File::Spec->splitdir($conda_path);
 
-    ## Running from conda_environment
-    if ( $conda_path_dirs[$MINUS_FOUR] eq q{envs} ) {
-
-        splice @conda_path_dirs, $MINUS_FOUR;
-    }
-    ## Running from conda base environment
-    else {
-
-        splice @conda_path_dirs, $MINUS_TWO;
-    }
+    ## Traverse to conda dir from binary
+    splice @conda_path_dirs, $MINUS_TWO;
 
     ## Return path to conda folder
     return catdir(@conda_path_dirs);
