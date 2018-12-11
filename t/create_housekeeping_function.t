@@ -25,7 +25,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
+my $VERBOSE = 0;
 our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
@@ -56,9 +56,9 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Language::Shell qw{ build_shebang create_housekeeping_function };
 use MIP::Gnu::Bash qw{ gnu_set };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
+use MIP::Language::Shell qw{ build_shebang create_housekeeping_function };
 
 diag(   q{Test create_housekeeping_function from Shell.pm v}
       . $MIP::Language::Shell::VERSION
@@ -76,7 +76,7 @@ my $FILEHANDLE = IO::Handle->new();
 my $bash_file_path = catfile( cwd(), q{test_create_housekeeping_function.sh} );
 my $log_file_path = catdir( cwd(), q{test_create_housekeeping_function} );
 
-# Install directory
+# Temporary directory
 my $temp_dir = catdir( cwd(), q{.test_create_housekeeping_function} );
 
 # Open filehandle for bash file
@@ -87,15 +87,16 @@ open $FILEHANDLE, q{>}, $bash_file_path
 open my $LOG_FH, q{>}, $log_file_path . q{.status}
   or croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
-say $LOG_FH q{Logging};
+# Touch file
+say {$LOG_FH} q{Logging};
 
 ## Write to bash file
 _build_test_file_recipe(
     {
-        bash_file_path => $bash_file_path,
-        FILEHANDLE     => $FILEHANDLE,
-        log_file_path  => $log_file_path,
-        temp_dir       => $temp_dir,
+        recipe_bash_file_path => $bash_file_path,
+        RECIPE_FILEHANDLE     => $FILEHANDLE,
+        recipe_log_file_path  => $log_file_path,
+        recipe_temp_dir       => $temp_dir,
     }
 );
 close $FILEHANDLE;
@@ -125,24 +126,24 @@ sub _build_test_file_recipe {
 
 ##Function : Builds the test file for testing the housekeeping function
 ##Returns  : ""
-##Arguments: $bash_file_path => Test file to write recipe to
-##         : $FILEHANDLE     => FILEHANDLE to write to
-##         : $log_file_path  => Log file path
-##         : $temp_dir       => Temporary directory to use for test
+##Arguments: $recipe_bash_file_path => Test file to write recipe to
+##         : $RECIPE_FILEHANDLE     => FILEHANDLE to write to
+##         : $recipe_log_file_path  => Log file path
+##         : $recipe_temp_dir       => Temporary directory to use for test
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $bash_file_path;
-    my $FILEHANDLE;
-    my $log_file_path;
-    my $temp_dir;
+    my $recipe_bash_file_path;
+    my $RECIPE_FILEHANDLE;
+    my $recipe_log_file_path;
+    my $recipe_temp_dir;
 
     my $tmpl = {
-        bash_file_path => { required => 1, store => \$bash_file_path, },
-        FILEHANDLE     => { required => 1, store => \$FILEHANDLE, },
-        log_file_path  => { required => 1, store => \$log_file_path, },
-        temp_dir       => { required => 1, store => \$temp_dir, },
+        recipe_bash_file_path => { required => 1, store => \$recipe_bash_file_path, },
+        RECIPE_FILEHANDLE     => { required => 1, store => \$RECIPE_FILEHANDLE, },
+        recipe_log_file_path  => { required => 1, store => \$recipe_log_file_path, },
+        recipe_temp_dir       => { required => 1, store => \$recipe_temp_dir, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -150,14 +151,14 @@ sub _build_test_file_recipe {
     # Add bash shebang
     build_shebang(
         {
-            FILEHANDLE => $FILEHANDLE,
+            FILEHANDLE => $RECIPE_FILEHANDLE,
         }
     );
 
     ## Set shell attributes
     gnu_set(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            FILEHANDLE  => $RECIPE_FILEHANDLE,
             set_errexit => 1,
             set_nounset => 1,
         }
@@ -166,20 +167,20 @@ sub _build_test_file_recipe {
     # Create dir to test removal later
     gnu_mkdir(
         {
-            FILEHANDLE       => $FILEHANDLE,
-            indirectory_path => $temp_dir,
+            FILEHANDLE       => $RECIPE_FILEHANDLE,
+            indirectory_path => $recipe_temp_dir,
             parents          => 1,
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
+    say {$RECIPE_FILEHANDLE} $NEWLINE;
 
     # Create housekeeping fucntion to remove temp_dir
     create_housekeeping_function(
         {
-            FILEHANDLE         => $FILEHANDLE,
+            FILEHANDLE         => $RECIPE_FILEHANDLE,
             job_ids_ref        => [qw{job_id_test}],
-            log_file_path      => $log_file_path,
-            remove_dir         => $temp_dir,
+            log_file_path      => $recipe_log_file_path,
+            remove_dir         => $recipe_temp_dir,
             trap_function_name => q{finish},
         }
     );
