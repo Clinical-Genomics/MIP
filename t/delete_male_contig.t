@@ -68,66 +68,35 @@ my @contigs = qw{ 1 2 3 4 Y};
 
 my $is_male = 0;
 
-my @cleansed_contigs = delete_male_contig(
+my @no_male_contigs = delete_male_contig(
     {
-        contigs_ref => \@contigs,
-        found_male  => $is_male,
+        contigs_ref      => \@contigs,
+        contig_names_ref => [qw{ Y }],
+        found_male       => $is_male,
     }
 );
 
 ## Define expected outcome
 my @expected_contigs = qw{ 1 2 3 4 };
 
-## Then remove the male contig
-is_deeply( \@cleansed_contigs, \@expected_contigs, q{Removed male contig} );
+## Then removed the male contig
+is_deeply( \@no_male_contigs, \@expected_contigs, q{Removed male contig} );
 
 ## Given contigs, when male is presnt
 $is_male = 1;
 
-@cleansed_contigs = delete_male_contig(
+my @has_male_contigs = delete_male_contig(
     {
-        contigs_ref => \@contigs,
-        found_male  => $is_male,
+        contigs_ref      => \@contigs,
+        contig_names_ref => [qw{ Y }],
+        found_male       => $is_male,
     }
 );
 
 ## Define expected outcome
-@expected_contigs = qw{ 1 2 3 4 Y };
+my @expected_male_contigs = qw{ 1 2 3 4 Y };
 
-## Then remove do not remove contig
-is_deeply( \@cleansed_contigs, \@expected_contigs, q{Did not remove male contig} );
+## Then did not remove male contig
+is_deeply( \@has_male_contigs, \@expected_male_contigs, q{Did not remove male contig} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}

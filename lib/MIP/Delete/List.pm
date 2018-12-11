@@ -144,6 +144,7 @@ sub delete_male_contig {
     use MIP::Check::Parameter qw{ check_allowed_array_values };
 
     my @contigs = @{$contigs_ref};
+
     ## Removes contigY|chrY from contigs if no males or 'other' found in analysis
     if ( not $found_male ) {
 
