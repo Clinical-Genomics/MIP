@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -58,9 +58,11 @@ Readonly my $SPACE        => q{ };
 
 sub bcftools_annotate {
 
-## Function : Perl wrapper for writing bcftools annotate recipe to $FILEHANDLE or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools annotate recipe to $FILEHANDLE or return commands array. Based on bcftools 1.9.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $annotations_file_path  => VCF file or tabix-indexed file path with annotations: CHR\tPOS[\tVALUE]+
+##          : $columns_name           => List of columns in the annotation file, e.g. CHROM,POS,REF,ALT,-,INFO/TAG
+##          : $FILEHANDLE             => Filehandle to write to
 ##          : $headerfile_path        => File with lines which should be appended to the VCF header
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
@@ -77,6 +79,8 @@ sub bcftools_annotate {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $annotations_file_path;
+    my $columns_name;
     my $FILEHANDLE;
     my $infile_path;
     my $headerfile_path;
@@ -94,6 +98,8 @@ sub bcftools_annotate {
     my $output_type;
 
     my $tmpl = {
+		annotations_file_path => { store => \$annotations_file_path, strict_type => 1, },
+		columns_name => { store => \$columns_name, strict_type => 1, },
         FILEHANDLE      => { store => \$FILEHANDLE, },
         headerfile_path => { store => \$headerfile_path, strict_type => 1, },
         infile_path     => { store => \$infile_path, strict_type => 1, },
@@ -142,6 +148,16 @@ sub bcftools_annotate {
     );
 
     ## Options
+    if ($annotations_file_path) {
+
+      push @commands, q{--annotations} . $SPACE . $annotations_file_path;
+    }
+
+    if ($columns_name) {
+
+      push @commands, q{--columns} . $SPACE . $columns_name;
+    }
+
     if ( @{$remove_ids_ref} ) {
 
         push @commands, q{--remove} . $SPACE . join $COMMA, @{$remove_ids_ref};

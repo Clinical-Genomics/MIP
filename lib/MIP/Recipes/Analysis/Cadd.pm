@@ -1,10 +1,11 @@
-package MIP::Recipes::Analysis::RECIPE_NAME;
+package MIP::Recipes::Analysis::Cadd;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -25,17 +26,18 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_RECIPE_NAME };
+    our @EXPORT_OK = qw{ analysis_cadd_ar };
 
 }
 
 ## Constants
 Readonly my $NEWLINE    => qq{\n};
+Readonly my $SEMICOLON       => q{;};
 Readonly my $UNDERSCORE => q{_};
 
-sub analysis_RECIPE_NAME {
+sub analysis_cadd_ar {
 
-## Function : DESCRIPTION OF RECIPE
+## Function : Annotate variants with CADD score
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -126,9 +128,10 @@ sub analysis_RECIPE_NAME {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
-    use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::QC::Record
       qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
@@ -150,11 +153,8 @@ sub analysis_RECIPE_NAME {
             stream         => q{in},
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path        = $io{in}{file_path};
-    my $infile_path_prefix = $io{in}{file_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
+    my %infile_path        = %{ $io{in}{file_path_href} };
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -194,6 +194,16 @@ sub analysis_RECIPE_NAME {
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
+    my $XARGSFILEHANDLE = IO::Handle->new();
+
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    $core_number = get_core_number(
+        {
+            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
+            modifier_core_number => scalar keys %infile_path,
+            recipe_core_number   => $core_number,
+        }
+    );
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -215,12 +225,55 @@ sub analysis_RECIPE_NAME {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
-###############################
-###RECIPE TOOL COMMANDS HERE###
-###############################
+    ## Genmod
+    say {$FILEHANDLE} q{## CADD};
+
+    ## Create file commands for xargs
+    my ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+        {
+            core_number        => $core_number,
+            FILEHANDLE         => $FILEHANDLE,
+            file_path          => $recipe_file_path,
+            recipe_info_path   => $recipe_info_path,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargs_file_counter => $xargs_file_counter,
+        }
+    );
+
+    ## Process per contig
+  CONTIG:
+    while ( my ( $contig_index, $infile_path ) = each %infile_path ) {
+
+      ## Get parameters
+      my $assembly_version = $file_info_href->{human_genome_reference_source}
+	. $file_info_href->{human_genome_reference_version};
+      ## Output stream
+      my $cadd_outfile_path =
+	catfile( dirname( devnull() ), q{stdout} );
+      my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig_index;
+
+    cadd({genome_build => $assembly_version,
+	  infile_path => $infile_path,
+	  outfile_path => $cadd_outfile_path,
+	 });
+
+      ## Pipe
+        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+
+    bcftools_annotate({annotations_file_path => $cadd_outfile_path,
+		       columns_name => $active_parameter_href->{cadd_columns_name},
+		       headerfile_path => $active_parameter_href->{cadd_header_file},
+		       infile_path => $infile_path,
+		       outfile_path => $OUTFILE_PATH,
+		       output_type => q{v},
+		      });
+
+  }
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+close $XARGSFILEHANDLE
+      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
     if ( $recipe_mode == 1 ) {
 

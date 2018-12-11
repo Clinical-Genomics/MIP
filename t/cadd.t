@@ -24,7 +24,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -44,18 +44,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Variantcalling::Bcftools} => [qw{ bcftools_annotate }],
+        q{MIP::Program::Variantcalling::Cadd} => [qw{ cadd }],
         q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Variantcalling::Cadd qw{ cadd };
 
-diag(   q{Test bcftools_annotate from Bcftools.pm v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+diag(   q{Test cadd from Cadd.pm v}
+      . $MIP::Program::Variantcalling::Cadd::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,10 +63,10 @@ diag(   q{Test bcftools_annotate from Bcftools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ bcftools };
+my @function_base_commands = qw{ cadd };
 
 my %base_argument = (
-FILEHANDLE => {
+    FILEHANDLE => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -79,70 +78,56 @@ FILEHANDLE => {
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-		     stdoutfile_path => {
+    stdoutfile_path => {
         input           => q{stdoutfile.test},
         expected_output => q{1> stdoutfile.test},
-},
+    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = ();
+my %required_argument = (
+    infile_path => {
+        input           => q{infile.vcf},
+        expected_output => q{infile.vcf},
+    },
+outfile_path => {
+        input           => q{outfile.tsv.gz},
+        expected_output => q{outfile.tsv.gz},
+    },
+);
 
 my %specific_argument = (
-annotations_file_path => {
-        input           => q{annotation_file.tsv},
-        expected_output => q{--annotations annotation_file.tsv},
+genome_build => {
+        input           => q{GRCh37},
+        expected_output => q{-g GRCh37},
     },
-columns_name => {
-        input           => q{Chrom,Pos,Ref,Alt,-,CADD},
-        expected_output => q{--columns Chrom,Pos,Ref,Alt,-,CADD},
+			 infile_path => {
+        input           => q{infile.vcf},
+        expected_output => q{infile.vcf},
     },
-    headerfile_path => {
-        input           => q{headerlines},
-        expected_output => q{--header-lines headerlines},
-    },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
-    },
-    outfile_path => {
-        input           => q{outfile.txt},
-        expected_output => q{--output outfile.txt},
-    },
-    output_type => {
-        input           => q{v},
-        expected_output => q{--output-type v},
-    },
-    remove_ids_ref => {
-        inputs_ref      => [qw{ idref1 idref2 idref3 }],
-        expected_output => q{--remove idref1,idref2,idref3},
-    },
-    samples_file_path => {
-        input           => q{samplesfile},
-        expected_output => q{--samples-file samplesfile},
-    },
-    set_id => {
-        input           => q{id},
-        expected_output => q{--set-id id},
+outfile_path => {
+        input           => q{outfile.tsv.gz},
+        expected_output => q{-o outfile.tsv.gz},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bcftools_annotate;
+my $module_function_cref = \&cadd;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
+
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }
