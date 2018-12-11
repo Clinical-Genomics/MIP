@@ -20,7 +20,7 @@ open $FILEHANDLE, q{>}, \$file_content
 my $base_command = q{samtools};
 say {$FILEHANDLE} $base_command;
 
-## Close the filehandle 
+## Close the filehandle
 close $FILEHANDLE;
 ```
 
