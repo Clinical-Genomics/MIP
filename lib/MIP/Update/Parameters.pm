@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -221,6 +221,7 @@ sub update_vcfparser_outfile_counter {
         sv_vcfparser => { sv_vcfparser_select_file => q{sv_vcfparser_outfile_count} },
         vcfparser_ar => { vcfparser_select_file    => q{vcfparser_outfile_count} },
     );
+
 ## Determine if to expect select outfile for vcfparser and sv_vcfparser
   RECIPE:
     foreach my $recipe ( keys %vcfparser_select_file ) {
@@ -245,8 +246,8 @@ sub update_vcfparser_outfile_counter {
 
 sub _set_vcfparser_file_counter {
 
-## Function : Set the expected number of outputfile after vcfparser
-## Returns  :
+## Function : Return the expected number of outputfile(s) after vcfparser
+## Returns  : 1 | 2
 ## Arguments: $parameter_name => Vcfparser select file
 
     my ($arg_href) = @_;
@@ -261,17 +262,11 @@ sub _set_vcfparser_file_counter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## To track if vcfparser was used with a vcfparser_select_file (=2) or not (=1)
-    if ( not defined $parameter_name ) {
+    # No select file was given
+    return 1 if ( not defined $parameter_name );
 
-        ## No select file was given
-        return 1;
-    }
-    else {
-
-        ## To track if vcfparser was used with a vcfparser_select_file (=2) or not (=1)
-        return 2;
-    }
-    return;
+    ## Select file was given
+    return 2;
 }
 
 1;
