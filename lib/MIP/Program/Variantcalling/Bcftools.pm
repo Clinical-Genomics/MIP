@@ -98,13 +98,13 @@ sub bcftools_annotate {
     my $output_type;
 
     my $tmpl = {
-		annotations_file_path => { store => \$annotations_file_path, strict_type => 1, },
-		columns_name => { store => \$columns_name, strict_type => 1, },
-        FILEHANDLE      => { store => \$FILEHANDLE, },
-        headerfile_path => { store => \$headerfile_path, strict_type => 1, },
-        infile_path     => { store => \$infile_path, strict_type => 1, },
-        outfile_path    => { store => \$outfile_path, strict_type => 1, },
-        output_type => {
+        annotations_file_path => { store => \$annotations_file_path, strict_type => 1, },
+        columns_name          => { store => \$columns_name,          strict_type => 1, },
+        FILEHANDLE            => { store => \$FILEHANDLE, },
+        headerfile_path       => { store => \$headerfile_path,       strict_type => 1, },
+        infile_path           => { store => \$infile_path,           strict_type => 1, },
+        outfile_path          => { store => \$outfile_path,          strict_type => 1, },
+        output_type           => {
             allow       => [qw{ b u z v}],
             default     => q{v},
             store       => \$output_type,
@@ -150,12 +150,12 @@ sub bcftools_annotate {
     ## Options
     if ($annotations_file_path) {
 
-      push @commands, q{--annotations} . $SPACE . $annotations_file_path;
+        push @commands, q{--annotations} . $SPACE . $annotations_file_path;
     }
 
     if ($columns_name) {
 
-      push @commands, q{--columns} . $SPACE . $columns_name;
+        push @commands, q{--columns} . $SPACE . $columns_name;
     }
 
     if ( @{$remove_ids_ref} ) {
