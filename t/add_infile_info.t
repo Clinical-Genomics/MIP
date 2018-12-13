@@ -26,7 +26,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.003;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -97,12 +97,13 @@ my ( $mip_file_format, $mip_file_format_with_direction,
     $original_file_name_prefix, $run_barcode )
   = _file_name_formats(
     {
-        date      => $infile_info{date},
-        direction => $infile_info{direction},
-        flowcell  => $infile_info{flowcell},
-        index     => $infile_info{index},
-        lane      => $infile_info{lane},
-        sample_id => $sample_id,
+        date               => $infile_info{date},
+        direction          => $infile_info{direction},
+        flowcell           => $infile_info{flowcell},
+        index              => $infile_info{index},
+        lane               => $infile_info{lane},
+        original_file_name => $file_info{$sample_id}{mip_infiles}[0],
+        sample_id          => $sample_id,
     }
   );
 
@@ -247,6 +248,8 @@ for my $sample_id ( keys %file_info ) {
                     flowcell  => $infile_info{flowcell},
                     index     => $infile_info{index},
                     lane      => $infile_info{lane},
+                    original_file_name =>
+                      $file_info{$sample_id}{mip_infiles}[$file_index],
                     sample_id => $sample_id,
                 }
               );
@@ -356,6 +359,7 @@ sub _file_name_formats {
 ## Returns  : $mip_file_format, $mip_file_format_with_direction, $original_file_name_prefix, $run_barcode;
 ## Arguments: $date                            => Flow-cell sequencing date
 ##          : $direction                       => Sequencing read direction
+##          : $original_file_name              => Original file name
 ##          : $flowcell                        => Flow-cell id
 ##          : $index                           => The DNA library preparation molecular barcode
 ##          : $lane                            => Flow-cell lane
@@ -369,10 +373,16 @@ sub _file_name_formats {
     my $flowcell;
     my $index;
     my $lane;
+    my $original_file_name;
     my $sample_id;
 
     my $tmpl = {
-        date      => { defined => 1, required => 1, store => \$date, strict_type => 1, },
+        date => {
+            defined     => 1,
+            required    => 1,
+            store       => \$date,
+            strict_type => 1,
+        },
         direction => {
             allow       => [ 1, 2 ],
             defined     => 1,
@@ -388,10 +398,16 @@ sub _file_name_formats {
         },
         index => { defined => 1, required => 1, store => \$index, strict_type => 1, },
         lane  => {
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => qr{ \A\d+\z }xsm,
             defined     => 1,
             required    => 1,
             store       => \$lane,
+            strict_type => 1,
+        },
+        original_file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$original_file_name,
             strict_type => 1,
         },
         sample_id => {
@@ -418,17 +434,7 @@ sub _file_name_formats {
     my $mip_file_format_with_direction = $mip_file_format . $UNDERSCORE . $direction;
 
     my $original_file_name_prefix =
-        $lane
-      . $UNDERSCORE
-      . $date
-      . $UNDERSCORE
-      . $flowcell
-      . $UNDERSCORE
-      . $sample_id
-      . $UNDERSCORE
-      . $index
-      . $UNDERSCORE
-      . $direction;
+      substr( $original_file_name, 0, index( $original_file_name, q{.fastq} ) );
 
     my $run_barcode =
       $date . $UNDERSCORE . $flowcell . $UNDERSCORE . $lane . $UNDERSCORE . $index;
