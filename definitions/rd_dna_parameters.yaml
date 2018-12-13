@@ -165,6 +165,7 @@ recipe_core_number:
     analysisrunstatus: 1
     bcftools_mpileup: 16
     bwa_mem: 16
+    cadd_ar: 16
     chanjo_sexcheck: 1
     cnvnator_ar: 16
     delly_call: 16
@@ -215,6 +216,7 @@ recipe_time:
     analysisrunstatus: 1
     bwa_mem: 30
     bcftools_mpileup: 40
+    cadd_ar: 10
     chanjo_sexcheck: 2
     cnvnator_ar: 5
     delly_call: 10
@@ -1391,6 +1393,39 @@ fqf_bcftools_filter_threshold:
   data_type: SCALAR
   default: 0.40
   type: recipe_argument
+cadd_ar:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _cadd
+  outfile_suffix: ".vcf"
+  program_executables:
+   - bcftools
+   - CADD.sh
+  type: recipe
+cadd_column_names:
+  associated_recipe:
+   - cadd_ar
+  element_separator: ,
+  data_type: ARRAY
+  default: 
+   - Chrom
+   - Pos
+   - Ref
+   - Alt
+   - "-"
+   - CADD
+  type: recipe_argument
+cadd_vcf_header_file:
+  associated_recipe:
+   - cadd_ar
+  data_type: SCALAR
+  default: GRCh37_cadd_to_vcf_header_-1.0-.txt
+  exists_check: file
+  reference: reference_dir
+  type: path
 gatk_variantevalall:
   analysis_mode: sample
   associated_recipe:

@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rd_dna_vcf_rerun };
@@ -140,6 +140,7 @@ sub pipeline_rd_dna_vcf_rerun {
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
@@ -197,6 +198,7 @@ sub pipeline_rd_dna_vcf_rerun {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus                => \&analysis_analysisrunstatus,
+        cadd_ar                          => \&analysis_cadd,
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
         frequency_filter                 => \&analysis_frequency_filter,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
