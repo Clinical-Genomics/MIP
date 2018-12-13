@@ -45,7 +45,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Variantcalling::Cadd} => [qw{ cadd }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures}                => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -63,7 +63,7 @@ diag(   q{Test cadd from Cadd.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ cadd };
+my @function_base_commands = qw{ CADD.sh };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -91,22 +91,22 @@ my %required_argument = (
         input           => q{infile.vcf},
         expected_output => q{infile.vcf},
     },
-outfile_path => {
+    outfile_path => {
         input           => q{outfile.tsv.gz},
         expected_output => q{outfile.tsv.gz},
     },
 );
 
 my %specific_argument = (
-genome_build => {
+    genome_build => {
         input           => q{GRCh37},
         expected_output => q{-g GRCh37},
     },
-			 infile_path => {
+    infile_path => {
         input           => q{infile.vcf},
         expected_output => q{infile.vcf},
     },
-outfile_path => {
+    outfile_path => {
         input           => q{outfile.tsv.gz},
         expected_output => q{-o outfile.tsv.gz},
     },

@@ -14,6 +14,7 @@ CHAIN_ALL:
       - rhocall_ar
       - vt_ar
       - frequency_filter
+      - cadd_ar
       - varianteffectpredictor
       - vcfparser_ar
       - snpeff

@@ -64,15 +64,18 @@ sub cadd {
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-		genome_build => {
+        genome_build => {
             allow       => [qw{ GRCh37 GRCh38}],
             store       => \$genome_build,
             strict_type => 1,
         },
-		infile_path => { defined     => 1,
-				 required    => 1,
-				 store => \$infile_path, strict_type => 1, },
-		outfile_path => {
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path => {
             defined     => 1,
             required    => 1,
             store       => \$outfile_path,
@@ -96,17 +99,17 @@ sub cadd {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ cadd };
+    my @commands = qw{ CADD.sh };
 
     ## Options
     if ($outfile_path) {
 
-      push @commands, q{-o} . $SPACE . $outfile_path;
+        push @commands, q{-o} . $SPACE . $outfile_path;
     }
 
     if ($genome_build) {
 
-      push @commands, q{-g} . $SPACE . $genome_build;
+        push @commands, q{-g} . $SPACE . $genome_build;
     }
 
     push @commands, $infile_path;

@@ -129,6 +129,7 @@ sub analysis_RECIPE_NAME {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::QC::Record
       qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };

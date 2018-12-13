@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Cadd;
+package MIP::Recipes::Analysis::RECIPE_NAME;
 
 use 5.026;
 use Carp;
@@ -26,24 +26,17 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_cadd };
+    our @EXPORT_OK = qw{ analysis_RECIPE_NAME };
 
 }
 
 ## Constants
-Readonly my $COMMA         => q{,};
-Readonly my $DOT           => q{.};
-Readonly my $NEWLINE       => qq{\n};
-Readonly my $REGION_START  => q{2};
-Readonly my $REGION_END    => q{2};
-Readonly my $SEQUENCE_NAME => q{1};
-Readonly my $SPACE         => q{ };
-Readonly my $SEMICOLON     => q{;};
-Readonly my $UNDERSCORE    => q{_};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $UNDERSCORE => q{_};
 
-sub analysis_cadd {
+sub analysis_RECIPE_NAME {
 
-## Function : Annotate variants with CADD score
+## Function : DESCRIPTION OF RECIPE
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -126,16 +119,13 @@ sub analysis_cadd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate bcftools_view };
-    use MIP::Program::Variantcalling::Cadd qw{ cadd };
-    use MIP::Program::Utility::Htslib qw{ htslib_tabix };
+    use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -157,9 +147,6 @@ sub analysis_cadd {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
 
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
-    my $cadd_columns_name = join $COMMA, @{ $active_parameter_href->{cadd_column_names} };
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
     my $job_id_chain         = get_recipe_attributes(
         {
@@ -200,17 +187,7 @@ sub analysis_cadd {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
-
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    $core_number = get_core_number(
-        {
-            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
-            modifier_core_number => scalar keys %infile_path,
-            recipe_core_number   => $core_number,
-        }
-    );
+    my $FILEHANDLE = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -232,115 +209,12 @@ sub analysis_cadd {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
-    ## View indels and calculate CADD
-    say {$FILEHANDLE} q{## CADD};
-
-    ## Create file commands for xargs
-    my ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            core_number      => $core_number,
-            FILEHANDLE       => $FILEHANDLE,
-            file_path        => $recipe_file_path,
-            recipe_info_path => $recipe_info_path,
-            XARGSFILEHANDLE  => $XARGSFILEHANDLE,
-        }
-    );
-
-    ## Process per contig
-  CONTIG:
-    foreach my $contig (@contigs_size_ordered) {
-
-        ## Get parameters
-        my $cadd_outfile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-        my $view_outfile_path =
-          $outfile_path_prefix . $UNDERSCORE . q{view} . $DOT . $contig . $outfile_suffix;
-
-        bcftools_view(
-            {
-                FILEHANDLE      => $XARGSFILEHANDLE,
-                infile_path     => $infile_path{$contig},
-                types           => q{indels},
-                outfile_path    => $view_outfile_path,
-                output_type     => q{v},
-                stderrfile_path => $stderrfile_path,
-            }
-        );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
-
-        cadd(
-            {
-                FILEHANDLE             => $XARGSFILEHANDLE,
-                genome_build           => $assembly_version,
-                infile_path            => $view_outfile_path,
-                outfile_path           => $cadd_outfile_path,
-                stderrfile_path_append => $stderrfile_path,
-            }
-        );
-        say {$XARGSFILEHANDLE} $NEWLINE;
-    }
-
-    ### Annotate
-    ## Tabix cadd outfile and annotate original vcf file with indel CADD score
-    say {$FILEHANDLE} q{## Tabix and bcftools annotate};
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
-            file_path          => $recipe_file_path,
-            recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
-    ## Process per contig
-  CONTIG:
-    foreach my $contig (@contigs_size_ordered) {
-
-        ## Get parameters
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-
-        # Corresponds to cadd outfile path
-        my $tabix_infile_path = $outfile_path_prefix . $DOT . $contig . $DOT . q{tsv.gz};
-
-        ## Create tabix index
-        htslib_tabix(
-            {
-                begin           => $REGION_START,
-                end             => $REGION_END,
-                FILEHANDLE      => $XARGSFILEHANDLE,
-                force           => 1,
-                infile_path     => $tabix_infile_path,
-                sequence        => $SEQUENCE_NAME,
-                stderrfile_path => $stderrfile_path,
-            }
-        );
-        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
-
-        bcftools_annotate(
-            {
-                annotations_file_path  => $tabix_infile_path,
-                columns_name           => $cadd_columns_name,
-                FILEHANDLE             => $XARGSFILEHANDLE,
-                headerfile_path        => $active_parameter_href->{cadd_vcf_header_file},
-                infile_path            => $infile_path{$contig},
-                outfile_path           => $outfile_path{$contig},
-                output_type            => q{v},
-                stderrfile_path_append => $stderrfile_path,
-            }
-        );
-        say {$XARGSFILEHANDLE} $NEWLINE;
-    }
+###############################
+###RECIPE TOOL COMMANDS HERE###
+###############################
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
     if ( $recipe_mode == 1 ) {
 
