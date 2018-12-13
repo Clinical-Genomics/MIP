@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.11;
+our $VERSION = 1.12;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1644,6 +1644,34 @@ q{Prepare for variant annotation block by copying and splitting files per contig
             documentation => q{Threshold for filtering variants},
             is            => q{rw},
             isa           => Num,
+        )
+    );
+
+    option(
+        q{cadd_ar} => (
+            cmd_aliases   => [qw{ cad }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Annotate variants with CADD},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{cadd_column_names} => (
+            cmd_aliases   => [qw{ cadc }],
+            documentation => q{Column names in cadd tsv},
+            is            => q{rw},
+            isa           => ArrayRef,
+        )
+    );
+
+    option(
+        q{cadd_vcf_header_file} => (
+            cmd_aliases   => [qw{ cadvh }],
+            documentation => q{},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 

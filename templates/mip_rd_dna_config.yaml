@@ -8,6 +8,7 @@ java_use_large_pages: 1
 max_cores_per_node: 16
 load_env:
   mip_travis:
+    cadd_ar:
     installation: emip
     method: conda
     mip:

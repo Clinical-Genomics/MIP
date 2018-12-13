@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rd_dna };
@@ -150,6 +150,7 @@ sub pipeline_rd_dna {
     use MIP::Recipes::Analysis::Bamcalibrationblock qw{ analysis_bamcalibrationblock };
     use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
     use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem };
+    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
@@ -247,6 +248,7 @@ sub pipeline_rd_dna {
         analysisrunstatus           => \&analysis_analysisrunstatus,
         bcftools_mpileup            => \&analysis_bcftools_mpileup,
         bwa_mem                     => \&analysis_bwa_mem,
+        cadd_ar                     => \&analysis_cadd,
         chanjo_sexcheck             => \&analysis_chanjo_sex_check,
         cnvnator_ar                 => \&analysis_cnvnator,
         delly_call                  => \&analysis_delly_call,
