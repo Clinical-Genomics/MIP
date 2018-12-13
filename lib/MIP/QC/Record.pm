@@ -27,8 +27,16 @@ BEGIN {
     our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ add_gene_panel add_infile_info add_most_complete_vcf add_processing_metafile_to_sample_info add_recipe_metafile_to_sample_info add_parameter_to_sample_info add_recipe_outfile_to_sample_info add_to_sample_info };
+    our @EXPORT_OK = qw{
+      add_gene_panel
+      add_infile_info
+      add_most_complete_vcf
+      add_processing_metafile_to_sample_info
+      add_recipe_metafile_to_sample_info
+      add_parameter_to_sample_info
+      add_recipe_outfile_to_sample_info
+      add_to_sample_info
+    };
 
 }
 
@@ -324,12 +332,13 @@ sub add_infile_info {
         $original_file_name_prefix, $run_barcode )
       = _file_name_formats(
         {
-            date      => $date,
-            direction => $direction,
-            flowcell  => $flowcell,
-            index     => $index,
-            lane      => $lane,
-            sample_id => $sample_id,
+            date               => $date,
+            direction          => $direction,
+            flowcell           => $flowcell,
+            index              => $index,
+            lane               => $lane,
+            original_file_name => $file_info_href->{$sample_id}{mip_infiles}[$file_index],
+            sample_id          => $sample_id,
         }
       );
 
@@ -966,6 +975,7 @@ sub _file_name_formats {
 ## Returns  : $mip_file_format, $mip_file_format_with_direction, $original_file_name_prefix, $run_barcode;
 ## Arguments: $date                            => Flow-cell sequencing date
 ##          : $direction                       => Sequencing read direction
+##          : $original_file_name              => Original file name
 ##          : $flowcell                        => Flow-cell id
 ##          : $index                           => The DNA library preparation molecular barcode
 ##          : $lane                            => Flow-cell lane
@@ -979,10 +989,16 @@ sub _file_name_formats {
     my $flowcell;
     my $index;
     my $lane;
+    my $original_file_name;
     my $sample_id;
 
     my $tmpl = {
-        date      => { defined => 1, required => 1, store => \$date, strict_type => 1, },
+        date => {
+            defined     => 1,
+            required    => 1,
+            store       => \$date,
+            strict_type => 1,
+        },
         direction => {
             allow       => [ 1, 2 ],
             defined     => 1,
@@ -1002,6 +1018,12 @@ sub _file_name_formats {
             defined     => 1,
             required    => 1,
             store       => \$lane,
+            strict_type => 1,
+        },
+        original_file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$original_file_name,
             strict_type => 1,
         },
         sample_id => {
@@ -1028,17 +1050,7 @@ sub _file_name_formats {
     my $mip_file_format_with_direction = $mip_file_format . $UNDERSCORE . $direction;
 
     my $original_file_name_prefix =
-        $lane
-      . $UNDERSCORE
-      . $date
-      . $UNDERSCORE
-      . $flowcell
-      . $UNDERSCORE
-      . $sample_id
-      . $UNDERSCORE
-      . $index
-      . $UNDERSCORE
-      . $direction;
+      substr( $original_file_name, 0, index( $original_file_name, q{.fastq} ) );
 
     my $run_barcode =
       $date . $UNDERSCORE . $flowcell . $UNDERSCORE . $lane . $UNDERSCORE . $index;

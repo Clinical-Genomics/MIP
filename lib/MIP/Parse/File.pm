@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -140,27 +140,31 @@ sub parse_fastq_infiles {
             ## Parse infile according to filename convention
             my %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
 
-            ## Get read length and interleaved status from file
-            if ( exists $infile_info{direction}
-                and $infile_info{direction} == 1 )
+            ## Get sequence read length from file
+            $read_length = get_read_length(
+                {
+                    file_path         => catfile( $infiles_dir, $file_name ),
+                    read_file_command => $read_file_command,
+                }
+            );
+
+            ## Is file interleaved and have proper read direction
+            $is_interleaved = check_interleaved(
+                {
+                    file_path         => catfile( $infiles_dir, $file_name ),
+                    log               => $log,
+                    read_file_command => $read_file_command,
+                }
+            );
+
+            ## STAR does not support interleaved fastq files
+            if ( ( $active_parameter_href->{analysis_type}{$sample_id} eq q{wts} )
+                and $is_interleaved )
             {
-
-                ## Get sequence read length from file
-                $read_length = get_read_length(
-                    {
-                        file_path         => catfile( $infiles_dir, $file_name ),
-                        read_file_command => $read_file_command,
-                    }
-                );
-
-                ## Is file interleaved and have proper read direction
-                $is_interleaved = check_interleaved(
-                    {
-                        file_path         => catfile( $infiles_dir, $file_name ),
-                        log               => $log,
-                        read_file_command => $read_file_command,
-                    }
-                );
+                $log->fatal(q{MIP rd_rna does not support interleaved fastq files});
+                $log->fatal(
+                    q{Please deinterleave: } . catfile( $infiles_dir, $file_name ) );
+                exit 1;
             }
 
             ## If filename convention is followed
