@@ -10,18 +10,19 @@ max_cores_per_node: 16
 project_id: travis_test
 load_env:
   mip_travis:
-   mip:
+   cadd_ar:
+   installation: emip
    method: conda
+   mip:
   mip_travis_py3:
    genmod:
+   installation: epy3
    method: conda
    rankvariant:
    sv_rankvariant:
-  mip_travis_svdb:
-   method: conda
-   sv_annotate:
   mip_travis_vep:
    method: conda
+   installation: evep
    sv_varianteffectpredictor:
    varianteffectpredictor:
 slurm_quality_of_service: low
