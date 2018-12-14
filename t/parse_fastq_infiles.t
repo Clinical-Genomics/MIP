@@ -26,7 +26,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -67,7 +67,13 @@ diag(   q{Test parse_fastq_infiles from File.pm v}
 my $log = test_log();
 
 ## Given compressed file, when proper data
-my %active_parameter = ( sample_ids => [qw{ ADM1059A1 }] );
+my %active_parameter = (
+    sample_ids    => [qw{ ADM1059A1 }],
+    analysis_type => {
+        ADM1059A1 => q{wgs},
+        ADM1059A2 => q{wgs},
+    },
+);
 my %file_info = (
     ADM1059A1 => {
         mip_infiles_dir =>
@@ -117,12 +123,40 @@ ok(
     q{Files uncompressed and got run info from headers}
 );
 
+## Given wts analysis type
+$active_parameter{analysis_type}{ADM1059A2} = q{wts};
+push @{ $file_info{ADM1059A2}{mip_infiles} }, qw{ 1_171118_interleaved.fastq };
+
+trap {
+    parse_fastq_infiles(
+        {
+            active_parameter_href           => \%active_parameter,
+            file_info_href                  => \%file_info,
+            infile_both_strands_prefix_href => \%infile_both_strands_prefix,
+            infile_lane_prefix_href         => \%infile_lane_prefix,
+            log                             => $log,
+            sample_info_href                => \%sample_info,
+        }
+    );
+};
+
+## Special case as it seems to make trap work with prove and not exit - Unclear why this works
+say {*STDOUT} $SPACE;
+
+## Then exit and throw fatal log message
+ok( $trap->exit, q{Exit if wts and interleaved fastq} );
+like(
+    $trap->stderr,
+    qr/MIP\s+ rd_rna \s+ does \s+ not \s+ support/xms,
+    q{Throw fatal log message if wts and fastq file is interleaved}
+);
+
 ## Remove ADM1059A2 from processing
 pop @{ $active_parameter{sample_ids} };
 
 ## Given file, when no sample_id in file name
 push @{ $active_parameter{sample_ids} }, q{ADM1059A3};
-push @{ $file_info{ADM1059A3}{mip_infiles} }, qw{ 643594-miptest_pedigree.yaml };
+push @{ $file_info{ADM1059A3}{mip_infiles} }, qw{ 1_161011_TestFilev2_CGCTCATT_1.fastq };
 $file_info{ADM1059A3}{mip_infiles_dir} =
   catdir( $Bin, qw{ data 643594-miptest test_data bad_input } );
 
@@ -139,7 +173,7 @@ trap {
     );
 };
 
-## Spcecial case as it seems to make trap work with prove and not exit - Unclear why this works
+## Special case as it seems to make trap work with prove and not exit - Unclear why this works
 say {*STDOUT} $SPACE;
 
 ## Then exit and throw FATAL log message

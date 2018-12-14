@@ -4,6 +4,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
+use List::Util qw { any sum };
 use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
@@ -12,7 +13,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { any };
 use Readonly;
 
 BEGIN {
@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_interleaved };
@@ -28,6 +28,7 @@ BEGIN {
 
 ## Constants
 Readonly my $SPACE => q{ };
+Readonly my $THREE => q{3};
 
 sub check_interleaved {
 
@@ -73,9 +74,7 @@ sub check_interleaved {
     ## Select relevant regexps from hash
     my @regexps = (
         $casava_header_regexp{q{1.4_interleaved}},
-        $casava_header_regexp{q{1.4_interleaved_no_dash_inst_id}},
         $casava_header_regexp{q{1.8_interleaved}},
-        $casava_header_regexp{q{1.8_interleaved_no_dash_inst_id}},
     );
 
     ## Store return from regexp
@@ -84,8 +83,7 @@ sub check_interleaved {
   REGEXP:
     foreach my $regexp (@regexps) {
 
-        my $fastq_info_headers_cmd =
-          qq{$read_file_command $file_path | $regexp;};
+        my $fastq_info_headers_cmd = qq{$read_file_command $file_path | $regexp;};
 
         $fastq_read_direction = `$fastq_info_headers_cmd`;
         last REGEXP if ($fastq_read_direction);
@@ -97,16 +95,21 @@ sub check_interleaved {
         $log->fatal(q{Could not find a read direction });
         exit 1;
     }
-    if ( $fastq_read_direction !~ /[1, 2, 3]/sxm ) {
+
+    my @fastq_read_directions = split //sxm, $fastq_read_direction;
+
+    if ( any { /[^123]/sxm } @fastq_read_directions ) {
 
         $log->fatal(q{Malformed fastq file!});
-        $log->fatal( q{Read direction is: }
-              . $fastq_read_direction
-              . q{ allowed entries are '1', '2', '3'. Please check fastq file}
-              . $file_path );
+        $log->fatal(
+            q{Read direction is: } . join q{ and },
+            @fastq_read_directions
+              . q{, allowed entries are '1', '2', '3'. Please check fastq file}
+              . $file_path
+        );
         exit 1;
     }
-    if ( $fastq_read_direction > 1 ) {
+    if ( sum(@fastq_read_directions) == $THREE ) {
 
         $log->info( q{Found interleaved fastq file: } . $file_path );
         return 1;
