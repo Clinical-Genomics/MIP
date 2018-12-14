@@ -123,7 +123,7 @@ ok(
     q{Files uncompressed and got run info from headers}
 );
 
-## Given wts anslysis type
+## Given wts analysis type
 $active_parameter{analysis_type}{ADM1059A2} = q{wts};
 push @{ $file_info{ADM1059A2}{mip_infiles} }, qw{ 1_171118_interleaved.fastq };
 
@@ -140,7 +140,7 @@ trap {
     );
 };
 
-## Spcecial case as it seems to make trap work with prove and not exit - Unclear why this works
+## Special case as it seems to make trap work with prove and not exit - Unclear why this works
 say {*STDOUT} $SPACE;
 
 ## Then exit and throw fatal log message
@@ -173,7 +173,7 @@ trap {
     );
 };
 
-## Spcecial case as it seems to make trap work with prove and not exit - Unclear why this works
+## Special case as it seems to make trap work with prove and not exit - Unclear why this works
 say {*STDOUT} $SPACE;
 
 ## Then exit and throw FATAL log message

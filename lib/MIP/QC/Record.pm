@@ -31,9 +31,9 @@ BEGIN {
       add_gene_panel
       add_infile_info
       add_most_complete_vcf
+      add_parameter_to_sample_info
       add_processing_metafile_to_sample_info
       add_recipe_metafile_to_sample_info
-      add_parameter_to_sample_info
       add_recipe_outfile_to_sample_info
       add_to_sample_info
     };
