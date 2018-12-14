@@ -55,20 +55,20 @@ emip:
       version: Your current MIP version
     picard:
       version: 2.17.11
+
 ## Python 3 environment spec
 epy3:
   conda:
+    bedops: 2.4.35
     pip:
     python: 3.6
+    ucsc-wigtobigwig:
   pip:
-    multiqc: 1.4
+    multiqc: 1.6
+    rseqc: 3.0.0
   shell:
-erseqc:
-  conda:
-    bedops: 2.4.35
-    rseqc: 2.6.4
-  pip:
-  shell:
+
+## STAR environment spec 
 estar:
   conda:
     fusion-filter: 0.5.0
@@ -82,14 +82,12 @@ estar:
 environment_name:
   emip: MIP_rna
   epy3: MIP_py3
-  erseqc: MIP_rseqc
   estar: MIP_star
 
 # Environments and their recipes
 installations:
   - emip
   - estar
-  - erseqc
   - epy3
 
 # Optional name of log file

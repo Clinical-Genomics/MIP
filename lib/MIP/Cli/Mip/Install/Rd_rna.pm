@@ -25,10 +25,9 @@ use Readonly;
 ## MIPs lib
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
-use MIP::Script::Utils
-  qw{ nest_hash print_parameter_defaults update_program_versions };
+use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -70,7 +69,7 @@ sub run {
 
     ## Update installation array
     if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
-        @{ $parameter{installations} } = qw{ emip epy3 erseqc estar };
+        @{ $parameter{installations} } = qw{ emip epy3 estar };
     }
 
     ## Nest the command line parameters and overwrite the default
@@ -105,10 +104,9 @@ sub _build_usage {
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip   => Optional [Str],
-                epy3   => Optional [Str],
-                erseqc => Optional [Str],
-                estar  => Optional [Str],
+                emip  => Optional [Str],
+                epy3  => Optional [Str],
+                estar => Optional [Str],
             ],
             required => 0,
         ),
@@ -116,14 +114,12 @@ sub _build_usage {
 
     option(
         q{config_file} => (
-            cmd_aliases => [qw{ config c }],
-            documentation =>
-              q{File with configuration parameters in YAML format},
-            is      => q{rw},
-            isa     => Str,
-            default => catfile(
-                dirname($Bin),
-                qw{ MIP definitions install_rd_rna_parameters.yaml }
+            cmd_aliases   => [qw{ config c }],
+            documentation => q{File with configuration parameters in YAML format},
+            is            => q{rw},
+            isa           => Str,
+            default       => catfile(
+                dirname($Bin), qw{ MIP definitions install_rd_rna_parameters.yaml }
             ),
         )
     );
@@ -135,8 +131,8 @@ sub _build_usage {
             cmd_tags      => [q{Default: emip}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa => ArrayRef [ enum( [qw{ emip full epy3 erseqc estar }] ), ],
-            required => 0,
+            isa           => ArrayRef [ enum( [qw{ emip full epy3 estar }] ), ],
+            required      => 0,
         ),
     );
 
@@ -202,7 +198,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
                           fusion-filter gatk gatk4 htslib mip_scripts multiqc
-						  picard rseqc salmon sambamba samtools
+                          picard rseqc salmon sambamba samtools
                           star star_fusion }
                     ]
                 ),
@@ -212,13 +208,12 @@ sub _build_usage {
     );
     option(
         q{shell_install} => (
-            cmd_aliases => [qw{ si }],
-            cmd_flag    => q{shell_install},
-            documentation =>
-              q{Install supplied programs via shell instead of via conda},
-            is       => q{rw},
-            isa      => ArrayRef [ enum( [qw{ picard }] ), ],
-            required => 0,
+            cmd_aliases   => [qw{ si }],
+            cmd_flag      => q{shell_install},
+            documentation => q{Install supplied programs via shell instead of via conda},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ picard }] ), ],
+            required      => 0,
         ),
     );
 
@@ -233,7 +228,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann cufflinks fastqc
                           fusion-filter gatk  gatk4 htslib mip_scripts multiqc
-						  picard rseqc salmon sambamba samtools
+                          picard rseqc salmon sambamba samtools
                           star star_fusion }
                     ]
                 ),
