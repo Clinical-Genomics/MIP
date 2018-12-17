@@ -27,7 +27,7 @@ MIP has been in use in the clinical production at the Clinical Genomics facility
 ## Example Usage
 
 ```Bash
-$ mip analyse rare_disease --case_id [case_id] --bwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [case_id_pedigree.yaml]
+$ mip analyse rare_disease [case_id] --bwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [case_id_pedigree.yaml]
 ```
 
 ## Features
