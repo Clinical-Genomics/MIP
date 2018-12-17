@@ -214,6 +214,16 @@ sub _build_usage {
     );
 
     option(
+        q{genebody_coverage} => (
+            cmd_aliases   => [qw{ gbc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Run geneBody_coverage2.py on bam},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{infile_dirs} => (
             cmd_aliases   => [qw{ ifd }],
             cmd_tags      => [q{infile_dirs=sample_id}],

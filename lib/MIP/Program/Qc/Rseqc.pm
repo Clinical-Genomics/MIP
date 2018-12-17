@@ -74,8 +74,8 @@ sub rseqc_bam2wig {
         chrom_size_file_path => {
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$chrom_size_file_path,
+            strict_type => 1,
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
@@ -87,15 +87,15 @@ sub rseqc_bam2wig {
             strict_type => 1,
         },
         strand => {
-            allow       => [qw{ 1++,1--,2+-,2-+ 1+-,1-+,2++,2-- ++,-- +-,-+ }],
-            strict_type => 1,
+            allow       => [ '1++,1--,2+-,2-+', '1+-,1-+,2++,2--', '++,--', '+-,-+' ],
             store       => \$strand,
+            strict_type => 1,
         },
         outfile_path_prefix => {
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$outfile_path_prefix,
+            strict_type => 1,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -182,8 +182,8 @@ sub rseqc_bam_stat {
         min_map_quality => {
             allow       => qr/ ^\d+$ /sxm,
             default     => $MIN_MAP_QUALITY,
-            strict_type => 1,
             store       => \$min_map_quality,
+            strict_type => 1,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,

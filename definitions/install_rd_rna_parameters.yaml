@@ -68,7 +68,7 @@ epy3:
     rseqc: 3.0.0
   shell:
 
-## STAR environment spec 
+## STAR environment spec
 estar:
   conda:
     fusion-filter: 0.5.0
@@ -186,6 +186,8 @@ program_test_command:
   stringtie:
     execution: 'stringtie --version'
     path: 'stringtie'
+  ucsc-wigtobigwig:
+    path: 'wigToBigWig'
 
 # Programs that needs to be installed with pyhton 3,
 # only touch if you know what you're doing
