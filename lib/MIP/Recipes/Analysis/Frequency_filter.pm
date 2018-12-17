@@ -37,9 +37,7 @@ Readonly my $DOT          => q{.};
 Readonly my $DOUBLE_QUOTE => q{"};
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $PIPE         => q{|};
-Readonly my $SEMICOLON    => q{;};
 Readonly my $SPACE        => q{ };
-Readonly my $UNDERSCORE   => q{_};
 
 sub analysis_frequency_filter {
 
@@ -210,10 +208,8 @@ sub analysis_frequency_filter {
         )
     );
 
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my @outfile_paths       = @{ $io{out}{file_paths} };
-    my %outfile_path        = %{ $io{out}{file_path_href} };
-    my $outfile_suffix      = $io{out}{file_suffix};
+    my @outfile_paths = @{ $io{out}{file_paths} };
+    my %outfile_path  = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -271,13 +267,6 @@ sub analysis_frequency_filter {
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
-        my $vcfanno_outfile_path =
-            $outfile_path_prefix
-          . $UNDERSCORE
-          . q{vcfanno}
-          . $DOT
-          . $contig
-          . $outfile_suffix;
         vcfanno(
             {
                 FILEHANDLE           => $XARGSFILEHANDLE,
