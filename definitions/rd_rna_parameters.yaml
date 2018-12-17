@@ -106,7 +106,7 @@ recipe_time:
     gatk_haplotypecaller: 2
     gatk_splitncigarreads: 5
     gatk_variantfiltration: 1
-    genebody_coverage: 7
+    genebody_coverage: 3
     gffcompare_ar: 1
     gzip_fastq: 2
     markduplicates: 2
