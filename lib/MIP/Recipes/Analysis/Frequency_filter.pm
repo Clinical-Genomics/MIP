@@ -31,12 +31,15 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $BACKSLASH    => q{\\};
 Readonly my $DASH         => q{-};
 Readonly my $DOT          => q{.};
 Readonly my $DOUBLE_QUOTE => q{"};
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $PIPE         => q{|};
+Readonly my $SEMICOLON    => q{;};
 Readonly my $SPACE        => q{ };
+Readonly my $UNDERSCORE   => q{_};
 
 sub analysis_frequency_filter {
 
@@ -146,7 +149,7 @@ sub analysis_frequency_filter {
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_filter };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate genmod_filter };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
     use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
@@ -207,8 +210,10 @@ sub analysis_frequency_filter {
         )
     );
 
-    my @outfile_paths = @{ $io{out}{file_paths} };
-    my %outfile_path  = %{ $io{out}{file_path_href} };
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my @outfile_paths       = @{ $io{out}{file_paths} };
+    my %outfile_path        = %{ $io{out}{file_path_href} };
+    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -266,6 +271,13 @@ sub analysis_frequency_filter {
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
+        my $vcfanno_outfile_path =
+            $outfile_path_prefix
+          . $UNDERSCORE
+          . q{vcfanno}
+          . $DOT
+          . $contig
+          . $outfile_suffix;
         vcfanno(
             {
                 FILEHANDLE           => $XARGSFILEHANDLE,
@@ -285,7 +297,7 @@ sub analysis_frequency_filter {
             }
         );
 
-        bcftools_filter(
+        bcftools_view(
             {
                 FILEHANDLE             => $XARGSFILEHANDLE,
                 infile_path            => $DASH,
@@ -370,10 +382,12 @@ sub _build_bcftools_filter {
     foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
         $exclude_filter =
-            $DOUBLE_QUOTE
+            $BACKSLASH
+          . $DOUBLE_QUOTE
           . q{INFO/}
           . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{ $annotation_href->{names} } )
           . $threshold
+          . $BACKSLASH
           . $DOUBLE_QUOTE;
     }
     return $exclude_filter;

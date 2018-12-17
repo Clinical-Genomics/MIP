@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ vcfanno };
@@ -40,7 +40,6 @@ sub vcfanno {
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $luafile_path           => Optional path to a file containing custom javascript functions to be used as ops
-##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -53,7 +52,6 @@ sub vcfanno {
     my $FILEHANDLE;
     my $infile_path;
     my $luafile_path;
-    my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -69,7 +67,6 @@ sub vcfanno {
         FILEHANDLE   => { store       => \$FILEHANDLE },
         infile_path  => { strict_type => 1, store => \$infile_path },
         luafile_path => { strict_type => 1, store => \$luafile_path },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
