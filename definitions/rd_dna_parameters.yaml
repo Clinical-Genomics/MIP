@@ -81,6 +81,13 @@ gatk_path:
   exists_check: directory
   type: path
   update_path: absolute_path
+gatk_use_new_qual_calculator:
+  associated_recipe:
+   - gatk_haplotypecaller
+   - gatk_genotypegvcfs
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 genomic_set:
   associated_recipe:
    - mip

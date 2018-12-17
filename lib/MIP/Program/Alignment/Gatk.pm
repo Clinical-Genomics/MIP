@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -405,6 +405,7 @@ sub gatk_haplotypecaller {
 ##          : $standard_min_confidence_threshold_for_calling => The minimum phred-scaled confidence threshold at which variants should be called
 ##          : $stderrfile_path                               => Stderrfile path
 ##          : $temp_directory                                => Redirect tmp files to java temp
+##          : $use_new_qual_calculator                       => Use the new AF model instead of the so-called exact model
 ##          : $verbosity                                     => Set the minimum level of logging
 ##          : $xargs_mode                                    => Set if the program will be executed via xargs
 
@@ -431,6 +432,7 @@ sub gatk_haplotypecaller {
     ## default(s)
     my $emit_ref_confidence;
     my $java_use_large_pages;
+    my $use_new_qual_calculator;
     my $verbosity;
     my $xargs_mode;
 
@@ -493,7 +495,7 @@ sub gatk_haplotypecaller {
             strict_type => 1,
         },
         pcr_indel_model => {
-            allow => [ undef, qw{ NONE HOSTILE AGGRESSIVE CONSERVATIVE } ],
+            allow       => [ undef, qw{ NONE HOSTILE AGGRESSIVE CONSERVATIVE } ],
             store       => \$pcr_indel_model,
             strict_type => 1,
         },
@@ -523,6 +525,12 @@ sub gatk_haplotypecaller {
         },
         temp_directory => {
             store       => \$temp_directory,
+            strict_type => 1,
+        },
+        use_new_qual_calculator => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$use_new_qual_calculator,
             strict_type => 1,
         },
         verbosity => {
@@ -585,6 +593,11 @@ sub gatk_haplotypecaller {
     ## Add dbsnp
     if ($dbsnp_path) {
         push @commands, q{--dbsnp} . $SPACE . $dbsnp_path;
+    }
+
+    if ($use_new_qual_calculator) {
+
+        push @commands, q{--use-new-qual-calculator};
     }
 
     ## No soft clipped bases

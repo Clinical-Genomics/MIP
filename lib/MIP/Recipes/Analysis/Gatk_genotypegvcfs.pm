@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -278,17 +278,17 @@ sub analysis_gatk_genotypegvcfs {
         }
         gatk_genomicsdbimport(
             {
-                FILEHANDLE           => $FILEHANDLE,
+                FILEHANDLE                => $FILEHANDLE,
+                genomicsdb_workspace_path => $temp_outfile_path_prefix
+                  . $UNDERSCORE . q{DB},
                 intervals_ref        => [$contig],
                 infile_paths_ref     => \@genotype_infile_paths,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                verbosity            => $active_parameter_href->{gatk_logging_level},
-                genomicsdb_workspace_path => $temp_outfile_path_prefix
-                  . $UNDERSCORE . q{DB},
+                memory_allocation    => q{Xmx8g},
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
                 sample_name_map_path => $sample_name_map_path,
                 temp_directory       => $temp_directory,
-                memory_allocation    => q{Xmx8g},
+                verbosity            => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -312,6 +312,8 @@ sub analysis_gatk_genotypegvcfs {
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
                 temp_directory       => $temp_directory,
                 verbosity            => $active_parameter_href->{gatk_logging_level},
+                use_new_qual_calculator =>
+                  $active_parameter_href->{gatk_use_new_qual_calculator},
             }
         );
         say {$FILEHANDLE} $NEWLINE;

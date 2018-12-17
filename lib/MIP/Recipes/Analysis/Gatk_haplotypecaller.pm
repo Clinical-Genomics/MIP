@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.012;
+    our $VERSION = 1.013;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
@@ -372,7 +372,9 @@ sub analysis_gatk_haplotypecaller {
                 stderrfile_path => $stderrfile_path,
                 temp_directory  => $temp_directory,
                 verbosity       => $active_parameter_href->{gatk_logging_level},
-                xargs_mode      => 1,
+                use_new_qual_calculator =>
+                  $active_parameter_href->{gatk_use_new_qual_calculator},
+                xargs_mode => 1,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;

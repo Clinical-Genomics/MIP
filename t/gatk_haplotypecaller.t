@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -101,8 +101,15 @@ my %specific_argument = (
     },
     dbsnp_path => {
         input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
-        expected_output => q{--dbsnp }
-          . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+        expected_output => q{--dbsnp } . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+    },
+    dont_use_soft_clipped_bases => {
+        input           => 1,
+        expected_output => q{--dont-use-soft-clipped-bases},
+    },
+    emit_ref_confidence => {
+        input           => q{GVCF},
+        expected_output => q{--emit-ref-confidence GVCF},
     },
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),
@@ -111,6 +118,10 @@ my %specific_argument = (
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
         expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
+    },
+    pcr_indel_model => {
+        input           => q{NONE},
+        expected_output => q{--pcr-indel-model NONE},
     },
     sample_ploidy => {
         input           => $SAMPLE_PLOIDY,
@@ -121,17 +132,9 @@ my %specific_argument = (
         expected_output => q{--standard-min-confidence-threshold-for-calling }
           . $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
     },
-    dont_use_soft_clipped_bases => {
+    use_new_qual_calculator => {
         input           => 1,
-        expected_output => q{--dont-use-soft-clipped-bases},
-    },
-    pcr_indel_model => {
-        input           => q{NONE},
-        expected_output => q{--pcr-indel-model NONE},
-    },
-    emit_ref_confidence => {
-        input           => q{GVCF},
-        expected_output => q{--emit-ref-confidence GVCF},
+        expected_output => q{--use-new-qual-calculator},
     },
 );
 

@@ -67,6 +67,12 @@ gatk_logging_level:
   data_type: SCALAR
   default: INFO
   type: recipe_argument
+gatk_use_new_qual_calculator:
+  associated_recipe:
+   - gatk_haplotypecaller
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 infile_dirs:
   associated_recipe:
    - mip

@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.12;
+our $VERSION = 1.13;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -220,6 +220,16 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             documentation => q{Coverage to downsample to at any given locus},
             is            => q{rw},
             isa           => Int,
+        )
+    );
+
+    option(
+        q{gatk_use_new_qual_calculator} => (
+            cmd_aliases   => [qw{ gatknq }],
+            cmd_flag      => q{gatk_new_qual},
+            documentation => q{Use new qual calculator},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 

@@ -91,8 +91,7 @@ my %required_argument = (
 my %specific_argument = (
     dbsnp_path => {
         input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
-        expected_output => q{--dbsnp }
-          . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+        expected_output => q{--dbsnp } . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
     },
     infile_path => {
         input           => q{gendb://} . catdir(qw{ path to my_db }),
@@ -105,6 +104,10 @@ my %specific_argument = (
     referencefile_path => {
         input           => catfile(qw{ my genome }),
         expected_output => q{--reference } . catdir(qw{ my genome }),
+    },
+    use_new_qual_calculator => {
+        input           => 1,
+        expected_output => q{--use-new-qual-calculator},
     },
 );
 

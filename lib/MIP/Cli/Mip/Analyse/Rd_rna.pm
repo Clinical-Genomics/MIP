@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -200,6 +200,16 @@ sub _build_usage {
             documentation => q{Coverage to downsample to at any given locus},
             is            => q{rw},
             isa           => Int,
+        )
+    );
+
+    option(
+        q{gatk_use_new_qual_calculator} => (
+            cmd_aliases   => [qw{ gatknq }],
+            cmd_flag      => q{gatk_new_qual},
+            documentation => q{Use new qual calculator},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
