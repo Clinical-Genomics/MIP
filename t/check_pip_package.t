@@ -64,17 +64,19 @@ diag(   q{Test check_pip_package from Pip.pm v}
 ## Given a conda environment and pip package, but not installed via conda
 my $conda_environment = q{mip_travis_svdb};
 my $svdb_version      = 1.0;
+my $conda_prefix_path = catfile($Bin, qw{ data modules miniconda });
 
 my $is_not_ok_conda = check_pip_package(
     {
         conda_environment => $conda_environment,
+     conda_prefix_path => $conda_prefix_path,
         package           => q{svdb},
         version           => $svdb_version,
     }
 );
 
 ## Then return undef
-is( $is_not_ok_conda, undef, q{Checked pip package in conda env} );
+like( $is_not_ok_conda, qr/EnvironmentLocationNotFound/, q{Checked pip package in conda env} );
 
 ## Given a conda environment and pip package, when package exist
 my $is_ok = check_pip_package(
