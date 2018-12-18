@@ -24,7 +24,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -105,6 +105,10 @@ my %specific_argument = (
     requirement => {
         input           => q{test_file.txt},
         expected_output => q{--requirement test_file.txt},
+    },
+    verbose => {
+        input           => 1,
+        expected_output => q{--verbose},
     },
 );
 

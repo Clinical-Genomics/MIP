@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,9 +62,16 @@ diag(   q{Test get_conda_path from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given a sub call when conda should be installed
-my $conda_path = get_conda_path();
+my $is_ok = get_conda_path( {} );
 
 ## Then
-ok( $conda_path, q{Found conda path} );
+ok( $is_ok, q{Found conda path} );
+
+# Given a sub call when conda should not be installed
+my $is_not_ok = 1;
+$is_not_ok = get_conda_path( { bin_file => q{not_a_conda_bin} } );
+
+## Then
+is( $is_not_ok, undef, q{Did not find conda path} );
 
 done_testing();

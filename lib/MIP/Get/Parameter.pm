@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -109,13 +109,13 @@ sub get_bin_file_path {
     ## Check environments special case env first
     if ( $environment_key and $environment_href->{$environment_key} ) {
 
-        $environment = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
+        $environment   = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
         $bin_file_path = catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
     }
     ## Assume installed in conda base environment
     else {
 
-        $environment = q{base};
+        $environment   = q{base};
         $bin_file_path = catfile( $conda_path, q{bin}, $bin_file );
     }
 
@@ -188,11 +188,28 @@ sub get_conda_path {
 
 ## Function: Get path to conda directory
 ## Returns : $conda_path
+## Arguments: $bin_file               => Bin file to test
 
+    my ($arg_href) = @_;
+
+## Default(s)
+    my $bin_file;
+
+    my $tmpl = {
+        bin_file => {
+            default     => q{conda},
+            store       => \$bin_file,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
     use IPC::Cmd qw{ can_run };
 
     ## Find path to conda bin
-    my $conda_path = can_run(q{conda});
+    my $conda_path = can_run($bin_file);
+
+    return if ( not $conda_path );
 
     ## Split dirs to array
     my @conda_path_dirs = File::Spec->splitdir($conda_path);
@@ -210,6 +227,7 @@ sub get_dynamic_conda_path {
 ## Returns  : Path to directory
 ## Arguments: $active_parameters_href => Active parameter hash {REF}
 ##          : $bin_file               => Bin file to test
+##          : $conda_bin_file         => Conda bin file name
 ##          : $environment_key        => Key to conda environment
 
     my ($arg_href) = @_;
@@ -217,6 +235,7 @@ sub get_dynamic_conda_path {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $bin_file;
+    my $conda_bin_file;
     my $environment_key;
 
     my $tmpl = {
@@ -230,6 +249,10 @@ sub get_dynamic_conda_path {
             required => 1,
             store    => \$bin_file,
         },
+        conda_bin_file => {
+            default => q{conda},
+            store   => \$conda_bin_file,
+        },
         environment_key => {
             store => \$environment_key,
         },
@@ -240,9 +263,12 @@ sub get_dynamic_conda_path {
     ## Establish path to conda
     if ( not $active_parameter_href->{conda_path} ) {
 
-        $active_parameter_href->{conda_path} = get_conda_path();
+        $active_parameter_href->{conda_path} =
+          get_conda_path( { bin_file => $conda_bin_file, } );
     }
-    if ( not -d $active_parameter_href->{conda_path} ) {
+    if (   not $active_parameter_href->{conda_path}
+        or not -d $active_parameter_href->{conda_path} )
+    {
 
         return q{Failed to find default conda path};
     }
@@ -285,17 +311,9 @@ sub get_dynamic_conda_path {
     );
 
     ## Test if path exists
-    if ( not $bin_file_path ) {
-        return
-            q{Failed to find default path for}
-          . $SPACE
-          . $bin_file
-          . $SPACE
-          . q{in conda environment}
-          . $SPACE
-          . $environment;
-    }
-    if ( not -f $bin_file_path ) {
+    if (   not $bin_file_path
+        or not -f $bin_file_path )
+    {
         return
             q{Failed to find default path for}
           . $SPACE
@@ -356,7 +374,7 @@ sub get_env_method_cmds {
 
     my %method_cmd = (
         conda => {
-            load => [ ( conda_activate( { env_name => $env_name, } ), ) ],
+            load   => [ ( conda_activate(   { env_name => $env_name, } ), ) ],
             unload => [ ( conda_deactivate( {} ), ) ],
         },
     );
