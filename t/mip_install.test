@@ -29,7 +29,7 @@ BEGIN {
       MODULE:
         foreach my $module ( @{$modules_ref} ) {
 
-# Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
+  # Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
             $module =~ s/::/\//gxms;
 
             # Add perl module ending for the same reason
@@ -41,8 +41,7 @@ BEGIN {
 
                 warn q{NOTE: }
                   . $module
-                  . q{ not installed - Please install to run install.t.}
-                  . qq{\n};
+                  . q{ not installed - Please install to run install.t.} . qq{\n};
                 warn q{NOTE: Aborting!} . qq{\n};
                 exit 1;
             }
@@ -52,8 +51,7 @@ BEGIN {
 
     ## Initate tests
     say {*STDOUT} q{Initiate tests:} . qq{\n};
-    say {*STDOUT} q{Testing default perl modules and selected functions}
-      . qq{\n};
+    say {*STDOUT} q{Testing default perl modules and selected functions} . qq{\n};
 
     ## More proper testing
     use Test::More;
@@ -106,7 +104,9 @@ our $USAGE = build_usage( {} );
 
 my $conda_dir_path;
 my $verbose = 1;
-our $VERSION = q{1.2.2};
+our $VERSION = q{1.3.0};
+
+Readonly my $EMPTY_STRING => q{};
 
 ###User Options
 GetOptions(
@@ -119,8 +119,7 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
         exit;
     },    #Display version number
   )
@@ -140,16 +139,16 @@ ok( can_run(q{conda}), q{Checking can run of conda binary} );
 ## Pipeline installations to test
 my %install_file = (
     rd_dna => q{Rd_dna.pm},
-    rd_rna          => q{Rd_rna.pm},
+    rd_rna => q{Rd_rna.pm},
 );
 
+my @installation_modes = ( $EMPTY_STRING, q{prefer_shell} );
+
+PIPELINE:
 foreach my $pipeline ( keys %install_file ) {
 
     ok(
-        catfile(
-            dirname($Bin), qw{ lib MIP Cli Mip Install },
-            $install_file{$pipeline}
-        ),
+        catfile( dirname($Bin), qw{ lib MIP Cli Mip Install }, $install_file{$pipeline} ),
         qq{Locating $pipeline install script}
     );
 
@@ -163,21 +162,28 @@ foreach my $pipeline ( keys %install_file ) {
         push @{$cmds_ref}, q{--conda_dir_path}, $conda_dir_path;
     }
 
-    my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
-        command => $cmds_ref,
-        verbose => $verbose
-    );
+    foreach my $installation_mode (@installation_modes) {
+        if ( $installation_mode eq q{prefer_shell} ) {
+            push @{$cmds_ref}, q{--prefer_shell};
+        }
 
-    ok( $success, qq{Executed $pipeline install} );
+        my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
+            command => $cmds_ref,
+            verbose => $verbose
+        );
 
-    ## Test that mip.sh has been created
-    ok( -e catfile( getcwd(), q{mip.sh} ), qq{Located $pipeline mip.sh} );
+        ok( $success, qq{Executed $pipeline install $installation_mode} );
+
+        ## Test that mip.sh has been created
+        ok( -e catfile( getcwd(), q{mip.sh} ), qq{Located $pipeline mip.sh} );
+    }
 
 }
 
 ## Clean-up mip_install.pl output
 my @outfiles = qw{ mip.sh mip_install_*.log };
 
+OUTFILE:
 foreach my $outfile (@outfiles) {
 
     my $cmd = q{rm } . catfile( getcwd(), $outfile );
