@@ -97,9 +97,6 @@ is( $job_ids_string, $expected_job_id_string,
 ## Given no job ids from MAIN chain, when existing job id for sample id
 delete $job_id{$case_id_chain_key}{$case_id_chain_key};
 
-#use Data::Printer;
-#p(%job_id);
-#exit;
 my $job_ids_string_sample = create_job_id_string_for_case_id_and_path(
     {
         case_id                 => $case_id,

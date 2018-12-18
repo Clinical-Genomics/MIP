@@ -67,9 +67,9 @@ Readonly my $COLON      => q{:};
 sub add_to_job_id_dependency_string {
 
 ## Function : Adds all previous job_ids per case_chain_key and chain_key to job_ids dependency string, which is used to set the dependency in SLURM.
-## Returns  : "$job_ids"
-## Arguments: $chain_key           => The current chain hash key
-##          : $job_id_href         => Info on jobIds hash {REF}
+## Returns  : $job_ids
+## Arguments: $chain_key         => The current chain hash key
+##          : $job_id_href       => Info on jobIds hash {REF}
 ##          : $case_id_chain_key => Case id chain hash key
 
     my ($arg_href) = @_;
@@ -257,33 +257,30 @@ sub add_sample_ids_job_ids_to_job_id_dependency_string {
 
 sub add_parallel_job_ids_to_job_id_dependency_string {
 
-##add_parallel_job_ids_to_job_id_dependency_string
-
-##Function : Create job id string from the case parallel job id chain and path associated with case chain for SLURM submission using dependencies
-##Returns  : "$job_ids_string"
-##Arguments: $job_id_href, $case_id_chain_key
-##         : $job_id_href         => The info on job ids hash {REF}
-##         : $case_id_chain_key => Case id chain hash key
+## Function : Create job id string from the case parallel job id chain and path associated with case chain for SLURM submission using dependencies
+## Returns  : $job_ids_string
+## Arguments: $case_id_chain_key => Case id chain hash key
+##          : $job_id_href       => The info on job ids hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $case_id_chain_key;
+    my $job_id_href;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$case_id_chain_key
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
     };
 
@@ -293,6 +290,7 @@ sub add_parallel_job_ids_to_job_id_dependency_string {
 
     if ( defined $job_id_href->{$case_id_chain_key} ) {
 
+      CASE_CHAIN_KEY:
         foreach my $chain_key ( keys %{ $job_id_href->{$case_id_chain_key} } ) {
 
             ## Check if chain_key actually is a parallel
@@ -301,9 +299,9 @@ sub add_parallel_job_ids_to_job_id_dependency_string {
                 ## Add to job_id string
                 $job_ids_string .= add_to_job_id_dependency_string(
                     {
-                        job_id_href       => $job_id_href,
                         case_id_chain_key => $case_id_chain_key,
                         chain_key         => $chain_key,
+                        job_id_href       => $job_id_href,
                     }
                 );
             }
@@ -395,41 +393,38 @@ sub add_parallel_chains_job_ids_to_job_id_dependency_string {
 
 sub add_job_id_dependency_tree {
 
-##add_job_id_dependency_tree
-
-##Function : Saves job_id to the correct hash array depending on chain type.
-##Returns  : ""
-##Arguments: $job_id_href, $chain_key, $job_id_returned
-##         : $job_id_href     => Info on jobIds hash {REF}
-##         : $chain_key       => Arbitrary chain hash key
-##         : $job_id_returned => Job_id that was returned from submission
+## Function : Saves job_id to the correct hash array depending on chain type.
+## Returns  :
+## Arguments: $chain_key       => Arbitrary chain hash key
+##          : $job_id_href     => Info on jobIds hash {REF}
+##          : $job_id_returned => Job_id that was returned from submission
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $chain_key;
+    my $job_id_href;
     my $job_id_returned;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$chain_key,
             strict_type => 1,
-            store       => \$chain_key
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
         job_id_returned => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_returned,
             strict_type => 1,
-            store       => \$job_id_returned
         },
     };
 
@@ -449,57 +444,54 @@ sub add_job_id_dependency_tree {
 
 sub add_parallel_job_id_to_sample_id_dependency_tree {
 
-##add_parallel_job_id_to_sample_id_dependency_tree
-
-##Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
-##Returns  : ""
-##Arguments: $job_id_href, $infile_lane_prefix_href, $case_id_chain_key, $sample_id_chain_key, $sample_id, $path
-##         : $job_id_href             => Info on jobIds hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $case_id_chain_key     => Case id chain hash key
-##         : $sample_id_chain_key     => Sample ID chain hash key
-##         : $sample_id               => Sample ID
-##         : $path                    => Trunk or branch
+## Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
+## Returns  :
+## Arguments: $case_id_chain_key       => Case id chain hash key
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Info on jobIds hash {REF}
+##          : $path                    => Trunk or branch
+##          : $sample_id               => Sample ID
+##          : $sample_id_chain_key     => Sample ID chain hash key
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $case_id_chain_key;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $case_id_chain_key;
-    my $sample_id_chain_key;
-    my $sample_id;
     my $path;
+    my $sample_id;
+    my $sample_id_chain_key;
 
     my $tmpl = {
-        infile_lane_prefix_href => {
-            required    => 1,
+        case_id_chain_key => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$case_id_chain_key
         },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        sample_id           => { store => \$sample_id, strict_type => 1, },
         sample_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id_chain_key,
             strict_type => 1,
-            store       => \$sample_id_chain_key
         },
-        sample_id => { strict_type => 1, store => \$sample_id },
-        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -539,53 +531,50 @@ sub add_parallel_job_id_to_sample_id_dependency_tree {
 
 sub add_parallel_job_id_to_case_id_dependency_tree {
 
-##add_parallel_job_id_to_case_id_dependency_tree
-
-##Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
-##Returns  : ""
-##Arguments: $job_id_href, $case_id_chain_key, $case_id, $path, $sbatch_script_tracker
-##         : $job_id_href           => Info on jobIds hash {REF}
-##         : $case_id_chain_key   => Case id chain hash key
-##         : $case_id             => Case id
-##         : $path                  => Trunk or branch
-##         : $sbatch_script_tracker => Track the number of parallel processes (e.g. sbatch scripts for a module)
+## Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
+## Returns  :
+## Arguments: $case_id               => Case id
+##          : $case_id_chain_key     => Case id chain hash key
+##          : $job_id_href           => Info on jobIds hash {REF}
+##          : $path                  => Trunk or branch
+##          : $sbatch_script_tracker => Track the number of parallel processes (e.g. sbatch scripts for a module)
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
-    my $case_id_chain_key;
     my $case_id;
+    my $case_id_chain_key;
+    my $job_id_href;
     my $path;
     my $sbatch_script_tracker;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$case_id_chain_key
         },
         case_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_id,
             strict_type => 1,
-            store       => \$case_id
         },
-        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
-        sbatch_script_tracker => {
-            required    => 1,
+        job_id_href => {
+            default     => {},
             defined     => 1,
-            allow       => qr{ \A\d+\z }sxm,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$sbatch_script_tracker
+        },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        sbatch_script_tracker => {
+            allow       => qr{ \A\d+\z }sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$sbatch_script_tracker,
+            strict_type => 1,
         },
     };
 
@@ -615,61 +604,58 @@ sub add_parallel_job_id_to_case_id_dependency_tree {
 
 sub add_parallel_job_id_to_parallel_dependency_tree {
 
-##add_parallel_job_id_to_parallel_dependency_tree
-
-##Function : Saves parallel job_id for case to the parallel case id hash array depending on chain type.
-##Returns  : ""
-##Arguments: $job_id_href, $case_id_chain_key, $id, $path, $sbatch_script_tracker, $job_id_returned
-##         : $job_id_href           => Info on jobIds hash {REF}
-##         : $case_id_chain_key   => Case id chain hash key
-##         : $id                    => Id (case or sample)
-##         : $path                  => Trunk or branch
-##         : $sbatch_script_tracker => Track the number of parallel processes (e.g. sbatch scripts for a module)
-##         : $job_id_returned       => Job_id that was returned from submission
+## Function : Saves parallel job_id for case to the parallel case id hash array depending on chain type.
+## Returns  :
+## Arguments: $case_id_chain_key     => Case id chain hash key
+##          : $id                    => Id (case or sample)
+##          : $job_id_href           => Info on jobIds hash {REF}
+##          : $job_id_returned       => Job_id that was returned from submission
+##          : $path                  => Trunk or branch
+##          : $sbatch_script_tracker => Track the number of parallel processes (e.g. sbatch scripts for a module)
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $case_id_chain_key;
     my $id;
+    my $job_id_href;
+    my $job_id_returned;
     my $path;
     my $sbatch_script_tracker;
-    my $job_id_returned;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$case_id_chain_key
         },
         id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$id,
             strict_type => 1,
-            store       => \$id
         },
-        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
-        sbatch_script_tracker => {
-            required    => 1,
+        job_id_href => {
+            default     => {},
             defined     => 1,
-            allow       => qr{ \A\d+\z }sxm,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$sbatch_script_tracker
         },
         job_id_returned => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_returned,
             strict_type => 1,
-            store       => \$job_id_returned
+        },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        sbatch_script_tracker => {
+            allow       => qr{ \A\d+\z }sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$sbatch_script_tracker,
+            strict_type => 1,
         },
     };
 
@@ -695,50 +681,46 @@ sub add_parallel_job_id_to_parallel_dependency_tree {
 
 sub add_sample_id_parallel_job_id_to_case_id_dependency_tree {
 
-##add_sample_id_parallel_job_id_to_sample_id_dependency_tree
-
-##Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
-##Returns  : ""
-##Arguments: $job_id_href, $infile_lane_prefix_href, $case_id_chain_key, $sample_id, $path
-##         : $job_id_href             => Info on jobIds hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $case_id_chain_key     => Case id chain hash key
-##         : $sample_id               => Sample ID
-##         : $path                    => Trunk or branch
+## Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
+## Returns  :
+## Arguments: $case_id_chain_key       => Case id chain hash key
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Info on jobIds hash {REF}
+##          : $path                    => Trunk or branch
+##          : $sample_id               => Sample ID
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $case_id_chain_key;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $case_id_chain_key;
-    my $sample_id_chain_key;
-    my $sample_id;
     my $path;
+    my $sample_id;
 
     my $tmpl = {
-        infile_lane_prefix_href => {
-            required    => 1,
+        case_id_chain_key => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$case_id_chain_key
         },
-        sample_id => { strict_type => 1, store => \$sample_id },
-        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        sample_id => { store => \$sample_id, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -781,59 +763,54 @@ sub add_sample_id_parallel_job_id_to_case_id_dependency_tree {
 
 sub add_sample_ids_parallel_job_id_to_case_id_dependency_tree {
 
-##add_sample_ids_parallel_job_id_to_case_id_dependency_tree
-
-##Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
-##Returns  : ""
-##Arguments: $job_id_href, $infile_lane_prefix_href, $sample_ids_ref, $case_id_chain_key, $sample_id_chain_key, $sample_id, $path
-##         : $job_id_href             => Info on jobIds hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $sample_ids_ref          => Sample ids {REF}
-##         : $case_id_chain_key     => Case id chain hash key
-##         : $sample_id_chain_key     => Sample ID chain hash key
-##         : $sample_id               => Sample ID
-##         : $path                    => Trunk or branch
+## Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
+## Returns  :
+## Arguments: $case_id_chain_key       => Case id chain hash key
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Info on jobIds hash {REF}
+##          : $path                    => Trunk or branch
+##          : $sample_id               => Sample ID
+##          : $sample_ids_ref          => Sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $case_id_chain_key;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $sample_ids_ref;
-    my $case_id_chain_key;
-    my $sample_id_chain_key;
-    my $sample_id;
     my $path;
+    my $sample_id;
+    my $sample_ids_ref;
 
     my $tmpl = {
-        infile_lane_prefix_href => {
-            required    => 1,
+        case_id_chain_key => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$job_id_href
         },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
         sample_ids_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
-            store       => \$sample_ids_ref
-        },
-        case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
             strict_type => 1,
-            store       => \$case_id_chain_key
         },
-        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -843,11 +820,11 @@ sub add_sample_ids_parallel_job_id_to_case_id_dependency_tree {
 
         add_sample_id_parallel_job_id_to_case_id_dependency_tree(
             {
+                case_id_chain_key       => $case_id_chain_key,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
-                case_id_chain_key       => $case_id_chain_key,
-                sample_id               => $sample_id,
                 path                    => $path,
+                sample_id               => $sample_id,
             }
         );
     }
@@ -856,41 +833,38 @@ sub add_sample_ids_parallel_job_id_to_case_id_dependency_tree {
 
 sub add_pan_job_id_to_sample_id_dependency_tree {
 
-##add_pan_job_id_to_sample_id_dependency_tree
-
-##Function : Saves pan (i.e job_ids that affect all chains) job_id to the the sample_id chain.
-##Returns  : ""
-##Arguments: $job_id_href, $case_id_chain_key, $sample_id_chain_key
-##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Case id chain hash key
-##         : $sample_id_chain_key => Sample ID chain hash key
+## Function : Saves pan (i.e job_ids that affect all chains) job_id to the the sample_id chain.
+## Returns  :
+## Arguments: $case_id_chain_key   => Case id chain hash key
+##          : $job_id_href         => Info on jobIds hash {REF}
+##          : $sample_id_chain_key => Sample ID chain hash key
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $case_id_chain_key;
+    my $job_id_href;
     my $sample_id_chain_key;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$case_id_chain_key
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
         sample_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id_chain_key,
             strict_type => 1,
-            store       => \$sample_id_chain_key
         },
     };
 
@@ -922,49 +896,46 @@ sub add_pan_job_id_to_sample_id_dependency_tree {
 
 sub add_sample_job_id_to_sample_id_dependency_tree {
 
-##add_sample_job_id_to_sample_id_dependency_tree
-
-##Function : Saves sample job_id to the sample_id hash array depending on chain type.
-##Returns  : ""
-##Arguments: $job_id_href, $case_id_chain_key, $sample_id_chain_key, $job_id_returned
-##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Case id chain hash key
-##         : $sample_id_chain_key => Sample ID chain hash key
-##         : $job_id_returned     => Job_id that was returned from submission
+## Function : Saves sample job_id to the sample_id hash array depending on chain type.
+## Returns  :
+## Arguments: $case_id_chain_key   => Case id chain hash key
+##          : $job_id_href         => Info on jobIds hash {REF}
+##          : $job_id_returned     => Job_id that was returned from submission
+##          : $sample_id_chain_key => Sample ID chain hash key
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $case_id_chain_key;
-    my $sample_id_chain_key;
+    my $job_id_href;
     my $job_id_returned;
+    my $sample_id_chain_key;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$case_id_chain_key
         },
-        sample_id_chain_key => {
-            required    => 1,
+        job_id_href => {
+            default     => {},
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$sample_id_chain_key
         },
         job_id_returned => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_returned,
             strict_type => 1,
-            store       => \$job_id_returned
+        },
+        sample_id_chain_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id_chain_key,
+            strict_type => 1,
         },
     };
 
@@ -984,41 +955,38 @@ sub add_sample_job_id_to_sample_id_dependency_tree {
 
 sub add_sample_job_id_to_case_id_dependency_tree {
 
-##add_sample_job_id_to_case_id_dependency_tree
-
-##Function : Saves sample_id job_id to the the case_id chain.
-##Returns  : ""
-##Arguments: $job_id_href, $case_id_chain_key, $sample_id_chain_key
-##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Case id chain hash key
-##         : $sample_id_chain_key => Sample ID chain hash key
+## Function : Saves sample_id job_id to the the case_id chain.
+## Returns  :
+## Arguments: $case_id_chain_key   => Case id chain hash key
+##          : $job_id_href         => Info on jobIds hash {REF}
+##          : $sample_id_chain_key => Sample ID chain hash key
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $case_id_chain_key;
+    my $job_id_href;
     my $sample_id_chain_key;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$case_id_chain_key
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
         sample_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id_chain_key,
             strict_type => 1,
-            store       => \$sample_id_chain_key
         },
     };
 
@@ -1397,49 +1365,46 @@ sub create_job_id_string_for_case_id_and_path {
 
 sub clear_sample_id_parallel_job_id_dependency_tree {
 
-##clear_sample_id_parallel_job_id_dependency_tree
-
-##Function : Clear parallel sample job_ids in the sample_id chain.
-##Returns  : ""
-##Arguments: $job_id_href, $infile_lane_prefix_href, $case_id_chain_key, $sample_id, $path
-##         : $job_id_href             => Info on jobIds hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $case_id_chain_key     => Case id chain hash key
-##         : $sample_id               => Sample ID
-##         : $path                    => Trunk or branch
+## Function : Clear parallel sample job_ids in the sample_id chain.
+## Returns  :
+## Arguments: $case_id_chain_key       => Case id chain hash key
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Info on jobIds hash {REF}
+##          : $path                    => Trunk or branch
+##          : $sample_id               => Sample ID
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
-    my $infile_lane_prefix_href;
     my $case_id_chain_key;
-    my $sample_id;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
     my $path;
+    my $sample_id;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
+        case_id_chain_key => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$job_id_href
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$case_id_chain_key
         },
-        sample_id => { strict_type => 1, store => \$sample_id },
-        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        sample_id => { store => \$sample_id, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1464,41 +1429,38 @@ sub clear_sample_id_parallel_job_id_dependency_tree {
 
 sub clear_pan_job_id_dependency_tree {
 
-##clear_pan_job_id_dependency_tree
-
-##Function : Clear pan (i.e job_ids that affect all sample chains) job_id to the pan chain.
-##Returns  : ""
-##Arguments: $job_id_href, $case_id_chain_key, $sample_id_chain_key
-##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Case id chain hash key
-##         : $sample_id_chain_key => Sample ID chain hash key
+## Function : Clear pan (i.e job_ids that affect all sample chains) job_id to the pan chain.
+## Returns  :
+## Arguments: $case_id_chain_key   => Case id chain hash key
+##          : $job_id_href         => Info on jobIds hash {REF}
+##          : $sample_id_chain_key => Sample ID chain hash key
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $case_id_chain_key;
+    my $job_id_href;
     my $sample_id_chain_key;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$case_id_chain_key
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
         sample_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id_chain_key,
             strict_type => 1,
-            store       => \$sample_id_chain_key
         },
     };
 
@@ -1517,41 +1479,38 @@ sub clear_pan_job_id_dependency_tree {
 
 sub clear_sample_id_job_id_dependency_tree {
 
-##clear_sample_id_job_id_dependency_tree
-
-##Function : Clear sample job_ids in the sample_id chain.
-##Returns  : ""
-##Arguments: $job_id_href, $case_id_chain_key, $sample_id_chain_key
-##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Case id chain hash key
-##         : $sample_id_chain_key => Sample ID chain hash key
+## Function : Clear sample job_ids in the sample_id chain.
+## Returns  :
+## Arguments: $case_id_chain_key   => Case id chain hash key
+##          : $job_id_href         => Info on jobIds hash {REF}
+##          : $sample_id_chain_key => Sample ID chain hash key
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $case_id_chain_key;
+    my $job_id_href;
     my $sample_id_chain_key;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$case_id_chain_key
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
         sample_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id_chain_key,
             strict_type => 1,
-            store       => \$sample_id_chain_key
         },
     };
 
@@ -1565,33 +1524,30 @@ sub clear_sample_id_job_id_dependency_tree {
 
 sub clear_case_id_job_id_dependency_tree {
 
-##clear_case_id_job_id_dependency_tree
-
-##Function : Clear case job_ids in the the case_id chain.
-##Returns  : ""
-##Arguments: $job_id_href, $case_id_chain_key
-##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Case id chain hash key
+## Function : Clear case job_ids in the the case_id chain.
+## Returns  :
+## Arguments: $case_id_chain_key => Case id chain hash key
+##          : $job_id_href       => Info on jobIds hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $case_id_chain_key;
+    my $job_id_href;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$case_id_chain_key
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
     };
 
@@ -1605,33 +1561,30 @@ sub clear_case_id_job_id_dependency_tree {
 
 sub clear_all_job_ids_within_chain_key_dependency_tree {
 
-##clear_all_job_ids_within_chain_key_dependency_tree
-
-##Function : Clear all job_ids in the chain key.
-##Returns  : ""
-##Arguments: $job_id_href, $case_id_chain_key
-##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Case id chain hash key
+## Function : Clear all job_ids in the chain key.
+## Returns  :
+## Arguments: $case_id_chain_key => Case id chain hash key
+##          : $job_id_href       => Info on jobIds hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $case_id_chain_key;
+    my $job_id_href;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         case_id_chain_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$case_id_chain_key
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
     };
 
@@ -1650,39 +1603,36 @@ sub clear_all_job_ids_within_chain_key_dependency_tree {
 
 sub limit_job_id_string {
 
-##limit_job_id_string
-
-##Function : Limit number of job_ids in job_id chain
-##Returns  : ""
-##Arguments: $job_id_href, $case_id_chain_key, $chain_key
-##         : $job_id_href         => The info on job ids hash {REF}
-##         : $case_id_chain_key => Case id chain hash key
-##         : $chain_key           => The current chain hash key
+## Function : Limit number of job_ids in job_id chain
+## Returns  :
+## Arguments: $case_id_chain_key => Case id chain hash key
+##          : $chain_key         => The current chain hash key
+##          : $job_id_href       => The info on job ids hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $case_id_chain_key;
     my $chain_key;
+    my $job_id_href;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         case_id_chain_key => {
             default     => qw{ALL},
+            store       => \$case_id_chain_key,
             strict_type => 1,
-            store       => \$case_id_chain_key
         },
         chain_key => {
             default     => qw{ALL},
+            store       => \$chain_key,
             strict_type => 1,
-            store       => \$chain_key
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1706,44 +1656,41 @@ sub limit_job_id_string {
 
 sub print_wait {
 
-##print_wait
-
-##Function : Calculates when to print "wait" statement and prints "wait" to supplied FILEHANDLE when adequate.
-##Returns  : "$process_batches_count"
-##Arguments: $process_counter, $max_process_number, $process_batches_count, $FILEHANDLE
-##         : $process_counter       => The number of started processes
-##         : $max_process_number    => The maximum number of processes to be use before printing "wait" statement
-##         : $process_batches_count => Scales the number of $max_process_number processs used after each print "wait" statement
-##         : $FILEHANDLE            => FILEHANDLE to print "wait" statment to
+## Function : Calculates when to print "wait" statement and prints "wait" to supplied FILEHANDLE when adequate.
+## Returns  : $process_batches_count
+## Arguments: $FILEHANDLE            => FILEHANDLE to print "wait" statment to
+##          : $max_process_number    => The maximum number of processes to be use before printing "wait" statement
+##          : $process_batches_count => Scales the number of $max_process_number processs used after each print "wait" statement
+##          : $process_counter       => The number of started processes
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $process_counter;
+    my $FILEHANDLE;
     my $max_process_number;
     my $process_batches_count;
-    my $FILEHANDLE;
+    my $process_counter;
 
     my $tmpl = {
-        process_counter => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$process_counter
-        },
+        FILEHANDLE         => { defined => 1, required => 1, store => \$FILEHANDLE, },
         max_process_number => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$max_process_number,
             strict_type => 1,
-            store       => \$max_process_number
         },
         process_batches_count => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$process_batches_count,
             strict_type => 1,
-            store       => \$process_batches_count
         },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+        process_counter => {
+            defined     => 1,
+            required    => 1,
+            store       => \$process_counter,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1767,7 +1714,7 @@ sub submit_recipe {
 
 ## Function : Submit recipe depending on submission profile
 ## Returns  :
-## Arguments: $case_id               => Case id
+## Arguments: $case_id                 => Case id
 ##          : $dependency_method       => Dependency method
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_chain            => Chain id
