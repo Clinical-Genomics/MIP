@@ -3,7 +3,7 @@ package MIP::Processmanagement::Processes;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
-use FindBin qw{$Bin};    # Find directory of script
+use FindBin qw{$Bin};
 use File::Basename qw{dirname};
 use File::Spec::Functions qw{catdir};
 use open qw{ :encoding(UTF-8) :std };
@@ -27,7 +27,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -69,7 +69,7 @@ sub add_to_job_id_dependency_string {
 ## Returns  : "$job_ids"
 ## Arguments: $chain_key           => The current chain hash key
 ##          : $job_id_href         => Info on jobIds hash {REF}
-##          : $case_id_chain_key => Family ID chain hash key
+##          : $case_id_chain_key => Case id chain hash key
 
     my ($arg_href) = @_;
 
@@ -149,8 +149,8 @@ sub add_sample_ids_job_ids_to_job_id_dependency_string {
 
 ## Function : Create job id string from sample_ids job id chain and path for SLURM submission using dependencies
 ## Returns  : $job_ids_string
-## Arguments: $case_id               => Family id
-##          : $case_id_chain_key     => Family ID chain hash key
+## Arguments: $case_id                 => Case id
+##          : $case_id_chain_key       => Case id chain hash key
 ##          : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => The info on job ids hash {REF}
 ##          : $path                    => Trunk or branch
@@ -262,7 +262,7 @@ sub add_parallel_job_ids_to_job_id_dependency_string {
 ##Returns  : "$job_ids_string"
 ##Arguments: $job_id_href, $case_id_chain_key
 ##         : $job_id_href         => The info on job ids hash {REF}
-##         : $case_id_chain_key => Family ID chain hash key
+##         : $case_id_chain_key => Case id chain hash key
 
     my ($arg_href) = @_;
 
@@ -313,49 +313,46 @@ sub add_parallel_job_ids_to_job_id_dependency_string {
 
 sub add_parallel_chains_job_ids_to_job_id_dependency_string {
 
-##add_parallel_chains_job_ids_to_job_id_dependency_string
-
-##Function : Create job id string from the job id chain and path associated with parallel chains for SLURM submission using dependencies
-##Returns  : "$job_ids_string"
-##Arguments: $job_id_href, $sample_ids_ref, $parallel_chains_ref, $case_id
-##         : $job_id_href         => The info on job ids hash {REF}
-##         : $sample_ids_ref      => Sample ids {REF}
-##         : $parallel_chains_ref => Info on parallel chains array {REF}
-##         : $case_id           => Family id
+## Function : Create job id string from the job id chain and path associated with parallel chains for SLURM submission using dependencies
+## Returns  : $job_ids_string
+## Arguments: $case_id             => Case id
+##          : $job_id_href         => The info on job ids hash {REF}
+##          : $parallel_chains_ref => Info on parallel chains array {REF}
+##          : $sample_ids_ref      => Sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
-    my $sample_ids_ref;
-    my $parallel_chains_ref;
     my $case_id;
+    my $job_id_href;
+    my $parallel_chains_ref;
+    my $sample_ids_ref;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
+        case_id => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$case_id,
             strict_type => 1,
-            store       => \$job_id_href
         },
-        sample_ids_ref => {
-            required    => 1,
+        job_id_href => {
+            default     => {},
             defined     => 1,
-            default     => [],
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$sample_ids_ref
         },
         parallel_chains_ref => {
             default     => [],
+            store       => \$parallel_chains_ref,
             strict_type => 1,
-            store       => \$parallel_chains_ref
         },
-        case_id => {
-            required    => 1,
+        sample_ids_ref => {
+            default     => [],
             defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
             strict_type => 1,
-            store       => \$case_id
         },
     };
 
@@ -367,7 +364,6 @@ sub add_parallel_chains_job_ids_to_job_id_dependency_string {
     foreach my $parallel_chain ( @{$parallel_chains_ref} ) {
 
         my $case_id_parallel_chain_key = $case_id . $UNDERSCORE . $parallel_chain;
-
       SAMPLE_IDS:
         foreach my $sample_id ( @{$sample_ids_ref} ) {
 
@@ -376,9 +372,9 @@ sub add_parallel_chains_job_ids_to_job_id_dependency_string {
             ## Add to job_id string
             $job_ids_string .= add_to_job_id_dependency_string(
                 {
-                    job_id_href       => $job_id_href,
                     case_id_chain_key => $case_id_parallel_chain_key,
                     chain_key         => $sample_id_parallel_chain_key,
+                    job_id_href       => $job_id_href,
                 }
             );
         }
@@ -387,9 +383,9 @@ sub add_parallel_chains_job_ids_to_job_id_dependency_string {
         ## Add to job_id string
         $job_ids_string .= add_to_job_id_dependency_string(
             {
-                job_id_href       => $job_id_href,
                 case_id_chain_key => $case_id_parallel_chain_key,
                 chain_key         => $case_id_parallel_chain_key,
+                job_id_href       => $job_id_href,
             }
         );
     }
@@ -459,7 +455,7 @@ sub add_parallel_job_id_to_sample_id_dependency_tree {
 ##Arguments: $job_id_href, $infile_lane_prefix_href, $case_id_chain_key, $sample_id_chain_key, $sample_id, $path
 ##         : $job_id_href             => Info on jobIds hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $case_id_chain_key     => Family ID chain hash key
+##         : $case_id_chain_key     => Case id chain hash key
 ##         : $sample_id_chain_key     => Sample ID chain hash key
 ##         : $sample_id               => Sample ID
 ##         : $path                    => Trunk or branch
@@ -548,8 +544,8 @@ sub add_parallel_job_id_to_case_id_dependency_tree {
 ##Returns  : ""
 ##Arguments: $job_id_href, $case_id_chain_key, $case_id, $path, $sbatch_script_tracker
 ##         : $job_id_href           => Info on jobIds hash {REF}
-##         : $case_id_chain_key   => Family ID chain hash key
-##         : $case_id             => Family id
+##         : $case_id_chain_key   => Case id chain hash key
+##         : $case_id             => Case id
 ##         : $path                  => Trunk or branch
 ##         : $sbatch_script_tracker => Track the number of parallel processes (e.g. sbatch scripts for a module)
 
@@ -624,7 +620,7 @@ sub add_parallel_job_id_to_parallel_dependency_tree {
 ##Returns  : ""
 ##Arguments: $job_id_href, $case_id_chain_key, $id, $path, $sbatch_script_tracker, $job_id_returned
 ##         : $job_id_href           => Info on jobIds hash {REF}
-##         : $case_id_chain_key   => Family ID chain hash key
+##         : $case_id_chain_key   => Case id chain hash key
 ##         : $id                    => Id (case or sample)
 ##         : $path                  => Trunk or branch
 ##         : $sbatch_script_tracker => Track the number of parallel processes (e.g. sbatch scripts for a module)
@@ -705,7 +701,7 @@ sub add_sample_id_parallel_job_id_to_case_id_dependency_tree {
 ##Arguments: $job_id_href, $infile_lane_prefix_href, $case_id_chain_key, $sample_id, $path
 ##         : $job_id_href             => Info on jobIds hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $case_id_chain_key     => Family ID chain hash key
+##         : $case_id_chain_key     => Case id chain hash key
 ##         : $sample_id               => Sample ID
 ##         : $path                    => Trunk or branch
 
@@ -792,7 +788,7 @@ sub add_sample_ids_parallel_job_id_to_case_id_dependency_tree {
 ##         : $job_id_href             => Info on jobIds hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $sample_ids_ref          => Sample ids {REF}
-##         : $case_id_chain_key     => Family ID chain hash key
+##         : $case_id_chain_key     => Case id chain hash key
 ##         : $sample_id_chain_key     => Sample ID chain hash key
 ##         : $sample_id               => Sample ID
 ##         : $path                    => Trunk or branch
@@ -865,7 +861,7 @@ sub add_pan_job_id_to_sample_id_dependency_tree {
 ##Returns  : ""
 ##Arguments: $job_id_href, $case_id_chain_key, $sample_id_chain_key
 ##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Family ID chain hash key
+##         : $case_id_chain_key => Case id chain hash key
 ##         : $sample_id_chain_key => Sample ID chain hash key
 
     my ($arg_href) = @_;
@@ -931,7 +927,7 @@ sub add_sample_job_id_to_sample_id_dependency_tree {
 ##Returns  : ""
 ##Arguments: $job_id_href, $case_id_chain_key, $sample_id_chain_key, $job_id_returned
 ##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Family ID chain hash key
+##         : $case_id_chain_key => Case id chain hash key
 ##         : $sample_id_chain_key => Sample ID chain hash key
 ##         : $job_id_returned     => Job_id that was returned from submission
 
@@ -993,7 +989,7 @@ sub add_sample_job_id_to_case_id_dependency_tree {
 ##Returns  : ""
 ##Arguments: $job_id_href, $case_id_chain_key, $sample_id_chain_key
 ##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Family ID chain hash key
+##         : $case_id_chain_key => Case id chain hash key
 ##         : $sample_id_chain_key => Sample ID chain hash key
 
     my ($arg_href) = @_;
@@ -1050,8 +1046,8 @@ sub create_job_id_string_for_sample_id {
 
 ## Function : Create job id string from the job id chain and path associated with sample for SLURM submission using dependencies
 ## Returns  : $job_ids_string
-## Arguments: $case_id             => Family id
-##          : $case_id_chain_key   => Family ID chain hash key
+## Arguments: $case_id               => Case id
+##          : $case_id_chain_key     => Case id chain hash key
 ##          : $job_id_href           => The info on job ids hash {REF}
 ##          : $path                  => Trunk or branch
 ##          : $sample_id             => Sample id
@@ -1061,9 +1057,9 @@ sub create_job_id_string_for_sample_id {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
     my $case_id;
     my $case_id_chain_key;
+    my $job_id_href;
     my $path;
     my $sample_id;
     my $sample_id_chain_key;
@@ -1119,18 +1115,20 @@ sub create_job_id_string_for_sample_id {
         ## Add to job_id string
         $job_ids_string = add_to_job_id_dependency_string(
             {
-                job_id_href       => $job_id_href,
                 case_id_chain_key => $case_id_chain_key,
                 chain_key         => $sample_id_chain_key,
+                job_id_href       => $job_id_href,
             }
         );
     }
     elsif ( $path ne $path_main ) {
+
         ## NOT MAIN. Branch
         ## Check for any previous job_ids within path current PATH. Branch.
 
-        my $sample_id_chain_key_main = $sample_id . $UNDERSCORE . $path_main;
         my $case_id_chain_key_main   = $case_id . $UNDERSCORE . $path_main;
+        my $sample_id_chain_key_main = $sample_id . $UNDERSCORE . $path_main;
+
         ## For sample parallel MAIN jobs
         my $sample_id_parallel_chain_key_main;
 
@@ -1151,9 +1149,9 @@ sub create_job_id_string_for_sample_id {
             ## Add to job_id string
             $job_ids_string = add_to_job_id_dependency_string(
                 {
-                    job_id_href       => $job_id_href,
                     case_id_chain_key => $case_id_chain_key,
                     chain_key         => $sample_id_chain_key,
+                    job_id_href       => $job_id_href,
                 }
             );
         }
@@ -1164,9 +1162,9 @@ sub create_job_id_string_for_sample_id {
             ## Add to job_id string
             $job_ids_string = add_to_job_id_dependency_string(
                 {
-                    job_id_href       => $job_id_href,
                     case_id_chain_key => $case_id_chain_key_main,
                     chain_key         => $sample_id_chain_key_main,
+                    job_id_href       => $job_id_href,
                 }
             );
         }
@@ -1180,9 +1178,9 @@ sub create_job_id_string_for_sample_id {
             ## Add to job_id string
             $job_ids_string = add_to_job_id_dependency_string(
                 {
-                    job_id_href       => $job_id_href,
                     case_id_chain_key => $case_id_chain_key_main,
                     chain_key         => $sample_id_parallel_chain_key_main,
+                    job_id_href       => $job_id_href,
                 }
             );
         }
@@ -1192,70 +1190,67 @@ sub create_job_id_string_for_sample_id {
 
 sub create_job_id_string_for_case_id {
 
-##create_job_id_string_for_case_id
-
-##Function : Create job id string from the job id chain and path associated with case for SLURM submission using dependencies
-##Returns  : "$job_ids_string"
-##Arguments: $job_id_href, $infile_lane_prefix_href, $sample_ids_ref, $parallel_chains_ref, $case_id, $case_id_chain_key, $path
-##         : $job_id_href             => The info on job ids hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $sample_ids_ref          => Sample ids {REF}
-##         : $parallel_chains_ref     => Info on parallel chains array {REF}
-##         : $case_id               => Family id
-##         : $case_id_chain_key     => Family ID chain hash key
-##         : $path                    => Trunk or branch
+## Function : Create job id string from the job id chain and path associated with case for SLURM submission using dependencies
+## Returns  : $job_ids_string
+##          : $case_id                 => Case id
+##          : $case_id_chain_key       => Case id chain hash key
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => The info on job ids hash {REF}
+##          : $parallel_chains_ref     => Info on parallel chains array {REF}
+##          : $path                    => Trunk or branch
+##          : $sample_ids_ref          => Sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $job_id_href;
-    my $infile_lane_prefix_href;
-    my $sample_ids_ref;
-    my $parallel_chains_ref;
-    my $case_id_chain_key;
     my $case_id;
+    my $case_id_chain_key;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $parallel_chains_ref;
     my $path;
+    my $sample_ids_ref;
 
     my $tmpl = {
-        job_id_href => {
-            required    => 1,
+        case_id => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$case_id,
             strict_type => 1,
-            store       => \$job_id_href
+        },
+        case_id_chain_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$case_id_chain_key,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        sample_ids_ref => {
-            required    => 1,
             defined     => 1,
-            default     => [],
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$sample_ids_ref
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
         },
         parallel_chains_ref => {
             default     => [],
+            store       => \$parallel_chains_ref,
             strict_type => 1,
-            store       => \$parallel_chains_ref
         },
-        case_id => {
-            required    => 1,
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        sample_ids_ref => {
+            default     => [],
             defined     => 1,
-            strict_type => 1,
-            store       => \$case_id
-        },
-        case_id_chain_key => {
             required    => 1,
-            defined     => 1,
+            store       => \$sample_ids_ref,
             strict_type => 1,
-            store       => \$case_id_chain_key
         },
-        path => { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1265,28 +1260,29 @@ sub create_job_id_string_for_case_id {
 
     $job_ids_string = create_job_id_string_for_case_id_and_path(
         {
-            job_id_href             => $job_id_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            sample_ids_ref          => $sample_ids_ref,
             case_id                 => $case_id,
             case_id_chain_key       => $case_id_chain_key,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
             path                    => $path,
+            sample_ids_ref          => $sample_ids_ref,
         }
     );
 
     if ( $path ne $path_main && !$job_ids_string ) {
+
         ## No previous sample_id job_ids for other path
 
         my $case_id_chain_key_main = $case_id . $UNDERSCORE . $path_main;
 
         $job_ids_string = create_job_id_string_for_case_id_and_path(
             {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref          => $sample_ids_ref,
                 case_id                 => $case_id,
                 case_id_chain_key       => $case_id_chain_key_main,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
                 path                    => $path_main,
+                sample_ids_ref          => $sample_ids_ref,
             }
         );
     }
@@ -1294,10 +1290,10 @@ sub create_job_id_string_for_case_id {
 
         $job_ids_string .= add_parallel_chains_job_ids_to_job_id_dependency_string(
             {
-                job_id_href         => $job_id_href,
-                sample_ids_ref      => $sample_ids_ref,
-                parallel_chains_ref => $parallel_chains_ref,
                 case_id             => $case_id,
+                job_id_href         => $job_id_href,
+                parallel_chains_ref => $parallel_chains_ref,
+                sample_ids_ref      => $sample_ids_ref,
             }
         );
 
@@ -1315,8 +1311,8 @@ sub create_job_id_string_for_case_id_and_path {
 ##         : $job_id_href             => The info on job ids hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $sample_ids_ref          => Sample ids {REF}
-##         : $case_id               => Family id
-##         : $case_id_chain_key     => Family ID chain hash key
+##         : $case_id               => Case id
+##         : $case_id_chain_key     => Case id chain hash key
 ##         : $path                    => Trunk or branch
 
     my ($arg_href) = @_;
@@ -1409,7 +1405,7 @@ sub clear_sample_id_parallel_job_id_dependency_tree {
 ##Arguments: $job_id_href, $infile_lane_prefix_href, $case_id_chain_key, $sample_id, $path
 ##         : $job_id_href             => Info on jobIds hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $case_id_chain_key     => Family ID chain hash key
+##         : $case_id_chain_key     => Case id chain hash key
 ##         : $sample_id               => Sample ID
 ##         : $path                    => Trunk or branch
 
@@ -1475,7 +1471,7 @@ sub clear_pan_job_id_dependency_tree {
 ##Returns  : ""
 ##Arguments: $job_id_href, $case_id_chain_key, $sample_id_chain_key
 ##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Family ID chain hash key
+##         : $case_id_chain_key => Case id chain hash key
 ##         : $sample_id_chain_key => Sample ID chain hash key
 
     my ($arg_href) = @_;
@@ -1528,7 +1524,7 @@ sub clear_sample_id_job_id_dependency_tree {
 ##Returns  : ""
 ##Arguments: $job_id_href, $case_id_chain_key, $sample_id_chain_key
 ##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Family ID chain hash key
+##         : $case_id_chain_key => Case id chain hash key
 ##         : $sample_id_chain_key => Sample ID chain hash key
 
     my ($arg_href) = @_;
@@ -1576,7 +1572,7 @@ sub clear_case_id_job_id_dependency_tree {
 ##Returns  : ""
 ##Arguments: $job_id_href, $case_id_chain_key
 ##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Family ID chain hash key
+##         : $case_id_chain_key => Case id chain hash key
 
     my ($arg_href) = @_;
 
@@ -1616,7 +1612,7 @@ sub clear_all_job_ids_within_chain_key_dependency_tree {
 ##Returns  : ""
 ##Arguments: $job_id_href, $case_id_chain_key
 ##         : $job_id_href         => Info on jobIds hash {REF}
-##         : $case_id_chain_key => Family ID chain hash key
+##         : $case_id_chain_key => Case id chain hash key
 
     my ($arg_href) = @_;
 
@@ -1661,7 +1657,7 @@ sub limit_job_id_string {
 ##Returns  : ""
 ##Arguments: $job_id_href, $case_id_chain_key, $chain_key
 ##         : $job_id_href         => The info on job ids hash {REF}
-##         : $case_id_chain_key => Family ID chain hash key
+##         : $case_id_chain_key => Case id chain hash key
 ##         : $chain_key           => The current chain hash key
 
     my ($arg_href) = @_;
@@ -1772,7 +1768,7 @@ sub submit_recipe {
 
 ## Function : Submit recipe depending on submission profile
 ## Returns  :
-## Arguments: $case_id               => Family id
+## Arguments: $case_id               => Case id
 ##          : $dependency_method       => Dependency method
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_chain            => Chain id
