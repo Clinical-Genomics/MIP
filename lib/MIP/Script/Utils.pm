@@ -23,14 +23,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       create_temp_dir
       help
       nest_hash
-      print_install_defaults
       print_parameter_defaults
       update_program_versions
       write_script_version };
@@ -158,6 +157,7 @@ sub print_parameter_defaults {
     ## Default
     my $colored;
     my $index;
+    my $output;
     my $scalar_quotes;
 
     my $tmpl = {
@@ -171,6 +171,11 @@ sub print_parameter_defaults {
             allow       => [ undef, 0, 1 ],
             default     => 1,
             store       => \$index,
+            strict_type => 1,
+        },
+        output => {
+            default     => q{stderr},
+            store       => \$output,
             strict_type => 1,
         },
         parameter_href => {
@@ -199,6 +204,7 @@ sub print_parameter_defaults {
         colored       => $colored,
         index         => $index,
         scalar_quotes => $scalar_quotes,
+        output        => $output,
     );
 
     exit 0;
@@ -271,7 +277,10 @@ sub update_program_versions {
     my @programs = keys %{ $parameter_href->{program_versions} };
 
     ## Check if any versions needs to be updated
-    return if scalar @programs == 0;
+    if ( scalar @programs == 0 ) {
+        delete $parameter_href->{program_versions};
+        return;
+    }
 
   INSTALLATION:
     foreach my $installation ( @{ $parameter_href->{installations} } ) {
