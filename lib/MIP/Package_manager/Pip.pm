@@ -1,5 +1,6 @@
 package MIP::Package_manager::Pip;
 
+use 5.026;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -22,14 +23,94 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pip_install check_pip_package};
+    our @EXPORT_OK = qw{ check_pip_package pip_install };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
+
+sub check_pip_package {
+
+## Function : Check if the package has been installed via pip
+## Returns  : $status
+## Arguments: $conda_environment => Name of conda environment
+##          : $conda_prefix_path => Path to conda environment
+##          : $package           => Pip package to check
+##          : $version           => Optional version check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $conda_environment;
+    my $conda_prefix_path;
+    my $package;
+    my $version;
+
+    my $tmpl = {
+        conda_environment => {
+            store       => \$conda_environment,
+            strict_type => 1,
+        },
+        conda_prefix_path => {
+            store       => \$conda_prefix_path,
+            strict_type => 1,
+        },
+        package => {
+            defined     => 1,
+            required    => 1,
+            store       => \$package,
+            strict_type => 1,
+        },
+        version => {
+            store       => \$version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $check_pip_package_regexp = _build_package_check_regexp(
+        {
+            package => $package,
+            version => $version,
+        }
+    );
+
+    # Variable for storing pip package status
+    my $status;
+
+    # Shell command to launch
+    my $command;
+
+    # Check if the program is to be installed into a conda env
+    if ($conda_environment) {
+
+        # Check if the environemnt already exists
+        if ( $conda_prefix_path and -d $conda_prefix_path ) {
+
+            # Test if the program already exists in that environment
+            $command =
+qq{conda list -n $conda_environment | grep 'pip' | $check_pip_package_regexp};
+            run(
+                command => $command,
+                buffer  => \$status
+            );
+        }
+        return $status;
+    }
+
+    # Test if the program is already installed in the root env
+    $command = qq{pip list --format columns | $check_pip_package_regexp};
+    run(
+        command => $command,
+        buffer  => \$status
+    );
+
+    return $status;
+}
 
 sub pip_install {
 
@@ -111,6 +192,7 @@ sub pip_install {
 
     ## Prepend 'python -m' to base command
     if ($python_module) {
+
         push @commands, join $SPACE, python_core( { module_mode => 1, } );
     }
 
@@ -118,20 +200,25 @@ sub pip_install {
     push @commands, q{pip install};
 
     if ($quiet) {
+
         push @commands, q{--quiet};
     }
 
     if ($verbose) {
+
         push @commands, q{--verbose};
     }
 
     if ($requirement) {
+
         push @commands, q{--requirement} . $SPACE . $requirement;
     }
     elsif ($editable) {
+
         push @commands, q{--editable} . $SPACE . $editable;
     }
     else {
+
         push @commands, join $SPACE, @{$packages_ref};
     }
 
@@ -155,86 +242,6 @@ sub pip_install {
     return @commands;
 }
 
-sub check_pip_package {
-
-## Function : Check if the package has been installed via pip
-## Returns  : $status
-## Arguments: $package           => Pip package to check
-##          : $version           => Optional version check
-##          : $conda_environment => Name of conda environment
-##          : $conda_prefix_path => Path to conda environment
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $package;
-    my $version;
-    my $conda_environment;
-    my $conda_prefix_path;
-
-    my $tmpl = {
-        package => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$package,
-        },
-        version => {
-            strict_type => 1,
-            store       => \$version,
-        },
-        conda_environment => {
-            strict_type => 1,
-            store       => \$conda_environment,
-        },
-        conda_prefix_path => {
-            strict_type => 1,
-            store       => \$conda_prefix_path,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $check_pip_package_regexp = _build_package_check_regexp(
-        {
-            package => $package,
-            version => $version,
-        }
-    );
-
-    # Variable for storing pip package status
-    my $status;
-
-    # Shell command to launch
-    my $command;
-
-    # Check if the program is to be installed into a conda env
-    if ($conda_environment) {
-
-        # Check if the environemnt already exists
-        if ( -d $conda_prefix_path ) {
-
-            # Test if the program already exists in that environment
-            $command =
-qq{conda list -n $conda_environment | grep 'pip' | $check_pip_package_regexp};
-            run(
-                command => $command,
-                buffer  => \$status
-            );
-        }
-    }
-    else {
-        #Test if the program is already installed in the root env
-        $command = qq{pip list --format columns | $check_pip_package_regexp};
-        run(
-            command => $command,
-            buffer  => \$status
-        );
-    }
-
-    return $status;
-}
-
 sub _build_package_check_regexp {
 
 ## Function : Build regexp for package check
@@ -250,14 +257,14 @@ sub _build_package_check_regexp {
 
     my $tmpl = {
         package => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$package,
+            strict_type => 1,
         },
         version => {
-            strict_type => 1,
             store       => \$version,
+            strict_type => 1,
         },
     };
 
@@ -266,6 +273,7 @@ sub _build_package_check_regexp {
     my $check_pip_package_regexp;
 
     if ($version) {
+
         $check_pip_package_regexp =
 
           # Execute perl, loop over input and split on whitespace
@@ -278,6 +286,7 @@ sub _build_package_check_regexp {
           . q?{print 1}'?;
     }
     else {
+
         $check_pip_package_regexp =
 
           # Execute perl, loop over input and split on whitespace
