@@ -1,14 +1,12 @@
-package MIP::Recipes::Analysis::Rseqc;
+package MIP::Recipes::Analysis::Genebody_coverage;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename fileparse };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use POSIX qw{ floor };
 use strict;
 use utf8;
 use warnings;
@@ -24,32 +22,31 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_rseqc };
+    our @EXPORT_OK = qw{ analysis_genebody_coverage };
 
 }
 
 ## Constants
+Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
 
-sub analysis_rseqc {
+sub analysis_genebody_coverage {
 
-## Function : Rseqc analysis for RNA-seq
+## Function : Recipe for calculating genebody coverage using RSeQC
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
-##          : $file_info_href          => File info hash {REF}
+##          : $case_id                 => Family id
+##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Recipe name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
-##          : $temp_directory          => Temporary directory
-##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
@@ -65,8 +62,6 @@ sub analysis_rseqc {
 
     ## Default(s)
     my $case_id;
-    my $temp_directory;
-    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
@@ -76,7 +71,7 @@ sub analysis_rseqc {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        case_id_ref => {
+        case_id => {
             default     => $arg_href->{active_parameter_href}{case_id},
             store       => \$case_id,
             strict_type => 1,
@@ -128,58 +123,49 @@ sub analysis_rseqc {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            store       => \$temp_directory,
-            strict_type => 1,
-        },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr{ ^\d+$ }xsm,
-            strict_type => 1,
-            store       => \$xargs_file_counter,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Gnu::Coreutils qw{ gnu_cp gnu_rm };
+    use MIP::Program::Qc::Rseqc qw{ rseqc_bam2wig rseqc_genebody_coverage2 };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Qc::Rseqc
-      qw{ rseqc_bam_stat rseqc_infer_experiment rseqc_inner_distance rseqc_junction_annotation rseqc_junction_saturation rseqc_read_distribution rseqc_read_duplication };
+    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ### PREPROCESSING
+    ### PREPROCESSING:
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
-            file_info_href => $file_info_href,
             id             => $sample_id,
+            file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
-    my $infile_path_prefix   = $io{in}{file_path_prefix};
-    my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my $infile_suffix        = $io{in}{file_suffix};
-    my $infile_path          = $infile_path_prefix . $infile_suffix;
-    my $recipe_mode          = $active_parameter_href->{$recipe_name};
-    my $bed_file_path        = $active_parameter_href->{rseqc_transcripts_file};
-    my $job_id_chain         = get_recipe_attributes(
+
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
+
+    my $job_id_chain = get_recipe_attributes(
         {
-            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
+            attribute      => q{chain},
         }
     );
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
     my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
@@ -187,7 +173,6 @@ sub analysis_rseqc {
         }
     );
 
-    ## Set and get the io files per chain, id and stream
     %io = (
         %io,
         parse_io_outfiles(
@@ -195,16 +180,16 @@ sub analysis_rseqc {
                 chain_id               => $job_id_chain,
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
-                file_name_prefixes_ref => \@infile_name_prefixes,
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
-                temp_directory         => $temp_directory,
             }
         )
     );
+
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -223,108 +208,86 @@ sub analysis_rseqc {
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
-            temp_directory                  => $temp_directory,
         }
     );
 
-    ## SHELL
+    ### SHELL:
 
-    ## Rseq
-    say {$FILEHANDLE} q{## Rseq infer_experiment.py};
-    rseqc_infer_experiment(
+    say {$FILEHANDLE} q{## } . $recipe_name;
+
+    ## Rename .bai to .bam.bai
+    say {$FILEHANDLE} q{## Rename .bai to .bam.bai};
+    gnu_cp(
         {
-            bed_file_path   => $bed_file_path,
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $infile_path,
-            stdoutfile_path => $outfile_path_prefix
-              . $UNDERSCORE
-              . q{infer_experiment}
-              . $outfile_suffix,
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => $infile_path_prefix . $DOT . q{bai},
+            outfile_path => $infile_path_prefix . $infile_suffix . $DOT . q{bai},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Rseq junction_annotation.py};
-    rseqc_junction_annotation(
+    ## Convert bam to bigwig
+    say {$FILEHANDLE} q{## Convert bam to bigwig};
+    my $chrom_size_file_path = catfile(
+        $active_parameter_href->{star_aln_reference_genome}
+          . $file_info_href->{star_aln_reference_genome}[0],
+        q{chrNameLength.txt}
+    );
+    rseqc_bam2wig(
         {
-            bed_file_path        => $bed_file_path,
+            chrom_size_file_path => $chrom_size_file_path,
             FILEHANDLE           => $FILEHANDLE,
             infile_path          => $infile_path,
-            outfiles_path_prefix => $outfile_path_prefix
-              . $UNDERSCORE
-              . q{junction_annotation},
+            outfile_path_prefix  => $outfile_path_prefix,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Rseq junction_saturation.py};
-    rseqc_junction_saturation(
+    ## Calculate genebody coverage
+    say {$FILEHANDLE} q{## Calculate genebody coverage};
+    my $bigwig_infile_path = $outfile_path_prefix . $DOT . q{bw};
+    rseqc_genebody_coverage2(
         {
-            bed_file_path        => $bed_file_path,
-            FILEHANDLE           => $FILEHANDLE,
-            infile_path          => $infile_path,
-            outfiles_path_prefix => $outfile_path_prefix
-              . $UNDERSCORE
-              . q{junction_saturation},
+            bed_file_path       => $active_parameter_href->{rseqc_transcripts_file},
+            FILEHANDLE          => $FILEHANDLE,
+            infile_path         => $bigwig_infile_path,
+            outfile_path_prefix => $outfile_path_prefix,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Rseq inner_distance.py};
-    rseqc_inner_distance(
-        {
-            bed_file_path        => $bed_file_path,
-            FILEHANDLE           => $FILEHANDLE,
-            infile_path          => $infile_path,
-            outfiles_path_prefix => $outfile_path_prefix
-              . $UNDERSCORE
-              . q{inner_distance},
-        }
+    ## Cleanup
+    say {$FILEHANDLE} q{## Cleanup};
+    my @temp_files = (
+        $infile_path_prefix . $infile_suffix . $DOT . q{bai},
+        $outfile_path_prefix . $DOT . q{wig}
     );
-    say {$FILEHANDLE} $NEWLINE;
+  TEMP_FILE:
+    foreach my $temp_file (@temp_files) {
+        gnu_rm(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $temp_file,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
 
-    say {$FILEHANDLE} q{## Rseq bam_stat.py};
-    rseqc_bam_stat(
-        {
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $infile_path,
-            stdoutfile_path => $outfile_path_prefix
-              . $UNDERSCORE
-              . q{bam_stat}
-              . $outfile_suffix,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    say {$FILEHANDLE} q{## Rseq read_distribution.py};
-    rseqc_read_distribution(
-        {
-            bed_file_path   => $bed_file_path,
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $infile_path,
-            stdoutfile_path => $outfile_path_prefix
-              . $UNDERSCORE
-              . q{read_distribution}
-              . $outfile_suffix,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    say {$FILEHANDLE} q{## Rseqc read_duplication};
-    rseqc_read_duplication(
-        {
-            FILEHANDLE           => $FILEHANDLE,
-            infile_path          => $infile_path,
-            outfiles_path_prefix => $outfile_path_prefix
-              . $UNDERSCORE
-              . q{read_duplication},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    close $FILEHANDLE;
+    ## Close FILEHANDLES
+    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
     if ( $recipe_mode == 1 ) {
+
+        ## Collect QC metadata info for later use
+        add_recipe_outfile_to_sample_info(
+            {
+                infile           => $outfile_name_prefix,
+                path             => $outfile_path_prefix,
+                recipe_name      => $recipe_name,
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
 
         submit_recipe(
             {

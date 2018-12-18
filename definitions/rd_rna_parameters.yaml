@@ -45,6 +45,7 @@ transcript_annotation:
 library_type:
   associated_recipe:
     - stringtie_ar
+    - genebody_coverage
   data_type: SCALAR
   default: reverse_stranded
   type: recipe_argument
@@ -105,6 +106,7 @@ recipe_time:
     gatk_haplotypecaller: 2
     gatk_splitncigarreads: 5
     gatk_variantfiltration: 1
+    genebody_coverage: 3
     gffcompare_ar: 1
     gzip_fastq: 2
     markduplicates: 2
@@ -130,6 +132,7 @@ recipe_core_number:
     gatk_haplotypecaller: 16
     gatk_splitncigarreads: 16
     gatk_variantfiltration: 1
+    genebody_coverage: 2
     gffcompare_ar: 1
     gzip_fastq: 0
     multiqc_ar: 1
@@ -266,6 +269,7 @@ chim_segment_min:
 star_aln_reference_genome:
   associated_recipe:
    - star_aln
+   - genebody_coverage
   build_file: 1
   data_type: SCALAR
   exists_check: directory
@@ -465,12 +469,26 @@ rseqc:
   type: recipe
 rseqc_transcripts_file:
   associated_recipe:
+   - genebody_coverage
    - rseqc
   data_type: SCALAR
   default: GRCh37_gencode_-v28-.bed
   exists_check: file
   reference: reference_dir
   type: path
+genebody_coverage:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _genecov
+  program_executables:
+    - bam2wig.py
+    - wigToBigWig
+    - geneBody_coverage2.py
+  outfile_suffix: ".txt"
+  type: recipe
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample
