@@ -87,7 +87,7 @@ sub rseqc_bam2wig {
             strict_type => 1,
         },
         strand => {
-            allow       => [ '1++,1--,2+-,2-+', '1+-,1-+,2++,2--', '++,--', '+-,-+' ],
+            allow       => [ q{1++,1--,2+-,2-+}, q{1+-,1-+,2++,2--}, q{++,--}, q{+-,-+} ],
             store       => \$strand,
             strict_type => 1,
         },
@@ -230,7 +230,7 @@ sub rseqc_bam_stat {
 
 sub rseqc_genebody_coverage2 {
 
-## Function : Perl wrapper for rseqc bam2wig.py. Version 3.0.0.
+## Function : Perl wrapper for rseqc geneBody_coverage.py. Version 3.0.0.
 ## Returns  : @commands
 ## Arguments: $bed_file_path          => Reference gene model
 ##          : $FILEHANDLE             => Filehandle to write to

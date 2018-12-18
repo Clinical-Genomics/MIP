@@ -258,20 +258,20 @@ sub analysis_genebody_coverage {
 
     ## Cleanup
     say {$FILEHANDLE} q{## Cleanup};
-    gnu_rm(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $infile_path_prefix . $infile_suffix . $DOT . q{bai},
-        }
+    my @temp_files = (
+        $infile_path_prefix . $infile_suffix . $DOT . q{bai},
+        $outfile_path_prefix . $DOT . q{wig}
     );
-    say {$FILEHANDLE} $NEWLINE;
-    gnu_rm(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_path_prefix . $DOT . q{wig},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+  TEMP_FILE:
+    foreach my $temp_file (@temp_files) {
+        gnu_rm(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $temp_file,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
@@ -289,7 +289,6 @@ sub analysis_genebody_coverage {
             }
         );
 
-        ## MODIY THE "dependency_metod" TO HOW YOU WANT SLURM TO PROCESSES UPSTREAM AND DOWNSTREAM DEPENDENCIES
         submit_recipe(
             {
                 dependency_method       => q{sample_to_island},
