@@ -227,6 +227,7 @@ sub get_dynamic_conda_path {
 ## Returns  : Path to directory
 ## Arguments: $active_parameters_href => Active parameter hash {REF}
 ##          : $bin_file               => Bin file to test
+##          : $conda_bin_file         => Conda bin file name
 ##          : $environment_key        => Key to conda environment
 
     my ($arg_href) = @_;
@@ -234,6 +235,7 @@ sub get_dynamic_conda_path {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $bin_file;
+    my $conda_bin_file;
     my $environment_key;
 
     my $tmpl = {
@@ -247,6 +249,10 @@ sub get_dynamic_conda_path {
             required => 1,
             store    => \$bin_file,
         },
+        conda_bin_file => {
+            default => q{conda},
+            store   => \$conda_bin_file,
+        },
         environment_key => {
             store => \$environment_key,
         },
@@ -257,7 +263,8 @@ sub get_dynamic_conda_path {
     ## Establish path to conda
     if ( not $active_parameter_href->{conda_path} ) {
 
-        $active_parameter_href->{conda_path} = get_conda_path( {} );
+        $active_parameter_href->{conda_path} =
+          get_conda_path( { bin_file => $conda_bin_file, } );
     }
     if (   not $active_parameter_href->{conda_path}
         or not -d $active_parameter_href->{conda_path} )

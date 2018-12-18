@@ -72,6 +72,7 @@ my $ret = get_dynamic_conda_path(
     {
         active_parameter_href => \%active_parameter,
         bin_file              => $binary,
+        conda_bin_file        => q{not_a_conda_bin},
         environment_key       => $recipe_name,
     }
 );
