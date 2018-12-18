@@ -142,7 +142,8 @@ epy3:
     expansionhunter:
       conda_dependency:
       version: 2.5.5
-    sambamba: 0.6.1
+    sambamba: 
+      version: 0.6.1
 
 ## Tiddit env spec
 etiddit:
