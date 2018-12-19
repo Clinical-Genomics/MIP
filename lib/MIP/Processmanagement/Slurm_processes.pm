@@ -49,6 +49,7 @@ BEGIN {
 ## Constants
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $SINGLE_QUOTE => q{'};
+Readonly my $SPACE        => q{ };
 Readonly my $UNDERSCORE   => q{_};
 
 sub slurm_submit_job_no_dependency_dead_end {
@@ -123,7 +124,8 @@ sub slurm_submit_job_no_dependency_add_to_sample {
 
 ## Function : Submit jobs that has no prior job dependencies but leave sample dependencies using SLURM
 ## Returns  :
-## Arguments: $case_id        => Family id
+## Arguments: $base_command     => Sbatch
+##          : $case_id          => Case id
 ##          : $job_id_href      => The info on job ids hash {REF}
 ##          : $log              => Log
 ##          : $path             => Trunk or branch
@@ -140,7 +142,15 @@ sub slurm_submit_job_no_dependency_add_to_sample {
     my $sample_id;
     my $sbatch_file_name;
 
+    ## Default(s)
+    my $base_command;
+
     my $tmpl = {
+        base_command => {
+            default     => q{sbatch},
+            store       => \$base_command,
+            strict_type => 1,
+        },
         case_id => {
             defined     => 1,
             required    => 1,
@@ -191,6 +201,7 @@ sub slurm_submit_job_no_dependency_add_to_sample {
     ## Submit jobs to sbatch
     $job_id_returned = submit_jobs_to_sbatch(
         {
+            base_command     => $base_command,
             log              => $log,
             sbatch_file_name => $sbatch_file_name,
         }
@@ -227,7 +238,8 @@ sub slurm_submit_job_no_dependency_add_to_samples {
 
 ## Function : Submit jobs that has no prior job dependencies and adds to samples dependencies using SLURM. Not dependent on earlier scripts and adds to sample_id jobs, but sbatch is processed at case level i.e. affects all sample_id jobs e.g. building a reference.
 ## Returns  :
-## Arguments: $case_id        => Family id
+## Arguments: $base_command     => Sbatch
+##          : $case_id          => Case id
 ##          : $job_id_href      => Info on job id dependencies hash {REF}
 ##          : $log              => Log
 ##          : $path             => Trunk or branch
@@ -244,7 +256,15 @@ sub slurm_submit_job_no_dependency_add_to_samples {
     my $sample_ids_ref;
     my $sbatch_file_name;
 
+    ## Default(s)
+    my $base_command;
+
     my $tmpl = {
+        base_command => {
+            default     => q{sbatch},
+            store       => \$base_command,
+            strict_type => 1,
+        },
         case_id => {
             defined     => 1,
             required    => 1,
@@ -292,6 +312,7 @@ sub slurm_submit_job_no_dependency_add_to_samples {
     ## Submit jobs to sbatch
     $job_id_returned = submit_jobs_to_sbatch(
         {
+            base_command     => $base_command,
             log              => $log,
             sbatch_file_name => $sbatch_file_name,
         }
@@ -338,7 +359,7 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
 
 ## Function : Submit jobs that has sample_id dependencies and leave no dependencies using SLURM
 ## Returns  :
-## Arguments: $case_id               => Family id
+## Arguments: $case_id                 => Case id
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => The info on job ids hash {REF}
 ##          : $job_dependency_type     => SLURM job dependency type
@@ -537,7 +558,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_sample {
 
 ## Function : Submit jobs that has sample_id dependencies and adds to sample dependencies using SLURM
 ## Returns  :
-## Arguments: $case_id               => Family id
+## Arguments: $case_id                 => Case id
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_dependency_type     => SLURM job dependency type
 ##          : $job_id_href             => The info on job ids hash {REF}
@@ -747,7 +768,7 @@ sub slurm_submit_job_sample_id_dependency_add_to_case {
 
 ## Function : Submit jobs that has sample_id dependencies and adds to case dependencies using SLURM
 ## Returns  :
-## Arguments: $case_id               => Family id
+## Arguments: $case_id                 => Case id
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_dependency_type     => SLURM job dependency type
 ##          : $job_id_href             => The info on job ids hash {REF}
@@ -937,7 +958,7 @@ sub slurm_submit_job_sample_id_dependency_case_dead_end {
 
 ## Function : Submit jobs that has sample_id dependencies and leave no dependencies using SLURM
 ## Returns  :
-## Arguments: $case_id               => Family id
+## Arguments: $case_id                 => Case id
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_dependency_type     => SLURM job dependency type
 ##          : $job_id_href             => The info on job ids hash {REF}
@@ -1118,7 +1139,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel_to_case {
 
 ## Function : Submit jobs that has sample_id dependencies and adds to case parallel dependencies using SLURM
 ## Returns  :
-## Arguments: $case_id               => Family id
+## Arguments: $case_id                 => Case id
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_dependency_type     => SLURM job dependency type
 ##          : $job_id_href             => The info on job ids hash {REF}
@@ -1297,7 +1318,7 @@ sub slurm_submit_job_sample_id_dependency_step_in_parallel {
 
 ## Function : Submit jobs that has sample_id dependencies and are processed in parallel dependencies using SLURM
 ## Returns  :
-## Arguments: $case_id               => Family id
+## Arguments: $case_id                 => Case id
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_dependency_type     => SLURM job dependency type
 ##          : $job_id_href             => The info on job ids hash {REF}
@@ -1512,7 +1533,7 @@ sub slurm_submit_job_case_id_dependency_dead_end {
 
 ## Function : Submit jobs that has case dependencies and leave no dependencies using SLURM
 ## Returns  :
-## Arguments: $case_id               => Family id
+## Arguments: $case_id                 => Case id
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_dependency_type     => SLURM job dependency type
 ##          : $job_id_href             => The info on job ids hash {REF}
@@ -1766,8 +1787,9 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
 sub submit_jobs_to_sbatch {
 
 ## Function : Sumit jobs to sbatch using dependencies
-## Returns  : Submitted $job_id
-## Arguments: $job_dependency_type => Job dependency type
+## Returns  : $job_id
+## Arguments: $base_command        => Sbatch
+##          : $job_dependency_type => Job dependency type
 ##          : $job_ids_string      => Job ids string
 ##          : $log                 => Log
 ##          : $sbatch_file_name    => Sbatch file to submit
@@ -1780,7 +1802,15 @@ sub submit_jobs_to_sbatch {
     my $log;
     my $sbatch_file_name;
 
+    ## Default(s)
+    my $base_command;
+
     my $tmpl = {
+        base_command => {
+            default     => q{sbatch},
+            store       => \$base_command,
+            strict_type => 1,
+        },
         job_dependency_type => { store => \$job_dependency_type, strict_type => 1, },
         job_ids_string      => { store => \$job_ids_string,      strict_type => 1, },
         log                 => {
@@ -1798,14 +1828,13 @@ sub submit_jobs_to_sbatch {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $job_id;
-
-    use IPC::Cmd qw{run};
     use MIP::Workloadmanager::Slurm qw{slurm_sbatch};
+    use MIP::Unix::System qw{ system_cmd_call };
 
     ## Supply with potential dependency of previous jobs that this one is dependent on
     my @commands = slurm_sbatch(
         {
+            base_command    => $base_command,
             dependency_type => $job_dependency_type,
             infile_path     => $sbatch_file_name,
             job_ids_string  => $job_ids_string,
@@ -1813,29 +1842,20 @@ sub submit_jobs_to_sbatch {
     );
 
     # Submit job process
-    my (
-        $full_buf_ref,   $error_message_ref, $stderr_buf_ref,
-        $stdout_buf_ref, $success_ref,
-      )
-      = run(
-        command => \@commands,
-        verbose => 0
-      );
+    my %return = system_cmd_call( { command_string => join $SPACE, @commands, } );
 
-    # Just submitted job_id
-    if (   $stdout_buf_ref->[0]
-        && $stdout_buf_ref->[0] =~ /Submitted\s+batch\s+job\s+(\d+)/sxm )
-    {
+    my $err_msg =
+      $log->fatal( @{ $return{error} } ) . $log->fatal( q{Aborting run} . $NEWLINE );
 
-        $job_id = $1;
-    }
-    else {
-        # Catch errors since, proper sbatch submission should only return numbers
+    # Sbatch should return message and job id in stdout
+    croak($err_msg) if ( not $return{output}[0] );
 
-        $log->fatal( @{$stderr_buf_ref} );
-        $log->fatal( q{Aborting run} . $NEWLINE );
-        exit 1;
-    }
+    # Capture job id for submitted scripts
+    my ($job_id) = $return{output}[0] =~ /Submitted \s+ batch \s+ job \s+ (\d+)/sxm;
+
+    # Sbatch should return message and job id in stdout
+    croak($err_msg) if ( not defined $job_id );
+
     return $job_id;
 }
 
@@ -1891,8 +1911,9 @@ sub submit_slurm_recipe {
 
 ## Function : Submit SLURM recipe
 ## Returns  :
-## Arguments: $dependency_method       => Dependency method
-##          : $case_id               => Family id
+## Arguments: $base_command            => Sbatch
+##          : $case_id                 => Case id
+##          : $dependency_method       => Dependency method
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_dependency_type     => SLURM job dependency type
 ##          : $job_id_chain            => Chain id
@@ -1921,7 +1942,19 @@ sub submit_slurm_recipe {
     my $recipe_file_path;
     my $recipe_files_tracker;
 
+    ## Default(s)
+    my $base_command;
+
     my $tmpl = {
+        base_command => {
+            default     => q{sbatch},
+            store       => \$base_command,
+            strict_type => 1,
+        },
+        case_id => {
+            store       => \$case_id,
+            strict_type => 1,
+        },
         dependency_method => {
             allow => [
                 qw{ add_to_all case_to_island island island_to_sample island_to_samples sample_to_case sample_to_case_parallel sample_to_island sample_to_sample sample_to_sample_parallel }
@@ -1929,10 +1962,6 @@ sub submit_slurm_recipe {
             defined     => 1,
             required    => 1,
             store       => \$dependency_method,
-            strict_type => 1,
-        },
-        case_id => {
-            store       => \$case_id,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -2034,6 +2063,7 @@ sub submit_slurm_recipe {
 
         slurm_submit_job_no_dependency_add_to_sample(
             {
+                base_command     => $base_command,
                 case_id          => $case_id,
                 job_id_href      => $job_id_href,
                 log              => $log,
@@ -2048,6 +2078,7 @@ sub submit_slurm_recipe {
 
         slurm_submit_job_no_dependency_add_to_samples(
             {
+                base_command     => $base_command,
                 case_id          => $case_id,
                 job_id_href      => $job_id_href,
                 log              => $log,

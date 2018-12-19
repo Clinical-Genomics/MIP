@@ -92,7 +92,7 @@ Readonly my $SPACE   => q{ };
 
 my $config_file = catfile( dirname($Bin), qw(templates mip_rd_dna_config.yaml) );
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 ###User Options
 GetOptions(
@@ -306,7 +306,7 @@ sub mip_scripts {
             qw{ mip_install.test mip_analyse_rd_dna.test mip_analyse_rd_rna.test mip_analyse_rd_dna_vcf_rerun.test mip_core.t mip_analysis.test }
         ],
         templates => [
-            qw{ 643594-miptest_pedigree.yaml aggregated_master.txt mip_rd_dna_config.yaml mip_log.yaml mip_rd_rna_config.yaml mip_rd_dna_vcf_rerun_config.yaml qc_regexp_-v1.17-.yaml rank_model_cmms_-v1.21-.ini svrank_model_cmms_-v1.3-.ini }
+            qw{ 643594-miptest_pedigree.yaml aggregated_master.txt mip_rd_dna_config.yaml mip_log.yaml mip_rd_rna_config.yaml mip_rd_dna_vcf_rerun_config.yaml qc_regexp_-v1.17-.yaml rank_model_cmms_-v1.21-.ini svrank_model_cmms_-v1.4-.ini }
         ],
     );
 
