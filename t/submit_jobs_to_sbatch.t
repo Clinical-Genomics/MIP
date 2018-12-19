@@ -119,10 +119,5 @@ trap {
 
 ## Then exit and throw FATAL log message
 is( $trap->leaveby, q{die}, q{Exit if faulty sbatch script} );
-like(
-    $trap->stderr,
-    qr/Aborting \s+ run/xms,
-    q{Throw fatal log message if faulty sbatch script}
-);
 
 done_testing();

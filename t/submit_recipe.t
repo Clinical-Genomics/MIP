@@ -112,10 +112,5 @@ trap {
 
 ## Then
 is( $trap->leaveby, q(die), q{Exit if no SLURM or faulty project id} );
-like(
-    $trap->stderr,
-    qr/Aborting \s+ run/xms,
-    q{Throw fatal log message if no SLURM or faulty project id}
-);
 
 done_testing();
