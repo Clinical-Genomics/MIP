@@ -37,6 +37,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 **New recipes**
 *Rd_dna*
+- cadd_ar
 - sv_annotate
 
 *rd_dna_vcf_rerun*
@@ -46,6 +47,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **Annotations**
 - genomic_superdups_frac_match
 - REVEL_rankscore
+- CADD for indels
 
 **References**
 - clinvar: 20180429 -> 20181028
@@ -53,6 +55,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - GRCh37_gatk_merged_reference_samples.txt
 - GRCh37_mip_sv_svdb_export_-2018-10-09-.vcf
 - VEPs cache: 91 -> 94
+- GRCh37_loqusdb_-2017-05-22-.vcf.gz -> GRCh37_loqusdb_snv_indel_-2018-12-18-.vcf.gz
 
 **Tools**
 - bcftools: 1.6 -> 1.9-h4da6232_0
