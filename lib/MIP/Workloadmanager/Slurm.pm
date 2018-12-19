@@ -1,5 +1,6 @@
 package MIP::Workloadmanager::Slurm;
 
+use 5.026;
 use Carp;
 use charnames qw( :full :short );
 use FindBin qw($Bin);
@@ -27,7 +28,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -197,8 +198,9 @@ q?if ($. >= 3 && $F[0] !~ /( .batch | .bat+ )\b/xms) { print join(qq{\t}, @F), q
 sub slurm_sbatch {
 
 ## Function : Perl wrapper for writing SLURM sbatch recipe to already open $FILEHANDLE or return commands array. Based on SLURM sbatch 2.6.0.
-## Returns  : "@commands"
-## Arguments: $dependency_type        => Type of slurm job dependency
+## Returns  : @commands
+## Arguments: $base_command           => Sbatch or slurm-mock (for tests)
+##          : $dependency_type        => Type of slurm job dependency
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile_path
 ##          : $job_ids_string         => Slurm job ids string (:job_id:job_id...n)
@@ -217,9 +219,15 @@ sub slurm_sbatch {
     my $stdoutfile_path;
 
     ## Default(s)
+    my $base_command;
     my $stderrfile_path_append;
 
     my $tmpl = {
+        base_command => {
+            default     => q{sbatch},
+            store       => \$base_command,
+            strict_type => 1,
+        },
         dependency_type => {
             store       => \$dependency_type,
             strict_type => 1,
@@ -253,8 +261,8 @@ sub slurm_sbatch {
 
     ## sbatch
 
-    #Stores commands depending on input parameters
-    my @commands = q{sbatch};
+    # Stores commands depending on input parameters
+    my @commands = $base_command;
 
     ## Options
     if ( ($dependency_type) && ($job_ids_string) ) {

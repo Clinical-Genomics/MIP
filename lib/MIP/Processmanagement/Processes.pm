@@ -1714,7 +1714,8 @@ sub submit_recipe {
 
 ## Function : Submit recipe depending on submission profile
 ## Returns  :
-## Arguments: $case_id                 => Case id
+## Arguments: $base_command            => Profile base command
+##          : $case_id                 => Case id
 ##          : $dependency_method       => Dependency method
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_chain            => Chain id
@@ -1745,9 +1746,15 @@ sub submit_recipe {
     my $recipe_files_tracker;
 
     ## Default(s)
+    my $base_command;
     my $submission_profile;
 
     my $tmpl = {
+        base_command => {
+            default     => q{sbatch},
+            store       => \$base_command,
+            strict_type => 1,
+        },
         case_id => {
             store       => \$case_id,
             strict_type => 1,
@@ -1820,6 +1827,7 @@ sub submit_recipe {
 
     $is_manager{$submission_profile}->(
         {
+            base_command            => $base_command,
             case_id                 => $case_id,
             dependency_method       => $dependency_method,
             infile_lane_prefix_href => $infile_lane_prefix_href,
@@ -1835,7 +1843,7 @@ sub submit_recipe {
 
         }
     );
-    return;
+    return 1;
 }
 
 1;
