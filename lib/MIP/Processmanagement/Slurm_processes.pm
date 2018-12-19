@@ -1844,17 +1844,30 @@ sub submit_jobs_to_sbatch {
     # Submit job process
     my %return = system_cmd_call( { command_string => join $SPACE, @commands, } );
 
-    my $err_msg =
-      $log->fatal( @{ $return{error} } ) . $log->fatal( q{Aborting run} . $NEWLINE );
-
     # Sbatch should return message and job id in stdout
-    croak($err_msg) if ( not $return{output}[0] );
+    if ( not $return{output}[0] ) {
+
+        _submission_error(
+            {
+                log         => $log,
+                stderr_refs => $return{error},
+            }
+        );
+    }
 
     # Capture job id for submitted scripts
     my ($job_id) = $return{output}[0] =~ /Submitted \s+ batch \s+ job \s+ (\d+)/sxm;
 
     # Sbatch should return message and job id in stdout
-    croak($err_msg) if ( not defined $job_id );
+    if ( not $job_id ) {
+
+        _submission_error(
+            {
+                log         => $log,
+                stderr_refs => $return{error},
+            }
+        );
+    }
 
     return $job_id;
 }
@@ -2168,6 +2181,39 @@ sub submit_slurm_recipe {
         return;
     }
     return;
+}
+
+sub _submission_error {
+
+## Function : Croak with error message if error in sbatch submission
+## Returns  :
+## Arguments: $log         => Log
+##          : $stderr_refs => Stderr buffer
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $stderr_refs;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        stderr_refs => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$stderr_refs,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    croak( $log->fatal( @{$stderr_refs} ) . $log->fatal( q{Aborting run} . $NEWLINE ) );
 }
 
 1;

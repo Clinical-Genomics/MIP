@@ -34,8 +34,9 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+Readonly my $COMMA     => q{,};
+Readonly my $EMPTY_STR => q{};
+Readonly my $SPACE     => q{ };
 
 BEGIN {
 
@@ -82,6 +83,30 @@ my $job_id_returned = submit_jobs_to_sbatch(
 my $expected_job_id = q{1234};
 is( $job_id_returned, $expected_job_id, q{Returned expected job id} );
 
+## Given a non integer return
+my $slurm_mock_cmd_no_job_id =
+  catfile( $Bin, qw{ data modules slurm-mock.pl } ) . q{ --no_job_id};
+
+trap {
+    submit_jobs_to_sbatch(
+        {
+            base_command     => $slurm_mock_cmd_no_job_id,
+            log              => $log,
+            sbatch_file_name => $sbatch_file_name,
+        }
+      )
+};
+## Required to make trap work - there must be something wrong with variables being stored in the trap object and not flushed between trappings
+say {*STDOUT} $EMPTY_STR;
+
+## Then exit and throw FATAL log message
+is( $trap->leaveby, q{die}, q{Exit if sbatch returned not a number} );
+like(
+    $trap->stderr,
+    qr/Aborting \s+ run/xms,
+    q{Throw fatal log message if sbatch returned not a number}
+);
+
 ## Given a faulty sbatch script
 trap {
     submit_jobs_to_sbatch(
@@ -93,11 +118,11 @@ trap {
 };
 
 ## Then exit and throw FATAL log message
-is( $trap->leaveby, q{die}, q{Exit if sbatch returned not a number} );
+is( $trap->leaveby, q{die}, q{Exit if faulty sbatch script} );
 like(
     $trap->stderr,
     qr/Aborting \s+ run/xms,
-    q{Throw fatal log message if sbatch returned not a number}
+    q{Throw fatal log message if faulty sbatch script}
 );
 
 done_testing();
