@@ -25,7 +25,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1847,12 +1847,8 @@ sub submit_jobs_to_sbatch {
     # Sbatch should return message and job id in stdout
     if ( not $return{output}[0] ) {
 
-        _submission_error(
-            {
-                log         => $log,
-                stderr_refs => $return{error},
-            }
-        );
+        croak(  $log->fatal( @{ $return{error} } )
+              . $log->fatal( q{Aborting run} . $NEWLINE ) );
     }
 
     # Capture job id for submitted scripts
@@ -1861,14 +1857,9 @@ sub submit_jobs_to_sbatch {
     # Sbatch should return message and job id in stdout
     if ( not $job_id ) {
 
-        _submission_error(
-            {
-                log         => $log,
-                stderr_refs => $return{error},
-            }
-        );
+        croak(  $log->fatal( @{ $return{error} } )
+              . $log->fatal( q{Aborting run} . $NEWLINE ) );
     }
-
     return $job_id;
 }
 
@@ -2181,39 +2172,6 @@ sub submit_slurm_recipe {
         return;
     }
     return;
-}
-
-sub _submission_error {
-
-## Function : Croak with error message if error in sbatch submission
-## Returns  :
-## Arguments: $log         => Log
-##          : $stderr_refs => Stderr buffer
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $stderr_refs;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        stderr_refs => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$stderr_refs,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    croak( $log->fatal( @{$stderr_refs} ) . $log->fatal( q{Aborting run} . $NEWLINE ) );
 }
 
 1;
