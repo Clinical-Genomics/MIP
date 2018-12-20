@@ -259,22 +259,15 @@ sub analysis_gffcompare {
     if ( scalar @infile_paths > 1 ) {
         $gff_output_path = $outfile_path_prefix . $DOT . q{combined.gtf};
     }
+    my $refmap_infile_path = catfile( $indir_path,
+        $outfile_name_prefix . $DOT . $infile_name . $DOT . q{refmap} );
+    my $tmap_infile_path =
+      catfile( $indir_path, $outfile_name_prefix . $DOT . $infile_name . $DOT . q{tmap} );
 
     my @file_names = (
-        [ $gff_output_path, $outfile_path ],
-        [
-            catfile(
-                $indir_path,
-                $outfile_name_prefix . $DOT . $infile_name . $DOT . q{refmap}
-            ),
-            $outfile_path_prefix . $DOT . q{refmap}
-        ],
-        [
-            catfile(
-                $indir_path, $outfile_name_prefix . $DOT . $infile_name . $DOT . q{tmap}
-            ),
-            $outfile_path_prefix . $DOT . q{tmap}
-        ],
+        [ $gff_output_path,    $outfile_path ],
+        [ $refmap_infile_path, $outfile_path_prefix . $DOT . q{refmap} ],
+        [ $tmap_infile_path,   $outfile_path_prefix . $DOT . q{tmap} ],
     );
 
     foreach my $files_ref (@file_names) {
