@@ -1845,21 +1845,18 @@ sub submit_jobs_to_sbatch {
     my %return = system_cmd_call( { command_string => join $SPACE, @commands, } );
 
     # Sbatch should return message and job id in stdout
-    if ( not $return{output}[0] ) {
-
-        croak(  $log->fatal( @{ $return{error} } )
-              . $log->fatal( q{Aborting run} . $NEWLINE ) );
-    }
+    croak(
+        $log->fatal( @{ $return{error} } ) . $log->fatal( q{Aborting run} . $NEWLINE ) )
+      if ( not $return{output}[0] );
 
     # Capture job id for submitted scripts
     my ($job_id) = $return{output}[0] =~ /Submitted \s+ batch \s+ job \s+ (\d+)/sxm;
 
     # Sbatch should return message and job id in stdout
-    if ( not $job_id ) {
+    croak(
+        $log->fatal( @{ $return{error} } ) . $log->fatal( q{Aborting run} . $NEWLINE ) )
+      if ( not $job_id );
 
-        croak(  $log->fatal( @{ $return{error} } )
-              . $log->fatal( q{Aborting run} . $NEWLINE ) );
-    }
     return $job_id;
 }
 
