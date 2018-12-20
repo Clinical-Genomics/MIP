@@ -305,10 +305,13 @@ sub analysis_vep {
         }
         elsif ( $plugin eq q{MaxEntScan} ) {
 
-            my $max_ent_scan_dir_path = q{,}
-              . catfile( $active_parameter_href->{vep_directory_cache},
+            my $max_ent_scan_dir_path =
+              catfile( $active_parameter_href->{vep_directory_cache},
                 qw{ Plugins fordownload } );
-            push @plugins, $plugin . $max_ent_scan_dir_path;
+            my @max_ent_scan_de_novos = qw{ SWA NCSS };
+
+            push @plugins, join $COMMA,
+              ( $plugin, $max_ent_scan_dir_path, @max_ent_scan_de_novos );
         }
         elsif ( $plugin eq q{ExACpLI}
             and exists $active_parameter_href->{vep_plugin_pli_value_file_path} )
