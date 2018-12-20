@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gffcompare };
@@ -172,6 +172,7 @@ sub analysis_gffcompare {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
+    my $indir_path         = $io{in}{dir_path};
     my $infile_name        = $infile_name_prefix . $infile_suffix;
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
@@ -212,6 +213,7 @@ sub analysis_gffcompare {
         )
     );
     my $outfile_path        = ${ $io{out}{file_paths} }[0];
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
 
     ## Filehandles
@@ -251,20 +253,33 @@ sub analysis_gffcompare {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Rename main output file
-    say {$FILEHANDLE} q{## Rename main GTF output};
+    ## Rename output files
+    say {$FILEHANDLE} q{## Rename and move GFFCompare output};
     my $gff_output_path = $outfile_path_prefix . $DOT . q{annotated.gtf};
     if ( scalar @infile_paths > 1 ) {
         $gff_output_path = $outfile_path_prefix . $DOT . q{combined.gtf};
     }
-    gnu_mv(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $gff_output_path,
-            outfile_path => $outfile_path,
-        }
+    my $refmap_infile_path = catfile( $indir_path,
+        $outfile_name_prefix . $DOT . $infile_name . $DOT . q{refmap} );
+    my $tmap_infile_path =
+      catfile( $indir_path, $outfile_name_prefix . $DOT . $infile_name . $DOT . q{tmap} );
+
+    my @file_names = (
+        [ $gff_output_path,    $outfile_path ],
+        [ $refmap_infile_path, $outfile_path_prefix . $DOT . q{refmap} ],
+        [ $tmap_infile_path,   $outfile_path_prefix . $DOT . q{tmap} ],
     );
-    say {$FILEHANDLE} $NEWLINE;
+
+    foreach my $files_ref (@file_names) {
+        gnu_mv(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $files_ref->[0],
+                outfile_path => $files_ref->[1],
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
 
     ## Close FILEHANDLE
     close $FILEHANDLE;

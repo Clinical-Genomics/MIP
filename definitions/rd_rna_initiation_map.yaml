@@ -15,6 +15,7 @@ CHAIN_ALL:
       - CHAIN_STRINGTIE:
          - stringtie_ar
          - gffcompare_ar
+   - CHAIN_MAIN:
       - markduplicates
       - CHAIN_RSEQC:
         - PARALLEL:
