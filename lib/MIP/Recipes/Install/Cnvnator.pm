@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_cnvnator };
@@ -100,6 +100,7 @@ sub install_cnvnator {
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mv gnu_rm};
     use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
+    use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Program::Compression::Tar qw{ tar };
@@ -158,7 +159,7 @@ sub install_cnvnator {
     say {$FILEHANDLE} q{## Install CNVnator};
 
     ## Check if CNVnator installation exists and remove directory unless a noupdate flag is provided
-    my $cnvnator_bin_dir = catdir( $conda_prefix_path, q{CVNnator} );
+    my $cnvnator_bin_dir = catdir( $conda_prefix_path, q{CNVnator} );
     my $cnvnator_install_check = check_existing_installation(
         {
             program_directory_path => $cnvnator_bin_dir,
@@ -196,7 +197,7 @@ sub install_cnvnator {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Download
-    say {$FILEHANDLE} q{## Download CNVNator};
+    say {$FILEHANDLE} q{## Download CNVnator};
     my $cnvnator_url =
         q{https://github.com/abyzovlab/CNVnator/releases/download/v}
       . $cnvnator_version
@@ -259,6 +260,19 @@ sub install_cnvnator {
         {
             directory_path => q{..},
             FILEHANDLE     => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+    
+	## Modify Makefile according to https://github.com/abyzovlab/CNVnator/issues/15#issuecomment-370376682
+    say {$FILEHANDLE} q{## Modify CNVnator makefile};
+    my $sed_script = q{'s/-std=c++11/-std=c++11 -lpthread/g'};
+    gnu_sed(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => q{Makefile},
+            inplace_edit => 1,
+            script       => $sed_script,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
