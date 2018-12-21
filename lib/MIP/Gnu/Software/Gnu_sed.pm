@@ -1,47 +1,46 @@
 package MIP::Gnu::Software::Gnu_sed;
 
-use strict;
-use warnings;
-use warnings qw( FATAL utf8 );
-use utf8;    #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
 use Carp;
-use autodie;
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
 
-use FindBin qw($Bin);                 #Find directory of script
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(catdir);
+## CPANM
+use autodie qw{ :all };
+use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Unix::Standard_streams qw(unix_standard_streams);
-use MIP::Unix::Write_to_file qw(unix_write_to_file);
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
 
-    use base qw(Exporter);
     require Exporter;
+    use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(gnu_sed);
+    our @EXPORT_OK = qw{ gnu_sed };
 
 }
 
-sub gnu_sed {
+## Constants
+Readonly my $SPACE => q{ };
 
-##gnu_sed
+sub gnu_sed {
 
 ##Function : Perl wrapper for writing sed recipe to already open $FILEHANDLE or return commands array. Based on sed 4.2.1.
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $script
-##         : $FILEHANDLE       => Filehandle to write to
+##Arguments: $FILEHANDLE       => Filehandle to write to
 ##         : $infile_path      => Infile path
+##         : $inplace_edit     => Edit file in place
 ##         : $outfile_path     => Outfile path
 ##         : $stderrfile_path_append => Append stderr info to file
 ##         : $stderrfile_path  => Stderrfile path
@@ -52,6 +51,7 @@ sub gnu_sed {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_path;
+    my $inplace_edit;
     my $outfile_path;
     my $stderrfile_path;
     my $script;
@@ -64,6 +64,12 @@ sub gnu_sed {
         infile_path => {
             strict_type => 1,
             store       => \$infile_path
+        },
+        inplace_edit => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$inplace_edit,
+            strict_type => 1,
         },
         outfile_path => {
             strict_type => 1,
@@ -83,15 +89,17 @@ sub gnu_sed {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $SPACE = q{ };
-
-    ### sed
     ##Stores commands depending on input parameters
-    my @commands = qw(sed);
+    my @commands = q{sed};
 
     ## Options
+    if ($inplace_edit) {
+
+        push @commands, q{-i};
+    }
+
     if ($script) {
 
         push @commands, $script;
@@ -106,7 +114,7 @@ sub gnu_sed {
     ## Outfile
     if ($outfile_path) {
 
-        push @commands, '> ' . $outfile_path;
+        push @commands, q{>} . $SPACE . $outfile_path;
     }
 
     push @commands,
