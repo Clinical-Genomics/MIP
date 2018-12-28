@@ -109,13 +109,13 @@ sub get_bin_file_path {
     ## Check environments special case env first
     if ( $environment_key and $environment_href->{$environment_key} ) {
 
-        $environment   = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
+        $environment = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
         $bin_file_path = catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
     }
     ## Assume installed in conda base environment
     else {
 
-        $environment   = q{base};
+        $environment = q{base};
         $bin_file_path = catfile( $conda_path, q{bin}, $bin_file );
     }
 
@@ -374,7 +374,7 @@ sub get_env_method_cmds {
 
     my %method_cmd = (
         conda => {
-            load   => [ ( conda_activate(   { env_name => $env_name, } ), ) ],
+            load => [ ( conda_activate( { env_name => $env_name, } ), ) ],
             unload => [ ( conda_deactivate( {} ), ) ],
         },
     );
@@ -682,7 +682,7 @@ sub get_pedigree_sample_id_attributes {
     my $tmpl = {
         attribute => {
             allow => [
-                qw{ analysis_type capture_kit expected_coverage father mother phenotype sample_id sample_name sample_origin sex }
+                qw{ analysis_type capture_kit expected_coverage father mother phenotype sample_id sample_name is_from_sample sex }
             ],
             defined     => 1,
             required    => 1,
@@ -1120,7 +1120,7 @@ sub get_user_supplied_info {
         exome_target_bed      => 0,
         expected_coverage     => 0,
         sample_ids            => 0,
-        sample_origin         => 0,
+        is_from_sample        => 0,
         supported_capture_kit => 0,
         time_point            => 0,
     );
