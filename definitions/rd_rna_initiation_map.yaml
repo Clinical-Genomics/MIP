@@ -18,9 +18,9 @@ CHAIN_ALL:
    - CHAIN_MAIN:
       - markduplicates
       - CHAIN_RSEQC:
-        - PARALLEL:
-          - rseqc
-          - genebody_coverage
+         - PARALLEL:
+            - rseqc
+            - genebody_coverage
    - CHAIN_MAIN:
       - gatk_splitncigarreads
       - gatk_baserecalibration
