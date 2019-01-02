@@ -314,6 +314,8 @@ sv_rankvariant:
   default: 1
   file_tag: _ranked
   outfile_suffix: ".vcf"
+  program_executables:
+   - genmod
   type: recipe
 sv_genmod_annotate_regions:
   associated_recipe:
@@ -358,6 +360,7 @@ sv_reformat:
   outfile_suffix: ".vcf"
   program_executables:
    - grep
+   - picard
   type: recipe
 sv_rankvariant_binary_file:
   associated_recipe:
