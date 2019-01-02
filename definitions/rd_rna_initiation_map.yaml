@@ -15,13 +15,13 @@ CHAIN_ALL:
       - CHAIN_STRINGTIE:
          - stringtie_ar
          - gffcompare_ar
-   - CHAIN_MAIN:
-      - markduplicates
-      - CHAIN_RSEQC:
+      - CHAIN_QC:
          - PARALLEL:
+            - preseq
             - rseqc
             - genebody_coverage
    - CHAIN_MAIN:
+      - markduplicates
       - gatk_splitncigarreads
       - gatk_baserecalibration
       - gatk_haplotypecaller

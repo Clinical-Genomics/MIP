@@ -26,6 +26,7 @@ emip:
     numpy:
     picard: 2.18
     pip:
+    preseq: 2.0.3
     python: 2.7
     r-optparse:
     r-readr:
@@ -156,6 +157,9 @@ program_test_command:
   picard:
     execution:
     path: 'picard'
+  preseq:
+    execution: 'preseq'
+    path: 'preseq'
   r-optparse:
     execution: 'R -e "library(tximport)"'
     path:
