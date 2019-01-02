@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.07;
+our $VERSION = 1.08;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -797,6 +797,16 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
             documentation => q{Generate sample specific reports},
             is            => q{rw},
             isa           => Bool,
+        )
+    );
+
+    option(
+        q{preseq_ar} => (
+            cmd_aliases   => [qw{ prs }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Estimate library complexity},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
