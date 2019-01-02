@@ -61,7 +61,7 @@ Readonly my $TAB       => qq{\t};
 my ( $infile, $config_file );
 my ( %parameter, %active_parameter, %pedigree, %vcfparser_data, );
 
-our $VERSION = 2.03;
+our $VERSION = 2.04;
 
 if ( scalar @ARGV == 0 ) {
 
@@ -281,7 +281,8 @@ sub test_modules {
 
     use Log::Log4perl;
     ## Creates log
-    my $log_file = catdir( dirname($Bin), qw{ templates mip_rd_dna_config.yaml } );
+    my $log_file =
+      catdir( dirname($Bin), qw{ templates mip_rd_dna_config.yaml } );
     ok( -f $log_file,
         q{Log::Log4perl: File=} . $log_file . q{in MIP directory} );
 
@@ -450,9 +451,9 @@ sub read_infile_vcf {
             ## Test Frequency filter
             _test_frequency_filter_in_vcf_header(
                 {
-                    recipe_mode =>
-                      $active_parameter_href->{frequency_filter},
-		 toml_file_path            => $active_parameter_href->{fqf_vcfanno_config},
+                    recipe_mode => $active_parameter_href->{frequency_filter},
+                    toml_file_path =>
+                      $active_parameter_href->{fqf_vcfanno_config},
                     vcf_header_href => \%vcf_header,
                 }
             );
@@ -569,9 +570,9 @@ sub read_infile_vcf {
             $vep_key_value = 0;
         }
 
-        my @todo_keys = qw{ APPRIS TSL Existing_variation
-          LoF_flags MOTIF_NAME MOTIF_POS HIGH_INF_POS
-          MOTIF_SCORE_CHANGE LoF_filter };
+        my @todo_keys = qw{ APPRIS Existing_variation
+          HIGH_INF_POS LoF_flags LoF_filter MOTIF_NAME MOTIF_POS
+          MOTIF_SCORE_CHANGE SOURCE TSL };
 
         if ( any { $_ eq $vep_key } @todo_keys ) {
 
@@ -733,23 +734,22 @@ sub read_sv_infile_vcf {
                 }
             );
 
-	    ## Test sv_annotate vcf keys
-	    _test_sv_annotate_in_vcf_header(
+            ## Test sv_annotate vcf keys
+            _test_sv_annotate_in_vcf_header(
                 {
-                    sv_annotate_mode =>
-                      $active_parameter_href->{sv_annotate},
+                    sv_annotate_mode => $active_parameter_href->{sv_annotate},
                     sv_frequency_filter =>
                       $active_parameter_href->{sv_frequency_filter},
                     vcf_header_href => \%vcf_header,
                 }
             );
 
-	    ## Test Frequency filter
+            ## Test Frequency filter
             _test_frequency_filter_in_vcf_header(
                 {
-                    recipe_mode =>
-                      $active_parameter_href->{sv_annotate},
-		 toml_file_path            => $active_parameter_href->{fqf_vcfanno_config},
+                    recipe_mode => $active_parameter_href->{sv_annotate},
+                    toml_file_path =>
+                      $active_parameter_href->{fqf_vcfanno_config},
                     vcf_header_href => \%vcf_header,
                 }
             );
@@ -850,7 +850,7 @@ sub read_sv_infile_vcf {
         my @todo_keys =
           qw{ APPRIS Codons DOMAINS Existing_variation HIGH_INF_POS
           HGVSp Amino_acids LoF_flags LoF_filter MOTIF_NAME MOTIF_POS
-          MOTIF_SCORE_CHANGE TSL };
+          MOTIF_SCORE_CHANGE SOURCE TSL };
 
         if ( any { $_ eq $vep_key } @todo_keys ) {
 
@@ -1185,10 +1185,10 @@ sub _test_sv_annotate_in_vcf_header {
     ## sv_annotate has been used
     if ($sv_annotate_mode) {
 
-      return if (not $sv_frequency_filter);
+        return if ( not $sv_frequency_filter );
 
-      ok( defined $vcf_header_href->{INFO}{q{1000GAF}},
-                    q{Vcfanno filter: 1000GAF key} );
+        ok( defined $vcf_header_href->{INFO}{q{1000GAF}},
+            q{Vcfanno filter: 1000GAF key} );
     }
     return;
 }
@@ -1217,13 +1217,13 @@ sub _test_sv_combinevariantcallsets_in_vcf_header {
             strict_type => 1,
         },
         sv_combinevariantcallsets_mode => {
-            allow       => qr{ \A\d+\z }sxm,
+            allow       => [ undef, qr{ \A\d+\z }sxm, ],
             required    => 1,
             store       => \$sv_combinevariantcallsets_mode,
             strict_type => 1,
         },
         sv_vt_decompose_mode => {
-            allow       => qr{ \A\d+\z }sxm,
+            allow       => [ undef, qr{ \A\d+\z }sxm, ],
             required    => 1,
             store       => \$sv_vt_decompose_mode,
             strict_type => 1,
@@ -1235,10 +1235,10 @@ sub _test_sv_combinevariantcallsets_in_vcf_header {
     ## sv_combinevariantcallset has been used
     if ($sv_combinevariantcallsets_mode) {
 
-        return if (not $sv_vt_decompose_mode);
+        return if ( not $sv_vt_decompose_mode );
 
-            ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
-                q{VTDecompose key: OLD_MULTIALLELIC} );
+        ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
+            q{VTDecompose key: OLD_MULTIALLELIC} );
     }
     return;
 }
@@ -1333,7 +1333,7 @@ sub _test_frequency_filter_in_vcf_header {
             store       => \$recipe_mode,
             strict_type => 1,
         },
-		toml_file_path => {
+        toml_file_path => {
             default     => 1,
             store       => \$toml_file_path,
             strict_type => 1,
@@ -1357,16 +1357,18 @@ sub _test_frequency_filter_in_vcf_header {
     if ($recipe_mode) {
 
       ANNOTATION:
-    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+        foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
-      VCF_KEY:
-      foreach my $names (@{$annotation_href->{names}}) {
+          VCF_KEY:
+            foreach my $names ( @{ $annotation_href->{names} } ) {
 
-        ok( defined $vcf_header_href->{INFO}{$names},
-            q{Frequency filter: } . $names . q{ key} );
+                ok(
+                    defined $vcf_header_href->{INFO}{$names},
+                    q{Frequency filter: } . $names . q{ key}
+                );
+            }
+        }
     }
-    }
-  }
 
     return;
 }
