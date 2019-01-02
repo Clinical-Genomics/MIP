@@ -74,7 +74,7 @@ my %sample_info = (
             phenotype         => q{affected},
             sample_id         => q{God of thunder},
             sample_name       => q{Thor},
-            sample_origin     => q{Valhalla},
+            is_from_sample    => q{Valhalla},
             sex               => q{male},
         },
     },
@@ -88,7 +88,7 @@ my %attribute = (
     phenotype         => q{affected},
     sample_id         => q{God of thunder},
     sample_name       => q{Thor},
-    sample_origin     => q{Valhalla},
+    is_from_sample    => q{Valhalla},
     sex               => q{male},
 );
 

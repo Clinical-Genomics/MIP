@@ -522,7 +522,7 @@ sub check_rd_rna {
         {
             active_parameter_href => $active_parameter_href,
             log                   => $log,
-            parameter_names_ref   => [qw{ sample_origin }],
+            parameter_names_ref   => [qw{ is_from_sample }],
             parameter_href        => $parameter_href,
             sample_ids_ref        => \@{ $active_parameter_href->{sample_ids} },
         }

@@ -272,9 +272,9 @@ sub _build_usage {
     );
 
     option(
-        q{sample_origin} => (
+        q{is_from_sample} => (
             cmd_aliases   => [qw{ samo }],
-            cmd_tags      => [q{sample_id=sample_origin}],
+            cmd_tags      => [q{sample_id=is_from_sample}],
             documentation => q{Sample origin of replicate},
             is            => q{rw},
             isa           => HashRef,
