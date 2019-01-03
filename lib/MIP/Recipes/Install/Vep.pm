@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -224,12 +224,6 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ## Set LD_LIBRARY_PATH for VEP installation
-    say {$FILEHANDLE} q{LD_LIBRARY_PATH=}
-      . $conda_prefix_path
-      . q{/lib/:$LD_LIBRARY_PATH};
-    say {$FILEHANDLE} q{export LD_LIBRARY_PATH} . $NEWLINE;
-
     ## Download VEP
     if ( $auto =~ m/[al]/xms ) {
         ## Move to miniconda environment
@@ -273,6 +267,12 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
 
     ## Install VEP
     say {$FILEHANDLE} q{## Install VEP};
+
+    ## Set LD_LIBRARY_PATH for VEP installation
+    say {$FILEHANDLE} q{LD_LIBRARY_PATH=}
+      . $conda_prefix_path
+      . q{/lib/:$LD_LIBRARY_PATH};
+    say {$FILEHANDLE} q{export LD_LIBRARY_PATH} . $NEWLINE;
 
     ## Don't install plugins unless specified in the auto flag
     if ( not $auto =~ m/p/xms ) {
