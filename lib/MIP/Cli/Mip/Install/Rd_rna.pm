@@ -27,7 +27,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -144,20 +144,23 @@ sub _build_usage {
             is            => q{rw},
             isa           => Dict [
                 bcftools         => Optional [Str],
-                cufflinks        => Optional [Str],
                 fastqc           => Optional [Str],
                 q{fusion-filter} => Optional [Str],
+                gatk4            => Optional [Str],
+                gffcompare       => Optional [Str],
                 htslib           => Optional [Str],
                 java_jdk         => Optional [Str],
                 multiqc          => Optional [Str],
                 picard           => Optional [Str],
                 pip              => Optional [Str],
+                preseq           => Optional [Str],
                 python           => Optional [Str],
                 rseqc            => Optional [Str],
                 salmon           => Optional [Str],
                 samtools         => Optional [Str],
                 star             => Optional [Str],
                 star_fusion      => Optional [Str],
+                stringtie        => Optional [Str],
             ],
             required => 0,
         ),
@@ -196,10 +199,9 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          fusion-filter gatk gatk4 htslib mip_scripts multiqc
-                          picard rseqc salmon sambamba samtools
-                          star star_fusion }
+                        qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
+                          gffcompare htslib mip_scripts multiqc picard preseq rseqc
+                          salmon sambamba samtools star star_fusion stringtie }
                     ]
                 ),
             ],
@@ -226,10 +228,9 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools blobfish bootstrapann cufflinks fastqc
-                          fusion-filter gatk  gatk4 htslib mip_scripts multiqc
-                          picard rseqc salmon sambamba samtools
-                          star star_fusion }
+                        qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
+                          gffcompare htslib mip_scripts multiqc picard preseq rseqc
+                          salmon sambamba samtools star star_fusion stringtie }
                     ]
                 ),
             ],
