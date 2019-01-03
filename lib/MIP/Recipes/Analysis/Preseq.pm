@@ -213,7 +213,7 @@ sub analysis_preseq {
     ### SHELL:
     say {$FILEHANDLE} q{## } . $recipe_name;
 
-    ## Run Preseq lc_extreap
+    ## Run Preseq lc_extrap
     say {$FILEHANDLE} q{## Run lc_extrap};
     preseq_lc_extrap(
         {
@@ -225,7 +225,7 @@ sub analysis_preseq {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Close FILEHANDLES
+    ## Close FILEHANDLE
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
     if ( $recipe_mode == 1 ) {
