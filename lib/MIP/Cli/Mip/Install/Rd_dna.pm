@@ -28,7 +28,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions};
 
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -70,20 +70,9 @@ sub run {
             }
         );
     }
-    my @full_installation_envs = get_install_parameter_attribute(
-        {
-            parameter_href => \%parameter,
-            parameter_name => q{installations},
-        }
-    );
 
     ## Merge arrays and overwrite flat values in config YAML with command line
     @parameter{ keys %{$arg_href} } = values %{$arg_href};
-
-    ## Add all environments to installation if full installation was selected
-    if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
-        @{ $parameter{installations} } = @full_installation_envs;
-    }
 
     ## Make sure that the cnvnator environment is installed last
     if ( any { $_ eq q{ecnvnator} } @{ $parameter{installations} } ) {
@@ -153,13 +142,13 @@ sub _build_usage {
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip, epeddy, epy3, evep}],
+            cmd_tags      => [q{Default: emip ecnvnator edelly epeddy eperl_5.26 epy3 etiddit evep}],
             documentation => q{Environments to install},
             is            => q{rw},
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ emip ecnvnator edelly epeddy eperl_5.26 epy3 etiddit evep full }
+                        qw{ emip ecnvnator edelly epeddy eperl_5.26 epy3 etiddit evep }
                     ]
                 ),
             ],
