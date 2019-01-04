@@ -1,8 +1,9 @@
+---
 language: perl
 perl:
   - "5.26"
 sudo: required
- 
+
 before_install:
 ## Install SSL
   - sudo apt-get update
@@ -17,11 +18,10 @@ before_install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - source $HOME/miniconda/etc/profile.d/conda.sh
   - conda activate base
-#  - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  
+
 ## Download cpan libraries
 ## For some reason DB_File installation fails, it is not needed for the test
   - sed -i '/DB_File/d' ./definitions/cpanfile
@@ -33,12 +33,12 @@ before_install:
 install:
 ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
-## Generate rare disease installation script 
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip  epeddy eperl_5.26 epy3 etiddit --envn emip=mip_travis --snpg GRCh37.75 --skip gatk
+## Generate rare disease installation script
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip epeddy eperl_5.26 epy3 etiddit --envn emip=mip_travis --snpg GRCh37.75 --skip gatk
 ## Install MIP rare disease
   - bash mip.sh
 ## Generate rna installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install full
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip epy3 estar 
 ## Install MIP rna
   - bash mip.sh
 
