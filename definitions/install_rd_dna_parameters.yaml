@@ -190,6 +190,13 @@ evep:
       conda_dependency:
         bcftools:
         htslib:
+        perl-archive-extract:
+        perl-archive-zip:
+        perl-bio-db-hts:
+        perl-dbd-mysql:
+        perl-dbi:
+        perl-module-build:
+        perl-try-tiny:
       vep_assemblies:
         - GRCh37
         - GRCh38
