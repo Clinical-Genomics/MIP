@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ vcf2cytosure_convert };
@@ -101,9 +101,7 @@ sub vcf2cytosure_convert {
             store       => \$outfile_path,
         },
         sex => {
-            allow       => [qw{ female male }],
-            defined     => 1,
-            required    => 1,
+            allow       => [ undef, qw{ female male } ],
             store       => \$sex,
             strict_type => 1,
         },
@@ -170,8 +168,10 @@ sub vcf2cytosure_convert {
         push @commands, q{--no-filter};
     }
 
-    push @commands, q{--sex} . $SPACE . $sex;
+    if ($sex) {
 
+        push @commands, q{--sex} . $SPACE . $sex;
+    }
     if ($outfile_path) {
 
         push @commands, q{--out} . $SPACE . $outfile_path;

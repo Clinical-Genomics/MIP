@@ -319,7 +319,7 @@ sub analysis_vcf2cytosure {
         {
             coverage_file   => q{Na},
             FILEHANDLE      => $FILEHANDLE,
-	 sex => q{male},
+            sex             => q{male},
             stderrfile_path => $stderrfile_path,
             vcf_infile_path => q{Na},
             version         => 1,
@@ -401,6 +401,12 @@ sub analysis_vcf2cytosure {
                 sample_info_href => $sample_info_href,
             }
         );
+
+        ## Special case for unknown sex
+        if ( $sample_id_sex eq q{unknown} ) {
+
+            $sample_id_sex = undef;
+        }
 
         vcf2cytosure_convert(
             {
