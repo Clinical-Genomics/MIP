@@ -94,7 +94,7 @@ MIP is written in perl and therefore requires that perl is installed on your OS.
 * [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
 * [Miniconda]
 
-We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/perl/installation/installation.md).
+We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/docs/perl/installation/installation.md).
 
 #### Automated Installation \(Linux x86\_64\)
 Below are instructions for installing MIP for analysis of rare diseases. Installation of the RNA pipeline (under development) follows a similar syntax.
