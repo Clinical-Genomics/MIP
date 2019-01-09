@@ -133,7 +133,6 @@ epy3:
     bcftools: 1.9=h4da6232_0
     ldc: 1.11.0=hb2c9046_0
     pip:
-    python: 3.6
     sambamba: 0.6.8=h682856c_0
   pip:
     chanjo: 4.2.0
@@ -154,6 +153,7 @@ etiddit:
     bcftools: 1.9=h4da6232_0
     cmake:
     cython: 0.29.1=py27hfc679d8_0
+    cyvcf2: 0.10.0=py27h355e19c_0
     gcc:
     numpy:
     pip:
