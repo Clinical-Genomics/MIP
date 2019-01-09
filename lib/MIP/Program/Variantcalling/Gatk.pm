@@ -1715,9 +1715,9 @@ sub gatk_concatenate_variants {
 
     ## Launch multiple processes
     if ($continue) {
+
         print {$FILEHANDLE} $AMPERSAND;
     }
-
     say {$FILEHANDLE} $NEWLINE;
     return;
 }

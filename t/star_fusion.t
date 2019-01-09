@@ -17,13 +17,14 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -70,9 +71,9 @@ Readonly my $THREAD_NUMBER => 16;
 my @function_base_commands = qw{ STAR-Fusion };
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -82,9 +83,9 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => \@function_base_commands,
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
@@ -95,13 +96,13 @@ my %required_argument = (
           . $SPACE
           . catfile(qw{ dir genome_lib_dir_path }),
     },
-    sjdb_path => {
-        input           => catfile(qw{ dir junctions.tab }),
-        expected_output => q{-J} . $SPACE . catfile(qw{ dir junctions.tab }),
-    },
     output_directory_path => {
         input           => catfile(qw{ dir }),
         expected_output => q{--output_dir} . $SPACE . catfile(qw{ dir }),
+    },
+    sjdb_path => {
+        input           => catfile(qw{ dir junctions.tab }),
+        expected_output => q{-J} . $SPACE . catfile(qw{ dir junctions.tab }),
     },
 );
 
@@ -116,6 +117,10 @@ my %specific_argument = (
           . $SPACE
           . catfile(qw{ dir genome_lib_dir_path }),
     },
+    output_directory_path => {
+        input           => catfile(qw{ dir }),
+        expected_output => q{--output_dir} . $SPACE . catfile(qw{ dir }),
+    },
     samples_file_path => {
         input           => catfile(qw{ dir samples_file.txt }),
         expected_output => q{--samples_file}
@@ -125,10 +130,6 @@ my %specific_argument = (
     sjdb_path => {
         input           => catfile(qw{ dir junctions.tab }),
         expected_output => q{-J} . $SPACE . catfile(qw{ dir junctions.tab }),
-    },
-    output_directory_path => {
-        input           => catfile(qw{ dir }),
-        expected_output => q{--output_dir} . $SPACE . catfile(qw{ dir }),
     },
 );
 
@@ -141,12 +142,74 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
+            do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
             required_argument_href     => \%required_argument,
+        }
+    );
+}
+
+## Given fastq supplied parameters, when no sjdb path supplied
+my %fastq_required_argument = (
+    fastq_r1_path => {
+        input           => catfile(qw{ a fastq_1.fasta }),
+        expected_output => q{--right_fq} . $SPACE . catfile(qw{ a fastq_1.fasta }),
+    },
+    fastq_r2_path => {
+        input           => catfile(qw{ a fastq_2.fasta }),
+        expected_output => q{--left_fq} . $SPACE . catfile(qw{ a fastq_2.fasta }),
+    },
+    genome_lib_dir_path => {
+        input           => catfile(qw{ dir genome_lib_dir_path }),
+        expected_output => q{--genome_lib_dir}
+          . $SPACE
+          . catfile(qw{ dir genome_lib_dir_path }),
+    },
+    output_directory_path => {
+        input           => catfile(qw{ dir }),
+        expected_output => q{--output_dir} . $SPACE . catfile(qw{ dir }),
+    },
+);
+my %fastq_specific_argument = (
+    fastq_r1_path => {
+        input           => catfile(qw{ a fastq_1.fasta }),
+        expected_output => q{--right_fq} . $SPACE . catfile(qw{ a fastq_1.fasta }),
+    },
+    fastq_r2_path => {
+        input           => catfile(qw{ a fastq_2.fasta }),
+        expected_output => q{--left_fq} . $SPACE . catfile(qw{ a fastq_2.fasta }),
+    },
+);
+
+my @fastq_arguments = ( \%fastq_specific_argument );
+
+ARGUMENT_HASH_REF:
+foreach my $argument_href (@fastq_arguments) {
+    my @commands = test_function(
+        {
+            argument_href              => $argument_href,
+            required_argument_href     => \%fastq_required_argument,
             module_function_cref       => $module_function_cref,
             function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
         }
     );
 }
+
+## Given no fastq paths or sjdb path
+trap {
+    star_fusion(
+        {
+            fastq_r1_path         => catfile(qw{ a fastq_1.fasta}),
+            genome_lib_dir_path   => catfile(qw{ dir genome_lib_dir_path }),
+            output_directory_path => catfile(qw{ dir }),
+        }
+    )
+};
+
+## Then exit and throw FATAL log message
+is( $trap->leaveby, q{die}, q{Exit if the fastq paths or sjdb path cannot be found} );
+like( $trap->die, qr/Error: \s+ You/xms, q{Throw error} );
 
 done_testing();

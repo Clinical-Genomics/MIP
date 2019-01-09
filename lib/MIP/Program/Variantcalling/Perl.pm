@@ -43,30 +43,28 @@ sub replace_iupac {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $stderrfile_path;
     my $FILEHANDLE;
+    my $stderrfile_path;
 
     ## Default(s)
     my $xargs;
 
     my $tmpl = {
         FILEHANDLE => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$FILEHANDLE
+            defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
         },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         xargs           => {
-            default     => 1,
             allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$xargs,
             strict_type => 1,
-            store       => \$xargs
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
 
     print {$FILEHANDLE} $PIPE . $SPACE;
 
@@ -77,11 +75,13 @@ sub replace_iupac {
     ## Substitute IUPAC code with N to not break vcf specifications (GRCh38)
     if ($xargs) {
 
-        # Print comment lines as they are but add escape char at the beginning of the expression
+  # Print comment lines as they are but add escape char at the beginning of the expression
         $regexp .= q{\'if($_=~/^#/) {print $_;}} . $SPACE;
 
         # Escape chars are needed in front of separators
-        $regexp .= q?else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join(\"\\\t\", @F), \"\\\n\"; }\'? . $SPACE;
+        $regexp .=
+          q?else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join(\"\\\t\", @F), \"\\\n\"; }\'?
+          . $SPACE;
     }
     else {
 
@@ -89,15 +89,16 @@ sub replace_iupac {
         $regexp .= q{'if($_=~/^#/) {print $_;}} . $SPACE;
 
         # Escape chars are NOT needed in front of separators
-        $regexp .= q?else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join("\t", @F), "\n"; }'? . $SPACE;
+        $regexp .=
+          q?else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join("\t", @F), "\n"; }'? . $SPACE;
     }
 
     print {$FILEHANDLE} $regexp;
 
     unix_standard_streams(
         {
-            stderrfile_path => $stderrfile_path,
             FILEHANDLE      => $FILEHANDLE,
+            stderrfile_path => $stderrfile_path,
 
         }
     );
