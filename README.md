@@ -27,7 +27,7 @@ MIP has been in use in the clinical production at the Clinical Genomics facility
 ## Example Usage
 
 ```Bash
-$ mip analyse rare_disease [case_id] --bwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [case_id_pedigree.yaml]
+$ mip analyse rd_dna [case_id] --bwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [case_id_pedigree.yaml]
 ```
 
 ## Features
@@ -94,7 +94,7 @@ MIP is written in perl and therefore requires that perl is installed on your OS.
 * [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
 * [Miniconda]
 
-We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/perl/installation/installation.md).
+We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/docs/perl/installation/installation.md).
 
 #### Automated Installation \(Linux x86\_64\)
 Below are instructions for installing MIP for analysis of rare diseases. Installation of the RNA pipeline (under development) follows a similar syntax.
@@ -120,7 +120,7 @@ $ perl t/mip_install.test
 
 ##### 4.Create the install instructions for MIP
 ```Bash
-$ perl mip install rare_disease --installations full --environment_name emip=MIP
+$ perl mip install rd_dna --installations full --environment_name emip=MIP
 ```
 This will generate a bash script called "mip.sh" in your working directory.
 
@@ -136,8 +136,8 @@ This will generate a bash script called "mip.sh" in your working directory.
 
 It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.   
 
-  - For a full list of available options and parameters, run: ``$ perl mip install rare_disease --help``
-  - For a full list of parameter defaults, run: ``$ perl mip install rare_disease --ppd``
+  - For a full list of available options and parameters, run: ``$ perl mip install rd_dna --help``
+  - For a full list of parameter defaults, run: ``$ perl mip install rd_dna --ppd``
 
 ##### 5.Run the bash script
 
@@ -155,7 +155,7 @@ Make sure to activate your conda environment if that option was used above.
 
 ```Bash
 $ prove t -r
-$ perl t/mip_analyse_rare_disease.test
+$ perl t/mip_analyse_rd_dna.test
 ```
 
 ###### When setting up your analysis config file
@@ -205,7 +205,7 @@ You can always supply `perl mip.pl --help` to list all available parameters and 
 
 Example usage:
 ```Bash
-$ mip analyse rare_disease -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
+$ mip analyse rd_dna 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --bwa_mem 2 -c 3_config.yaml
 ```
 
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
