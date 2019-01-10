@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Star_fusion;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_fusion };
@@ -128,18 +129,13 @@ sub star_fusion {
     }
     elsif ( $fastq_r1_path and $fastq_r2_path ) {
 
-        push @commands,
-            q{--right_fq}
-          . $SPACE
-          . $fastq_r1_path
-          . $SPACE
-          . q{--left_fq}
-          . $SPACE
-          . $fastq_r2_path;
+        push @commands, q{--right_fq} . $SPACE . $fastq_r1_path;
+        push @commands, q{--left_fq} . $SPACE . $fastq_r2_path;
     }
     else {
-        croak
-q{Error: You must either specify the fastq file paths or a splice junction database (SJDB) file.};
+        croak(
+q{Error: You must either specify the fastq file paths or a splice junction database (SJDB) file.}
+        );
     }
 
     if ($cpu) {
