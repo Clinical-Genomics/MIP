@@ -17,13 +17,14 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -71,6 +72,7 @@ my @order_parameters =
 
 my %active_parameter = (
     bwa_mem_bamstats                          => 0,
+    expansionhunter                           => 1,
     gatk_genotypegvcfs_ref_gvcf               => q{test_file},
     markduplicates_picardtools_markduplicates => 1,
     mip                                       => 1,
@@ -126,5 +128,27 @@ is_deeply( \%{ $active_parameter{gatk_variantrecalibration_resource_indel} },
 
 is( $active_parameter{sv_vcfparser_range_feature_file},
     undef, q{Skipped no default and not mandatory parameter} );
+
+## Given a mandatory and active recipe
+trap {
+    set_default_to_active_parameter(
+        {
+            active_parameter_href => \%active_parameter,
+            associated_recipes_ref =>
+              \@{ $parameter{expansionhunter_repeat_specs_dir}{associated_recipe} },
+            log            => $log,
+            parameter_href => \%parameter,
+            parameter_name => q{expansionhunter_repeat_specs_dir},
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+ok( $trap->exit, q{Exit if mandatory parameter for active recipe is not set} );
+like(
+    $trap->stderr,
+    qr/Supply \s+ '-/xms,
+    q{Throw fatal log message if mandatory parameter for active recipe is not set}
+);
 
 done_testing();
