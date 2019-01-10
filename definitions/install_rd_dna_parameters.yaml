@@ -138,7 +138,7 @@ epy3:
     chanjo: 4.2.0
     genmod: 3.7.3
     multiqc: 1.6
-    stranger: 0.3
+    stranger: 0.4
     variant_integrity: 0.0.4
   shell:
     expansionhunter:
