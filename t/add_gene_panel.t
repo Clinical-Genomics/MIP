@@ -17,10 +17,11 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
 our $VERSION = 1.00;
@@ -44,7 +45,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::QC::Record}     => [qw{ add_gene_panel }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -62,6 +63,7 @@ diag(   q{Test add_gene_panel from Record.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+my $log = test_log();
 my $aggregate_gene_panel_file =
   catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
 my $aggregate_gene_panels_key = q{select_file};
@@ -82,6 +84,7 @@ add_gene_panel(
         aggregate_gene_panel_file => $aggregate_gene_panel_file,
         aggregate_gene_panels_key => $aggregate_gene_panels_key,
         case_id                   => $case_id_test,
+        log                       => $log,
         recipe_name               => $recipe_name_test,
         sample_info_href          => \%sample_info,
     }
@@ -104,5 +107,27 @@ while ( my ( $key, $value ) = each %header_info ) {
     is( $set_header_value, $value,
         q{Gene panel header info value for key: } . $key . q{ added to $sample_info} );
 }
+
+## Given a not valid gene panel
+trap {
+    add_gene_panel(
+        {
+            aggregate_gene_panel_file =>
+              catfile( $Bin, qw{ data test_data not_valid_gene_panel.bed } ),
+            aggregate_gene_panels_key => $aggregate_gene_panels_key,
+            case_id                   => $case_id_test,
+            log                       => $log,
+            recipe_name               => $recipe_name_test,
+            sample_info_href          => \%sample_info,
+        }
+    )
+};
+
+## Then warn
+like(
+    $trap->stderr,
+    qr/Unable \s+ to \s+ write \s+ select_file/xms,
+    q{Throw fatal log message}
+);
 
 done_testing();
