@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -393,6 +393,7 @@ sub analysis_mip_vcfparser {
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
                     case_id                   => $case_id,
+                    log                       => $log,
                     recipe_name               => $recipe_name,
                     sample_info_href          => $sample_info_href,
                 }
@@ -729,6 +730,7 @@ sub analysis_vcfparser_sv_wes {
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
                     case_id          => $arg_href->{active_parameter_href}{case_id},
+                    log              => $log,
                     recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
@@ -1130,6 +1132,7 @@ sub analysis_vcfparser_sv_wgs {
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
                     case_id          => $arg_href->{active_parameter_href}{case_id},
+                    log              => $log,
                     recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }

@@ -53,7 +53,8 @@ sub add_gene_panel {
 ## Returns  :
 ## Arguments: $aggregate_gene_panel_file => The database file
 ##          : $aggregate_gene_panels_key => The database key i.e. select or range
-##          : $case_id                 => The case ID
+##          : $case_id                   => The case ID
+##          : $log                       => Log object
 ##          : $recipe_name               => Recipe name
 ##          : $sample_info_href          => Info on samples and case hash {REF}
 
@@ -63,6 +64,7 @@ sub add_gene_panel {
     my $aggregate_gene_panel_file;
     my $aggregate_gene_panels_key;
     my $case_id;
+    my $log;
     my $recipe_name;
     my $sample_info_href;
 
@@ -81,6 +83,11 @@ sub add_gene_panel {
             store       => \$case_id,
             strict_type => 1,
         },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -98,9 +105,6 @@ sub add_gene_panel {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     if ($aggregate_gene_panel_file) {
-
-        ## Retrieve logger object
-        my $log = Log::Log4perl->get_logger(q{MIP});
 
         # Collect each gene panel features
         my %gene_panel;
@@ -838,7 +842,7 @@ sub add_to_sample_info {
 ## Function : Adds parameter info to sample_info
 ## Returns  :
 ## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
-##          : $case_id_ref          => The case_id_ref {REF}
+##          : $case_id_ref            => The case_id_ref {REF}
 ##          : $file_info_href         => File info hash {REF}
 ##          : $human_genome_reference => Human genome reference
 ##          : $outdata_dir            => Outdata directory
@@ -973,13 +977,13 @@ sub _file_name_formats {
 
 ## Function : Define format using information derived from infile name.
 ## Returns  : $mip_file_format, $mip_file_format_with_direction, $original_file_name_prefix, $run_barcode;
-## Arguments: $date                            => Flow-cell sequencing date
-##          : $direction                       => Sequencing read direction
-##          : $original_file_name              => Original file name
-##          : $flowcell                        => Flow-cell id
-##          : $index                           => The DNA library preparation molecular barcode
-##          : $lane                            => Flow-cell lane
-##          : $sample_id                       => Sample id
+## Arguments: $date               => Flow-cell sequencing date
+##          : $direction          => Sequencing read direction
+##          : $original_file_name => Original file name
+##          : $flowcell           => Flow-cell id
+##          : $index              => The DNA library preparation molecular barcode
+##          : $lane               => Flow-cell lane
+##          : $sample_id          => Sample id
 
     my ($arg_href) = @_;
 
