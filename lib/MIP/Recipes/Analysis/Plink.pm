@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_plink };
@@ -224,6 +224,14 @@ sub analysis_plink {
                 push @plink_outfiles, $file_name_prefix . $DOT . $file_suffix;
             }
         }
+    }
+
+    ## No eligible test to run
+    if ( not scalar @plink_outfiles ) {
+        $log->warn(
+            q{No eligible Plink test to run for pedigree and sample(s) - skipping 'plink'}
+        );
+        return;
     }
 
     ## Set and get the io files per chain, id and stream
