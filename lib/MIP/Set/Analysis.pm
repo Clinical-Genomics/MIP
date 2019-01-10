@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ set_recipe_on_analysis_type set_rankvariants_ar };
@@ -67,40 +67,37 @@ sub set_recipe_on_analysis_type {
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_sv_wes analysis_vep_sv_wgs };
 
     my %analysis_type_recipe = (
+        vrn => {
+            sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
+            sv_vcfparser              => \&analysis_vcfparser_sv_wgs,
+        },
         wes => {
             gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wes,
-            sv_vcfparser              => \&analysis_vcfparser_sv_wes,
             sv_varianteffectpredictor => \&analysis_vep_sv_wes,
+            sv_vcfparser              => \&analysis_vcfparser_sv_wes,
         },
         wgs => {
             gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wgs,
-            sv_vcfparser              => \&analysis_vcfparser_sv_wgs,
             sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
-        },
-        vrn => {
             sv_vcfparser              => \&analysis_vcfparser_sv_wgs,
-            sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
         },
     );
 
-  RECIPE:
-    while ( my ( $recipe_name, $recipe_cref ) =
-        each %{ $analysis_type_recipe{$consensus_analysis_type} } )
-    {
+    ## If not a defined consensus analysis type e.g. "mixed"
+    if ( not exists $analysis_type_recipe{$consensus_analysis_type} ) {
 
-        next RECIPE if ( not exists $analysis_recipe_href->{$recipe_name} );
+        ## Use wgs as fallback
+        $consensus_analysis_type = q{wgs};
+    }
 
-        if ( exists $analysis_type_recipe{$consensus_analysis_type} ) {
-            $analysis_recipe_href->{$recipe_name} = $recipe_cref;
-        }
-        else {
+  ANALYSIS_RECIPE:
+    foreach my $recipe_name ( keys %{$analysis_recipe_href} ) {
 
-            ## Use wgs as default
-            my $recipe_wgs_cref = $analysis_type_recipe{wgs}{$recipe_name};
+        next ANALYSIS_RECIPE
+          if ( not exists $analysis_type_recipe{$consensus_analysis_type}{$recipe_name} );
 
-            # Set recipe
-            $analysis_recipe_href->{$recipe_name} = $recipe_wgs_cref;
-        }
+        $analysis_recipe_href->{$recipe_name} =
+          $analysis_type_recipe{$consensus_analysis_type}{$recipe_name};
     }
     return;
 }
