@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -77,8 +77,7 @@ set_recipe_on_analysis_type(
 );
 
 ## Then set wgs recipe
-is_deeply( \%analysis_recipe, \%expected_recipe,
-    q{Set no recipe when no program} );
+is_deeply( \%analysis_recipe, \%expected_recipe, q{Set no recipe when no program} );
 
 ## Given program name and wes
 $analysis_recipe{sv_vcfparser} = undef;
@@ -114,6 +113,26 @@ is(
     $analysis_recipe{sv_vcfparser},
     $expected_wgs_recipe{sv_vcfparser},
     q{Set wgs recipe}
+);
+
+## Given a mixed consensus analysis type
+$consensus_analysis_type = q{mixed};
+$analysis_recipe{sv_vcfparser} = undef;
+my %expected_default_recipe = ( sv_vcfparser => \&analysis_vcfparser_sv_wgs, );
+
+## Update which recipe to use depending on consensus analysis type
+set_recipe_on_analysis_type(
+    {
+        consensus_analysis_type => $consensus_analysis_type,
+        analysis_recipe_href    => \%analysis_recipe,
+    }
+);
+
+## Then wgs recipe should be set as a default
+is(
+    $analysis_recipe{sv_vcfparser},
+    $expected_default_recipe{sv_vcfparser},
+    q{Set default recipe}
 );
 
 done_testing();

@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -141,6 +141,22 @@ is(
     $active_parameter{human_genome_reference},
     q{Set human_genome_reference default for rtg vcfeval reference genome}
 );
+
+## Given an analysis type, when unset for a sample
+# Clear analysis type
+delete $active_parameter{analysis_type}{sample_1};
+
+set_custom_default_to_active_parameter(
+    {
+        active_parameter_href => \%active_parameter,
+        parameter_href        => \%parameter,
+        parameter_name        => q{infile_dirs},
+    }
+);
+
+## Then the defaults should be set for analysis type before setting default for infile dirs
+is( $active_parameter{analysis_type}{sample_1},
+    q{wgs}, q{Set analysis_type default within infile dirs} );
 
 CAPTURE_KIT:
 foreach my $capture_kit ( keys %{ $active_parameter{exome_target_bed} } ) {
