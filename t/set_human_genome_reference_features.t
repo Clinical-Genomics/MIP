@@ -127,7 +127,10 @@ trap {
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if the version cannot be found} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message if the version cannot be found} );
+like(
+    $trap->stderr,
+    qr/MIP \s+ cannot \s+ detect/xms,
+    q{Throw fatal log message if the version cannot be found}
+);
 
 done_testing();
