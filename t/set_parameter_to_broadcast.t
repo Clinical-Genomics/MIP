@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,9 +33,10 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-Readonly my $HASH_OF_HASH_INDEX => q{3};
+Readonly my $COMMA               => q{,};
+Readonly my $SPACE               => q{ };
+Readonly my $HASH_OF_HASH_INDEX  => q{3};
+Readonly my $HASH_OF_ARRAY_INDEX => q{4};
 
 BEGIN {
 
@@ -65,15 +66,16 @@ diag(   q{Test set_parameter_to_broadcast from Parameter.pm v}
 ## Given different containers to broadcast
 my %active_parameter = (
     Basil  => [qw{ Don't mention the war }],
-    Sybil  => q{Ooohh, I knoooow},
+    cast   => { starring => [qw{ John_Cleese Prunella_Scales Andrew_Sachs }], },
+    Fawlty => { Towers => { genre => q{sitcom}, }, },
     Manuel => {
         line => q{Que},
     },
-    Fawlty => { Towers => { Genre => q{sitcom}, }, },
+    Sybil => q{Ooohh, I knoooow},
 );
 
 # Add a order to the broadcast
-my @order_parameters = qw{ Basil Manuel Sybil Fawlty };
+my @order_parameters = qw{ Basil Manuel Sybil Fawlty cast };
 
 # How to seperate elements in arrays
 my %parameter = (
@@ -95,9 +97,19 @@ set_parameter_to_broadcast(
 );
 
 ## Then expect output according to container level
-is( $broadcasts[0], q{Set Basil to: Don't mention the war},       q{Set array} );
-is( $broadcasts[1], q{Set Manuel to: line=Que},                   q{Set hash} );
-is( $broadcasts[2], q{Set Sybil to: Ooohh, I knoooow},            q{Set scalar} );
-is( $broadcasts[$HASH_OF_HASH_INDEX], q?Set Fawlty to: {Towers => Genre=sitcom,} ?, q{Set hash of hash} );
+is( $broadcasts[0], q{Set Basil to: Don't mention the war}, q{Set array} );
+is( $broadcasts[1], q{Set Manuel to: line=Que},             q{Set hash} );
+is( $broadcasts[2], q{Set Sybil to: Ooohh, I knoooow},      q{Set scalar} );
+is(
+    $broadcasts[$HASH_OF_HASH_INDEX],
+    q?Set Fawlty to: {Towers => genre=sitcom,} ?,
+    q{Set hash of hash}
+);
+
+is(
+    $broadcasts[$HASH_OF_ARRAY_INDEX],
+    q?Set cast to: starring=John_Cleese Prunella_Scales Andrew_Sachs?,
+    q{Set hash of array}
+);
 
 done_testing();

@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1005,9 +1005,7 @@ sub _get_default_repeat_specs_dir_path {
 
     ## Return if path not found,
     ## MIP requires a defined variable in order to flag that it can't find the dir
-    if ( not $expansionhunter_bin_path ) {
-        return q{Failed to find default path};
-    }
+    return q{Failed to find default path} if ( not $expansionhunter_bin_path );
 
     ## Follow potential link
     $expansionhunter_bin_path = abs_path($expansionhunter_bin_path);
