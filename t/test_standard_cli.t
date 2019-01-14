@@ -62,6 +62,17 @@ diag(   q{Test test_standard_cli from Fixtures.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Given a cli
+my $is_ok = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
+
+## Then return true
+ok( $is_ok, q{Generated standard cli} );
+
 ## Given verbose and version (this scripts)
 my $command_version_string = qq{perl $PROGRAM_NAME -v};
 my %return = system_cmd_call( { command_string => $command_version_string, } );
