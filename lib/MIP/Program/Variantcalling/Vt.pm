@@ -87,7 +87,7 @@ sub vt_decompose {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{vt decompose};
+    my @commands = qw{ vt decompose };
 
     if ($smart_decomposition) {
 
@@ -186,7 +186,7 @@ sub vt_normalize {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{vt normalize};
+    my @commands = qw{ vt normalize };
 
     ## Options
     if ($no_fail_inconsistent_reference) {
@@ -274,7 +274,7 @@ sub vt_uniq {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{vt uniq};
+    my @commands = qw{ vt uniq };
 
     #Specify output filename
     if ($outfile_path) {

@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Svdb;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ svdb_merge svdb_query };
@@ -89,7 +90,7 @@ sub svdb_merge {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## svdb
-    my @commands = q{svdb --merge};
+    my @commands = qw{ svdb --merge };
 
     ## Options
     if ($priority) {
@@ -122,8 +123,8 @@ sub svdb_merge {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -207,7 +208,7 @@ sub svdb_query {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## svdb
-    my @commands = q{svdb --query};
+    my @commands = qw{ svdb --query };
 
     ## Options
     if ($bnd_distance) {
@@ -243,8 +244,8 @@ sub svdb_query {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }

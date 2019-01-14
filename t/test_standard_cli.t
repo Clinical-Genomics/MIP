@@ -23,7 +23,14 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.00;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
 Readonly my $COMMA => q{,};
@@ -36,15 +43,15 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Script::Utils}  => [qw{ help }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
-
 }
 
 use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Unix::System qw{ system_cmd_call };
 
 diag(   q{Test test_standard_cli from Fixtures.pm v}
       . $MIP::Test::Fixtures::VERSION
@@ -55,7 +62,7 @@ diag(   q{Test test_standard_cli from Fixtures.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-### User Options
+## Given a cli
 my $is_ok = test_standard_cli(
     {
         verbose => $VERBOSE,
@@ -63,6 +70,27 @@ my $is_ok = test_standard_cli(
     }
 );
 
+## Then return true
 ok( $is_ok, q{Generated standard cli} );
+
+## Given verbose and version (this scripts)
+my $command_version_string = qq{perl $PROGRAM_NAME -v};
+my %return = system_cmd_call( { command_string => $command_version_string, } );
+
+my $expected_version_return = join $SPACE, @{ $return{output} };
+
+## Then show version
+like( $expected_version_return, qr/test_standard_cli.t \s+ 1/xms, q{Show version} );
+
+## Given verbose and help
+
+my $command_help_string = qq{perl $PROGRAM_NAME -h};
+%return = system_cmd_call( { command_string => $command_help_string, } );
+
+#my $ret = `perl $PROGRAM_NAME -v `;
+my $expected_help_return = join $SPACE, @{ $return{output} };
+
+## Then show help text
+like( $expected_help_return, qr/test_standard_cli.t \s+ [[]options[]]/xms, q{Show help} );
 
 done_testing();
