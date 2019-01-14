@@ -107,7 +107,7 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            do_test_base_command       => 1,
+            do_test_base_command       => 0,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
             required_argument_href     => \%required_argument,

@@ -1,5 +1,6 @@
 package MIP::Program::Alignment::Star;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_aln star_genome_generate };
@@ -193,14 +194,13 @@ sub star_aln {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{STAR};
+    my @commands = qw{ STAR };
 
     push @commands, q{--genomeDir} . $SPACE . $genome_dir_path;
 
     push @commands, q{--readFilesCommand} . $SPACE . $read_files_command;
 
-    push @commands, q{--readFilesIn} . $SPACE . join $SPACE,
-      @{$infile_paths_ref};
+    push @commands, q{--readFilesIn} . $SPACE . join $SPACE, @{$infile_paths_ref};
 
     push @commands, q{--outFileNamePrefix} . $SPACE . $outfile_name_prefix;
 
@@ -216,8 +216,7 @@ sub star_aln {
 
     }
     if ($align_sjdb_overhang_min) {
-        push @commands,
-          q{--alignSJDBoverhangMin} . $SPACE . $align_sjdb_overhang_min;
+        push @commands, q{--alignSJDBoverhangMin} . $SPACE . $align_sjdb_overhang_min;
 
     }
     if ($chim_segment_min) {
@@ -230,8 +229,7 @@ sub star_aln {
 
     }
     if ($chim_segment_read_gap_max) {
-        push @commands,
-          q{--chimSegmentReadGapMax} . $SPACE . $chim_segment_read_gap_max;
+        push @commands, q{--chimSegmentReadGapMax} . $SPACE . $chim_segment_read_gap_max;
 
     }
     if ($limit_bam_sort_ram) {
@@ -266,8 +264,8 @@ sub star_aln {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -355,9 +353,9 @@ sub star_genome_generate {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{STAR --runMode genomeGenerate};
+    my @commands = qw{ STAR --runMode genomeGenerate };
 
-    #options
+    # Options
     push @commands, q{--genomeFastaFiles} . $SPACE . $fasta_path;
 
     push @commands, q{--genomeDir} . $SPACE . $genome_dir_path;
@@ -384,8 +382,8 @@ sub star_genome_generate {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }

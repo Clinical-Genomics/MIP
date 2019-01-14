@@ -63,7 +63,7 @@ diag(   q{Test bcftools_view from Bcftools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = q{bcftools view};
+my @function_base_commands = qw{ bcftools view };
 
 Readonly my $MAX_ALLELES => 2;
 Readonly my $MIN_ALLELES => 2;
@@ -149,10 +149,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

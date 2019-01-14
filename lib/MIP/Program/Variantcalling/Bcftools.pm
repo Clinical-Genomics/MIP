@@ -1187,12 +1187,12 @@ sub bcftools_reheader {
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE   => { store   => \$FILEHANDLE, },
-        infile_path  => { store   => \$infile_path, strict_type => 1, },
-        outfile_path => { store   => \$outfile_path, strict_type => 1, },
-        regions_ref  => { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
-        samples_ref       => {
+        FILEHANDLE        => { store   => \$FILEHANDLE, },
+        infile_path       => { store   => \$infile_path, strict_type => 1, },
+        outfile_path      => { store   => \$outfile_path, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
+        samples_ref => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
@@ -1739,7 +1739,7 @@ sub bcftools_view {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{bcftools view};
+    my @commands = qw{ bcftools view };
 
     ## Bcftools base args
     @commands = bcftools_base(

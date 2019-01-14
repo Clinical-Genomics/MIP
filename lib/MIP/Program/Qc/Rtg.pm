@@ -1,5 +1,6 @@
 package MIP::Program::Qc::Rtg;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rtg_format rtg_vcfeval };
@@ -37,8 +38,8 @@ sub rtg_format {
 ## Function : Perl wrapper for rtg tools 3.8.4.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : $reference_genome_path  => Human reference genome file path
 ##          : $input_format           => Format of input
+##          : $reference_genome_path  => Human reference genome file path
 ##          : $sdf_output_directory   => Directory name of output SDF
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -48,8 +49,8 @@ sub rtg_format {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $reference_genome_path;
     my $input_format;
+    my $reference_genome_path;
     my $sdf_output_directory;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -58,12 +59,6 @@ sub rtg_format {
     ## Default(s)
 
     my $tmpl = {
-        reference_genome_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$reference_genome_path,
-            strict_type => 1,
-        },
         input_format => {
             allow       => [qw{ fasta fastq fastq-interleaved sam-se sam-pe }],
             default     => q{fasta},
@@ -72,6 +67,12 @@ sub rtg_format {
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
+        },
+        reference_genome_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_genome_path,
+            strict_type => 1,
         },
         sdf_output_directory => {
             defined     => 1,
@@ -96,7 +97,7 @@ sub rtg_format {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{rtg format};
+    my @commands = qw{ rtg format };
 
     push @commands, q{--format=} . $input_format;
 
@@ -115,8 +116,8 @@ sub rtg_format {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -135,10 +136,10 @@ sub rtg_vcfeval {
 ##          : $outputdirectory_path   => Directory for output
 ##          : $output_mode            => Output reporting mode
 ##          : $sample_id              => Sample ID
+##          : $sdf_template_file_path => SDF (SDF=Rtg specif format) of the reference genome the variants are called against
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $sdf_template_file_path => SDF (SDF=Rtg specif format) of the reference genome the variants are called against
 
     my ($arg_href) = @_;
 
@@ -218,7 +219,7 @@ sub rtg_vcfeval {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{rtg vcfeval};
+    my @commands = qw{ rtg vcfeval };
 
     push @commands, q{--baseline=} . $baselinefile_path;
 
@@ -248,8 +249,8 @@ sub rtg_vcfeval {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }

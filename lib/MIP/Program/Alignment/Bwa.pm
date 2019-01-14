@@ -1,5 +1,6 @@
 package MIP::Program::Alignment::Bwa;
 
+use 5.026;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ bwa_mem run_bwamem bwa_index };
@@ -91,11 +92,9 @@ sub bwa_mem {
             store       => \$mark_split_as_secondary,
             strict_type => 1,
         },
-        read_group_header =>
-          { store => \$read_group_header, strict_type => 1, },
-        second_infile_path =>
-          { store => \$second_infile_path, strict_type => 1, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        read_group_header  => { store => \$read_group_header,  strict_type => 1, },
+        second_infile_path => { store => \$second_infile_path, strict_type => 1, },
+        stderrfile_path    => { store => \$stderrfile_path,    strict_type => 1, },
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
@@ -110,7 +109,7 @@ sub bwa_mem {
 
     ## Bwa
     # Stores commands depending on input parameters
-    my @commands = q{bwa mem};
+    my @commands = qw{ bwa mem };
 
     ##Options
     if ($thread_number) {
@@ -223,11 +222,9 @@ sub run_bwamem {
             store       => \$outfiles_prefix_path,
             strict_type => 1,
         },
-        read_group_header =>
-          { store => \$read_group_header, strict_type => 1, },
-        second_infile_path =>
-          { store => \$second_infile_path, strict_type => 1, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        read_group_header  => { store => \$read_group_header,  strict_type => 1, },
+        second_infile_path => { store => \$second_infile_path, strict_type => 1, },
+        stderrfile_path    => { store => \$stderrfile_path,    strict_type => 1, },
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
         thread_number => {
@@ -241,7 +238,7 @@ sub run_bwamem {
 
     ## Run_bwamem
     # Stores commands depending on input parameters
-    my @commands = q{run-bwamem};
+    my @commands = qw{ run-bwamem };
 
     ## Options
     if ($thread_number) {
@@ -328,8 +325,7 @@ sub bwa_index {
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-        prefix =>
-          { defined => 1, required => 1, store => \$prefix, strict_type => 1, },
+        prefix => { defined => 1, required => 1, store => \$prefix, strict_type => 1, },
         reference_genome => {
             defined     => 1,
             required    => 1,
@@ -353,7 +349,7 @@ sub bwa_index {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{bwa index};
+    my @commands = qw{ bwa index };
 
     push @commands, q{-p} . $SPACE . $prefix;
 
