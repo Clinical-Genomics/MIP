@@ -64,10 +64,12 @@ sub slurm_submit_job_no_dependency_dead_end {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $base_command;
     my $log;
     my $job_id_href;
     my $sbatch_file_name;
+
+    ## Default(s)
+    my $base_command;
 
     my $tmpl = {
         base_command => {
