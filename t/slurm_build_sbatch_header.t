@@ -152,7 +152,7 @@ my @args = (
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&slurm_build_sbatch_header;
 
-my @function_base_commands = qw{ #SBATCH  };
+my @function_base_commands = ( q{#SBATCH}, );
 
 test_write_to_file(
     {
