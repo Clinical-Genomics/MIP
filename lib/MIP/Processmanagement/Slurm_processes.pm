@@ -25,7 +25,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -56,18 +56,25 @@ sub slurm_submit_job_no_dependency_dead_end {
 
 ## Function : Submit jobs that has no prior job dependencies and does not leave any dependencies using SLURM, except to PAN dependencies
 ## Returns  :
-## Arguments: $log              => Log object
+## Arguments: $base_command     => Sbatch
+##          : $log              => Log object
 ##          : $job_id_href      => The info on job ids hash {REF}
 ##          : $sbatch_file_name => Sbatch file name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $base_command;
     my $log;
     my $job_id_href;
     my $sbatch_file_name;
 
     my $tmpl = {
+        base_command => {
+            default     => q{sbatch},
+            store       => \$base_command,
+            strict_type => 1,
+        },
         log => {
             defined  => 1,
             required => 1,
@@ -97,6 +104,7 @@ sub slurm_submit_job_no_dependency_dead_end {
     ## Submit jobs to sbatch
     $job_id_returned = submit_jobs_to_sbatch(
         {
+            base_command     => $base_command,
             log              => $log,
             sbatch_file_name => $sbatch_file_name,
         }
