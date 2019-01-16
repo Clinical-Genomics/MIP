@@ -86,19 +86,14 @@ evep:
     htslib: 1.9
     pip:
     python: 2.7
+    tabix:
   pip:
   shell:
     vep:
       conda_dependency:
         bcftools:
         htslib:
-        perl-archive-extract:
-        perl-archive-zip:
-        perl-bio-db-hts:
-        perl-dbd-mysql:
-        perl-dbi:
-        perl-module-build:
-        perl-try-tiny:
+        tabix:
       vep_assemblies:
         - GRCh37
         - GRCh38
@@ -110,7 +105,7 @@ evep:
         - MaxEntScan
       vep_species:
         - homo_sapiens_merged
-      version: 94
+      version: 95
 
 # Specify environment names
 environment_name:
