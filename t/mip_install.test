@@ -154,8 +154,7 @@ foreach my $pipeline ( keys %install_file ) {
 
     ## Test execution of install script
     my $cmds_ref = [
-        q{perl}, catfile( dirname($Bin), q{mip} ),
-        q{install}, $pipeline, qw{--installation full --dec }
+        q{perl}, catfile( dirname($Bin), q{mip} ), q{install}, $pipeline, qw{ --dec }
     ];
     if ($conda_dir_path) {
 
