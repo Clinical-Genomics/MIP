@@ -2090,23 +2090,22 @@ sub submit_slurm_recipe {
         );
         return 1;
     }
-    if ( $dependency_method eq q{sample_to_sample} ) {
+    ## Last dependency method
+    return if ( $dependency_method ne q{sample_to_sample} );
 
-        slurm_submit_job_sample_id_dependency_add_to_sample(
-            {
-                base_command            => $base_command,
-                case_id                 => $case_id,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                log                     => $log,
-                path                    => $job_id_chain,
-                sample_id               => $sample_id,
-                sbatch_file_name        => $recipe_file_path,
-            }
-        );
-        return 1;
-    }
-    return;
+    slurm_submit_job_sample_id_dependency_add_to_sample(
+        {
+            base_command            => $base_command,
+            case_id                 => $case_id,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
+            log                     => $log,
+            path                    => $job_id_chain,
+            sample_id               => $sample_id,
+            sbatch_file_name        => $recipe_file_path,
+        }
+    );
+    return 1;
 }
 
 1;

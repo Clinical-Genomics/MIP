@@ -75,6 +75,9 @@ my $sbatch_file_name =
   catfile( $Bin, qw{ data 643594-miptest test_script fastqc_ADM1059A1.0.sh } );
 my $log = test_log();
 
+## Add paralell case chain job id
+@{ $job_id{case1_MAIN}{case1_parallel_MAIN0} } = qw{ job_id_10 };
+
 slurm_submit_job_sample_id_dependency_case_dead_end(
     {
         base_command            => $slurm_mock_cmd,
