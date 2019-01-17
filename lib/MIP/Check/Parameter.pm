@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -2335,7 +2335,7 @@ sub _get_vep_cache_species_dir_path {
         ## Get species specific cache dir
         $vep_cache_species_dir_path =
           abs_path( catdir( $vep_directory_cache, $species_cache ) );
-        last if ($vep_cache_species_dir_path);
+        last if ( -e $vep_cache_species_dir_path );
     }
     return $vep_cache_species_dir_path;
 }
