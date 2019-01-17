@@ -24,7 +24,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -306,16 +306,6 @@ sub setup_script {
         }
     );
 
-    ## Set shell attributes
-    gnu_set(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            set_errexit  => $set_errexit,
-            set_nounset  => $set_nounset,
-            set_pipefail => $set_pipefail,
-        }
-    );
-
     ### Sbatch header
     ## Get parameters
     my $job_name        = $recipe_name . $UNDERSCORE . $directory_id;
@@ -343,6 +333,17 @@ sub setup_script {
             }
         );
     }
+
+    ## Set shell attributes
+    gnu_set(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            set_errexit  => $set_errexit,
+            set_nounset  => $set_nounset,
+            set_pipefail => $set_pipefail,
+        }
+    );
+
     say {$FILEHANDLE} q{readonly PROGNAME=$(basename "$0")}, $NEWLINE;
 
     gnu_echo(
