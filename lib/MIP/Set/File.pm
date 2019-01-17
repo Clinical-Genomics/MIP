@@ -24,7 +24,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -120,7 +120,7 @@ sub set_file_prefix_tag {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $current_chain         => Name of current chain
-##          : $case_id             => Family id {REF}
+##          : $case_id               => Family id {REF}
 ##          : $file_tag              => File tag to set
 ##          : $file_info_href        => Info on files hash {REF}
 ##          : $id                    => To change id for

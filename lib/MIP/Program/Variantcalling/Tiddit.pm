@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Tiddit;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ tiddit_coverage tiddit_sv };
@@ -73,9 +74,8 @@ sub tiddit_coverage {
             store       => \$infile_path,
             strict_type => 1,
         },
-        outfile_path_prefix =>
-          { store => \$outfile_path_prefix, strict_type => 1, },
-        stderrfile_path => {
+        outfile_path_prefix => { store => \$outfile_path_prefix, strict_type => 1, },
+        stderrfile_path     => {
             store       => \$stderrfile_path,
             strict_type => 1,
         },
@@ -92,7 +92,7 @@ sub tiddit_coverage {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{TIDDIT.py --cov};
+    my @commands = qw{ TIDDIT.py --cov };
 
     # Option: specify output prefix
     if ($outfile_path_prefix) {
@@ -167,9 +167,8 @@ sub tiddit_sv {
             store       => \$minimum_number_supporting_pairs,
             strict_type => 1,
         },
-        outfile_path_prefix =>
-          { store => \$outfile_path_prefix, strict_type => 1, },
-        referencefile_path => {
+        outfile_path_prefix => { store => \$outfile_path_prefix, strict_type => 1, },
+        referencefile_path  => {
             defined     => 1,
             required    => 1,
             store       => \$referencefile_path,

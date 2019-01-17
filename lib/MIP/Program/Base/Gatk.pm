@@ -1,5 +1,6 @@
 package MIP::Program::Base::Gatk;
 
+use 5.026;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gatk_base gatk_common_options gatk_java_options };
@@ -38,106 +39,104 @@ sub gatk_base {
 
 ## Function : Perl wrapper for Gatk base parameters. Based on Gatk 3.7
 ## Returns  : @commands
-## Arguments: $commands_ref                          => List of commands added earlier
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $read_filters_ref                      => Filters to apply to reads before analysis {REF}
-##          : $static_quantized_quals_ref            => Use static quantized quality scores [ref]
-##          : $analysis_type                         => Analysis type
-##          : $referencefile_path                    => Reference sequence file
-##          : $pedigree                              => Pedigree files
-##          : $pedigree_validation_type              => Validation strictness for pedigree
+## Arguments: $analysis_type                         => Analysis type
+##          : $base_quality_score_recalibration_file => Base quality score recalibration file
+##          : $commands_ref                          => List of commands added earlier
+##          : $disable_indel_qual                    => Disable indel quality
+##          : $FILEHANDLE                            => Filehandle to write to
 ##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
 ##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
-##          : $base_quality_score_recalibration_file => Base quality score recalibration file
-##          : $disable_indel_qual                    => Disable indel quality
+##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
 ##          : $num_cpu_threads_per_data_thread       => Number of CPU threads to allocate per data thread
 ##          : $logging_level                         => Logging level
-##          : $FILEHANDLE                            => Filehandle to write to
+##          : $read_filters_ref                      => Filters to apply to reads before analysis {REF}
+##          : $referencefile_path                    => Reference sequence file
+##          : $static_quantized_quals_ref            => Use static quantized quality scores [ref]
+##          : $pedigree                              => Pedigree files
+##          : $pedigree_validation_type              => Validation strictness for pedigree
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $commands_ref;
     my $analysis_type;
+    my $base_quality_score_recalibration_file;
+    my $commands_ref;
+    my $disable_indel_qual;
+    my $downsample_to_coverage;
+    my $FILEHANDLE;
     my $intervals_ref;
-    my $read_filters_ref;
-    my $static_quantized_quals_ref;
-    my $referencefile_path;
     my $pedigree;
     my $pedigree_validation_type;
-    my $downsample_to_coverage;
-    my $base_quality_score_recalibration_file;
-    my $disable_indel_qual;
-    my $FILEHANDLE;
+    my $read_filters_ref;
+    my $referencefile_path;
+    my $static_quantized_quals_ref;
 
     ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
     my $num_cpu_threads_per_data_thread;
     my $logging_level;
-    my $gatk_disable_auto_index_and_file_lock;
 
     my $tmpl = {
-        commands_ref =>
-          { default => [], strict_type => 1, store => \$commands_ref },
         analysis_type => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
-            store       => \$analysis_type
-        },
-        intervals_ref =>
-          { default => [], strict_type => 1, store => \$intervals_ref },
-        read_filters_ref =>
-          { default => [], strict_type => 1, store => \$read_filters_ref },
-        static_quantized_quals_ref => {
-            default     => [],
-            strict_type => 1,
-            store       => \$static_quantized_quals_ref
-        },
-        referencefile_path => {
             required    => 1,
-            defined     => 1,
+            store       => \$analysis_type,
             strict_type => 1,
-            store       => \$referencefile_path
-        },
-        pedigree                 => { strict_type => 1, store => \$pedigree },
-        pedigree_validation_type => {
-            default     => q{SILENT},
-            allow       => [qw{ STRICT SILENT}],
-            strict_type => 1,
-            store       => \$pedigree_validation_type
-        },
-        downsample_to_coverage => {
-            strict_type => 1,
-            store       => \$downsample_to_coverage
         },
         base_quality_score_recalibration_file => {
+            store       => \$base_quality_score_recalibration_file,
             strict_type => 1,
-            store       => \$base_quality_score_recalibration_file
         },
+        commands_ref => { default => [], store => \$commands_ref, strict_type => 1, },
         disable_indel_qual => {
             allow       => [ 0, 1 ],
+            store       => \$disable_indel_qual,
             strict_type => 1,
-            store       => \$disable_indel_qual
         },
-        num_cpu_threads_per_data_thread => {
-            default     => 0,
-            allow       => [ undef, qr/ ^\d+$ /sxm ],
+        downsample_to_coverage => {
+            store       => \$downsample_to_coverage,
             strict_type => 1,
-            store       => \$num_cpu_threads_per_data_thread
+        },
+        FILEHANDLE                            => { store => \$FILEHANDLE, },
+        gatk_disable_auto_index_and_file_lock => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$gatk_disable_auto_index_and_file_lock,
+            strict_type => 1,
+        },
+        intervals_ref => { default => [], store => \$intervals_ref, strict_type => 1, },
+        num_cpu_threads_per_data_thread => {
+            allow       => [ undef, qr/ ^\d+$ /sxm ],
+            default     => 0,
+            store       => \$num_cpu_threads_per_data_thread,
+            strict_type => 1,
         },
         logging_level => {
-            default     => q{INFO},
             allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$logging_level,
             strict_type => 1,
-            store       => \$logging_level
         },
-        gatk_disable_auto_index_and_file_lock => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        pedigree                 => { store => \$pedigree, strict_type => 1, },
+        pedigree_validation_type => {
+            allow       => [qw{ STRICT SILENT}],
+            default     => q{SILENT},
+            store       => \$pedigree_validation_type,
             strict_type => 1,
-            store       => \$gatk_disable_auto_index_and_file_lock
         },
-        FILEHANDLE => { store => \$FILEHANDLE },
+        read_filters_ref =>
+          { default => [], store => \$read_filters_ref, strict_type => 1, },
+        referencefile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        static_quantized_quals_ref => {
+            default     => [],
+            store       => \$static_quantized_quals_ref,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -145,14 +144,13 @@ sub gatk_base {
     # Stores commands depending on input parameters
     my @commands = @{$commands_ref};
 
-    push @commands, q{--analysis_type} . $SPACE . $analysis_type;
+    push @commands, ( qw{ --analysis_type }, $analysis_type, );
 
     push @commands, q{--logging_level} . $SPACE . $logging_level;
 
     if ($pedigree_validation_type) {
 
-        push @commands,
-          q{--pedigreeValidationType} . $SPACE . $pedigree_validation_type;
+        push @commands, q{--pedigreeValidationType} . $SPACE . $pedigree_validation_type;
     }
 
     if ($pedigree) {
@@ -170,14 +168,12 @@ sub gatk_base {
 
     if ($downsample_to_coverage) {
 
-        push @commands,
-          q{--downsample_to_coverage} . $SPACE . $downsample_to_coverage;
+        push @commands, q{--downsample_to_coverage} . $SPACE . $downsample_to_coverage;
     }
 
     if ($gatk_disable_auto_index_and_file_lock) {
 
-        push @commands,
-          q{--disable_auto_index_creation_and_locking_when_reading_rods};
+        push @commands, q{--disable_auto_index_creation_and_locking_when_reading_rods};
     }
 
     if ( @{$intervals_ref} ) {
@@ -201,8 +197,7 @@ sub gatk_base {
 
     if ($base_quality_score_recalibration_file) {
 
-        push @commands,
-          q{--BQSR} . $SPACE . $base_quality_score_recalibration_file;
+        push @commands, q{--BQSR} . $SPACE . $base_quality_score_recalibration_file;
     }
 
     if ($disable_indel_qual) {
@@ -223,8 +218,8 @@ sub gatk_base {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;

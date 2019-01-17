@@ -31,7 +31,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -216,7 +216,7 @@ sub conda_create {
 
     ##Stores commands depending on input parameters
     # Basic command
-    my @commands = q{conda create};
+    my @commands = qw{ conda create };
 
     if ($env_name) {
         push @commands, q{--name} . $SPACE . $env_name;
@@ -270,7 +270,7 @@ sub conda_deactivate {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{conda deactivate};
+    my @commands = qw{ conda deactivate };
 
     unix_write_to_file(
         {
@@ -361,7 +361,7 @@ sub conda_install {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = q{conda install};
+    my @commands = qw{ conda install };
 
     if ($env_name) {
 
@@ -463,7 +463,7 @@ sub conda_uninstall {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = q{conda uninstall};
+    my @commands = qw{ conda uninstall };
 
     if ($env_name) {
         push @commands, q{--name} . $SPACE . $env_name;
@@ -522,7 +522,7 @@ sub conda_update {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = q{conda update};
+    my @commands = qw{ conda update };
 
     if ($no_confirmation) {
         push @commands, q{--yes};

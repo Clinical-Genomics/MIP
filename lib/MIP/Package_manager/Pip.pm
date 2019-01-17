@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_pip_package pip_install };
@@ -197,7 +197,7 @@ sub pip_install {
     }
 
     ## Push base command
-    push @commands, q{pip install};
+    push @commands, qw{ pip install };
 
     if ($quiet) {
 

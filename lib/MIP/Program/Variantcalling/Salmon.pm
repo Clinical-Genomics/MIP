@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Salmon;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ salmon_index salmon_quant };
@@ -86,7 +87,7 @@ sub salmon_index {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{salmon index};
+    my @commands = qw{ salmon index };
 
     # Options
     push @commands, q{--transcripts} . $SPACE . $fasta_path;
@@ -104,8 +105,8 @@ sub salmon_index {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -206,7 +207,7 @@ sub salmon_quant {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{salmon quant};
+    my @commands = qw{ salmon quant };
 
     if ($gc_bias) {
         push @commands, q{--gcBias};
@@ -249,8 +250,8 @@ sub salmon_quant {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }

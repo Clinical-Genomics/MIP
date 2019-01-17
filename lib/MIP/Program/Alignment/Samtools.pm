@@ -22,7 +22,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Inherit from Exporter to export functions and variables
     use base qw{ Exporter };
@@ -152,7 +152,7 @@ sub samtools_view {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Array @commands stores commands depending on input parameters
-    my @commands = q{samtools view};
+    my @commands = qw{ samtools view };
 
     ## Options
     if ($thread_number) {
@@ -348,8 +348,7 @@ sub samtools_stats {
             store       => \$remove_overlap,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
@@ -439,8 +438,7 @@ sub samtools_faidx {
             strict_type => 1,
         },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
+        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
@@ -607,7 +605,7 @@ sub samtools_idxstats {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{samtools idxstats};
+    my @commands = qw{ samtools idxstats };
 
     ## Infile
     push @commands, $infile_path;
@@ -688,7 +686,7 @@ sub samtools_depth {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{samtools depth};
+    my @commands = qw{ samtools depth };
 
     ## Optionally set the read depth cutoff value
     if ($max_depth_treshold) {
