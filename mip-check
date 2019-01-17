@@ -50,7 +50,7 @@ mip_dir="$(dirname "$(readlink -f "$0")")"
 for infile in ${infiles[@]}
 do
     ## Only operate on perl files
-    if ! [[ $infile =~ .*\.(t|pm|pl)$ ]] ; then
+    if ! [[ $infile =~ .*\.(t|pm|pl|test)$ ]] ; then
         echo "[SKIPPING]: $infile"
         continue
     fi
