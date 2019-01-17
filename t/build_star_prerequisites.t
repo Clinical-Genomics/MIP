@@ -74,6 +74,8 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+$active_parameter{star_fusion}               = 1;
+$active_parameter{star_aln_reference_genome} = q{_star_genome_dir};
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -86,9 +88,8 @@ my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
 
 my %sample_info;
 
-#Special case
-$active_parameter{star_aln_reference_genome} = q{human_genome.fastq};
-$active_parameter{star_aln_transcripts_file} = q{GRCH37_transcripts.gtf};
+# Special case
+$active_parameter{transcript_annotation} = q{GRCH37_transcripts.gtf};
 
 trap {
     build_star_prerequisites(
@@ -103,7 +104,7 @@ trap {
             recipe_name                  => $recipe_name,
             sample_info_href             => \%sample_info,
         }
-      )
+    )
 };
 
 ## Then broadcast info log message

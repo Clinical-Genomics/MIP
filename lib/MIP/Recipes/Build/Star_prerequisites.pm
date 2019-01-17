@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_star_prerequisites };
@@ -39,14 +39,14 @@ sub build_star_prerequisites {
 ## Function : Creates the Star prerequisites for the human genome
 ## Returns  :
 ## Arguments: $active_parameter_href        => Active parameters for this analysis hash {REF}
-##          : $case_id                    => Family id
+##          : $case_id                      => Family id
 ##          : $file_info_href               => File info hash {REF}
 ##          : $human_genome_reference       => Human genome reference
 ##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                  => Job id hash {REF}
 ##          : $log                          => Log object
 ##          : $parameter_href               => Parameter hash {REF}
-##          : $recipe_name                 => Program name
+##          : $recipe_name                  => Program name
 ##          : $parameter_build_suffixes_ref => The rtg reference associated directory suffixes {REF}
 ##          : $sample_info_href             => Info on samples and case hash {REF}
 ##          : $temp_directory               => Temporary directory
@@ -224,6 +224,7 @@ sub build_star_prerequisites {
               . $recipe_name );
 
         say {$FILEHANDLE} q{## Building Star dir files};
+
         ## Get parameters
         my $star_directory_tmp =
             $active_parameter_href->{star_aln_reference_genome}

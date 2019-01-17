@@ -14,11 +14,24 @@ java_use_large_pages: 1
 max_cores_per_node: 16
 picardtools_path: a_test_path
 project_id: wamdu
+sacct_format_fields:
+  - jobid
+  - "jobname%50"
+  - account
+  - partition
+  - alloccpus
+  - TotalCPU
+  - elapsed
+  - start
+  - end
+  - state
+  - exitcode
 sample_ids:
   - ADM1059A1
   - ADM1059A2
   - ADM1059A3
 slurm_quality_of_service: low
+submission_profile: slurm
 load_env:
   test:
     bwa_mem:
