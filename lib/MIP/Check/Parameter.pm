@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1868,8 +1868,9 @@ q{Could not retrieve VEP version. Skipping checking that VEP api and cache match
         return;
     }
 
-    ## Get absolute path to VEP cache as it is commonly linked
-    my $vep_cache_dir_path = abs_path( catdir( $vep_directory_cache, q{homo_sapiens} ) );
+    ## Get absolute path to VEP species cache as it is commonly linked
+    my $vep_cache_species_dir_path =
+      _get_vep_cache_species_dir_path( { vep_directory_cache => $vep_directory_cache, } );
 
     ## Get folders in cache directory
     # Build rule
@@ -1885,7 +1886,7 @@ q{Could not retrieve VEP version. Skipping checking that VEP api and cache match
     $rule->relative;
 
     # Apply rule to find directories
-    my @vep_cache_version_folders = $rule->in($vep_cache_dir_path);
+    my @vep_cache_version_folders = $rule->in($vep_cache_species_dir_path);
 
     ## Check that
     if ( not @vep_cache_version_folders ) {
@@ -2301,6 +2302,42 @@ sub _check_vep_custom_annotation_options {
     }
 
     return 1;
+}
+
+sub _get_vep_cache_species_dir_path {
+
+## Function : Get the vep cache species dir path
+## Returns  : $vep_cache_species_dir_path
+## Arguments: $vep_directory_cache => VEP cache directory path {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $vep_directory_cache;
+
+    my $tmpl = {
+        vep_directory_cache => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_directory_cache,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @vep_species_cache = qw{ homo_sapiens homo_sapiens_merged };
+    my $vep_cache_species_dir_path;
+
+  SPECIES_CACHE:
+    foreach my $species_cache (@vep_species_cache) {
+
+        ## Get species specific cache dir
+        $vep_cache_species_dir_path =
+          abs_path( catdir( $vep_directory_cache, $species_cache ) );
+        last if ($vep_cache_species_dir_path);
+    }
+    return $vep_cache_species_dir_path;
 }
 
 1;
