@@ -144,7 +144,7 @@ epy3:
     expansionhunter:
       conda_dependency:
       version: 2.5.5
-    sambamba: 
+    sambamba:
       version: 0.6.1
 
 ## Tiddit env spec
@@ -204,7 +204,7 @@ evep:
         - MaxEntScan
       vep_species:
         - homo_sapiens_merged
-      version: 94
+      version: 95
 
 # Specify environment names
 environment_name:
@@ -255,7 +255,7 @@ program_test_command:
     execution:
     path: 'bwa'
   bwakit:
-    execution: 
+    execution:
     path: 'run-bwamem'
   chanjo:
     execution: 'chanjo'
@@ -299,20 +299,20 @@ program_test_command:
   manta:
     execution: 'configManta.py --version'
     path: 'configManta.py'
-  mip_scripts: 
+  mip_scripts:
     execution: 'mip --help'
     path: 'mip'
   multiqc:
     execution: 'multiqc --version'
     path: 'multiqc'
-  numpy: 
+  numpy:
     execution: 'python -c "import numpy"'
-    path: 
+    path:
   peddy:
     execution: 'peddy --version'
     path: 'peddy'
-  picard: 
-    execution: 
+  picard:
+    execution:
     path: 'picard'
   plink2:
     execution: 'plink2 --version'

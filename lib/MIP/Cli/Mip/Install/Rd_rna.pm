@@ -27,7 +27,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -67,11 +67,6 @@ sub run {
     ## Merge arrays and overwrite flat values in config YAML with command line
     @parameter{ keys %{$arg_href} } = values %{$arg_href};
 
-    ## Update installation array
-    if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
-        @{ $parameter{installations} } = qw{ emip epy3 estar };
-    }
-
     ## Nest the command line parameters and overwrite the default
     nest_hash( { cmd_href => \%parameter } );
 
@@ -107,6 +102,7 @@ sub _build_usage {
                 emip  => Optional [Str],
                 epy3  => Optional [Str],
                 estar => Optional [Str],
+                evep  => Optional [Str],
             ],
             required => 0,
         ),
@@ -128,10 +124,10 @@ sub _build_usage {
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip}],
+            cmd_tags      => [q{Default: emip epy3 estar evep}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip full epy3 estar }] ), ],
+            isa           => ArrayRef [ enum( [qw{ emip epy3 estar evep }] ), ],
             required      => 0,
         ),
     );
@@ -161,6 +157,7 @@ sub _build_usage {
                 star             => Optional [Str],
                 star_fusion      => Optional [Str],
                 stringtie        => Optional [Str],
+                vep              => Optional [Str],
             ],
             required => 0,
         ),
@@ -201,7 +198,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba samtools star star_fusion stringtie }
+                          salmon sambamba samtools star star_fusion stringtie vep }
                     ]
                 ),
             ],
@@ -230,7 +227,7 @@ sub _build_usage {
                     [
                         qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
                           gffcompare htslib mip_scripts multiqc picard preseq rseqc
-                          salmon sambamba samtools star star_fusion stringtie }
+                          salmon sambamba samtools star star_fusion stringtie vep }
                     ]
                 ),
             ],
@@ -238,6 +235,68 @@ sub _build_usage {
         ),
     );
 
+    option(
+        q{shell:vep:vep_auto_flag} => (
+            cmd_aliases   => [qw{ vepf }],
+            cmd_flag      => q{vep_auto_flag},
+            cmd_tags      => [q{Default: acfp}],
+            documentation => q{Set the vep auto installer flags},
+            is            => q{rw},
+            isa           => Str,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{shell:vep:vep_assemblies} => (
+            cmd_aliases   => [qw{ vepa }],
+            cmd_flag      => q{vep_assemblies},
+            cmd_tags      => [q{Default: GRCh37, hg38}],
+            documentation => q{Select the assembly version},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{shell:vep:vep_cache_dir} => (
+            cmd_aliases => [qw{ vepc }],
+            cmd_flag    => q{vep_cache_dir},
+            cmd_tags    => [
+                q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}
+            ],
+            documentation => q{Specify the cache directory to use},
+            is            => q{rw},
+            isa           => Str,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{shell:vep:vep_plugins} => (
+            cmd_aliases   => [qw{ vepp }],
+            cmd_flag      => q{vep_plugins},
+            cmd_tags      => [q{Default: MaxEntScan, LoFtool}],
+            documentation => q{Select the vep plugins to install},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ MaxEntScan Loftool }] ), ],
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{shell:vep:vep_species} => (
+            cmd_aliases   => [qw{ vepsp }],
+            cmd_flag      => q{vep_species},
+            cmd_tags      => [q{Default: homo_sapiens_merged}],
+            documentation => q{Select the vep species to install},
+            is            => q{rw},
+            isa      => ArrayRef [ enum( [qw{ homo_sapiens homo_sapiens_merged }] ), ],
+            required => 0,
+        ),
+    );
+    
     return;
 }
 
