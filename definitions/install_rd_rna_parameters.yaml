@@ -15,13 +15,12 @@ disable_env_check: 0
 # MIP main environment spec
 emip:
   conda:
-    bcftools: 1.8
+    bcftools: 1.9
     bioconductor-deseq2: 1.18.1
     bioconductor-tximport:
-    fastqc: 0.11.4
     gatk4: 4.0
     gffcompare: 0.10.1
-    htslib: 1.8
+    htslib: 1.9
     java-jdk:
     numpy:
     picard: 2.18
@@ -31,8 +30,8 @@ emip:
     r-optparse:
     r-readr:
     salmon: 0.9.1
-    sambamba: 0.6.6
-    samtools: 1.8
+    sambamba: 0.6.8
+    samtools: 1.9
     scipy:
     stringtie: 1.3.4
   shell:
@@ -72,6 +71,7 @@ epy3:
 ## STAR environment spec
 estar:
   conda:
+    fastqc: 0.11.8=0
     fusion-filter: 0.5.0
     star: 2.6
     star-fusion: 1.4.0
@@ -79,17 +79,47 @@ estar:
   pip:
   shell:
 
+# VEP environment spec
+evep:
+  conda:
+    bcftools: 1.9
+    htslib: 1.9
+    pip:
+    python: 2.7
+    tabix:
+  pip:
+  shell:
+    vep:
+      conda_dependency:
+        bcftools:
+        htslib:
+        tabix:
+      vep_assemblies:
+        - GRCh37
+        - GRCh38
+      vep_auto_flag: acfp
+      vep_cache_dir: ~
+      vep_plugins:
+        - ExACpLI
+        - LoFtool
+        - MaxEntScan
+      vep_species:
+        - homo_sapiens_merged
+      version: 95
+
 # Specify environment names
 environment_name:
-  emip: MIP_rna
-  epy3: MIP_py3
-  estar: MIP_star
+  emip: MIP_rd_rna
+  epy3: MIP_rd_rna_py3
+  estar: MIP_rd_rna_star
+  evep: MIP_rd_rna_vep
 
 # Environments and their recipes
 installations:
   - emip
-  - estar
   - epy3
+  - estar
+  - evep
 
 # Optional name of log file
 log_file: ~
@@ -192,6 +222,9 @@ program_test_command:
     path: 'stringtie'
   ucsc-wigtobigwig:
     path: 'wigToBigWig'
+  vep:
+    execution: 'vep'
+    path: 'vep'
 
 # Programs that needs to be installed with pyhton 3,
 # only touch if you know what you're doing

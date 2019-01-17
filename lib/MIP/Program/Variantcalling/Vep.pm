@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ variant_effect_predictor variant_effect_predictor_install };
@@ -271,6 +271,8 @@ sub variant_effect_predictor_install {
 ##          : $cache_directory        => Set destination directory for cache files
 ##          : $cache_version          => Set cache version to download
 ##          : $FILEHANDLE             => Filehandle to write to
+##          : $no_update              => Don't update
+##          : $no_htslib              => Don't attempt to install Bio::DB::HTS/htslib
 ##          : $plugins_ref            => Vep plugins {REF}
 ##          : $species_ref            => Comma-separated list of species to install when using --AUTO {REF}
 ##          : $stderrfile_path        => Stderrfile path
@@ -286,6 +288,7 @@ sub variant_effect_predictor_install {
     my $cache_directory;
     my $cache_version;
     my $FILEHANDLE;
+    my $no_htslib;
     my $no_update;
     my $plugins_ref;
     my $species_ref;
@@ -304,6 +307,11 @@ sub variant_effect_predictor_install {
             default     => 1,
             allow       => [ undef, 0, 1 ],
             store       => \$no_update,
+            strict_type => 1,
+        },
+        no_htslib => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$no_htslib,
             strict_type => 1,
         },
         plugins_ref => { default => [], store => \$plugins_ref, strict_type => 1, },
@@ -337,7 +345,12 @@ sub variant_effect_predictor_install {
         push @commands, q{--CACHE_VERSION} . $SPACE . $cache_version;
     }
     if ($no_update) {
+
         push @commands, q{--NO_UPDATE};
+    }
+    if ($no_htslib) {
+
+        push @commands, q{--NO_HTSLIB};
     }
     if ( @{$plugins_ref} ) {
 

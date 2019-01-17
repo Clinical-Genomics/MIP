@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -225,11 +225,9 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
     }
 
     ## Set LD_LIBRARY_PATH for VEP installation
-    say {$FILEHANDLE} q{LD_LIBRARY_PATH=}
-      . $conda_prefix_path
-      . q{/lib/:$LD_LIBRARY_PATH};
+    say {$FILEHANDLE} q{LD_LIBRARY_PATH=} . $conda_prefix_path . q{/lib/:$LD_LIBRARY_PATH};
     say {$FILEHANDLE} q{export LD_LIBRARY_PATH} . $NEWLINE;
-
+    
     ## Download VEP
     if ( $auto =~ m/[al]/xms ) {
         ## Move to miniconda environment
@@ -284,6 +282,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
             auto            => $auto,
             cache_directory => $cache_directory,
             FILEHANDLE      => $FILEHANDLE,
+            no_htslib       => 0,
             plugins_ref     => \@plugins,
             species_ref     => \@species,
             version         => $vep_version,
@@ -427,7 +426,7 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.tx
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
+    
     ## Go back to subroutine origin
     say {$FILEHANDLE} q{## Moving back to original working directory};
     gnu_cd(

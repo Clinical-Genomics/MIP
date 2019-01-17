@@ -669,3 +669,15 @@ sacct_format_fields:
     - exitcode
   element_separator: ,
   type: recipe_argument
+## VEP
+varianteffectpredictor:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _vep
+  outfile_suffix: ".vcf"
+  program_executables:
+   - vep
+  type: recipe
