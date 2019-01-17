@@ -904,6 +904,7 @@ sv_vep_features:
    - no_progress
    - no_stats
    - numbers
+   - merged
    - offline
    - per_gene
    - protein
@@ -1522,6 +1523,7 @@ vep_features:
    - no_progress
    - no_stats
    - numbers
+   - merged
    - "polyphen p"
    - protein
    - offline
