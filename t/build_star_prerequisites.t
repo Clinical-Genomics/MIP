@@ -66,7 +66,8 @@ diag(   q{Test build_star_prerequisites from Star_prerequisites.pm v}
 my $log = test_log();
 
 ## Given build parameters
-my $recipe_name = q{star_fusion};
+my $recipe_name    = q{star_fusion};
+my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
     {
@@ -74,6 +75,8 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+$active_parameter{star_fusion}               = 1;
+$active_parameter{star_aln_reference_genome} = q{_star_genome_dir};
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -81,14 +84,17 @@ my %file_info = test_mip_hashes(
     }
 );
 my %infile_lane_prefix;
-my %job_id;
-my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
-
+my %job_id    = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %parameter = test_mip_hashes(
+    {
+        mip_hash_name => q{recipe_parameter},
+        recipe_name   => $recipe_name,
+    }
+);
 my %sample_info;
 
-#Special case
-$active_parameter{star_aln_reference_genome} = q{human_genome.fastq};
-$active_parameter{star_aln_transcripts_file} = q{GRCH37_transcripts.gtf};
+# Special case
+$active_parameter{transcript_annotation} = q{GRCH37_transcripts.gtf};
 
 trap {
     build_star_prerequisites(
@@ -100,12 +106,14 @@ trap {
             log                          => $log,
             parameter_href               => \%parameter,
             parameter_build_suffixes_ref => \@{ $file_info{star_aln_reference_genome} },
+            profile_base_command         => $slurm_mock_cmd,
             recipe_name                  => $recipe_name,
             sample_info_href             => \%sample_info,
         }
-      )
+    )
 };
-
+## Special case to get the "ok" at the beginning of the line for Test::Harness
+say {*STDOUT} q{};
 ## Then broadcast info log message
 my $log_msg = q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+star\s+files};
 like( $trap->stderr, qr/$log_msg/msx, q{Broadcast star_fusion log message} );
