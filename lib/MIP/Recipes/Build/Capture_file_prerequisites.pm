@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_capture_file_prerequisites };
@@ -38,18 +38,18 @@ sub build_capture_file_prerequisites {
 
 ## Function : Creates the target "interval_list" and  "padded.interval_list" files.
 ## Returns  :
-## Arguments: $active_parameter_href       => Active parameters for this analysis hash {REF}
-##          : $case_id                   => Family ID
-##          : $FILEHANDLE                  => Filehandle to write to
-##          : $file_info_href              => File info hash {REF}
-##          : $infile_lane_prefix_href     => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                 => Job id hash {REF}
-##          : $log                         => Log object
+## Arguments: $active_parameter_href        => Active parameters for this analysis hash {REF}
+##          : $case_id                      => Family ID
+##          : $FILEHANDLE                   => Filehandle to write to
+##          : $file_info_href               => File info hash {REF}
+##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
+##          : $job_id_href                  => Job id hash {REF}
+##          : $log                          => Log object
 ##          : $parameter_build_suffixes_ref => Exome target bed associated file endings
-##          : $parameter_href              => Parameter hash {REF}
-##          : $recipe_name                => Program name
-##          : $sample_info_href            => Info on samples and case hash {REF}
-##          : $temp_directory              => Temporary directory
+##          : $parameter_href               => Parameter hash {REF}
+##          : $recipe_name                  => Program name
+##          : $sample_info_href             => Info on samples and case hash {REF}
+##          : $temp_directory               => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -141,6 +141,7 @@ sub build_capture_file_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Parameter qw{ get_recipe_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_rm gnu_cat gnu_ln };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -156,6 +157,12 @@ sub build_capture_file_prerequisites {
     my $submit_switch;
 
     ## Unpack parameters
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
     my $interval_list_suffix        = $parameter_build_suffixes_ref->[0];
     my $padded_interval_list_suffix = $parameter_build_suffixes_ref->[1];
     my $recipe_mode                 = $active_parameter_href->{$recipe_name};
@@ -172,13 +179,14 @@ sub build_capture_file_prerequisites {
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         ($recipe_file_path) = setup_script(
             {
-                active_parameter_href => $active_parameter_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $case_id,
-                job_id_href           => $job_id_href,
-                log                   => $log,
-                recipe_directory      => $recipe_name,
-                recipe_name           => $recipe_name,
+                active_parameter_href           => $active_parameter_href,
+                FILEHANDLE                      => $FILEHANDLE,
+                directory_id                    => $case_id,
+                job_id_href                     => $job_id_href,
+                log                             => $log,
+                recipe_directory                => $recipe_name,
+                recipe_name                     => $recipe_name,
+                source_environment_commands_ref => \@source_environment_cmds,
             }
         );
     }
