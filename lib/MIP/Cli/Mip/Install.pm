@@ -22,7 +22,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run }
   ;    # MooseX::App required sub. Called internally by MooseX::App
 
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -155,6 +155,17 @@ sub _build_usage {
             is            => q{rw},
             isa           => Bool,
             required      => 0,
+        ),
+    );
+
+    option(
+        q{core_number} => (
+            cmd_tags      => [q{Default: 1}],
+            documentation => q{Number of tasks in sbatch allocation},
+            is            => q{rw},
+            isa           => Int,
+            required      => 0,
+
         ),
     );
 
