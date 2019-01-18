@@ -3,7 +3,7 @@
 title = "Vcfanno configuration file" 
 
 [[annotation]]
-file="TEST_REFERENCES/GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz"
+file="TEST_REFERENCES!/GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz"
 fields = ["AF", "AF_POPMAX"]
 ops=["self", "self"]
 names=["GNOMADAF", "GNOMADAF_POPMAX"]

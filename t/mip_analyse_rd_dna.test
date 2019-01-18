@@ -195,14 +195,14 @@ sub _write_toml_config {
     ## Create copy of template
     cp $toml_template_path, $toml_config_path;
 
-    ## Create Path::Tiy object
+    ## Create Path::Tiny object
     $toml_config_path = path($toml_config_path);
 
     ## Read into memory
     my $toml_config = $toml_config_path->slurp_utf8;
 
     ## Replace with system specific path
-    $toml_config =~ s/TEST_REFERENCES/$test_reference_path/xms;
+    $toml_config =~ s/TEST_REFERENCES!/$test_reference_path/xms;
 
     ## Write to file
     $toml_config_path->spew_utf8($toml_config);
