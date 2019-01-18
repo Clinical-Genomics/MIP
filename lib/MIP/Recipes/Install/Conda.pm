@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.15;
+    our $VERSION = 1.0.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -381,10 +381,10 @@ sub install_bioconda_packages {
     say {$FILEHANDLE} q{## Installing bioconda modules in conda environment};
     conda_install(
         {
-            conda_channel => q{bioconda},
-            env_name      => $conda_env,
-            FILEHANDLE    => $FILEHANDLE,
-            packages_ref  => \@packages,
+            conda_channels_ref => [qw{ bioconda conda-forge }],
+            env_name           => $conda_env,
+            FILEHANDLE         => $FILEHANDLE,
+            packages_ref       => \@packages,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -653,11 +653,15 @@ sub finish_bioconda_package_install {
     if ( $bioconda_packages_href->{gatk} ) {
         say {$FILEHANDLE} q{## Custom GATK solutions};
 
+        ## Strip build number from version
+        my $gatk_version = substr( $bioconda_packages_href->{gatk},
+            0, index( $bioconda_packages_href->{gatk}, q{=} ) );
+
         ## Download gatk .tar.bz2
         my $gatk_tar_path = gatk_download(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                gatk_version => $bioconda_packages_href->{gatk},
+                gatk_version => $gatk_version,
                 quiet        => $quiet,
                 verbose      => $verbose,
             }
@@ -665,7 +669,10 @@ sub finish_bioconda_package_install {
 
         ## Hard coding here since GATK 4.0 will be open source.
         ## Then this step will be unnecessary
-        say {$FILEHANDLE} q{gatk-register} . $SPACE . $gatk_tar_path . $NEWLINE;
+        say {$FILEHANDLE} q{gatk3-register}
+          . $SPACE
+          . $gatk_tar_path
+          . $NEWLINE;
 
         gnu_rm(
             {

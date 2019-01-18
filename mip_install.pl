@@ -68,7 +68,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.35};
+our $VERSION = q{1.2.7};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -577,6 +577,9 @@ sub get_programs_for_installation {
     if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_program} } ) {
         push @{ $parameter_href->{select_program} }, qw{ samtools bcftools };
     }
+    if ( any { $_ eq q{freebayes} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} }, qw{ bcftools gatk };
+    }
     if ( any { $_ eq q{peddy} } @{ $parameter_href->{select_program} } ) {
         push @{ $parameter_href->{select_program} }, qw{ bcftools };
     }
@@ -590,6 +593,10 @@ sub get_programs_for_installation {
     }
     if ( any { $_ eq q{vep} } @{ $parameter_href->{select_program} } ) {
         push @{ $parameter_href->{select_program} }, qw{ bcftools htslib };
+    }
+    if ( any { $_ eq q{tiddit} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} },
+          qw{ bcftools cmake htslib cython gcc numpy scipy svdb };
     }
 
     ## Remove all programs except those selected for installation
@@ -612,7 +619,7 @@ sub get_programs_for_installation {
 
     ## Some programs have conflicting dependencies and require seperate environments to function properly
     ## These are excluded from installation unless specified with the select_program flag
-    my @conflicting_programs = qw{ cnvnator peddy svdb vep };
+    my @conflicting_programs = qw{ cnvnator peddy svdb vep freebayes tiddit };
   CONFLICTING_PROGRAM:
     foreach my $conflicting_program (@conflicting_programs) {
         if (

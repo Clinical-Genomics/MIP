@@ -83,6 +83,8 @@ my $cmds_ref = [
     qw(--dra),
     qw(--psvv 0),
     qw(--pfreebayes 0),
+    qw(--ptiddit 0),
+	qw(--sv_svdb_merge_prioritize manta,delly,cnvnator),
     qw(--pvcf2cytosure 0),
 	qw(--gatk_combinevariants_prioritize_caller gatk,bcftools),
 ];
