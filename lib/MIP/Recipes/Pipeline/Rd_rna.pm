@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rd_rna };
@@ -149,6 +149,7 @@ sub pipeline_rd_rna {
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
+    use MIP::Recipes::Analysis::Bcftools_merge qw{ analysis_bcftools_merge };
     use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
     use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
@@ -208,6 +209,7 @@ sub pipeline_rd_rna {
 
     ## Dispatch table
     my %analysis_recipe = (
+        bcftools_merge            => \&analysis_bcftools_merge,
         blobfish                  => \&analysis_blobfish,
         bootstrapann              => \&analysis_bootstrapann,
         fastqc_ar                 => \&analysis_fastqc,

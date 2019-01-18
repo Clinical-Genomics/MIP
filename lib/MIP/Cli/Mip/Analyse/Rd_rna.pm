@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.08;
+our $VERSION = 1.09;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -152,6 +152,16 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
+
+    option(
+        q{bcftools_merge} => (
+            cmd_aliases   => [qw{ bcfm }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge vcfs before anotation},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
 
     option(
         q{blobfish} => (

@@ -27,8 +27,9 @@ CHAIN_ALL:
     - gatk_baserecalibration
     - gatk_haplotypecaller
     - gatk_variantfiltration
-    - CHAIN_ASE:
-      - gatk_asereadcounter
-      - bootstrapann
+    - gatk_asereadcounter
+    - bootstrapann
+    - bcftools_merge
+    - varianteffectpredictor
   - multiqc_ar
   - sacct
