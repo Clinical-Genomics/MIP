@@ -23,7 +23,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -314,16 +314,6 @@ sub setup_script {
         }
     );
 
-    ## Set shell attributes
-    gnu_set(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            set_errexit  => $set_errexit,
-            set_nounset  => $set_nounset,
-            set_pipefail => $set_pipefail,
-        }
-    );
-
     ### Sbatch header
     ## Get parameters
     my $job_name = $program_name . $UNDERSCORE . $directory_id . $call_type;
@@ -344,6 +334,16 @@ sub setup_script {
             slurm_quality_of_service => $slurm_quality_of_service,
             stderrfile_path          => $stderrfile_path,
             stdoutfile_path          => $stdoutfile_path,
+        }
+    );
+
+    ## Set shell attributes
+    gnu_set(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            set_errexit  => $set_errexit,
+            set_nounset  => $set_nounset,
+            set_pipefail => $set_pipefail,
         }
     );
 
