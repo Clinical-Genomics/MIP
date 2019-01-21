@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.013;
+    our $VERSION = 1.014;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
@@ -346,8 +346,8 @@ sub analysis_gatk_haplotypecaller {
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## GATK Haplotypecaller
-        my $stderrfile_path => $xargs_file_path_prefix . $DOT . $contig . $DOT
-          . q{stderr.txt};
+        my $stderrfile_path =
+          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_haplotypecaller(
             {
                 annotations_ref =>
