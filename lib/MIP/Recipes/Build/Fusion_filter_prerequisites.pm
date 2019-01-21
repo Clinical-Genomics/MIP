@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_fusion_filter_prerequisites };
@@ -48,6 +48,7 @@ sub build_fusion_filter_prerequisites {
 ##          : $parameter_href               => Parameter hash {REF}
 ##          : $recipe_name                 => Program name
 ##          : $parameter_build_suffixes_ref => The rtg reference associated directory suffixes {REF}
+##          : $profile_base_command         => Submission profile base command
 ##          : $sample_info_href             => Info on samples and case hash {REF}
 ##          : $temp_directory               => Temporary directory
 
@@ -67,6 +68,7 @@ sub build_fusion_filter_prerequisites {
     ## Default(s)
     my $case_id;
     my $human_genome_reference;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -131,6 +133,11 @@ sub build_fusion_filter_prerequisites {
             defined     => 1,
             required    => 1,
             store       => \$parameter_build_suffixes_ref,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         sample_info_href => {
@@ -326,6 +333,7 @@ sub build_fusion_filter_prerequisites {
 
         submit_recipe(
             {
+                base_command       => $profile_base_command,
                 dependency_method  => q{island_to_samples},
                 case_id            => $case_id,
                 job_id_href        => $job_id_href,
@@ -337,7 +345,7 @@ sub build_fusion_filter_prerequisites {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

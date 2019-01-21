@@ -17,7 +17,6 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
-use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -75,8 +74,9 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$active_parameter{star_fusion}               = 1;
+$active_parameter{$recipe_name} = 1;
 $active_parameter{star_aln_reference_genome} = q{_star_genome_dir};
+
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
