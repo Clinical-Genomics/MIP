@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.1';
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,9 +34,10 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+Readonly my $COLON     => q{:};
+Readonly my $COMMA     => q{,};
+Readonly my $EMPTY_STR => q{};
+Readonly my $SPACE     => q{ };
 
 BEGIN {
 
@@ -68,6 +69,7 @@ my $log = test_log();
 ## Given build parameters
 my $parameter_build_name = q{bwa_build_reference};
 my $recipe_name          = q{bwa_mem};
+my $slurm_mock_cmd       = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
     {
@@ -75,6 +77,9 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+## Submission via slurm_mock
+$active_parameter{$recipe_name} = 1;
+
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -97,11 +102,14 @@ trap {
             log                          => $log,
             parameter_build_suffixes_ref => \@{ $file_info{$parameter_build_name} },
             parameter_href               => \%parameter,
+            profile_base_command         => $slurm_mock_cmd,
             recipe_name                  => $recipe_name,
             sample_info_href             => \%sample_info,
         }
-      )
+    )
 };
+## Special case to get the "ok" at the beginning of the line for Test::Harness
+say {*STDOUT} $EMPTY_STR;
 
 ## Then broadcast info log message
 my $log_msg = q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+index\s+files};

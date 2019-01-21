@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,9 +34,10 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+Readonly my $COLON     => q{:};
+Readonly my $COMMA     => q{,};
+Readonly my $EMPTY_STR => q{};
+Readonly my $SPACE     => q{ };
 
 BEGIN {
 
@@ -114,6 +115,7 @@ trap {
 };
 ## Special case to get the "ok" at the beginning of the line for Test::Harness
 say {*STDOUT} q{};
+
 ## Then broadcast info log message
 my $log_msg = q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+star\s+files};
 like( $trap->stderr, qr/$log_msg/msx, q{Broadcast star_fusion log message} );

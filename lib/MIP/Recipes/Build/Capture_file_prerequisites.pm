@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_capture_file_prerequisites };
@@ -47,6 +47,7 @@ sub build_capture_file_prerequisites {
 ##          : $log                          => Log object
 ##          : $parameter_build_suffixes_ref => Exome target bed associated file endings
 ##          : $parameter_href               => Parameter hash {REF}
+##          : $profile_base_command         => Submission profile base command
 ##          : $recipe_name                  => Program name
 ##          : $sample_info_href             => Info on samples and case hash {REF}
 ##          : $temp_directory               => Temporary directory
@@ -62,6 +63,7 @@ sub build_capture_file_prerequisites {
     my $log;
     my $parameter_build_suffixes_ref;
     my $parameter_href;
+    my $profile_base_command;
     my $recipe_name;
     my $sample_info_href;
 
@@ -117,6 +119,11 @@ sub build_capture_file_prerequisites {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -360,6 +367,7 @@ sub build_capture_file_prerequisites {
 
             submit_recipe(
                 {
+                    base_command       => $profile_base_command,
                     dependency_method  => q{island_to_samples},
                     case_id            => $case_id,
                     job_id_href        => $job_id_href,
