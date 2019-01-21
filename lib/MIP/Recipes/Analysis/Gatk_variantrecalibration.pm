@@ -392,7 +392,9 @@ sub analysis_gatk_variantrecalibration_wes {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Genotype refinement
-    if ( $parameter_href->{cache}{trio} ) {
+    if (    $parameter_href->{cache}{trio}
+        and $active_parameter_href->{gatk_calculategenotypeposteriors} )
+    {
 
         say {$FILEHANDLE} q{## GATK CalculateGenotypePosteriors};
 
@@ -856,7 +858,9 @@ sub analysis_gatk_variantrecalibration_wgs {
     }
 
     ## GenotypeRefinement
-    if ( $parameter_href->{cache}{trio} ) {
+    if (    $parameter_href->{cache}{trio}
+        and $active_parameter_href->{gatk_calculategenotypeposteriors} )
+    {
 
         say {$FILEHANDLE} q{## GATK CalculateGenotypePosteriors};
 

@@ -1199,6 +1199,12 @@ gatk_variantrecalibration:
   recipe_type: variant_callers
   outfile_suffix: ".vcf"
   type: recipe
+gatk_calculategenotypeposteriors:
+  associated_recipe:
+   - gatk_variantrecalibration
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 gatk_calculategenotypeposteriors_support_set:
   associated_recipe:
    - gatk_variantrecalibration

@@ -1363,6 +1363,16 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
+        q{gatk_calculategenotypeposteriors} => (
+            cmd_aliases   => [qw{ gcgp }],
+            cmd_flag      => q{gatk_calculategenotypeposteriors},
+            documentation => q{Perform gatk calculate genotype posterior},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{gatk_variantrecalibration_dp_annotation} => (
             cmd_aliases   => [qw{ gvrdpa }],
             cmd_flag      => q{gatk_varrecal_dp_ann},
