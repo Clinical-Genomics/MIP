@@ -380,7 +380,7 @@ sub build_capture_file_prerequisites {
             );
         }
     }
-    return;
+    return 1;
 }
 
 sub _reformat_capture_file {

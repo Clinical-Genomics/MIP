@@ -269,7 +269,7 @@ sub build_bwa_prerequisites {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

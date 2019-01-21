@@ -34,10 +34,9 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COLON     => q{:};
-Readonly my $COMMA     => q{,};
-Readonly my $EMPTY_STR => q{};
-Readonly my $SPACE     => q{ };
+Readonly my $COLON => q{:};
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -97,27 +96,22 @@ my %sample_info;
 # Special case
 $active_parameter{transcript_annotation} = q{GRCH37_transcripts.gtf};
 
-trap {
-    build_star_prerequisites(
-        {
-            active_parameter_href        => \%active_parameter,
-            file_info_href               => \%file_info,
-            infile_lane_prefix_href      => \%infile_lane_prefix,
-            job_id_href                  => \%job_id,
-            log                          => $log,
-            parameter_href               => \%parameter,
-            parameter_build_suffixes_ref => \@{ $file_info{star_aln_reference_genome} },
-            profile_base_command         => $slurm_mock_cmd,
-            recipe_name                  => $recipe_name,
-            sample_info_href             => \%sample_info,
-        }
-    )
-};
-## Special case to get the "ok" at the beginning of the line for Test::Harness
-say {*STDOUT} q{};
+my $is_ok = build_star_prerequisites(
+    {
+        active_parameter_href        => \%active_parameter,
+        file_info_href               => \%file_info,
+        infile_lane_prefix_href      => \%infile_lane_prefix,
+        job_id_href                  => \%job_id,
+        log                          => $log,
+        parameter_href               => \%parameter,
+        parameter_build_suffixes_ref => \@{ $file_info{star_aln_reference_genome} },
+        profile_base_command         => $slurm_mock_cmd,
+        recipe_name                  => $recipe_name,
+        sample_info_href             => \%sample_info,
+    }
+);
 
-## Then broadcast info log message
-my $log_msg = q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+star\s+files};
-like( $trap->stderr, qr/$log_msg/msx, q{Broadcast star_fusion log message} );
+## Then return TRUE
+ok( $is_ok, q{ Executed build star prerequisites} );
 
 done_testing();
