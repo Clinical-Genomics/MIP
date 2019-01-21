@@ -211,7 +211,7 @@ sub analysis_bcftools_merge {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
-    ## Iterate over two arrays
+    ## Iterate over two arrays taking each corresponding element of each array per iteration
     my $infiles = each_array( @infile_paths, @infile_path_prefixes );
   INFILE:
     while ( my ( $infile_path, $infile_path_prefix ) = $infiles->() ) {

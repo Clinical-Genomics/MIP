@@ -157,7 +157,7 @@ sub _build_usage {
         q{bcftools_merge} => (
             cmd_aliases   => [qw{ bcfm }],
             cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Merge vcfs before anotation},
+            documentation => q{Merge vcfs before annotation},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )
