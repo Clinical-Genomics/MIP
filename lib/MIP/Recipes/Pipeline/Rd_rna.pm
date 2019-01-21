@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rd_rna };
@@ -175,6 +175,7 @@ sub pipeline_rd_rna {
     use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
     use MIP::Recipes::Analysis::Stringtie qw{ analysis_stringtie };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_rna };
     use MIP::Recipes::Build::Rd_rna qw{build_rd_rna_meta_files};
 
     ### Pipeline specific checks
@@ -230,6 +231,7 @@ sub pipeline_rd_rna {
         star_aln                  => \&analysis_star_aln,
         star_fusion               => \&analysis_star_fusion,
         stringtie_ar              => \&analysis_stringtie,
+        varianteffectpredictor    => \&analysis_vep_rna,
     );
 
   RECIPE:

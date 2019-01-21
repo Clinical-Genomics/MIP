@@ -22,7 +22,7 @@ requires qw{ IO::Interactive 1.022 };               # MIP
 requires qw{ IO::Uncompress::Gunzip 2.074 };        # VEP
 requires qw{ IPC::System::Simple 1.25 };            # MIP
 requires qw{ JSON 2.97000 };                        # VEP
-requires qw{ JSON::XS 3.02 };                       # STAR-Fusion
+requires qw{ JSON::XS 4.0 };                        # STAR-Fusion
 requires qw{ List::MoreUtils 0.413 };               # MIP
 requires qw{ List::Util 1.49 };                     # MIP
 requires qw{ Log::Log4perl 1.49 };                  # MIP
