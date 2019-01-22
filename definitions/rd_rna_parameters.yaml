@@ -120,6 +120,7 @@ recipe_time:
     star_aln: 3
     star_fusion: 6
     stringtie_ar: 2
+    varianteffectpredictor: 2
   type: mip
 recipe_core_number:
   associated_recipe:
@@ -631,26 +632,75 @@ bootstrapann:
 bcftools_merge:
   analysis_mode: case
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   default: 1
   file_tag: _comb
   outfile_suffix: ".vcf"
   program_executables:
-   - bcftools
+    - bcftools
   type: recipe
 ## VEP
 varianteffectpredictor:
   analysis_mode: case
   associated_recipe:
-   - mip
+    - mip
   data_type: SCALAR
   default: 1
   file_tag: _vep
   outfile_suffix: ".vcf"
   program_executables:
-   - vep
+    - vep
   type: recipe
+vep_custom_annotation:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: HASH
+  mandatory: no
+  type: path
+vep_directory_cache:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
+vep_directory_path:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
+vep_features:
+  associated_recipe:
+    - varianteffectpredictor
+  element_separator: ,
+  data_type: ARRAY
+  default:
+    - appris
+    - biotype
+    - cache
+    - canonical
+    - ccds
+    - domains
+    - exclude_predicted
+    - force_overwrite
+    - hgvs
+    - humdiv
+    - no_progress
+    - no_stats
+    - numbers
+    - merged
+    - "polyphen p"
+    - protein
+    - offline
+    - regulatory
+    - "sift p"
+    - symbol
+    - tsl
+    - uniprot
+  type: recipe_argument
 ## MultiQC
 multiqc_ar:
   analysis_mode: case

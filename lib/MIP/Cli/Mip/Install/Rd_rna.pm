@@ -27,7 +27,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -239,7 +239,7 @@ sub _build_usage {
         q{shell:vep:vep_auto_flag} => (
             cmd_aliases   => [qw{ vepf }],
             cmd_flag      => q{vep_auto_flag},
-            cmd_tags      => [q{Default: acfp}],
+            cmd_tags      => [q{Default: acf}],
             documentation => q{Set the vep auto installer flags},
             is            => q{rw},
             isa           => Str,
@@ -274,18 +274,6 @@ sub _build_usage {
     );
 
     option(
-        q{shell:vep:vep_plugins} => (
-            cmd_aliases   => [qw{ vepp }],
-            cmd_flag      => q{vep_plugins},
-            cmd_tags      => [q{Default: MaxEntScan, LoFtool}],
-            documentation => q{Select the vep plugins to install},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ MaxEntScan Loftool }] ), ],
-            required      => 0,
-        ),
-    );
-
-    option(
         q{shell:vep:vep_species} => (
             cmd_aliases   => [qw{ vepsp }],
             cmd_flag      => q{vep_species},
@@ -296,7 +284,7 @@ sub _build_usage {
             required => 0,
         ),
     );
-    
+
     return;
 }
 
