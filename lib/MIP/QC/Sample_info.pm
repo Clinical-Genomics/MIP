@@ -1,4 +1,4 @@
-package MIP::QC::Record;
+package MIP::QC::Sample_info;
 
 use 5.026;
 use Carp;
@@ -24,18 +24,18 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      add_gene_panel
-      add_infile_info
-      add_most_complete_vcf
-      add_parameter_to_sample_info
-      add_processing_metafile_to_sample_info
-      add_recipe_metafile_to_sample_info
-      add_recipe_outfile_to_sample_info
-      add_to_sample_info
+      set_gene_panel
+      set_infile_info
+      set_most_complete_vcf
+      set_parameter_to_sample_info
+      set_processing_metafile_to_sample_info
+      set_recipe_metafile_to_sample_info
+      set_recipe_outfile_to_sample_info
+      set_to_sample_info
     };
 
 }
@@ -47,13 +47,13 @@ Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
 
-sub add_gene_panel {
+sub set_gene_panel {
 
-## Function : Collect databases(s) from a database file and adds them to sample_info
+## Function : Collect databases(s) from a database file and sets them to sample_info
 ## Returns  :
-## Arguments: $aggregate_gene_panel_file => The database file
-##          : $aggregate_gene_panels_key => The database key i.e. select or range
-##          : $case_id                   => The case ID
+## Arguments: $aggregate_gene_panel_file => Database file
+##          : $aggregate_gene_panels_key => Database key i.e. select or range
+##          : $case_id                   => Case ID
 ##          : $log                       => Log object
 ##          : $recipe_name               => Recipe name
 ##          : $sample_info_href          => Info on samples and case hash {REF}
@@ -187,8 +187,8 @@ sub add_gene_panel {
             %gene_panel = ();
         }
 
-        # Call add_processing_metafile_to_sample_info with case parameter
-        add_processing_metafile_to_sample_info(
+        # Call set_processing_metafile_to_sample_info with case parameter
+        set_processing_metafile_to_sample_info(
             {
                 metafile_tag     => $aggregate_gene_panels_key,
                 sample_info_href => $sample_info_href,
@@ -199,9 +199,9 @@ sub add_gene_panel {
     return;
 }
 
-sub add_infile_info {
+sub set_infile_info {
 
-## Function : Adds information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elements.
+## Function : Sets information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elements.
 ## Returns  : $lane_tracker
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##          : $date                            => Flow-cell sequencing date
@@ -427,9 +427,9 @@ sub add_infile_info {
     return $lane_tracker;
 }
 
-sub add_most_complete_vcf {
+sub set_most_complete_vcf {
 
-## Function : Adds the most complete vcf file to sample_info
+## Function : Sets the most complete vcf file to sample_info
 ## Returns  :
 ## Arguments: $active_parameter_href     => Active parameters for this analysis hash {REF}
 ##          : $path                      => Path to file
@@ -501,7 +501,7 @@ sub add_most_complete_vcf {
     return;
 }
 
-sub add_parameter_to_sample_info {
+sub set_parameter_to_sample_info {
 
 ##Function : Adds parameter to sample info
 ##Returns  :
@@ -549,9 +549,9 @@ sub add_parameter_to_sample_info {
     return;
 }
 
-sub add_recipe_outfile_to_sample_info {
+sub set_recipe_outfile_to_sample_info {
 
-## Function : Adds path and/or outdirectory and/or outfile and/or version from recipes to sample_info to track all outfiles and extract downstream
+## Function : Sets path and/or outdirectory and/or outfile and/or version from recipes to sample_info to track all outfiles and extract downstream
 ## Returns  :
 ## Arguments: $infile           => Infile for data at sample level {Optional}
 ##          : $outdirectory     => Outdirectory of the file
@@ -657,9 +657,9 @@ sub add_recipe_outfile_to_sample_info {
     return;
 }
 
-sub add_processing_metafile_to_sample_info {
+sub set_processing_metafile_to_sample_info {
 
-## Function : Adds metafile path from sample_id|case_id processing to sample_info to track all metafiles and extract downstream
+## Function : Sets metafile path from sample_id|case_id processing to sample_info to track all metafiles and extract downstream
 ## Returns  :
 ## Arguments: $metafile_tag     => Id tag of meta file
 ##          : $path             => Path of file
@@ -726,9 +726,9 @@ sub add_processing_metafile_to_sample_info {
     return;
 }
 
-sub add_recipe_metafile_to_sample_info {
+sub set_recipe_metafile_to_sample_info {
 
-## Function : Adds path and/or directory and/or file and/or version from recipes to sample_info to track all metafiles and extract downstream
+## Function : Sets path and/or directory and/or file and/or version from recipes to sample_info to track all metafiles and extract downstream
 ## Returns  :
 ## Arguments: $infile           => Infile for data at sample level {Optional}
 ##          : $directory        => Directory of the file
@@ -837,9 +837,9 @@ sub add_recipe_metafile_to_sample_info {
     return;
 }
 
-sub add_to_sample_info {
+sub set_to_sample_info {
 
-## Function : Adds parameter info to sample_info
+## Function : Sets parameter info to sample_info
 ## Returns  :
 ## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
 ##          : $case_id_ref            => The case_id_ref {REF}
@@ -909,7 +909,7 @@ sub add_to_sample_info {
   PARAMETER:
     foreach my $key_to_add (@add_keys) {
 
-        add_parameter_to_sample_info(
+        set_parameter_to_sample_info(
             {
                 active_parameter_href => $active_parameter_href,
                 key_to_add            => $key_to_add,
@@ -920,7 +920,7 @@ sub add_to_sample_info {
 
     ## Define program features to find version of program that do not print version to log file or can be collected from the parameter
     my %program_feature =
-      define_program_features( { active_parameter_href => $active_parameter_href, } );
+      _define_program_features( { active_parameter_href => $active_parameter_href, } );
 
   PARAMETER:
     foreach my $parameter_name ( keys %program_feature ) {
@@ -936,7 +936,7 @@ sub add_to_sample_info {
             }
         );
 
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 recipe_name      => $program_feature{$parameter_name}{program_name},
@@ -1062,7 +1062,7 @@ sub _file_name_formats {
       $original_file_name_prefix, $run_barcode;
 }
 
-sub define_program_features {
+sub _define_program_features {
 
 ## Function : Define program features to find version of program
 ## Returns  :

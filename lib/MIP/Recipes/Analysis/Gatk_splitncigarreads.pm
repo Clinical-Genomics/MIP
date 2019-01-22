@@ -156,8 +156,8 @@ sub analysis_gatk_splitncigarreads {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Gatk qw{ gatk_splitncigarreads };
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_processing_metafile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_outfile_to_sample_info set_processing_metafile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -336,7 +336,7 @@ sub analysis_gatk_splitncigarreads {
         my $first_outfile_path = $outfile_paths[0];
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $first_outfile_path,
@@ -348,7 +348,7 @@ sub analysis_gatk_splitncigarreads {
 
         my $most_complete_format_key =
           q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        add_processing_metafile_to_sample_info(
+        set_processing_metafile_to_sample_info(
             {
                 metafile_tag     => $most_complete_format_key,
                 path             => $first_outfile_path,

@@ -148,7 +148,7 @@ sub analysis_vcf2cytosure {
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Variantcalling::Tiddit qw{ tiddit_coverage };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -421,7 +421,7 @@ sub analysis_vcf2cytosure {
 
         if ( $recipe_mode == 1 ) {
 
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_to_sample_info(
                 {
                     infile           => $outfile_name{$sample_id},
                     sample_id        => $sample_id,
@@ -432,7 +432,7 @@ sub analysis_vcf2cytosure {
             );
 
             ## For logging version - until present in cgh file
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_to_sample_info(
                 {
                     infile           => $outfile_name{$sample_id},
                     sample_id        => $sample_id,

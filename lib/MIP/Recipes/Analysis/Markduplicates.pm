@@ -156,8 +156,8 @@ sub analysis_markduplicates {
       qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::QC::Record
-      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_metafile_to_sample_info set_recipe_outfile_to_sample_info };
 
     ### PREPROCESSING:
 
@@ -490,7 +490,7 @@ sub analysis_markduplicates {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 infile => $outfile_name_prefix,
                 path   => catfile( $outfile_path_name_prefix . $UNDERSCORE . q{metric} ),
@@ -501,7 +501,7 @@ sub analysis_markduplicates {
         );
 
 # Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
-        add_recipe_metafile_to_sample_info(
+        set_recipe_metafile_to_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 metafile_tag     => q{marking_duplicates},
@@ -653,8 +653,8 @@ sub analysis_markduplicates_rio {
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_flagstat sambamba_markdup };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
-    use MIP::QC::Record
-      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_metafile_to_sample_info set_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
 
     ### PREPROCESSING:
@@ -912,7 +912,7 @@ sub analysis_markduplicates_rio {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 infile => $outfile_name_prefix,
                 path   => catfile( $outfile_path_name_prefix . $UNDERSCORE . q{metric} ),
@@ -923,7 +923,7 @@ sub analysis_markduplicates_rio {
         );
 
 # Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
-        add_recipe_metafile_to_sample_info(
+        set_recipe_metafile_to_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 metafile_tag     => q{marking_duplicates},

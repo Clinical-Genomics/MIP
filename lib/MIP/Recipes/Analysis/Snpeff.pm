@@ -148,7 +148,7 @@ sub analysis_snpeff {
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
     use MIP::Program::Variantcalling::Snpeff qw{ snpeff_ann };
     use MIP::Program::Variantcalling::Snpsift qw{ snpsift_annotate snpsift_dbnsfp };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -478,7 +478,7 @@ sub analysis_snpeff {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_paths[0],
                 recipe_name      => $recipe_name,

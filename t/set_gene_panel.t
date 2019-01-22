@@ -44,18 +44,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::QC::Record}     => [qw{ add_gene_panel }],
+        q{MIP::QC::Sample_info}     => [qw{ set_gene_panel }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::QC::Record qw{ add_gene_panel };
+use MIP::QC::Sample_info qw{ set_gene_panel };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test add_gene_panel from Record.pm v}
-      . $MIP::QC::Record::VERSION
+diag(   q{Test set_gene_panel from Sample_info.pm v}
+      . $MIP::QC::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -79,7 +79,7 @@ my %header_info = (
     version      => q{1.0},
 );
 
-add_gene_panel(
+set_gene_panel(
     {
         aggregate_gene_panel_file => $aggregate_gene_panel_file,
         aggregate_gene_panels_key => $aggregate_gene_panels_key,
@@ -110,7 +110,7 @@ while ( my ( $key, $value ) = each %header_info ) {
 
 ## Given a not valid gene panel
 trap {
-    add_gene_panel(
+    set_gene_panel(
         {
             aggregate_gene_panel_file =>
               catfile( $Bin, qw{ data test_data not_valid_gene_panel.bed } ),

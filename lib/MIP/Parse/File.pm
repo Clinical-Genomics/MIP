@@ -104,7 +104,7 @@ sub parse_fastq_infiles {
     use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
     use MIP::Get::File qw{ get_fastq_file_header_info get_read_length };
     use MIP::Set::File qw{ set_file_compression_features };
-    use MIP::QC::Record qw{ add_infile_info };
+    use MIP::QC::Sample_info qw{ set_infile_info };
 
   SAMPLE_ID:
     for my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -182,7 +182,7 @@ sub parse_fastq_infiles {
                 );
 
                 ## Adds information derived from infile name to hashes
-                $lane_tracker = add_infile_info(
+                $lane_tracker = set_infile_info(
                     {
                         active_parameter_href => $active_parameter_href,
                         date                  => $infile_info{date},
@@ -234,7 +234,7 @@ sub parse_fastq_infiles {
                     $fastq_info_header{index} = $EMPTY_STR;
                 }
                 ## Adds information derived from infile name to hashes
-                $lane_tracker = add_infile_info(
+                $lane_tracker = set_infile_info(
                     {
                         active_parameter_href => $active_parameter_href,
                         ## fastq format does not contain a date of the run,

@@ -150,7 +150,7 @@ sub analysis_frequency_filter {
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate genmod_filter };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -306,7 +306,7 @@ sub analysis_frequency_filter {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_paths[0],
                 recipe_name      => $recipe_name,

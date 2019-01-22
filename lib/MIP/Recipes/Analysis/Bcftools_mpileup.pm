@@ -148,7 +148,7 @@ sub analysis_bcftools_mpileup {
       qw{ bcftools_call bcftools_filter bcftools_mpileup bcftools_norm };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Perl qw{ replace_iupac };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -432,7 +432,7 @@ sub analysis_bcftools_mpileup {
     if ( $recipe_mode == 1 ) {
 
         ## Collect bcftools version in qccollect
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => q{bcftools},
@@ -441,7 +441,7 @@ sub analysis_bcftools_mpileup {
         );
 
         ## Locating bcftools_mpileup file
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => q{bcftools_mpileup},

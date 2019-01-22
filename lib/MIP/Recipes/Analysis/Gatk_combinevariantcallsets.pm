@@ -135,8 +135,8 @@ sub analysis_gatk_combinevariantcallsets {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_combinevariants };
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_processing_metafile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_outfile_to_sample_info set_processing_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -293,7 +293,7 @@ sub analysis_gatk_combinevariantcallsets {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
@@ -303,7 +303,7 @@ sub analysis_gatk_combinevariantcallsets {
 
         my $most_complete_format_key =
           q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        add_processing_metafile_to_sample_info(
+        set_processing_metafile_to_sample_info(
             {
                 metafile_tag     => $most_complete_format_key,
                 path             => $outfile_path,
@@ -317,7 +317,7 @@ sub analysis_gatk_combinevariantcallsets {
             my $most_complete_bcf_key =
               q{most_complete} . $UNDERSCORE . substr $bcf_suffix, 1;
             my $bcf_file_path = $outfile_path_prefix . $bcf_suffix;
-            add_processing_metafile_to_sample_info(
+            set_processing_metafile_to_sample_info(
                 {
                     metafile_tag     => $most_complete_bcf_key,
                     path             => $bcf_file_path,

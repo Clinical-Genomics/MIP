@@ -141,7 +141,7 @@ sub analysis_fastqc {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Qc::Fastqc qw{ fastqc };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -291,7 +291,7 @@ sub analysis_fastqc {
         ## Collect QC metadata info for active recipe for later use
         if ( $recipe_mode == 1 ) {
 
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_to_sample_info(
                 {
                     infile           => $outfile_name_prefixes[$index],
                     path             => $outfile_paths[$index],

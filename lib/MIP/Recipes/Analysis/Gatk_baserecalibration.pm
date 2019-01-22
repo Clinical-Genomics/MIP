@@ -155,8 +155,8 @@ sub analysis_gatk_baserecalibration {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Gatk qw{ gatk_baserecalibrator gatk_applybqsr };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info add_processing_metafile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_outfile_to_sample_info set_recipe_metafile_to_sample_info set_processing_metafile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -467,7 +467,7 @@ sub analysis_gatk_baserecalibration {
           catfile( $outdir_path_prefix, $outfile_name_prefix . $outfile_suffix );
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $gathered_outfile_path,
@@ -478,7 +478,7 @@ sub analysis_gatk_baserecalibration {
         );
         my $most_complete_format_key =
           q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        add_processing_metafile_to_sample_info(
+        set_processing_metafile_to_sample_info(
             {
                 metafile_tag     => $most_complete_format_key,
                 path             => $gathered_outfile_path,
@@ -634,8 +634,8 @@ sub analysis_gatk_baserecalibration_rio {
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Gatk qw{ gatk_baserecalibrator gatk_applybqsr };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_outfile_to_sample_info set_recipe_metafile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
 
     ### PREPROCESSING:
@@ -921,7 +921,7 @@ sub analysis_gatk_baserecalibration_rio {
           catfile( $outdir_path_prefix, $outfile_name_prefix . $outfile_suffix );
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $gathered_outfile_path,
@@ -932,7 +932,7 @@ sub analysis_gatk_baserecalibration_rio {
         );
         my $most_complete_format_key =
           q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        add_processing_metafile_to_sample_info(
+        set_processing_metafile_to_sample_info(
             {
                 metafile_tag     => $most_complete_format_key,
                 path             => $gathered_outfile_path,
