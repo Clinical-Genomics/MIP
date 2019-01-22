@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.09;
+our $VERSION = 1.10;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -875,6 +875,54 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
         )
     );
 
+    option(
+        q{varianteffectpredictor} => (
+            cmd_aliases   => [qw{ vep }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Annotate variants using VEP},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{vep_custom_annotation} => (
+            cmd_aliases   => [qw{ vepcann }],
+            documentation => q{VEP custom annotation},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{vep_directory_cache} => (
+            cmd_aliases   => [qw{ vepc }],
+            documentation => q{Specify the cache directory to use},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{vep_directory_path} => (
+            cmd_aliases   => [qw{ vepp }],
+            documentation => q{Path to VEP script directory},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{vep_features} => (
+            cmd_aliases => [qw{ vepf }],
+            cmd_tags    => [
+q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds, uniprot, biotype, regulatory, tsl, canonical, per_gene, appris}
+            ],
+            documentation => q{VEP features},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
     return;
 }
 

@@ -97,12 +97,10 @@ evep:
       vep_assemblies:
         - GRCh37
         - GRCh38
-      vep_auto_flag: acfp
+      vep_auto_flag: acf
       vep_cache_dir: ~
       vep_plugins:
-        - ExACpLI
-        - LoFtool
-        - MaxEntScan
+        -
       vep_species:
         - homo_sapiens_merged
       version: 95
