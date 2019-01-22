@@ -56,7 +56,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - GRCh37_mip_sv_svdb_export_-2018-10-09-.vcf
 - VEPs cache: 91 -> 94
 - GRCh37_loqusdb_-2017-05-22-.vcf.gz -> GRCh37_loqusdb_snv_indel_-2018-12-18-.vcf.gz
-- svrank_model: 1.3 -> 1.4
+- rank_model: 1.21 -> 1.23
+- svrank_model: 1.3 -> 1.5
 
 **Tools**
 - bcftools: 1.6 -> 1.9-h4da6232_0
@@ -81,7 +82,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - stranger: 0.4
 - svdb: 1.1.2 -> 1.3.0-py27h7eb728f_0
 - tiddit: 2.2.5 -> 2.3.1
-- vcf2cytosure: 0.3.0 -> 0.4.2
+- vcf2cytosure: 0.3.0 -> 0.4.3
 - vcfanno: 0.1.0 -> 0.3.1-0
 - vep: 91 -> 94.4
 

@@ -178,7 +178,7 @@ etiddit:
         python: 2.7
       version: 2.3.1
     vcf2cytosure:
-      version: 0.4.2
+      version: 0.4.3
 
 # VEP environment spec
 evep:
