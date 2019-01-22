@@ -135,7 +135,7 @@ sub analysis_variant_integrity {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Variant_integrity
       qw{ variant_integrity_mendel variant_integrity_father };
-    use MIP::QC::Sample_info qw{ set_recipe_metafile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -313,7 +313,7 @@ sub analysis_variant_integrity {
         while ( my ( $outfile_tag, $outfile_path ) = each %outfile_path ) {
 
 ## Collect QC metadata info for later use
-            set_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     metafile_tag     => $outfile_tag,
                     path             => $outfile_path,

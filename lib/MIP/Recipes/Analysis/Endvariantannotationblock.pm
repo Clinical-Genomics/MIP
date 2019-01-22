@@ -154,7 +154,8 @@ sub analysis_endvariantannotationblock {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-    use MIP::QC::Sample_info qw{ set_most_complete_vcf set_recipe_metafile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -345,7 +346,7 @@ sub analysis_endvariantannotationblock {
 
         if ( $recipe_mode == 1 ) {
 
-            set_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     recipe_name      => $recipe_name,

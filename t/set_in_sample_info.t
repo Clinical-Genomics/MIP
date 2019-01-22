@@ -45,16 +45,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::QC::Sample_info}     => [qw{ set_to_sample_info }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::QC::Sample_info} => [qw{ set_in_sample_info }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::QC::Sample_info qw{ set_to_sample_info };
+use MIP::QC::Sample_info qw{ set_in_sample_info };
 
-diag(   q{Test set_to_sample_info from Sample_info.pm v}
+diag(   q{Test set_in_sample_info from Sample_info.pm v}
       . $MIP::QC::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -76,7 +76,7 @@ my %file_info = (
 );
 my %sample_info;
 
-set_to_sample_info(
+set_in_sample_info(
     {
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,

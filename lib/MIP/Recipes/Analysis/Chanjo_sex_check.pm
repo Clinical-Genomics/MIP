@@ -134,7 +134,7 @@ sub analysis_chanjo_sex_check {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Chanjo qw{ chanjo_sex };
     use MIP::QC::Sample_info
-      qw{ set_recipe_metafile_to_sample_info set_recipe_outfile_to_sample_info };
+      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -245,7 +245,7 @@ sub analysis_chanjo_sex_check {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $outfile_path,
@@ -254,7 +254,7 @@ sub analysis_chanjo_sex_check {
                 sample_info_href => $sample_info_href,
             }
         );
-        set_recipe_metafile_to_sample_info(
+        set_recipe_metafile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 metafile_tag     => q{log},

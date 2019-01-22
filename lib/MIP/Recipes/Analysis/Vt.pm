@@ -150,7 +150,7 @@ sub analysis_vt {
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core_rio};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -300,7 +300,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
             ## Collect QC metadata info for later use
             my $qc_vt_outfile_path = catfile( $directory,
                 $stderr_file_xargs . $DOT . $contig . $DOT . q{stderr.txt} );
-            set_recipe_outfile_to_sample_info(
+            set_recipe_outfile_in_sample_info(
                 {
                     path             => $qc_vt_outfile_path,
                     recipe_name      => $recipe_name,

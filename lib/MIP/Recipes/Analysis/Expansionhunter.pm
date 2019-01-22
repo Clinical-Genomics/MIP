@@ -150,7 +150,7 @@ sub analysis_expansionhunter {
     use MIP::Program::Variantcalling::Stranger qw{ stranger };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script
       qw{ setup_script write_return_to_environment write_source_environment_command };
 
@@ -442,7 +442,7 @@ sub analysis_expansionhunter {
 
     if ( $recipe_mode == 1 ) {
 
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 recipe_name      => q{expansionhunter},

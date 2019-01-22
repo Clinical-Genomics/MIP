@@ -166,7 +166,7 @@ sub analysis_cnvnator {
       qw{ bcftools_annotate bcftools_concat bcftools_create_reheader_samples_file bcftools_rename_vcf_samples };
     use MIP::Program::Variantcalling::Cnvnator
       qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -512,7 +512,7 @@ sub analysis_cnvnator {
 
     if ( $recipe_mode == 1 ) {
 
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 recipe_name      => q{cnvnator},

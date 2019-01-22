@@ -166,7 +166,7 @@ sub analysis_picardtools_mergesamfiles {
       qw{ picardtools_gatherbamfiles picardtools_mergesamfiles };
     use MIP::Program::Alignment::Sambamba qw{ split_and_index_aligment_file };
     use MIP::Program::Alignment::Samtools qw{ samtools_index };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_merged_infile_prefix };
@@ -502,7 +502,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
     if ( $recipe_mode == 1 ) {
 
         my $qc_outfile_path = $outfile_paths[0];
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $merged_infile_prefix,
                 path             => $qc_outfile_path,

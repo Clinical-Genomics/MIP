@@ -141,7 +141,7 @@ sub check_rd_dna {
     use MIP::Update::Recipes
       qw{ update_prioritize_flag update_recipe_mode_for_analysis_type };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
-    use MIP::QC::Sample_info qw{ set_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_in_sample_info };
 
     ## Check mutually exclusive parameters and croak if mutually enabled
     check_mutually_exclusive_parameters(
@@ -374,7 +374,7 @@ sub check_rd_dna {
     );
 
     ## Add to sample info
-    set_to_sample_info(
+    set_in_sample_info(
         {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
@@ -485,7 +485,7 @@ sub check_rd_rna {
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
-    use MIP::QC::Sample_info qw{ set_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_in_sample_info };
 
     ## Checks parameter metafile exists and set build_file parameter
     check_parameter_metafiles(
@@ -598,7 +598,7 @@ sub check_rd_rna {
     );
 
     ## Add to sample info
-    set_to_sample_info(
+    set_in_sample_info(
         {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
@@ -700,7 +700,7 @@ sub check_rd_dna_vcf_rerun {
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
-    use MIP::QC::Sample_info qw{ set_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_in_sample_info };
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -817,7 +817,7 @@ sub check_rd_dna_vcf_rerun {
     );
 
     ## Add to sample info
-    set_to_sample_info(
+    set_in_sample_info(
         {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,

@@ -150,7 +150,7 @@ sub analysis_gffcompare {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gffcompare qw{ gffcompare };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
 
     ### PREPROCESSING:
 
@@ -287,7 +287,7 @@ sub analysis_gffcompare {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $infile_name,
                 path             => $outfile_path,

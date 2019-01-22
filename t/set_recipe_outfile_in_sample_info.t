@@ -43,16 +43,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::QC::Sample_info}     => [qw{ set_recipe_outfile_to_sample_info }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::QC::Sample_info} => [qw{ set_recipe_outfile_in_sample_info }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::QC::Sample_info qw(set_recipe_outfile_to_sample_info);
+use MIP::QC::Sample_info qw(set_recipe_outfile_in_sample_info);
 
-diag(   q{Test set_recipe_outfile_to_sample_info from Record.pm v}
+diag(   q{Test set_recipe_outfile_in_sample_info from Sample_info.pm v}
       . $MIP::QC::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -72,7 +72,7 @@ my $path             = catfile( $directory, $outfile );
 my $version          = q{1.0.1};
 
 ## Family level
-set_recipe_outfile_to_sample_info(
+set_recipe_outfile_in_sample_info(
     {
         sample_info_href => \%sample_info,
         recipe_name      => $test_recipe_name,
@@ -102,7 +102,7 @@ is( $sample_info{recipe}{$test_recipe_name}{version},
 my $sample_id = q{test_sample_id};
 my $infile    = q{test_infile};
 
-set_recipe_outfile_to_sample_info(
+set_recipe_outfile_in_sample_info(
     {
         sample_info_href => \%sample_info,
         sample_id        => $sample_id,
@@ -132,7 +132,7 @@ while ( my ( $parameter, $test_comment ) = each %test_no_infile ) {
 }
 
 ## Sample level, with infile
-set_recipe_outfile_to_sample_info(
+set_recipe_outfile_in_sample_info(
     {
         sample_info_href => \%sample_info,
         sample_id        => $sample_id,

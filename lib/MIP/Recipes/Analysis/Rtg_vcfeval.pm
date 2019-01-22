@@ -142,7 +142,7 @@ sub analysis_rtg_vcfeval {
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_rename_vcf_samples bcftools_view_and_index_vcf };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Return if not a nist_id sample
@@ -314,7 +314,7 @@ sub analysis_rtg_vcfeval {
     if ( $recipe_mode == 1 ) {
 
 ## Collect QC metadata info for later use
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 outdirectory     => $rtg_outdirectory_path,
                 recipe_name      => $recipe_name,

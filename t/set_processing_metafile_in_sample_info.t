@@ -78,9 +78,9 @@ BEGIN {
     }
 }
 
-use MIP::QC::Sample_info qw{set_processing_metafile_to_sample_info};
+use MIP::QC::Sample_info qw{set_processing_metafile_in_sample_info};
 
-diag(   q{Test set_processing_metafile_to_sample_info from Record.pm v}
+diag(   q{Test set_processing_metafile_in_sample_info from Sample_info.pm v}
       . $MIP::QC::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -99,7 +99,7 @@ my $directory    = q{test_directory};
 my $path         = catfile( $directory, $metafile );
 
 ## Family level
-set_processing_metafile_to_sample_info(
+set_processing_metafile_in_sample_info(
     {
         sample_info_href => \%sample_info,
         metafile_tag     => $metafile_tag,
@@ -116,7 +116,7 @@ is( $sample_info{$metafile_tag}{path},
 ## Sample level
 my $sample_id = q{test_sample_id};
 
-set_processing_metafile_to_sample_info(
+set_processing_metafile_in_sample_info(
     {
         sample_info_href => \%sample_info,
         sample_id        => $sample_id,

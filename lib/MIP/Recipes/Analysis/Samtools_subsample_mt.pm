@@ -139,7 +139,7 @@ sub analysis_samtools_subsample_mt {
     use MIP::Program::Alignment::Samtools
       qw{ samtools_depth samtools_index samtools_view };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -303,7 +303,7 @@ sub analysis_samtools_subsample_mt {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $outfile_path,

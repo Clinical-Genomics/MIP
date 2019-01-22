@@ -141,7 +141,7 @@ sub analysis_picardtools_collectmultiplemetrics {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_collectmultiplemetrics };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -286,7 +286,7 @@ sub analysis_picardtools_collectmultiplemetrics {
         ## Collect QC metadata info for later use
         my $metrics_outfile_path =
           $outfile_path_prefix . $DOT . q{alignment_summary_metrics};
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $metrics_outfile_path,
@@ -297,7 +297,7 @@ sub analysis_picardtools_collectmultiplemetrics {
         );
         my $insertsize_outfile_path =
           $outfile_path_prefix . $DOT . q{insert_size_metrics};
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $insertsize_outfile_path,

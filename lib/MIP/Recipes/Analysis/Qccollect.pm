@@ -128,7 +128,7 @@ sub analysis_qccollect {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Qc::Qccollect qw{ qccollect };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -207,7 +207,7 @@ sub analysis_qccollect {
 
     if ( $recipe_mode == 1 ) {
 
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 recipe_name      => q{qccollect},

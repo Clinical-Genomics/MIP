@@ -153,7 +153,7 @@ sub analysis_vep {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::QC::Sample_info
-      qw{ set_recipe_metafile_to_sample_info set_recipe_outfile_to_sample_info };
+      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -391,7 +391,7 @@ sub analysis_vep {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        set_recipe_metafile_to_sample_info(
+        set_recipe_metafile_in_sample_info(
             {
                 metafile_tag     => q{stderrfile},
                 path             => $stderr_path,
@@ -401,7 +401,7 @@ sub analysis_vep {
         );
 
         ## Collect QC metadata info for later use
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_paths[0],
                 recipe_name      => $recipe_name,
@@ -536,7 +536,7 @@ sub analysis_vep_sv_wes {
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Sample_info
-      qw{ set_recipe_metafile_to_sample_info set_recipe_outfile_to_sample_info };
+      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
 
     ### PREPROCESSING:
 
@@ -738,7 +738,7 @@ sub analysis_vep_sv_wes {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
@@ -871,7 +871,7 @@ sub analysis_vep_sv_wgs {
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::QC::Sample_info
-      qw{ set_recipe_metafile_to_sample_info set_recipe_outfile_to_sample_info };
+      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -1142,7 +1142,7 @@ sub analysis_vep_sv_wgs {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_paths[0],
                 recipe_name      => $recipe_name,
@@ -1262,7 +1262,7 @@ sub analysis_vep_rna {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:

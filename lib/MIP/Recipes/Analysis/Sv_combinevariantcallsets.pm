@@ -148,7 +148,7 @@ sub analysis_sv_combinevariantcallsets {
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
     use MIP::QC::Sample_info
-      qw{ set_recipe_outfile_to_sample_info set_recipe_metafile_to_sample_info };
+      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -363,7 +363,7 @@ sub analysis_sv_combinevariantcallsets {
 
     if ( $recipe_mode == 1 ) {
 
-        set_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
@@ -376,7 +376,7 @@ sub analysis_sv_combinevariantcallsets {
         if ( $active_parameter_href->{sv_combinevariantcallsets_bcf_file} ) {
 
             my $sv_bcf_file_path = $outfile_path_prefix . $DOT . q{bcf};
-            set_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     metafile_tag     => q{sv_bcf_file},
                     path             => $sv_bcf_file_path,
