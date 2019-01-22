@@ -1383,7 +1383,6 @@ sub analysis_vep_rna {
 
         # Add VEP features to the output.
         push @vep_features_ref, $vep_feature;
-
     }
 
     variant_effect_predictor(
