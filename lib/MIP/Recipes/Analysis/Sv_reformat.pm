@@ -144,7 +144,7 @@ sub analysis_reformat_sv {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
-    use MIP::QC::Record qw{ add_most_complete_vcf add_recipe_metafile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_most_complete_vcf set_recipe_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -298,7 +298,7 @@ sub analysis_reformat_sv {
             if ( $recipe_mode == 1 ) {
 
                 ## Save filtered file
-                add_recipe_metafile_to_sample_info(
+                set_recipe_metafile_to_sample_info(
                     {
                         recipe_name      => $recipe_name,
                         metafile_tag     => $filter_metafile_tag,
@@ -322,7 +322,7 @@ sub analysis_reformat_sv {
 
         if ( $recipe_mode == 1 ) {
 
-            add_most_complete_vcf(
+            set_most_complete_vcf(
                 {
                     active_parameter_href => $active_parameter_href,
                     path                  => $outfile_paths[$infile_index],
@@ -335,7 +335,7 @@ sub analysis_reformat_sv {
                     vcfparser_outfile_counter => $infile_index,
                 }
             );
-            add_most_complete_vcf(
+            set_most_complete_vcf(
                 {
                     active_parameter_href => $active_parameter_href,
                     path                  => $outfile_paths[$infile_index] . $DOT . q{gz},
@@ -351,7 +351,7 @@ sub analysis_reformat_sv {
             );
 
             # Save clinical candidate list path
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_to_sample_info(
                 {
                     metafile_tag     => $metafile_tag,
                     path             => $outfile_paths[$infile_index] . $DOT . q{gz},

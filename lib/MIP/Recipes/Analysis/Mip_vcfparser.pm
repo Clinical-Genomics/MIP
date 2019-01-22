@@ -153,7 +153,7 @@ sub analysis_mip_vcfparser {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
-    use MIP::QC::Record qw{ add_gene_panel add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_gene_panel set_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -387,7 +387,7 @@ sub analysis_mip_vcfparser {
         while ( my ( $gene_panel_key, $gene_panel_file ) = each %gene_panels ) {
 
             ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
-            add_gene_panel(
+            set_gene_panel(
                 {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
@@ -401,7 +401,7 @@ sub analysis_mip_vcfparser {
         }
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_paths[0],
                 recipe_name      => $recipe_name,
@@ -542,7 +542,7 @@ sub analysis_vcfparser_sv_wes {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
-    use MIP::QC::Record qw{ add_most_complete_vcf add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_most_complete_vcf set_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
 
@@ -708,7 +708,7 @@ sub analysis_vcfparser_sv_wes {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
@@ -724,7 +724,7 @@ sub analysis_vcfparser_sv_wes {
         while ( my ( $gene_panel_key, $gene_panel_file ) = each %gene_panels ) {
 
             ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
-            add_gene_panel(
+            set_gene_panel(
                 {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
@@ -864,7 +864,7 @@ sub analysis_vcfparser_sv_wgs {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
-    use MIP::QC::Record qw{ add_most_complete_vcf add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_most_complete_vcf set_recipe_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
 
@@ -1110,7 +1110,7 @@ sub analysis_vcfparser_sv_wgs {
           $outfile_path_prefix . $DOT . $contigs[0] . $outfile_suffix;
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
@@ -1126,7 +1126,7 @@ sub analysis_vcfparser_sv_wgs {
         while ( my ( $gene_panel_key, $gene_panel_file ) = each %gene_panels ) {
 
             ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
-            add_gene_panel(
+            set_gene_panel(
                 {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},

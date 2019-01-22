@@ -150,7 +150,7 @@ sub analysis_stringtie {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Stringtie qw{ stringtie };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
 
     ### PREPROCESSING:
 
@@ -275,7 +275,7 @@ sub analysis_stringtie {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 infile           => $infile_name,
                 path             => $outfile_path,

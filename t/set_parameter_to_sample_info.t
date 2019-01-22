@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::QC::Record});
+    my @modules = (q{MIP::QC::Sample_info});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::QC::Record qw{ add_parameter_to_sample_info };
+use MIP::QC::Sample_info qw{ set_parameter_to_sample_info };
 
-diag(   q{Test add_parameter_to_sample_info from MODULE_NAME.pm v}
-      . $MIP::QC::Record::VERSION
+diag(   q{Test set_parameter_to_sample_info from MODULE_NAME.pm v}
+      . $MIP::QC::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -115,7 +115,7 @@ my %sample_info;
 PARAMETER:
 foreach my $key_to_add (@add_keys) {
 
-    add_parameter_to_sample_info(
+    set_parameter_to_sample_info(
         {
             active_parameter_href => \%active_parameter,
             key_to_add            => $key_to_add,

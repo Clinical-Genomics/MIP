@@ -49,17 +49,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::QC::Record}     => [qw{ add_infile_info }],
+        q{MIP::QC::Sample_info}     => [qw{ set_infile_info }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::QC::Record qw{ add_infile_info };
+use MIP::QC::Sample_info qw{ set_infile_info };
 
-diag(   q{Test add_infile_info from Record.pm v}
-      . $MIP::QC::Record::VERSION
+diag(   q{Test set_infile_info from Sample_info.pm v}
+      . $MIP::QC::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -121,7 +121,7 @@ for my $sample_id ( keys %file_info ) {
         each @{ $file_info{$sample_id}{mip_infiles} } )
     {
 
-        add_infile_info(
+        set_infile_info(
             {
                 active_parameter_href           => \%active_parameter,
                 date                            => $infile_info{date},
@@ -262,7 +262,7 @@ for my $sample_id ( keys %file_info ) {
         push @{ $expected_result{infile_both_strands_prefix}{$sample_id} },
           $mip_file_format_with_direction;
 
-        $lane_tracker = add_infile_info(
+        $lane_tracker = set_infile_info(
             {
                 active_parameter_href           => \%active_parameter,
                 date                            => $infile_info{date},

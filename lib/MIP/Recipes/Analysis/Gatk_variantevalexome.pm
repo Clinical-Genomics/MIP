@@ -143,7 +143,7 @@ sub analysis_gatk_variantevalexome {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_varianteval };
-    use MIP::QC::Record qw(add_recipe_outfile_to_sample_info);
+    use MIP::QC::Sample_info qw(set_recipe_outfile_to_sample_info);
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -268,7 +268,7 @@ sub analysis_gatk_variantevalexome {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 infile           => $outfile_path_prefix,
                 path             => $outfile_path,

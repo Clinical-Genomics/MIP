@@ -45,17 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::QC::Record}     => [qw{ add_most_complete_vcf }],
+        q{MIP::QC::Sample_info}     => [qw{ set_most_complete_vcf }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::QC::Record qw{ add_most_complete_vcf };
+use MIP::QC::Sample_info qw{ set_most_complete_vcf };
 
-diag(   q{Test add_most_complete_vcf from Record.pm v}
-      . $MIP::QC::Record::VERSION
+diag(   q{Test set_most_complete_vcf from Sample_info.pm v}
+      . $MIP::QC::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -72,7 +72,7 @@ my $vcf_file_key =
 my %active_parameter = ( $recipe_name_test => 1, );
 
 my %sample_info;
-add_most_complete_vcf(
+set_most_complete_vcf(
     {
         active_parameter_href     => \%active_parameter,
         path                      => $path,
@@ -84,7 +84,7 @@ add_most_complete_vcf(
 );
 is( $sample_info{$vcf_file_key}{research}{path}, $path, q{Added research path} );
 
-add_most_complete_vcf(
+set_most_complete_vcf(
     {
         active_parameter_href     => \%active_parameter,
         path                      => $path,

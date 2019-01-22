@@ -139,8 +139,8 @@ sub analysis_plink {
     use MIP::Program::Variantcalling::Plink
       qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
     use MIP::Program::Variantcalling::Vt qw(vt_uniq);
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_outfile_to_sample_info set_recipe_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -493,7 +493,7 @@ sub analysis_plink {
         while ( my ( $outfile_tag, $outfile_path ) = each %outfile_path ) {
 
             ## Collect QC metadata info for later use
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_to_sample_info(
                 {
                     path             => $outfile_path,
                     recipe_name      => $outfile_tag,
@@ -504,7 +504,7 @@ sub analysis_plink {
         }
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 path             => $stdout_file_path,
                 recipe_name      => q{plink2},

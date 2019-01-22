@@ -155,7 +155,7 @@ sub analysis_sv_annotate {
     use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_query };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -451,7 +451,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
 
         if ( $recipe_mode == 1 ) {
 
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_to_sample_info(
                 {
                     path             => catfile( $directory, $stderr_file ),
                     recipe_name      => q{sv_annotate},
@@ -515,7 +515,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
 
     if ( $recipe_mode == 1 ) {
 
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_to_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => q{sv_annotate},
