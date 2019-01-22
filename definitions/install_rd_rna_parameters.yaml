@@ -15,25 +15,25 @@ disable_env_check: 0
 # MIP main environment spec
 emip:
   conda:
-    bcftools: 1.9
-    bioconductor-deseq2: 1.18.1
-    bioconductor-tximport:
-    gatk4: 4.0
-    gffcompare: 0.10.1
-    htslib: 1.9
+    bcftools: 1.9=h4da6232_0
+    bioconductor-deseq2: 1.18.1=r3.4.1_1
+    bioconductor-tximport: 1.8.0=r341_0
+    gatk4: 4.0.12.0=0
+    gffcompare: 0.10.1=0
+    htslib: 1.9=hc238db4_4
     java-jdk:
     numpy:
-    picard: 2.18
+    picard: 2.18.23=0
     pip:
-    preseq: 2.0.3
+    preseq: 2.0.3=gsl2.2_1
     python: 2.7
     r-optparse:
     r-readr:
-    salmon: 0.9.1
-    sambamba: 0.6.8
-    samtools: 1.9
+    salmon: 0.9.1=1
+    sambamba: 0.6.8=h682856c_1
+    samtools: 1.9=h8ee4bcc_1
     scipy:
-    stringtie: 1.3.4
+    stringtie: 1.3.4=py27_0
   shell:
     blobfish:
       conda_dependency:
@@ -59,10 +59,10 @@ emip:
 ## Python 3 environment spec
 epy3:
   conda:
-    bedops: 2.4.35
+    bedops: 2.4.35=h2d50403_1
     pip:
     python: 3.6
-    ucsc-wigtobigwig:
+    ucsc-wigtobigwig: 366=hdd26221_0
   pip:
     multiqc: 1.6
     rseqc: 3.0.0
@@ -71,22 +71,25 @@ epy3:
 ## STAR environment spec
 estar:
   conda:
-    fastqc: 0.11.8=0
+    blast: 2.7.1=h4422958_6
+    fastqc: 0.11.8=1
     fusion-filter: 0.5.0
-    star: 2.6
-    star-fusion: 1.4.0
-    blast: 2.7.1
+    perl-common-sense:
+    perl-json-xs:
+    perl-db-file:
+    star-fusion: 1.5.0=0
+    star: 2.6.1b=0
   pip:
   shell:
 
 # VEP environment spec
 evep:
   conda:
-    bcftools: 1.9
-    htslib: 1.9
+    bcftools: 1.9=h4da6232_0
+    htslib: 1.9=hc238db4_4
     pip:
     python: 2.7
-    tabix:
+    tabix: 0.2.6
   pip:
   shell:
     vep:
