@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -40,15 +40,15 @@ Readonly my $MINUS_ONE  => -1;
 
 sub analysis_gatk_baserecalibration {
 
-## Function : GATK baserecalibrator/ApplyBQSR to recalibrate bases before variant calling. Both BaseRecalibrator/ApplyBQSR will be executed within the same sbatch script.
+## Function : GATK baserecalibrator/GatherBQSRReports/ApplyBQSR to recalibrate bases before variant calling. BaseRecalibrator/GatherBQSRReports/ApplyBQSR will be executed within the same sbatch script.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -73,74 +73,74 @@ sub analysis_gatk_baserecalibration {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         case_id => {
             default     => $arg_href->{active_parameter_href}{case_id},
-            strict_type => 1,
             store       => \$case_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         recipe_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$recipe_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$sample_id,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -153,7 +153,8 @@ sub analysis_gatk_baserecalibration {
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Gatk qw{ gatk_baserecalibrator gatk_applybqsr };
+    use MIP::Program::Alignment::Gatk
+      qw{ gatk_applybqsr gatk_baserecalibrator gatk_gatherbqsrreports };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
     use MIP::QC::Record
       qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info add_processing_metafile_to_sample_info };
@@ -271,13 +272,13 @@ sub analysis_gatk_baserecalibration {
         {
             analysis_type         => $analysis_type,
             contigs_ref           => \@{ $file_info_href->{contigs_size_ordered} },
+            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
             FILEHANDLE            => $FILEHANDLE,
+            file_ending           => $file_info_href->{exome_target_bed}[0],
             max_cores_per_node    => $core_number,
+            log                   => $log,
             outdirectory          => $temp_directory,
             reference_dir         => $active_parameter_href->{reference_dir},
-            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
-            file_ending           => $file_info_href->{exome_target_bed}[0],
-            log                   => $log,
             sample_id             => $sample_id,
         }
     );
@@ -328,11 +329,16 @@ sub analysis_gatk_baserecalibration {
         }
     );
 
+    my @base_quality_score_recalibration_files;
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         my $base_quality_score_recalibration_file =
           $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
+
+        ## Add for gathering base recal files later
+        push @base_quality_score_recalibration_files,
+          $base_quality_score_recalibration_file;
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
@@ -341,9 +347,9 @@ sub analysis_gatk_baserecalibration {
                 infile_path          => $temp_infile_path{$contig},
                 intervals_ref        => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx6g},
                 known_sites_ref =>
                   \@{ $active_parameter_href->{gatk_baserecalibration_known_sites} },
+                memory_allocation  => q{Xmx6g},
                 outfile_path       => $base_quality_score_recalibration_file,
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
@@ -354,6 +360,20 @@ sub analysis_gatk_baserecalibration {
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
+
+    ## GATK GatherBQSRReports
+    say {$FILEHANDLE} q{## GATK GatherBQSRReports};
+    my $gatk_gatherbqsr_outfile_path =
+      $temp_outfile_path_prefix . $DOT . $sample_id . $DOT . q{grp};
+    gatk_gatherbqsrreports(
+        {
+            base_quality_score_recalibration_files_ref =>
+              \@base_quality_score_recalibration_files,
+            FILEHANDLE   => $FILEHANDLE,
+            outfile_path => $gatk_gatherbqsr_outfile_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## GATK ApplyBQSR
     say {$FILEHANDLE} q{## GATK ApplyBQSR};
@@ -373,17 +393,14 @@ sub analysis_gatk_baserecalibration {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        my $base_quality_score_recalibration_file =
-          $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_applybqsr(
             {
-                base_quality_score_recalibration_file =>
-                  $base_quality_score_recalibration_file,
-                FILEHANDLE           => $XARGSFILEHANDLE,
-                infile_path          => $temp_infile_path{$contig},
-                intervals_ref        => $gatk_intervals{$contig},
+                base_quality_score_recalibration_file => $gatk_gatherbqsr_outfile_path,
+                FILEHANDLE                            => $XARGSFILEHANDLE,
+                infile_path                           => $temp_infile_path{$contig},
+                intervals_ref                         => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx6g},
                 verbosity            => $active_parameter_href->{gatk_logging_level},
@@ -489,8 +506,8 @@ sub analysis_gatk_baserecalibration {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_sample},
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
@@ -506,18 +523,18 @@ sub analysis_gatk_baserecalibration {
 
 sub analysis_gatk_baserecalibration_rio {
 
-## Function : GATK baserecalibrator/ApplyBQSR to recalibrate bases before variant calling. Both BaseRecalibrator/ApplyBQSR will be executed within the same sbatch script.
+## Function : GATK baserecalibrator/GatherBQSRReports/ApplyBQSR to recalibrate bases before variant calling. BaseRecalibrator/GatherBQSRReports/ApplyBQSR will be executed within the same sbatch script.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_info_path       => Recipe info path
-##          : $recipe_name            => Program name
+##          : $recipe_info_path        => Recipe info path
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -545,77 +562,77 @@ sub analysis_gatk_baserecalibration_rio {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         case_id => {
             default     => $arg_href->{active_parameter_href}{case_id},
-            strict_type => 1,
             store       => \$case_id,
+            strict_type => 1,
         },
         FILEHANDLE     => { store => \$FILEHANDLE, },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
-        },
-        file_path               => { strict_type => 1, store => \$file_path },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
+        },
+        file_path               => { store => \$file_path, strict_type => 1, },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        recipe_info_path => { strict_type => 1, store => \$recipe_info_path },
-        recipe_name      => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
+        },
+        recipe_info_path => { store => \$recipe_info_path, strict_type => 1, },
+        recipe_name      => {
+            defined     => 1,
+            required    => 1,
             store       => \$recipe_name,
+            strict_type => 1,
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$sample_id,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -632,7 +649,8 @@ sub analysis_gatk_baserecalibration_rio {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::Program::Alignment::Gatk qw{ gatk_baserecalibrator gatk_applybqsr };
+    use MIP::Program::Alignment::Gatk
+      qw{ gatk_applybqsr gatk_baserecalibrator gatk_gatherbqsrreports };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
     use MIP::QC::Record
       qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info };
@@ -732,13 +750,13 @@ sub analysis_gatk_baserecalibration_rio {
         {
             analysis_type         => $analysis_type,
             contigs_ref           => \@{ $file_info_href->{contigs_size_ordered} },
+            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
             FILEHANDLE            => $FILEHANDLE,
+            file_ending           => $file_info_href->{exome_target_bed}[0],
             max_cores_per_node    => $core_number,
+            log                   => $log,
             outdirectory          => $temp_directory,
             reference_dir         => $active_parameter_href->{reference_dir},
-            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
-            file_ending           => $file_info_href->{exome_target_bed}[0],
-            log                   => $log,
             sample_id             => $sample_id,
         }
     );
@@ -771,11 +789,15 @@ sub analysis_gatk_baserecalibration_rio {
         }
     );
 
+    my @base_quality_score_recalibration_files;
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         my $base_quality_score_recalibration_file =
           $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
+## Add for gathering base recal files later
+        push @base_quality_score_recalibration_files,
+          $base_quality_score_recalibration_file;
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_baserecalibrator(
@@ -798,7 +820,21 @@ sub analysis_gatk_baserecalibration_rio {
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
-    ## GATK PrintReads
+    ## GATK GatherBQSRReports
+    say {$FILEHANDLE} q{## GATK GatherBQSRReports};
+    my $gatk_gatherbqsr_outfile_path =
+      $temp_outfile_path_prefix . $DOT . $sample_id . $DOT . q{grp};
+    gatk_gatherbqsrreports(
+        {
+            base_quality_score_recalibration_files_ref =>
+              \@base_quality_score_recalibration_files,
+            FILEHANDLE   => $FILEHANDLE,
+            outfile_path => $gatk_gatherbqsr_outfile_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## GATK ApplyBQSR
     say {$FILEHANDLE} q{## GATK ApplyBQSR};
 
     ## Create file commands for xargs
@@ -816,17 +852,14 @@ sub analysis_gatk_baserecalibration_rio {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        my $base_quality_score_recalibration_file =
-          $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_applybqsr(
             {
-                base_quality_score_recalibration_file =>
-                  $base_quality_score_recalibration_file,
-                FILEHANDLE           => $XARGSFILEHANDLE,
-                infile_path          => $temp_infile_path{$contig},
-                intervals_ref        => $gatk_intervals{$contig},
+                base_quality_score_recalibration_file => $gatk_gatherbqsr_outfile_path,
+                FILEHANDLE                            => $XARGSFILEHANDLE,
+                infile_path                           => $temp_infile_path{$contig},
+                intervals_ref                         => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx6g},
                 verbosity            => $active_parameter_href->{gatk_logging_level},
@@ -943,8 +976,8 @@ sub analysis_gatk_baserecalibration_rio {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_sample},
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
