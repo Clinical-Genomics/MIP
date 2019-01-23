@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.010;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem };
@@ -45,12 +45,12 @@ sub analysis_bwa_mem {
 ## Function : Performs alignment of single and paired-end as well as interleaved fastq(.gz) files.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -371,8 +371,10 @@ sub analysis_bwa_mem {
                     interleaved_fastq_file  => $interleaved_fastq_file,
                     mark_split_as_secondary => 1,
                     read_group_header       => join( $EMPTY_STR, @read_group_headers ),
-                    second_infile_path      => $second_fastq_file_path,
-                    thread_number           => $core_number,
+                    soft_clip_sup_align =>
+                      $active_parameter_href->{bwa_soft_clip_sup_align},
+                    second_infile_path => $second_fastq_file_path,
+                    thread_number      => $core_number,
                 }
             );
 
@@ -407,8 +409,10 @@ sub analysis_bwa_mem {
                     idxbase              => $referencefile_path,
                     outfiles_prefix_path => $file_path_prefix,
                     read_group_header    => join( $EMPTY_STR, @read_group_headers ),
-                    second_infile_path   => $second_fastq_file_path,
-                    thread_number        => $core_number,
+                    soft_clip_sup_align =>
+                      $active_parameter_href->{bwa_soft_clip_sup_align},
+                    second_infile_path => $second_fastq_file_path,
+                    thread_number      => $core_number,
                 }
             );
             print {$FILEHANDLE} $PIPE . $SPACE;

@@ -24,7 +24,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -116,6 +116,10 @@ my %specific_argument = (
         input           => 2,
         expected_output => q{-t 2},
     },
+    infile_path => {
+        input           => q{test_infile_1.fastq},
+        expected_output => q{test_infile_1.fastq},
+    },
     interleaved_fastq_file => {
         input           => 1,
         expected_output => q{-p},
@@ -128,13 +132,13 @@ my %specific_argument = (
         input           => ( join $SPACE,                  @read_group_headers ),
         expected_output => ( q{-R} . $SPACE . join $SPACE, @read_group_headers ),
     },
-    infile_path => {
-        input           => q{test_infile_1.fastq},
-        expected_output => q{test_infile_1.fastq},
-    },
     second_infile_path => {
         input           => q{test_infile_2.fastq},
         expected_output => q{test_infile_2.fastq},
+    },
+    soft_clip_sup_align => {
+        input           => 1,
+        expected_output => q{-Y},
     },
     stdoutfile_path => {
         input           => q{test_outfile.bam},

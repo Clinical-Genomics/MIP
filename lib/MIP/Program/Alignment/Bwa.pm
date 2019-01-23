@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ bwa_mem run_bwamem bwa_index };
@@ -44,6 +44,7 @@ sub bwa_mem {
 ##          : $mark_split_as_secondary => Mark shorter split hits as secondary
 ##          : $read_group_header       => Read group header line, such as '@RG\tID:foo\tSM:bar'
 ##          : $second_infile_path      => Second infile path (read 2)
+##          : $soft_clip_sup_align     => Use soft clipping for supplementary alignments
 ##          : $stderrfile_path         => Stderrfile path
 ##          : $stderrfile_path_append  => Stderrfile path append
 ##          : $stdoutfile_path         => Stdoutfile path
@@ -55,11 +56,12 @@ sub bwa_mem {
     my $FILEHANDLE;
     my $idxbase;
     my $infile_path;
+    my $read_group_header;
     my $second_infile_path;
+    my $soft_clip_sup_align;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-    my $read_group_header;
     my $thread_number;
 
     ## Default(s)
@@ -92,9 +94,15 @@ sub bwa_mem {
             store       => \$mark_split_as_secondary,
             strict_type => 1,
         },
-        read_group_header  => { store => \$read_group_header,  strict_type => 1, },
-        second_infile_path => { store => \$second_infile_path, strict_type => 1, },
-        stderrfile_path    => { store => \$stderrfile_path,    strict_type => 1, },
+        read_group_header   => { store => \$read_group_header,  strict_type => 1, },
+        second_infile_path  => { store => \$second_infile_path, strict_type => 1, },
+        soft_clip_sup_align => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$soft_clip_sup_align,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
@@ -126,6 +134,10 @@ sub bwa_mem {
 
         # Mark shorter split hits as secondary
         push @commands, q{-M};
+    }
+    if ($soft_clip_sup_align) {
+
+        push @commands, q{-Y};
     }
     if ($read_group_header) {
 
