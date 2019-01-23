@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -252,6 +252,7 @@ sub analysis_star_fusion {
     star_fusion(
         {
             cpu                   => $core_number,
+            examine_coding_effect => 1,
             FILEHANDLE            => $FILEHANDLE,
             genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
             output_directory_path => $temp_directory,
