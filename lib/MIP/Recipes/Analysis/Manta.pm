@@ -140,7 +140,7 @@ sub analysis_manta {
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Compression::Gzip qw{ gzip };
     use MIP::Program::Variantcalling::Manta qw{ manta_config manta_workflow };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -319,7 +319,7 @@ sub analysis_manta {
 
     if ( $recipe_mode == 1 ) {
 
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => q{manta},

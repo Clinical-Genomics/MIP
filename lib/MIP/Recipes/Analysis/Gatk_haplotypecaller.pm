@@ -158,7 +158,7 @@ sub analysis_gatk_haplotypecaller {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Gatk qw{ gatk_haplotypecaller };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_gathervcfscloud };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Set::File qw{ set_io_files };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -422,7 +422,7 @@ sub analysis_gatk_haplotypecaller {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => basename($concat_vcf_path),
                 path             => $concat_vcf_path,

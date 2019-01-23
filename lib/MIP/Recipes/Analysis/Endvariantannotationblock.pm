@@ -154,7 +154,8 @@ sub analysis_endvariantannotationblock {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-    use MIP::QC::Record qw{ add_most_complete_vcf add_recipe_metafile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -333,7 +334,7 @@ sub analysis_endvariantannotationblock {
         }
 
         ## Adds the most complete vcf file to sample_info
-        add_most_complete_vcf(
+        set_most_complete_vcf(
             {
                 active_parameter_href     => $active_parameter_href,
                 path                      => $outfile_paths[$analysis_suffix_index],
@@ -345,7 +346,7 @@ sub analysis_endvariantannotationblock {
 
         if ( $recipe_mode == 1 ) {
 
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     recipe_name      => $recipe_name,

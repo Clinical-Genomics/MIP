@@ -156,7 +156,7 @@ sub analysis_delly_reformat {
     use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -467,7 +467,7 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
 
     if ( $recipe_mode == 1 ) {
 
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 recipe_name      => q{delly},
                 path             => $outfile_path,

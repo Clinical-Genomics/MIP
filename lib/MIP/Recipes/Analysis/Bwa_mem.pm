@@ -149,8 +149,8 @@ sub analysis_bwa_mem {
     use MIP::Program::Alignment::Bwa qw{ bwa_mem run_bwamem };
     use MIP::Program::Alignment::Samtools qw{ samtools_stats samtools_view };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
-    use MIP::QC::Record
-      qw{ add_processing_metafile_to_sample_info add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_processing_metafile_in_sample_info set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -539,7 +539,7 @@ sub analysis_bwa_mem {
 
             my $most_complete_format_key =
               q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-            add_processing_metafile_to_sample_info(
+            set_processing_metafile_in_sample_info(
                 {
                     metafile_tag     => $most_complete_format_key,
                     path             => $outfile_path,
@@ -554,7 +554,7 @@ sub analysis_bwa_mem {
 
                 # Required for analysisRunStatus check downstream
                 my $qc_cram_path = $outfile_path_prefix . $DOT . q{cram};
-                add_recipe_metafile_to_sample_info(
+                set_recipe_metafile_in_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         metafile_tag     => q{cram},
@@ -570,7 +570,7 @@ sub analysis_bwa_mem {
 
                 ## Collect QC metadata info for later use
                 my $qc_stats_outfile = $outfile_path_prefix . $DOT . q{stats};
-                add_recipe_outfile_to_sample_info(
+                set_recipe_outfile_in_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         path             => $qc_stats_outfile,
@@ -583,7 +583,7 @@ sub analysis_bwa_mem {
 
             if ( $bwa_binary eq q{bwa mem} ) {
 
-                add_recipe_outfile_to_sample_info(
+                set_recipe_outfile_in_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         path             => catfile( $directory, $stderr_file ),
@@ -596,7 +596,7 @@ sub analysis_bwa_mem {
             if ( $bwa_binary eq q{run-bwamem} ) {
 
                 my $qc_bwa_log = $outfile_path_prefix . $DOT . q{log.bwamem};
-                add_recipe_outfile_to_sample_info(
+                set_recipe_outfile_in_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         path             => $$qc_bwa_log,

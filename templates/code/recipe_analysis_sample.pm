@@ -131,8 +131,8 @@ sub analysis_RECIPE_NAME {
     use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Record
-      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ add_recipe_metafile_to_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -226,7 +226,7 @@ sub analysis_RECIPE_NAME {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
                 path             => $outfile_path,
@@ -238,7 +238,7 @@ sub analysis_RECIPE_NAME {
 
         my $most_complete_format_key =
           q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        add_processing_metafile_to_sample_info(
+        set_processing_metafile_in_sample_info(
             {
                 metafile_tag     => $most_complete_format_key,
                 path             => $outfile_path,
