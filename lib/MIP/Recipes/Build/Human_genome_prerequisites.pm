@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_human_genome_prerequisites };
@@ -38,20 +38,21 @@ sub build_human_genome_prerequisites {
 
 ## Function : Creates the human genome prerequisites using active_parameters{human_genome_reference} as reference.
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family ID
-##          : $FILEHANDLE              => Filehandle to write to. A new sbatch script will be generated if $FILEHANDLE is lacking, else write to exising $FILEHANDLE {Optional}
-##          : $file_info_href          => File info hash {REF}
-##          : $human_genome_reference  => Human genome reference
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $log                     => Log object
+## Arguments: $active_parameter_href        => Active parameters for this analysis hash {REF}
+##          : $case_id                      => Family ID
+##          : $FILEHANDLE                   => Filehandle to write to. A new sbatch script will be generated if $FILEHANDLE is lacking, else write to exising $FILEHANDLE {Optional}
+##          : $file_info_href               => File info hash {REF}
+##          : $human_genome_reference       => Human genome reference
+##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
+##          : $job_id_href                  => Job id hash {REF}
+##          : $log                          => Log object
 ##          : $parameter_build_suffixes_ref => The human genome reference associated file endings {REF}
-##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program under evaluation
-##          : $random_integer          => The random integer to create temporary file name
-##          : $reference_dir           => MIP reference directory
-##          : $sample_info_href        => Info on samples and case hash {REF}
+##          : $parameter_href               => Parameter hash {REF}
+##          : $profile_base_command         => Submission profile base command
+##          : $recipe_name                  => Program under evaluation
+##          : $random_integer               => The random integer to create temporary file name
+##          : $reference_dir                => MIP reference directory
+##          : $sample_info_href             => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -71,6 +72,7 @@ sub build_human_genome_prerequisites {
     ## Default(s)
     my $case_id;
     my $human_genome_reference;
+    my $profile_base_command;
     my $reference_dir;
 
     my $tmpl = {
@@ -126,6 +128,11 @@ sub build_human_genome_prerequisites {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -363,6 +370,7 @@ sub build_human_genome_prerequisites {
 
             submit_recipe(
                 {
+                    base_command       => $profile_base_command,
                     dependency_method  => q{island_to_samples},
                     case_id            => $case_id,
                     job_id_href        => $job_id_href,
@@ -375,7 +383,7 @@ sub build_human_genome_prerequisites {
             );
         }
     }
-    return;
+    return 1;
 }
 
 1;
