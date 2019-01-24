@@ -54,7 +54,6 @@ sub star_fusion {
 
     ## Flatten argument(s)
     my $cpu;
-    my $examine_coding_effect;
     my $fastq_r1_path;
     my $fastq_r2_path;
     my $FILEHANDLE;
@@ -67,6 +66,7 @@ sub star_fusion {
     my $stdoutfile_path;
 
     ## Default(s)
+    my $examine_coding_effect;
 
     my $tmpl = {
         cpu => {
@@ -75,6 +75,7 @@ sub star_fusion {
         },
         examine_coding_effect => {
             allow       => [ undef, 0, 1 ],
+            default     => 0,
             store       => \$examine_coding_effect,
             strict_type => 1,
         },
