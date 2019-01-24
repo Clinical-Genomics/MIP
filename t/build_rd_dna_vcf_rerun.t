@@ -44,19 +44,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Build::Salmon_quant_prerequisites} =>
-          [qw{ build_salmon_quant_prerequisites }],
+        q{MIP::Recipes::Build::Rd_dna_vcf_rerun} =>
+          [qw{ build_rd_dna_vcf_rerun_meta_files }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Build::Salmon_quant_prerequisites
-  qw{ build_salmon_quant_prerequisites };
+use MIP::Recipes::Build::Rd_dna_vcf_rerun qw{ build_rd_dna_vcf_rerun_meta_files };
 
-diag(   q{Test build_salmon_quant_prerequisites from Salmon_quant_prerequisites.pm v}
-      . $MIP::Recipes::Build::Salmon_quant_prerequisites::VERSION
+diag(   q{Test build_rd_dna_vcf_rerun_meta_files from Rd_dna.pm v}
+      . $MIP::Recipes::Build::Rd_dna_vcf_rerun::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -67,8 +66,8 @@ diag(   q{Test build_salmon_quant_prerequisites from Salmon_quant_prerequisites.
 my $log = test_log();
 
 ## Given build parameters
-my $recipe_name    = q{salmon_quant};
-my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
+my $parameter_build_name = q{human_genome_reference_file_endings};
+my $recipe_name          = q{bwa_mem};
 
 my %active_parameter = test_mip_hashes(
     {
@@ -76,15 +75,19 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$active_parameter{$recipe_name} = 1;
+## Submission via slurm_mock
+$active_parameter{$recipe_name} = 2;
+
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
         recipe_name   => $recipe_name,
     }
 );
+$file_info{human_genome_reference_name_prefix} = q{human_genome};
+
 my %infile_lane_prefix;
-my %job_id    = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %job_id;
 my %parameter = test_mip_hashes(
     {
         mip_hash_name => q{recipe_parameter},
@@ -94,26 +97,19 @@ my %parameter = test_mip_hashes(
 
 my %sample_info;
 
-## Special case
-$active_parameter{salmon_quant_reference_genome} = q{human_genome.fastq};
-$active_parameter{transcript_annotation}         = q{GRCH37_transcripts.gtf};
-
-my $is_ok = build_salmon_quant_prerequisites(
+my $is_ok = build_rd_dna_vcf_rerun_meta_files(
     {
-        active_parameter_href        => \%active_parameter,
-        file_info_href               => \%file_info,
-        infile_lane_prefix_href      => \%infile_lane_prefix,
-        job_id_href                  => \%job_id,
-        log                          => $log,
-        parameter_href               => \%parameter,
-        parameter_build_suffixes_ref => \@{ $file_info{salmon_quant_reference_genome} },
-        profile_base_command         => $slurm_mock_cmd,
-        recipe_name                  => $recipe_name,
-        sample_info_href             => \%sample_info,
+        active_parameter_href   => \%active_parameter,
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        log                     => $log,
+        parameter_href          => \%parameter,
+        sample_info_href        => \%sample_info,
     }
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed build star prerequisites} );
+ok( $is_ok, q{ Executed build rd dna vcf rerun meta prerequisites} );
 
 done_testing();

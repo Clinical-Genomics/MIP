@@ -145,7 +145,7 @@ sub build_rd_dna_vcf_rerun_meta_files {
         }
     }
 
-    return;
+    return 1;
 }
 
 1;

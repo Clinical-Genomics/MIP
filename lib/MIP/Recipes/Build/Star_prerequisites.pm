@@ -297,7 +297,7 @@ sub build_star_prerequisites {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;
