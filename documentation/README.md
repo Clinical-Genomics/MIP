@@ -190,7 +190,7 @@ $ perl t/mip_analyse_rd_dna.test
      sv_rankvariant:
      variant_integrity_ar:
     MIP_rare_ecnvnator:
-     cnvnator_ar: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/MIP_cnvnator/root/bin/thisroot.sh;"
+     cnvnator_ar: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/MIP_rare_ecnvnator/root/bin/thisroot.sh;"
      method: conda
     MIP_rare_edelly:
      delly_call:
@@ -200,8 +200,8 @@ $ perl t/mip_analyse_rd_dna.test
      peddy_ar:
      method: conda
     MIP_rare_evep:
-     sv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
-     varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
+     sv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_rare_evep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
+     varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/MIP_rare_evep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
      method: conda
   ```
 
