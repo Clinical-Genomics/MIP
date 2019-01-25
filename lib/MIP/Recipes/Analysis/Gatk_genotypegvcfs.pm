@@ -135,7 +135,7 @@ sub analysis_gatk_genotypegvcfs {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_genomicsdbimport  gatk_genotypegvcfs };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:

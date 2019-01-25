@@ -136,7 +136,7 @@ sub analysis_blobfish {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Blobfish qw{ blobfish_allvsall };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -236,7 +236,7 @@ sub analysis_blobfish {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outdir_path,
                 recipe_name      => $recipe_name,

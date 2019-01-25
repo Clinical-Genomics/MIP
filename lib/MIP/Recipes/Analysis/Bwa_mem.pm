@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.010;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem };
@@ -45,12 +45,12 @@ sub analysis_bwa_mem {
 ## Function : Performs alignment of single and paired-end as well as interleaved fastq(.gz) files.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -149,8 +149,8 @@ sub analysis_bwa_mem {
     use MIP::Program::Alignment::Bwa qw{ bwa_mem run_bwamem };
     use MIP::Program::Alignment::Samtools qw{ samtools_stats samtools_view };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
-    use MIP::QC::Record
-      qw{ add_processing_metafile_to_sample_info add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_processing_metafile_in_sample_info set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -371,8 +371,10 @@ sub analysis_bwa_mem {
                     interleaved_fastq_file  => $interleaved_fastq_file,
                     mark_split_as_secondary => 1,
                     read_group_header       => join( $EMPTY_STR, @read_group_headers ),
-                    second_infile_path      => $second_fastq_file_path,
-                    thread_number           => $core_number,
+                    soft_clip_sup_align =>
+                      $active_parameter_href->{bwa_soft_clip_sup_align},
+                    second_infile_path => $second_fastq_file_path,
+                    thread_number      => $core_number,
                 }
             );
 
@@ -407,8 +409,10 @@ sub analysis_bwa_mem {
                     idxbase              => $referencefile_path,
                     outfiles_prefix_path => $file_path_prefix,
                     read_group_header    => join( $EMPTY_STR, @read_group_headers ),
-                    second_infile_path   => $second_fastq_file_path,
-                    thread_number        => $core_number,
+                    soft_clip_sup_align =>
+                      $active_parameter_href->{bwa_soft_clip_sup_align},
+                    second_infile_path => $second_fastq_file_path,
+                    thread_number      => $core_number,
                 }
             );
             print {$FILEHANDLE} $PIPE . $SPACE;
@@ -539,7 +543,7 @@ sub analysis_bwa_mem {
 
             my $most_complete_format_key =
               q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-            add_processing_metafile_to_sample_info(
+            set_processing_metafile_in_sample_info(
                 {
                     metafile_tag     => $most_complete_format_key,
                     path             => $outfile_path,
@@ -554,7 +558,7 @@ sub analysis_bwa_mem {
 
                 # Required for analysisRunStatus check downstream
                 my $qc_cram_path = $outfile_path_prefix . $DOT . q{cram};
-                add_recipe_metafile_to_sample_info(
+                set_recipe_metafile_in_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         metafile_tag     => q{cram},
@@ -570,7 +574,7 @@ sub analysis_bwa_mem {
 
                 ## Collect QC metadata info for later use
                 my $qc_stats_outfile = $outfile_path_prefix . $DOT . q{stats};
-                add_recipe_outfile_to_sample_info(
+                set_recipe_outfile_in_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         path             => $qc_stats_outfile,
@@ -583,7 +587,7 @@ sub analysis_bwa_mem {
 
             if ( $bwa_binary eq q{bwa mem} ) {
 
-                add_recipe_outfile_to_sample_info(
+                set_recipe_outfile_in_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         path             => catfile( $directory, $stderr_file ),
@@ -596,7 +600,7 @@ sub analysis_bwa_mem {
             if ( $bwa_binary eq q{run-bwamem} ) {
 
                 my $qc_bwa_log = $outfile_path_prefix . $DOT . q{log.bwamem};
-                add_recipe_outfile_to_sample_info(
+                set_recipe_outfile_in_sample_info(
                     {
                         infile           => $outfile_name_prefix,
                         path             => $$qc_bwa_log,

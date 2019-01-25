@@ -151,8 +151,8 @@ sub analysis_rankvariant {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Genmod
       qw{ genmod_annotate genmod_compound genmod_models genmod_score };
-    use MIP::QC::Record
-      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -416,7 +416,7 @@ sub analysis_rankvariant {
 
     if ( $recipe_mode == 1 ) {
 
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_paths[0],
                 recipe_name      => q{genmod},
@@ -431,7 +431,7 @@ sub analysis_rankvariant {
               $active_parameter_href->{rank_model_file} =~
               m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     file         => basename( $active_parameter_href->{rank_model_file} ),
                     metafile_tag => q{rank_model},
@@ -568,8 +568,8 @@ sub analysis_rankvariant_unaffected {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Genmod
       qw{ genmod_annotate genmod_compound genmod_models genmod_score };
-    use MIP::QC::Record
-      qw{ add_recipe_metafile_to_sample_info add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -752,7 +752,7 @@ sub analysis_rankvariant_unaffected {
 
     if ( $recipe_mode == 1 ) {
 
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_paths[0],
                 recipe_name      => q{genmod},
@@ -767,7 +767,7 @@ sub analysis_rankvariant_unaffected {
               $active_parameter_href->{rank_model_file} =~
               m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     file         => basename( $active_parameter_href->{rank_model_file} ),
                     metafile_tag => q{rank_model},
@@ -903,8 +903,8 @@ sub analysis_rankvariant_sv {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Genmod
       qw{ genmod_annotate genmod_compound genmod_models genmod_score };
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -1140,7 +1140,7 @@ sub analysis_rankvariant_sv {
 
         if ( $recipe_mode == 1 ) {
 
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_in_sample_info(
                 {
                     path             => $outfile_paths[$infile_index],
                     recipe_name      => q{sv_genmod},
@@ -1162,7 +1162,7 @@ sub analysis_rankvariant_sv {
               $active_parameter_href->{sv_rank_model_file} =~
               m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     file => basename( $active_parameter_href->{sv_rank_model_file} ),
                     metafile_tag     => q{sv_rank_model},
@@ -1297,8 +1297,8 @@ sub analysis_rankvariant_sv_unaffected {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate };
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -1428,7 +1428,7 @@ sub analysis_rankvariant_sv_unaffected {
 
         if ( $recipe_mode == 1 ) {
 
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_in_sample_info(
                 {
                     path             => $outfile_paths[$infile_index],
                     recipe_name      => q{sv_genmod},
@@ -1450,7 +1450,7 @@ sub analysis_rankvariant_sv_unaffected {
               $active_parameter_href->{sv_rank_model_file} =~
               m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     file => basename( $active_parameter_href->{sv_rank_model_file} ),
                     metafile_tag     => q{sv_rank_model},

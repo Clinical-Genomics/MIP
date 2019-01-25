@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rd_dna_meta_files };
@@ -33,7 +33,7 @@ Readonly my $TAB       => qq{\t};
 
 sub build_rd_dna_meta_files {
 
-## Function : Rare disease DNA pipeline recipe for wes/wgs data analysis.
+## Function : Build rare disease DNA pipeline recipe meta files for wes/wgs data analysis.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
@@ -106,9 +106,6 @@ sub build_rd_dna_meta_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Reference qw{
-      check_references_for_vt };
-    use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
     use MIP::Recipes::Build::Bwa_prerequisites qw{ build_bwa_prerequisites };
     use MIP::Recipes::Build::Capture_file_prerequisites
       qw{ build_capture_file_prerequisites };
@@ -157,45 +154,7 @@ sub build_rd_dna_meta_files {
     }
 
     $log->info( $TAB . q{Reference check: Reference prerequisites checked} );
-
-## Check if vt has processed references, if not try to reprocesses them before launcing modules
-    $log->info(q{[Reference check - Reference processed by VT]});
-    if (   $active_parameter_href->{vt_decompose}
-        || $active_parameter_href->{vt_normalize} )
-    {
-
-        my @to_process_references = check_references_for_vt(
-            {
-                active_parameter_href => $active_parameter_href,
-                log                   => $log,
-                parameter_href        => $parameter_href,
-                vt_references_ref =>
-                  \@{ $active_parameter_href->{decompose_normalize_references} },
-            }
-        );
-
-      REFERENCE:
-        foreach my $reference_file_path (@to_process_references) {
-
-            $log->info(q{[VT - Normalize and decompose]});
-            $log->info( $TAB . q{File: } . $reference_file_path );
-
-            ## Split multi allelic records into single records and normalize
-            analysis_vt_core(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    decompose               => 1,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    infile_path             => $reference_file_path,
-                    normalize               => 1,
-                    parameter_href          => $parameter_href,
-                    recipe_directory        => q{vt},
-                }
-            );
-        }
-    }
-    return;
+    return 1;
 }
 
 1;

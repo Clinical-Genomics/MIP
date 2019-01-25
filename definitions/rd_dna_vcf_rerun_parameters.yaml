@@ -814,6 +814,7 @@ endvariantannotationblock:
   outfile_suffix: ".vcf"
   program_executables:
    - grep
+   - gatk
   type: recipe
 rankvariant_binary_file:
   associated_recipe:

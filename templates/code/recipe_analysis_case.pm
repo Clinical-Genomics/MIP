@@ -125,7 +125,7 @@ sub analysis_RECIPE_NAME {
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -219,7 +219,7 @@ sub analysis_RECIPE_NAME {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_paths[0],
                 recipe_name      => $recipe_name,

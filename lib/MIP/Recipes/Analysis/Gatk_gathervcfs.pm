@@ -132,8 +132,8 @@ sub analysis_gatk_gathervcfs {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_gathervcfscloud gatk_selectvariants };
-    use MIP::QC::Record
-      qw{ add_processing_metafile_to_sample_info add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_processing_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -291,7 +291,7 @@ sub analysis_gatk_gathervcfs {
 
             my $gbcf_file_path = $outfile_path_prefix . $DOT . q{bcf};
 
-            add_processing_metafile_to_sample_info(
+            set_processing_metafile_in_sample_info(
                 {
                     metafile_tag     => q{gbcf_file},
                     path             => $gbcf_file_path,
@@ -301,7 +301,7 @@ sub analysis_gatk_gathervcfs {
         }
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,

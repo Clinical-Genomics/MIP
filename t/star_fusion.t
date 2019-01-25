@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -110,6 +110,10 @@ my %specific_argument = (
     cpu => {
         input           => $CPU,
         expected_output => q{--CPU} . $SPACE . $CPU,
+    },
+    examine_coding_effect => {
+        input           => 1,
+        expected_output => q{--examine_coding_effect},
     },
     genome_lib_dir_path => {
         input           => catfile(qw{ dir genome_lib_dir_path }),

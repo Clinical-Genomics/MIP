@@ -396,6 +396,12 @@ bwa_sambamba_sort_memory_limit:
   data_type: SCALAR
   default: 64G
   type: recipe_argument
+bwa_soft_clip_sup_align:
+  associated_recipe:
+   - bwa_mem
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 ## BAMCalibrationBlock
 bamcalibrationblock:
   associated_recipe:
@@ -1199,6 +1205,12 @@ gatk_variantrecalibration:
   recipe_type: variant_callers
   outfile_suffix: ".vcf"
   type: recipe
+gatk_calculategenotypeposteriors:
+  associated_recipe:
+   - gatk_variantrecalibration
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 gatk_calculategenotypeposteriors_support_set:
   associated_recipe:
    - gatk_variantrecalibration

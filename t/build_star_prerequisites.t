@@ -17,14 +17,13 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
-use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -75,8 +74,9 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$active_parameter{star_fusion}               = 1;
+$active_parameter{$recipe_name} = 1;
 $active_parameter{star_aln_reference_genome} = q{_star_genome_dir};
+
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -96,26 +96,22 @@ my %sample_info;
 # Special case
 $active_parameter{transcript_annotation} = q{GRCH37_transcripts.gtf};
 
-trap {
-    build_star_prerequisites(
-        {
-            active_parameter_href        => \%active_parameter,
-            file_info_href               => \%file_info,
-            infile_lane_prefix_href      => \%infile_lane_prefix,
-            job_id_href                  => \%job_id,
-            log                          => $log,
-            parameter_href               => \%parameter,
-            parameter_build_suffixes_ref => \@{ $file_info{star_aln_reference_genome} },
-            profile_base_command         => $slurm_mock_cmd,
-            recipe_name                  => $recipe_name,
-            sample_info_href             => \%sample_info,
-        }
-    )
-};
-## Special case to get the "ok" at the beginning of the line for Test::Harness
-say {*STDOUT} q{};
-## Then broadcast info log message
-my $log_msg = q{Will\s+try\s+to\s+create\s+required\s+human_genome.fasta\s+star\s+files};
-like( $trap->stderr, qr/$log_msg/msx, q{Broadcast star_fusion log message} );
+my $is_ok = build_star_prerequisites(
+    {
+        active_parameter_href        => \%active_parameter,
+        file_info_href               => \%file_info,
+        infile_lane_prefix_href      => \%infile_lane_prefix,
+        job_id_href                  => \%job_id,
+        log                          => $log,
+        parameter_href               => \%parameter,
+        parameter_build_suffixes_ref => \@{ $file_info{star_aln_reference_genome} },
+        profile_base_command         => $slurm_mock_cmd,
+        recipe_name                  => $recipe_name,
+        sample_info_href             => \%sample_info,
+    }
+);
+
+## Then return TRUE
+ok( $is_ok, q{ Executed build star prerequisites} );
 
 done_testing();

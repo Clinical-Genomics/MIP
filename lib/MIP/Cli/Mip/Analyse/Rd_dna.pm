@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.13;
+our $VERSION = 1.14;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -406,6 +406,15 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
               q{Set the memory limit for Sambamba sort after bwa alignment},
             is  => q{rw},
             isa => Str,
+        )
+    );
+
+    option(
+        q{bwa_soft_clip_sup_align} => (
+            cmd_aliases   => [qw{ memscsa }],
+            documentation => q{Use soft clipping for supplementary alignments},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -1359,6 +1368,16 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             documentation => q{Annotations to use with GATK VariantRecalibrator},
             is            => q{rw},
             isa           => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{gatk_calculategenotypeposteriors} => (
+            cmd_aliases   => [qw{ gcgp }],
+            cmd_flag      => q{gatk_calculategenotypeposteriors},
+            documentation => q{Perform gatk calculate genotype posterior},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 

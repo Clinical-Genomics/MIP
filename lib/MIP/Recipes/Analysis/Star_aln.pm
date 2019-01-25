@@ -143,8 +143,8 @@ sub analysis_star_aln {
     use MIP::Program::Alignment::Picardtools qw{ picardtools_addorreplacereadgroups };
     use MIP::Program::Alignment::Star qw{ star_aln };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_recipe_metafile_to_sample_info add_processing_metafile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info set_processing_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## PREPROCESSING:
@@ -367,7 +367,7 @@ sub analysis_star_aln {
         if ( $recipe_mode == 1 ) {
 
             ## Collect QC metadata info for later use
-            add_recipe_outfile_to_sample_info(
+            set_recipe_outfile_in_sample_info(
                 {
                     infile           => $outfile_name_prefix,
                     path             => $outfile_path,
@@ -378,7 +378,7 @@ sub analysis_star_aln {
             );
 
             my $star_aln_log = $outfile_path_prefix . $DOT . q{Log.final.out};
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     infile           => $outfile_name_prefix,
                     path             => $star_aln_log,
@@ -391,7 +391,7 @@ sub analysis_star_aln {
 
             my $most_complete_format_key =
               q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-            add_processing_metafile_to_sample_info(
+            set_processing_metafile_in_sample_info(
                 {
                     metafile_tag     => $most_complete_format_key,
                     path             => $outfile_path,

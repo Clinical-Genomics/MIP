@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.07;
+our $VERSION = 1.08;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -238,7 +238,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         q{sv_vcf_rerun_file} => (
             cmd_aliases   => [qw{ svrrf }],
             cmd_flag      => q{sv_vcf_rerun_file},
-            cmd_tags      => [q{Format: vcf}],
+            cmd_tags      => [q{Format: vcf | bcf}],
             documentation => q{Sv variant calling file},
             is            => q{rw},
             isa           => Str,
@@ -558,8 +558,8 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
         q{vcf_rerun_file} => (
             cmd_aliases   => [qw{ vrrf }],
             cmd_flag      => q{vcf_rerun_file},
-            cmd_tags      => [q{Format: vcf}],
-            documentation => q{Sv variant calling file},
+            cmd_tags      => [q{Format: vcf | bcf }],
+            documentation => q{Variant calling file},
             is            => q{rw},
             isa           => Str,
         )

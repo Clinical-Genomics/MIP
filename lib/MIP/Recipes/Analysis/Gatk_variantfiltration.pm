@@ -143,7 +143,7 @@ sub analysis_gatk_variantfiltration {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_variantfiltration };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
 
     ## Constants
     Readonly my $JAVA_MEMORY_ALLOCATION => 4;
@@ -254,7 +254,7 @@ sub analysis_gatk_variantfiltration {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $infile_name,
                 path             => $outfile_path,

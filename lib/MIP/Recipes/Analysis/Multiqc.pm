@@ -122,7 +122,7 @@ sub analysis_multiqc {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Qc::Multiqc qw{ multiqc };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::QC::Record qw{ add_recipe_metafile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_metafile_in_sample_info };
 
     ### PREPROCESSING:
 
@@ -207,7 +207,7 @@ sub analysis_multiqc {
         if ( $recipe_mode == 1 ) {
 
             ## Collect QC metadata info for later use
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     metafile_tag     => $report_id,
                     path             => catfile( $outdir_path, q{multiqc_report.html} ),

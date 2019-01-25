@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -140,7 +140,7 @@ sub analysis_star_fusion {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## PREPROCESSING:
@@ -252,6 +252,7 @@ sub analysis_star_fusion {
     star_fusion(
         {
             cpu                   => $core_number,
+            examine_coding_effect => 1,
             FILEHANDLE            => $FILEHANDLE,
             genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
             output_directory_path => $temp_directory,
@@ -275,7 +276,7 @@ sub analysis_star_fusion {
 
     if ( $recipe_mode == 1 ) {
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $file_paths[0],
                 recipe_name      => $recipe_name,

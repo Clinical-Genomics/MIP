@@ -141,7 +141,7 @@ sub analysis_gatk_variantrecalibration_wes {
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_variantrecalibrator gatk_applyvqsr gatk_selectvariants gatk_calculategenotypeposteriors };
-    use MIP::QC::Record qw{ add_recipe_outfile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -392,7 +392,9 @@ sub analysis_gatk_variantrecalibration_wes {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Genotype refinement
-    if ( $parameter_href->{cache}{trio} ) {
+    if (    $parameter_href->{cache}{trio}
+        and $active_parameter_href->{gatk_calculategenotypeposteriors} )
+    {
 
         say {$FILEHANDLE} q{## GATK CalculateGenotypePosteriors};
 
@@ -456,7 +458,7 @@ sub analysis_gatk_variantrecalibration_wes {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
@@ -465,7 +467,7 @@ sub analysis_gatk_variantrecalibration_wes {
         );
 
         # Used to find order of samples in qccollect downstream
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => q{pedigree_check},
@@ -592,8 +594,8 @@ sub analysis_gatk_variantrecalibration_wgs {
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_variantrecalibrator gatk_applyvqsr gatk_selectvariants gatk_calculategenotypeposteriors };
-    use MIP::QC::Record
-      qw{ add_recipe_outfile_to_sample_info add_processing_metafile_to_sample_info };
+    use MIP::QC::Sample_info
+      qw{ set_recipe_outfile_in_sample_info set_processing_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -856,7 +858,9 @@ sub analysis_gatk_variantrecalibration_wgs {
     }
 
     ## GenotypeRefinement
-    if ( $parameter_href->{cache}{trio} ) {
+    if (    $parameter_href->{cache}{trio}
+        and $active_parameter_href->{gatk_calculategenotypeposteriors} )
+    {
 
         say {$FILEHANDLE} q{## GATK CalculateGenotypePosteriors};
 
@@ -920,7 +924,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
@@ -929,7 +933,7 @@ sub analysis_gatk_variantrecalibration_wgs {
         );
 
         # Used to find order of samples in qccollect downstream
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 path             => $outfile_path,
                 recipe_name      => q{pedigree_check},

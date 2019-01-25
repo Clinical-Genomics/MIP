@@ -134,7 +134,7 @@ sub analysis_peddy {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Peddy qw{ peddy };
-    use MIP::QC::Record qw{ add_recipe_metafile_to_sample_info };
+    use MIP::QC::Sample_info qw{ set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -280,7 +280,7 @@ sub analysis_peddy {
         while ( my ( $outfile_tag, $outfile_path ) = each %outfile_path ) {
 
             ## Collect QC metadata info for later use
-            add_recipe_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
                     metafile_tag     => $outfile_tag,
                     path             => $outfile_path,
@@ -291,7 +291,7 @@ sub analysis_peddy {
         }
 
         ## Collect QC metadata info for later use
-        add_recipe_metafile_to_sample_info(
+        set_recipe_metafile_in_sample_info(
             {
                 metafile_tag     => q{stderr},
                 path             => $stderr_file_path,

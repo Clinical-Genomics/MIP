@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_fusion };
@@ -38,6 +38,7 @@ sub star_fusion {
 ## Function : Splice site analysis using STAR-fusion.
 ## Returns  :
 ## Arguments: $cpu                    => Number of threads for running STAR
+##          : $examine_coding_effect  => Append coding effect to fusion
 ##          : $fastq_r1_path          => The path of the R1 fastq
 ##          : $fastq_r2_path          => The path of the R2 fastq
 ##          : $FILEHANDLE             => Filehandle to write to
@@ -64,9 +65,18 @@ sub star_fusion {
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
+    ## Default(s)
+    my $examine_coding_effect;
+
     my $tmpl = {
         cpu => {
             store       => \$cpu,
+            strict_type => 1,
+        },
+        examine_coding_effect => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$examine_coding_effect,
             strict_type => 1,
         },
         fastq_r1_path => {
@@ -140,6 +150,10 @@ q{Error: You must either specify the fastq file paths or a splice junction datab
 
     if ($cpu) {
         push @commands, q{--CPU} . $SPACE . $cpu;
+    }
+
+    if ($examine_coding_effect) {
+        push @commands, q{--examine_coding_effect};
     }
 
     push @commands, q{--output_dir} . $SPACE . $output_directory_path;

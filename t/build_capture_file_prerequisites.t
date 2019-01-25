@@ -17,14 +17,13 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
-use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -80,6 +79,7 @@ open $FILEHANDLE, q{>}, \$file_content
 ## Given build parameters
 my $parameter_build_name = q{exome_target_bed};
 my $recipe_name          = q{picardtools_collecthsmetrics};
+my $slurm_mock_cmd       = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
     {
@@ -87,6 +87,9 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+## Submission via slurm_mock
+$active_parameter{$recipe_name} = 1;
+
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -102,27 +105,29 @@ my %sample_info;
 my $interval_list_suffix        = $file_info{exome_target_bed}[0];
 my $padded_interval_list_suffix = $file_info{exome_target_bed}[1];
 
-trap {
-    build_capture_file_prerequisites(
+FILEHANDLE:
+foreach my $fh ( $FILEHANDLE, undef ) {
+
+    my $is_ok = build_capture_file_prerequisites(
         {
             active_parameter_href        => \%active_parameter,
-            FILEHANDLE                   => $FILEHANDLE,
+            FILEHANDLE                   => $fh,
             file_info_href               => \%file_info,
             infile_lane_prefix_href      => \%infile_lane_prefix,
             job_id_href                  => \%job_id,
             log                          => $log,
             parameter_build_suffixes_ref => \@{ $file_info{$parameter_build_name} },
             parameter_href               => \%parameter,
+            profile_base_command         => $slurm_mock_cmd,
             recipe_name                  => $recipe_name,
             sample_info_href             => \%sample_info,
         }
-      )
-};
+    );
+
+    ## Then return TRUE
+    ok( $is_ok, q{ Executed build capture prerequisites} );
+}
 
 close $FILEHANDLE;
-
-## Then broadcast info log message
-my $log_msg = q{Will\s+try\s+to\s+create\s+required};
-like( $trap->stderr, qr/$log_msg/msx, q{Broadcast exome_target_bed build log message} );
 
 done_testing();
