@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.07;
+our $VERSION = 1.08;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -559,7 +559,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             cmd_aliases   => [qw{ vrrf }],
             cmd_flag      => q{vcf_rerun_file},
             cmd_tags      => [q{Format: vcf}],
-            documentation => q{Sv variant calling file},
+            documentation => q{Variant calling file},
             is            => q{rw},
             isa           => Str,
         )

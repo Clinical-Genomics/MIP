@@ -18,7 +18,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Two-step model for reruns. Fix https://github.com/Clinical-Genomics/MIP/issues/546
 - Add input SV vcf for rd_dna_vcf_rerun to qc_sample_info. Fix https://github.com/Clinical-Genomics/MIP/issues/548
 - Added io to all recipes
-- Updated GATK to version 4.0.10 for most GATK recipes
+- Updated GATK to version 4.0.11 for most GATK recipes
 - Removed bed_cov and corresponding R scripts from rare disease analysis 
 - Removed variantannotation block - "--rio" now only operates on BAM block
 - Refactored and updated Delly to "0.7.8". Removed small-indel calling for better speed.
@@ -28,11 +28,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added exclude contig option. Fix https://github.com/Clinical-Genomics/MIP/issues/509.
 - Add UCSC genomicsSuperDups to annoation and rank model. Fix https://github.com/Clinical-Genomics/MIP/issues/574
 - Switched to using conda instead of source with conda e.g. "conda activate [ENV]" instead of "source activate [ENV]"
+- Changed default for gatk_calculategenotypeposteriors to 0 (=no). 
 - Switched 1000G phase3_v4_2013-05-02 to gnomad r2.0.1 as default for gatk_calculategenotypeposteriors_support_set option
 - Added switch to add all research variants to clinical file for MT. Required to display all MT variants in Scout clinical view as they are all deemed clinically relevant.
+- Added gatk GatherBqsrReports to gather bqsr reports after parallelization
 
 **New Pipeline**
-- rna
+- rd_dna
 - rd_dna_vcf_rerun
 
 **New recipes**
@@ -48,6 +50,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - genomic_superdups_frac_match
 - REVEL_rankscore
 - CADD for indels
+- MaxEntScan
 
 **References**
 - clinvar: 20180429 -> 20181028
