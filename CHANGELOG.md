@@ -65,15 +65,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **Tools**
 - bcftools: 1.6 -> 1.9-h4da6232_0
 - bedtools: 2.26.0 -> 2.27.1-he941832_2
-- bwa: 0.7.15 -> 0.7.1-ha92aebf_3
+- bwa: 0.7.15 -> 0.7.17-ha92aebf_3
+- cadd: 1.4
 - bwakit: 0.7.12 -> 0.7.15-1
 - cutadapt: 1.14 -> 1.18-py27_0
 - cramtools: 3.0.b47 -> 3.0.b127-2
+- expansionhunter: 2.5.5
 - delly: 0.7.7 -> 0.7.8-h278814d_3
 - fastqc: 0.11.4 -> 0.11.8-0
 - freebayes: 1.1.0 -> 1.2.0-py27h82df9c4_3
 - genmod: 3.7.2 -> 3.7.3
-- GATK: 3.8 -> 4.0.11.0-0
+- GATK: 3.8 -> 4.0.11.0-0 (and some modules still use 3.8)
 - htslib: 1.6 -> 1.9-hc238db4_4
 - manta: 1.1.0 -> 1.4.0-py27_1
 - multiqc: 1.4 -> 1.6
