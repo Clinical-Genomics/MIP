@@ -66,7 +66,7 @@ diag(   q{Test set_human_genome_reference_features from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log();
+my $log = test_log( {} );
 
 my %parameter;
 
@@ -122,7 +122,7 @@ trap {
             log                    => $log,
             parameter_href         => \%parameter,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

@@ -62,7 +62,7 @@ diag(   q{Test build_star_prerequisites from Star_prerequisites.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given build parameters
 my $recipe_name    = q{star_fusion};

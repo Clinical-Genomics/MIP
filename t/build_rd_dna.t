@@ -62,7 +62,7 @@ diag(   q{Test build_rd_dna_meta_files from Rd_dna.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given build parameters
 my $parameter_build_name = q{bwa_build_reference};

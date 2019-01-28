@@ -64,7 +64,7 @@ diag(   q{Test parse_fastq_infiles from File.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given compressed file, when proper data
 my %active_parameter = (

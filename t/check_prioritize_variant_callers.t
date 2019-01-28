@@ -63,7 +63,7 @@ diag(   q{Test check_prioritize_variant_callers from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given active callers, when priority string is ok
 my %active_parameter = (
@@ -104,7 +104,7 @@ trap {
             parameter_name        => q{gatk_combinevariants_prioritize_caller},
             variant_callers_ref   => \@{ $parameter{cache}{variant_callers} },
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -125,7 +125,7 @@ trap {
             parameter_name        => q{gatk_combinevariants_prioritize_caller},
             variant_callers_ref   => \@{ $parameter{cache}{variant_callers} },
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -147,7 +147,7 @@ trap {
             parameter_name        => q{gatk_combinevariants_prioritize_caller},
             variant_callers_ref   => \@{ $parameter{cache}{variant_callers} },
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

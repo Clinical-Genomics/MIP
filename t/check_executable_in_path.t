@@ -63,7 +63,7 @@ diag(   q{Test check_executable_in_path from Path.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log();
+my $log = test_log( {} );
 
 my %active_parameter = (
     conda_path => catfile( $Bin, qw{ data modules miniconda } ),
@@ -117,7 +117,7 @@ trap {
             log                   => $log,
             parameter_href        => \%parameter,
         }
-      )
+    )
 };
 
 ## Then INFO message should broadcast
@@ -143,7 +143,7 @@ trap {
             log                   => $log,
             parameter_href        => \%parameter,
         }
-      )
+    )
 };
 
 ## Then FATAL message should broadcast
@@ -177,7 +177,7 @@ trap {
             log                   => $log,
             parameter_href        => \%parameter,
         }
-      )
+    )
 };
 
 ## Then INFO message should broadcast
@@ -212,7 +212,7 @@ trap {
             log                   => $log,
             parameter_href        => \%parameter,
         }
-      )
+    )
 };
 
 ## Then FATAL message should broadcast

@@ -61,7 +61,7 @@ diag(   q{Test check_vep_custom_annotation from Parameter.pm v}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given a undefined vep_custom_annotation
 my %vep_custom_ann_undef;
@@ -106,7 +106,7 @@ trap {
             log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -130,7 +130,7 @@ trap {
             log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann_not_valid_option,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -157,7 +157,7 @@ trap {
             log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann_bad_path,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -179,7 +179,7 @@ trap {
             log                 => $log,
             vep_custom_ann_href => \%vep_custom_ann_bad_key,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

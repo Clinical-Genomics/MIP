@@ -61,7 +61,7 @@ diag(   q{Test parse_start_with_recipe from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given no defined start_with_recipe parameter
 my %active_parameter;

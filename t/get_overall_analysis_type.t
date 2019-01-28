@@ -62,7 +62,7 @@ diag(   q{Test get_overall_analysis_type from Get.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Base arguments
 my %analysis_type_consensus = (

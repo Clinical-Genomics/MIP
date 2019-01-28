@@ -63,7 +63,7 @@ diag(   q{Test submit_recipe from Processes.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Base arguments
 my $case_id = q{case1};
@@ -107,7 +107,7 @@ trap {
             sample_ids_ref     => \@sample_ids,
             submission_profile => q{slurm},
         }
-      )
+    )
 };
 
 ## Then

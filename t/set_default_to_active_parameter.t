@@ -65,7 +65,7 @@ diag(   q{Test set_default_to_active_parameter from Set::Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create log object
-my $log = test_log();
+my $log = test_log( {} );
 
 my @order_parameters =
   qw{ bcftools_mpileup_filter_variant bwa_mem bwa_mem_bamstats gatk_genotypegvcfs_ref_gvcf gatk_variantrecalibration_resource_indel markduplicates sv_vcfparser_range_feature_file };
@@ -140,7 +140,7 @@ trap {
             parameter_href => \%parameter,
             parameter_name => q{expansionhunter_repeat_specs_dir},
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

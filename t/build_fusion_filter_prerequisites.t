@@ -64,7 +64,7 @@ diag(   q{Test build_fusion_filter_prerequisites from Fusion_filter_prerequisite
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given build parameters
 my $recipe_name    = q{star_fusion};

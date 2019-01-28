@@ -62,7 +62,7 @@ diag(   q{Test check_recipe_exists_in_hash from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given recipe names
 my %parameter = ( q{bcftools_mpileup} => 1, );
@@ -83,7 +83,7 @@ trap {
             query_ref      => \%{ $active_parameter{recipe_time} },
             truth_href     => \%parameter,
         }
-      )
+    )
 };
 
 ## Then exist and throw error
@@ -116,7 +116,7 @@ trap {
             query_ref      => \@{ $active_parameter{associated_recipe} },
             truth_href     => \%parameter,
         }
-      )
+    )
 };
 
 ## Then exist and throw error
@@ -155,7 +155,7 @@ trap {
             query_ref      => \$recipe_name,
             truth_href     => \%parameter,
         }
-      )
+    )
 };
 
 ## Then exist and throw error

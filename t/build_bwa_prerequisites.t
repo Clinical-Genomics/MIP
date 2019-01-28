@@ -62,7 +62,7 @@ diag(   q{Test build_bwa_prerequisites from Bwa_prerequisites.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given build parameters
 my $parameter_build_name = q{bwa_build_reference};

@@ -63,7 +63,7 @@ diag(   q{Test submit_jobs_to_sbatch from Slurm_processes.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given a mock slurm instance
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
@@ -94,7 +94,7 @@ trap {
             log              => $log,
             sbatch_file_name => $sbatch_file_name,
         }
-      )
+    )
 };
 ## Required to make trap work - there must be something wrong with variables being stored in the trap object and not flushed between trappings
 say {*STDOUT} $EMPTY_STR;
@@ -114,7 +114,7 @@ trap {
             log              => $log,
             sbatch_file_name => $sbatch_file_name,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

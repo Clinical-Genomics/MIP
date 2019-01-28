@@ -67,7 +67,7 @@ diag(   q{Test create_bash_file from Shell.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create test log
-my $log = test_log();
+my $log = test_log( {} );
 
 my %parameter = (
     slurm_quality_of_service => q{low},
@@ -89,12 +89,7 @@ my $file_content;
 
 # Store file content in memory by using referenced variable
 open $FILEHANDLE, q{>}, \$file_content
-  or croak q{Cannot write to}
-  . $SPACE
-  . $file_content
-  . $COLON
-  . $SPACE
-  . $OS_ERROR;
+  or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## When the sub is launched
 trap {

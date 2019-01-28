@@ -62,7 +62,7 @@ diag(   q{Test parse_prioritize_variant_callers from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given no structural active callers, when priority string is ok
 my %active_parameter = (

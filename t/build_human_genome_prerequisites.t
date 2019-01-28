@@ -64,7 +64,7 @@ diag(   q{Test build_human_genome_prerequisites from Human_genome_prerequisites.
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given build parameters
 my $parameter_build_name = q{human_genome_reference_file_endings};

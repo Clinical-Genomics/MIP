@@ -72,7 +72,7 @@ my @sample_ids     = qw{ sample1 sample2 };
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 my $sbatch_file_name =
   catfile( $Bin, qw{ data 643594-miptest test_script fastqc_ADM1059A1.0.sh } );
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Add paralell case chain job id
 @{ $job_id{case1_MAIN}{case1_parallel_MAIN0} } = qw{ job_id_10 };

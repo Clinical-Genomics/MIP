@@ -67,8 +67,8 @@ q{Test slurm_submit_job_sample_id_dependency_step_in_parallel_to_case from Slurm
 ## Given a mock slurm and script
 my $case_id = q{case1};
 my %infile_lane_prefix;
-my %job_id          = test_mip_hashes( { mip_hash_name => q{job_id}, } );
-my $log             = test_log();
+my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my $log    = test_log(        {} );
 my @parallel_chains = qw{ OTHER };
 my $path            = q{MAIN};
 my @sample_ids      = qw{ sample1 sample2 };

@@ -64,7 +64,7 @@ diag(   q{Test check_parameter_files from Path.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log();
+my $log = test_log( {} );
 
 my @order_parameters =
   qw{ gatk_baserecalibration_known_sites gatk_genotypegvcfs_ref_gvcf human_genome_reference snpsift_annotation_files sv_vcfparser_select_file vcfparser_select_file };

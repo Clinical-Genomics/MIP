@@ -67,7 +67,7 @@ my %job_id         = test_mip_hashes( { mip_hash_name => q{job_id}, } );
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 my $sbatch_file_name =
   catfile( $Bin, qw{ data 643594-miptest test_script fastqc_ADM1059A1.0.sh } );
-my $log = test_log();
+my $log = test_log( {} );
 
 slurm_submit_job_no_dependency_dead_end(
     {

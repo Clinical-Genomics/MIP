@@ -66,8 +66,8 @@ my $case_id = q{case1};
 my @dependency_methods =
   qw{ add_to_all case_to_island island island_to_sample island_to_samples sample_to_case sample_to_case_parallel sample_to_island sample_to_sample sample_to_sample_parallel };
 my %infile_lane_prefix;
-my %job_id          = test_mip_hashes( { mip_hash_name => q{job_id}, } );
-my $log             = test_log();
+my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my $log    = test_log(        {} );
 my @parallel_chains = qw{ OTHER };
 my $job_id_chain    = q{MAIN};
 my $sample_id       = q{sample1};

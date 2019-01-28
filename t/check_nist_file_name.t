@@ -62,7 +62,7 @@ diag(   q{Test check_nist_file_name from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given nist info
 my %active_parameter = (
@@ -98,7 +98,7 @@ trap {
             log                   => $log,
             nist_parameters_ref   => \@nist_parameters,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

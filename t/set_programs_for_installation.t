@@ -64,7 +64,7 @@ diag(   q{Test set_programs_for_installation from Set::Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Create starting hash
 my $parameter_href = {
@@ -121,7 +121,7 @@ trap {
             parameter_href => $parameter_copy_href,
             log            => $log,
         }
-      )
+    )
 };
 
 ## Then print FATAL log message and exit
@@ -141,7 +141,7 @@ trap {
             parameter_href => $parameter_copy_href,
             log            => $log,
         }
-      )
+    )
 };
 
 ## Then print FATAL log message for trying to use --select_program together with and installation of more than one environment
@@ -160,7 +160,7 @@ trap {
             parameter_href => $parameter_copy_href,
             log            => $log,
         }
-      )
+    )
 };
 
 ##Then warn for no python and solve the installation as such

@@ -63,7 +63,7 @@ diag(   q{Test get_exom_target_bed_file from File.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create log
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Base arguments
 my $sample_1         = q{sample_1};

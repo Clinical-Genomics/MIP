@@ -62,7 +62,7 @@ diag(   q{Test parse_nist_parameters from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given nist info
 my %active_parameter = (

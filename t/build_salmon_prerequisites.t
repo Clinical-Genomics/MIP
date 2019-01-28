@@ -64,7 +64,7 @@ diag(   q{Test build_salmon_quant_prerequisites from Salmon_quant_prerequisites.
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given build parameters
 my $recipe_name    = q{salmon_quant};
