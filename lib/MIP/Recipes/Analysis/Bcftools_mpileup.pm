@@ -328,8 +328,9 @@ sub analysis_bcftools_mpileup {
 
         ## Get parameter
         my $samples_file;
-        my $constrain;
-        if ( $parameter_href->{cache}{trio} ) {
+        ## Special case: bcftools version 1.9 does not output GQ when contsraint is applied
+        my $constrain = undef;
+        if ( $parameter_href->{cache}{trio} and $constrain ) {
 
             $samples_file =
               catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} ) . $SPACE;

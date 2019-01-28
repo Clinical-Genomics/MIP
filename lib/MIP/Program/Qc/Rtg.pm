@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rtg_format rtg_vcfeval };
@@ -35,7 +35,7 @@ Readonly my $SPACE => q{ };
 
 sub rtg_format {
 
-## Function : Perl wrapper for rtg tools 3.8.4.
+## Function : Perl wrapper for rtg tools 3.9.1.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $input_format           => Format of input
@@ -49,7 +49,6 @@ sub rtg_format {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $input_format;
     my $reference_genome_path;
     my $sdf_output_directory;
     my $stderrfile_path;
@@ -57,6 +56,7 @@ sub rtg_format {
     my $stdoutfile_path;
 
     ## Default(s)
+    my $input_format;
 
     my $tmpl = {
         input_format => {
@@ -127,9 +127,10 @@ sub rtg_format {
 
 sub rtg_vcfeval {
 
-## Function : Perl wrapper for rtg tools 3.8.4.
+## Function : Perl wrapper for rtg tools 3.9.1.
 ## Returns  : @commands
-## Arguments: $baselinefile_path      => VCF file containing baseline variants
+## Arguments: $all_record             => Use all records regardless of FILTER status
+##          : $baselinefile_path      => VCF file containing baseline variants
 ##          : $callfile_path          => VCF file containing called variants
 ##          : $eval_region_file_path  => Evaluate within regions contained in the supplied BED file, allowing transborder matches
 ##          : $FILEHANDLE             => Filehandle to write to
@@ -156,9 +157,16 @@ sub rtg_vcfeval {
     my $stdoutfile_path;
 
     ## Default(s)
+    my $all_record;
     my $output_mode;
 
     my $tmpl = {
+        all_record => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$all_record,
+            strict_type => 1,
+        },
         baselinefile_path => {
             defined     => 1,
             required    => 1,
@@ -220,6 +228,11 @@ sub rtg_vcfeval {
 
     ## Stores commands depending on input parameters
     my @commands = qw{ rtg vcfeval };
+
+    if ($all_record) {
+
+        push @commands, q{--all-records};
+    }
 
     push @commands, q{--baseline=} . $baselinefile_path;
 
