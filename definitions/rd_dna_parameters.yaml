@@ -50,12 +50,6 @@ gatk_bundle_download_version:
   data_type: SCALAR
   default: 2.8
   type: recipe_argument
-gatk_downsample_to_coverage:
-  associated_recipe:
-   - gatk_haplotypecaller
-  data_type: SCALAR
-  default: 1000
-  type: recipe_argument
 gatk_logging_level:
   associated_recipe:
    - gatk_baserecalibration
@@ -147,22 +141,6 @@ human_genome_reference_file_endings:
   mandatory: no
   reference: reference_dir
   type: path
-## java large pages - affects all modules using java
-java_use_large_pages:
-  associated_recipe:
-   - gatk_baserecalibration
-   - gatk_haplotypecaller
-   - gatk_genotypegvcfs
-   - gatk_gathervcfs
-   - gatk_variantrecalibration
-   - gatk_combinevariantcallsets
-   - gatk_variantevalall
-   - gatk_variantevalexome
-   - varianteffectpredictor
-   - snpeff
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
 ####Bash
 recipe_core_number:
   associated_recipe:
@@ -1949,40 +1927,4 @@ multiqc_per_sample:
    - multiqc_ar
   data_type: SCALAR
   default: 0
-  type: recipe_argument
-## AnalysisRunStatus
-analysisrunstatus:
-  analysis_mode: case
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: nofile_tag
-  type: recipe
-## Sacct
-sacct:
-  analysis_mode: case
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: nofile_tag
-  type: recipe
-sacct_format_fields:
-  associated_recipe:
-   - sacct
-  data_type: ARRAY
-  default:
-   - jobid
-   - "jobname%50"
-   - account
-   - partition
-   - alloccpus
-   - TotalCPU
-   - elapsed
-   - start
-   - end
-   - state
-   - exitcode
-  element_separator: ,
   type: recipe_argument

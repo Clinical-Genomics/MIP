@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bootstrapann };
@@ -163,7 +163,6 @@ sub analysis_bootstrapann {
             temp_directory => $temp_directory,
         }
     );
-    my $ase_infile_name          = ${ $io{in}{file_names} }[0];
     my @ase_infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
     my $ase_infile_path          = ${ $io{in}{file_paths} }[0];
 
@@ -217,6 +216,7 @@ sub analysis_bootstrapann {
             }
         )
     );
+    my $outfile_name = ${ $io{out}{file_names} }[0];
     my $outfile_path = ${ $io{out}{file_paths} }[0];
 
     ## Filehandles
@@ -261,7 +261,7 @@ sub analysis_bootstrapann {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $ase_infile_name,
+                infile           => $outfile_name,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,

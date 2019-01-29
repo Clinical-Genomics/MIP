@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ salmon_index salmon_quant };
@@ -123,13 +123,14 @@ sub salmon_quant {
 ##           : $gc_bias                => Correct for GC-bias
 ##           : $index_path             => Path to the index folder
 ##           : $libi_type              => Library visit the salmon website for more  info
-##           : $outfile_path           => The path of the  output directory
-##           : $read_1_fastq_path      => Read 1 Fastq path
-##           : $read_2_fastq_path      => Read 2 Fastq path
+##           : $outdir_path            => The path of the  output directory
+##           : $read_1_fastq_paths_ref => Read 1 Fastq paths
+##           : $read_2_fastq_paths_ref => Read 2 Fastq paths
 ##           : $read_files_command     => command applied to the input FASTQ files
 ##           : $stderrfile_path        => Stderrfile path
 ##           : $stderrfile_path_append => Append stderr info to file path
 ##           : $stdoutfile_path        => Stdoutfile path
+##           : $validate_mappings      => Validarte mappings
 
     my ($arg_href) = @_;
 
@@ -137,9 +138,9 @@ sub salmon_quant {
     my $FILEHANDLE;
     my $gc_bias;
     my $index_path;
-    my $outfile_path;
-    my $read_1_fastq_path;
-    my $read_2_fastq_path;
+    my $outdir_path;
+    my $read_1_fastq_paths_ref;
+    my $read_2_fastq_paths_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -147,6 +148,7 @@ sub salmon_quant {
     ## Default(s)
     my $lib_type;
     my $read_files_command;
+    my $validate_mappings;
 
     my $tmpl = {
         FILEHANDLE => {
@@ -168,21 +170,23 @@ sub salmon_quant {
             store       => \$lib_type,
             strict_type => 1,
         },
-        outfile_path => {
+        outdir_path => {
             defined     => 1,
             required    => 1,
-            store       => \$outfile_path,
+            store       => \$outdir_path,
             strict_type => 1,
         },
-        read_1_fastq_path => {
+        read_1_fastq_paths_ref => {
+            default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$read_1_fastq_path,
+            store       => \$read_1_fastq_paths_ref,
             strict_type => 1,
         },
-        read_2_fastq_path => {
+        read_2_fastq_paths_ref => {
+            default     => [],
             defined     => 1,
-            store       => \$read_2_fastq_path,
+            store       => \$read_2_fastq_paths_ref,
             strict_type => 1,
         },
         read_files_command => {
@@ -202,6 +206,12 @@ sub salmon_quant {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        validate_mappings => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$validate_mappings,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -218,7 +228,11 @@ sub salmon_quant {
 # Library type, defines if the library is stranded or not, and the orientation of the reads, according to the documentation http://salmon.readthedocs.io/en/latest/library_type.html
     push @commands, q{--libType} . $SPACE . $lib_type;
 
-    push @commands, q{--output} . $SPACE . $outfile_path;
+    push @commands, q{--output} . $SPACE . $outdir_path;
+
+    if ($validate_mappings) {
+        push @commands, q{--validateMappings};
+    }
 
 # The input Fastq files, either single reads or paired. Salmon uses a bash command to stream the reads. Here, the default is <( pigz -dc file.fastq.gz )
     push @commands,
@@ -226,16 +240,16 @@ sub salmon_quant {
       . $SPACE . q{<(}
       . $read_files_command
       . $SPACE
-      . $read_1_fastq_path
+      . join( $SPACE, @{$read_1_fastq_paths_ref} )
       . $SPACE . q{)};
 
-    if ($read_2_fastq_path) {
+    if ($read_2_fastq_paths_ref) {
         push @commands,
             q{-2}
           . $SPACE . q{<(}
           . $read_files_command
           . $SPACE
-          . $read_2_fastq_path
+          . join( $SPACE, @{$read_2_fastq_paths_ref} )
           . $SPACE . q{)};
     }
 

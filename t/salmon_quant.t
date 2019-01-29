@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -91,17 +91,20 @@ my %required_argument = (
         input           => catfile(qw{ dir index_dir }),
         expected_output => q{--index} . $SPACE . catfile(qw{ dir index_dir }),
     },
-    outfile_path => {
+    outdir_path => {
         input           => catfile(qw{ dir output_dir }),
-        expected_output => q{--output} . $SPACE . catfile(qw{ dir output_dir }),
+        expected_output => q{--output} . $SPACE . catdir(qw{ dir output_dir }),
     },
-    read_1_fastq_path => {
-        input           => catfile(qw{ dir hej_r1.fastq.gz }),
+    read_1_fastq_paths_ref => {
+        inputs_ref =>
+          [ catfile(qw{ dir hej_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
         expected_output => q{-1}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND
           . $SPACE
           . catfile(qw{ dir hej_r1.fastq.gz })
+          . $SPACE
+          . catfile(qw{ dir hello_r1.fastq.gz })
           . $SPACE . q{)}
     },
 );
@@ -115,27 +118,37 @@ my %specific_argument = (
         input           => catfile(qw{ dir index_dir }),
         expected_output => q{--index} . $SPACE . catfile(qw{ dir index_dir }),
     },
-    outfile_path => {
+    outdir_path => {
         input           => catfile(qw{ dir output_dir }),
-        expected_output => q{--output} . $SPACE . catfile(qw{ dir output_dir }),
+        expected_output => q{--output} . $SPACE . catdir(qw{ dir output_dir }),
     },
-    read_1_fastq_path => {
-        input           => catfile(qw{ dir hej_r1.fastq.gz }),
+    read_1_fastq_paths_ref => {
+        inputs_ref =>
+          [ catfile(qw{ dir hej_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
         expected_output => q{-1}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND
           . $SPACE
           . catfile(qw{ dir hej_r1.fastq.gz })
+          . $SPACE
+          . catfile(qw{ dir hello_r1.fastq.gz })
           . $SPACE . q{)}
     },
-    read_2_fastq_path => {
-        input           => catfile(qw{ dir hej_r2.fastq.gz }),
+    read_2_fastq_paths_ref => {
+        inputs_ref =>
+          [ catfile(qw{ dir hej_r2.fastq.gz }), catfile(qw{ dir hello_r2.fastq.gz }) ],
         expected_output => q{-2}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND
           . $SPACE
           . catfile(qw{ dir hej_r2.fastq.gz })
+          . $SPACE
+          . catfile(qw{ dir hello_r2.fastq.gz })
           . $SPACE . q{)}
+    },
+    validate_mappings => {
+        input           => 1,
+        expected_output => q{--validateMappings},
     },
 );
 

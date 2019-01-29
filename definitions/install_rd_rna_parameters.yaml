@@ -29,7 +29,7 @@ emip:
     python: 2.7
     r-optparse:
     r-readr:
-    salmon: 0.9.1=1
+    salmon: 0.12.0=h86b0361_1
     sambamba: 0.6.8=h682856c_1
     samtools: 1.9=h8ee4bcc_1
     scipy:

@@ -98,6 +98,7 @@ recipe_time:
     - mip
   data_type: HASH
   default:
+    analysisrunstatus: 1
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 2
@@ -127,6 +128,7 @@ recipe_core_number:
     - mip
   data_type: HASH
   default:
+    analysisrunstatus: 1
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 1
@@ -203,7 +205,7 @@ salmon_quant:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
+  file_tag: quant
   outfile_suffix: ".sf"
   program_executables:
     - salmon
@@ -718,6 +720,15 @@ multiqc_per_sample:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+## AnalysisRunStatus
+analysisrunstatus:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  type: recipe
 ## Sacct
 sacct:
   analysis_mode: case

@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_genebody_coverage };
@@ -190,6 +190,7 @@ sub analysis_genebody_coverage {
 
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -279,10 +280,12 @@ sub analysis_genebody_coverage {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
+        my $outfile_path =
+          $outfile_path_prefix . $DOT . q{geneBodyCoverage} . $outfile_suffix;
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
-                path             => $outfile_path_prefix,
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
