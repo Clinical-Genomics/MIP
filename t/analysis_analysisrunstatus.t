@@ -97,8 +97,10 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-my %sample_info =
-  ( recipe => { varianteffectpredictor => { stderrfile => { path => q{vep_file} }, }, } );
+my %sample_info = (
+    recipe   => { varianteffectpredictor => { stderrfile => { path => q{vep_file} }, }, },
+    vcf_file => { clinical               => { path       => q{clinical_file.vcf}, }, },
+);
 
 my $is_ok = analysis_analysisrunstatus(
     {

@@ -2,7 +2,15 @@
 ADM1059A1:
   mip_infiles_dir: infile_dir
   mip_infiles:
-   - file.fastq
+   - ADM1059A1.fastq
+ADM1059A2:
+  mip_infiles_dir: infile_dir
+  mip_infiles:
+   - ADM1059A2.fastq
+ADM1059A3:
+  mip_infiles_dir: infile_dir
+  mip_infiles:
+   - ADM1059A3.fastq
 bwa_build_reference:
   - .bwt
   - .ann
