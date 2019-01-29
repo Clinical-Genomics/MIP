@@ -46,6 +46,7 @@ sub analysis_analysisrunstatus {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 
@@ -62,6 +63,7 @@ sub analysis_analysisrunstatus {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
 
     my $tmpl = {
         active_parameter_href => {
@@ -102,6 +104,11 @@ sub analysis_analysisrunstatus {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         sample_info_href => {
@@ -243,6 +250,7 @@ sub analysis_analysisrunstatus {
 
         submit_recipe(
             {
+                base_command        => $profile_base_command,
                 dependency_method   => q{add_to_all},
                 job_dependency_type => q{afterok},
                 job_id_href         => $job_id_href,
@@ -253,7 +261,7 @@ sub analysis_analysisrunstatus {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub _eval_status_flag {

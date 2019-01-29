@@ -1,4 +1,8 @@
 ---
+ADM1059A1:
+  mip_infiles_dir: infile_dir
+  mip_infiles:
+   - file.fastq
 bwa_build_reference:
   - .bwt
   - .ann
