@@ -67,7 +67,7 @@ diag(   q{Test set_rankvariants_ar from Analysis.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given no recipes and only unaffected
-my $log                = test_log();
+my $log                = test_log( {} );
 my $sample_id          = q{sample_1};
 my $sample_id_affected = q{sample_2};
 my %active_parameter   = ( sample_ids => [$sample_id], );

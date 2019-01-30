@@ -62,7 +62,7 @@ diag(   q{Test get_gatk_intervals from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
@@ -72,12 +72,7 @@ my $file_content;
 
 ## Store file content in memory by using referenced variable
 open $FILEHANDLE, q{>}, \$file_content
-  or croak q{Cannot write to}
-  . $SPACE
-  . $file_content
-  . $COLON
-  . $SPACE
-  . $OS_ERROR;
+  or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 my %expected_output = (
     wes => {

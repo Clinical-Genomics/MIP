@@ -63,7 +63,7 @@ diag(   q{Test test_log from Fixtures.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given no args
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Then return a TEST log object
 ok( $log, q{Returned log object} );

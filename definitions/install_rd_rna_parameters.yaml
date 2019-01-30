@@ -19,7 +19,7 @@ emip:
     bioconductor-deseq2: 1.18.1=r3.4.1_1
     bioconductor-tximport: 1.8.0=r341_0
     gatk4: 4.0.12.0=0
-    gffcompare: 0.10.1=0
+    gffcompare: 0.10.6=h2d50403_0
     htslib: 1.9=hc238db4_4
     java-jdk:
     numpy:

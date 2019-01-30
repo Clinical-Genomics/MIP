@@ -62,7 +62,7 @@ diag(   q{Test check_nist_sample_id from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given nist info
 my %active_parameter = (
@@ -97,7 +97,7 @@ trap {
             nist_id_href   => $active_parameter{nist_id},
             sample_ids_ref => $active_parameter{sample_ids},
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

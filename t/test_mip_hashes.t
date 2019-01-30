@@ -61,7 +61,7 @@ diag(   q{Test test_mip_hashes from Fixtures.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given active parameters
 my $recipe_name = q{bwa_mem};

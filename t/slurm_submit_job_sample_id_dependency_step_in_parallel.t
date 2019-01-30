@@ -67,9 +67,9 @@ q{Test slurm_submit_job_sample_id_dependency_step_in_parallel from Slurm_process
 ## Given a mock slurm and script
 my $case_id = q{case1};
 my %infile_lane_prefix;
-my %job_id         = test_mip_hashes( { mip_hash_name => q{job_id}, } );
-my $log            = test_log();
-my $path           = q{MAIN};
+my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my $log    = test_log(        {} );
+my $path   = q{MAIN};
 my $sample_id      = q{sample1};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 my $sbatch_file_name =

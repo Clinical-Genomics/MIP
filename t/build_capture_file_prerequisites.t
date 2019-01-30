@@ -64,7 +64,7 @@ diag(   q{Test build_capture_file_prerequisites from Capture_file_prerequisites.
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();

@@ -64,7 +64,7 @@ diag(   q{Test parse_infiles from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given proper test data, when parsing
 my $sample_id        = q{ADM1059A1};
@@ -84,7 +84,7 @@ my @returns = trap {
             file_info_href        => \%file_info,
             log                   => $log,
         }
-      )
+    )
 };
 
 ## Then return true

@@ -61,7 +61,7 @@ diag(   q{Test check_if_processed_by_vt from Reference.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given no reference path
 my $return = check_if_processed_by_vt(
@@ -73,8 +73,8 @@ my $return = check_if_processed_by_vt(
 is( $return, undef, q{No reference file to check} );
 
 ## Given a reference file path, when needing vt processing
-my $reference_file_path_no_vt = catfile( $Bin,
-    qw{ data references GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz } );
+my $reference_file_path_no_vt =
+  catfile( $Bin, qw{ data references GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz } );
 
 ## Check if vt has processed references using regexp
 my @checked_references = check_if_processed_by_vt(

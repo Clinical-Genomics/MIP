@@ -63,7 +63,7 @@ diag(   q{Test check_references_for_vt from Reference.pm v}
       . $EXECUTABLE_NAME );
 
 # Create log object
-my $log = test_log();
+my $log = test_log( {} );
 
 my %active_parameter_test = (
     fqf_vcfanno_config => catfile(
@@ -86,7 +86,7 @@ my %active_parameter_test = (
     snpsift_annotation_files => {
         catfile(
             $Bin, qw{ data references GRCh37_anon-swegen_snp_-1000samples-.vcf.gz }
-          ) => q{SWEREF},
+        ) => q{SWEREF},
         catfile( $Bin, qw{ data references GRCh37_exac_reheader_-r0.3.1-.vcf.gz } ) =>
           q{EXAC},
         catfile( $Bin, qw{ data references GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz } ) =>

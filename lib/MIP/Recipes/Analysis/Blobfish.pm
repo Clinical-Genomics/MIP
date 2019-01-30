@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_blobfish };
@@ -44,12 +44,13 @@ sub analysis_blobfish {
 ## Function : Blobfish (DESeq2) recipe for wts data
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
@@ -66,6 +67,7 @@ sub analysis_blobfish {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -107,6 +109,11 @@ sub analysis_blobfish {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -210,7 +217,7 @@ sub analysis_blobfish {
     ### SHELL
 
     say {$FILEHANDLE} q{## Generate tx2gene file};
-    my $gtf_file_path = $active_parameter_href->{transcript_annotation};
+    my $gtf_file_path     = $active_parameter_href->{transcript_annotation};
     my $tx2gene_file_path = catfile( $outdir_path, q{tx2gene.txt} );
     _generate_tx2gene_file(
         {
@@ -246,6 +253,7 @@ sub analysis_blobfish {
 
         submit_recipe(
             {
+                base_command            => $profile_base_command,
                 dependency_method       => q{case_to_island},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
@@ -258,7 +266,7 @@ sub analysis_blobfish {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub _generate_tx2gene_file {

@@ -62,7 +62,7 @@ diag(   q{Test retrieve_log from MIP_log4perl.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given a log name and debug log level
-my $log = test_log();
+my $log = test_log( {} );
 
 $log = retrieve_log(
     {

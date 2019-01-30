@@ -62,7 +62,7 @@ diag(   q{Test parse_yaml_pedigree_file from Pedigree.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given correct input
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
@@ -100,7 +100,7 @@ trap {
             pedigree_href         => \%pedigree,
             sample_info_href      => \%sample_info,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

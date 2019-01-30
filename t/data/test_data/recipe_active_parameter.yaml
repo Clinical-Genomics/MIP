@@ -10,6 +10,7 @@ exome_target_bed:
   GRCh37_agilent_sureselect_targets_cre_-v1-.bed: 'ADM1059A2,ADM1059A1'
 case_id: 643594-miptest
 human_genome_reference: human_genome.fasta
+gatk_logging_level: INFO
 java_use_large_pages: 1
 max_cores_per_node: 16
 picardtools_path: a_test_path

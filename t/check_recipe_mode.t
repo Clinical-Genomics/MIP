@@ -85,7 +85,7 @@ diag(   q{Test check_recipe_mode from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given recipes when correct recipe modes
 my %parameter =
@@ -117,7 +117,7 @@ trap {
             log                   => $log,
             parameter_href        => \%parameter,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -137,7 +137,7 @@ trap {
             log                   => $log,
             parameter_href        => \%parameter,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

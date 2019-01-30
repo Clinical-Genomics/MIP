@@ -62,7 +62,7 @@ diag(   q{Test get_programs_for_shell_installation from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log();
+my $log = test_log( {} );
 
 my @returned_shell_programs;
 my $expected_shell_programs_ref;

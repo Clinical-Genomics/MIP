@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,9 +34,10 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+Readonly my $COLON                => q{:};
+Readonly my $COMMA                => q{,};
+Readonly my $GENOME_BUILD_VERSION => 38;
+Readonly my $SPACE                => q{ };
 
 BEGIN {
 
@@ -45,17 +46,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Rseqc} => [qw{ analysis_rseqc }],
+        q{MIP::Recipes::Analysis::Bwa_mem} => [qw{ analysis_bwa_mem }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Rseqc qw{ analysis_rseqc };
+use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem };
 
-diag(   q{Test analysis_rseqc from Rseqc.pm v}
-      . $MIP::Recipes::Analysis::Rseqc::VERSION
+diag(   q{Test analysis_bwa_mem from Bwa_mem.pm v}
+      . $MIP::Recipes::Analysis::Bwa_mem::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,7 +67,7 @@ diag(   q{Test analysis_rseqc from Rseqc.pm v}
 my $log = test_log( { log_name => q{MIP}, } );
 
 ## Given build parameters
-my $recipe_name    = q{rseqc};
+my $recipe_name    = q{bwa_mem};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -79,7 +80,8 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
-$active_parameter{rseqc_transcripts_file} = q{GRCH37_transcripts.bed};
+$active_parameter{platform}                       = q{ILLUMINA};
+$active_parameter{bwa_sambamba_sort_memory_limit} = q{28G};
 
 my %file_info = test_mip_hashes(
     {
@@ -87,8 +89,11 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+$file_info{human_genome_reference_source}  = q{GRCh};
+$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION;
 
-my %infile_lane_prefix;
+my $infile_prefix      = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
+my %infile_lane_prefix = ( $sample_id => [ $infile_prefix, ], );
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -96,11 +101,29 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-my %sample_info;
+$parameter{$recipe_name}{outfile_suffix} = q{.bam};
 
-my $is_ok = analysis_rseqc(
+my %sample_info = (
+    sample => {
+        $sample_id => {
+            file => {
+                ADM1059A1_161011_TestFilev2_GAGATTCC_lane1 => {
+                    sequence_run_type   => q{single-end},
+                    read_direction_file => {
+                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane1_1 => {
+                            flowcell       => q{TestFilev2},
+                            lane           => q{1},
+                            sample_barcode => q{GAGATTC},
+                        },
+                    },
+                },
+            },
+        },
+    },
+);
+
+my $is_ok = analysis_bwa_mem(
     {
         active_parameter_href   => \%active_parameter,
         file_info_href          => \%file_info,

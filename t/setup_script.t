@@ -65,7 +65,7 @@ diag(   q{Test setup_script from Setup_script.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Create temp logger
 my $test_dir = File::Temp->newdir();

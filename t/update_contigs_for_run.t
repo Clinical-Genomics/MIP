@@ -64,7 +64,7 @@ diag(   q{Test update_contigs_for_run from Contigs.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given some contigs to remove
 my $found_male      = 0;

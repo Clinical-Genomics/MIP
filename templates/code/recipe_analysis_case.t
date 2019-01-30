@@ -63,10 +63,11 @@ diag(   q{Test SUB_ROUTINE from MODULE.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( { log_name => q{MIP}, } );
 
 ## Given build parameters
-my $recipe_name = q{RECIPE_NAME};
+my $recipe_name    = q{RECIPE_NAME};
+my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
     {
@@ -74,6 +75,10 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+$active_parameter{$recipe_name}                     = 1;
+$active_parameter{recipe_core_number}{$recipe_name} = 1;
+$active_parameter{recipe_time}{$recipe_name}        = 1;
+
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -82,28 +87,30 @@ my %file_info = test_mip_hashes(
 );
 my %infile_lane_prefix;
 my %job_id;
-my %parameter = test_mip_hashes( { mip_hash_name => q{parameter}, } );
-
+my %parameter = test_mip_hashes(
+    {
+        mip_hash_name => q{recipe_parameter},
+        recipe_name   => $recipe_name,
+    }
+);
+@{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 my %sample_info;
 
-trap {
-    SUB_ROUTINE(
-        {
-            active_parameter_href   => \%active_parameter,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            log                     => $log,
-            parameter_href          => \%parameter,
-            recipe_name             => $recipe_name,
-            sample_id               => $sample_id,
-            sample_info_href        => \%sample_info,
-        }
-      )
-};
+my $is_ok = SUB_ROUTINE(
+    {
+        active_parameter_href   => \%active_parameter,
+        case_id                 => $active_parameter{case_id},
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        parameter_href          => \%parameter,
+        profile_base_command    => $slurm_mock_cmd,
+        recipe_name             => $recipe_name,
+        sample_info_href        => \%sample_info,
+    }
+);
 
-## Then broadcast info log message
-my $log_msg = q{};
-like( $trap->stderr, qr/$log_msg/msx, q{Broadcast RECIPE_NAME log message} );
+## Then return TRUE
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
 done_testing();

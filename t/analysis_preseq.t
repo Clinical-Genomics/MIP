@@ -63,7 +63,7 @@ diag(   q{Test analysis_preseq from Preseq.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given build parameters
 my $recipe_name = q{preseq};
@@ -99,7 +99,7 @@ trap {
             sample_id               => $active_parameter{sample_ids}[0],
             sample_info_href        => \%sample_info,
         }
-      )
+    )
 };
 
 ## Then broadcast info log message

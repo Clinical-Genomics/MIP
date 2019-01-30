@@ -49,8 +49,8 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::QC::Sample_info}     => [qw{ set_infile_info }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::QC::Sample_info} => [qw{ set_infile_info }],
+        q{MIP::Test::Fixtures}  => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -68,7 +68,7 @@ diag(   q{Test set_infile_info from Sample_info.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Set file info parameters
 

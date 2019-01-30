@@ -61,7 +61,7 @@ diag(   q{Test delete_male_contig from List.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given contigs, when male not present
 my @contigs = qw{ 1 2 3 4 Y};

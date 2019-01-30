@@ -63,7 +63,7 @@ diag(   q{Test check_sample_id_in_parameter_value from Pedigree.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create log
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given all samples in pedigree present in analysis
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );

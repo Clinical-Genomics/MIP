@@ -66,7 +66,7 @@ diag(   q{Test parse_toml_config_parameters from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Replace file path depending on location - required for TRAVIS
 my $test_reference_dir = catfile( $Bin, qw{ data references } );

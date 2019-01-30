@@ -67,7 +67,7 @@ diag(   q{Test set_custom_default_to_active_parameter from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log();
+my $log = test_log( {} );
 
 my %active_parameter = (
     cluster_constant_path  => catfile(qw{ constant path }),

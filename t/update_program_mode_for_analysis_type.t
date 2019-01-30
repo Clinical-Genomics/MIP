@@ -62,7 +62,7 @@ diag(   q{Test update_recipe_mode_for_analysis_type from Recipes.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create log object
-my $log = test_log();
+my $log = test_log( {} );
 
 my @recipes = qw{ cnvnator_ar delly_call delly_reformat samtools_subsample_mt tiddit };
 my %active_parameter = (

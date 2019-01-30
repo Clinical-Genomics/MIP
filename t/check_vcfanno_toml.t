@@ -66,7 +66,7 @@ diag(   q{Test check_vcfanno_toml from Path.pm v}
       . $EXECUTABLE_NAME );
 
 ## Creates log object
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Replace file path depending on location - required for TRAVIS
 my $test_reference_dir = catfile( $Bin, qw{ data references } );
@@ -120,7 +120,7 @@ trap {
             parameter_name    => q{fqf_vcfanno_config},
             vcfanno_file_toml => $faulty_fqf_vcfanno_config_file,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

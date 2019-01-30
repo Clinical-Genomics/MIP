@@ -62,7 +62,7 @@ diag(   q{Test build_rtg_prerequisites from Rtg_prerequisites.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given build parameters
 my $parameter_build_name = q{rtg_vcfeval_reference_genome};

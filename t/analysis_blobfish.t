@@ -17,13 +17,14 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -44,17 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Build::Star_prerequisites} => [qw{ build_star_prerequisites }],
+        q{MIP::Recipes::Analysis::Blobfish} => [qw{ analysis_blobfish }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Build::Star_prerequisites qw{ build_star_prerequisites };
+use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
 
-diag(   q{Test build_star_prerequisites from Star_prerequisites.pm v}
-      . $MIP::Recipes::Build::Star_prerequisites::VERSION
+diag(   q{Test analysis_blobfish from Blobfish.pm v}
+      . $MIP::Recipes::Analysis::Blobfish::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,10 +63,10 @@ diag(   q{Test build_star_prerequisites from Star_prerequisites.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+my $log = test_log( { log_name => q{MIP}, } );
 
 ## Given build parameters
-my $recipe_name    = q{star_fusion};
+my $recipe_name    = q{blobfish};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -74,8 +75,10 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$active_parameter{$recipe_name} = 1;
-$active_parameter{star_aln_reference_genome} = q{_star_genome_dir};
+$active_parameter{$recipe_name}                     = 1;
+$active_parameter{recipe_core_number}{$recipe_name} = 1;
+$active_parameter{recipe_time}{$recipe_name}        = 1;
+$active_parameter{transcript_annotation}            = q{gtf_file_path};
 
 my %file_info = test_mip_hashes(
     {
@@ -84,34 +87,37 @@ my %file_info = test_mip_hashes(
     }
 );
 my %infile_lane_prefix;
-my %job_id    = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %job_id;
 my %parameter = test_mip_hashes(
     {
         mip_hash_name => q{recipe_parameter},
         recipe_name   => $recipe_name,
     }
 );
-my %sample_info;
+@{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
+my %sample_info = (
+    sample => {
+        ADM1059A1 => { phenotype => q{affected}, },
+        ADM1059A2 => { phenotype => q{unaffected}, },
+        ADM1059A3 => { phenotype => q{affected}, },
+    },
+);
 
-# Special case
-$active_parameter{transcript_annotation} = q{GRCH37_transcripts.gtf};
-
-my $is_ok = build_star_prerequisites(
+my $is_ok = analysis_blobfish(
     {
-        active_parameter_href        => \%active_parameter,
-        file_info_href               => \%file_info,
-        infile_lane_prefix_href      => \%infile_lane_prefix,
-        job_id_href                  => \%job_id,
-        log                          => $log,
-        parameter_href               => \%parameter,
-        parameter_build_suffixes_ref => \@{ $file_info{star_aln_reference_genome} },
-        profile_base_command         => $slurm_mock_cmd,
-        recipe_name                  => $recipe_name,
-        sample_info_href             => \%sample_info,
+        active_parameter_href   => \%active_parameter,
+        case_id                 => $active_parameter{case_id},
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        parameter_href          => \%parameter,
+        profile_base_command    => $slurm_mock_cmd,
+        recipe_name             => $recipe_name,
+        sample_info_href        => \%sample_info,
     }
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed build star prerequisites} );
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
 done_testing();

@@ -110,21 +110,33 @@ sub test_log {
 
 ## Function : Generate a log object and a temporary log file
 ## Returns  : $log
-## Arguments:
+## Arguments: $log_name => Name of logger
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log_name;
+
+    my $tmpl = {
+        log_name => {
+            default     => q{TEST},
+            store       => \$log_name,
+            strict_type => 1,
+        },
+    };
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
     ## Create temp logger
-    my $test_dir = File::Temp->newdir();
+    my $test_dir      = File::Temp->newdir();
     my $test_log_path = catfile( $test_dir, q{test.log} );
 
     ## Creates log object
     my $log = initiate_logger(
         {
             file_path => $test_log_path,
-            log_name  => q{TEST},
+            log_name  => $log_name,
         }
     );
 

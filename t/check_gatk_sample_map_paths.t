@@ -64,7 +64,7 @@ diag(   q{Test check_gatk_sample_map_paths from Path.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log      = test_log();
+my $log      = test_log( {} );
 my $test_dir = File::Temp->newdir();
 
 ## Given a sample file with paths that exists
@@ -108,7 +108,7 @@ trap {
             log             => $log,
             sample_map_path => $gatk_genotypegvcfs_ref_gvcf,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

@@ -62,7 +62,7 @@ diag(   q{Test conda_check_env_status from Conda.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( {} );
 
 ## Given an activate conda env, when running test suite (=TRUE)
 # This test will fail otherwise

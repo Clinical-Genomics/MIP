@@ -109,7 +109,7 @@ my $FILEHANDLE;
 my $test_log_path = catfile( $test_dir, q{test.log} );
 $active_parameter_test_hash{log_file} = $test_log_path;
 
-my $log = test_log();
+my $log = test_log( {} );
 
 my @execution_modes = qw{ system sbatch };
 for my $execution_mode (@execution_modes) {
@@ -214,7 +214,7 @@ trap {
             log                   => $log,
             sample_info_href      => \%sample_info_test_hash,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
