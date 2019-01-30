@@ -720,39 +720,3 @@ multiqc_per_sample:
   data_type: SCALAR
   default: 0
   type: recipe_argument
-## AnalysisRunStatus
-analysisrunstatus:
-  analysis_mode: case
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: nofile_tag
-  type: recipe
-## Sacct
-sacct:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: nofile_tag
-  type: recipe
-sacct_format_fields:
-  associated_recipe:
-    - sacct
-  data_type: ARRAY
-  default:
-    - jobid
-    - "jobname%50"
-    - account
-    - partition
-    - alloccpus
-    - TotalCPU
-    - elapsed
-    - start
-    - end
-    - state
-    - exitcode
-  element_separator: ,
-  type: recipe_argument
