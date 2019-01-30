@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bootstrapann };
@@ -39,15 +39,16 @@ Readonly my $NEWLINE  => qq{\n};
 
 sub analysis_bootstrapann {
 
-## Function : BootstrapAnn analysis for rna recipe
+## Function : BootstrapAnn analysis for RNA recipe
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -66,6 +67,7 @@ sub analysis_bootstrapann {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -107,6 +109,11 @@ sub analysis_bootstrapann {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -167,7 +174,7 @@ sub analysis_bootstrapann {
     my @ase_infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
     my $ase_infile_path          = ${ $io{in}{file_paths} }[0];
 
-    ## Get bam infile from GATK BaseRecalibration
+    ## Get bam infile from gatk_variantfiltration
     my %variant_io = get_io_files(
         {
             id             => $sample_id,
@@ -271,6 +278,7 @@ sub analysis_bootstrapann {
 
         submit_recipe(
             {
+                base_command            => $profile_base_command,
                 dependency_method       => q{sample_to_sample},
                 case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
@@ -283,6 +291,6 @@ sub analysis_bootstrapann {
             }
         );
     }
-    return;
+    return 1;
 }
 1;
