@@ -97,7 +97,7 @@ sub bwa_mem {
         read_group_header   => { store => \$read_group_header,  strict_type => 1, },
         second_infile_path  => { store => \$second_infile_path, strict_type => 1, },
         soft_clip_sup_align => {
-            allow       => [ 0, 1 ],
+            allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$soft_clip_sup_align,
             strict_type => 1,

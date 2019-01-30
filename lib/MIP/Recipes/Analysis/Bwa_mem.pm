@@ -50,6 +50,7 @@ sub analysis_bwa_mem {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -69,6 +70,7 @@ sub analysis_bwa_mem {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -110,6 +112,11 @@ sub analysis_bwa_mem {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -409,10 +416,8 @@ sub analysis_bwa_mem {
                     idxbase              => $referencefile_path,
                     outfiles_prefix_path => $file_path_prefix,
                     read_group_header    => join( $EMPTY_STR, @read_group_headers ),
-                    soft_clip_sup_align =>
-                      $active_parameter_href->{bwa_soft_clip_sup_align},
-                    second_infile_path => $second_fastq_file_path,
-                    thread_number      => $core_number,
+                    second_infile_path   => $second_fastq_file_path,
+                    thread_number        => $core_number,
                 }
             );
             print {$FILEHANDLE} $PIPE . $SPACE;
@@ -603,7 +608,7 @@ sub analysis_bwa_mem {
                 set_recipe_outfile_in_sample_info(
                     {
                         infile           => $outfile_name_prefix,
-                        path             => $$qc_bwa_log,
+                        path             => $qc_bwa_log,
                         recipe_name      => $recipe_name,
                         sample_id        => $sample_id,
                         sample_info_href => $sample_info_href,
@@ -613,6 +618,7 @@ sub analysis_bwa_mem {
 
             submit_recipe(
                 {
+                    base_command            => $profile_base_command,
                     dependency_method       => q{sample_to_sample_parallel},
                     case_id                 => $case_id,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
@@ -627,7 +633,7 @@ sub analysis_bwa_mem {
             );
         }
     }
-    return;
+    return 1;
 }
 
 sub _select_bwamem_binary {
