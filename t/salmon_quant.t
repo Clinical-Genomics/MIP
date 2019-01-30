@@ -97,12 +97,12 @@ my %required_argument = (
     },
     read_1_fastq_paths_ref => {
         inputs_ref =>
-          [ catfile(qw{ dir hej_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
+          [ catfile(qw{ dir hi_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
         expected_output => q{-1}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND
           . $SPACE
-          . catfile(qw{ dir hej_r1.fastq.gz })
+          . catfile(qw{ dir hi_r1.fastq.gz })
           . $SPACE
           . catfile(qw{ dir hello_r1.fastq.gz })
           . $SPACE . q{)}
@@ -124,24 +124,24 @@ my %specific_argument = (
     },
     read_1_fastq_paths_ref => {
         inputs_ref =>
-          [ catfile(qw{ dir hej_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
+          [ catfile(qw{ dir hi_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
         expected_output => q{-1}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND
           . $SPACE
-          . catfile(qw{ dir hej_r1.fastq.gz })
+          . catfile(qw{ dir hi_r1.fastq.gz })
           . $SPACE
           . catfile(qw{ dir hello_r1.fastq.gz })
           . $SPACE . q{)}
     },
     read_2_fastq_paths_ref => {
         inputs_ref =>
-          [ catfile(qw{ dir hej_r2.fastq.gz }), catfile(qw{ dir hello_r2.fastq.gz }) ],
+          [ catfile(qw{ dir hi_r2.fastq.gz }), catfile(qw{ dir hello_r2.fastq.gz }) ],
         expected_output => q{-2}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND
           . $SPACE
-          . catfile(qw{ dir hej_r2.fastq.gz })
+          . catfile(qw{ dir hi_r2.fastq.gz })
           . $SPACE
           . catfile(qw{ dir hello_r2.fastq.gz })
           . $SPACE . q{)}

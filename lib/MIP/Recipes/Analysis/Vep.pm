@@ -1316,7 +1316,7 @@ sub analysis_vep_rna {
         }
     );
 
-    my $outfile_name   = ${ $io{out}{file_names} }[0];
+    my $outfile_name   = $io{out}{file_names}->[0];
     my $outfile_path   = $io{out}{file_path};
     my $outfile_suffix = $io{out}{file_suffix};
 

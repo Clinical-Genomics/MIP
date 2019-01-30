@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -41,6 +41,7 @@ BEGIN {
       get_read_group
       get_recipe_parameters
       get_recipe_attributes
+      get_sequence_run_type
       get_user_supplied_info
     };
 }
@@ -1031,7 +1032,12 @@ sub get_recipe_attributes {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        recipe_name => { store => \$recipe_name, strict_type => 1, },
+        recipe_name => {
+            required    => 1,
+            defined     => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1156,6 +1162,76 @@ sub get_user_supplied_info {
         }
     }
     return %user_supply_switch;
+}
+
+sub get_sequence_run_type {
+
+## Function : Return sequence run type
+## Returns  : $sequence_run_type | %sequence_run_type
+## Arguments: $infile_lane_prefix      => Infile lane prefix
+##          : $infile_lane_prefix_href => Infile lane prefix hash {REF}
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_lane_prefix;
+    my $infile_lane_prefix_href;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        infile_lane_prefix => {
+            store       => \$infile_lane_prefix,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            required    => 1,
+            defined     => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( %{$infile_lane_prefix_href} ) {
+
+        my %sequence_run_type;
+
+      INFILE_LANE_PREFIX:
+        foreach my $infile_lane_prefix ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+            $sequence_run_type{$infile_lane_prefix} =
+              $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
+              {sequence_run_type};
+        }
+
+        return %sequence_run_type;
+    }
+    elsif ( defined $infile_lane_prefix ) {
+
+        return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
+          {sequence_run_type};
+
+    }
+    else {
+
+        croak q{Either $infile_lane_prefix_href or $infile_prefix must be provided!};
+    }
+    return;
 }
 
 1;

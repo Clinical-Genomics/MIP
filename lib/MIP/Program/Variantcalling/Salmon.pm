@@ -123,14 +123,14 @@ sub salmon_quant {
 ##           : $gc_bias                => Correct for GC-bias
 ##           : $index_path             => Path to the index folder
 ##           : $libi_type              => Library visit the salmon website for more  info
-##           : $outdir_path            => The path of the  output directory
+##           : $outdir_path            => Path of the output directory
 ##           : $read_1_fastq_paths_ref => Read 1 Fastq paths
 ##           : $read_2_fastq_paths_ref => Read 2 Fastq paths
 ##           : $read_files_command     => command applied to the input FASTQ files
 ##           : $stderrfile_path        => Stderrfile path
 ##           : $stderrfile_path_append => Append stderr info to file path
 ##           : $stdoutfile_path        => Stdoutfile path
-##           : $validate_mappings      => Validarte mappings
+##           : $validate_mappings      => Validate mappings
 
     my ($arg_href) = @_;
 
@@ -243,7 +243,7 @@ sub salmon_quant {
       . join( $SPACE, @{$read_1_fastq_paths_ref} )
       . $SPACE . q{)};
 
-    if ($read_2_fastq_paths_ref) {
+    if ( @{$read_2_fastq_paths_ref} ) {
         push @commands,
             q{-2}
           . $SPACE . q{<(}

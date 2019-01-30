@@ -31,7 +31,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $NEWLINE    => qq{\n};
+Readonly my $NEWLINE => qq{\n};
 
 sub analysis_salmon_quant {
 
@@ -134,7 +134,8 @@ sub analysis_salmon_quant {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter
+      qw{ get_recipe_parameters get_recipe_attributes get_sequence_run_type };
     use MIP::IO::Files qw{ migrate_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Salmon qw{ salmon_quant };
@@ -201,35 +202,37 @@ sub analysis_salmon_quant {
         )
     );
     my $outdir_path  = $io{out}{dir_path};
-    my $outfile_name = ${ $io{out}{file_names} }[0];
-    my $outfile_path = ${ $io{out}{file_paths} }[0];
+    my $outfile_name = $io{out}{file_names}->[0];
+    my $outfile_path = $io{out}{file_paths}->[0];
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Perform per single-end or read pair
-    my @infile_prefixes = @{ $infile_lane_prefix_href->{$sample_id} };
+    ## Get sequence run type
+    my %sequence_run_type = get_sequence_run_type(
+        {
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            sample_id               => $sample_id,
+            sample_info_href        => $sample_info_href,
+        }
+    );
 
-    ## Collect paired-end or single-end sequence run mode
-    my @sequence_run_modes;
-  INFILE_PREFIX:
-    foreach my $infile_prefix (@infile_prefixes) {
-        push @sequence_run_modes,
-          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {sequence_run_type};
-    }
-    @sequence_run_modes = uniq @sequence_run_modes;
+    my @sequence_run_types = uniq( values %sequence_run_type );
 
     # Fail on mixed sequencing modes - THIS CHECK WILL BE MOVED IN A LATER PR
-    if ( scalar @sequence_run_modes > 1 ) {
+    if ( scalar @sequence_run_types > 1 ) {
         $log->fatal(
             q{Salmon quant cannot operate on mixed single-end and paired-end fastq files}
         );
+        $log->warn(
+q{The differential expression analysis chain of the pipeline will not be executed}
+        );
+        $active_parameter_href->{blobfish_ar} = 2;
         return;
     }
 
-    my $sequence_run_mode = $sequence_run_modes[0];
+    my $sequence_run_mode = $sequence_run_types[0];
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -265,12 +268,17 @@ sub analysis_salmon_quant {
     ## Salmon quant
     say {$FILEHANDLE} q{## Quantifying transcripts using } . $recipe_name;
 
-    ## For paired_end, split first and second reads
+    ## For paired end
     if ( $sequence_run_mode eq q{paired-end} ) {
+
+        ## Grep every other read file and place in new arrays
+        # Even array indexes get a 0 remainder and are evalauted as false
         my @read_1_fastq_paths =
           @temp_infile_paths[ grep { !( $_ % 2 ) } 0 .. $#temp_infile_paths ];
+
+        # Odd array indexes get a 1 remainder and are evalauted as true
         my @read_2_fastq_paths =
-          @temp_infile_paths[ grep { ( $_ % 2 ) } 0 .. $#temp_infile_paths ];
+          @temp_infile_paths[ grep { $_ % 2 } 0 .. $#temp_infile_paths ];
 
         salmon_quant(
             {
