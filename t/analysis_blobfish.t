@@ -45,17 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Bcftools_mpileup} => [qw{ analysis_bcftools_mpileup }],
+        q{MIP::Recipes::Analysis::Blobfish} => [qw{ analysis_blobfish }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Bcftools_mpileup qw{ analysis_bcftools_mpileup };
+use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
 
-diag(   q{Test analysis_bcftools_mpileup from Bcftools_mpileup.pm v}
-      . $MIP::Recipes::Analysis::Bcftools_mpileup::VERSION
+diag(   q{Test analysis_blobfish from Blobfish.pm v}
+      . $MIP::Recipes::Analysis::Blobfish::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,7 +66,7 @@ diag(   q{Test analysis_bcftools_mpileup from Bcftools_mpileup.pm v}
 my $log = test_log( { log_name => q{MIP}, } );
 
 ## Given build parameters
-my $recipe_name    = q{bcftools_mpileup};
+my $recipe_name    = q{blobfish};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -78,8 +78,7 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-$active_parameter{bcftools_mpileup_filter_variant}  = 1;
-$active_parameter{replace_iupac}                    = 1;
+$active_parameter{transcript_annotation}            = q{gtf_file_path};
 
 my %file_info = test_mip_hashes(
     {
@@ -87,7 +86,6 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -97,10 +95,15 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
-my %sample_info;
+my %sample_info = (
+    sample => {
+        ADM1059A1 => { phenotype => q{affected}, },
+        ADM1059A2 => { phenotype => q{unaffected}, },
+        ADM1059A3 => { phenotype => q{affected}, },
+    },
+);
 
-my $is_ok = analysis_bcftools_mpileup(
+my $is_ok = analysis_blobfish(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $active_parameter{case_id},
