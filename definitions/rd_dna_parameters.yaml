@@ -1076,6 +1076,12 @@ bcftools_mpileup_filter_variant:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+bcftools_mpileup_keep_unnormalised:
+  associated_recipe:
+   - bcftools_mpileup
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 ## Freebayes
 freebayes_ar:
   analysis_mode: case

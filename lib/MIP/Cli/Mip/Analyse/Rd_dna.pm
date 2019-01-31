@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.14;
+our $VERSION = 1.15;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1223,9 +1223,19 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{bcftools_mpileup_filter_variant} => (
-            cmd_aliases   => [qw{ pbmpfv }],
+            cmd_aliases   => [qw{ bmpfv }],
             cmd_flag      => q{bcftools_mpileup_fil_var},
             documentation => q{Use standard bcftools filters},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{bcftools_mpileup_keep_unnormalised} => (
+            cmd_aliases   => [qw{ bmpkn }],
+            cmd_flag      => q{bcftools_mpileup_keep_unn},
+            documentation => q{Do not normalise variants},
             is            => q{rw},
             isa           => Bool,
         )

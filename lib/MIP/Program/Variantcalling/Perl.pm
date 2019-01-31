@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ replace_iupac };
@@ -38,6 +38,7 @@ sub replace_iupac {
 ## Returns  :
 ## Arguments: $FILEHANDLE      => Sbatch filehandle to write to
 ##          : $stderrfile_path => Stderr path to errors write to
+##          : $stdoutfile_path => Stdoutfile path
 ##          : $xargs           => Write on xargs format
 
     my ($arg_href) = @_;
@@ -45,6 +46,7 @@ sub replace_iupac {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $stderrfile_path;
+    my $stdoutfile_path;
 
     ## Default(s)
     my $xargs;
@@ -56,7 +58,11 @@ sub replace_iupac {
             store    => \$FILEHANDLE,
         },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        xargs           => {
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+        xargs => {
             allow       => [ 0, 1 ],
             default     => 1,
             store       => \$xargs,
@@ -65,8 +71,6 @@ sub replace_iupac {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    print {$FILEHANDLE} $PIPE . $SPACE;
 
     ## Compose $regexp
     # Execute perl
@@ -99,6 +103,7 @@ sub replace_iupac {
         {
             FILEHANDLE      => $FILEHANDLE,
             stderrfile_path => $stderrfile_path,
+            stdoutfile_path => $stdoutfile_path,
 
         }
     );

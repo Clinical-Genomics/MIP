@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1076,8 +1076,6 @@ sub bcftools_norm {
             strict_type => 1,
         },
         outfile_path => {
-            defined     => 1,
-            required    => 1,
             store       => \$outfile_path,
             strict_type => 1,
         },
@@ -1187,12 +1185,12 @@ sub bcftools_reheader {
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE        => { store   => \$FILEHANDLE, },
-        infile_path       => { store   => \$infile_path, strict_type => 1, },
-        outfile_path      => { store   => \$outfile_path, strict_type => 1, },
-        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        FILEHANDLE   => { store   => \$FILEHANDLE, },
+        infile_path  => { store   => \$infile_path, strict_type => 1, },
+        outfile_path => { store   => \$outfile_path, strict_type => 1, },
+        regions_ref  => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
