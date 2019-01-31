@@ -98,6 +98,16 @@ my %parameter = test_mip_hashes(
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
+
+SAMPLE_ID:
+foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+    %{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
+        {
+            mip_hash_name => q{io},
+        }
+    );
+}
 my %sample_info;
 
 my $is_ok = analysis_bcftools_mpileup(
