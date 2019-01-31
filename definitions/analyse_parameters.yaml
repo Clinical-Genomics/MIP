@@ -56,17 +56,25 @@ case_id:
    - mip
   data_type: SCALAR
   type: mip
-node_ram_memory:
+## java large pages - affects all modules using java
+java_use_large_pages:
   associated_recipe:
-   - mip
+   - varianteffectpredictor
+   - snpeff
   data_type: SCALAR
-  default: 128
-  type: mip
+  default: 0
+  type: recipe_argument
 max_cores_per_node:
   associated_recipe:
    - mip
   data_type: SCALAR
   default: 16
+  type: mip
+node_ram_memory:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 128
   type: mip
 outdata_dir:
   associated_recipe:
@@ -169,3 +177,39 @@ supported_capture_kit:
     latest: genome_reference_source_version_twist_target_-1-.bed
   type: mip
 ### Programs
+## AnalysisRunStatus
+analysisrunstatus:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  type: recipe
+## Sacct
+sacct:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  type: recipe
+sacct_format_fields:
+  associated_recipe:
+   - sacct
+  data_type: ARRAY
+  default:
+   - jobid
+   - "jobname%50"
+   - account
+   - partition
+   - alloccpus
+   - TotalCPU
+   - elapsed
+   - start
+   - end
+   - state
+   - exitcode
+  element_separator: ,
+  type: recipe_argument

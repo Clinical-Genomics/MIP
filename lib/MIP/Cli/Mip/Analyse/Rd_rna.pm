@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.10;
+our $VERSION = 1.11;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -238,35 +238,6 @@ sub _build_usage {
             cmd_aliases   => [qw{ ifd }],
             cmd_tags      => [q{infile_dirs=sample_id}],
             documentation => q{Infile directory(s)},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{java_use_large_pages} => (
-            cmd_aliases   => [qw{ jul }],
-            documentation => q{Use large page memory},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{recipe_core_number} => (
-            cmd_aliases   => [qw{ rcn }],
-            cmd_tags      => [q{recipe_name=X(cores)}],
-            documentation => q{Set the number of cores for each recipe},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{recipe_time} => (
-            cmd_aliases   => [qw{ rot }],
-            cmd_tags      => [q{recipe_name=time(hours)}],
-            documentation => q{Set the time allocation for each recipe},
             is            => q{rw},
             isa           => HashRef,
         )
@@ -781,7 +752,7 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
     );
 
     option(
-        q{gffcompare} => (
+        q{gffcompare_ar} => (
             cmd_aliases   => [qw{ gffcmp }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Compare RNA transcripts to reference using GffCompare},
@@ -821,25 +792,22 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
     );
 
     option(
-        q{sacct} => (
-            cmd_aliases => [qw{ sac }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-              q{Generating sbatch script for SLURM info on each submitted job},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+        q{recipe_core_number} => (
+            cmd_aliases   => [qw{ rcn }],
+            cmd_tags      => [q{recipe_name=X(cores)}],
+            documentation => q{Set the number of cores for each recipe},
+            is            => q{rw},
+            isa           => HashRef,
         )
     );
 
     option(
-        q{sacct_format_fields} => (
-            cmd_aliases => [qw{ sacfrf }],
-            cmd_tags    => [
-q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
-            ],
-            documentation => q{Format and fields of sacct output},
+        q{recipe_time} => (
+            cmd_aliases   => [qw{ rot }],
+            cmd_tags      => [q{recipe_name=time(hours)}],
+            documentation => q{Set the time allocation for each recipe},
             is            => q{rw},
-            isa           => ArrayRef [Str],
+            isa           => HashRef,
         )
     );
 

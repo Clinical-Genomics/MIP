@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_asereadcounter };
@@ -169,7 +169,6 @@ sub analysis_gatk_asereadcounter {
             temp_directory => $temp_directory,
         }
     );
-    my $variant_infile_name           = ${ $io{in}{file_names} }[0];
     my $variant_infile_name_prefix    = $io{in}{file_name_prefix};
     my $variant_infile_path           = ${ $io{in}{file_paths} }[0];
     my $variant_suffix                = $io{in}{file_suffix};
@@ -228,6 +227,7 @@ sub analysis_gatk_asereadcounter {
             }
         )
     );
+    my $outfile_name = ${ $io{out}{file_names} }[0];
     my $outfile_path = ${ $io{out}{file_paths} }[0];
     my $outdir_path  = $io{out}{dir_path};
 
@@ -316,7 +316,7 @@ sub analysis_gatk_asereadcounter {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $variant_infile_name,
+                infile           => $outfile_name,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,

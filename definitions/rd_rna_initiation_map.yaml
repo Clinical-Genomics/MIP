@@ -32,4 +32,5 @@ CHAIN_ALL:
     - bcftools_merge
     - varianteffectpredictor
   - multiqc_ar
+  - analysisrunstatus
   - sacct

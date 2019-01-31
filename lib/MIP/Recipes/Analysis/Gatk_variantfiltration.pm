@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantfiltration };
@@ -204,6 +204,7 @@ sub analysis_gatk_variantfiltration {
             }
         )
     );
+    my $outfile_name = ${ $io{out}{file_names} }[0];
     my $outfile_path = ${ $io{out}{file_paths} }[0];
 
     ## Filehandles
@@ -256,7 +257,7 @@ sub analysis_gatk_variantfiltration {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $infile_name,
+                infile           => $outfile_name,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,

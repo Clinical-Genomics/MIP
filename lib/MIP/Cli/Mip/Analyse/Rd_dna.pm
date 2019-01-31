@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.14;
+our $VERSION = 1.15;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -250,15 +250,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             documentation => q{Human genome reference},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{java_use_large_pages} => (
-            cmd_aliases   => [qw{ jul }],
-            documentation => q{Use large page memory},
-            is            => q{rw},
-            isa           => Bool,
         )
     );
 
@@ -2209,40 +2200,6 @@ q{Regular expression file containing the regular expression to be used for each 
             documentation => q{Generate sample specific reports},
             is            => q{rw},
             isa           => Bool,
-        )
-    );
-
-    option(
-        q{analysisrunstatus} => (
-            cmd_aliases => [qw{ ars }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-q{Check analysis output and sets the analysis run status flag to finished in sample_info_file},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{sacct} => (
-            cmd_aliases => [qw{ sac }],
-            cmd_tags    => [q{Analysis recipe switch}],
-            documentation =>
-              q{Generating sbatch script for SLURM info on each submitted job},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{sacct_format_fields} => (
-            cmd_aliases => [qw{ sacfrf }],
-            cmd_tags    => [
-q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
-            ],
-            documentation => q{Format and fields of sacct output},
-            is            => q{rw},
-            isa           => ArrayRef [Str],
         )
     );
 

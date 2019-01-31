@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gffcompare };
@@ -214,6 +214,7 @@ sub analysis_gffcompare {
     );
     my $outfile_path        = ${ $io{out}{file_paths} }[0];
     my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_name        = ${ $io{out}{file_names} }[0];
     my $outfile_path_prefix = $io{out}{file_path_prefix};
 
     ## Filehandles
@@ -289,7 +290,7 @@ sub analysis_gffcompare {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $infile_name,
+                infile           => $outfile_name,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
