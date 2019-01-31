@@ -292,6 +292,7 @@ sub analysis_bcftools_mpileup {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
+            null_character     => 1,
             recipe_info_path   => $recipe_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
