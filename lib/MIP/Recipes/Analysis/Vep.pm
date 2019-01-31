@@ -1316,6 +1316,7 @@ sub analysis_vep_rna {
         }
     );
 
+    my $outfile_name   = $io{out}{file_names}->[0];
     my $outfile_path   = $io{out}{file_path};
     my $outfile_suffix = $io{out}{file_suffix};
 
@@ -1411,6 +1412,7 @@ sub analysis_vep_rna {
         ## Collect QC metadata info for later use
         add_recipe_outfile_to_sample_info(
             {
+                infile           => $outfile_name,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,

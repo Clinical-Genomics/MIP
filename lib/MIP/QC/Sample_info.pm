@@ -24,10 +24,11 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      get_sequence_run_type
       set_gene_panel
       set_infile_info
       set_most_complete_vcf
@@ -122,12 +123,11 @@ sub set_gene_panel {
         $sub_database_regexp .= q?if ($_=~/^##gene_panel=/)? . $SPACE;
 
         # Remove newline char and split fields
-        $sub_database_regexp .=
-          q?{chomp($_);my @entries=split(/,/, $_);? . $SPACE;
+        $sub_database_regexp .= q?{chomp($_);my @entries=split(/,/, $_);? . $SPACE;
 
-   # Join fields with comma separator appending ":". Skip rest if it's a comment
+        # Join fields with comma separator appending ":". Skip rest if it's a comment
         $sub_database_regexp .=
-q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
+          q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
 
         # Collect header_lines(s) from select_file header
         my $ret = `$sub_database_regexp $aggregate_gene_panel_file`;
@@ -148,8 +148,7 @@ q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
                 foreach my $gene_panel_header_element ( keys %header ) {
 
                     # Parse the features using defined header keys
-                    if ( $feature_element =~ /$gene_panel_header_element=/sxm )
-                    {
+                    if ( $feature_element =~ /$gene_panel_header_element=/sxm ) {
 
                         my @temps = split /=/sxm, $feature_element;
 
@@ -171,8 +170,8 @@ q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
                 foreach my $feature ( keys %gene_panel ) {
 
                     $sample_info_href->{$recipe_name}
-                      {$aggregate_gene_panels_key}{gene_panel}
-                      {$gene_panel_name}{$feature} = $gene_panel{$feature};
+                      {$aggregate_gene_panels_key}{gene_panel}{$gene_panel_name}{$feature}
+                      = $gene_panel{$feature};
                 }
             }
             else {
@@ -248,8 +247,7 @@ sub set_infile_info {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        date =>
-          { defined => 1, required => 1, store => \$date, strict_type => 1, },
+        date      => { defined => 1, required => 1, store => \$date, strict_type => 1, },
         direction => {
             allow       => [ 1, 2 ],
             defined     => 1,
@@ -277,8 +275,7 @@ sub set_infile_info {
             store       => \$flowcell,
             strict_type => 1,
         },
-        index =>
-          { defined => 1, required => 1, store => \$index, strict_type => 1, },
+        index => { defined => 1, required => 1, store => \$index, strict_type => 1, },
         infile_both_strands_prefix_href => {
             default     => {},
             defined     => 1,
@@ -340,14 +337,13 @@ sub set_infile_info {
         $original_file_name_prefix, $run_barcode )
       = _file_name_formats(
         {
-            date      => $date,
-            direction => $direction,
-            flowcell  => $flowcell,
-            index     => $index,
-            lane      => $lane,
-            original_file_name =>
-              $file_info_href->{$sample_id}{mip_infiles}[$file_index],
-            sample_id => $sample_id,
+            date               => $date,
+            direction          => $direction,
+            flowcell           => $flowcell,
+            index              => $index,
+            lane               => $lane,
+            original_file_name => $file_info_href->{$sample_id}{mip_infiles}[$file_index],
+            sample_id          => $sample_id,
         }
       );
 
@@ -358,8 +354,7 @@ sub set_infile_info {
         push @{ $file_info_href->{$sample_id}{lanes} }, $lane;
 
 # Save new format (sample_id_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and the file suffix is removed (.fastq).
-        $infile_lane_prefix_href->{$sample_id}[$lane_tracker] =
-          $mip_file_format;
+        $infile_lane_prefix_href->{$sample_id}[$lane_tracker] = $mip_file_format;
 
         ## Detect Undetermined in flowcell id
         if ( $flowcell =~ /Undetermined/ixsm ) {
@@ -390,8 +385,7 @@ sub set_infile_info {
 
         ## $lane_tracker -1 since it gets incremented after direction eq 1
         # Alias
-        $mip_file_format =
-          $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ];
+        $mip_file_format = $infile_lane_prefix_href->{$sample_id}[ $lane_tracker - 1 ];
 
         my %direction_two_metric = ( sequence_run_type => q{paired-end}, );
 
@@ -410,11 +404,10 @@ sub set_infile_info {
       $mip_file_format_with_direction;
 
     my %both_directions_metric = (
-        date     => $parsed_date,
-        flowcell => $flowcell,
-        lane     => $lane,
-        original_file_name =>
-          $file_info_href->{$sample_id}{mip_infiles}[$file_index],
+        date               => $parsed_date,
+        flowcell           => $flowcell,
+        lane               => $lane,
+        original_file_name => $file_info_href->{$sample_id}{mip_infiles}[$file_index],
         original_file_name_prefix => $original_file_name_prefix,
         read_direction            => $direction,
         run_barcode               => $run_barcode,
@@ -466,8 +459,7 @@ sub set_most_complete_vcf {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        path =>
-          { defined => 1, required => 1, store => \$path, strict_type => 1, },
+        path => { defined => 1, required => 1, store => \$path, strict_type => 1, },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -482,10 +474,9 @@ sub set_most_complete_vcf {
             strict_type => 1,
         },
         vcf_file_key => {
-            allow =>
-              [qw{ vcf_file vcf_binary_file sv_vcf_file sv_vcf_binary_file }],
-            default     => q{vcf_file},
-            store       => \$vcf_file_key,
+            allow   => [qw{ vcf_file vcf_binary_file sv_vcf_file sv_vcf_binary_file }],
+            default => q{vcf_file},
+            store   => \$vcf_file_key,
             strict_type => 1,
         },
         vcfparser_outfile_counter => {
@@ -553,8 +544,7 @@ sub set_parameter_in_sample_info {
 
     if ( exists $active_parameter_href->{$key_to_add} ) {
 
-        $sample_info_href->{$key_to_add} =
-          $active_parameter_href->{$key_to_add};
+        $sample_info_href->{$key_to_add} = $active_parameter_href->{$key_to_add};
     }
 
     return;
@@ -718,8 +708,8 @@ sub set_processing_metafile_in_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{sample}{$sample_id}{$metafile_tag}
-                  {$parameter_key} = $parameter_value;
+                $sample_info_href->{sample}{$sample_id}{$metafile_tag}{$parameter_key} =
+                  $parameter_value;
             }
         }
     }
@@ -730,8 +720,7 @@ sub set_processing_metafile_in_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{$metafile_tag}{$parameter_key} =
-                  $parameter_value;
+                $sample_info_href->{$metafile_tag}{$parameter_key} = $parameter_value;
             }
         }
     }
@@ -841,8 +830,8 @@ sub set_recipe_metafile_in_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{recipe}{$recipe_name}{$metafile_tag}
-                  {$parameter_key} = $parameter_value;
+                $sample_info_href->{recipe}{$recipe_name}{$metafile_tag}{$parameter_key}
+                  = $parameter_value;
             }
         }
     }
@@ -893,8 +882,7 @@ sub set_in_sample_info {
             strict_type => 1,
         },
         human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
+            default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$human_genome_reference,
             strict_type => 1,
         },
@@ -933,8 +921,7 @@ sub set_in_sample_info {
 
     ## Define program features to find version of program that do not print version to log file or can be collected from the parameter
     my %program_feature =
-      _define_program_features(
-        { active_parameter_href => $active_parameter_href, } );
+      _define_program_features( { active_parameter_href => $active_parameter_href, } );
 
   PARAMETER:
     foreach my $parameter_name ( keys %program_feature ) {
@@ -945,16 +932,16 @@ sub set_in_sample_info {
                 active_parameter_href => $active_parameter_href,
                 cmd                   => $program_feature{$parameter_name}{cmd},
                 parameter_name        => $parameter_name,
-                regexp           => $program_feature{$parameter_name}{regexp},
-                sample_info_href => $sample_info_href,
+                regexp                => $program_feature{$parameter_name}{regexp},
+                sample_info_href      => $sample_info_href,
             }
         );
 
         set_recipe_outfile_in_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                recipe_name => $program_feature{$parameter_name}{program_name},
-                version     => $version,
+                recipe_name      => $program_feature{$parameter_name}{program_name},
+                version          => $version,
             }
         );
     }
@@ -981,9 +968,78 @@ sub set_in_sample_info {
 
         ## Add log_file_dir to sample info file
         my $path = dirname( dirname( $active_parameter_href->{log_file} ) );
-        $sample_info_href->{log_file_dir} = $path;
-        $sample_info_href->{last_log_file_path} =
-          $active_parameter_href->{log_file};
+        $sample_info_href->{log_file_dir}       = $path;
+        $sample_info_href->{last_log_file_path} = $active_parameter_href->{log_file};
+    }
+    return;
+}
+
+sub get_sequence_run_type {
+
+## Function : Return sequence run type
+## Returns  : $sequence_run_type | %sequence_run_type
+## Arguments: $infile_lane_prefix      => Infile lane prefix
+##          : $infile_lane_prefix_href => Infile lane prefix hash {REF}
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_lane_prefix;
+    my $infile_lane_prefix_href;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        infile_lane_prefix => {
+            store       => \$infile_lane_prefix,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            required    => 1,
+            defined     => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( %{$infile_lane_prefix_href} ) {
+
+        my %sequence_run_type;
+
+      INFILE_LANE_PREFIX:
+        foreach my $infile_lane_prefix ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+            $sequence_run_type{$infile_lane_prefix} =
+              $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
+              {sequence_run_type};
+        }
+
+        return %sequence_run_type;
+    }
+    elsif ( defined $infile_lane_prefix ) {
+
+        return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
+          {sequence_run_type};
+
+    }
+    else {
+
+        croak q{Either $infile_lane_prefix_href or $infile_prefix must be provided!};
     }
     return;
 }
@@ -1031,9 +1087,8 @@ sub _file_name_formats {
             store       => \$flowcell,
             strict_type => 1,
         },
-        index =>
-          { defined => 1, required => 1, store => \$index, strict_type => 1, },
-        lane => {
+        index => { defined => 1, required => 1, store => \$index, strict_type => 1, },
+        lane  => {
             allow       => qr{ \A\d+\z }xsm,
             defined     => 1,
             required    => 1,
@@ -1067,20 +1122,13 @@ sub _file_name_formats {
       . $UNDERSCORE . q{lane}
       . $lane;
 
-    my $mip_file_format_with_direction =
-      $mip_file_format . $UNDERSCORE . $direction;
+    my $mip_file_format_with_direction = $mip_file_format . $UNDERSCORE . $direction;
 
     my $original_file_name_prefix = substr $original_file_name, 0,
       index $original_file_name, q{.fastq};
 
     my $run_barcode =
-        $date
-      . $UNDERSCORE
-      . $flowcell
-      . $UNDERSCORE
-      . $lane
-      . $UNDERSCORE
-      . $index;
+      $date . $UNDERSCORE . $flowcell . $UNDERSCORE . $lane . $UNDERSCORE . $index;
     return $mip_file_format, $mip_file_format_with_direction,
       $original_file_name_prefix, $run_barcode;
 }
@@ -1114,9 +1162,9 @@ sub _define_program_features {
 
     if ( exists $active_parameter_href->{gatk_path} ) {
 
-        $gatk_cmd = q{java -jar }
-          . catfile( $active_parameter_href->{gatk_path},
-            q{GenomeAnalysisTK.jar} )
+        $gatk_cmd =
+            q{java -jar }
+          . catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} )
           . $SPACE
           . q{--version 2>&1};
     }
@@ -1142,8 +1190,8 @@ sub _define_program_features {
             program_name => q{picardtools},
         },
         bwa_mem => {
-            cmd    => $sambamba_cmd,     #bwa_mem uses sambamba post alignment
-            regexp => q?Not relevant?,
+            cmd          => $sambamba_cmd,     #bwa_mem uses sambamba post alignment
+            regexp       => q?Not relevant?,
             program_name => q{sambamba},
         },
         sambamba_depth => {

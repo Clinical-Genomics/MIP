@@ -24,7 +24,7 @@ use MIP::Cli::Utils qw{ run }
   ;    # MooseX::App required sub. Called internally by MooseX::App
 
 # Set the version for version checking
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -58,6 +58,17 @@ sub _build_usage {
             documentation => q{Set the analysis constant path},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{analysisrunstatus} => (
+            cmd_aliases => [qw{ ars }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+q{Check analysis output and sets the analysis run status flag to finished in sample_info_file},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -167,12 +178,11 @@ sub _build_usage {
     );
 
     option(
-        q{node_ram_memory} => (
-            cmd_aliases   => [qw{ nrm }],
-            cmd_tags      => [q{Default: 128}],
-            documentation => q{RAM memory size of the node(s) in GigaBytes},
+        q{java_use_large_pages} => (
+            cmd_aliases   => [qw{ jul }],
+            documentation => q{Use large page memory},
             is            => q{rw},
-            isa           => Int,
+            isa           => Bool,
         )
     );
 
@@ -181,6 +191,16 @@ sub _build_usage {
             cmd_aliases   => [qw{ mcpn }],
             cmd_tags      => [q{Default: 16}],
             documentation => q{Maximum number of processor cores per node},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{node_ram_memory} => (
+            cmd_aliases   => [qw{ nrm }],
+            cmd_tags      => [q{Default: 128}],
+            documentation => q{RAM memory size of the node(s) in GigaBytes},
             is            => q{rw},
             isa           => Int,
         )
@@ -257,6 +277,29 @@ sub _build_usage {
             documentation => q{Reference(s) directory},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{sacct} => (
+            cmd_aliases => [qw{ sac }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Generating sbatch script for SLURM info on each submitted job},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{sacct_format_fields} => (
+            cmd_aliases => [qw{ sacfrf }],
+            cmd_tags    => [
+q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
+            ],
+            documentation => q{Format and fields of sacct output},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
         )
     );
 
