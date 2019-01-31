@@ -24,7 +24,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -110,6 +110,10 @@ my %specific_argument = (
     regions_ref => {
         inputs_ref      => [qw{ 1:1000000-2000000 2:1000-5000 }],
         expected_output => q{1:1000000-2000000 2:1000-5000},
+    },
+    referencefile_path => {
+        input           => q{GRCh37_homo_sapiens.fasta},
+        expected_output => q{--reference GRCh37_homo_sapiens.fasta},
     },
     stderrfile_path => {
         input           => q{stderrfile.test},

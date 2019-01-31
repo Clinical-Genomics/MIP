@@ -55,6 +55,7 @@ sub samtools_view {
 ##          : $infile_path                    => Infile path
 ##          : $outfile_path                   => Outfile path
 ##          : $output_format                  => Output format
+##          : $referencefile_path             => Reference file path (fasta)
 ##          : $regions_ref                    => The regions to process {REF}
 ##          : $stderrfile_path                => Stderrfile path
 ##          : $stderrfile_path_append         => Stderrfile path append
@@ -64,22 +65,23 @@ sub samtools_view {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $auto_detect_input_format;
-    my $output_format;
-    my $uncompressed_bam_output;
-    my $with_header;
-
     ## Flatten argument(s)
     my $exclude_reads_with_these_flags;
     my $FILEHANDLE;
     my $fraction;
     my $infile_path;
     my $outfile_path;
+    my $referencefile_path;
     my $regions_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $thread_number;
+
+    ## Default(s)
+    my $auto_detect_input_format;
+    my $output_format;
+    my $uncompressed_bam_output;
+    my $with_header;
 
     my $tmpl = {
         auto_detect_input_format => {
@@ -120,6 +122,10 @@ sub samtools_view {
         regions_ref => {
             default     => [],
             store       => \$regions_ref,
+            strict_type => 1,
+        },
+        referencefile_path => {
+            store       => \$referencefile_path,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -182,6 +188,10 @@ sub samtools_view {
         push @commands, q{-F} . $SPACE . $exclude_reads_with_these_flags;
     }
 
+    if ($referencefile_path) {
+
+        push @commands, q{--reference} . $SPACE . $referencefile_path;
+    }
     if ($outfile_path) {
 
         #Specify output filename

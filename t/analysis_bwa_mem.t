@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,10 +34,11 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COLON                => q{:};
-Readonly my $COMMA                => q{,};
-Readonly my $GENOME_BUILD_VERSION => 38;
-Readonly my $SPACE                => q{ };
+Readonly my $COLON                   => q{:};
+Readonly my $COMMA                   => q{,};
+Readonly my $GENOME_BUILD_VERSION_38 => 38;
+Readonly my $GENOME_BUILD_VERSION_37 => 37;
+Readonly my $SPACE                   => q{ };
 
 BEGIN {
 
@@ -66,7 +67,7 @@ diag(   q{Test analysis_bwa_mem from Bwa_mem.pm v}
 
 my $log = test_log( { log_name => q{MIP}, } );
 
-## Given build parameters
+## Given parameters
 my $recipe_name    = q{bwa_mem};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
@@ -82,6 +83,9 @@ $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
 $active_parameter{platform}                       = q{ILLUMINA};
 $active_parameter{bwa_sambamba_sort_memory_limit} = q{28G};
+$active_parameter{bwa_mem_cram}                   = 1;
+$active_parameter{bwa_mem_bamstats}               = 1;
+$active_parameter{human_genome_reference}         = q{GRCh37_homo_sapiens_-d5-.fasta};
 
 my %file_info = test_mip_hashes(
     {
@@ -89,8 +93,6 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$file_info{human_genome_reference_source}  = q{GRCh};
-$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION;
 
 my $infile_prefix      = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
 my %infile_lane_prefix = ( $sample_id => [ $infile_prefix, ], );
@@ -123,6 +125,10 @@ my %sample_info = (
     },
 );
 
+## Will test the run-bwamem
+$file_info{human_genome_reference_source}  = q{GRCh};
+$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_38;
+
 my $is_ok = analysis_bwa_mem(
     {
         active_parameter_href   => \%active_parameter,
@@ -138,6 +144,32 @@ my $is_ok = analysis_bwa_mem(
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+ok( $is_ok,
+        q{ Executed analysis recipe }
+      . $recipe_name
+      . q{ with genome build }
+      . $GENOME_BUILD_VERSION_38 );
 
+## Will test the bwamem
+$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_37;
+$is_ok = analysis_bwa_mem(
+    {
+        active_parameter_href   => \%active_parameter,
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        parameter_href          => \%parameter,
+        profile_base_command    => $slurm_mock_cmd,
+        recipe_name             => $recipe_name,
+        sample_id               => $sample_id,
+        sample_info_href        => \%sample_info,
+    }
+);
+
+## Then return TRUE
+ok( $is_ok,
+        q{ Executed analysis recipe }
+      . $recipe_name
+      . q{ with genome build }
+      . $GENOME_BUILD_VERSION_37 );
 done_testing();

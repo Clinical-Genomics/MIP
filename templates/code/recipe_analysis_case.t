@@ -65,7 +65,7 @@ diag(   q{Test SUB_ROUTINE from MODULE.pm v}
 
 my $log = test_log( { log_name => q{MIP}, } );
 
-## Given build parameters
+## Given analysis parameters
 my $recipe_name    = q{RECIPE_NAME};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
