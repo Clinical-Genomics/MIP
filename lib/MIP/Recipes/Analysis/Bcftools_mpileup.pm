@@ -292,7 +292,6 @@ sub analysis_bcftools_mpileup {
             core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
-            null_character     => 1,
             recipe_info_path   => $recipe_info_path,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
@@ -499,7 +498,7 @@ sub _build_bcftools_filter_expr {
     Readonly my $FILTER_SEPARATOR => q{ || };
 
     # Add minimum value for QUAL field
-    my $expr = q?\'"%QUAL<10?;
+    my $expr = q?\'\"%QUAL<10?;
 
     # Add read position bias threshold
     $expr .= $FILTER_SEPARATOR . q{(RPB<0.1 && %QUAL<15)};
@@ -511,7 +510,7 @@ sub _build_bcftools_filter_expr {
     $expr .= $FILTER_SEPARATOR . q{%MAX(DV)<=3};
 
     # Add high-qual non-reference bases / high-qual bases
-    $expr .= $FILTER_SEPARATOR . q?%MAX(DV)/%MAX(DP)<=0.25\"'?;
+    $expr .= $FILTER_SEPARATOR . q?%MAX(DV)/%MAX(DP)<=0.25\"\'?;
 
     return $expr;
 }
