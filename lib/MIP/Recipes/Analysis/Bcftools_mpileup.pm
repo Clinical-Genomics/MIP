@@ -372,7 +372,7 @@ sub analysis_bcftools_mpileup {
             );
         }
 
-        if ( $active_parameter_href->{bcftools_mpileup_keep_unnormalised} ) {
+        if ( not $active_parameter_href->{bcftools_mpileup_keep_unnormalised} ) {
 
             # Print pipe
             print {$XARGSFILEHANDLE} $PIPE . $SPACE;
@@ -393,7 +393,6 @@ sub analysis_bcftools_mpileup {
         # Print pipe
         print {$XARGSFILEHANDLE} $PIPE . $SPACE;
 
-        ## BcfTools norm, Left-align and normalize indels, split multiallelics
         my $bcftools_outfile_path;
 
         if ( not $active_parameter_href->{replace_iupac} ) {

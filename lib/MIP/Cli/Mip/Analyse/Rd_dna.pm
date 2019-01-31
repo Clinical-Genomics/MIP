@@ -1252,6 +1252,26 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
+        q{freebayes_filter_variant} => (
+            cmd_aliases   => [qw{ frbfv }],
+            cmd_flag      => q{freebayes_fil_var},
+            documentation => q{Use standard bcftools filters},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{freebayes_keep_unnormalised} => (
+            cmd_aliases   => [qw{ frbkn }],
+            cmd_flag      => q{freebayes_keep_unn},
+            documentation => q{Do not normalise variants},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{gatk_haplotypecaller} => (
             cmd_aliases   => [qw{ ghc }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -1420,6 +1440,16 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
               q{Truth sensitivity level for indels at which to start filtering},
             is  => q{rw},
             isa => Num,
+        )
+    );
+
+    option(
+        q{gatk_variantrecalibration_keep_unnormalised} => (
+            cmd_aliases   => [qw{ gvrkn }],
+            cmd_flag      => q{gatk_variantrecalibration_keep_unn},
+            documentation => q{Do not normalise variants},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
