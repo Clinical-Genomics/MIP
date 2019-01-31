@@ -1054,6 +1054,12 @@ bcftools_mpileup_filter_variant:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+bcftools_mpileup_keep_unnormalised:
+  associated_recipe:
+   - bcftools_mpileup
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 ## Freebayes
 freebayes_ar:
   analysis_mode: case
@@ -1068,6 +1074,18 @@ freebayes_ar:
   recipe_type: variant_callers
   outfile_suffix: ".vcf"
   type: recipe
+freebayes_filter_variant:
+  associated_recipe:
+   - freebayes_ar
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
+freebayes_keep_unnormalised:
+  associated_recipe:
+   - freebayes_ar
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample
@@ -1227,6 +1245,12 @@ gatk_variantrecalibration_indel_tsfilter_level:
    - gatk_variantrecalibration
   data_type: SCALAR
   default: 99.9
+  type: recipe_argument
+gatk_variantrecalibration_keep_unnormalised:
+  associated_recipe:
+   - gatk_variantrecalibration
+  data_type: SCALAR
+  default: 0
   type: recipe_argument
 gatk_variantrecalibration_resource_indel:
   associated_recipe:

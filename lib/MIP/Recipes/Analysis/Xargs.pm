@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Xargs;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ xargs_command };
@@ -47,6 +48,7 @@ sub xargs_command {
 ##         : $java_jar             => Java jar
 ##         : $java_use_large_pages => Use java large pages {REF}
 ##         : $memory_allocation    => Memory allocation for java
+##          : $null_character     => Input items are terminated by a null character instead of by whitespace
 ##         : $recipe_info_path    => Program info path
 ##         : $XARGSFILEHANDLE      => XARGS filehandle to write to
 ##         : $temp_directory       => Redirect tmp files to java temp {Optional}
@@ -67,6 +69,7 @@ sub xargs_command {
     my $temp_directory;
 
     ## Default(s)
+    my $null_character;
     my $xargs_file_counter;
 
     my $tmpl = {
@@ -92,8 +95,14 @@ sub xargs_command {
             store       => \$java_use_large_pages
         },
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        recipe_info_path  => { strict_type => 1, store => \$recipe_info_path },
-        temp_directory    => { strict_type => 1, store => \$temp_directory },
+        null_character    => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => 0,
+            store       => \$null_character,
+            strict_type => 1,
+        },
+        recipe_info_path => { strict_type => 1, store => \$recipe_info_path },
+        temp_directory   => { strict_type => 1, store => \$temp_directory },
         XARGSFILEHANDLE => { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
         xargs_file_counter => {
             default     => 0,
@@ -161,8 +170,9 @@ sub xargs_command {
         {
             FILEHANDLE         => $FILEHANDLE,
             max_procs          => $core_number,
-            shell_commands_ref => \@commands,
+            null_character     => $null_character,
             replace_str        => 1,
+            shell_commands_ref => \@commands,
             verbose            => 1,
         }
     );

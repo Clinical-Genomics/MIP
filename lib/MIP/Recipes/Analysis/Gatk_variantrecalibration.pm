@@ -35,6 +35,7 @@ BEGIN {
 Readonly my $ASTERISK   => q{*};
 Readonly my $AMPERSAND  => q{&};
 Readonly my $COLON      => q{:};
+Readonly my $DASH       => q{-};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
@@ -266,6 +267,8 @@ sub analysis_gatk_variantrecalibration_wes {
     # Haplotypecaller step.
     my @modes = q{BOTH};
 
+    my $select_infile_path;
+    my $norm_infile_path;
   MODE:
     foreach my $mode (@modes) {
 
@@ -333,6 +336,8 @@ sub analysis_gatk_variantrecalibration_wes {
         $ts_filter_level =
           $active_parameter_href->{gatk_variantrecalibration_snv_tsfilter_level};
 
+        my $apply_vqsr_outfile_path =
+          $outfile_path_prefix . $UNDERSCORE . q{apply} . $outfile_suffix;
         gatk_applyvqsr(
             {
                 FILEHANDLE           => $FILEHANDLE,
@@ -340,7 +345,7 @@ sub analysis_gatk_variantrecalibration_wes {
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx10g},
                 mode                 => $mode,
-                outfile_path         => $outfile_path,
+                outfile_path         => $apply_vqsr_outfile_path,
                 recal_file_path      => $recal_file_path,
                 referencefile_path   => $referencefile_path,
                 temp_directory       => $temp_directory,
@@ -350,23 +355,34 @@ sub analysis_gatk_variantrecalibration_wes {
             }
         );
         say {$FILEHANDLE} $NEWLINE;
+        ## Set infiles for next step(s)
+        $select_infile_path = $apply_vqsr_outfile_path;
+        $norm_infile_path   = $apply_vqsr_outfile_path;
     }
 
-    ## BcfTools norm, Left-align and normalize indels, split multiallelics
-    my $norm_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{normalized} . $outfile_suffix;
-    bcftools_norm(
-        {
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $outfile_path,
-            multiallelic    => q{-},
-            outfile_path    => $norm_outfile_path,
-            output_type     => q{v},
-            reference_path  => $referencefile_path,
-            stderrfile_path => $outfile_path_prefix . $UNDERSCORE . q{normalized.stderr},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+    if ( not $active_parameter_href->{gatk_variantrecalibration_keep_unnormalised} ) {
+
+        ## Bcftools norm, left-align and normalize indels, split multiallelics
+        my $norm_outfile_path =
+          $outfile_path_prefix . $UNDERSCORE . q{normalized} . $outfile_suffix;
+        bcftools_norm(
+            {
+                FILEHANDLE      => $FILEHANDLE,
+                infile_path     => $norm_infile_path,
+                multiallelic    => $DASH,
+                outfile_path    => $norm_outfile_path,
+                output_type     => q{v},
+                reference_path  => $referencefile_path,
+                stderrfile_path => $outfile_path_prefix
+                  . $UNDERSCORE
+                  . q{normalized.stderr},
+            }
+        );
+        ## Set outfile path for next step
+        $select_infile_path = $norm_outfile_path;
+
+        say {$FILEHANDLE} $NEWLINE;
+    }
 
     ### GATK SelectVariants
 
@@ -379,7 +395,7 @@ sub analysis_gatk_variantrecalibration_wes {
         {
             FILEHANDLE           => $FILEHANDLE,
             exclude_non_variants => 1,
-            infile_path          => $norm_outfile_path,
+            infile_path          => $select_infile_path,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx2g},
             outfile_path         => $outfile_path,
@@ -428,31 +444,33 @@ sub analysis_gatk_variantrecalibration_wes {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ## BcfTools norm, Left-align and normalize indels, split multiallelics
-    my $filtered_norm_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{filtered_normalized} . $outfile_suffix;
-    bcftools_norm(
-        {
-            FILEHANDLE     => $FILEHANDLE,
-            infile_path    => $outfile_path,
-            multiallelic   => q{-},
-            outfile_path   => $filtered_norm_outfile_path,
-            output_type    => q{v},
-            reference_path => $referencefile_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+    if ( not $active_parameter_href->{gatk_variantrecalibration_keep_unnormalised} ) {
 
-    ## Change name of file to accomodate downstream
-    gnu_mv(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $filtered_norm_outfile_path,
-            outfile_path => $outfile_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        ## BcfTools norm, Left-align and normalize indels, split multiallelics
+        my $selected_norm_outfile_path =
+          $outfile_path_prefix . $UNDERSCORE . q{selected_normalized} . $outfile_suffix;
+        bcftools_norm(
+            {
+                FILEHANDLE     => $FILEHANDLE,
+                infile_path    => $outfile_path,
+                multiallelic   => $DASH,
+                outfile_path   => $selected_norm_outfile_path,
+                output_type    => q{v},
+                reference_path => $referencefile_path,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
+        ## Change name of file to accomodate downstream
+        gnu_mv(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $selected_norm_outfile_path,
+                outfile_path => $outfile_path,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
     close $FILEHANDLE;
 
     if ( $recipe_mode == 1 ) {
@@ -497,12 +515,12 @@ sub analysis_gatk_variantrecalibration_wgs {
 ## Function : GATK VariantRecalibrator/ApplyRecalibration analysis recipe for wgs data
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
@@ -894,31 +912,33 @@ sub analysis_gatk_variantrecalibration_wgs {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ## BcfTools norm, Left-align and normalize indels, split multiallelics
-    my $bcftools_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{normalized} . $outfile_suffix;
-    bcftools_norm(
-        {
-            FILEHANDLE     => $FILEHANDLE,
-            infile_path    => $outfile_path,
-            multiallelic   => q{-},
-            output_type    => q{v},
-            outfile_path   => $bcftools_outfile_path,
-            reference_path => $referencefile_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+    if ( not $active_parameter_href->{gatk_variantrecalibration_keep_unnormalised} ) {
 
-    ## Change name of file to accomodate downstream
-    gnu_mv(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $bcftools_outfile_path,
-            outfile_path => $outfile_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        ## BcfTools norm, Left-align and normalize indels, split multiallelics
+        my $bcftools_outfile_path =
+          $outfile_path_prefix . $UNDERSCORE . q{normalized} . $outfile_suffix;
+        bcftools_norm(
+            {
+                FILEHANDLE     => $FILEHANDLE,
+                infile_path    => $outfile_path,
+                multiallelic   => $DASH,
+                output_type    => q{v},
+                outfile_path   => $bcftools_outfile_path,
+                reference_path => $referencefile_path,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
+        ## Change name of file to accomodate downstream
+        gnu_mv(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $bcftools_outfile_path,
+                outfile_path => $outfile_path,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
     close $FILEHANDLE;
 
     if ( $recipe_mode == 1 ) {

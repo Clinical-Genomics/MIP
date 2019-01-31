@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_mpileup };
@@ -152,7 +152,7 @@ sub analysis_bcftools_mpileup {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_call bcftools_filter bcftools_mpileup bcftools_norm };
+      qw{ bcftools_call bcftools_filter bcftools_mpileup bcftools_norm bcftools_view };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Perl qw{ replace_iupac };
     use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
@@ -359,12 +359,6 @@ sub analysis_bcftools_mpileup {
             }
         );
 
-        if ( $active_parameter_href->{replace_iupac} ) {
-
-            ## Change output type to "v"
-            $output_type = q{v};
-        }
-
         if ( $active_parameter_href->{bcftools_mpileup_filter_variant} ) {
 
             # Print pipe
@@ -384,15 +378,21 @@ sub analysis_bcftools_mpileup {
                 }
             );
         }
-        if ( $active_parameter_href->{replace_iupac} ) {
 
-            ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
-            replace_iupac(
+        if ( not $active_parameter_href->{bcftools_mpileup_keep_unnormalised} ) {
+
+            # Print pipe
+            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+
+            bcftools_norm(
                 {
                     FILEHANDLE      => $XARGSFILEHANDLE,
+                    multiallelic    => $DASH,
+                    output_type     => $output_type,
+                    reference_path  => $reference_path,
                     stderrfile_path => $stderrfile_path_prefix
                       . $UNDERSCORE
-                      . q{replace_iupac.stderr.txt},
+                      . q{norm.stderr.txt},
                 }
             );
         }
@@ -400,21 +400,43 @@ sub analysis_bcftools_mpileup {
         # Print pipe
         print {$XARGSFILEHANDLE} $PIPE . $SPACE;
 
-        ## BcfTools norm, Left-align and normalize indels, split multiallelics
-        my $norm_temp_outfile_path =
-          $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
-        bcftools_norm(
+        my $bcftools_outfile_path;
+
+        if ( not $active_parameter_href->{replace_iupac} ) {
+
+            ## End stream and write to disc
+            $bcftools_outfile_path =
+              $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
+        }
+        bcftools_view(
             {
                 FILEHANDLE      => $XARGSFILEHANDLE,
-                multiallelic    => $DASH,
+                outfile_path    => $bcftools_outfile_path,
                 output_type     => q{v},
-                outfile_path    => $norm_temp_outfile_path,
-                reference_path  => $reference_path,
                 stderrfile_path => $stderrfile_path_prefix
                   . $UNDERSCORE
-                  . q{norm.stderr.txt},
+                  . q{view.stderr.txt},
             }
         );
+        if ( $active_parameter_href->{replace_iupac} ) {
+
+            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+
+            ## End stream and write to disc
+            $bcftools_outfile_path =
+              $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
+            ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
+            replace_iupac(
+                {
+                    FILEHANDLE      => $XARGSFILEHANDLE,
+                    stderrfile_path => $stderrfile_path_prefix
+                      . $UNDERSCORE
+                      . q{replace_iupac.stderr.txt},
+                    stdoutfile_path => $bcftools_outfile_path,
+                }
+            );
+        }
+
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
@@ -484,7 +506,7 @@ sub _build_bcftools_filter_expr {
     Readonly my $FILTER_SEPARATOR => q{ || };
 
     # Add minimum value for QUAL field
-    my $expr = q?\'"%QUAL<10?;
+    my $expr = q?\'\"%QUAL<10?;
 
     # Add read position bias threshold
     $expr .= $FILTER_SEPARATOR . q{(RPB<0.1 && %QUAL<15)};
@@ -496,7 +518,7 @@ sub _build_bcftools_filter_expr {
     $expr .= $FILTER_SEPARATOR . q{%MAX(DV)<=3};
 
     # Add high-qual non-reference bases / high-qual bases
-    $expr .= $FILTER_SEPARATOR . q?%MAX(DV)/%MAX(DP)<=0.25\"'?;
+    $expr .= $FILTER_SEPARATOR . q?%MAX(DV)/%MAX(DP)<=0.25\"\'?;
 
     return $expr;
 }

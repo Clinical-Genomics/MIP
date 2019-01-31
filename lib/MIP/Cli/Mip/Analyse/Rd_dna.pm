@@ -1214,9 +1214,19 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{bcftools_mpileup_filter_variant} => (
-            cmd_aliases   => [qw{ pbmpfv }],
+            cmd_aliases   => [qw{ bmpfv }],
             cmd_flag      => q{bcftools_mpileup_fil_var},
             documentation => q{Use standard bcftools filters},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{bcftools_mpileup_keep_unnormalised} => (
+            cmd_aliases   => [qw{ bmpkn }],
+            cmd_flag      => q{bcftools_mpileup_keep_unn},
+            documentation => q{Do not normalise variants},
             is            => q{rw},
             isa           => Bool,
         )
@@ -1229,6 +1239,26 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Variant calling using Freebayes},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{freebayes_filter_variant} => (
+            cmd_aliases   => [qw{ frbfv }],
+            cmd_flag      => q{freebayes_fil_var},
+            documentation => q{Use standard bcftools filters},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{freebayes_keep_unnormalised} => (
+            cmd_aliases   => [qw{ frbkn }],
+            cmd_flag      => q{freebayes_keep_unn},
+            documentation => q{Do not normalise variants},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -1401,6 +1431,16 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
               q{Truth sensitivity level for indels at which to start filtering},
             is  => q{rw},
             isa => Num,
+        )
+    );
+
+    option(
+        q{gatk_variantrecalibration_keep_unnormalised} => (
+            cmd_aliases   => [qw{ gvrkn }],
+            cmd_flag      => q{gatk_variantrecalibration_keep_unn},
+            documentation => q{Do not normalise variants},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
