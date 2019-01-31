@@ -134,13 +134,13 @@ sub analysis_salmon_quant {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_recipe_parameters get_recipe_attributes get_sequence_run_type };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::IO::Files qw{ migrate_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Salmon qw{ salmon_quant };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::QC::Sample_info
+      qw{ get_sequence_run_type set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING

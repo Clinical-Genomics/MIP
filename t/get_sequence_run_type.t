@@ -44,17 +44,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Parameter} => [qw{ get_sequence_run_type }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::QC::Sample_info} => [qw{ get_sequence_run_type }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Parameter qw{ get_sequence_run_type };
+use MIP::QC::Sample_info qw{ get_sequence_run_type };
 
-diag(   q{Test get_sequence_run_type from Parameter.pm v}
-      . $MIP::Get::Parameter::VERSION
+diag(   q{Test get_sequence_run_type from Sample_info.pm v}
+      . $MIP::QC::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
