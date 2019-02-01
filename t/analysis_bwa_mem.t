@@ -37,7 +37,8 @@ $VERBOSE = test_standard_cli(
 Readonly my $COLON                   => q{:};
 Readonly my $COMMA                   => q{,};
 Readonly my $GENOME_BUILD_VERSION_38 => 38;
-Readonly my $GENOME_BUILD_VERSION_37 => 37;
+Readonly my $GENOME_BUILD_VERSION_20 => 20;
+Readonly my $GENOME_BUILD_VERSION_19 => 19;
 Readonly my $SPACE                   => q{ };
 
 BEGIN {
@@ -150,9 +151,10 @@ ok( $is_ok,
       . q{ with genome build }
       . $GENOME_BUILD_VERSION_38 );
 
-## Will test the bwamem
-$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_37;
-$is_ok = analysis_bwa_mem(
+## Will test the bwamem with hg19
+$file_info{human_genome_reference_source}  = q{hg};
+$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_20;
+$is_ok                                     = analysis_bwa_mem(
     {
         active_parameter_href   => \%active_parameter,
         file_info_href          => \%file_info,
@@ -171,5 +173,30 @@ ok( $is_ok,
         q{ Executed analysis recipe }
       . $recipe_name
       . q{ with genome build }
-      . $GENOME_BUILD_VERSION_37 );
+      . $GENOME_BUILD_VERSION_20 );
+
+## Will test the bwamem with hg18
+$file_info{human_genome_reference_source}  = q{hg};
+$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_19;
+$is_ok                                     = analysis_bwa_mem(
+    {
+        active_parameter_href   => \%active_parameter,
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        parameter_href          => \%parameter,
+        profile_base_command    => $slurm_mock_cmd,
+        recipe_name             => $recipe_name,
+        sample_id               => $sample_id,
+        sample_info_href        => \%sample_info,
+    }
+);
+
+## Then return TRUE
+ok( $is_ok,
+        q{ Executed analysis recipe }
+      . $recipe_name
+      . q{ with genome build }
+      . $GENOME_BUILD_VERSION_19 );
+
 done_testing();

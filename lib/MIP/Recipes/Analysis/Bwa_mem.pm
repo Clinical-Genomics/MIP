@@ -321,7 +321,7 @@ sub analysis_bwa_mem {
           . q{ and sorting via Sambamba};
 
         ## Detect version and source of the human_genome_reference: Source (hg19 or GRCh) and return the correct bwa_mem binary
-        my $bwa_binary = _select_bwamem_binary(
+        my $bwa_binary = _get_bwamem_binary(
             {
                 human_genome_reference_source =>
                   $file_info_href->{human_genome_reference_source},
@@ -636,7 +636,7 @@ sub analysis_bwa_mem {
     return 1;
 }
 
-sub _select_bwamem_binary {
+sub _get_bwamem_binary {
 
 ## Function : Detect version and source of the human_genome_reference: Source (hg19 or GRCh) and return the correct bwa_mem binary
 ## Returns  :
@@ -671,28 +671,22 @@ sub _select_bwamem_binary {
 
     if ( $human_genome_reference_source eq q{GRCh} ) {
 
-        if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS ) {
+        # Human genome version > GRCh37
+        return q{run-bwamem}
+          if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS );
 
-            return q{run-bwamem};
-        }
-        else {
-            # Human genome version less than GrCh37
-
-            return q{bwa mem};
-        }
+        # Human genome version <= GRCh37
+        return q{bwa mem};
     }
     else {
         # hgXX build
 
-        if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_HG_PRIOR_ALTS ) {
+        # Human genome version > hg19
+        return q{run-bwamem}
+          if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_HG_PRIOR_ALTS );
 
-            return q{run-bwamem};
-        }
-        else {
-            # Human genome version less than hg19
-
-            return q{bwa mem};
-        }
+        # Human genome version <= hg19
+        return q{bwa mem};
     }
     return;
 }
