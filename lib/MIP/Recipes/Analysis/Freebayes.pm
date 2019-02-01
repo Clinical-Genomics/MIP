@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_freebayes_calling };
@@ -32,6 +32,7 @@ BEGIN {
 ## Constants
 Readonly my $ASTERISK   => q{*};
 Readonly my $UNDERSCORE => q{_};
+Readonly my $DASH       => q{-};
 Readonly my $DOT        => q{.};
 Readonly my $PIPE       => q{|};
 Readonly my $NEWLINE    => qq{\n};
@@ -42,12 +43,12 @@ sub analysis_freebayes_calling {
 ## Function : Call snv/small indels using freebayes
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temp directory
 ##          : $xargs_file_counter      => Xargs file counter
@@ -282,7 +283,8 @@ sub analysis_freebayes_calling {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig;
+        my $output_type            = q{b};
+        my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
 
         ## Assemble contig file paths for freebayes
         my @freebayes_file_paths =
@@ -296,49 +298,85 @@ sub analysis_freebayes_calling {
                 FILEHANDLE                 => $XARGSFILEHANDLE,
                 infile_paths_ref           => \@freebayes_file_paths,
                 referencefile_path         => $referencefile_path,
-                stderrfile_path            => $stderrfile_path . $DOT . q{stderr.txt},
-            }
-        );
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
-
-        bcftools_filter(
-            {
-                exclude         => q?\'%QUAL<10 || (AC<2 && %QUAL<15)\'?,
-                FILEHANDLE      => $XARGSFILEHANDLE,
-                indel_gap       => 10,
-                snp_gap         => 3,
-                soft_filter     => q{LowQual},
-                stderrfile_path => $stderrfile_path . $UNDERSCORE . q{filter.stderr.txt},
+                stderrfile_path => $stderrfile_path_prefix . $DOT . q{stderr.txt},
             }
         );
 
-        if ( $active_parameter_href->{replace_iupac} ) {
+        if ( $active_parameter_href->{freebayes_filter_variant} ) {
 
-            ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
-            replace_iupac(
+            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+
+            bcftools_filter(
                 {
+                    exclude         => q?\'%QUAL<10 || (AC<2 && %QUAL<15)\'?,
                     FILEHANDLE      => $XARGSFILEHANDLE,
-                    stderrfile_path => $stderrfile_path
+                    indel_gap       => 10,
+                    output_type     => $output_type,
+                    snp_gap         => 3,
+                    soft_filter     => q{LowQual},
+                    stderrfile_path => $stderrfile_path_prefix
                       . $UNDERSCORE
                       . q{filter.stderr.txt},
                 }
             );
         }
+        if ( not $active_parameter_href->{freebayes_keep_unnormalised} ) {
+
+            # Print pipe
+            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+
+            bcftools_norm(
+                {
+                    FILEHANDLE      => $XARGSFILEHANDLE,
+                    multiallelic    => $DASH,
+                    output_type     => $output_type,
+                    reference_path  => $referencefile_path,
+                    stderrfile_path => $stderrfile_path_prefix
+                      . $UNDERSCORE
+                      . q{norm.stderr.txt},
+                }
+            );
+        }
+
+        # Print pipe
         print {$XARGSFILEHANDLE} $PIPE . $SPACE;
 
-        ## BcfTools norm, Left-align and normalize indels, split multiallelics
-        my $norm_temp_outfile_path =
-          $temp_outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
-        bcftools_norm(
+        my $bcftools_outfile_path;
+
+        if ( not $active_parameter_href->{replace_iupac} ) {
+
+            ## End stream and write to disc
+            $bcftools_outfile_path =
+              $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
+        }
+        bcftools_view(
             {
                 FILEHANDLE      => $XARGSFILEHANDLE,
-                multiallelic    => q{-},
-                outfile_path    => $norm_temp_outfile_path,
+                outfile_path    => $bcftools_outfile_path,
                 output_type     => q{v},
-                reference_path  => $referencefile_path,
-                stderrfile_path => $stderrfile_path . $UNDERSCORE . q{norm.stderr.txt},
+                stderrfile_path => $stderrfile_path_prefix
+                  . $UNDERSCORE
+                  . q{view.stderr.txt},
             }
         );
+
+        if ( $active_parameter_href->{replace_iupac} ) {
+
+            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+            ## End stream and write to disc
+            $bcftools_outfile_path =
+              $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
+            ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
+            replace_iupac(
+                {
+                    FILEHANDLE      => $XARGSFILEHANDLE,
+                    stderrfile_path => $stderrfile_path_prefix
+                      . $UNDERSCORE
+                      . q{replace_iupac.stderr.txt},
+                    stdoutfile_path => $bcftools_outfile_path,
+                }
+            );
+        }
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
@@ -359,9 +397,9 @@ sub analysis_freebayes_calling {
 
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig;
+        my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
         my $view_temp_infile_path =
-          $temp_outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
+          $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
         my $view_temp_outfile_path_prefix =
           $temp_outfile_path_prefix . $UNDERSCORE . q{ordered};
         bcftools_view(
@@ -374,7 +412,9 @@ sub analysis_freebayes_calling {
                   . $outfile_suffix,
                 output_type     => q{v},
                 samples_ref     => $active_parameter_href->{sample_ids},
-                stderrfile_path => $stderrfile_path . $UNDERSCORE . q{ordered.stderr.txt},
+                stderrfile_path => $stderrfile_path_prefix
+                  . $UNDERSCORE
+                  . q{ordered.stderr.txt},
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;

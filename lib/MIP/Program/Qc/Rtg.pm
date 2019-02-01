@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rtg_format rtg_vcfeval };
@@ -163,7 +163,7 @@ sub rtg_vcfeval {
     my $tmpl = {
         all_record => {
             allow       => [ undef, 0, 1 ],
-            default     => 1,
+            default     => 0,
             store       => \$all_record,
             strict_type => 1,
         },
