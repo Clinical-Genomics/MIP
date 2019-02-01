@@ -678,17 +678,15 @@ sub _get_bwamem_binary {
         # Human genome version <= GRCh37
         return q{bwa mem};
     }
-    else {
-        # hgXX build
 
-        # Human genome version > hg19
-        return q{run-bwamem}
-          if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_HG_PRIOR_ALTS );
+    # hgXX build
 
-        # Human genome version <= hg19
-        return q{bwa mem};
-    }
-    return;
+    # Human genome version > hg19
+    return q{run-bwamem}
+      if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_HG_PRIOR_ALTS );
+
+    # Human genome version <= hg19
+    return q{bwa mem};
 }
 
 sub _add_percentage_mapped_reads_from_samtools {

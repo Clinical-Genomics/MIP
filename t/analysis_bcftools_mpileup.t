@@ -80,6 +80,7 @@ $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 $active_parameter{bcftools_mpileup_filter_variant}  = 1;
 $active_parameter{replace_iupac}                    = 1;
+$active_parameter{bcftools_mpileup_constrain}       = q{trio};
 
 my %file_info = test_mip_hashes(
     {
