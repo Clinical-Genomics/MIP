@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.15;
+our $VERSION = 1.16;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1209,6 +1209,16 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Variant calling using bcftools mpileup},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{bcftools_mpileup_constrain} => (
+            cmd_aliases   => [qw{ bmpcon }],
+            cmd_flag      => q{bcftools_mpileup_constrain},
+            documentation => q{Use contrain in trio calling},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 

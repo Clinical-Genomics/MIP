@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_mpileup };
@@ -336,7 +336,7 @@ sub analysis_bcftools_mpileup {
         ## Get parameter
         my $samples_file;
         ## Special case: bcftools version 1.9 does not output GQ when contsraint is applied
-        my $constrain = undef;
+        my $constrain = $active_parameter_href->{bcftools_mpileup_constrain};
         if ( $parameter_href->{cache}{trio} and $constrain ) {
 
             $samples_file =

@@ -1048,6 +1048,12 @@ bcftools_mpileup:
   recipe_type: variant_callers
   outfile_suffix: ".vcf"
   type: recipe
+bcftools_mpileup_constrain:
+  associated_recipe:
+   - bcftools_mpileup
+  data_type: SCALAR
+  mandatory: no
+  type: recipe_argument
 bcftools_mpileup_filter_variant:
   associated_recipe:
    - bcftools_mpileup
