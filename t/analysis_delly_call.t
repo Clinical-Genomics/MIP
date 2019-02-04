@@ -45,17 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Recipes::Analysis::Delly_call} => [qw{ analysis_delly_call }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
 
-diag(   q{Test SUB_ROUTINE from MODULE.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test analysis_delly_call from Delly_call.pm v}
+      . $MIP::Recipes::Analysis::Delly_call::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,7 +66,7 @@ diag(   q{Test SUB_ROUTINE from MODULE.pm v}
 my $log = test_log( { log_name => q{MIP}, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{RECIPE_NAME};
+my $recipe_name    = q{delly_call};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -103,7 +103,7 @@ my %parameter = test_mip_hashes(
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 my %sample_info;
 
-my $is_ok = SUB_ROUTINE(
+my $is_ok = analysis_delly_call(
     {
         active_parameter_href   => \%active_parameter,
         file_info_href          => \%file_info,
