@@ -4,8 +4,8 @@
 requires qw{ Archive::Extract 0.80 };               # VEP
 requires qw{ Archive::Zip 1.59 };                   # VEP
 requires qw{ Array::Utils 0.5 };                    # MIP
-requires qw{ Bio::Perl 1.007002 };                  # VEP
-requires qw{ Bio::Root::Version 1.007002 };         # VEP
+requires 'Bio::Perl', '== 1.007002';                # VEP
+requires 'Bio::Root::Version', '== 1.007002';       # VEP
 requires qw{ CGI 4.37 };                            # VEP
 requires qw{ Clone 0.39 };                          # MIP
 requires qw{ Data::Diver 1.0101 };                  # MIP
