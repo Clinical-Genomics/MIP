@@ -49,7 +49,7 @@ script:
   - sudo ln -s "$ROOTSYS"/lib/*so .
   - cd -
 ## Set-up test coverage for test directory "t"
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs t
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -j 9 t
 ## Set-up test coverage for mip_analyse_rd_dna.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna.test
 ## Set-up test coverage for mip_analyse_vcf_rerun.test

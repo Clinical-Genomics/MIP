@@ -45,17 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Delly_reformat} => [qw{ analysis_delly_reformat }],
+        q{MIP::Recipes::Analysis::Frequency_filter} => [qw{ analysis_frequency_filter }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
+use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
 
-diag(   q{Test analysis_delly_reformat from Delly_reformat.pm v}
-      . $MIP::Recipes::Analysis::Delly_reformat::VERSION
+diag(   q{Test analysis_frequency_filter from Frequency_filter.pm v}
+      . $MIP::Recipes::Analysis::Frequency_filter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,7 +66,7 @@ diag(   q{Test analysis_delly_reformat from Delly_reformat.pm v}
 my $log = test_log( { log_name => q{MIP}, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{delly_reformat};
+my $recipe_name    = q{frequency_filter};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -79,6 +79,9 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
+$active_parameter{fqf_vcfanno_config} = catfile( $Bin,
+    qw{ data references GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml } );
+$active_parameter{fqf_bcftools_filter_threshold} = 1;
 
 my %file_info = test_mip_hashes(
     {
@@ -86,46 +89,11 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-
-## Special case since delly_reformat needs to collect from recipe not immediate upstream
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    %{ $file_info{io}{TEST}{$sample_id}{gatk_baserecalibration} } = test_mip_hashes(
-        {
-            mip_hash_name => q{io},
-        }
-    );
-}
-
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    $file_info{io}{TEST}{$sample_id}{gatk_baserecalibration}{out}{file_path_prefix} =
-      q{file_path_prefix};
-    $file_info{io}{TEST}{$sample_id}{gatk_baserecalibration}{out}{file_suffix} =
-      q{.bam};
-}
-
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    %{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-        {
-            mip_hash_name => q{io},
-        }
-    );
-}
-
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    $file_info{io}{TEST}{$sample_id}{$recipe_name}{in}{file_path_prefix} =
-      q{file_path_prefix};
-    $file_info{io}{TEST}{$sample_id}{$recipe_name}{in}{file_suffix} =
-      q{.bcf};
-}
-
+%{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
+    {
+        mip_hash_name => q{io},
+    }
+);
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -134,14 +102,12 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-@{ $parameter{cache}{order_recipes_ref} } =
-  ( qw{ gatk_baserecalibration }, $recipe_name );
+@{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
-$parameter{gatk_baserecalibration}{chain} = q{TEST};
 
 my %sample_info;
 
-my $is_ok = analysis_delly_reformat(
+my $is_ok = analysis_frequency_filter(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,
@@ -156,26 +122,6 @@ my $is_ok = analysis_delly_reformat(
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ using trio} );
-
-## Given only a single samples
-@{ $active_parameter{sample_ids} } = ( $active_parameter{sample_ids}[0] );
-
-$is_ok = analysis_delly_reformat(
-    {
-        active_parameter_href   => \%active_parameter,
-        case_id                 => $case_id,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_info_href        => \%sample_info,
-    }
-);
-
-## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ using single sample} );
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
 done_testing();
