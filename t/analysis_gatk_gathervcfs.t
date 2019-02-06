@@ -45,18 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Gatk_baserecalibration} =>
-          [qw{ analysis_gatk_baserecalibration }],
+        q{MIP::Recipes::Analysis::Gatk_gathervcfs} => [qw{ analysis_gatk_gathervcfs }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
+use MIP::Recipes::Analysis::Gatk_gathervcfs qw{ analysis_gatk_gathervcfs };
 
-diag(   q{Test analysis_gatk_baserecalibration from Gatk_baserecalibration.pm v}
-      . $MIP::Recipes::Analysis::Gatk_baserecalibration::VERSION
+diag(   q{Test analysis_gatk_gathervcfs from Gatk_gathervcfs.pm v}
+      . $MIP::Recipes::Analysis::Gatk_gathervcfs::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -67,7 +66,7 @@ diag(   q{Test analysis_gatk_baserecalibration from Gatk_baserecalibration.pm v}
 my $log = test_log( { log_name => q{MIP}, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{gatk_baserecalibration};
+my $recipe_name    = q{gatk_gathervcfs};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -79,7 +78,8 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $sample_id = $active_parameter{sample_ids}[0];
+my $case_id = $active_parameter{case_id};
+$active_parameter{gatk_gathervcfs_bcf_file} = 1;
 
 my %file_info = test_mip_hashes(
     {
@@ -87,23 +87,11 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-
-%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
+%{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
     {
         mip_hash_name => q{io},
     }
 );
-
-CONTIG:
-foreach my $contig ( @{ $file_info{contigs} } ) {
-
-    $file_info{io}{TEST}{$sample_id}{$recipe_name}{temp}{file_path_href}{$contig} =
-      q{a_file.bam};
-}
-
-$file_info{$sample_id}{merged_infile} = q{a_prefix};
-$file_info{$sample_id}{$recipe_name}{file_tag} = q{brecal};
-
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -113,20 +101,20 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{$recipe_name}{outfile_suffix} = q{.bam};
+$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 my %sample_info;
 
-my $is_ok = analysis_gatk_baserecalibration(
+my $is_ok = analysis_gatk_gathervcfs(
     {
         active_parameter_href   => \%active_parameter,
+        case_id                 => $case_id,
         file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
         profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );

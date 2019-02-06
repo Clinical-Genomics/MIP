@@ -541,6 +541,7 @@ sub analysis_gatk_baserecalibration_rio {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_info_path        => Recipe info path
 ##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
@@ -565,6 +566,7 @@ sub analysis_gatk_baserecalibration_rio {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -609,6 +611,11 @@ sub analysis_gatk_baserecalibration_rio {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_info_path => { store => \$recipe_info_path, strict_type => 1, },
@@ -984,6 +991,7 @@ sub analysis_gatk_baserecalibration_rio {
 
         submit_recipe(
             {
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
@@ -996,7 +1004,7 @@ sub analysis_gatk_baserecalibration_rio {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

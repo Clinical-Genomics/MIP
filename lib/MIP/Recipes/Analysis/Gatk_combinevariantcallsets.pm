@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -46,6 +46,7 @@ sub analysis_gatk_combinevariantcallsets {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -63,6 +64,7 @@ sub analysis_gatk_combinevariantcallsets {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -104,6 +106,11 @@ sub analysis_gatk_combinevariantcallsets {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -328,8 +335,9 @@ sub analysis_gatk_combinevariantcallsets {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -341,7 +349,7 @@ sub analysis_gatk_combinevariantcallsets {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

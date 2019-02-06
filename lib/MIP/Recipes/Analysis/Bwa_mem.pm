@@ -619,8 +619,8 @@ sub analysis_bwa_mem {
             submit_recipe(
                 {
                     base_command            => $profile_base_command,
-                    dependency_method       => q{sample_to_sample_parallel},
                     case_id                 => $case_id,
+                    dependency_method       => q{sample_to_sample_parallel},
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_chain            => $job_id_chain,
                     job_id_href             => $job_id_href,

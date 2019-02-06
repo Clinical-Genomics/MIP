@@ -48,8 +48,8 @@ sub xargs_command {
 ##         : $java_jar             => Java jar
 ##         : $java_use_large_pages => Use java large pages {REF}
 ##         : $memory_allocation    => Memory allocation for java
-##          : $null_character     => Input items are terminated by a null character instead of by whitespace
-##         : $recipe_info_path    => Program info path
+##         : $null_character       => Input items are terminated by a null character instead of by whitespace
+##         : $recipe_info_path     => Program info path
 ##         : $XARGSFILEHANDLE      => XARGS filehandle to write to
 ##         : $temp_directory       => Redirect tmp files to java temp {Optional}
 ##         : $xargs_file_counter   => Xargs file counter
@@ -103,7 +103,7 @@ sub xargs_command {
         },
         recipe_info_path => { strict_type => 1, store => \$recipe_info_path },
         temp_directory   => { strict_type => 1, store => \$temp_directory },
-        XARGSFILEHANDLE => { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
+        XARGSFILEHANDLE    => { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,

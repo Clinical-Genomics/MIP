@@ -6,6 +6,7 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
+use File::Temp;
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -46,16 +47,17 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Gatk_baserecalibration} =>
-          [qw{ analysis_gatk_baserecalibration }],
+          [qw{ analysis_gatk_baserecalibration_rio }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
+use MIP::Recipes::Analysis::Gatk_baserecalibration
+  qw{ analysis_gatk_baserecalibration_rio };
 
-diag(   q{Test analysis_gatk_baserecalibration from Gatk_baserecalibration.pm v}
+diag(   q{Test analysis_gatk_baserecalibration_rio from Gatk_baserecalibration.pm v}
       . $MIP::Recipes::Analysis::Gatk_baserecalibration::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -64,7 +66,15 @@ diag(   q{Test analysis_gatk_baserecalibration from Gatk_baserecalibration.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, } );
+my $test_dir  = File::Temp->newdir();
+my $file_path = catfile( $test_dir, q{recipe_script.sh} );
+my $log       = test_log( { log_name => q{MIP}, } );
+
+# Create anonymous filehandle
+my $FILEHANDLE = IO::Handle->new();
+
+open $FILEHANDLE, q{>}, $file_path
+  or croak q{Cannot write to} . $SPACE . $file_path . $COLON . $SPACE . $OS_ERROR;
 
 ## Given analysis parameters
 my $recipe_name    = q{gatk_baserecalibration};
@@ -117,21 +127,24 @@ $parameter{$recipe_name}{outfile_suffix} = q{.bam};
 
 my %sample_info;
 
-my $is_ok = analysis_gatk_baserecalibration(
+my $is_ok = analysis_gatk_baserecalibration_rio(
     {
         active_parameter_href   => \%active_parameter,
+        FILEHANDLE              => $FILEHANDLE,
         file_info_href          => \%file_info,
+        file_path               => $file_path,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
         profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
+        recipe_info_path        => $file_path,
         sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ using rio } );
 
 done_testing();
