@@ -157,6 +157,7 @@ etiddit:
     gcc:
     numpy: 1.15.4=py27_blas_openblashb06ca3d_0
     pip:
+    pysam: 0.15.2=py27h1671916_1
     python: 2.7
     scipy: 1.2.0=py27_blas_openblashb06ca3d_200
     svdb: 1.3.0=py27h7eb728f_0
@@ -176,7 +177,7 @@ etiddit:
         gcc:
         numpy:
         python: 2.7
-      version: 2.3.1
+      version: 2.5.0
     vcf2cytosure:
       version: 0.4.3
 
