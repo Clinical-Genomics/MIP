@@ -86,6 +86,7 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+
 ## Special case since Bootstrap needs to collect from recipe not immediate upstream
 $file_info{io}{CHAIN_MAIN}{ADM1059A1}{gatk_variantfiltration}{out}{file_path_prefix} =
   q{file_path_prefix};

@@ -222,19 +222,19 @@ sub gatk_asereadcounter {
 
 ## Function : Perl wrapper for writing GATK ASEReadCounter recipe to $FILEHANDLE. Based on GATK 4.0.8.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $infile_path                           => Infile path
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $java_use_large_pages                  => Use java large pages
-##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $outfile_path                          => Outfile path
-##          : $read_filters_ref                      => Filters to apply on reads {REF}
-##          : $referencefile_path                    => Reference sequence file
-##          : $stderrfile_path                       => Stderrfile path
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $variant_infile_path                   => Sites for which to count allele specific expression
-##          : $verbosity                             => Set the minimum level of logging
-##          : $xargs_mode                            => Set if the program will be executed via xargs
+## Arguments: $FILEHANDLE           => Sbatch filehandle to write to
+##          : $infile_path          => Infile path
+##          : $intervals_ref        => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages => Use java large pages
+##          : $memory_allocation    => Memory allocation to run Gatk
+##          : $outfile_path         => Outfile path
+##          : $read_filters_ref     => Filters to apply on reads {REF}
+##          : $referencefile_path   => Reference sequence file
+##          : $stderrfile_path      => Stderrfile path
+##          : $temp_directory       => Redirect tmp files to java temp
+##          : $variant_infile_path  => Sites for which to count allele specific expression
+##          : $verbosity            => Set the minimum level of logging
+##          : $xargs_mode           => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 

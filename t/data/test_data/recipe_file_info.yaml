@@ -17,6 +17,32 @@ bwa_build_reference:
   - .amb
   - .pac
   - .sa
+contigs:
+ - 1
+ - 2
+ - 3
+ - 4
+ - 5
+ - 6
+ - 7
+ - 8
+ - 9
+ - 10
+ - 11
+ - 12
+ - 13
+ - 14
+ - 15
+ - 16
+ - 17
+ - 18
+ - 19
+ - 20
+ - 21
+ - 22
+ - X
+ - Y
+ - MT
 contigs_size_ordered:
  - 1
  - 2
@@ -60,3 +86,29 @@ salmon_quant_reference_genome:
   - salmon_quant_genome_dir
 star_aln_reference_genome:
   - _star_aln_genome_dir
+select_file_contigs:
+ - 1
+ - 2
+ - 3
+ - 4
+ - 5
+ - 6
+ - 7
+ - 8
+ - 9
+ - 10
+ - 11
+ - 12
+ - 13
+ - 14
+ - 15
+ - 16
+ - 17
+ - 18
+ - 19
+ - 20
+ - 21
+ - 22
+ - X
+ - Y
+ - MT

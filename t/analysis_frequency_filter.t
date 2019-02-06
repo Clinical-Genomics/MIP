@@ -45,17 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Bcftools_mpileup} => [qw{ analysis_bcftools_mpileup }],
+        q{MIP::Recipes::Analysis::Frequency_filter} => [qw{ analysis_frequency_filter }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Bcftools_mpileup qw{ analysis_bcftools_mpileup };
+use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
 
-diag(   q{Test analysis_bcftools_mpileup from Bcftools_mpileup.pm v}
-      . $MIP::Recipes::Analysis::Bcftools_mpileup::VERSION
+diag(   q{Test analysis_frequency_filter from Frequency_filter.pm v}
+      . $MIP::Recipes::Analysis::Frequency_filter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -65,8 +65,8 @@ diag(   q{Test analysis_bcftools_mpileup from Bcftools_mpileup.pm v}
 
 my $log = test_log( { log_name => q{MIP}, } );
 
-## Given build parameters
-my $recipe_name    = q{bcftools_mpileup};
+## Given analysis parameters
+my $recipe_name    = q{frequency_filter};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -78,9 +78,10 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-$active_parameter{bcftools_mpileup_filter_variant}  = 1;
-$active_parameter{replace_iupac}                    = 1;
-$active_parameter{bcftools_mpileup_constrain}       = q{trio};
+my $case_id = $active_parameter{case_id};
+$active_parameter{fqf_vcfanno_config} = catfile( $Bin,
+    qw{ data references GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml } );
+$active_parameter{fqf_bcftools_filter_threshold} = 1;
 
 my %file_info = test_mip_hashes(
     {
@@ -88,7 +89,11 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-
+%{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
+    {
+        mip_hash_name => q{io},
+    }
+);
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -98,24 +103,14 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{cache}{trio} = 1;
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    %{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-        {
-            mip_hash_name => q{io},
-        }
-    );
-}
 my %sample_info;
 
-my $is_ok = analysis_bcftools_mpileup(
+my $is_ok = analysis_frequency_filter(
     {
         active_parameter_href   => \%active_parameter,
-        case_id                 => $active_parameter{case_id},
+        case_id                 => $case_id,
         file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
