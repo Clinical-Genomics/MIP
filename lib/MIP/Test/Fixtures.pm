@@ -161,7 +161,7 @@ sub test_mip_hashes {
     my $tmpl = {
         mip_hash_name => {
             allow => [
-                qw{ active_parameter define_parameter file_info install_parameter io job_id pedigree recipe_parameter }
+                qw{ active_parameter define_parameter file_info install_parameter io job_id pedigree recipe_parameter qc_sample_info }
             ],
             defined     => 1,
             required    => 1,
@@ -195,6 +195,8 @@ sub test_mip_hashes {
         job_id           => catfile( $Bin, qw{ data test_data job_id.yaml } ),
         recipe_parameter => catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
         pedigree         => catfile( $Bin, qw{ data test_data pedigree.yaml } ),
+        qc_sample_info =>
+          catfile( $Bin, qw{ data test_data 643594-miptest_qc_sample_info.yaml } ),
     );
 
     my %hash_to_return = load_yaml(

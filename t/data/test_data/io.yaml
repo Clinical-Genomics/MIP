@@ -134,6 +134,7 @@ in:
     - /develop/643594-miptest/analysis/643594-miptest/frequency_filter/643594-miptest_gatkcomb_rhocall_vt_frqf
     - /develop/643594-miptest/analysis/643594-miptest/frequency_filter/643594-miptest_gatkcomb_rhocall_vt_frqf
     - /develop/643594-miptest/analysis/643594-miptest/frequency_filter/643594-miptest_gatkcomb_rhocall_vt_frqf
+  file_path: /develop/643594-miptest/analysis/643594-miptest/frequency_filter/643594-miptest_gatkcomb_rhocall_vt_frqf.vcf
   file_paths:
     - /develop/643594-miptest/analysis/643594-miptest/frequency_filter/643594-miptest_gatkcomb_rhocall_vt_frqf.1.vcf
     - /develop/643594-miptest/analysis/643594-miptest/frequency_filter/643594-miptest_gatkcomb_rhocall_vt_frqf.2.vcf

@@ -1,0 +1,31 @@
+sample:
+  ADM1059A1:
+    analysis_type: wgs
+    capture_kit: agilent_sureselect.v5
+    expected_coverage: 150
+    father: ADM1059A2
+    mother: ADM1059A3
+    phenotype: affected
+    sample_id: ADM1059A1
+    sample_name: ADM1059A1
+    sex: female
+  ADM1059A2:
+    analysis_type: wgs
+    capture_kit: agilent_sureselect.v5
+    expected_coverage: 150
+    father: 0
+    mother: 0
+    phenotype: unaffected
+    sample_id: ADM1059A2
+    sample_name: ADM1059A2
+    sex: male
+  ADM1059A3:
+    analysis_type: wts
+    capture_kit: agilent_sureselect.v5
+    expected_coverage: 150
+    father: 0
+    mother: 0
+    phenotype: unaffected
+    sample_id: ADM1059A3
+    sample_name: ADM1059A3
+    sex: unknown

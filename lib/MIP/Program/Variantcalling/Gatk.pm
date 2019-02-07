@@ -1726,21 +1726,21 @@ sub gatk_variantfiltration {
 
 ## Function : Perl wrapper for writing GATK VariantFiltration recipe to $FILEHANDLE. Based on GATK 4.0.8.
 ## Returns  : @commands
-##          : $cluster_size                          => Number of SNPs which make up a cluster
-##          : $cluster_window_size                   => Window size (in bases) in which to evaluate clustered SNPs
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $filter_href                           => Hash with the name of the filter as key and the filter expression as value {REF}
-##          : $infile_path                           => Infile paths
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $java_use_large_pages                  => Use java large pages
-##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $outfile_path                          => Outfile path
-##          : $read_filters_ref                      => Filters to apply on reads {REF}
-##          : $referencefile_path                    => Reference sequence file
-##          : $stderrfile_path                       => Stderrfile path
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $verbosity                             => Set the minimum level of logging
-##          : $xargs_mode                            => Set if the program will be executed via xargs
+##          : $cluster_size         => Number of SNPs which make up a cluster
+##          : $cluster_window_size  => Window size (in bases) in which to evaluate clustered SNPs
+##          : $FILEHANDLE           => Sbatch filehandle to write to
+##          : $filter_href          => Hash with the name of the filter as key and the filter expression as value {REF}
+##          : $infile_path          => Infile paths
+##          : $intervals_ref        => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages => Use java large pages
+##          : $memory_allocation    => Memory allocation to run Gatk
+##          : $outfile_path         => Outfile path
+##          : $read_filters_ref     => Filters to apply on reads {REF}
+##          : $referencefile_path   => Reference sequence file
+##          : $stderrfile_path      => Stderrfile path
+##          : $temp_directory       => Redirect tmp files to java temp
+##          : $verbosity            => Set the minimum level of logging
+##          : $xargs_mode           => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
