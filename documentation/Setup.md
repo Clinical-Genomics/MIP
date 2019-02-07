@@ -26,6 +26,9 @@ MIP requires pedigree information recorded in a pedigree.yaml file and a config 
 MIP comes with an install application, which will install all necessary programs to execute models in MIP via conda and/or $SHELL. Make sure you have installed all dependencies via the MIP install application and that you have loaded your MIP base environment.
 You only need to install the dependencies that are required for the recipes that you want to run. If you have not installed a dependency for a module, MIP will tell you what dependencies you need to install and exit.
 
+**Extra CPANM modules**
+You can speed up, for instance, the Readonly module by also installing the companion module Readonly::XS. No change to the code is required and the Readonly module will call the Readonly::XS module if available.  
+
 **CADD**
 MIP is currently unable to install the CADD binary for dynamic calculation of indels and there is also no support for downloading the CADD references file. If you want to use these features in MIP you have to install and download them manually.
 
