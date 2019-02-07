@@ -17,9 +17,6 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
-## MIPs lib/
-use MIP::Check::Cluster qw{ check_max_core_number };
-
 BEGIN {
 
     require Exporter;
@@ -144,6 +141,7 @@ sub analysis_gatk_asereadcounter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::IO::Files qw{ migrate_file };
@@ -237,6 +235,16 @@ sub analysis_gatk_asereadcounter {
     my $outfile_name = ${ $io{out}{file_names} }[0];
     my $outfile_path = ${ $io{out}{file_paths} }[0];
     my $outdir_path  = $io{out}{dir_path};
+
+    ## Check java memory allocation and availability
+    get_memory_constrained_core_number(
+        {
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+            node_ram_memory    => $active_parameter_href->{node_ram_memory},
+            recipe_core_number => $core_number,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle

@@ -140,6 +140,7 @@ sub analysis_gatk_variantrecalibration_wes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
@@ -274,6 +275,17 @@ sub analysis_gatk_variantrecalibration_wes {
     # Haplotypecaller step.
     my @modes = q{BOTH};
 
+    ## Set java memory allocation and check availability
+    Readonly my $JAVA_MEMORY_ALLOCATION => 10;
+    get_memory_constrained_core_number(
+        {
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+            node_ram_memory    => $active_parameter_href->{node_ram_memory},
+            recipe_core_number => $core_number,
+        }
+    );
+
     my $select_infile_path;
     my $norm_infile_path;
   MODE:
@@ -319,7 +331,7 @@ sub analysis_gatk_variantrecalibration_wes {
                 infile_path          => $infile_path,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 max_gaussian_level   => $max_gaussian_level,
-                memory_allocation    => q{Xmx10g},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 mode                 => $mode,
                 outfile_path         => $recal_file_path,
                 referencefile_path   => $referencefile_path,
@@ -350,7 +362,7 @@ sub analysis_gatk_variantrecalibration_wes {
                 FILEHANDLE           => $FILEHANDLE,
                 infile_path          => $infile_path,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx10g},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 mode                 => $mode,
                 outfile_path         => $apply_vqsr_outfile_path,
                 recal_file_path      => $recal_file_path,
@@ -617,6 +629,7 @@ sub analysis_gatk_variantrecalibration_wgs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
     use MIP::Get::File qw{ get_io_files };
@@ -755,6 +768,17 @@ sub analysis_gatk_variantrecalibration_wgs {
     # without modification, and vice-versa.
     my @modes = qw{ SNP INDEL };
 
+    ## Set java memory allocation and check availability
+    Readonly my $JAVA_MEMORY_ALLOCATION => 24;
+    get_memory_constrained_core_number(
+        {
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+            node_ram_memory    => $active_parameter_href->{node_ram_memory},
+            recipe_core_number => $core_number,
+        }
+    );
+
   MODE:
     foreach my $mode (@modes) {
 
@@ -829,7 +853,7 @@ sub analysis_gatk_variantrecalibration_wgs {
                 infile_path           => $varrecal_infile_path,
                 java_use_large_pages  => $active_parameter_href->{java_use_large_pages},
                 max_gaussian_level    => $max_gaussian_level,
-                memory_allocation     => q{Xmx24g},
+                memory_allocation     => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 mode                  => $mode,
                 outfile_path          => $recal_file_path,
                 referencefile_path    => $referencefile_path,

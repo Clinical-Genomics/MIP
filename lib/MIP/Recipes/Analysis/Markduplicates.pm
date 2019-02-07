@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rio };
@@ -144,6 +144,7 @@ sub analysis_markduplicates {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
@@ -294,17 +295,29 @@ sub analysis_markduplicates {
 
         $markduplicates_program = q{picardtools_markduplicates};
 
+        Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+
+        # Constrain parallelization to match available memory
+        my $program_core_number = get_memory_constrained_core_number(
+            {
+                max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+                memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+                node_ram_memory    => $active_parameter_href->{node_ram_memory},
+                recipe_core_number => $core_number,
+            }
+        );
+
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                core_number   => $core_number,
+                core_number   => $program_core_number,
                 FILEHANDLE    => $FILEHANDLE,
                 file_path     => $recipe_file_path,
                 first_command => q{java},
                 java_jar =>
                   catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx4g},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 recipe_info_path     => $recipe_info_path,
                 temp_directory       => $temp_directory,
                 XARGSFILEHANDLE      => $XARGSFILEHANDLE,
@@ -644,6 +657,7 @@ sub analysis_markduplicates_rio {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Get::File qw{ get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
@@ -756,17 +770,29 @@ sub analysis_markduplicates_rio {
 
         $markduplicates_program = q{picardtools_markduplicates};
 
+        Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+
+        # Constrain parallelization to match available memory
+        my $program_core_number = get_memory_constrained_core_number(
+            {
+                max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+                memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+                node_ram_memory    => $active_parameter_href->{node_ram_memory},
+                recipe_core_number => $core_number,
+            }
+        );
+
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                core_number   => $core_number,
+                core_number   => $program_core_number,
                 FILEHANDLE    => $FILEHANDLE,
                 file_path     => $file_path,
                 first_command => q{java},
                 java_jar =>
                   catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx4g},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 recipe_info_path     => $recipe_info_path,
                 temp_directory       => $temp_directory,
                 XARGSFILEHANDLE      => $XARGSFILEHANDLE,

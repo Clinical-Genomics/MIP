@@ -133,7 +133,7 @@ recipe_core_number:
     blobfish: 1
     bootstrapann: 1
     fastqc_ar: 0
-    gatk_asereadcounter: 3
+    gatk_asereadcounter: 4
     gatk_baserecalibration: 16
     gatk_haplotypecaller: 16
     gatk_splitncigarreads: 16

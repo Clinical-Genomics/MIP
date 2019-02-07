@@ -31,7 +31,6 @@ use Readonly;
 
 ## MIPs lib/
 # Add MIPs internal lib
-use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory
   check_cmd_config_vs_definition_file
@@ -46,6 +45,7 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
 use MIP::Check::Path qw{ check_executable_in_path check_parameter_files };
 use MIP::Check::Reference qw{ check_human_genome_file_endings };
 use MIP::Constants qw{ $MIP_VERSION };
+use MIP::Cluster qw{ check_max_core_number };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };

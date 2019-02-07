@@ -134,6 +134,7 @@ sub analysis_gatk_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
@@ -204,6 +205,17 @@ sub analysis_gatk_genotypegvcfs {
             log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Set java memory allocation and check availability
+    Readonly my $JAVA_MEMORY_ALLOCATION => 8;
+    get_memory_constrained_core_number(
+        {
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+            node_ram_memory    => $active_parameter_href->{node_ram_memory},
+            recipe_core_number => $core_number,
         }
     );
 
@@ -291,7 +303,7 @@ sub analysis_gatk_genotypegvcfs {
                 intervals_ref        => [$contig],
                 infile_paths_ref     => \@genotype_infile_paths,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx8g},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
                 sample_name_map_path => $sample_name_map_path,
                 temp_directory       => $temp_directory,
@@ -313,7 +325,7 @@ sub analysis_gatk_genotypegvcfs {
                   . $temp_outfile_path_prefix
                   . $UNDERSCORE . q{DB},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx8g},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 outfile_path         => $outfile_path{$contig},
                 pedigree             => $fam_file_path,
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
