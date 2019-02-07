@@ -1,5 +1,6 @@
 package MIP::Cli::Mip;
 
+use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
 use strict;
@@ -9,14 +10,15 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use MooseX::App qw{ BashCompletion Color MutexGroup Typo };
+use MooseX::App qw{ BashCompletion Color MutexGroup Typo Version };
 use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
 ## MIPs lib/
 use MIP::Cli::Mip;
+use MIP::Constants qw{ $MIP_VERSION };
 
-our $VERSION = 0.03;
+our $VERSION = $MIP_VERSION;
 
 ## Enable strict mode
 app_strict 1;
@@ -108,14 +110,6 @@ sub _build_usage {
         ),
     );
 
-    option(
-        q{version} => (
-            cmd_aliases   => q{v},
-            documentation => q{Show version},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
     return;
 }
 
