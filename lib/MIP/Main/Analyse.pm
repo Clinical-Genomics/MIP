@@ -45,6 +45,7 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
 };
 use MIP::Check::Path qw{ check_executable_in_path check_parameter_files };
 use MIP::Check::Reference qw{ check_human_genome_file_endings };
+use MIP::Constants qw{ $MIP_VERSION };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
@@ -53,7 +54,6 @@ use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
-use MIP::Script::Utils qw{ help write_script_version };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
   qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_cache set_human_genome_reference_features set_no_dry_run_parameters set_parameter_reference_dir_path };
@@ -73,7 +73,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -158,16 +158,6 @@ sub mip_analyse {
     chomp( $date_time_stamp, $date, $script );
 
 #### Set program parameters
-
-## Set MIP version
-    our $VERSION = q{v7.0.1};
-
-    write_script_version(
-        {
-            version       => $VERSION,
-            write_version => $active_parameter{version},
-        }
-    );
 
 ## Directories, files, job_ids and sample_info
     my ( %infile_lane_prefix, %infile_both_strands_prefix, %job_id, %sample_info );
@@ -266,7 +256,7 @@ sub mip_analyse {
     );
 
 ## Write MIP VERSION and log file path
-    $log->info( q{MIP Version: } . $VERSION );
+    $log->info( q{MIP Version: } . $MIP_VERSION );
     $log->info( q{Script parameters and info from are saved in file: }
           . $active_parameter{log_file} );
 
@@ -702,7 +692,7 @@ sub mip_analyse {
         {
             is_dry_run_all   => $active_parameter{dry_run_all},
             analysis_date    => $date_time_stamp,
-            mip_version      => $VERSION,
+            mip_version      => $MIP_VERSION,
             sample_info_href => \%sample_info,
         }
     );
