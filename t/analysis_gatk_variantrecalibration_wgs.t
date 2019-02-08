@@ -70,7 +70,7 @@ diag(   q{Test analysis_gatk_variantrecalibration_wgs from Gatk_variantrecalibra
 my $log = test_log( { log_name => q{MIP}, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{gatk_variantrecalibration_wes};
+my $recipe_name    = q{gatk_variantrecalibration_wgs};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -83,6 +83,7 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
+my $sample_id = $active_parameter{sample_ids}[0];
 @{ $active_parameter{gatk_variantrecalibration_annotations} } = (qw{ DP });
 $active_parameter{gatk_variantrecalibration_resource_snv} = { resource => q{a_resource} };
 $active_parameter{gatk_variantrecalibration_resource_indel} =
@@ -141,5 +142,29 @@ my $is_ok = analysis_gatk_variantrecalibration_wgs(
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+
+## Given a mixed consensus and single sample
+$parameter{cache}{consensus_analysis_type} = q{mixed};
+@{$active_parameter{sample_ids} } = $sample_id;
+$parameter{cache}{trio} = undef;
+$sample_info{sample}{$sample_id}{mother} = 0;
+$sample_info{sample}{$sample_id}{father} = 0;
+
+$is_ok = analysis_gatk_variantrecalibration_wgs(
+    {
+        active_parameter_href   => \%active_parameter,
+        case_id                 => $case_id,
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        parameter_href          => \%parameter,
+        profile_base_command    => $slurm_mock_cmd,
+        recipe_name             => $recipe_name,
+        sample_info_href        => \%sample_info,
+    }
+);
+
+## Then return TRUE
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ mixed and single sample});
 
 done_testing();

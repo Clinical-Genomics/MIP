@@ -45,17 +45,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Genebody_coverage} => [qw{ analysis_genebody_coverage }],
+        q{MIP::Recipes::Analysis::Gffcompare} => [qw{ analysis_gffcompare }],
         q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Genebody_coverage qw{ analysis_genebody_coverage };
+use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
 
-diag(   q{Test analysis_genebody_coverage from Genebody_coverage.pm v}
-      . $MIP::Recipes::Analysis::Genebody_coverage::VERSION
+diag(   q{Test analysis_gffcompare from Gffcompare.pm v}
+      . $MIP::Recipes::Analysis::Gffcompare::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,7 +66,7 @@ diag(   q{Test analysis_genebody_coverage from Genebody_coverage.pm v}
 my $log = test_log( { log_name => q{MIP}, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{genebody_coverage};
+my $recipe_name    = q{gffcompare};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -79,8 +79,7 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
-$active_parameter{star_aln_reference_genome} = q{genome.fasta};
-$active_parameter{rseqc_transcripts_file} = q{transcripts.bed};
+$active_parameter{transcript_annotation} = q{transcripts.gff};
 
 my %file_info = test_mip_hashes(
     {
@@ -105,7 +104,7 @@ my %parameter = test_mip_hashes(
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 my %sample_info;
 
-my $is_ok = analysis_genebody_coverage(
+my $is_ok = analysis_gffcompare(
     {
         active_parameter_href   => \%active_parameter,
         file_info_href          => \%file_info,

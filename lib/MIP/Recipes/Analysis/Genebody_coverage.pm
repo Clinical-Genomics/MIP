@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_genebody_coverage };
@@ -44,6 +44,7 @@ sub analysis_genebody_coverage {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Recipe name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -62,6 +63,7 @@ sub analysis_genebody_coverage {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
 
     my $tmpl = {
         active_parameter_href => {
@@ -102,6 +104,11 @@ sub analysis_genebody_coverage {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -226,7 +233,6 @@ sub analysis_genebody_coverage {
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
     ## Convert bam to bigwig
     say {$FILEHANDLE} q{## Convert bam to bigwig};
     my $chrom_size_file_path = catfile(
@@ -294,8 +300,9 @@ sub analysis_genebody_coverage {
 
         submit_recipe(
             {
+              base_command            => $profile_base_command,
+              case_id                 => $case_id,
                 dependency_method       => q{sample_to_island},
-                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -306,7 +313,7 @@ sub analysis_genebody_coverage {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;
