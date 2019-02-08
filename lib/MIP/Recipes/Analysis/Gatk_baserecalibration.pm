@@ -153,7 +153,7 @@ sub analysis_gatk_baserecalibration {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{ check_max_core_number };
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter
       qw{ get_gatk_intervals get_recipe_parameters get_recipe_attributes };
@@ -310,14 +310,14 @@ sub analysis_gatk_baserecalibration {
 
     ## Division by X according to the java heap
     Readonly my $JAVA_MEMORY_ALLOCATION => 6;
-    $core_number =
-      floor( $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
 
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
+    # Constrain parallelization to match available memory
+    my $program_core_number = get_memory_constrained_core_number(
         {
-            core_number_requested => $core_number,
-            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+            node_ram_memory    => $active_parameter_href->{node_ram_memory},
+            recipe_core_number => $core_number,
         }
     );
 
@@ -327,7 +327,7 @@ sub analysis_gatk_baserecalibration {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $program_core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
@@ -356,7 +356,7 @@ sub analysis_gatk_baserecalibration {
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 known_sites_ref =>
                   \@{ $active_parameter_href->{gatk_baserecalibration_known_sites} },
-                memory_allocation  => q{Xmx6g},
+                memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 outfile_path       => $base_quality_score_recalibration_file,
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
@@ -388,7 +388,7 @@ sub analysis_gatk_baserecalibration {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $program_core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
@@ -409,7 +409,7 @@ sub analysis_gatk_baserecalibration {
                 infile_path                           => $temp_infile_path{$contig},
                 intervals_ref                         => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx6g},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 verbosity            => $active_parameter_href->{gatk_logging_level},
                 read_filters_ref =>
                   \@{ $active_parameter_href->{gatk_baserecalibration_read_filters} },
@@ -653,7 +653,7 @@ sub analysis_gatk_baserecalibration_rio {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{ check_max_core_number };
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
@@ -776,16 +776,15 @@ sub analysis_gatk_baserecalibration_rio {
         }
     );
 
-    ## Division by X according to the java heap
     Readonly my $JAVA_MEMORY_ALLOCATION => 6;
-    $core_number =
-      floor( $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
 
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
+    # Constrain parallelization to match available memory
+    my $program_core_number = get_memory_constrained_core_number(
         {
-            core_number_requested => $core_number,
-            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+            node_ram_memory    => $active_parameter_href->{node_ram_memory},
+            recipe_core_number => $core_number,
         }
     );
 
@@ -795,7 +794,7 @@ sub analysis_gatk_baserecalibration_rio {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $program_core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $file_path,
             recipe_info_path   => $recipe_info_path,
@@ -821,7 +820,7 @@ sub analysis_gatk_baserecalibration_rio {
                 infile_path          => $temp_infile_path{$contig},
                 intervals_ref        => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx6g},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 known_sites_ref =>
                   \@{ $active_parameter_href->{gatk_baserecalibration_known_sites} },
                 verbosity          => $active_parameter_href->{gatk_logging_level},
@@ -855,7 +854,7 @@ sub analysis_gatk_baserecalibration_rio {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $program_core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $file_path,
             recipe_info_path   => $recipe_info_path,
@@ -876,7 +875,7 @@ sub analysis_gatk_baserecalibration_rio {
                 infile_path                           => $temp_infile_path{$contig},
                 intervals_ref                         => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx6g},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 verbosity            => $active_parameter_href->{gatk_logging_level},
                 read_filters_ref =>
                   \@{ $active_parameter_href->{gatk_baserecalibration_read_filters} },

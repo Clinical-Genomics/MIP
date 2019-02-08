@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -155,7 +155,7 @@ sub analysis_picardtools_mergesamfiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{ check_max_core_number };
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters  get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
@@ -335,22 +335,20 @@ sub analysis_picardtools_mergesamfiles {
 
         Readonly my $JAVA_MEMORY_ALLOCATION => 4;
 
-        # Division by X according to java Heap size
-        $core_number =
-          floor( $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
-
-        ## Limit number of cores requested to the maximum number of cores available per node
-        $core_number = check_max_core_number(
+        # Constrain parallelization to match available memory
+        my $program_core_number = get_memory_constrained_core_number(
             {
-                core_number_requested => $core_number,
-                max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
+                max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+                memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+                node_ram_memory    => $active_parameter_href->{node_ram_memory},
+                recipe_core_number => $core_number,
             }
         );
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                core_number   => $core_number,
+                core_number   => $program_core_number,
                 FILEHANDLE    => $FILEHANDLE,
                 file_path     => $recipe_file_path,
                 first_command => q{java},
@@ -653,7 +651,7 @@ sub analysis_picardtools_mergesamfiles_rio {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{ check_max_core_number };
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Delete::File qw{ delete_files };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters };
@@ -815,22 +813,20 @@ sub analysis_picardtools_mergesamfiles_rio {
 
         Readonly my $JAVA_MEMORY_ALLOCATION => 4;
 
-        # Division by X according to java Heap size
-        $core_number =
-          floor( $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
-
-        ## Limit number of cores requested to the maximum number of cores available per node
-        $core_number = check_max_core_number(
+        # Constrain parallelization to match available memory
+        my $program_core_number = get_memory_constrained_core_number(
             {
-                core_number_requested => $core_number,
-                max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
+                max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+                memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+                node_ram_memory    => $active_parameter_href->{node_ram_memory},
+                recipe_core_number => $core_number,
             }
         );
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                core_number          => $core_number,
+                core_number          => $program_core_number,
                 FILEHANDLE           => $FILEHANDLE,
                 file_path            => $file_path,
                 first_command        => q{java},

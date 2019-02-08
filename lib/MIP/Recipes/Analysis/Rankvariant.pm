@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -142,8 +142,7 @@ sub analysis_rankvariant {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{ check_max_core_number };
-    use MIP::Cluster qw{ get_core_number };
+    use MIP::Cluster qw{ check_max_core_number get_core_number };
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
@@ -238,6 +237,7 @@ sub analysis_rankvariant {
         {
             core_number_requested => $CORE_NUMBER_REQUESTED,
             max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
+            recipe_core_number    => $core_number,
         }
     );
 
@@ -559,8 +559,7 @@ sub analysis_rankvariant_unaffected {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Cluster qw{ check_max_core_number };
-    use MIP::Cluster qw{ get_core_number };
+    use MIP::Cluster qw{ check_max_core_number get_core_number };
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
@@ -655,6 +654,7 @@ sub analysis_rankvariant_unaffected {
         {
             core_number_requested => $CORE_NUMBER_REQUESTED,
             max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
+            recipe_core_number    => $core_number,
         }
     );
 
@@ -978,14 +978,6 @@ sub analysis_rankvariant_sv {
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
-
-    ## Limit number of cores requested to the maximum number of cores available per node
-    my $genmod_core_number = check_max_core_number(
-        {
-            core_number_requested => $core_number,
-            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
-        }
-    );
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -1372,14 +1364,6 @@ sub analysis_rankvariant_sv_unaffected {
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
-
-    ## Limit number of cores requested to the maximum number of cores available per node
-    my $genmod_core_number = check_max_core_number(
-        {
-            core_number_requested => $core_number,
-            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
-        }
-    );
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(

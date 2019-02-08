@@ -18,9 +18,6 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
-## MIPs lib/
-use MIP::Check::Cluster qw{ check_max_core_number };
-
 BEGIN {
 
     require Exporter;
@@ -156,6 +153,7 @@ sub analysis_gatk_haplotypecaller {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
@@ -217,14 +215,13 @@ sub analysis_gatk_haplotypecaller {
         }
     );
 
-    # Division by X according to the java heap
-    $core_number =
-      floor( $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
+    # Constrain parallelization to match available memory
+    my $program_core_number = get_memory_constrained_core_number(
         {
-            core_number_requested => $core_number,
-            max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+            node_ram_memory    => $active_parameter_href->{node_ram_memory},
+            recipe_core_number => $core_number,
         }
     );
 
@@ -340,7 +337,7 @@ sub analysis_gatk_haplotypecaller {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $program_core_number,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,

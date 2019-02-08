@@ -17,9 +17,6 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
-## MIPs lib/
-use MIP::Check::Cluster qw{ check_max_core_number };
-
 BEGIN {
 
     require Exporter;

@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_collectmultiplemetrics };
@@ -134,6 +134,7 @@ sub analysis_picardtools_collectmultiplemetrics {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::IO::Files qw{ migrate_file };
@@ -243,6 +244,18 @@ sub analysis_picardtools_collectmultiplemetrics {
     ## CollectMultipleMetrics
     say {$FILEHANDLE} q{## Collecting multiple metrics on alignment};
 
+    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+
+    # Check that enough memory is available
+    get_memory_constrained_core_number(
+        {
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
+            node_ram_memory    => $active_parameter_href->{node_ram_memory},
+            recipe_core_number => $core_number,
+        }
+    );
+
     picardtools_collectmultiplemetrics(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -250,7 +263,7 @@ sub analysis_picardtools_collectmultiplemetrics {
             java_jar =>
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx4g},
+            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path         => $temp_outfile_path_prefix,
             referencefile_path   => $active_parameter_href->{human_genome_reference},
             temp_directory       => $temp_directory,

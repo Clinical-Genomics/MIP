@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1410,7 +1410,7 @@ sub analysis_vep_rna {
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_recipe_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name,
                 path             => $outfile_path,
