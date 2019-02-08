@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -37,6 +37,7 @@ $VERBOSE = test_standard_cli(
 Readonly my $COLON                 => q{:};
 Readonly my $COMMA                 => q{,};
 Readonly my $INDEL_TS_FILTER_LEVEL => 99.9;
+Readonly my $RECIPE_CORE_NUMBER    => 16;
 Readonly my $SNV_TS_FILTER_LEVEL   => 99.9;
 Readonly my $SPACE                 => q{ };
 
@@ -80,7 +81,7 @@ my %active_parameter = test_mip_hashes(
     }
 );
 $active_parameter{$recipe_name}                     = 1;
-$active_parameter{recipe_core_number}{$recipe_name} = 1;
+$active_parameter{recipe_core_number}{$recipe_name} = $RECIPE_CORE_NUMBER;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
 my $sample_id = $active_parameter{sample_ids}[0];
