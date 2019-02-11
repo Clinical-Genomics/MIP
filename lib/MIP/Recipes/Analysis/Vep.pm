@@ -18,6 +18,10 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ %ANALYSIS $ASTERISK $COMMA $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
@@ -33,15 +37,8 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK               => q{*};
-Readonly my $ANNOTATION_DISTANCE    => 5000;
-Readonly my $ANNOTATION_DISTANCE_MT => 0;
-Readonly my $COMMA                  => q{,};
-Readonly my $DOT                    => q{.};
-Readonly my $EMPTY_STR              => q{};
-Readonly my $NEWLINE                => qq{\n};
-Readonly my $SPACE                  => q{ };
-Readonly my $UNDERSCORE             => q{_};
+Readonly my $ANNOTATION_DISTANCE    => $ANALYSIS{ANNOTATION_DISTANCE};
+Readonly my $ANNOTATION_DISTANCE_MT => $ANALYSIS{ANNOTATION_DISTANCE_MT};
 
 sub analysis_vep {
 

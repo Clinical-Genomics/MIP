@@ -20,6 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -32,18 +33,16 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
-			q{MIP::Test::Fixtures} => [qw{ test_standard_cli }], );
+    my %perl_module = (
+        q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
 }

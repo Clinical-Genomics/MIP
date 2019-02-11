@@ -20,6 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
@@ -32,11 +33,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -45,7 +41,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -65,7 +61,7 @@ diag(   q{Test SUB_ROUTINE from MODULE.pm v}
 my $log = test_log();
 
 ## Given build parameters
-my $recipe_name    = q{RECIPE_NAME};
+my $recipe_name = q{RECIPE_NAME};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -83,7 +79,7 @@ my %file_info = test_mip_hashes(
     }
 );
 my %infile_lane_prefix;
-my %job_id    = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
 my %parameter = test_mip_hashes(
     {
         mip_hash_name => q{recipe_parameter},

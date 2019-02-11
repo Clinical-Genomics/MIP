@@ -16,6 +16,9 @@ use warnings;
 ## CPAN
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DASH $DOT $NEWLINE $SPACE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
@@ -26,12 +29,6 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_PROGRAM };
 }
-
-## Constants
-Readonly my $DASH    => q{-};
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 #############################################################################
 ############### SHORT INSTRUCTIONS ON HOW TO USE THE TEMPLATE ###############
