@@ -50,6 +50,7 @@ sub analysis_mip_vcfparser {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -69,6 +70,7 @@ sub analysis_mip_vcfparser {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -112,6 +114,11 @@ sub analysis_mip_vcfparser {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -160,7 +167,7 @@ sub analysis_mip_vcfparser {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Unpack parameters
-## Get the io infiles per chain and id
+    ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
             id             => $case_id,
@@ -193,7 +200,7 @@ sub analysis_mip_vcfparser {
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
             vcfparser_outfile_count =>
-              $active_parameter_href->{sv_vcfparser_outfile_count},
+              $active_parameter_href->{vcfparser_outfile_count},
         }
     );
 
@@ -415,8 +422,9 @@ sub analysis_mip_vcfparser {
 
         submit_recipe(
             {
+              base_command            => $profile_base_command,
+              case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
-                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -427,7 +435,7 @@ sub analysis_mip_vcfparser {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub analysis_vcfparser_sv_wes {
@@ -435,13 +443,14 @@ sub analysis_vcfparser_sv_wes {
 ## Function : Vcfparser performs parsing of varianteffectpredictor annotated wes SV variants
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
@@ -459,6 +468,7 @@ sub analysis_vcfparser_sv_wes {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -501,6 +511,11 @@ sub analysis_vcfparser_sv_wes {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -734,8 +749,9 @@ sub analysis_vcfparser_sv_wes {
 
         submit_recipe(
             {
+              base_command            => $profile_base_command,
+              case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
-                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -746,7 +762,7 @@ sub analysis_vcfparser_sv_wes {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub analysis_vcfparser_sv_wgs {
@@ -760,17 +776,13 @@ sub analysis_vcfparser_sv_wgs {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $case_id;
-    my $temp_directory;
-    my $xargs_file_counter;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -780,6 +792,12 @@ sub analysis_vcfparser_sv_wgs {
     my $parameter_href;
     my $recipe_name;
     my $sample_info_href;
+
+    ## Default(s)
+    my $case_id;
+    my $profile_base_command;
+    my $temp_directory;
+    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
@@ -820,6 +838,11 @@ sub analysis_vcfparser_sv_wgs {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -1134,8 +1157,9 @@ sub analysis_vcfparser_sv_wgs {
 
         submit_recipe(
             {
+              base_command            => $profile_base_command,
+              case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
-                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -1146,7 +1170,7 @@ sub analysis_vcfparser_sv_wgs {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub _add_all_mt_var_from_research_to_clinical {
