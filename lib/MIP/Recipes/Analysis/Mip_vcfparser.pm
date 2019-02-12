@@ -18,6 +18,10 @@ use autodie qw{ :all };
 use List::MoreUtils qw{ any };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ %ANALYSIS $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
@@ -33,14 +37,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $AMPERSAND    => q{&};
-Readonly my $ASTERISK     => q{*};
-Readonly my $DOT          => q{.};
-Readonly my $EMPTY_STR    => q{};
-Readonly my $MITO_PADDING => 0;
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $SPACE        => q{ };
-Readonly my $UNDERSCORE   => q{_};
+Readonly my $ANNOTATION_DISTANCE_MT => $ANALYSIS{ANNOTATION_DISTANCE_MT};
 
 sub analysis_mip_vcfparser {
 
@@ -302,7 +299,7 @@ sub analysis_mip_vcfparser {
         if ( $contig =~ / MT | M /xms ) {
 
             # Special case for mitochondrial contig annotation
-            $padding = $MITO_PADDING;
+            $padding = $ANNOTATION_DISTANCE_MT;
         }
 
         my $vcfparser_xargs_file_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
@@ -563,9 +560,6 @@ sub analysis_vcfparser_sv_wes {
     use MIP::Script::Setup_script qw{ setup_script};
 
     ### PREPROCESSING:
-
-    ## Constants
-    Readonly my $MT_PADDING => 10;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -895,9 +889,6 @@ sub analysis_vcfparser_sv_wgs {
 
     ### PREPROCESSING:
 
-    ## Constants
-    Readonly my $MT_PADDING => 10;
-
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
@@ -1013,7 +1004,7 @@ sub analysis_vcfparser_sv_wgs {
         if ( $contig =~ / MT | M /sxm ) {
 
             ## Special case for mitochondrial contig annotation
-            $padding = $MT_PADDING;
+            $padding = $ANNOTATION_DISTANCE_MT;
         }
 
         my $vcfparser_outfile_path =
