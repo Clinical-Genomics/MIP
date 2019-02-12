@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $ASTERISK $AMPERSAND $DOT $DOUBLE_QUOTE $EMPTY_STR $NEWLINE $SPACE $UNDERSCORE };
+  qw{ $ASTERISK $AMPERSAND $COLON $DOT $DOUBLE_QUOTE $EMPTY_STR $NEWLINE $SPACE $UNDERSCORE };
 use MIP::Language::Java qw{ java_core };
 use MIP::Program::Base::Gatk qw{ gatk_base gatk_common_options gatk_java_options };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
@@ -438,28 +438,28 @@ sub gatk_selectvariants {
 
 sub gatk_variantrecalibrator {
 
-## Function : Perl wrapper for writing GATK variantrecalibrator recipe to $FILEHANDLE. Based on GATK 3.7.0.
+## Function : Perl wrapper for writing GATK variantrecalibrator recipe to $FILEHANDLE. Based on GATK 4.1.0.
 ## Returns  : @commands
-##          : $annotations_ref                       => One or more specific annotations to apply to variant calls
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $infile_path                           => Infile path
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $java_use_large_pages                  => Use java large pages
-##          : $max_attempts                          => Number of attempts to build the model
-##          : $max_gaussian_level                    => Max number of Gaussians for the positive model
-##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $mode                                  => Mode for emitting reference confidence scores
-##          : $outfile_path                          => The output recal file used by ApplyRecalibration
-##          : $read_filters_ref                      => Filters to apply to reads before analysis {REF}
-##          : $referencefile_path                    => Reference sequence file
-##          : $resources_ref                         => A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm (training and truth setsare required to run)
-##          : $rscript_file_path                     => Rscript file path
-##          : $stderrfile_path                       => Stderrfile path
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $tranches_file_path                    => The output tranches file used by ApplyRecalibration
-##          : $trust_all_polymorphic                 => Trust that all the input training sets' unfiltered records contain only polymorphic sites to speed up computation
-##          : $verbosity	                         => Set the minimum level of logging
-##          : $xargs_mode                            => Set if the program will be executed via xargs
+##          : $annotations_ref       => One or more specific annotations to apply to variant calls
+##          : $FILEHANDLE            => Sbatch filehandle to write to
+##          : $infile_path           => Infile path
+##          : $intervals_ref         => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages  => Use java large pages
+##          : $max_attempts          => Number of attempts to build the model
+##          : $max_gaussian_level    => Max number of Gaussians for the positive model
+##          : $memory_allocation     => Memory allocation to run Gatk
+##          : $mode                  => Mode for emitting reference confidence scores
+##          : $outfile_path          => The output recal file used by ApplyRecalibration
+##          : $read_filters_ref      => Filters to apply to reads before analysis {REF}
+##          : $referencefile_path    => Reference sequence file
+##          : $resources_ref         => A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm (training and truth setsare required to run)
+##          : $rscript_file_path     => Rscript file path
+##          : $stderrfile_path       => Stderrfile path
+##          : $temp_directory        => Redirect tmp files to java temp
+##          : $tranches_file_path    => The output tranches file used by ApplyRecalibration
+##          : $trust_all_polymorphic => Trust that all the input training sets' unfiltered records contain only polymorphic sites to speed up computation
+##          : $verbosity	     => Set the minimum level of logging
+##          : $xargs_mode            => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
@@ -656,7 +656,7 @@ sub gatk_variantrecalibrator {
 
     ## Add list of resources
     push @commands,
-      q{--resource} . $SPACE . join $SPACE . q{--resource} . $SPACE,
+      q{--resource} . $COLON . join $SPACE . q{--resource} . $COLON,
       @{$resources_ref};
 
     ## Add path to tranches file
@@ -1699,7 +1699,7 @@ sub gatk_concatenate_variants {
 
 sub gatk_variantfiltration {
 
-## Function : Perl wrapper for writing GATK VariantFiltration recipe to $FILEHANDLE. Based on GATK 4.0.8.
+## Function : Perl wrapper for writing GATK VariantFiltration recipe to $FILEHANDLE. Based on GATK 4.1.0.
 ## Returns  : @commands
 ##          : $cluster_size         => Number of SNPs which make up a cluster
 ##          : $cluster_window_size  => Window size (in bases) in which to evaluate clustered SNPs
@@ -1891,8 +1891,8 @@ sub gatk_variantfiltration {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 

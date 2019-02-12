@@ -20,6 +20,8 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+## MIPs lib/
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -33,10 +35,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA        => q{,};
 Readonly my $GAUSSIANS    => 8;
 Readonly my $MAX_ATTEMPTS => 2;
-Readonly my $SPACE        => q{ };
 
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
@@ -90,7 +90,7 @@ my %required_argument = (
     },
     resources_ref => {
         inputs_ref      => [qw{ resource_1 resource_2 }],
-        expected_output => q{--resource resource_1 --resource resource_2},
+        expected_output => q{--resource:resource_1 --resource:resource_2},
     },
     tranches_file_path => {
         input           => catfile(qw{ my output.tranches }),
@@ -125,7 +125,7 @@ my %specific_argument = (
     },
     resources_ref => {
         inputs_ref      => [qw{ resource_1 resource_2 }],
-        expected_output => q{--resource resource_1 --resource resource_2},
+        expected_output => q{--resource:resource_1 --resource:resource_2},
     },
     tranches_file_path => {
         input           => catfile(qw{ my output.tranches }),
