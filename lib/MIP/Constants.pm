@@ -24,7 +24,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ $AMPERSAND %ANALYSIS $ASTERISK $COLON $COMMA $DASH $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SPACE $UNDERSCORE };
+      qw{ $AMPERSAND %ANALYSIS $ASTERISK $COLON $COMMA $DASH $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SPACE $SEMICOLON $UNDERSCORE };
 }
 
 ## Constants
@@ -32,7 +32,7 @@ BEGIN {
 ## Constants
 Readonly our $MIP_VERSION => q{v7.0.1};
 
-## Syntax
+## Symbols
 Readonly our $AMPERSAND  => q{&};
 Readonly our $ASTERISK   => q{*};
 Readonly our $COMMA      => q{,};
@@ -42,6 +42,7 @@ Readonly our $DOT        => q{.};
 Readonly our $EMPTY_STR  => q{};
 Readonly our $NEWLINE    => qq{\n};
 Readonly our $SPACE      => q{ };
+Readonly our $SEMICOLON  => q{;};
 Readonly our $UNDERSCORE => q{_};
 
 ## Analysis

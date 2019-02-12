@@ -16,6 +16,9 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $NEWLINE };
+
 BEGIN {
 
     require Exporter;
@@ -28,9 +31,6 @@ BEGIN {
     our @EXPORT_OK = qw{ analysis_multiqc };
 
 }
-
-## Constants
-Readonly my $NEWLINE => qq{\n};
 
 sub analysis_multiqc {
 

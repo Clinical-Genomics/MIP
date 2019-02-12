@@ -16,6 +16,9 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
@@ -28,12 +31,6 @@ BEGIN {
     our @EXPORT_OK = qw{ analysis_peddy };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_peddy {
 

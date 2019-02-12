@@ -15,6 +15,9 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SPACE $SEMICOLON $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
@@ -29,12 +32,12 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $SEMICOLON  => q{;};
-Readonly my $UNDERSCORE => q{_};
+#Readonly my $ASTERISK   => q{*};
+#Readonly my $DOT        => q{.};
+#Readonly my $NEWLINE    => qq{\n};
+#Readonly my $SPACE      => q{ };
+#Readonly my $SEMICOLON  => q{;};
+#Readonly my $UNDERSCORE => q{_};
 
 sub analysis_markduplicates {
 

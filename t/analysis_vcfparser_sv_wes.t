@@ -21,6 +21,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
@@ -33,11 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -46,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Mip_vcfparser} => [qw{ analysis_vcfparser_sv_wes }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -79,9 +75,12 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
+
 #$active_parameter{vcfparser_add_all_mt_var} = 1;
 $active_parameter{sv_vcfparser_outfile_count} = 2;
-$active_parameter{sv_vcfparser_select_file} = catfile($Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt });
+@{ $active_parameter{sv_vcfparser_select_feature_annotation_columns} } = ( 1, 2 );
+$active_parameter{sv_vcfparser_select_file} =
+  catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
 
 my %file_info = test_mip_hashes(
     {

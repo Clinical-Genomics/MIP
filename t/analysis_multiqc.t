@@ -21,6 +21,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
@@ -32,11 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -66,7 +62,7 @@ diag(   q{Test analysis_multiqc from Multiqc.pm v}
 my $log = test_log( { log_name => q{MIP}, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{multiqc};
+my $recipe_name    = q{multiqc_ar};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -79,6 +75,7 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
+$active_parameter{multiqc_per_sample} = 1;
 
 my %file_info = test_mip_hashes(
     {
