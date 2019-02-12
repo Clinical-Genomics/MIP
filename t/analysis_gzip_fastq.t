@@ -89,13 +89,8 @@ my %file_info = test_mip_hashes(
 );
 $file_info{is_file_uncompressed}{$sample_id} = 1;
 
-#%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-#    {
-#        mip_hash_name => q{io},
-#    }
-#);
-
-my %infile_lane_prefix;
+my $infile_prefix      = q{an_infile_prefix};
+my %infile_lane_prefix = ( $sample_id => [q{an_infile_prefix}] );
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -104,7 +99,12 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-my %sample_info;
+my %sample_info = (
+    sample => {
+        $sample_id =>
+          { file => { $infile_prefix => { sequence_run_type => q{paired-end} }, }, },
+    }
+);
 
 my $is_ok = analysis_gzip_fastq(
     {

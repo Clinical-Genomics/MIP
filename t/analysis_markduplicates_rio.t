@@ -45,16 +45,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Markduplicates} => [qw{ analysis_markduplicates }],
+        q{MIP::Recipes::Analysis::Markduplicates} => [qw{ analysis_markduplicates_rio }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_rio };
 
-diag(   q{Test analysis_markduplicates from Markduplicates.pm v}
+diag(   q{Test analysis_markduplicates_rio from Markduplicates.pm v}
       . $MIP::Recipes::Analysis::Markduplicates::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -63,7 +63,15 @@ diag(   q{Test analysis_markduplicates from Markduplicates.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, } );
+my $test_dir  = File::Temp->newdir();
+my $file_path = catfile( $test_dir, q{recipe_script.sh} );
+my $log       = test_log( { log_name => q{MIP}, } );
+
+# Create anonymous filehandle
+my $FILEHANDLE = IO::Handle->new();
+
+open $FILEHANDLE, q{>}, $file_path
+  or croak q{Cannot write to} . $SPACE . $file_path . $COLON . $SPACE . $OS_ERROR;
 
 ## Given analysis parameters
 my $recipe_name    = q{markduplicates};
@@ -115,22 +123,24 @@ $parameter{$recipe_name}{outfile_suffix} = q{.bam};
 
 my %sample_info;
 
-my $is_ok = analysis_markduplicates(
+my $is_ok = analysis_markduplicates_rio(
     {
         active_parameter_href   => \%active_parameter,
+        FILEHANDLE              => $FILEHANDLE,
         file_info_href          => \%file_info,
+        file_path               => $file_path,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
+        recipe_info_path        => $file_path,
         sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ using picardtools} );
+ok( $is_ok, q{ Executed analysis recipe rio } . $recipe_name . q{ using picardtools} );
 
 ## Given sambamba_markdup
 $active_parameter{markduplicates_sambamba_markdup}                    = 1;
@@ -138,21 +148,23 @@ $active_parameter{markduplicates_sambamba_markdup_hash_table_size}    = 1;
 $active_parameter{markduplicates_sambamba_markdup_io_buffer_size}     = 1;
 $active_parameter{markduplicates_sambamba_markdup_overflow_list_size} = 1;
 
-$is_ok = analysis_markduplicates(
+$is_ok = analysis_markduplicates_rio(
     {
         active_parameter_href   => \%active_parameter,
+        FILEHANDLE              => $FILEHANDLE,
         file_info_href          => \%file_info,
+        file_path               => $file_path,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
+        recipe_info_path        => $file_path,
         sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ using sambamba} );
+ok( $is_ok, q{ Executed analysis recipe rio } . $recipe_name . q{ using sambamba} );
 
 done_testing();
