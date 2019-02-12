@@ -18,6 +18,9 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
@@ -30,13 +33,6 @@ BEGIN {
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_gatk_haplotypecaller {
 
