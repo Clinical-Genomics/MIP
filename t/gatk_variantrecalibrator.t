@@ -20,7 +20,6 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-## MIPs lib/
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
