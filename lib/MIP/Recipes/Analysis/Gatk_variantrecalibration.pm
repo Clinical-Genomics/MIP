@@ -17,29 +17,23 @@ use autodie qw{ :all };
 use List::MoreUtils qw { uniq };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $ASTERISK $AMPERSAND $COLON $DASH $DOT $NEWLINE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ analysis_gatk_variantrecalibration_wes analysis_gatk_variantrecalibration_wgs };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $AMPERSAND  => q{&};
-Readonly my $COLON      => q{:};
-Readonly my $DASH       => q{-};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_gatk_variantrecalibration_wes {
 
@@ -1047,7 +1041,7 @@ sub _build_gatk_resource_command {
     while ( my ( $file, $string ) = each %{$resources_href} ) {
 
         ## Build resource string
-        push @built_resources, $string . $COLON . $file;
+        push @built_resources, $string . $SPACE . $file;
     }
     return @built_resources;
 }
