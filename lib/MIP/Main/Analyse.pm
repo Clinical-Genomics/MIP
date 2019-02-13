@@ -44,7 +44,7 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
 };
 use MIP::Check::Path qw{ check_executable_in_path check_parameter_files };
 use MIP::Check::Reference qw{ check_human_genome_file_endings };
-use MIP::Constants qw{ $MIP_VERSION };
+use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
 use MIP::Cluster qw{ check_max_core_number };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Pedigree
@@ -73,19 +73,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
 }
-
-## Constants
-Readonly my $DOT          => q{.};
-Readonly my $EMPTY_STR    => q{};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $SPACE        => q{ };
-Readonly my $TAB          => qq{\t};
 
 sub mip_analyse {
 
@@ -239,11 +231,11 @@ sub mip_analyse {
 ## Set the default Log4perl file using supplied dynamic parameters.
     $active_parameter{log_file} = set_default_log4perl_file(
         {
-            active_parameter_href => \%active_parameter,
-            cmd_input             => $active_parameter{log_file},
-            date                  => $date,
-            date_time_stamp       => $date_time_stamp,
-            script                => $script,
+            cmd_input       => $active_parameter{log_file},
+            date            => $date,
+            date_time_stamp => $date_time_stamp,
+            outdata_dir     => $active_parameter{outdata_dir},
+            script          => $script,
         }
     );
 
@@ -251,7 +243,7 @@ sub mip_analyse {
     my $log = initiate_logger(
         {
             file_path => $active_parameter{log_file},
-            log_name  => q{MIP},
+            log_name  => uc q{mip},
         }
     );
 

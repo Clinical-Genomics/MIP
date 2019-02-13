@@ -6,7 +6,7 @@ use charnames qw( :full :short );
 use Cwd;
 use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ dirname basename fileparse };
 use File::Spec::Functions qw{ catfile catdir devnull };
 use FindBin qw{ $Bin };
 use Getopt::Long;
@@ -14,6 +14,7 @@ use IO::Handle;
 use warnings qw{ FATAL utf8 };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
+use Time::Piece;
 use utf8;
 
 ## CPANM
@@ -23,25 +24,19 @@ use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants
+  qw{ $COLON $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Language::Shell qw{ create_bash_file };
-use MIP::Log::MIP_log4perl qw{ initiate_logger };
+use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Script::Utils qw{ create_temp_dir };
-
-## Constants
-Readonly my $COLON        => q{:};
-Readonly my $DOT          => q{.};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $SPACE        => q{ };
-Readonly my $UNDERSCORE   => q{_};
 
 BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{0.0.5};
+    our $VERSION = 1.00;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -74,24 +69,35 @@ sub mip_download {
     ## Transfer to lexical variables
     my %parameter = %{$parameter_href};
 
-    ## Create default log name
-    if ( not $parameter{log_file} ) {
+    ## Get local time
+    my $date_time       = localtime;
+    my $date_time_stamp = $date_time->datetime;
+    my $date            = $date_time->ymd;
 
-        ## Get local time
-        my $date_time       = localtime;
-        my $date_time_stamp = $date_time->datetime;
+    # Catches script name and removes ending
+    my $script = fileparse( basename( $PROGRAM_NAME, $DOT . q{pl} ) );
 
-        $parameter{log_file} =
-          catfile( q{mip_donwload} . $UNDERSCORE . $date_time_stamp . $DOT . q{log} );
-    }
+    # Add specific MIP process
+    $script .= $UNDERSCORE . q{download};
+
+    ## Set the default Log4perl file using supplied dynamic parameters.
+    $parameter{log_file} = set_default_log4perl_file(
+        {
+            cmd_input       => $parameter{log_file},
+            date            => $date,
+            date_time_stamp => $date_time_stamp,
+            script          => $script,
+        }
+    );
 
     ## Initiate logger
     my $log = initiate_logger(
         {
             file_path => $parameter{log_file},
-            log_name  => q{mip_download},
+            log_name  => uc q{mip_download},
         }
     );
+    $log->info( q{MIP Version: } . $MIP_VERSION );
     $log->info( q{Writing log messages to} . $COLON . $SPACE . $parameter{log_file} );
 
 ## Set parameter default
