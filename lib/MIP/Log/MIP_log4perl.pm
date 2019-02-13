@@ -3,6 +3,7 @@ package MIP::Log::MIP_log4perl;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
+use Cwd;
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use File::Path qw{ make_path };
@@ -17,28 +18,21 @@ use warnings qw{ FATAL utf8 };
 use Log::Log4perl qw{ get_logger :levels };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $CLOSE_BRACKET $COMMA $DOT $EMPTY_STR $NEWLINE $OPEN_BRACKET $SPACE $TAB $UNDERSCORE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ create_log4perl_config log_display_recipe_for_user initiate_logger retrieve_log set_default_log4perl_file };
 }
-
-## Constants
-Readonly my $CLOSE_BRACKET => q{]};
-Readonly my $COMMA         => q{,};
-Readonly my $DOT           => q{.};
-Readonly my $EMPTY_STR     => q{};
-Readonly my $NEWLINE       => qq{\n};
-Readonly my $OPEN_BRACKET  => q{[};
-Readonly my $SPACE         => q{ };
-Readonly my $TAB           => qq{\t};
-Readonly my $UNDERSCORE    => q{_};
 
 sub create_log4perl_config {
 
@@ -264,17 +258,15 @@ sub set_default_log4perl_file {
 
 ## Function : Set the default Log4perl file using supplied dynamic parameters.
 ## Returns  : $log_file
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $cmd_input             => User supplied info on cmd for log_file option {REF}
-##          : $date                  => The date
-##          : $date_time_stamp       => The date and time
-##          : $script                => The script that is executed
-##          : $outdata_dir           => Outdata directory
+## Arguments: $cmd_input       => User supplied info on cmd for log_file option {REF}
+##          : $date            => The date
+##          : $date_time_stamp => The date and time
+##          : $outdata_dir     => Outdata directory
+##          : $script          => The script that is executed
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
     my $cmd_input;
     my $date;
     my $date_time_stamp;
@@ -284,13 +276,6 @@ sub set_default_log4perl_file {
     my $outdata_dir;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
         cmd_input => { store => \$cmd_input, strict_type => 1, },
         date      => {
             defined     => 1,
@@ -311,7 +296,7 @@ sub set_default_log4perl_file {
             strict_type => 1,
         },
         outdata_dir => {
-            default     => $arg_href->{active_parameter_href}{outdata_dir},
+            default     => getcwd(),
             store       => \$outdata_dir,
             strict_type => 1,
         },
