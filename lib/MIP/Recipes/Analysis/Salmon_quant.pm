@@ -17,21 +17,21 @@ use autodie qw{ :all };
 use List::MoreUtils qw{ uniq };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $NEWLINE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_salmon_quant };
 
 }
-
-## Constants
-Readonly my $NEWLINE => qq{\n};
 
 sub analysis_salmon_quant {
 
@@ -219,18 +219,6 @@ sub analysis_salmon_quant {
     );
 
     my @sequence_run_types = uniq( values %sequence_run_type );
-
-    # Fail on mixed sequencing modes - THIS CHECK WILL BE MOVED IN A LATER PR
-    if ( scalar @sequence_run_types > 1 ) {
-        $log->fatal(
-            q{Salmon quant cannot operate on mixed single-end and paired-end fastq files}
-        );
-        $log->warn(
-q{The differential expression analysis chain of the pipeline will not be executed}
-        );
-        $active_parameter_href->{blobfish_ar} = 2;
-        return;
-    }
 
     my $sequence_run_mode = $sequence_run_types[0];
 

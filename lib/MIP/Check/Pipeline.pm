@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_rd_dna check_rd_rna check_rd_dna_vcf_rerun };
@@ -478,10 +478,10 @@ sub check_rd_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter
-      qw{ check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_sample_id_in_parameter_value };
+      qw{ check_salmon_compatibility check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_sample_id_in_parameter_value };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
-    use MIP::Parse::Parameter qw{ parse_infiles parse_prioritize_variant_callers };
+    use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
@@ -546,15 +546,6 @@ sub check_rd_rna {
         $log->info($parameter_info);
     }
 
-    ## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller
-    parse_prioritize_variant_callers(
-        {
-            active_parameter_href => $active_parameter_href,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-        }
-    );
-
     ## Write config file for case
     write_mip_config(
         {
@@ -603,6 +594,17 @@ sub check_rd_rna {
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
             sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Check salmon compability
+    check_salmon_compatibility(
+        {
+            active_parameter_href   => $active_parameter_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            log                     => $log,
+            parameter_href          => $parameter_href,
+            sample_info_href        => $sample_info_href,
         }
     );
 
