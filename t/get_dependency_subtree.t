@@ -61,10 +61,10 @@ diag(   q{Test get_dependency_subtree from Analysis.pm v}
 
 my %dependency_tree = test_mip_hashes(
     {
-        mip_hash_name => q{dependency_tree_dna},
+        mip_hash_name => q{dependency_tree_rna},
     }
 );
-my $chain_initiation_point  = q{DELLY_CALL};
+my $chain_initiation_point  = q{CHAIN_QC};
 my $dependency_subtree_href = {};
 
 ## Given request to get DELLY_CALL subtree
@@ -77,7 +77,8 @@ get_dependency_subtree(
 );
 
 ## Then get it
-my %expected_tree = ( DELLY_CALL => [qw{ delly_call delly_reformat }], );
+my %expected_tree =
+  ( CHAIN_QC => [ { PARALLEL => [qw{ preseq_ar rseqc genebody_coverage }] }, ] );
 is_deeply( $dependency_subtree_href, \%expected_tree, q{Get subtree} );
 
 done_testing();

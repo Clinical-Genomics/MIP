@@ -1218,8 +1218,9 @@ sub set_recipe_mode {
             strict_type => 1,
         },
         log => {
-            defined => 1,
-            store   => \$log,
+            defined  => 1,
+            required => 1,
+            store    => \$log,
         },
         mode => {
             allow       => [ 0, 1, $TWO ],
@@ -1246,10 +1247,8 @@ sub set_recipe_mode {
         $active_parameter_href->{$recipe} = $mode;
 
         ## Broadcast
-        if ($log) {
-            $log->info(
-                q{Set} . $SPACE . $recipe . $SPACE . q{to} . $COLON . $SPACE . $mode );
-        }
+        $log->info(
+            q{Set} . $SPACE . $recipe . $SPACE . q{to} . $COLON . $SPACE . $mode );
     }
 
     return;

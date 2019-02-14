@@ -481,7 +481,7 @@ sub check_rd_rna {
       qw{ check_salmon_compatibility check_sample_id_in_hash_parameter check_sample_id_in_hash_parameter_path check_sample_id_in_parameter_value };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
-    use MIP::Parse::Parameter qw{ parse_infiles parse_prioritize_variant_callers };
+    use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ update_contigs_for_run };

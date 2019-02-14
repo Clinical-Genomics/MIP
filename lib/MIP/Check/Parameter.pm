@@ -1968,7 +1968,7 @@ sub check_salmon_compatibility {
     ## Check if program is gong to run
     return if ( $active_parameter_href->{salmon_quant} != 1 );
 
-    my $salmon_compatibility = 1;
+    my $is_salmon_compatible = 1;
 
     ## Get sequence run modes
   SAMPLE_ID:
@@ -1984,11 +1984,11 @@ sub check_salmon_compatibility {
 
         ## Turn of Salmon if multiple sequence types are present
         if ( uniq( values %sequence_run_type ) > 1 ) {
-            $salmon_compatibility = 0;
+            $is_salmon_compatible = 0;
         }
     }
 
-    if ( $salmon_compatibility == 0 ) {
+    if ( not $is_salmon_compatible ) {
 
         ## Turn of salmon and downstream recipes
         $log->warn(q{Multiple sequence run types detected});
@@ -2002,8 +2002,6 @@ sub check_salmon_compatibility {
                 chain_id_ref         => \$salmon_chain,
             }
         );
-
-        say STDERR $salmon_chain;
 
         my @chain_recipes = get_chain_recipes(
             {
@@ -2024,7 +2022,7 @@ sub check_salmon_compatibility {
         );
     }
 
-    return $salmon_compatibility;
+    return $is_salmon_compatible;
 }
 
 sub _check_parameter_mandatory_keys_exits {

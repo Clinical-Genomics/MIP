@@ -580,10 +580,10 @@ sub get_recipe_chain {
 
 ## Function  : Get the chain to which a recipe belongs
 ## Returns   :
-## Arguments : $chain_id_ref           => Chain found {REF}
-##           : $current_chain          => Current chain
-##           : $dependency_tree_href   => Dependency hash {REF}
-##           : $recipe                 => Initiation point
+## Arguments : $chain_id_ref         => Chain found {REF}
+##           : $current_chain        => Current chain
+##           : $dependency_tree_href => Dependency hash {REF}
+##           : $recipe               => Initiation point
 
     my ($arg_href) = @_;
 
@@ -619,7 +619,7 @@ sub get_recipe_chain {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Return if Chain has been fund
+    ## Return if chain has been found
     return if ( ${$chain_id_ref} );
 
     ## Copy hash to enable recursive removal of keys
@@ -634,20 +634,8 @@ sub get_recipe_chain {
             $current_chain = $key;
         }
 
-        ## Go deeper
-        if ( ref $value eq q{HASH} ) {
-
-            get_recipe_chain(
-                {
-                    dependency_tree_href => $value,
-                    recipe               => $recipe,
-                    current_chain        => $current_chain,
-                    chain_id_ref         => $chain_id_ref,
-                }
-            );
-        }
         ## Inspect element
-        elsif ( ref $value eq q{ARRAY} ) {
+        if ( ref $value eq q{ARRAY} ) {
 
           ELEMENT:
             foreach my $element ( @{$value} ) {
@@ -657,10 +645,10 @@ sub get_recipe_chain {
 
                     get_recipe_chain(
                         {
+                            chain_id_ref         => $chain_id_ref,
+                            current_chain        => $current_chain,
                             dependency_tree_href => $element,
                             recipe               => $recipe,
-                            current_chain        => $current_chain,
-                            chain_id_ref         => $chain_id_ref,
                         }
                     );
                 }
@@ -681,7 +669,7 @@ sub get_recipe_chain {
 
 sub get_chain_recipes {
 
-## Function  : Collects all recipes downstream of initation point.
+## Function  : Collects all recipes downstream of initation point
 ## Returns   : @chain_recipes
 ## Arguments : $chain_initiation_point  => Chain to operate on
 ##           : $dependency_tree_href    => Dependency hash {REF}
@@ -748,11 +736,11 @@ sub get_chain_recipes {
 
 sub get_dependency_subtree {
 
-## Function  : Get part of dependency tree.
-## Returns   : %dependency_tree
-## Arguments : $chain_initiation_point    => Chain to operate on
-##           : $dependency_tree_href      => Dependency hash {REF}
-##           : $dependency_subtree_href   => Dependency sub hash {REF}
+## Function : Get part of dependency tree.
+## Returns  : %dependency_tree
+## Arguments: $chain_initiation_point  => Chain to operate on
+##          : $dependency_tree_href    => Dependency hash {REF}
+##          : $dependency_subtree_href => Dependency sub hash {REF}
 
     my ($arg_href) = @_;
 
@@ -797,19 +785,8 @@ sub get_dependency_subtree {
             $dependency_subtree_href->{$chain_initiation_point} = $value;
         }
 
-        ## Go deeper
-        if ( ref $value eq q{HASH} ) {
-
-            get_dependency_subtree(
-                {
-                    dependency_tree_href    => $value,
-                    dependency_subtree_href => $dependency_subtree_href,
-                    chain_initiation_point  => $chain_initiation_point,
-                }
-            );
-        }
         ## Inspect element
-        elsif ( ref $value eq q{ARRAY} ) {
+        if ( ref $value eq q{ARRAY} ) {
 
           ELEMENT:
             foreach my $element ( @{$value} ) {
