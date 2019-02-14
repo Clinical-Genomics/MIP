@@ -145,7 +145,7 @@ sub analysis_gatk_variantevalexome {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_varianteval };
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_indexfeaturefile gatk_varianteval };
     use MIP::QC::Sample_info qw(set_recipe_outfile_in_sample_info);
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -242,6 +242,16 @@ sub analysis_gatk_variantevalexome {
             infile_path     => $infile_path,
             samples_ref     => [$sample_id],
             stdoutfile_path => $view_outfile_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Index VCF
+    say {$FILEHANDLE} q{## GATK IndexFeatureFile};
+    gatk_indexfeaturefile(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $view_outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
