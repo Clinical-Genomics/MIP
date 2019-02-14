@@ -17,28 +17,22 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $ASTERISK $DOT $DOUBLE_QUOTE $EMPTY_STR $NEWLINE $PIPE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem };
 
 }
-
-## Constants
-Readonly my $ASTERISK     => q{*};
-Readonly my $DOT          => q{.};
-Readonly my $DOUBLE_QUOTE => q{"};
-Readonly my $EMPTY_STR    => q{};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $PIPE         => q{|};
-Readonly my $SPACE        => q{ };
-Readonly my $UNDERSCORE   => q{_};
 
 sub analysis_bwa_mem {
 
