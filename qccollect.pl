@@ -30,6 +30,7 @@ use Readonly;
 ##MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
+use MIP::Constants qw{ $NEWLINE $SPACE };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
@@ -54,10 +55,6 @@ BEGIN {
     );
 }
 
-## Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
 my ( $sample_info_file, $regexp_file, $print_regexp, $skip_evaluation,
     $evaluate_plink_gender );
 
@@ -73,7 +70,7 @@ my %qc_header;
 ## Save data in each outfile
 my %qc_recipe_data;
 
-my $qccollect_version = q{2.1.0};
+my $qccollect_version = q{2.1.1};
 
 ###User Options
 GetOptions(
@@ -1709,7 +1706,7 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
       ;    #Note return whole line and only look at line 8, where the data action is
 
     $regexp{variantevalall}{comp_overlap_header}{comp_overlap_header} =
-      q?perl -nae' if ($_ =~/^CompOverlap\s+CompRod/ ) {print $_;last;}' ?
+      q?perl -nae' if ($_ =~/^CompOverlap\s+CompFeatureInput/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
 
     $regexp{variantevalall}{comp_overlap_header}{comp_overlap_data_all} =
@@ -1725,7 +1722,7 @@ q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print
       ;    #Note return whole line
 
     $regexp{variantevalall}{count_variants_header}{count_variants_header} =
-      q?perl -nae' if ($_ =~/^CountVariants\s+CompRod/ ) {print $_;last;}' ?
+      q?perl -nae' if ($_ =~/^CountVariants\s+CompFeatureInput/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{count_variants_header}{count_variants_data_all} =
       q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/all\s/) ) {print $_;last;}' ?
@@ -1738,7 +1735,7 @@ q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print
       ;    #Note return whole line
 
     $regexp{variantevalall}{indel_summary_header}{indel_summary_header} =
-      q?perl -nae' if ($_ =~/^IndelSummary\s+CompRod/ ) {print $_;last;}' ?
+      q?perl -nae' if ($_ =~/^IndelSummary\s+CompFeatureInput/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{indel_summary_header}{indel_summary_data_all} =
       q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
@@ -1751,7 +1748,7 @@ q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print
       ;    #Note return whole line
 
     $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_header} =
-      q?perl -nae' if ($_ =~/^MultiallelicSummary\s+CompRod/ ) {print $_;last;}' ?
+q?perl -nae' if ($_ =~/^MultiallelicSummary\s+CompFeatureInput/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_all} =
 q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
@@ -1764,7 +1761,7 @@ q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\s/) ) {print $_;la
       ;    #Note return whole line
 
     $regexp{variantevalall}{titv_variant_evaluator_header}{titv_variant_evaluator_header}
-      = q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+CompRod/ ) {print $_;last;}' ?
+      = q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+CompFeatureInput/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{titv_variant_evaluator_header}
       {titv_variant_evaluator_data_all} =
@@ -1780,7 +1777,7 @@ q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\s/) ) {print $_
       ;    #Note return whole line
 
     $regexp{variantevalall}{validation_report_header}{validation_report_header} =
-      q?perl -nae' if ($_ =~/^ValidationReport\s+CompRod/ ) {print $_;last;}' ?
+      q?perl -nae' if ($_ =~/^ValidationReport\s+CompFeatureInput/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{validation_report_header}{validation_report_data_all} =
 q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/all\s/) && ($_ =~/none\s/)) {print $_;last;}' ?
@@ -1793,7 +1790,7 @@ q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\s/) ) {print $_;las
       ;    #Note return whole line
 
     $regexp{variantevalall}{variant_summary_header}{variant_summary_header} =
-      q?perl -nae' if ($_ =~/^VariantSummary\s+CompRod/ ) {print $_;last;}' ?
+      q?perl -nae' if ($_ =~/^VariantSummary\s+CompFeatureInput/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{variant_summary_header}{variant_summary_data_all} =
       q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
