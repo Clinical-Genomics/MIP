@@ -16,26 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_genotypeconcordance };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $SEMICOLON  => q{;};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_picardtools_genotypeconcordance {
 
@@ -47,6 +42,7 @@ sub analysis_picardtools_genotypeconcordance {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_id               => Sample id
@@ -67,6 +63,7 @@ sub analysis_picardtools_genotypeconcordance {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $reference_dir;
     my $temp_directory;
 
@@ -110,6 +107,11 @@ sub analysis_picardtools_genotypeconcordance {
             default     => {},
             strict_type => 1,
             store       => \$parameter_href,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
         },
         recipe_name => {
             required    => 1,
@@ -499,8 +501,9 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605/ || $_=~/##contig=<ID=hs37d5/ ||
 
         submit_recipe(
             {
-                dependency_method       => q{case_to_island},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{case_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -511,7 +514,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605/ || $_=~/##contig=<ID=hs37d5/ ||
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;
