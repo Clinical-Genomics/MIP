@@ -76,7 +76,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - fastqc: 0.11.4 -> 0.11.8-0
 - freebayes: 1.1.0 -> 1.2.0-py27h82df9c4_3
 - genmod: 3.7.2 -> 3.7.3
-- GATK: 3.8 -> 4.0.11.0-0 (and some modules still use 3.8)
+- GATK: 3.8 -> 4.1.0.0-0 (and some modules still use 3.8)
 - htslib: 1.6 -> 1.9-hc238db4_4
 - manta: 1.1.0 -> 1.4.0-py27_1
 - multiqc: 1.4 -> 1.6
