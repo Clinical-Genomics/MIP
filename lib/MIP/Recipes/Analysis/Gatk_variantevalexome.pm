@@ -16,26 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantevalexome };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $PIPE       => q{|};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_gatk_variantevalexome {
 
@@ -146,10 +141,11 @@ sub analysis_gatk_variantevalexome {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Gnu::Coreutils qw{ gnu_touch };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_varianteval };
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_indexfeaturefile gatk_varianteval };
     use MIP::QC::Sample_info qw(set_recipe_outfile_in_sample_info);
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -250,6 +246,25 @@ sub analysis_gatk_variantevalexome {
     );
     say {$FILEHANDLE} $NEWLINE;
 
+    ## Index VCF
+    say {$FILEHANDLE} q{## GATK IndexFeatureFile};
+    gatk_indexfeaturefile(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $view_outfile_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Special case: GATK 4.1.0 requires that the --output file for GATK VariantEval already exists. Clearly, a bug. To get around it we touch the output file before launching. Can be removed once the bug ins fixed.
+    gnu_touch(
+        {
+            file       => $outfile_path,
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
     ## VariantEval
     say {$FILEHANDLE} q{## GATK varianteval};
     gatk_varianteval(
@@ -259,9 +274,8 @@ sub analysis_gatk_variantevalexome {
             indel_gold_standard_file_path =>
               $active_parameter_href->{gatk_varianteval_gold},
             infile_paths_ref     => [$view_outfile_path],
-            java_jar             => $gatk_jar,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            logging_level        => $active_parameter_href->{gatk_logging_level},
+            verbosity            => $active_parameter_href->{gatk_logging_level},
             memory_allocation    => q{Xmx2g},
             outfile_path         => $outfile_path,
             referencefile_path   => $referencefile_path,

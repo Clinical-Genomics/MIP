@@ -16,7 +16,7 @@ use File::Spec::Functions qw{ catdir };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $DOUBLE_QUOTE $ESCAPE $SPACE };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
@@ -24,16 +24,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gatk_base gatk_common_options gatk_java_options };
 }
-
-## Constants
-Readonly my $DOUBLE_QUOTE => q{"};
-Readonly my $ESCAPE       => q{\\};
-Readonly my $SPACE        => q{ };
 
 sub gatk_base {
 
@@ -316,7 +311,6 @@ sub gatk_java_options {
 sub gatk_common_options {
 
 ## Function : Perl wrapper for adding common GATK options to commands_ref. Based on GATK 4.0.
-
 ## Returns  : $commands_ref
 ## Arguments: $commands_ref       => List of commands added earlier {REF}
 ##          : $intervals_ref      => One or more genomic intervals over which to operate {REF}
