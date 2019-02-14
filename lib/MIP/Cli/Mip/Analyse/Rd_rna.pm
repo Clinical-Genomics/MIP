@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.11;
+our $VERSION = 1.12;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -90,16 +90,18 @@ sub run {
         }
     );
 
+    ## Get dependency tree and store in parameter hash
     my %dependency_tree = load_yaml(
         {
             yaml_file => catfile( $Bin, qw{ definitions rd_rna_initiation_map.yaml } ),
         }
     );
+    $parameter{dependency_tree} = \%dependency_tree;
 
 ## Sets chain id to parameters hash from the dependency tree
     get_dependency_tree_chain(
         {
-            dependency_tree_href => \%dependency_tree,
+            dependency_tree_href => $parameter{dependency_tree},
             parameter_href       => \%parameter,
         }
     );
@@ -107,7 +109,7 @@ sub run {
 ## Order recipes - Parsed from initiation file
     get_dependency_tree_order(
         {
-            dependency_tree_href => \%dependency_tree,
+            dependency_tree_href => $parameter{dependency_tree},
             recipes_ref          => \@{ $parameter{cache}{order_recipes_ref} },
         }
     );

@@ -20,7 +20,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+#use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
 
 BEGIN {
@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
@@ -129,7 +129,7 @@ sub test_log {
     use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
     ## Create temp logger
-    my $test_dir      = File::Temp->newdir();
+    my $test_dir = File::Temp->newdir();
     my $test_log_path = catfile( $test_dir, q{test.log} );
 
     ## Creates log object
@@ -161,7 +161,7 @@ sub test_mip_hashes {
     my $tmpl = {
         mip_hash_name => {
             allow => [
-                qw{ active_parameter define_parameter file_info install_parameter io job_id pedigree recipe_parameter qc_sample_info }
+                qw{ active_parameter define_parameter dependency_tree_dna dependency_tree_rna file_info install_parameter io job_id pedigree recipe_parameter qc_sample_info }
             ],
             defined     => 1,
             required    => 1,
@@ -188,7 +188,11 @@ sub test_mip_hashes {
         active_parameter =>
           catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
         define_parameter => catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
-        file_info        => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
+        dependency_tree_dna =>
+          catfile( $Bin, qw{ data test_data rd_dna_initiation_map.yaml } ),
+        dependency_tree_rna =>
+          catfile( $Bin, qw{ data test_data rd_rna_initiation_map.yaml } ),
+        file_info => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
         install_parameter =>
           catfile( $Bin, qw{ data test_data install_rd_dna_parameters.yaml } ),
         io               => catfile( $Bin, qw{ data test_data io.yaml } ),
@@ -197,6 +201,7 @@ sub test_mip_hashes {
         pedigree         => catfile( $Bin, qw{ data test_data pedigree.yaml } ),
         qc_sample_info =>
           catfile( $Bin, qw{ data test_data 643594-miptest_qc_sample_info.yaml } ),
+
     );
 
     my %hash_to_return = load_yaml(
