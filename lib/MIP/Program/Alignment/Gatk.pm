@@ -15,6 +15,7 @@ use Params::Check qw{ check allow last_error };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE $DOUBLE_QUOTE };
 use MIP::Program::Base::Gatk qw{ gatk_java_options gatk_common_options };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -24,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -37,10 +38,6 @@ BEGIN {
       gatk_splitncigarreads
     };
 }
-
-## Constants
-Readonly my $SPACE        => q{ };
-Readonly my $DOUBLE_QUOTE => q{"};
 
 sub gatk_applybqsr {
 
@@ -704,7 +701,7 @@ sub gatk_gatherbqsrreports {
 
 sub gatk_haplotypecaller {
 
-## Function : Perl wrapper for writing GATK haplotypecaller recipe to $FILEHANDLE. Based on GATK 4.0.8.
+## Function : Perl wrapper for writing GATK haplotypecaller recipe to $FILEHANDLE. Based on GATK 4.1.0.
 ## Returns  : @commands
 ## Arguments: $annotations_ref                               => One or more specific annotations to apply to variant calls
 ##          : $dbsnp_path                                    => Path to DbSNP file
@@ -715,9 +712,11 @@ sub gatk_haplotypecaller {
 ##          : $intervals_ref                                 => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                          => Use java large pages
 ##          : $memory_allocation                             => Memory allocation to run Gatk
+##          : $num_ref_samples_if_no_call                    => Number of hom-ref genotypes to infer at sites not present in a panel
 ##          : $outfile_path                                  => Outfile path
 ##          : $pcr_indel_model                               => The PCR indel model to use
 ##          : $pedigree                                      => Pedigree files for samples
+##          : $population_callset                            => Callset to use in calculating genotype priors
 ##          : $read_filters_ref                              => Filters to apply to reads before analysis {REF}
 ##          : $referencefile_path                            => Reference sequence file
 ##          : $sample_ploidy                                 => Ploidy per sample
@@ -738,9 +737,11 @@ sub gatk_haplotypecaller {
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
+    my $num_ref_samples_if_no_call;
     my $outfile_path;
     my $pcr_indel_model;
     my $pedigree;
+    my $population_callset;
     my $read_filters_ref;
     my $referencefile_path;
     my $sample_ploidy;
@@ -748,7 +749,7 @@ sub gatk_haplotypecaller {
     my $stderrfile_path;
     my $temp_directory;
 
-    ## default(s)
+    ## Default(s)
     my $emit_ref_confidence;
     my $java_use_large_pages;
     my $use_new_qual_calculator;
@@ -803,6 +804,11 @@ sub gatk_haplotypecaller {
             store       => \$memory_allocation,
             strict_type => 1,
         },
+        num_ref_samples_if_no_call => {
+            allow       => [ undef, qr/ ^\d+$ /sxm ],
+            store       => \$num_ref_samples_if_no_call,
+            strict_type => 1,
+        },
         outfile_path => {
             defined     => 1,
             required    => 1,
@@ -816,6 +822,10 @@ sub gatk_haplotypecaller {
         pcr_indel_model => {
             allow       => [ undef, qw{ NONE HOSTILE AGGRESSIVE CONSERVATIVE } ],
             store       => \$pcr_indel_model,
+            strict_type => 1,
+        },
+        population_callset => {
+            store       => \$population_callset,
             strict_type => 1,
         },
         read_filters_ref => {
@@ -912,6 +922,16 @@ sub gatk_haplotypecaller {
     ## Add dbsnp
     if ($dbsnp_path) {
         push @commands, q{--dbsnp} . $SPACE . $dbsnp_path;
+    }
+
+    if ($population_callset) {
+
+        push @commands, q{--population-callset} . $SPACE . $population_callset;
+    }
+
+    if ($num_ref_samples_if_no_call) {
+        push @commands,
+          q{--num-reference-samples-if-no-call} . $SPACE . $num_ref_samples_if_no_call;
     }
 
     if ($use_new_qual_calculator) {

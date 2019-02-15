@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.16;
+our $VERSION = 1.17;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1515,11 +1515,23 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
     );
 
     option(
-        q{gatk_calculategenotypeposteriors_support_set} => (
-            cmd_aliases   => [qw{ gcgpss }],
-            cmd_flag      => q{gatk_calcgenotypepost_ss},
-            cmd_tags      => [q{Defaults: 1000g_sites_GRCh37_phase3_v4_20130502.vcf}],
-            documentation => q{GATK CalculateGenotypePosteriors support set},
+        q{gatk_num_reference_samples_if_no_call} => (
+            cmd_aliases => [qw{ gnrsc }],
+            cmd_flag    => q{gatk_num_ref_sam_if_ncall},
+            cmd_tags    => [q{Defaults: 7854}],
+            documentation =>
+q{Number of hom-ref genotypes to infer at sites not present in a panel. Connected to option 'gatk_calculate_genotype_call_set'},
+            is  => q{rw},
+            isa => Int,
+        )
+    );
+
+    option(
+        q{gatk_calculate_genotype_call_set} => (
+            cmd_aliases   => [qw{ gcgcs }],
+            cmd_flag      => q{gatk_calc_gtype_cs},
+            cmd_tags      => [q{Defaults: GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz}],
+            documentation => q{Callset to use in calculating genotype priors},
             is            => q{rw},
             isa           => Str,
         )

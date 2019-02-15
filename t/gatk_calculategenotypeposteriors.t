@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,8 +34,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+Readonly my $HOM_REF_GENOTYPES_IN_CALL_SET => 7854;
 
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
@@ -88,6 +88,11 @@ my %specific_argument = (
     infile_path => {
         input           => catfile(qw{ my case.vcf  }),
         expected_output => q{--variant } . catfile(qw{ my case.vcf }),
+    },
+    num_ref_samples_if_no_call => {
+        input           => $HOM_REF_GENOTYPES_IN_CALL_SET,
+        expected_output => q{--num-reference-samples-if-no-call }
+          . $HOM_REF_GENOTYPES_IN_CALL_SET,
     },
     outfile_path => {
         input           => catfile(qw{ my case_refined.vcf }),
