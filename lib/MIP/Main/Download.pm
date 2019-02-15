@@ -106,8 +106,6 @@ sub mip_download {
         $parameter{reference_dir} = cwd();
     }
 
-    our $VERSION = q{0.0.4};
-
     check_user_reference(
         {
             cmd_reference_ref => \%{ $parameter{cmd_reference} },
@@ -134,10 +132,10 @@ sub mip_download {
 ## Create bash file for writing install instructions
     create_bash_file(
         {
-            file_name   => $bash_file_path,
             FILEHANDLE  => $FILEHANDLE,
-            remove_dir  => $temp_dir,
+            file_name   => $bash_file_path,
             log         => $log,
+            remove_dir  => $temp_dir,
             set_errexit => 1,
             set_nounset => 1,
         }
