@@ -126,6 +126,10 @@ my %specific_argument = (
         inputs_ref      => [qw{ test_package_1 test_package_2 }],
         expected_output => q{test_package_1 test_package_2},
     },
+    no_cache_dir => {
+        input           => 1,
+        expected_output => q{--no-cache-dir},
+    },
     quiet => {
         input           => 1,
         expected_output => q{--quiet},

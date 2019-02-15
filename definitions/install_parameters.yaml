@@ -9,6 +9,7 @@ bioconda:
   bedtools: 2.26.0
   bwa: 0.7.15
   bwakit: 0.7.12
+  click: 6.7
   cmake: 3.3.1
   cramtools: 3.0.b47
   cutadapt: 1.14
@@ -22,6 +23,7 @@ bioconda:
   libxslt: 1.1.29
   manta: 1.1.0
   numpy: 1.9.3
+  openssl: 1.0.2p
   peddy: 0.3.1
   picard: 2.14.1
   plink2: 1.90b3.35
@@ -59,6 +61,7 @@ noupdate: ~
 
 # Python packages to be installed via pip
 pip:
+  cyvcf2: 0.9.0
   chanjo: 4.2.0
   multiqc: 1.4
   genmod: 3.7.2
