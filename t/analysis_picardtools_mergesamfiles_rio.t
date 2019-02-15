@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -63,7 +63,7 @@ diag(   q{Test analysis_picardtools_mergesamfiles_rio from Picardtools_mergesamf
 
 my $test_dir  = File::Temp->newdir();
 my $file_path = catfile( $test_dir, q{recipe_script.sh} );
-my $log       = test_log( { log_name => q{MIP}, } );
+my $log       = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
@@ -72,7 +72,7 @@ open $FILEHANDLE, q{>}, $file_path
   or croak q{Cannot write to} . $SPACE . $file_path . $COLON . $SPACE . $OS_ERROR;
 
 ## Given analysis parameters
-my $recipe_name    = q{picardtools_mergesamfiles};
+my $recipe_name = q{picardtools_mergesamfiles};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(

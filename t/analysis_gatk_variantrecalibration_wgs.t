@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,12 +35,9 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COLON                 => q{:};
-Readonly my $COMMA                 => q{,};
 Readonly my $INDEL_TS_FILTER_LEVEL => 99.9;
 Readonly my $RECIPE_CORE_NUMBER    => 16;
 Readonly my $SNV_TS_FILTER_LEVEL   => 99.9;
-Readonly my $SPACE                 => q{ };
 
 BEGIN {
 
@@ -68,10 +66,10 @@ diag(   q{Test analysis_gatk_variantrecalibration_wgs from Gatk_variantrecalibra
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, } );
+my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{gatk_variantrecalibration_wgs};
+my $recipe_name = q{gatk_variantrecalibration_wgs};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -83,7 +81,7 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = $RECIPE_CORE_NUMBER;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $case_id = $active_parameter{case_id};
+my $case_id   = $active_parameter{case_id};
 my $sample_id = $active_parameter{sample_ids}[0];
 @{ $active_parameter{gatk_variantrecalibration_annotations} } = (qw{ DP });
 $active_parameter{gatk_variantrecalibration_resource_snv} = { resource => q{a_resource} };
@@ -146,8 +144,8 @@ ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
 ## Given a mixed consensus and single sample
 $parameter{cache}{consensus_analysis_type} = q{mixed};
-@{$active_parameter{sample_ids} } = $sample_id;
-$parameter{cache}{trio} = undef;
+@{ $active_parameter{sample_ids} } = $sample_id;
+$parameter{cache}{trio}                  = undef;
 $sample_info{sample}{$sample_id}{mother} = 0;
 $sample_info{sample}{$sample_id}{father} = 0;
 
@@ -166,6 +164,6 @@ $is_ok = analysis_gatk_variantrecalibration_wgs(
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ mixed and single sample});
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ mixed and single sample} );
 
 done_testing();

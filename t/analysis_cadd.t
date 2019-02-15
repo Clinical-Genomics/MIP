@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,10 +35,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COLON                => q{:};
-Readonly my $COMMA                => q{,};
 Readonly my $GENOME_BUILD_VERSION => 37;
-Readonly my $SPACE                => q{ };
 
 BEGIN {
 
@@ -64,10 +62,10 @@ diag(   q{Test analysis_cadd from Cadd.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, } );
+my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given build parameters
-my $recipe_name    = q{cadd};
+my $recipe_name = q{cadd};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
