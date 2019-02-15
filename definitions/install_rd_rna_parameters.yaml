@@ -69,7 +69,7 @@ epy3:
   shell:
 
 ## STAR environment spec
-estar:
+eperl5.26:
   conda:
     blast: 2.7.1=h4422958_6
     fastqc: 0.11.8=1
@@ -112,14 +112,14 @@ evep:
 environment_name:
   emip: MIP_rd_rna
   epy3: MIP_rd_rna_py3
-  estar: MIP_rd_rna_star
+  eperl5.26: MIP_rd_rna_perl5.26
   evep: MIP_rd_rna_vep
 
 # Environments and their recipes
 installations:
   - emip
   - epy3
-  - estar
+  - eperl5.26
   - evep
 
 # Optional name of log file

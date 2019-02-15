@@ -17,22 +17,22 @@ use autodie qw{ :all };
 use List::Util qw{ any };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $SPACE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_start_with_recipe parse_toml_config_parameters };
 
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub parse_infiles {
 
@@ -334,7 +334,6 @@ sub parse_start_with_recipe {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $initiation_file;
     my $log;
     my $parameter_href;
 
@@ -344,12 +343,6 @@ sub parse_start_with_recipe {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        initiation_file => {
-            defined     => 1,
-            required    => 1,
-            store       => \$initiation_file,
             strict_type => 1,
         },
         log => {
@@ -369,17 +362,10 @@ sub parse_start_with_recipe {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter qw{ check_recipe_exists_in_hash };
-    use MIP::File::Format::Yaml qw{ load_yaml };
     use MIP::Get::Analysis qw{ get_dependency_tree };
     use MIP::Update::Recipes qw{  update_recipe_mode_with_start_with };
 
     return if ( not defined $active_parameter_href->{start_with_recipe} );
-
-    my %dependency_tree = load_yaml(
-        {
-            yaml_file => $initiation_file,
-        }
-    );
 
     check_recipe_exists_in_hash(
         {
@@ -397,7 +383,7 @@ sub parse_start_with_recipe {
     ## Collects all downstream recipes from initation point
     get_dependency_tree(
         {
-            dependency_tree_href   => \%dependency_tree,
+            dependency_tree_href   => $parameter_href->{dependency_tree},
             is_recipe_found_ref    => \$is_recipe_found,
             is_chain_found_ref     => \$is_chain_found,
             recipe                 => $active_parameter_href->{start_with_recipe},

@@ -20,13 +20,35 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-
-      qw{ $AMPERSAND %ANALYSIS $ASTERISK $CLOSE_BRACKET $COLON $COMMA $DASH $DOT $DOUBLE_QUOTE $EMPTY_STR $ESCAPE $MIP_VERSION $NEWLINE $OPEN_BRACKET $PIPE $SEMICOLON $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
-
+    our @EXPORT_OK = qw{
+      $AMPERSAND
+      %ANALYSIS
+      $ASTERISK
+      $CLOSE_BRACE
+      $CLOSE_BRACKET
+      $COLON
+      $COMMA
+      $DASH
+      $DOLLAR_SIGN
+      $DOT
+      $DOUBLE_QUOTE
+      $EMPTY_STR
+      $ESCAPE
+      $FORWARD_SLASH
+      $MIP_VERSION
+      $NEWLINE
+      $OPEN_BRACE
+      $OPEN_BRACKET
+      $PIPE
+      $SEMICOLON
+      $SINGLE_QUOTE
+      $SPACE
+      $TAB
+      $UNDERSCORE
+    };
 }
 
 ## Constants
@@ -37,20 +59,24 @@ Readonly our $MIP_VERSION => q{v7.0.1};
 ## Symbols
 Readonly our $AMPERSAND     => q{&};
 Readonly our $ASTERISK      => q{*};
+Readonly our $CLOSE_BRACE   => q{\}};
 Readonly our $CLOSE_BRACKET => q{]};
-Readonly our $COMMA         => q{,};
 Readonly our $COLON         => q{:};
+Readonly our $COMMA         => q{,};
 Readonly our $DASH          => q{-};
+Readonly our $DOLLAR_SIGN   => q{$};
 Readonly our $DOT           => q{.};
 Readonly our $DOUBLE_QUOTE  => q{"};
 Readonly our $EMPTY_STR     => q{};
 Readonly our $ESCAPE        => q{\\};
+Readonly our $FORWARD_SLASH => q{/};
 Readonly our $NEWLINE       => qq{\n};
+Readonly our $OPEN_BRACE    => q{\{};
 Readonly our $OPEN_BRACKET  => q{[};
 Readonly our $PIPE          => q{|};
 Readonly our $SEMICOLON     => q{;};
-Readonly our $SPACE         => q{ };
 Readonly our $SINGLE_QUOTE  => q{'};
+Readonly our $SPACE         => q{ };
 Readonly our $TAB           => qq{\t};
 Readonly our $UNDERSCORE    => q{_};
 

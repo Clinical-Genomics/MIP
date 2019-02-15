@@ -16,7 +16,11 @@ use warnings qw{ FATAL utf8 };
 use autodie;
 use Email::Valid;
 use Readonly;
-use List::MoreUtils qw { all any };
+use List::MoreUtils qw { all any uniq };
+
+## MIPs lib/
+use MIP::Constants
+  qw{ $COMMA $DOLLAR_SIGN $DOT $FORWARD_SLASH $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -24,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -47,6 +51,7 @@ BEGIN {
       check_recipe_exists_in_hash
       check_recipe_mode
       check_recipe_name
+      check_salmon_compatibility
       check_sample_ids
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
@@ -56,17 +61,6 @@ BEGIN {
       check_vep_directories
     };
 }
-
-## Constants
-Readonly my $COMMA         => q{,};
-Readonly my $DOLLAR_SIGN   => q{$};
-Readonly my $DOT           => q{.};
-Readonly my $FORWARD_SLASH => q{/};
-Readonly my $NEWLINE       => qq{\n};
-Readonly my $PIPE          => q{|};
-Readonly my $SINGLE_QUOTE  => q{'};
-Readonly my $SPACE         => q{ };
-Readonly my $UNDERSCORE    => q{_};
 
 sub check_allowed_array_values {
 
@@ -1908,6 +1902,127 @@ q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache
         exit 1;
     }
     return 1;
+}
+
+sub check_salmon_compatibility {
+
+## Function : Check that Salmon is compatible with the fastq sequence modes. Turn of downstream applications otherwise
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameter hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $log                     => Log
+##          : $parameter_href          => Parameter hash {REF}
+##          : $sample_info_href        => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten arguments
+    my $active_parameter_href;
+    my $infile_lane_prefix_href;
+    my $log;
+    my $parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Analysis qw{ get_recipe_chain get_chain_recipes };
+    use MIP::QC::Sample_info qw{ get_sequence_run_type };
+    use MIP::Set::Parameter qw{ set_recipe_mode };
+
+    ## Check if program is gong to run
+    return if ( $active_parameter_href->{salmon_quant} != 1 );
+
+    my $is_salmon_compatible = 1;
+
+    ## Get sequence run modes
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+
+        my %sequence_run_type = get_sequence_run_type(
+            {
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                sample_id               => $sample_id,
+                sample_info_href        => $sample_info_href,
+            }
+        );
+
+        ## Turn of Salmon if multiple sequence types are present
+        if ( uniq( values %sequence_run_type ) > 1 ) {
+            $is_salmon_compatible = 0;
+        }
+    }
+
+    if ( not $is_salmon_compatible ) {
+
+        ## Turn of salmon and downstream recipes
+        $log->warn(q{Multiple sequence run types detected});
+        $log->warn(q{Turning off salmon_quant and downstream recipes});
+
+        my $salmon_chain;
+        get_recipe_chain(
+            {
+                recipe               => q{salmon_quant},
+                dependency_tree_href => $parameter_href->{dependency_tree},
+                chain_id_ref         => \$salmon_chain,
+            }
+        );
+
+        my @chain_recipes = get_chain_recipes(
+            {
+                dependency_tree_href    => $parameter_href->{dependency_tree},
+                chain_initiation_point  => $salmon_chain,
+                recipe_initiation_point => q{salmon_quant},
+            }
+        );
+
+        ## Turn of recipes
+        set_recipe_mode(
+            {
+                active_parameter_href => $active_parameter_href,
+                recipes_ref           => \@chain_recipes,
+                mode                  => 0,
+                log                   => $log,
+            }
+        );
+    }
+
+    return $is_salmon_compatible;
 }
 
 sub _check_parameter_mandatory_keys_exits {
