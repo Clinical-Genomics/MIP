@@ -27,7 +27,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -99,10 +99,10 @@ sub _build_usage {
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip  => Optional [Str],
-                epy3  => Optional [Str],
-                estar => Optional [Str],
-                evep  => Optional [Str],
+                emip         => Optional [Str],
+                epy3         => Optional [Str],
+                q{eperl5.26} => Optional [Str],
+                evep         => Optional [Str],
             ],
             required => 0,
         ),
@@ -124,10 +124,10 @@ sub _build_usage {
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip epy3 estar evep}],
+            cmd_tags      => [q{Default: emip epy3 eperl5.26 evep}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip epy3 estar evep }] ), ],
+            isa           => ArrayRef [ enum( [qw{ emip epy3 eperl5.26 evep }] ), ],
             required      => 0,
         ),
     );
@@ -263,9 +263,8 @@ sub _build_usage {
         q{shell:vep:vep_cache_dir} => (
             cmd_aliases => [qw{ vepc }],
             cmd_flag    => q{vep_cache_dir},
-            cmd_tags    => [
-                q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}
-            ],
+            cmd_tags =>
+              [q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}],
             documentation => q{Specify the cache directory to use},
             is            => q{rw},
             isa           => Str,
