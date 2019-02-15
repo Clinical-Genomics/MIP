@@ -1,12 +1,4 @@
----
-language: perl
-perl:
-  - "5.26.0"
-sudo: required
 
-before_install:
-## Install SSL
-  - sudo apt-get update
   - sudo apt-get install libssl1.0.0 libssl-dev libcrypto++9 libcrypto++-dev
   - cd /lib/x86_64-linux-gnu
   - sudo ln -s libssl.so.1.0.0 libssl.so.10
@@ -38,7 +30,7 @@ install:
 ## Install MIP rare disease
   - bash mip.sh
 ## Generate rna installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip epy3 estar 
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip epy3 eperl5.26
 ## Install MIP rna
   - bash mip.sh
 
