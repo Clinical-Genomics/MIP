@@ -388,6 +388,10 @@ sub reference_install_recipe {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::File qw{ check_file_md5sum };
+    use MIP::File::Decompression qw{ decompress_file };
+    use MIP::Program::Download::Wget qw{ wget };
+
     ## Potential download files
     my @file_keys = qw{ file file_check
       file_index file_index_check };
@@ -402,336 +406,42 @@ sub reference_install_recipe {
         my $file         = $reference_href->{$key};
         my $outfile      = $reference_href->{ q{out} . $key };
         my $outfile_path = catfile( $parameter_href->{reference_dir}, $outfile );
+        my $url          = $reference_href->{url_prefix} . $file;
 
-        download(
+        ## Download
+        say {$FILEHANDLE} q{## Download } . $reference_id . $NEWLINE;
+
+        wget(
             {
-                parameter_href => $parameter_href,
-                FILEHANDLE     => $FILEHANDLE,
-                url            => $reference_href->{url_prefix} . $file,
-                outfile_path   => $outfile_path,
-                file_id        => $reference_id,
+                FILEHANDLE   => $FILEHANDLE,
+                outfile_path => $outfile_path,
+                quiet        => $quiet,
+                url          => $url,
+                verbose      => $verbose,
             }
         );
+        say {$FILEHANDLE} $NEWLINE;
 
         ## Check if file needs to be decompress and write decompression if so
         decompress_file(
             {
-                parameter_href => $parameter_href,
-                FILEHANDLE     => $FILEHANDLE,
-                outfile_path   => $outfile_path,
-                file_decompress =>
+                FILEHANDLE   => $FILEHANDLE,
+                outdir_path  => $parameter_href->{reference_dir},
+                outfile_path => $outfile_path,
+                decompress_program =>
                   $reference_href->{ q{out} . $key . $UNDERSCORE . q{decompress} },
             }
         );
 
         ## Check file integrity of file
-        check_file(
+        check_file_md5sum(
             {
-                FILEHANDLE         => $FILEHANDLE,
-                outfile_path       => $outfile_path,
-                outfile_path_check => $outfile_path,
+                FILEHANDLE    => $FILEHANDLE,
+                md5_file_path => $outfile_path,
                 check_method =>
                   $reference_href->{ q{out} . $key . $UNDERSCORE . q{method} },
             }
         );
-    }
-    return;
-}
-
-sub download {
-
-## Function : Downloads files
-## Returns  :
-## Arguments: $parameter_href => Holds all parameters
-##          : $FILEHANDLE     => Filehandle to write to
-##          : $url            => Url to use for download
-##          : $outfile_path   => Outfile path
-##          : $program        => Program to use for download
-##          : $file_id        => File id
-##          : $quiet          => Quiet (no output)
-##          : $verbose        => Verbosity
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-    my $url;
-    my $outfile_path;
-    my $file_id;
-
-    ## Default(s)
-    my $program;
-    my $quiet;
-    my $verbose;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        FILEHANDLE => { required => 1, defined => 1, store       => \$FILEHANDLE },
-        url        => { required => 1, defined => 1, strict_type => 1, store => \$url },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        file_id => { required => 1, defined => 1, strict_type => 1, store => \$file_id },
-        program => {
-            default     => q{wget},
-            allow       => [qw{ wget }],
-            strict_type => 1,
-            store       => \$program
-        },
-        quiet => {
-            default     => 1,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$quiet
-        },
-        verbose => {
-            default     => $arg_href->{parameter_href}{verbose},
-            strict_type => 1,
-            store       => \$verbose
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Download::Wget qw{ wget };
-
-    ## Download
-    say {$FILEHANDLE} q{## Download } . $file_id . $NEWLINE;
-
-    if ( $program eq q{wget} ) {
-
-        wget(
-            {
-                url          => $url,
-                FILEHANDLE   => $FILEHANDLE,
-                quiet        => $quiet,
-                verbose      => $verbose,
-                outfile_path => $outfile_path,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-    return;
-}
-
-sub remove_file_ending {
-
-## Function : Removes ".file_ending" in filename.file_ending(.gz)
-## Returns  : File name with supplied $file_ending or $file_ending(.gz) removed
-## Arguments: $file_name   => File name
-##          : $file_ending => File ending to be removed
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name;
-    my $file_ending;
-
-    my $tmpl = {
-        file_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_name
-        },
-        file_ending => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_ending
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $file_name_noending;
-
-    if ( defined $file_name
-        && $file_name =~ / (\S+)($file_ending$ | $file_ending.gz$) /x )
-    {
-
-        $file_name_noending = $1;
-    }
-    return $file_name_noending;
-}
-
-sub decompress_file {
-
-## Function : Check if file needs to be decompress and write decompression if so
-## Returns  :
-## Arguments: $parameter_href  => Holds all parameters
-##          : $FILEHANDLE      => Filehandle to write to
-##          : $outfile_path    => Outfile path
-##          : $file_decompress => Decompress the downloaded file
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-    my $outfile_path;
-    my $file_decompress;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        FILEHANDLE   => { required => 1, defined => 1, store => \$FILEHANDLE, },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path,
-        },
-        file_decompress => { strict_type => 1, store => \$file_decompress, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Compression::Gzip qw{ gzip };
-    use MIP::Program::Compression::Tar qw{ tar };
-    use MIP::Program::Compression::Zip qw{ unzip };
-
-    return if ( not defined $outfile_path );
-
-    if ( defined $file_decompress && $file_decompress eq q{gzip} ) {
-
-        ## Removes ".file_ending" in filename.FILENDING(.gz)
-        my $outfile_path_no_ending = remove_file_ending(
-            {
-                file_name   => $outfile_path,
-                file_ending => $DOT . q{gz},
-            }
-        );
-
-        gzip(
-            {
-                infile_path  => $outfile_path,
-                outfile_path => $outfile_path_no_ending,
-                force        => 1,
-                quiet        => 1,
-                decompress   => 1,
-                stdout       => 1,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    if ( defined $file_decompress && $file_decompress eq q{unzip} ) {
-
-        unzip(
-            {
-                infile_path => $outfile_path,
-                outdir_path => $parameter_href->{reference_dir},
-                FILEHANDLE  => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    if ( defined $file_decompress && $file_decompress eq q{tar} ) {
-
-        tar(
-            {
-                extract           => 1,
-                filter_gzip       => 1,
-                file_path         => $outfile_path,
-                outdirectory_path => $parameter_href->{reference_dir},
-                FILEHANDLE        => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-    return;
-}
-
-sub check_file {
-
-## Function : Check file integrity of file
-## Returns  :
-## Arguments: $FILEHANDLE         => Filehandle to write to
-##          : $outfile_path       => Outfile path
-##          : $outfile_path_check => File to check
-##          : $check_method       => Method to perform file check
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $outfile_path;
-    my $outfile_path_check;
-    my $check_method;
-
-    my $tmpl = {
-        FILEHANDLE   => { required => 1, defined => 1, store => \$FILEHANDLE, },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path,
-        },
-        outfile_path_check => { strict_type => 1, store => \$outfile_path_check, },
-        check_method       => { strict_type => 1, store => \$check_method, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Gnu::Coreutils qw{ gnu_md5sum gnu_rm };
-
-    return if ( not defined $check_method );
-
-    if ( $check_method eq q{md5sum} ) {
-
-        ## Removes ".file_ending" in filename.FILENDING(.gz)
-        my $outfile_path_no_ending = remove_file_ending(
-            {
-                file_name   => $outfile_path,
-                file_ending => $DOT . q{md5},
-            }
-        );
-
-        return if ( not defined $outfile_path_no_ending );
-
-        my $perl_regexp =
-            q?perl -nae 'print $F[0]."  ?
-          . $outfile_path_no_ending . q?" ' ?
-          . $outfile_path_check;
-        print {$FILEHANDLE} $perl_regexp . q{ > md5sum_check.txt};
-        say   {$FILEHANDLE} $NEWLINE;
-
-        gnu_md5sum(
-            {
-                check       => 1,
-                infile_path => q{md5sum_check.txt},
-                FILEHANDLE  => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Clean-up
-        gnu_rm(
-            {
-                infile_path => q{md5sum_check.txt},
-                force       => 1,
-                FILEHANDLE  => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
     }
     return;
 }

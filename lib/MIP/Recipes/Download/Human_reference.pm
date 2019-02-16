@@ -48,24 +48,24 @@ sub download_human_reference {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-my $job_id_href;
+    my $job_id_href;
     my $parameter_href;
     my $recipe_name;
     my $reference_href;
 
     ## Default(s)
-my $quiet;
-my $temp_directory;
-my $verbose;
+    my $quiet;
+    my $temp_directory;
+    my $verbose;
 
     my $tmpl = {
-job_id_href => {
+        job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
             strict_type => 1,
-},
+        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -79,58 +79,60 @@ job_id_href => {
             store       => \$recipe_name,
             strict_type => 1,
         },
-reference_href => {
+        reference_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$reference_href,
-},
-quiet      => {
+        },
+        quiet => {
             default     => 1,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
             store       => \$quiet
-},
-temp_directory => {
+        },
+        temp_directory => {
             store       => \$temp_directory,
             strict_type => 1,
-},
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Cwd;
+    use MIP::Check::File qw{ check_file_md5sum };
+    use MIP::File::Decompression qw{ decompress_file };
+    use MIP::Program::Download::Wget qw{ wget };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(uc q{mip_download});
+    my $log = Log::Log4perl->get_logger( uc q{mip_download} );
 
     ## Unpack parameters
-    my @reference_genome_versions = @{$parameter_href->{reference_genome_versions}};
-    my $file_path = catfile(cwd(), q{test.sh});
+    my @reference_genome_versions = @{ $parameter_href->{reference_genome_versions} };
+    my $file_path                 = catfile( cwd(), q{test.sh} );
 
     ## Filehandle(s)
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-#    open $FILEHANDLE, q{>}, $file_path
-#  or croak q{Cannot write to} . $SPACE . $file_path . $COLON . $SPACE . $OS_ERROR;
-
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $parameter_href,
-            directory_id                    => q{mip_download},
-            FILEHANDLE                      => $FILEHANDLE,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
+            active_parameter_href => $parameter_href,
+            directory_id          => q{mip_download},
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            log                   => $log,
+            outdata_dir           => $parameter_href->{reference_dir},
+            outscript_dir         => $parameter_href->{reference_dir},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
-);
+    );
 
     ### SHELL:
 
@@ -150,39 +152,43 @@ temp_directory => {
         my $file         = $reference_href->{$key};
         my $outfile      = $reference_href->{ q{out} . $key };
         my $outfile_path = catfile( $parameter_href->{reference_dir}, $outfile );
+        my $url          = $reference_href->{url_prefix} . $file;
 
- #       download(
- #           {
- #               parameter_href => $parameter_href,
- #               FILEHANDLE     => $FILEHANDLE,
- #               url            => $reference_href->{url_prefix} . $file,
- #               outfile_path   => $outfile_path,
- #               file_id        => $recipe_name,
- #           }
- #       );
+        ## Download
+        say {$FILEHANDLE} q{## Download } . $recipe_name . $NEWLINE;
+
+        wget(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                outfile_path => $outfile_path,
+                quiet        => $quiet,
+                url          => $url,
+                verbose      => $verbose,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
         ## Check if file needs to be decompress and write decompression if so
-#        decompress_file(
-#            {
-#                parameter_href => $parameter_href,
-#                FILEHANDLE     => $FILEHANDLE,
-#                outfile_path   => $outfile_path,
-#                file_decompress =>
-#                  $reference_href->{ q{out} . $key . $UNDERSCORE . q{decompress#} },
- #           }
- #       );
+        decompress_file(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                outdir_path  => $parameter_href->{reference_dir},
+                outfile_path => $outfile_path,
+                decompress_program =>
+                  $reference_href->{ q{out} . $key . $UNDERSCORE . q{decompress} },
+            }
+        );
 
         ## Check file integrity of file
-#        check_file(
-#            {
-#                FILEHANDLE         => $FILEHANDLE,
-#                outfile_path       => $outfile_path,
-#                outfile_path_check => $outfile_path,
-#                check_method =>
-#                  $reference_href->{ q{out} . $key . $UNDERSCORE . q{method} },
-#            }
-#        );
-      }
+        check_file_md5sum(
+            {
+                FILEHANDLE    => $FILEHANDLE,
+                md5_file_path => $outfile_path,
+                check_method =>
+                  $reference_href->{ q{out} . $key . $UNDERSCORE . q{method} },
+            }
+        );
+    }
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});

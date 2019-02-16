@@ -24,7 +24,7 @@ use MIP::Cli::Utils qw{ run }
   ;    # MooseX::App required sub. Called internally by MooseX::App
 
 # Set the version for version checking
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -118,25 +118,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
               q{Sets all recipes to dry run mode i.e. no sbatch submission},
             is  => q{rw},
             isa => Bool,
-        )
-    );
-
-    option(
-        q{email} => (
-            cmd_aliases   => [qw{ em }],
-            documentation => q{E-mail},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{email_types} => (
-            cmd_aliases   => [qw{ emt }],
-            cmd_tags      => [q{Default: FAIL}],
-            documentation => q{E-mail type},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ FAIL BEGIN END }] ), ],
         )
     );
 
@@ -263,15 +244,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
     );
 
     option(
-        q{project_id} => (
-            cmd_aliases   => [qw{ pro }],
-            documentation => q{Project id},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{reference_dir} => (
             cmd_aliases   => [qw{ rd }],
             documentation => q{Reference(s) directory},
@@ -319,16 +291,6 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             documentation => q{File for sample info used in the analysis},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{slurm_quality_of_service} => (
-            cmd_aliases   => [qw{ qos }],
-            cmd_flag      => q{slurm_quly_sri},
-            documentation => q{SLURM quality of service},
-            is            => q{rw},
-            isa           => enum( [qw{ low normal high }] ),
         )
     );
 

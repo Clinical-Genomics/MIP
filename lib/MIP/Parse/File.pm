@@ -16,23 +16,22 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $EMPTY_STR };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ parse_fastq_infiles parse_fastq_infiles_format parse_io_outfiles };
+      qw{ parse_fastq_infiles parse_fastq_infiles_format parse_file_suffix parse_io_outfiles };
 
 }
-
-## Constants
-Readonly my $DOT       => q{.};
-Readonly my $EMPTY_STR => q{};
 
 sub parse_fastq_infiles {
 
@@ -319,6 +318,42 @@ sub parse_fastq_infiles_format {
         $file_info{$feature} = $file_features[$index];
     }
     return %file_info;
+}
+
+sub parse_file_suffix {
+
+## Function : Parse file suffix in filename.suffix(.gz). Removes suffix if matching else return undef
+## Returns  : undef | $file_name
+## Arguments: $file_name   => File name
+##          : $file_suffix => File suffix to be removed
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_name;
+    my $file_suffix;
+
+    my $tmpl = {
+        file_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$file_name
+        },
+        file_suffix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$file_suffix
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my ($file_name_nosuffix) =
+      $file_name =~ / (\S+)($file_suffix$ | $file_suffix.gz$) /xsm;
+
+    return $file_name_nosuffix;
 }
 
 sub parse_io_outfiles {

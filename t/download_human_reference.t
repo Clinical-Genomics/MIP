@@ -69,8 +69,6 @@ my %parameter = test_mip_hashes(
         mip_hash_name => q{download_parameter},
     }
 );
-$parameter{outdata_dir}   = catfile($test_dir);
-$parameter{outscript_dir} = catfile($test_dir);
 $parameter{project_id}    = q{test};
 $parameter{reference_dir} = catfile($test_dir);
 my %job_id;
