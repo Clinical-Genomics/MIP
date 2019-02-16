@@ -890,7 +890,7 @@ sub gatk_applyvqsr {
 
 sub gatk_calculategenotypeposteriors {
 
-## Function : Perl wrapper for writing GATK CalculateGenotypePosteriors recipe to $FILEHANDLE. Based on GATK 4.0.8.
+## Function : Perl wrapper for writing GATK CalculateGenotypePosteriors recipe to $FILEHANDLE. Based on GATK 4.1.0.
 ## Returns  : @commands
 ##          : $FILEHANDLE                            => Sbatch filehandle to write to
 ##          : $infile_path                           => Infile paths
