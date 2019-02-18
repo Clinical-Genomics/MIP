@@ -16,41 +16,36 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $ASTERISK $DOT $EMPTY_STR $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_prepareforvariantannotationblock };
 
 }
 
-## Constants
-Readonly my $ASTERISK    => q{*};
-Readonly my $DOT         => q{.};
-Readonly my $EMPTY_STR   => q{};
-Readonly my $NEWLINE     => qq{\n};
-Readonly my $PIPE        => q{|};
-Readonly my $SPACE       => q{ };
-Readonly my $SEMI_COLONN => q{;};
-Readonly my $UNDERSCORE  => q{_};
-
 sub analysis_prepareforvariantannotationblock {
 
 ## Function : Split into contigs for variantannotationblock
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $stderr_path             => The stderr path of the block script
 ##          : $temp_directory          => Temporary directory
@@ -71,6 +66,7 @@ sub analysis_prepareforvariantannotationblock {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -114,6 +110,11 @@ sub analysis_prepareforvariantannotationblock {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -301,7 +302,7 @@ sub analysis_prepareforvariantannotationblock {
                 write_to_stdout => 1,
             }
         );
-        print {$XARGSFILEHANDLE} $SEMI_COLONN . $SPACE;
+        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
 
         ## Index file using tabix
         htslib_tabix(
@@ -323,8 +324,9 @@ sub analysis_prepareforvariantannotationblock {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -335,7 +337,7 @@ sub analysis_prepareforvariantannotationblock {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

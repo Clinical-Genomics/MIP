@@ -24,7 +24,7 @@ use MIP::Cli::Utils qw{ run }
   ;    # MooseX::App required sub. Called internally by MooseX::App
 
 # Set the version for version checking
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -36,13 +36,6 @@ command_usage(q{analyse <pipeline>});
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
-
-#sub run {
-#    my ($arg_href) = @_;
-
-#    say {*STDERR} q{Please choose an subcommand to start the analysis};
-#    return;
-#}
 
 sub _build_usage {
 
