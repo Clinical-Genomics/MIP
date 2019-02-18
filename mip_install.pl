@@ -581,11 +581,16 @@ sub get_programs_for_installation {
         push @{ $parameter_href->{select_program} }, qw{ bcftools gatk };
     }
     if ( any { $_ eq q{peddy} } @{ $parameter_href->{select_program} } ) {
-        push @{ $parameter_href->{select_program} }, qw{ bcftools };
+        push @{ $parameter_href->{select_program} },
+          qw{ bcftools click htslib scikit-learn };
     }
     if ( any { $_ eq q{svdb} } @{ $parameter_href->{select_program} } ) {
         push @{ $parameter_href->{select_program} },
           qw{ bcftools htslib picard vcfanno vt };
+    }
+    if ( any { $_ eq q{tiddit} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} },
+          qw{ bcftools cmake htslib cython gcc numpy scipy svdb vcf2cytosure };
     }
     if ( any { $_ eq q{vcf2cytosure} } @{ $parameter_href->{select_program} } )
     {
@@ -594,9 +599,11 @@ sub get_programs_for_installation {
     if ( any { $_ eq q{vep} } @{ $parameter_href->{select_program} } ) {
         push @{ $parameter_href->{select_program} }, qw{ bcftools htslib };
     }
-    if ( any { $_ eq q{tiddit} } @{ $parameter_href->{select_program} } ) {
-        push @{ $parameter_href->{select_program} },
-          qw{ bcftools cmake htslib cython gcc numpy scipy svdb };
+    if ( any { $_ eq q{bcftools} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} }, qw{ openssl };
+    }
+    if ( any { $_ eq q{genmod} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} }, qw{ click };
     }
 
     ## Remove all programs except those selected for installation
@@ -619,7 +626,8 @@ sub get_programs_for_installation {
 
     ## Some programs have conflicting dependencies and require seperate environments to function properly
     ## These are excluded from installation unless specified with the select_program flag
-    my @conflicting_programs = qw{ cnvnator peddy svdb vep freebayes tiddit };
+    my @conflicting_programs =
+      qw{ cnvnator peddy svdb vep freebayes tiddit vcf2cytosure };
   CONFLICTING_PROGRAM:
     foreach my $conflicting_program (@conflicting_programs) {
         if (

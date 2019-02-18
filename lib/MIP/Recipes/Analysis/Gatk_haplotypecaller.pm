@@ -184,7 +184,7 @@ sub analysis_gatk_haplotypecaller {
 
     ## Constants
     Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
-    Readonly my $JAVA_MEMORY_ALLOCATION        => 4;
+    Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
     Readonly my $VARIANT_INDEX_PARAMETER       => 128_000;
     Readonly my $MITOCHONDRIA_PLOIDY           => 2;
 
@@ -366,7 +366,7 @@ sub analysis_gatk_haplotypecaller {
             ),
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            memory_allocation  => q{Xmx8g},
+            memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             program_info_path  => $program_info_path,
             temp_directory     => $temp_directory,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,

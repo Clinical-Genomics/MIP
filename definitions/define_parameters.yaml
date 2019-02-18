@@ -934,8 +934,6 @@ ptiddit:
   outdir_name: tiddit
   outfile_suffix: ".vcf"
   coverage_file_suffix: ".tab"
-  program_name_path:
-   - TIDDIT.py
   program_type: structural_variant_callers
   type: program
 tiddit_minimum_number_supporting_pairs:
@@ -1231,10 +1229,6 @@ pvcf2cytosure:
   file_tag: cyto_
   outfile_suffix: ".cgh"
   outdir_name: vcf2cytosure
-  program_name_path:
-    - TIDDIT.py
-    - vcf2cytosure
-    - bcftools
   type: program
 vcf2cytosure_exclude_filter:
   associated_program:
@@ -1296,9 +1290,6 @@ pfreebayes:
   data_type: SCALAR
   default: 0
   file_tag: _freebayes_
-  program_name_path:
-   - freebayes
-   - bcftools
   outdir_name: freebayes
   program_type: variant_callers
   file_endings:

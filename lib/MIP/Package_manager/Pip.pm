@@ -48,6 +48,7 @@ sub pip_install {
 
     ## Flatten argument(s)
     my $packages_ref;
+    my $no_cache_dir;
     my $quiet;
     my $verbose;
     my $requirement;
@@ -95,12 +96,22 @@ sub pip_install {
         FILEHANDLE => {
             store => \$FILEHANDLE
         },
+        no_cache_dir => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$no_cache_dir,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
     my @commands = q{pip install};
+
+    if ($no_cache_dir) {
+        push @commands, q{--no-cache-dir};
+    }
 
     if ($quiet) {
         push @commands, q{--quiet};
