@@ -30,7 +30,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -97,13 +97,13 @@ sub gatk_genotypegvcfs {
             store       => \$dbsnp_path,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE, },
-		include_nonvariant_sites => {
-            allow       => [ 0, 1 ],
+        FILEHANDLE               => { store => \$FILEHANDLE, },
+        include_nonvariant_sites => {
+            allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$include_nonvariant_sites,
             strict_type => 1,
-					    },
+        },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -207,7 +207,7 @@ sub gatk_genotypegvcfs {
     if ($include_nonvariant_sites) {
 
         push @commands, q{--include-non-variant-sites};
-}
+    }
 
     if ($use_new_qual_calculator) {
 

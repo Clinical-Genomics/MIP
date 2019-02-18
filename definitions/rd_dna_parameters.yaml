@@ -1176,6 +1176,12 @@ gatk_genotypegvcfs_ref_gvcf:
   exists_check: file
   reference: reference_dir
   type: path
+gatk_genotypegvcfs_all_sites:
+  associated_recipe:
+   - gatk_genotypegvcfs
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 gatk_gathervcfs:
   analysis_mode: case
   associated_recipe:
