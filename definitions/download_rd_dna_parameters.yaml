@@ -13,9 +13,9 @@ reference:
   1000g_all_sv:
     - phase3_v8.20130502
   clinvar:
-    - 20171029
     - 20180429
     - 20181028
+    - 20190211
   1000g_omni:
     - 2.5
   1000g_indels:
@@ -25,7 +25,7 @@ reference:
   1000g_sites:
     - phase3_v4_20130502
   mills_and_1000g_indels:
-    - gold_standard_indel
+    - gold_standard_indels
   dbsnp:
     - 138_esa_129
     - 138
