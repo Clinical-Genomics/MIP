@@ -16,24 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE $TAB $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
 
 }
-
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $TAB        => qq{\t};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_gatk_genotypegvcfs {
 
@@ -146,6 +143,9 @@ sub analysis_gatk_genotypegvcfs {
     use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    ## Constants
+    Readonly my $INCLUDE_NONVARIANT_SITES_TIME => 50;
+
     ### PREPROCESSING:
 
     ## Retrieve logger object
@@ -170,6 +170,13 @@ sub analysis_gatk_genotypegvcfs {
             recipe_name           => $recipe_name,
         }
     );
+
+     If all sites should be included
+    if ( $active_parameter_href->{gatk_genotypegvcfs_all_sites} == 1 ) {
+
+        # Including all sites requires longer processing time
+        $time = $INCLUDE_NONVARIANT_SITES_TIME;
+}
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
@@ -320,10 +327,12 @@ sub analysis_gatk_genotypegvcfs {
                 dbsnp_path =>
                   $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 FILEHANDLE    => $FILEHANDLE,
-                intervals_ref => [$contig],
+	     include_nonvariant_sites =>
+	     $active_parameter_href->{gatk_genotypegvcfs_all_sites},
                 infile_path   => q{gendb://}
                   . $temp_outfile_path_prefix
                   . $UNDERSCORE . q{DB},
+                intervals_ref => [$contig],
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 outfile_path         => $outfile_path{$contig},

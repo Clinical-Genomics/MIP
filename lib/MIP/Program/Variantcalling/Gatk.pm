@@ -53,22 +53,23 @@ BEGIN {
 
 sub gatk_genotypegvcfs {
 
-## Function : Perl wrapper for writing GATK GenoTypeGVCFs recipe to $FILEHANDLE. Based on GATK 4.0.8.
+## Function : Perl wrapper for writing GATK GenoTypeGVCFs recipe to $FILEHANDLE. Based on GATK 4.1.0.
 ## Returns  : @commands
-## Arguments: $dbsnp_path              => Path to DbSNP file
-##          : $FILEHANDLE              => Sbatch filehandle to write to
-##          : $infile_path             => Path to variant input
-##          : $intervals_ref           => One or more genomic intervals over which to operate {REF}
-##          : $java_use_large_pages    => Use java large pages
-##          : $memory_allocation       => Memory allocation to run Gatk
-##          : $outfile_path            => Outfile path
-##          : $pedigree                => Pedigree files for samples
-##          : $referencefile_path      => Reference sequence file
-##          : $stderrfile_path         => Stderrfile path
-##          : $temp_directory          => Redirect tmp files to java temp
-##          : $use_new_qual_calculator => Use the new AF model instead of the so-called exact model
-##          : $verbosity               => Set the minimum level of logging
-##          : $xargs_mode              => Set if the program will be executed via xargs
+## Arguments: $dbsnp_path               => Path to DbSNP file
+##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $infile_path              => Path to variant input
+##          : $include_nonvariant_sites => Include loci found to be non-variant after genotyping
+##          : $intervals_ref            => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages     => Use java large pages
+##          : $memory_allocation        => Memory allocation to run Gatk
+##          : $outfile_path             => Outfile path
+##          : $pedigree                 => Pedigree files for samples
+##          : $referencefile_path       => Reference sequence file
+##          : $stderrfile_path          => Stderrfile path
+##          : $temp_directory           => Redirect tmp files to java temp
+##          : $use_new_qual_calculator  => Use the new AF model instead of the so-called exact model
+##          : $verbosity                => Set the minimum level of logging
+##          : $xargs_mode               => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
@@ -85,6 +86,7 @@ sub gatk_genotypegvcfs {
     my $temp_directory;
 
     ## Default(s)
+    my $include_nonvariant_sites;
     my $java_use_large_pages;
     my $use_new_qual_calculator;
     my $verbosity;
@@ -96,6 +98,12 @@ sub gatk_genotypegvcfs {
             strict_type => 1,
         },
         FILEHANDLE  => { store => \$FILEHANDLE, },
+		include_nonvariant_sites => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$include_nonvariant_sites,
+            strict_type => 1,
+					    },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -195,6 +203,11 @@ sub gatk_genotypegvcfs {
             verbosity          => $verbosity,
         }
     );
+
+    if ($include_nonvariant_sites) {
+
+        push @commands, q{--include-non-variant-sites};
+}
 
     if ($use_new_qual_calculator) {
 
