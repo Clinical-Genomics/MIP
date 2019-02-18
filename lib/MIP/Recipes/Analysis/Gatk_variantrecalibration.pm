@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -435,11 +435,13 @@ sub analysis_gatk_variantrecalibration_wes {
                 infile_path          => $outfile_path,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx6g},
-                outfile_path         => $calculategt_outfile_path,
-                pedigree             => $commands{pedigree},
-                referencefile_path   => $referencefile_path,
+                num_ref_samples_if_no_call =>
+                  $active_parameter_href->{gatk_num_reference_samples_if_no_call},
+                outfile_path       => $calculategt_outfile_path,
+                pedigree           => $commands{pedigree},
+                referencefile_path => $referencefile_path,
                 supporting_callset_file_path =>
-                  $active_parameter_href->{gatk_calculategenotypeposteriors_support_set},
+                  $active_parameter_href->{gatk_calculate_genotype_call_set},
                 temp_directory => $temp_directory,
                 verbosity      => $active_parameter_href->{gatk_logging_level},
             }
@@ -923,11 +925,13 @@ sub analysis_gatk_variantrecalibration_wgs {
                 infile_path          => $outfile_path,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx6g},
-                outfile_path         => $calculategt_outfile_path,
-                pedigree             => $commands{pedigree},
-                referencefile_path   => $referencefile_path,
+                num_ref_samples_if_no_call =>
+                  $active_parameter_href->{gatk_num_reference_samples_if_no_call},
+                outfile_path       => $calculategt_outfile_path,
+                pedigree           => $commands{pedigree},
+                referencefile_path => $referencefile_path,
                 supporting_callset_file_path =>
-                  $active_parameter_href->{gatk_calculategenotypeposteriors_support_set},
+                  $active_parameter_href->{gatk_calculate_genotype_call_set},
                 temp_directory => $temp_directory,
                 verbosity      => $active_parameter_href->{gatk_logging_level},
             }

@@ -890,13 +890,14 @@ sub gatk_applyvqsr {
 
 sub gatk_calculategenotypeposteriors {
 
-## Function : Perl wrapper for writing GATK CalculateGenotypePosteriors recipe to $FILEHANDLE. Based on GATK 4.0.8.
+## Function : Perl wrapper for writing GATK CalculateGenotypePosteriors recipe to $FILEHANDLE. Based on GATK 4.1.0.
 ## Returns  : @commands
 ##          : $FILEHANDLE                            => Sbatch filehandle to write to
 ##          : $infile_path                           => Infile paths
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $memory_allocation                     => Memory allocation to run Gatk
+##          : $num_ref_samples_if_no_call            => Number of hom-ref genotypes to infer at sites not present in a panel
 ##          : $outfile_path                          => Outfile path
 ##          : $pedigree                              => Pedigree files for samples
 ##          : $read_filters_ref                      => Filters to apply on reads {REF}
@@ -914,6 +915,7 @@ sub gatk_calculategenotypeposteriors {
     my $infile_path;
     my $intervals_ref;
     my $memory_allocation;
+    my $num_ref_samples_if_no_call;
     my $outfile_path;
     my $pedigree;
     my $read_filters_ref;
@@ -950,6 +952,11 @@ sub gatk_calculategenotypeposteriors {
         },
         memory_allocation => {
             store       => \$memory_allocation,
+            strict_type => 1,
+        },
+        num_ref_samples_if_no_call => {
+            allow       => [ undef, qr/ ^\d+$ /sxm ],
+            store       => \$num_ref_samples_if_no_call,
             strict_type => 1,
         },
         outfile_path => {
@@ -1033,6 +1040,12 @@ sub gatk_calculategenotypeposteriors {
             verbosity          => $verbosity,
         }
     );
+
+    if ($num_ref_samples_if_no_call) {
+
+        push @commands,
+          q{--num-reference-samples-if-no-call} . $SPACE . $num_ref_samples_if_no_call;
+    }
 
     ## Add supporting data
     if ($supporting_callset_file_path) {

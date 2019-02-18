@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
@@ -363,10 +363,14 @@ sub analysis_gatk_haplotypecaller {
                 intervals_ref        => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                outfile_path         => $temp_outfile_path{$contig},
-                pcr_indel_model      => $pcr_indel_model,
-                pedigree             => $fam_file_path,
-                referencefile_path   => $referencefile_path,
+                num_ref_samples_if_no_call =>
+                  $active_parameter_href->{gatk_num_reference_samples_if_no_call},
+                outfile_path    => $temp_outfile_path{$contig},
+                pcr_indel_model => $pcr_indel_model,
+                pedigree        => $fam_file_path,
+                population_callset =>
+                  $active_parameter_href->{gatk_calculate_genotype_call_set},
+                referencefile_path => $referencefile_path,
                 standard_min_confidence_threshold_for_calling =>
                   $STANDARD_MIN_CONFIDENCE_THRSD,
                 stderrfile_path => $stderrfile_path,

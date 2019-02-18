@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
     use MIP::Test::Fixtures qw{ test_import };
@@ -58,6 +55,7 @@ diag(   q{Test gatk_haplotypecaller from Alignment::Gatk.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
+Readonly my $HOM_REF_GENOTYPES_IN_CALL_SET                 => 7854;
 Readonly my $SAMPLE_PLOIDY                                 => 3;
 Readonly my $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING => 10;
 
@@ -115,6 +113,11 @@ my %specific_argument = (
         input           => catfile(qw{ dir infile.bam }),
         expected_output => q{--input } . catfile(qw{ dir infile.bam }),
     },
+    num_ref_samples_if_no_call => {
+        input           => $HOM_REF_GENOTYPES_IN_CALL_SET,
+        expected_output => q{--num-reference-samples-if-no-call }
+          . $HOM_REF_GENOTYPES_IN_CALL_SET,
+    },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
         expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
@@ -122,6 +125,11 @@ my %specific_argument = (
     pcr_indel_model => {
         input           => q{NONE},
         expected_output => q{--pcr-indel-model NONE},
+    },
+    population_callset => {
+        input           => catfile(qw{ dir GRCh37_gnomad.genomes_-r2.0.1-.vcf }),
+        expected_output => q{--population-callset }
+          . catfile(qw{ dir GRCh37_gnomad.genomes_-r2.0.1-.vcf }),
     },
     sample_ploidy => {
         input           => $SAMPLE_PLOIDY,
@@ -148,12 +156,12 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            base_commands_index        => 1,
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
+            base_commands_index        => 1,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }
