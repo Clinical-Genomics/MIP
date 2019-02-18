@@ -107,6 +107,7 @@ sub test_log {
 ## Returns  : $log
 ## Arguments: $log_level => Log level
 ##          : $log_name  => Name of logger
+##          : $no_screen => Don't log to screen
 
     my ($arg_href) = @_;
 
@@ -114,12 +115,12 @@ sub test_log {
     my $log_name;
     my $no_screen;
 
-    ##Default(s)
+    ## Default(s)
     my $log_level;
 
     my $tmpl = {
         log_level => {
-            allow       => [qw{ DEBUG ERROR FATAL INFO WARN TRACE }],
+            allow       => [qw{ DEBUG ERROR FATAL INFO TRACE WARN }],
             default     => q{TRACE},
             store       => \$log_level,
             strict_type => 1,
