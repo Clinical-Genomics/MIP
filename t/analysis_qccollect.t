@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Preseq} => [qw{ analysis_preseq }],
+        q{MIP::Recipes::Analysis::Qccollect} => [qw{ analysis_qccollect }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Preseq qw{ analysis_preseq };
+use MIP::Recipes::Analysis::Qccollect qw{ analysis_qccollect };
 
-diag(   q{Test analysis_preseq from Preseq.pm v}
-      . $MIP::Recipes::Analysis::Preseq::VERSION
+diag(   q{Test analysis_qccollect from Qccollect.pm v}
+      . $MIP::Recipes::Analysis::Qccollect::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,7 +62,7 @@ diag(   q{Test analysis_preseq from Preseq.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{preseq};
+my $recipe_name    = q{qccollect};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -74,7 +74,10 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $sample_id = $active_parameter{sample_ids}[0];
+my $case_id = $active_parameter{case_id};
+$active_parameter{qccollect_regexp_file}     = q{qc_regexp_file.txt};
+$active_parameter{qccollect_sampleinfo_file} = q{sample_info.yaml};
+$active_parameter{qccollect_skip_evaluation} = 1;
 
 my %file_info = test_mip_hashes(
     {
@@ -82,12 +85,11 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
+%{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
     {
         mip_hash_name => q{io},
     }
 );
-
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -97,18 +99,20 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
+$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
+
 my %sample_info;
 
-my $is_ok = analysis_preseq(
+my $is_ok = analysis_qccollect(
     {
         active_parameter_href   => \%active_parameter,
+        case_id                 => $case_id,
         file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
         profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );

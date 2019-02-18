@@ -15,6 +15,7 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $DASH $NEWLINE $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,36 +24,31 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ genmod_annotate genmod_compound genmod_filter genmod_models genmod_score };
 }
 
-## Constants
-Readonly my $DASH    => q{-};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
 sub genmod_annotate {
 
 ## Function : Perl wrapper for writing Genmod annotate recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
-## Arguments: $annotate_region                      => Annotate what regions a variant belongs to
-##          : $append_stderr_info                   => Append stderr info to file
-##          : $cadd_file_paths_ref                  => Specify the path to a bgzipped cadd file (with index) with variant scores
-##          : $FILEHANDLE                           => Filehandle to write to
-##          : $infile_path                          => Infile path to read from
-##          : $max_af                               => If the MAX AF should be annotated
-##          : $outfile_path                         => Outfile path to write to
-##          : $spidex_file_path                     => Specify the path to a bgzipped tsv file (with index) with spidex information
-##          : $stderrfile_path                      => Stderrfile path
-##          : $stderrfile_path_append               => Append stderr info to file path
-##          : $stdoutfile_path                      => Stdoutfile path
-##          : $temp_directory_path                  => Directory for storing intermediate files
-##          : $thousand_g_file_path                 => Specify the path to a bgzipped vcf file (with index) with 1000g variants
-##          : $verbosity                            => Increase output verbosity
+## Arguments: $annotate_region        => Annotate what regions a variant belongs to
+##          : $append_stderr_info     => Append stderr info to file
+##          : $cadd_file_paths_ref    => Specify the path to a bgzipped cadd file (with index) with variant scores
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path to read from
+##          : $max_af                 => If the MAX AF should be annotated
+##          : $outfile_path           => Outfile path to write to
+##          : $spidex_file_path       => Specify the path to a bgzipped tsv file (with index) with spidex information
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $temp_directory_path    => Directory for storing intermediate files
+##          : $thousand_g_file_path   => Specify the path to a bgzipped vcf file (with index) with 1000g variants
+##          : $verbosity              => Increase output verbosity
 
     my ($arg_href) = @_;
 
@@ -76,52 +72,52 @@ sub genmod_annotate {
 
     my $tmpl = {
         annotate_region => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$annotate_region,
+            strict_type => 1,
         },
         append_stderr_info => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$append_stderr_info,
+            strict_type => 1,
         },
         cadd_file_paths_ref =>
-          { default => [], strict_type => 1, store => \$cadd_file_paths_ref, },
+          { default => [], store => \$cadd_file_paths_ref, strict_type => 1, },
         FILEHANDLE  => { store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infile_path,
+            strict_type => 1,
         },
         max_af => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$max_af,
-        },
-        outfile_path    => { strict_type => 1, store => \$outfile_path, },
-        stderrfile_path => {
             strict_type => 1,
+        },
+        outfile_path    => { store => \$outfile_path, strict_type => 1, },
+        stderrfile_path => {
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
-        spidex_file_path     => { strict_type => 1, store => \$spidex_file_path, },
-        temp_directory_path  => { strict_type => 1, store => \$temp_directory_path, },
-        thousand_g_file_path => { strict_type => 1, store => \$thousand_g_file_path, },
+        spidex_file_path     => { store => \$spidex_file_path,     strict_type => 1, },
+        temp_directory_path  => { store => \$temp_directory_path,  strict_type => 1, },
+        thousand_g_file_path => { store => \$thousand_g_file_path, strict_type => 1, },
         verbosity            => {
             allow       => qr/ ^\w+$ /sxm,
-            strict_type => 1,
             store       => \$verbosity,
+            strict_type => 1,
         },
     };
 
@@ -184,8 +180,8 @@ sub genmod_annotate {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -228,41 +224,41 @@ sub genmod_compound {
     my $tmpl = {
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        outfile_path    => { store => \$outfile_path, strict_type => 1, },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
-        },
-        temp_directory_path => { strict_type => 1, store => \$temp_directory_path },
-        thread_number       => {
-            default     => 0,
-            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
-            store       => \$thread_number
+        },
+        temp_directory_path => { store => \$temp_directory_path, strict_type => 1, },
+        thread_number       => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => 0,
+            store       => \$thread_number,
+            strict_type => 1,
         },
         verbosity => {
             allow       => qr/ ^\w+$ /sxm,
+            store       => \$verbosity,
             strict_type => 1,
-            store       => \$verbosity
         },
         vep => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$vep,
             strict_type => 1,
-            store       => \$vep
         },
     };
 
@@ -309,8 +305,8 @@ sub genmod_compound {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -322,15 +318,14 @@ sub genmod_filter {
 
 ## Function : Perl wrapper for writing Genmod filter recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                           => Filehandle to write to
-
-##          : $infile_path                          => Infile path to read from
-##          : $outfile_path                         => Outfile path to write to
-##          : $stderrfile_path                      => Stderrfile path
-##          : $stderrfile_path_append               => Append stderr info to file path
-##          : $stdoutfile_path                      => Stdoutfile path
-##          : $threshold                            => Directory for storing intermediate files
-##          : $verbosity                            => Increase output verbosity
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path to read from
+##          : $outfile_path           => Outfile path to write to
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $threshold              => Directory for storing intermediate files
+##          : $verbosity              => Increase output verbosity
 
     my ($arg_href) = @_;
 
@@ -348,35 +343,35 @@ sub genmod_filter {
     my $verbosity;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        outfile_path    => { store => \$outfile_path, strict_type => 1, },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
         threshold => {
             allow       => qr/ ^\d+$ | ^\d+.\d+$ /xsm,
+            store       => \$threshold,
             strict_type => 1,
-            store       => \$threshold
         },
         verbosity => {
             allow       => qr/ ^\w+$ /sxm,
+            store       => \$verbosity,
             strict_type => 1,
-            store       => \$verbosity
         },
     };
 
@@ -415,8 +410,8 @@ sub genmod_filter {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -466,61 +461,61 @@ sub genmod_models {
 
     my $tmpl = {
         case_file => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_file,
             strict_type => 1,
-            store       => \$case_file
         },
         case_type => {
             allow       => [qw{ped alt cmms mip }],
+            store       => \$case_type,
             strict_type => 1,
-            store       => \$case_type
         },
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
+        outfile_path => { store => \$outfile_path, strict_type => 1, },
         reduced_penetrance_file_path =>
-          { strict_type => 1, store => \$reduced_penetrance_file_path },
+          { store => \$reduced_penetrance_file_path, strict_type => 1, },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
-        },
-        temp_directory_path => { strict_type => 1, store => \$temp_directory_path },
-        thread_number       => {
-            default     => 1,
-            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
-            store       => \$thread_number
+        },
+        temp_directory_path => { store => \$temp_directory_path, strict_type => 1, },
+        thread_number       => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => 1,
+            store       => \$thread_number,
+            strict_type => 1,
         },
         verbosity => {
             allow       => qr/ ^\w+$ /sxm,
+            store       => \$verbosity,
             strict_type => 1,
-            store       => \$verbosity
         },
         vep => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$vep,
             strict_type => 1,
-            store       => \$vep
         },
         whole_gene => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$whole_gene,
             strict_type => 1,
-            store       => \$whole_gene
         },
     };
 
@@ -584,8 +579,8 @@ sub genmod_models {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -630,53 +625,53 @@ sub genmod_score {
 
     my $tmpl = {
         case_file => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$case_file,
             strict_type => 1,
-            store       => \$case_file
         },
         case_type => {
             allow       => [qw{ ped alt cmms mip }],
+            store       => \$case_type,
             strict_type => 1,
-            store       => \$case_type
         },
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        outfile_path         => { strict_type => 1, store => \$outfile_path },
+        outfile_path         => { store => \$outfile_path, strict_type => 1, },
         rank_model_file_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$rank_model_file_path,
             strict_type => 1,
-            store       => \$rank_model_file_path
         },
         rank_result => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$rank_result,
             strict_type => 1,
-            store       => \$rank_result
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
-        temp_directory_path => { strict_type => 1, store => \$temp_directory_path },
+        temp_directory_path => { store => \$temp_directory_path, strict_type => 1, },
         verbosity           => {
             allow       => qr/ ^\w+$ /sxm,
+            store       => \$verbosity,
             strict_type => 1,
-            store       => \$verbosity
         },
     };
 
