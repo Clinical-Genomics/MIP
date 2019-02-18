@@ -36,9 +36,9 @@ sub decompress_file {
 ## Function : Check if file needs to be decompress and write decompression if so
 ## Returns  :
 ## Arguments: $decompress_program => Decompress the downloaded file using program supplied
-##          : $FILEHANDLE      => Filehandle to write to
-##          : $outdir_path     => Outdirectory path
-##          : $outfile_path    => Outfile path
+##          : $FILEHANDLE         => Filehandle to write to
+##          : $outdir_path        => Outdirectory path
+##          : $outfile_path       => Outfile path
 
     my ($arg_href) = @_;
 
