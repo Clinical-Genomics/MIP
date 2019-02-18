@@ -182,7 +182,7 @@ sub test_mip_hashes {
     my $tmpl = {
         mip_hash_name => {
             allow => [
-                qw{ active_parameter define_parameter dependency_tree_dna dependency_tree_rna file_info install_parameter io job_id pedigree recipe_parameter qc_sample_info }
+                qw{ active_parameter define_parameter dependency_tree_dna dependency_tree_rna download_parameter file_info install_parameter io job_id pedigree recipe_parameter qc_sample_info }
             ],
             defined     => 1,
             required    => 1,
@@ -213,6 +213,8 @@ sub test_mip_hashes {
           catfile( $Bin, qw{ data test_data rd_dna_initiation_map.yaml } ),
         dependency_tree_rna =>
           catfile( $Bin, qw{ data test_data rd_rna_initiation_map.yaml } ),
+        download_parameter =>
+          catfile( $Bin, qw{ data test_data download_parameters.yaml } ),
         file_info => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
         install_parameter =>
           catfile( $Bin, qw{ data test_data install_rd_dna_parameters.yaml } ),
