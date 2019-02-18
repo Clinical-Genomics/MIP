@@ -22,10 +22,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,11 +34,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -68,7 +64,7 @@ diag(   q{Test analysis_gatk_baserecalibration_rio from Gatk_baserecalibration.p
 
 my $test_dir  = File::Temp->newdir();
 my $file_path = catfile( $test_dir, q{recipe_script.sh} );
-my $log       = test_log( { log_name => q{MIP}, } );
+my $log       = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
@@ -77,7 +73,7 @@ open $FILEHANDLE, q{>}, $file_path
   or croak q{Cannot write to} . $SPACE . $file_path . $COLON . $SPACE . $OS_ERROR;
 
 ## Given analysis parameters
-my $recipe_name    = q{gatk_baserecalibration};
+my $recipe_name = q{gatk_baserecalibration};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(

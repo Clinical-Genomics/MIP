@@ -20,7 +20,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-#use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Script::Utils qw{ help };
 
 BEGIN {
@@ -28,16 +28,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_import test_log test_mip_hashes test_standard_cli };
 }
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 sub build_usage {
 
@@ -110,17 +105,34 @@ sub test_log {
 
 ## Function : Generate a log object and a temporary log file
 ## Returns  : $log
-## Arguments: $log_name => Name of logger
+## Arguments: $log_level => Log level
+##          : $log_name  => Name of logger
+##          : $no_screen => Don't log to screen
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $log_name;
+    my $no_screen;
+
+    ## Default(s)
+    my $log_level;
 
     my $tmpl = {
+        log_level => {
+            allow       => [qw{ DEBUG ERROR FATAL INFO TRACE WARN }],
+            default     => q{TRACE},
+            store       => \$log_level,
+            strict_type => 1,
+        },
         log_name => {
             default     => q{TEST},
             store       => \$log_name,
+            strict_type => 1,
+        },
+        no_screen => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$no_screen,
             strict_type => 1,
         },
     };
@@ -132,11 +144,20 @@ sub test_log {
     my $test_dir = File::Temp->newdir();
     my $test_log_path = catfile( $test_dir, q{test.log} );
 
+    ## Set default log categories
+    my @categories = ( $log_level, qw{ LogFile ScreenApp } );
+
+    ## Disable print to screen
+    if ($no_screen) {
+        @categories = ( $log_level, q{LogFile} );
+    }
+
     ## Creates log object
     my $log = initiate_logger(
         {
-            file_path => $test_log_path,
-            log_name  => $log_name,
+            categories_ref => \@categories,
+            file_path      => $test_log_path,
+            log_name       => $log_name,
         }
     );
 

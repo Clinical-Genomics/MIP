@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,12 +35,9 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COLON                   => q{:};
-Readonly my $COMMA                   => q{,};
 Readonly my $GENOME_BUILD_VERSION_38 => 38;
 Readonly my $GENOME_BUILD_VERSION_20 => 20;
 Readonly my $GENOME_BUILD_VERSION_19 => 19;
-Readonly my $SPACE                   => q{ };
 
 BEGIN {
 
@@ -66,10 +64,10 @@ diag(   q{Test analysis_bwa_mem from Bwa_mem.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, } );
+my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given parameters
-my $recipe_name    = q{bwa_mem};
+my $recipe_name = q{bwa_mem};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -95,7 +93,7 @@ my %file_info = test_mip_hashes(
     }
 );
 
-my $infile_prefix      = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
+my $infile_prefix = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
 my %infile_lane_prefix = ( $sample_id => [ $infile_prefix, ], );
 my %job_id;
 my %parameter = test_mip_hashes(

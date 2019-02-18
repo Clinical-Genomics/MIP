@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,11 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -45,8 +41,9 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Genebody_coverage} => [qw{ analysis_genebody_coverage }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Recipes::Analysis::Genebody_coverage} =>
+          [qw{ analysis_genebody_coverage }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -63,10 +60,10 @@ diag(   q{Test analysis_genebody_coverage from Genebody_coverage.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, } );
+my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{genebody_coverage};
+my $recipe_name = q{genebody_coverage};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -80,7 +77,7 @@ $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
 $active_parameter{star_aln_reference_genome} = q{genome.fasta};
-$active_parameter{rseqc_transcripts_file} = q{transcripts.bed};
+$active_parameter{rseqc_transcripts_file}    = q{transcripts.bed};
 
 my %file_info = test_mip_hashes(
     {

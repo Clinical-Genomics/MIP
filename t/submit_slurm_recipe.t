@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -67,7 +64,7 @@ my @dependency_methods =
   qw{ add_to_all case_to_island island island_to_sample island_to_samples sample_to_case sample_to_case_parallel sample_to_island sample_to_sample sample_to_sample_parallel };
 my %infile_lane_prefix;
 my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
-my $log    = test_log(        {} );
+my $log             = test_log( { log_name => q{MIP}, no_screen => 1, } );
 my @parallel_chains = qw{ OTHER };
 my $job_id_chain    = q{MAIN};
 my $sample_id       = q{sample1};
