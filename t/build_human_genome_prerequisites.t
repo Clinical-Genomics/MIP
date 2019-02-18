@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,11 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -64,7 +60,7 @@ diag(   q{Test build_human_genome_prerequisites from Human_genome_prerequisites.
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given build parameters
 my $parameter_build_name = q{human_genome_reference_file_endings};
@@ -87,7 +83,7 @@ my %file_info = test_mip_hashes(
 $file_info{human_genome_reference_name_prefix} = q{human_genome};
 
 my %infile_lane_prefix;
-my %job_id    = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
 my %parameter = test_mip_hashes(
     {
         mip_hash_name => q{recipe_parameter},

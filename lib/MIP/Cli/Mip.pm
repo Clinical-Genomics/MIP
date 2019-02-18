@@ -72,6 +72,25 @@ sub _build_usage {
     );
 
     option(
+        q{email} => (
+            cmd_aliases   => [qw{ em }],
+            documentation => q{E-mail},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{email_types} => (
+            cmd_aliases   => [qw{ emt }],
+            cmd_tags      => [q{Default: FAIL}],
+            documentation => q{E-mail type},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ FAIL BEGIN END }] ), ],
+        )
+    );
+
+    option(
         q{log_file} => (
             cmd_aliases   => [qw{ log }],
             documentation => q{Log file},
@@ -86,6 +105,24 @@ sub _build_usage {
             default => 1,
             is      => q{rw},
             isa     => q{Int},
+        )
+    );
+
+    option(
+        q{project_id} => (
+            cmd_aliases   => [qw{ pro }],
+            documentation => q{Project id},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{slurm_quality_of_service} => (
+            cmd_aliases   => [qw{ qos }],
+            documentation => q{SLURM quality of service},
+            is            => q{rw},
+            isa           => enum( [qw{ low normal high }] ),
         )
     );
 

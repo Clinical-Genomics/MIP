@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -68,7 +65,7 @@ q{Test slurm_submit_job_sample_id_dependency_step_in_parallel_to_case from Slurm
 my $case_id = q{case1};
 my %infile_lane_prefix;
 my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
-my $log    = test_log(        {} );
+my $log             = test_log( { log_name => q{MIP}, no_screen => 1, } );
 my @parallel_chains = qw{ OTHER };
 my $path            = q{MAIN};
 my @sample_ids      = qw{ sample1 sample2 };

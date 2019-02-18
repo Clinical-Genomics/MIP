@@ -23,6 +23,7 @@ BEGIN {
     our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
+
     our @EXPORT_OK = qw{
       $AMPERSAND
       %ANALYSIS

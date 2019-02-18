@@ -25,7 +25,7 @@ samples: [  # Array of hashes
     .,
     }
 ],
-``
+```
 
 ## Methods
 get_pedigree_sample_id_attributes:

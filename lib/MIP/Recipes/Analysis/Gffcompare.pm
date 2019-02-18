@@ -16,24 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gffcompare };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_gffcompare {
 
@@ -263,9 +260,6 @@ sub analysis_gffcompare {
     ## Rename output files
     say {$FILEHANDLE} q{## Rename and move GFFCompare output};
     my $gff_output_path = $outfile_path_prefix . $DOT . q{annotated.gtf};
-    if ( scalar @infile_paths > 1 ) {
-        $gff_output_path = $outfile_path_prefix . $DOT . q{combined.gtf};
-    }
     my $refmap_infile_path = catfile( $indir_path,
         $outfile_name_prefix . $DOT . $infile_name . $DOT . q{refmap} );
     my $tmap_infile_path =

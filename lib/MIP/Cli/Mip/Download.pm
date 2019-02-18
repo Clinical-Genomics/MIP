@@ -20,8 +20,7 @@ extends(qw{ MIP::Cli::Mip });
 
 command_short_description(q{MIP download command});
 
-command_long_description(
-    q{Entry point for generating MIP download references scripts});
+command_long_description(q{Entry point for generating MIP download references scripts});
 
 command_usage(q{download <pipeline>});
 
@@ -31,8 +30,7 @@ _build_usage();
 sub run {
     my ($arg_href) = @_;
 
-    say {*STDERR}
-      q{Please choose a pipeline to start generation of the download script};
+    say {*STDERR} q{Please choose a pipeline to start generation of the download script};
     return;
 }
 
@@ -41,6 +39,16 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
+
+    option(
+        q{dry_run_all} => (
+            cmd_aliases => [qw{ dra }],
+            documentation =>
+              q{Sets all recipes to dry run mode i.e. no sbatch submission},
+            is  => q{rw},
+            isa => Bool,
+        )
+    );
 
     option(
         q{print_parameter_default} => (
@@ -60,6 +68,16 @@ sub _build_usage {
             documentation => q{Download references to this dir},
             is            => q{rw},
             isa           => Str,
+        ),
+    );
+
+    option(
+        q{sbatch_mode} => (
+            documentation => q{Write install script for sbatch submisson},
+            is            => q{rw},
+            isa           => Bool,
+            required      => 0,
+
         ),
     );
 
