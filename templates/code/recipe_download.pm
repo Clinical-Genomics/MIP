@@ -1,4 +1,4 @@
-package MIP::Recipes::Download::Human_reference;
+package MIP::Recipes::Download::RECIPE_NAME;
 
 use 5.026;
 use Carp;
@@ -29,13 +29,13 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ download_human_reference };
+    our @EXPORT_OK = qw{ download_RECIPE_NAME };
 
 }
 
-sub download_human_reference {
+sub download_RECIPE_NAME {
 
-## Function : Download human genome reference builds
+## Function : Download RECIPE_NAME
 ## Returns  :
 ## Arguments: $job_id_href       => The job_id hash {REF}
 ##          : $parameter_href    => Parameter hash {REF}

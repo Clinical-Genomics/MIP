@@ -119,15 +119,28 @@ sub mip_download {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
+    # Install temp directory
+    my $temp_dir = create_temp_dir( {} );
+
+    if ( $parameter{sbatch_mode} ) {
+
+        if ( not $parameter{project_id} ) {
+
+            $log->fatal(q{Please provide a sbatch project id with option '--project_id'});
+            exit 1;
+        }
+        $log->info(
+q{Will write sbatch install instructions to for sbatch enabled references to individual sbatch scripts}
+        );
+
+    }
+
     # Downloads instruction file
     my $bash_file_path = catfile( cwd(), q{download_reference} . $DOT . q{sh} );
 
     open $FILEHANDLE, '>', $bash_file_path
       or
       $log->logdie( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . "\n" );
-
-    # Install temp directory
-    my $temp_dir = create_temp_dir( {} );
 
 ## Create bash file for writing install instructions
     create_bash_file(
@@ -142,7 +155,6 @@ sub mip_download {
     );
 
     say {$FILEHANDLE} q{## Create temp dir};
-
     gnu_mkdir(
         {
             FILEHANDLE       => $FILEHANDLE,
@@ -155,14 +167,28 @@ sub mip_download {
     $log->info( q{Will write install instructions to '} . $bash_file_path,
         $SINGLE_QUOTE );
 
-## Build install references recipe in bash file
-    build_reference_install_recipe(
-        {
-            parameter_href => \%parameter,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
+    if ( $parameter{sbatch_mode} ) {
 
+## Build install references recipe in bash file
+        sbatch_build_reference_install_recipe(
+            {
+                FILEHANDLE     => $FILEHANDLE,
+                parameter_href => \%parameter,
+                temp_directory => $temp_dir,
+            }
+        );
+    }
+    else {
+
+        ## Build install references recipe in bash file
+        build_reference_install_recipe(
+            {
+                FILEHANDLE     => $FILEHANDLE,
+                parameter_href => \%parameter,
+                temp_directory => $temp_dir,
+            }
+        );
+    }
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
     return;
 }
@@ -178,6 +204,7 @@ sub build_reference_install_recipe {
 ## Arguments: $parameter_href => Holds all parameters
 ##          : $FILEHANDLE     => Filehandle to write to
 ##          : $quiet          => Be quiet
+##          : $temp_directory => Temporary directory
 ##          : $verbose        => Verbosity
 
     my ($arg_href) = @_;
@@ -188,27 +215,34 @@ sub build_reference_install_recipe {
 
     ## Default(s)
     my $quiet;
+    my $temp_directory;
     my $verbose;
 
     my $tmpl = {
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-        quiet      => {
-            default     => 1,
-            allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$quiet
+        },
+        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        quiet      => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$quiet,
+            strict_type => 1,
+        },
+        temp_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$temp_directory,
+            strict_type => 1,
         },
         verbose => {
             default     => $arg_href->{parameter_href}{verbose},
+            store       => \$verbose,
             strict_type => 1,
-            store       => \$verbose
         },
     };
 
@@ -216,11 +250,20 @@ sub build_reference_install_recipe {
 
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
+    use MIP::Recipes::Download::Get_reference qw{ get_reference };
+    use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger(q{Download_reference});
 
     my $pwd = cwd();
+
+    ### Download recipes
+    ## Create code reference table for download recipes
+    my %download_recipe = ( human_reference => \&download_human_reference, );
+
+    # Storing job_ids from SLURM
+    my %job_id;
 
     say {$FILEHANDLE} q{## Create reference directory};
     gnu_mkdir(
@@ -295,12 +338,12 @@ sub build_reference_install_recipe {
                       . $reference_version,
                 );
 
-                reference_install_recipe(
+                get_reference(
                     {
-                        parameter_href => $parameter_href,
-                        reference_href => $reference_href,
-                        reference_id   => $reference_id,
                         FILEHANDLE     => $FILEHANDLE,
+                        parameter_href => $parameter_href,
+                        recipe_name    => $reference_id,
+                        reference_href => $reference_href,
                         quiet          => $quiet,
                         verbose        => $verbose,
                     }
@@ -328,121 +371,173 @@ sub build_reference_install_recipe {
     return;
 }
 
-sub reference_install_recipe {
+sub sbatch_build_reference_install_recipe {
 
-## Function : Write reference install recipe
+## Function : Build install references recipe in bash file
 ## Returns  :
-## Arguments: $parameter_href => Holds all parameters {REF}
-##          : $reference_href => Reference hash {REF}
-##          : $reference_id  => Reference id
+## Arguments: $parameter_href => Holds all parameters
 ##          : $FILEHANDLE     => Filehandle to write to
-##          : $quiet          => Quiet (no output)
+##          : $quiet          => Be quiet
+##          : $temp_directory => Temporary directory
 ##          : $verbose        => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
-    my $reference_href;
-    my $reference_id;
     my $FILEHANDLE;
 
     ## Default(s)
     my $quiet;
+    my $temp_directory;
     my $verbose;
 
     my $tmpl = {
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
-        },
-        reference_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$reference_href,
         },
-        reference_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$reference_id
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
         quiet      => {
-            default     => 1,
             allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$quiet,
             strict_type => 1,
-            store       => \$quiet
+        },
+        temp_directory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$temp_directory,
+            strict_type => 1,
         },
         verbose => {
             default     => $arg_href->{parameter_href}{verbose},
+            store       => \$verbose,
             strict_type => 1,
-            store       => \$verbose
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::File qw{ check_file_md5sum };
-    use MIP::File::Decompression qw{ decompress_file };
-    use MIP::Program::Download::Wget qw{ wget };
+    use MIP::Gnu::Bash qw{ gnu_cd };
+    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
+    use MIP::Recipes::Download::Get_reference qw{ get_reference };
+    use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
 
-    ## Potential download files
-    my @file_keys = qw{ file file_check
-      file_index file_index_check };
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger(q{Download_reference});
 
-  REFERENCE_FILE:
-    foreach my $key (@file_keys) {
+    my $pwd = cwd();
 
-        next REFERENCE_FILE
-          if ( not exists $reference_href->{$key} );
+    ### Download recipes
+    ## Create code reference table for download recipes
+    my %download_recipe = ( human_reference => \&download_human_reference, );
 
-        ## Install reference
-        my $file         = $reference_href->{$key};
-        my $outfile      = $reference_href->{ q{out} . $key };
-        my $outfile_path = catfile( $parameter_href->{reference_dir}, $outfile );
-        my $url          = $reference_href->{url_prefix} . $file;
+    # Storing job_ids from SLURM
+    my %job_id;
 
-        ## Download
-        say {$FILEHANDLE} q{## Download } . $reference_id . $NEWLINE;
+    say {$FILEHANDLE} q{## Create reference directory};
+    gnu_mkdir(
+        {
+            indirectory_path => $parameter_href->{reference_dir},
+            parents          => 1,
+            FILEHANDLE       => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
-        wget(
+    ## Since all commands should assume working directory to be the reference directory
+    gnu_cd(
+        {
+            directory_path => $parameter_href->{reference_dir},
+            FILEHANDLE     => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+  REFERENCE:
+    while ( my ( $reference_id, $versions_ref ) = each %{ $parameter_href->{reference} } )
+    {
+
+        ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
+
+        my @reference_versions;
+        if ( ref $versions_ref eq q{ARRAY} ) {
+
+            @reference_versions = @{$versions_ref};
+        }
+        else {
+
+            push @reference_versions, $versions_ref;
+        }
+
+      REFERENCE_VERSION:
+        foreach my $reference_version (@reference_versions) {
+
+          GENOME_VERSION:
+            foreach
+              my $genome_version ( @{ $parameter_href->{reference_genome_versions} } )
             {
-                FILEHANDLE   => $FILEHANDLE,
-                outfile_path => $outfile_path,
-                quiet        => $quiet,
-                url          => $url,
-                verbose      => $verbose,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
 
-        ## Check if file needs to be decompress and write decompression if so
-        decompress_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                outdir_path  => $parameter_href->{reference_dir},
-                outfile_path => $outfile_path,
-                decompress_program =>
-                  $reference_href->{ q{out} . $key . $UNDERSCORE . q{decompress} },
-            }
-        );
+                ## Standardize case
+                $genome_version = lc $genome_version;
 
-        ## Check file integrity of file
-        check_file_md5sum(
-            {
-                FILEHANDLE    => $FILEHANDLE,
-                md5_file_path => $outfile_path,
-                check_method =>
-                  $reference_href->{ q{out} . $key . $UNDERSCORE . q{method} },
+                my $reference_href =
+                  $parameter_href->{$reference_id}{$genome_version}{$reference_version};
+
+                next GENOME_VERSION
+                  if ( not exists $parameter_href->{$reference_id}{$genome_version} );
+
+                next GENOME_VERSION
+                  if (
+                    not exists $parameter_href->{$reference_id}{$genome_version}
+                    {$reference_version} );
+
+                ## Build file name and path
+                my $outfile_name = $reference_href->{outfile};
+                my $outfile_path =
+                  catfile( $parameter_href->{reference_dir}, $outfile_name );
+
+                ## Check if reference already exists in reference directory
+                next GENOME_VERSION if ( -f $outfile_path );
+
+                $log->warn( q{Cannot find reference file:} . $outfile_path );
+                $log->warn(
+                        q{Will try to download: }
+                      . $reference_id
+                      . q{ version: }
+                      . $reference_version,
+                );
+
+                if ( exists $download_recipe{$reference_id} ) {
+
+                    $download_recipe{$reference_id}->(
+                        {
+                            job_id_href       => \%job_id,
+                            parameter_href    => $parameter_href,
+                            recipe_name       => $reference_id,
+                            reference_href    => $reference_href,
+                            reference_version => $reference_version,
+                            quiet             => $quiet,
+                            temp_directory    => $temp_directory,
+                        }
+                    );
+                }
             }
-        );
+        }
     }
+
+    ## Move back to original
+    gnu_cd(
+        {
+            directory_path => $pwd,
+            FILEHANDLE     => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
     return;
 }
 
