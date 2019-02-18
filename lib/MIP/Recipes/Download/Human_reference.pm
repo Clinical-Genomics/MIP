@@ -37,14 +37,15 @@ sub download_human_reference {
 
 ## Function : Download human genome reference builds
 ## Returns  :
-## Arguments: $job_id_href       => The job_id hash {REF}
-##          : $parameter_href    => Parameter hash {REF}
-##          : $recipe_name       => Recipe name
-##          : $reference_href    => Reference hash {REF}
-##          : $reference_version => Reference version
-##          : $quiet             => Quiet (no output)
-##          : $temp_directory    => Temporary directory for recipe
-##          : $verbose           => Verbosity
+## Arguments: $job_id_href          => The job_id hash {REF}
+##          : $parameter_href       => Parameter hash {REF}
+##          : $profile_base_command => Submission profile base command
+##          : $recipe_name          => Recipe name
+##          : $reference_href       => Reference hash {REF}
+##          : $reference_version    => Reference version
+##          : $quiet                => Quiet (no output)
+##          : $temp_directory       => Temporary directory for recipe
+##          : $verbose              => Verbosity
 
     my ($arg_href) = @_;
 
@@ -56,6 +57,7 @@ sub download_human_reference {
     my $reference_version;
 
     ## Default(s)
+    my $profile_base_command;
     my $quiet;
     my $temp_directory;
     my $verbose;
@@ -73,6 +75,11 @@ sub download_human_reference {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -172,6 +179,7 @@ sub download_human_reference {
         ## No upstream or downstream dependencies
         slurm_submit_job_no_dependency_dead_end(
             {
+                base_command     => $profile_base_command,
                 job_id_href      => $job_id_href,
                 log              => $log,
                 sbatch_file_name => $recipe_file_path,

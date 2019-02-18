@@ -63,7 +63,12 @@ my $test_dir  = File::Temp->newdir();
 my $file_path = catfile( $test_dir, q{recipe_script.sh} );
 my $log       = test_log( { log_name => q{MIP_DOWNLOAD}, no_screen => 1, } );
 
-## Given
+## Given analysis parameters
+my $genome_version    = q{grch37};
+my $recipe_name       = q{RECIPE_NAME};
+my $reference_version = q{REFERENCE_VERSION};
+my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );
+
 my %parameter = test_mip_hashes(
     {
         mip_hash_name => q{download_parameter},
@@ -71,19 +76,19 @@ my %parameter = test_mip_hashes(
 );
 $parameter{project_id}    = q{test};
 $parameter{reference_dir} = catfile($test_dir);
+my $reference_href = $parameter{$recipe_name}{$genome_version}{$REFERENCE_VERSION};
+
 my %job_id;
-my $recipe_name       = q{RECIPE_NAME};
-my $genome_version    = q{grch37};
-my $reference_version = q{REFERENCE_VERSION};
-my $reference_href    = $parameter{$recipe_name}{$genome_version}{$REFERENCE_VERSION};
 
 my $is_ok = SUB_ROUTINE(
     {
-        job_id_href    => \%job_id,
-        parameter_href => \%parameter,
-        recipe_name    => $recipe_name,
-        reference_href => $reference_href,
-        temp_directory => catfile($test_dir),
+        job_id_href          => \%job_id,
+        parameter_href       => \%parameter,
+        profile_base_command => $slurm_mock_cmd,
+        recipe_name          => $recipe_name,
+        reference_href       => $reference_href,
+        reference_version    => $reference_version,
+        temp_directory       => catfile($test_dir),
     }
 );
 
