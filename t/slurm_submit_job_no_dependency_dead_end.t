@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -63,11 +64,11 @@ diag(   q{Test slurm_submit_job_no_dependency_dead_end from Slurm_processes.pm v
       . $EXECUTABLE_NAME );
 
 ## Given a mock slurm and script
-my %job_id         = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 my $sbatch_file_name =
   catfile( $Bin, qw{ data 643594-miptest test_script fastqc_ADM1059A1.0.sh } );
-my $log = test_log( {} );
+my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 slurm_submit_job_no_dependency_dead_end(
     {

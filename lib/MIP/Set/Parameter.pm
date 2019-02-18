@@ -17,12 +17,16 @@ use warnings qw{ FATAL utf8 };
 use List::Util qw{ any };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $COLON $COMMA $CLOSE_BRACE $NEWLINE $OPEN_BRACE $SPACE $TAB $UNDERSCORE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -38,19 +42,14 @@ BEGIN {
       set_parameter_reference_dir_path
       set_parameter_to_broadcast
       set_programs_for_installation
+      set_recipe_mode
     };
 }
 
 ## Constants
-Readonly my $COMMA       => q{,};
-Readonly my $OPEN_BRACE  => q{\{};
-Readonly my $CLOSE_BRACE => q{\}};
-Readonly my $MINUS_ONE   => -1;
-Readonly my $MINUS_TWO   => -2;
-Readonly my $NEWLINE     => qq{\n};
-Readonly my $SPACE       => q{ };
-Readonly my $TAB         => qq{\t};
-Readonly my $UNDERSCORE  => q{_};
+Readonly my $MINUS_ONE => -1;
+Readonly my $MINUS_TWO => -2;
+Readonly my $TWO       => 2;
 
 sub set_config_to_active_parameters {
 
@@ -1189,6 +1188,68 @@ q{Please select a single installation environment when using the option --select
             select_programs_ref   => $parameter_href->{select_programs},
         }
     );
+
+    return;
+}
+
+sub set_recipe_mode {
+
+## Function : Set recipe mode
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $log                   => Log
+##          : $mode                  => Mode to set
+##          : $recipes_ref           => Recipes to set {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $mode;
+    my $recipes_ref;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        mode => {
+            allow       => [ 0, 1, $TWO ],
+            defined     => 1,
+            required    => 1,
+            store       => \$mode,
+            strict_type => 1,
+        },
+        recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$recipes_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set recipe mode
+  RECIPE:
+    foreach my $recipe ( @{$recipes_ref} ) {
+
+        $active_parameter_href->{$recipe} = $mode;
+
+        ## Broadcast
+        $log->info(
+            q{Set} . $SPACE . $recipe . $SPACE . q{to} . $COLON . $SPACE . $mode );
+    }
 
     return;
 }

@@ -37,13 +37,6 @@ command_usage(q{analyse <pipeline>});
 ## Define, check and get Cli supplied parameters
 _build_usage();
 
-#sub run {
-#    my ($arg_href) = @_;
-
-#    say {*STDERR} q{Please choose an subcommand to start the analysis};
-#    return;
-#}
-
 sub _build_usage {
 
 ## Function : Get and/or set input parameters

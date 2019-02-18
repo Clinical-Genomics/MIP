@@ -37,6 +37,7 @@ sample_ids:
   - ADM1059A2
   - ADM1059A3
 slurm_quality_of_service: low
+salmon_quant: 1
 submission_profile: slurm
 load_env:
   test:

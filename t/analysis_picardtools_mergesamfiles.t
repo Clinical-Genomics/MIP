@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,9 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $RECIPE_CORE_NUMBER => 16;
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,18 +41,19 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Gatk_splitncigarreads} =>
-          [qw{ analysis_gatk_splitncigarreads }],
+        q{MIP::Recipes::Analysis::Picardtools_mergesamfiles} =>
+          [qw{ analysis_picardtools_mergesamfiles }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Gatk_splitncigarreads qw{ analysis_gatk_splitncigarreads };
+use MIP::Recipes::Analysis::Picardtools_mergesamfiles
+  qw{ analysis_picardtools_mergesamfiles };
 
-diag(   q{Test analysis_gatk_splitncigarreads from Gatk_splitncigarreads.pm v}
-      . $MIP::Recipes::Analysis::Gatk_splitncigarreads::VERSION
+diag(   q{Test analysis_picardtools_mergesamfiles from Picardtools_mergesamfiles.pm v}
+      . $MIP::Recipes::Analysis::Picardtools_mergesamfiles::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -66,7 +64,7 @@ diag(   q{Test analysis_gatk_splitncigarreads from Gatk_splitncigarreads.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name = q{gatk_splitncigarreads};
+my $recipe_name = q{picardtools_mergesamfiles};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -76,7 +74,7 @@ my %active_parameter = test_mip_hashes(
     }
 );
 $active_parameter{$recipe_name}                     = 1;
-$active_parameter{recipe_core_number}{$recipe_name} = $RECIPE_CORE_NUMBER;
+$active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
 
@@ -86,19 +84,26 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+@{ $file_info{$sample_id}{lanes} } = ( 1, 2 );
+$file_info{$sample_id}{$recipe_name}{file_tag} = q{merged};
+
 %{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
     {
         mip_hash_name => q{io},
     }
 );
 
-## Set correct outfile path
 CONTIG:
 foreach my $contig ( @{ $file_info{contigs} } ) {
 
-    $file_info{io}{TEST}{$sample_id}{$recipe_name}{temp}{file_path_href}{$contig} =
+    $file_info{io}{TEST}{$sample_id}{$recipe_name}{in}{file_path_href}{$contig} =
       q{a_file.bam};
+    push @{ $file_info{io}{TEST}{$sample_id}{$recipe_name}{in}{file_name_prefixes} },
+      $contig . q{_a_file.bam};
+    $file_info{io}{TEST}{$sample_id}{$recipe_name}{in}{file_suffix} =
+      q{.bam};
 }
+
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -109,9 +114,10 @@ my %parameter = test_mip_hashes(
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 $parameter{$recipe_name}{outfile_suffix} = q{.bam};
+
 my %sample_info;
 
-my $is_ok = analysis_gatk_splitncigarreads(
+my $is_ok = analysis_picardtools_mergesamfiles(
     {
         active_parameter_href   => \%active_parameter,
         file_info_href          => \%file_info,

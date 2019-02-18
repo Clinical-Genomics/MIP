@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -35,7 +35,7 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $RECIPE_CORE_NUMBER => 16;
+Readonly my $GENOME_BUILD_VERSION_HG => 20;
 
 BEGIN {
 
@@ -44,18 +44,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Gatk_splitncigarreads} =>
-          [qw{ analysis_gatk_splitncigarreads }],
+        q{MIP::Recipes::Analysis::Plink} => [qw{ analysis_plink }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Gatk_splitncigarreads qw{ analysis_gatk_splitncigarreads };
+use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
 
-diag(   q{Test analysis_gatk_splitncigarreads from Gatk_splitncigarreads.pm v}
-      . $MIP::Recipes::Analysis::Gatk_splitncigarreads::VERSION
+diag(   q{Test analysis_plink from Plink.pm v}
+      . $MIP::Recipes::Analysis::Plink::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -63,10 +62,10 @@ diag(   q{Test analysis_gatk_splitncigarreads from Gatk_splitncigarreads.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+my $log = test_log( { log_name => q{MIP}, } );
 
 ## Given analysis parameters
-my $recipe_name = q{gatk_splitncigarreads};
+my $recipe_name    = q{plink};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -76,9 +75,10 @@ my %active_parameter = test_mip_hashes(
     }
 );
 $active_parameter{$recipe_name}                     = 1;
-$active_parameter{recipe_core_number}{$recipe_name} = $RECIPE_CORE_NUMBER;
+$active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $sample_id = $active_parameter{sample_ids}[0];
+my $case_id = $active_parameter{case_id};
+$active_parameter{found_other_count} = 1;
 
 my %file_info = test_mip_hashes(
     {
@@ -86,19 +86,14 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
+%{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
     {
         mip_hash_name => q{io},
     }
 );
+$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_HG;
+$file_info{human_genome_reference_source}  = q{hg};
 
-## Set correct outfile path
-CONTIG:
-foreach my $contig ( @{ $file_info{contigs} } ) {
-
-    $file_info{io}{TEST}{$sample_id}{$recipe_name}{temp}{file_path_href}{$contig} =
-      q{a_file.bam};
-}
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -108,24 +103,46 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{$recipe_name}{outfile_suffix} = q{.bam};
+$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
+
 my %sample_info;
 
-my $is_ok = analysis_gatk_splitncigarreads(
+my $is_ok = analysis_plink(
     {
         active_parameter_href   => \%active_parameter,
+        case_id                 => $case_id,
         file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
         profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+
+## Given no eliglbe test to run
+# Reduce to single sample
+@{ $active_parameter{sample_ids} } = $active_parameter{sample_ids}[0];
+
+my $return = analysis_plink(
+    {
+        active_parameter_href   => \%active_parameter,
+        case_id                 => $case_id,
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        parameter_href          => \%parameter,
+        profile_base_command    => $slurm_mock_cmd,
+        recipe_name             => $recipe_name,
+        sample_info_href        => \%sample_info,
+    }
+);
+
+## Then return undef, since there are no tests to run
+is( $return, undef, q{ Skipped analysis recipe } . $recipe_name );
 
 done_testing();

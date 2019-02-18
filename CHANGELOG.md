@@ -32,6 +32,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Switched 1000G phase3_v4_2013-05-02 to gnomad r2.0.1 as default for gatk_calculategenotypeposteriors_support_set option
 - Added switch to add all research variants to clinical file for MT. Required to display all MT variants in Scout clinical view as they are all deemed clinically relevant.
 - Added gatk GatherBqsrReports to gather bqsr reports after parallelization
+- Renamed flag "gatk_calculategenotypeposteriors_support_set" to "gatk_calculate_genotype_call_set"
 
 **New Pipeline**
 - rd_dna

@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,11 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COLON => q{:};
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -62,10 +58,10 @@ diag(   q{Test build_star_prerequisites from Star_prerequisites.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given build parameters
-my $recipe_name    = q{star_fusion};
+my $recipe_name = q{star_fusion};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -84,7 +80,7 @@ my %file_info = test_mip_hashes(
     }
 );
 my %infile_lane_prefix;
-my %job_id    = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
 my %parameter = test_mip_hashes(
     {
         mip_hash_name => q{recipe_parameter},

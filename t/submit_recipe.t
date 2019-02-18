@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,11 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA      => q{,};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 BEGIN {
 
@@ -63,7 +59,7 @@ diag(   q{Test submit_recipe from Processes.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Base arguments
 my $case_id = q{case1};
@@ -107,7 +103,7 @@ trap {
             sample_ids_ref     => \@sample_ids,
             submission_profile => q{slurm},
         }
-    )
+      )
 };
 
 ## Then

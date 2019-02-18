@@ -103,10 +103,9 @@ trap {
             required_argument_href     => \%required_argument,
             is_self_testing            => 1,
         }
-    )
+      )
 };
-say STDERR $trap->stderr;
 ## Then throw error
-like( $trap->stderr, qr/Command \s+ line \s+ does \s+ not/xms, q{Throw error message} );
+like( $trap->stderr, qr/Command\sline\sdoes\snot/xms, q{Throw error message} );
 
 done_testing();

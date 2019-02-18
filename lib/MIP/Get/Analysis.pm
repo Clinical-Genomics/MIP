@@ -16,30 +16,34 @@ use warnings qw{ FATAL utf8 };
 
 ## Third party module(s)
 use autodie;
-use List::MoreUtils qw{ all any };
+use List::MoreUtils qw{ all any firstidx };
 use Log::Log4perl;
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $EMPTY_STR $NEWLINE $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ get_dependency_tree get_dependency_tree_chain get_dependency_tree_order get_overall_analysis_type get_vcf_parser_analysis_suffix print_recipe };
+    our @EXPORT_OK = qw{
+      get_chain_recipes
+      get_dependency_tree
+      get_dependency_subtree
+      get_dependency_tree_chain
+      get_dependency_tree_order
+      get_overall_analysis_type
+      get_recipe_chain
+      get_vcf_parser_analysis_suffix
+      print_recipe
+    };
 
 }
-
-## Constants
-Readonly my $SPACE     => q{ };
-Readonly my $EMPTY_STR => q{};
-Readonly my $NEWLINE   => qq{\n};
 
 sub get_dependency_tree {
 
@@ -516,9 +520,9 @@ sub print_recipe {
             strict_type => 1,
         },
         print_recipe_mode => {
-            allow       => [ undef, 0, 1, 2 ],
-            default     => $arg_href->{print_recipe_mode} //= 2,
-            store       => \$print_recipe_mode,
+            allow => [ undef, 0, 1, 2 ],
+            default => $arg_href->{print_recipe_mode} //= 2,
+            store => \$print_recipe_mode,
             strict_type => 1,
         },
     };
@@ -570,6 +574,239 @@ sub print_recipe {
     print {*STDOUT} $NEWLINE;
 
     exit;
+}
+
+sub get_recipe_chain {
+
+## Function  : Get the chain to which a recipe belongs
+## Returns   :
+## Arguments : $chain_id_ref         => Chain found {REF}
+##           : $current_chain        => Current chain
+##           : $dependency_tree_href => Dependency hash {REF}
+##           : $recipe               => Initiation point
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id_ref;
+    my $current_chain;
+    my $dependency_tree_href;
+    my $recipe;
+
+    my $tmpl = {
+        chain_id_ref => {
+            default     => \$$,
+            store       => \$chain_id_ref,
+            strict_type => 1,
+        },
+        current_chain => {
+            store       => \$current_chain,
+            strict_type => 1,
+        },
+        dependency_tree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$dependency_tree_href,
+            strict_type => 1,
+        },
+        recipe => {
+            required    => 1,
+            store       => \$recipe,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Return if chain has been found
+    return if ( ${$chain_id_ref} );
+
+    ## Copy hash to enable recursive removal of keys
+    my %tree = %{$dependency_tree_href};
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %tree ) {
+
+        ## Don't store PARALLEL as the current chain
+        if ( $key =~ /CHAIN_/sxm ) {
+
+            $current_chain = $key;
+        }
+
+        ## Inspect element
+        if ( ref $value eq q{ARRAY} ) {
+
+          ELEMENT:
+            foreach my $element ( @{$value} ) {
+
+                ## Call recursive
+                if ( ref $element eq q{HASH} ) {
+
+                    get_recipe_chain(
+                        {
+                            chain_id_ref         => $chain_id_ref,
+                            current_chain        => $current_chain,
+                            dependency_tree_href => $element,
+                            recipe               => $recipe,
+                        }
+                    );
+                }
+                ## Found recipe
+                if ( ( ref $element ne q{HASH} ) && ( $element eq $recipe ) ) {
+
+                    ## Save current chain
+                    ${$chain_id_ref} = $current_chain;
+
+                    last ELEMENT;
+                }
+            }
+            delete $tree{$key};
+        }
+    }
+    return;
+}
+
+sub get_chain_recipes {
+
+## Function  : Collects all recipes downstream of initation point
+## Returns   : @chain_recipes
+## Arguments : $chain_initiation_point  => Chain to operate on
+##           : $dependency_tree_href    => Dependency hash {REF}
+##           : $recipe_initiation_point => Recipe to start with
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_initiation_point;
+    my $dependency_tree_href;
+    my $recipe_initiation_point;
+
+    my $tmpl = {
+        chain_initiation_point => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_initiation_point,
+            strict_type => 1,
+        },
+        dependency_tree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$dependency_tree_href,
+            strict_type => 1,
+        },
+        recipe_initiation_point => {
+            defined     => 1,
+            store       => \$recipe_initiation_point,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get the dependency subtree
+    my $dependency_subtree_href = {};
+    get_dependency_subtree(
+        {
+            dependency_subtree_href => $dependency_subtree_href,
+            dependency_tree_href    => $dependency_tree_href,
+            chain_initiation_point  => $chain_initiation_point,
+        }
+    );
+
+    ## Get the recipes
+    my @recipes;
+    get_dependency_tree_order(
+        {
+            dependency_tree_href => $dependency_subtree_href,
+            recipes_ref          => \@recipes,
+        }
+    );
+
+    ## Slice if $recipe_initiation_point is defined
+    if ($recipe_initiation_point) {
+        my $initiation_idx = firstidx { $_ eq $recipe_initiation_point } @recipes;
+        @recipes = @recipes[ $initiation_idx .. $#recipes ];
+
+    }
+
+    return @recipes;
+}
+
+sub get_dependency_subtree {
+
+## Function : Get part of dependency tree.
+## Returns  : %dependency_tree
+## Arguments: $chain_initiation_point  => Chain to operate on
+##          : $dependency_tree_href    => Dependency hash {REF}
+##          : $dependency_subtree_href => Dependency sub hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_initiation_point;
+    my $dependency_tree_href;
+    my $dependency_subtree_href;
+
+    my $tmpl = {
+        chain_initiation_point => {
+            store       => \$chain_initiation_point,
+            strict_type => 1,
+        },
+        dependency_tree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$dependency_tree_href,
+            strict_type => 1,
+        },
+        dependency_subtree_href => {
+            default     => {},
+            required    => 1,
+            store       => \$dependency_subtree_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Return if tree is found
+    return if ( defined $dependency_subtree_href->{$chain_initiation_point} );
+
+    ## Copy hash to enable recursive removal of keys
+    my %tree = %{$dependency_tree_href};
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %tree ) {
+
+        ## Save subtree if it matches chain
+        if ( $key eq $chain_initiation_point ) {
+            $dependency_subtree_href->{$chain_initiation_point} = $value;
+        }
+
+        ## Inspect element
+        if ( ref $value eq q{ARRAY} ) {
+
+          ELEMENT:
+            foreach my $element ( @{$value} ) {
+
+                ## Call recursive
+                if ( ref $element eq q{HASH} ) {
+
+                    get_dependency_subtree(
+                        {
+                            dependency_tree_href    => $element,
+                            dependency_subtree_href => $dependency_subtree_href,
+                            chain_initiation_point  => $chain_initiation_point,
+                        }
+                    );
+                }
+            }
+            delete $tree{$key};
+        }
+    }
+    return;
 }
 
 1;

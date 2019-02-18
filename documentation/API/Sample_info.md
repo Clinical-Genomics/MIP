@@ -7,6 +7,10 @@ The metadata on the case and samples are recorded in a yaml outfile format with 
 ```
 analysis_date: string
 case: string
+mip_version: string
+[METAFILE_TAG]: {
+  path: string,
+},
 [VCF_FILE_KEY]: {  #Hash of hashes
   clinical: {  
     path: string,
@@ -29,12 +33,13 @@ recipe: { #Hash of hashes
       version: string,
     },
   },
-  [METAFILE_TAG]: {
-    path: string,
-  },
 },
 sample: { #Hash of hashes
   [SAMPLE_ID]: {
+    analysis_type: string
+    [METAFILE_TAG]: {  
+      path: string,
+    },
     recipe: {
       [RECIPE_NAME]: {
         outdirectory: string,
@@ -48,9 +53,7 @@ sample: { #Hash of hashes
           processed_by: string,
           version: string,
         },
-      },
-      [INFILE]: {
-        [RECIPE_NAME]: {
+        [INFILE]: {
           outdirectory: string,
           outfile: string,
           path: string,
@@ -63,9 +66,6 @@ sample: { #Hash of hashes
             version: string,
           },
         },
-      },
-      [METAFILE_TAG]: {  
-        path: string,
       },
     },
   },
