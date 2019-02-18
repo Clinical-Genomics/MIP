@@ -58,10 +58,10 @@ diag(   q{Test SUB_ROUTINE from MODULE.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log();
+my $log = test_log( { no_screen => 1, } );
 
 ## Given build parameters
-my $recipe_name = q{RECIPE_NAME};
+my $recipe_name    = q{RECIPE_NAME};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -79,7 +79,7 @@ my %file_info = test_mip_hashes(
     }
 );
 my %infile_lane_prefix;
-my %job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
+my %job_id    = test_mip_hashes( { mip_hash_name => q{job_id}, } );
 my %parameter = test_mip_hashes(
     {
         mip_hash_name => q{recipe_parameter},
