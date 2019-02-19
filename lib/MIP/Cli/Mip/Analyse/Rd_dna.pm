@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.18;
+our $VERSION = 1.19;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1359,6 +1359,16 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
               q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
             is  => q{rw},
             isa => Str,
+        )
+    );
+
+    option(
+        q{gatk_genotypegvcfs_all_sites} => (
+            cmd_aliases   => [qw{ ggtas }],
+            cmd_flag      => q{gatk_genotype_all_sit},
+            documentation => q{Include loci found to be non-variant after genotyping},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 

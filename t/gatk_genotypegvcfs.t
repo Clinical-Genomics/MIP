@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -92,6 +92,10 @@ my %specific_argument = (
     dbsnp_path => {
         input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
         expected_output => q{--dbsnp } . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+    },
+    include_nonvariant_sites => {
+        input           => 1,
+        expected_output => q{--include-non-variant-sites},
     },
     infile_path => {
         input           => q{gendb://} . catdir(qw{ path to my_db }),
