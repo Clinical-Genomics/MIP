@@ -24,19 +24,27 @@ use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Cluster qw{ check_max_core_number };
 use MIP::Constants
-  qw{ $COLON $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Language::Shell qw{ create_bash_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
+use MIP::Check::Parameter
+  qw{ check_cmd_config_vs_definition_file check_email_address check_recipe_exists_in_hash check_recipe_mode };
+use MIP::Check::Path qw{ check_parameter_files };
+use MIP::Set::Parameter
+  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_to_active_parameter set_cache };
 use MIP::Script::Utils qw{ create_temp_dir };
+use MIP::Update::Path qw{ update_to_absolute_path };
+use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -47,14 +55,23 @@ sub mip_download {
 
 ## Function : Main script for generating MIP download scripts
 ## Returns  :
-## Arguments: $parameter_href => Parameter hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $active_parameter_href;
     my $parameter_href;
 
     my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -67,6 +84,10 @@ sub mip_download {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments};
 
     ## Transfer to lexical variables
+    # Parameters to include in each download run
+    my %active_parameter = %{$active_parameter_href};
+
+    # All parameters MIP download knows
     my %parameter = %{$parameter_href};
 
     ## Get local time
@@ -80,10 +101,46 @@ sub mip_download {
     # Add specific MIP process
     $script .= $UNDERSCORE . q{download};
 
-    ## Set the default Log4perl file using supplied dynamic parameters.
-    $parameter{log_file} = set_default_log4perl_file(
+    ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
+    update_to_absolute_path(
         {
-            cmd_input       => $parameter{log_file},
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
+        }
+    );
+
+    ### Config file
+## If config from cmd
+    if ( exists $active_parameter{config_file}
+        && defined $active_parameter{config_file} )
+    {
+
+        ## Loads a YAML file into an arbitrary hash and returns it.
+        my %config_parameter =
+          load_yaml( { yaml_file => $active_parameter{config_file}, } );
+
+## Set config parameters into %active_parameter unless $parameter
+## has been supplied on the command line
+        set_config_to_active_parameters(
+            {
+                active_parameter_href => \%active_parameter,
+                config_parameter_href => \%config_parameter,
+            }
+        );
+
+        ## Compare keys from config and cmd (%active_parameter) with definitions file (%parameter)
+        check_cmd_config_vs_definition_file(
+            {
+                active_parameter_href => \%active_parameter,
+                parameter_href        => \%parameter,
+            }
+        );
+    }
+
+    ## Set the default Log4perl file using supplied dynamic parameters.
+    $active_parameter{log_file} = set_default_log4perl_file(
+        {
+            cmd_input       => $active_parameter{log_file},
             date            => $date,
             date_time_stamp => $date_time_stamp,
             script          => $script,
@@ -93,42 +150,192 @@ sub mip_download {
     ## Initiate logger
     my $log = initiate_logger(
         {
-            file_path => $parameter{log_file},
+            file_path => $active_parameter{log_file},
             log_name  => uc q{mip_download},
         }
     );
     $log->info( q{MIP Version: } . $MIP_VERSION );
-    $log->info( q{Writing log messages to} . $COLON . $SPACE . $parameter{log_file} );
+    $log->info(
+        q{Writing log messages to} . $COLON . $SPACE . $active_parameter{log_file} );
 
-## Set parameter default
-    if ( not $parameter{reference_dir} ) {
+### Populate uninitilized active_parameters{parameter_name} with default from parameter
+  PARAMETER:
+    foreach my $parameter_name ( keys %parameter ) {
 
-        $parameter{reference_dir} = cwd();
+        ## If hash and set - skip
+        next PARAMETER
+          if ( ref $active_parameter{$parameter_name} eq qw{HASH}
+            && keys %{ $active_parameter{$parameter_name} } );
+
+        ## If array and set - skip
+        next PARAMETER
+          if ( ref $active_parameter{$parameter_name} eq qw{ARRAY}
+            && @{ $active_parameter{$parameter_name} } );
+
+        ## If scalar and set - skip
+        next PARAMETER
+          if ( defined $active_parameter{$parameter_name}
+            and not ref $active_parameter{$parameter_name} );
+
+        ### Special case for parameters that are dependent on other parameters values
+        my @custom_default_parameters = qw{ reference_dir };
+
+        if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
+
+            set_custom_default_to_active_parameter(
+                {
+                    active_parameter_href => \%active_parameter,
+                    parameter_href        => \%parameter,
+                    parameter_name        => $parameter_name,
+                }
+            );
+            next PARAMETER;
+        }
+
+        ## Checks and sets user input or default values to active_parameters
+        set_default_to_active_parameter(
+            {
+                active_parameter_href => \%active_parameter,
+                associated_recipes_ref =>
+                  \@{ $parameter{$parameter_name}{associated_recipe} },
+                log            => $log,
+                parameter_href => \%parameter,
+                parameter_name => $parameter_name,
+            }
+        );
     }
 
-    check_user_reference(
+    ## Make sure that we have lower case from user input
+    @{ $active_parameter{reference_genome_versions} } =
+      map { lc } @{ $active_parameter{reference_genome_versions} };
+
+    ### Checks
+
+    ## Check existence of files and directories
+  PARAMETER:
+    foreach my $parameter_name ( keys %parameter ) {
+
+        if ( exists $parameter{$parameter_name}{exists_check} ) {
+
+            check_parameter_files(
+                {
+                    active_parameter_href => \%active_parameter,
+                    associated_recipes_ref =>
+                      \@{ $parameter{$parameter_name}{associated_recipe} },
+                    log                    => $log,
+                    parameter_exists_check => $parameter{$parameter_name}{exists_check},
+                    parameter_href         => \%parameter,
+                    parameter_name         => $parameter_name,
+                }
+            );
+        }
+    }
+
+    ## Check email adress syntax and mail host
+    check_email_address(
         {
-            cmd_reference_ref => \%{ $parameter{cmd_reference} },
-            reference_ref     => \%{ $parameter{reference} },
+            email => $active_parameter{email},
+            log   => $log,
         }
     );
 
-## Change relative path to absolute path for certain parameters
-    update_to_absolute_path( { parameter_href => \%parameter, } );
+    ## Parameters that have keys as MIP recipe names
+    my @parameter_keys_to_check = (qw{ recipe_time recipe_core_number });
+  PARAMETER_NAME:
+    foreach my $parameter_name (@parameter_keys_to_check) {
+
+        ## Test if key from query hash exists truth hash
+        check_recipe_exists_in_hash(
+            {
+                log            => $log,
+                parameter_name => $parameter_name,
+                query_ref      => \%{ $active_parameter{$parameter_name} },
+                truth_href     => \%parameter,
+            }
+        );
+    }
+
+## Parameters with key(s) that have elements as MIP recipe names
+    my @parameter_element_to_check = qw{ associated_recipe };
+  PARAMETER:
+    foreach my $parameter ( keys %parameter ) {
+
+      KEY:
+        foreach my $parameter_name (@parameter_element_to_check) {
+
+            next KEY if ( not exists $parameter{$parameter}{$parameter_name} );
+
+            ## Test if element from query array exists truth hash
+            check_recipe_exists_in_hash(
+                {
+                    log            => $log,
+                    parameter_name => $parameter_name,
+                    query_ref      => \@{ $parameter{$parameter}{$parameter_name} },
+                    truth_href     => \%parameter,
+                }
+            );
+        }
+    }
+
+    ## Check that the module core number do not exceed the maximum per node
+    foreach my $recipe_name ( keys %{ $active_parameter{recipe_core_number} } ) {
+
+        ## Limit number of cores requested to the maximum number of cores available per node
+        $active_parameter{recipe_core_number}{$recipe_name} = check_max_core_number(
+            {
+                max_cores_per_node => $active_parameter{max_cores_per_node},
+                core_number_requested =>
+                  $active_parameter{recipe_core_number}{$recipe_name},
+            }
+        );
+    }
+
+    ## Adds dynamic aggregate information from definitions to parameter hash
+    set_cache(
+        {
+            aggregates_ref => [
+                ## Collects all recipes that MIP can handle
+                q{type:recipe},
+            ],
+            parameter_href => \%parameter,
+        }
+    );
+
+    ## Check correct value for recipe mode in MIP
+    check_recipe_mode(
+        {
+            active_parameter_href => \%active_parameter,
+            log                   => $log,
+            parameter_href        => \%parameter,
+        }
+    );
+
+    ## Update recipe mode depending on dry_run_all flag
+    update_recipe_mode_with_dry_run_all(
+        {
+            active_parameter_href => \%active_parameter,
+            dry_run_all           => $active_parameter{dry_run_all},
+            recipes_ref           => \@{ $parameter{cache}{recipe} },
+        }
+    );
+
+    check_user_reference(
+        {
+            user_supplied_reference_ref => \%{ $active_parameter{reference} },
+            reference_genome_versions_ref =>
+              \@{ $active_parameter{reference_genome_versions} },
+            reference_ref => \%{ $active_parameter{reference_feature} },
+        }
+    );
 
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    # Install temp directory
+    # Download temp directory
     my $temp_dir = create_temp_dir( {} );
 
-    if ( $parameter{sbatch_mode} ) {
+    if ( $active_parameter{sbatch_mode} ) {
 
-        if ( not $parameter{project_id} ) {
-
-            $log->fatal(q{Please provide a sbatch project id with option '--project_id'});
-            exit 1;
-        }
         $log->info(
 q{Will write sbatch install instructions to for sbatch enabled references to individual sbatch scripts}
         );
@@ -167,14 +374,14 @@ q{Will write sbatch install instructions to for sbatch enabled references to ind
     $log->info( q{Will write install instructions to '} . $bash_file_path,
         $SINGLE_QUOTE );
 
-    if ( $parameter{sbatch_mode} ) {
+    if ( $active_parameter{sbatch_mode} ) {
 
 ## Build install references recipe in bash file
         sbatch_build_reference_install_recipe(
             {
-                FILEHANDLE     => $FILEHANDLE,
-                parameter_href => \%parameter,
-                temp_directory => $temp_dir,
+                active_parameter_href => \%active_parameter,
+                FILEHANDLE            => $FILEHANDLE,
+                temp_directory        => $temp_dir,
             }
         );
     }
@@ -183,9 +390,9 @@ q{Will write sbatch install instructions to for sbatch enabled references to ind
         ## Build install references recipe in bash file
         build_reference_install_recipe(
             {
-                FILEHANDLE     => $FILEHANDLE,
-                parameter_href => \%parameter,
-                temp_directory => $temp_dir,
+                active_parameter_href => \%active_parameter,
+                FILEHANDLE            => $FILEHANDLE,
+                temp_directory        => $temp_dir,
             }
         );
     }
@@ -201,16 +408,16 @@ sub build_reference_install_recipe {
 
 ## Function : Build install references recipe in bash file
 ## Returns  :
-## Arguments: $parameter_href => Holds all parameters
-##          : $FILEHANDLE     => Filehandle to write to
-##          : $quiet          => Be quiet
-##          : $temp_directory => Temporary directory
-##          : $verbose        => Verbosity
+## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
+##          : $FILEHANDLE            => Filehandle to write to
+##          : $quiet                 => Be quiet
+##          : $temp_directory        => Temporary directory
+##          : $verbose               => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
+    my $active_parameter_href;
     my $FILEHANDLE;
 
     ## Default(s)
@@ -219,11 +426,11 @@ sub build_reference_install_recipe {
     my $verbose;
 
     my $tmpl = {
-        parameter_href => {
+        active_parameter_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$parameter_href,
+            store       => \$active_parameter_href,
             strict_type => 1,
         },
         FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
@@ -240,7 +447,7 @@ sub build_reference_install_recipe {
             strict_type => 1,
         },
         verbose => {
-            default     => $arg_href->{parameter_href}{verbose},
+            default     => $arg_href->{active_parameter_href}{verbose},
             store       => \$verbose,
             strict_type => 1,
         },
@@ -268,7 +475,7 @@ sub build_reference_install_recipe {
     say {$FILEHANDLE} q{## Create reference directory};
     gnu_mkdir(
         {
-            indirectory_path => $parameter_href->{reference_dir},
+            indirectory_path => $active_parameter_href->{reference_dir},
             parents          => 1,
             FILEHANDLE       => $FILEHANDLE,
         }
@@ -278,14 +485,15 @@ sub build_reference_install_recipe {
     ## Since all commands should assume working directory to be the reference directory
     gnu_cd(
         {
-            directory_path => $parameter_href->{reference_dir},
+            directory_path => $active_parameter_href->{reference_dir},
             FILEHANDLE     => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
   REFERENCE:
-    while ( my ( $reference_id, $versions_ref ) = each %{ $parameter_href->{reference} } )
+    while ( my ( $reference_id, $versions_ref ) =
+        each %{ $active_parameter_href->{reference} } )
     {
 
         ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
@@ -304,28 +512,31 @@ sub build_reference_install_recipe {
         foreach my $reference_version (@reference_versions) {
 
           GENOME_VERSION:
-            foreach
-              my $genome_version ( @{ $parameter_href->{reference_genome_versions} } )
+            foreach my $genome_version (
+                @{ $active_parameter_href->{reference_genome_versions} } )
             {
 
                 ## Standardize case
                 $genome_version = lc $genome_version;
 
                 my $reference_href =
-                  $parameter_href->{$reference_id}{$genome_version}{$reference_version};
-
-                next GENOME_VERSION
-                  if ( not exists $parameter_href->{$reference_id}{$genome_version} );
+                  $active_parameter_href->{reference_feature}{$reference_id}
+                  {$genome_version}{$reference_version};
 
                 next GENOME_VERSION
                   if (
-                    not exists $parameter_href->{$reference_id}{$genome_version}
-                    {$reference_version} );
+                    not exists $active_parameter_href->{reference_feature}{$reference_id}
+                    {$genome_version} );
+
+                next GENOME_VERSION
+                  if (
+                    not exists $active_parameter_href->{reference_feature}{$reference_id}
+                    {$genome_version}{$reference_version} );
 
                 ## Build file name and path
                 my $outfile_name = $reference_href->{outfile};
                 my $outfile_path =
-                  catfile( $parameter_href->{reference_dir}, $outfile_name );
+                  catfile( $active_parameter_href->{reference_dir}, $outfile_name );
 
                 ## Check if reference already exists in reference directory
                 next GENOME_VERSION if ( -f $outfile_path );
@@ -341,8 +552,8 @@ sub build_reference_install_recipe {
                 get_reference(
                     {
                         FILEHANDLE     => $FILEHANDLE,
-                        parameter_href => $parameter_href,
                         recipe_name    => $reference_id,
+                        reference_dir  => $active_parameter_href->{reference_dir},
                         reference_href => $reference_href,
                         quiet          => $quiet,
                         verbose        => $verbose,
@@ -375,16 +586,16 @@ sub sbatch_build_reference_install_recipe {
 
 ## Function : Build install references recipe in bash file
 ## Returns  :
-## Arguments: $parameter_href => Holds all parameters
-##          : $FILEHANDLE     => Filehandle to write to
-##          : $quiet          => Be quiet
-##          : $temp_directory => Temporary directory
-##          : $verbose        => Verbosity
+## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
+##          : $FILEHANDLE            => Filehandle to write to
+##          : $quiet                 => Be quiet
+##          : $temp_directory        => Temporary directory
+##          : $verbose               => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
+    my $active_parameter_href;
     my $FILEHANDLE;
 
     ## Default(s)
@@ -393,11 +604,11 @@ sub sbatch_build_reference_install_recipe {
     my $verbose;
 
     my $tmpl = {
-        parameter_href => {
+        active_parameter_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$parameter_href,
+            store       => \$active_parameter_href,
             strict_type => 1,
         },
         FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
@@ -414,7 +625,7 @@ sub sbatch_build_reference_install_recipe {
             strict_type => 1,
         },
         verbose => {
-            default     => $arg_href->{parameter_href}{verbose},
+            default     => $arg_href->{active_parameter_href}{verbose},
             store       => \$verbose,
             strict_type => 1,
         },
@@ -428,7 +639,7 @@ sub sbatch_build_reference_install_recipe {
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
 
     ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger(q{Download_reference});
+    my $log = Log::Log4perl->get_logger( uc q{mip_download} );
 
     my $pwd = cwd();
 
@@ -442,7 +653,7 @@ sub sbatch_build_reference_install_recipe {
     say {$FILEHANDLE} q{## Create reference directory};
     gnu_mkdir(
         {
-            indirectory_path => $parameter_href->{reference_dir},
+            indirectory_path => $active_parameter_href->{reference_dir},
             parents          => 1,
             FILEHANDLE       => $FILEHANDLE,
         }
@@ -452,15 +663,18 @@ sub sbatch_build_reference_install_recipe {
     ## Since all commands should assume working directory to be the reference directory
     gnu_cd(
         {
-            directory_path => $parameter_href->{reference_dir},
+            directory_path => $active_parameter_href->{reference_dir},
             FILEHANDLE     => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
   REFERENCE:
-    while ( my ( $reference_id, $versions_ref ) = each %{ $parameter_href->{reference} } )
+    while ( my ( $reference_id, $versions_ref ) =
+        each %{ $active_parameter_href->{reference} } )
     {
+
+        next REFERENCE if ( not exists $download_recipe{$reference_id} );
 
         ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
 
@@ -478,54 +692,51 @@ sub sbatch_build_reference_install_recipe {
         foreach my $reference_version (@reference_versions) {
 
           GENOME_VERSION:
-            foreach
-              my $genome_version ( @{ $parameter_href->{reference_genome_versions} } )
+            foreach my $genome_version (
+                @{ $active_parameter_href->{reference_genome_versions} } )
             {
 
-                ## Standardize case
-                $genome_version = lc $genome_version;
-
                 my $reference_href =
-                  $parameter_href->{$reference_id}{$genome_version}{$reference_version};
-
-                next GENOME_VERSION
-                  if ( not exists $parameter_href->{$reference_id}{$genome_version} );
+                  $active_parameter_href->{reference_feature}{$reference_id}
+                  {$genome_version}{$reference_version};
 
                 next GENOME_VERSION
                   if (
-                    not exists $parameter_href->{$reference_id}{$genome_version}
-                    {$reference_version} );
+                    not exists $active_parameter_href->{reference_feature}{$reference_id}
+                    {$genome_version} );
+
+                next GENOME_VERSION
+                  if (
+                    not exists $active_parameter_href->{reference_feature}{$reference_id}
+                    {$genome_version}{$reference_version} );
 
                 ## Build file name and path
                 my $outfile_name = $reference_href->{outfile};
                 my $outfile_path =
-                  catfile( $parameter_href->{reference_dir}, $outfile_name );
+                  catfile( $active_parameter_href->{reference_dir}, $outfile_name );
 
                 ## Check if reference already exists in reference directory
                 next GENOME_VERSION if ( -f $outfile_path );
 
-                $log->warn( q{Cannot find reference file:} . $outfile_path );
-                $log->warn(
+                $log->info( q{Cannot find reference file:} . $outfile_path );
+                $log->info(
                         q{Will try to download: }
                       . $reference_id
                       . q{ version: }
                       . $reference_version,
                 );
 
-                if ( exists $download_recipe{$reference_id} ) {
-
-                    $download_recipe{$reference_id}->(
-                        {
-                            job_id_href       => \%job_id,
-                            parameter_href    => $parameter_href,
-                            recipe_name       => $reference_id,
-                            reference_href    => $reference_href,
-                            reference_version => $reference_version,
-                            quiet             => $quiet,
-                            temp_directory    => $temp_directory,
-                        }
-                    );
-                }
+                $download_recipe{$reference_id}->(
+                    {
+                        active_parameter_href => $active_parameter_href,
+                        job_id_href           => \%job_id,
+                        recipe_name           => $reference_id,
+                        reference_href        => $reference_href,
+                        reference_version     => $reference_version,
+                        quiet                 => $quiet,
+                        temp_directory        => $temp_directory,
+                    }
+                );
             }
         }
     }
@@ -541,147 +752,106 @@ sub sbatch_build_reference_install_recipe {
     return;
 }
 
-sub update_to_absolute_path {
-
-## Function : Change relative path to absolute path for certain parameter_names
-## Returns  :
-## Arguments: $parameter_href => The parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Set::File qw{ set_absolute_path };
-
-    ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger(q{mip_download});
-
-  PARAMETER:
-    foreach my $parameter_name ( @{ $parameter_href->{absolute_paths} } ) {
-
-        next PARAMETER if ( not $parameter_href->{$parameter_name} );
-
-        ## Alias
-        my $parameter = \$parameter_href->{$parameter_name};
-
-        ## Array reference
-        if ( ref($parameter) eq q{ARRAY} ) {
-
-            foreach my $parameter_value ( @{$parameter} ) {
-                ## Replace original input with abolute path for supplied path or croaks and exists if path does not exists
-                $parameter_value = set_absolute_path(
-                    {
-                        path           => $parameter_value,
-                        parameter_name => $parameter_name,
-                        log            => $log,
-                    }
-                );
-            }
-        }
-        elsif ( ref($parameter) eq 'HASH' ) {
-            ## Hash reference
-
-            foreach my $key ( keys %{ $parameter_href->{$parameter_name} } )
-            {    #Cannot use each since we are updating key
-
-                ## Find aboslute path for supplied path or croaks and exists if path does not exists
-                my $updated_key = set_absolute_path(
-                    {
-                        path           => $key,
-                        parameter_name => $parameter_name,
-                        log            => $log,
-                    }
-                );
-                $parameter_href->{$parameter_name}{$updated_key} =
-                  delete( $parameter_href->{$parameter_name}{$key} );
-            }
-        }
-        else {
-            ## Scalar - not a reference
-
-            ## Find aboslute path for supplied path or croaks and exists if path does not exists
-            $parameter_href->{$parameter_name} = set_absolute_path(
-                {
-                    path           => $parameter_href->{$parameter_name},
-                    parameter_name => $parameter_name,
-                }
-            );
-        }
-    }
-    return;
-}
-
 sub check_user_reference {
 
 ## Function : Check that the user supplied reference id and version
 ## Returns  :
-## Arguments: $cmd_reference_ref => User supplied reference id and version
-##          : $reference_ref     => Defined reference id and version
+## Arguments: $reference_genome_versions_ref => Reference genome build versions
+##          : $reference_ref                 => Defined reference id and version
+##          : $user_supplied_reference_ref   => User supplied reference id and version
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $cmd_reference_ref;
+    my $reference_genome_versions_ref;
     my $reference_ref;
+    my $user_supplied_reference_ref;
 
     my $tmpl = {
-        cmd_reference_ref => {
-            required    => 1,
+        reference_genome_versions_ref => {
+            default     => [],
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$reference_genome_versions_ref,
             strict_type => 1,
-            store       => \$cmd_reference_ref
         },
         reference_ref => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_ref,
             strict_type => 1,
-            store       => \$reference_ref
+        },
+        user_supplied_reference_ref => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$user_supplied_reference_ref,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger(q{mip_download});
+    my $log = Log::Log4perl->get_logger( uc q{mip_download} );
+
+    ## Store what has been seen
+    my %cache;
 
   REFERENCE:
-    while ( my ( $reference_id, $version ) = each %{$cmd_reference_ref} ) {
+    while ( my ( $reference_id, $versions_ref ) = each %{$user_supplied_reference_ref} ) {
 
         if ( not exists $reference_ref->{$reference_id} ) {
 
             $log->fatal( q{Cannot find reference key:} . $reference_id );
             exit 1;
         }
-        elsif (
-            not any { $_ eq $version }
-            @{ $reference_ref->{$reference_id} }
-          )
-        {
-            ## If element is part of array
+
+## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
+        my @reference_versions;
+        if ( ref $versions_ref eq q{ARRAY} ) {
+
+            @reference_versions = @{$versions_ref};
+        }
+        else {
+
+            push @reference_versions, $versions_ref;
+        }
+
+      REFERENCE_VERSION:
+        foreach my $version (@reference_versions) {
+
+          GENOME_VERSION:
+            foreach my $reference_genome_version ( @{$reference_genome_versions_ref} ) {
+
+                ## Found match
+                if (
+                    exists $reference_ref->{$reference_id}{$reference_genome_version}
+                    {$version} )
+                {
+
+                    $cache{$reference_id}++;
+                }
+                ## Store mismatch
+                push @{ $cache{$version} }, $reference_genome_version;
+            }
+
+            ## Require at least one match
+            next REFERENCE if ( $cache{$reference_id} );
 
             $log->fatal(
-                    q{Cannot find version key: }
+                q{Cannot find version key: }
                   . $version
                   . q{ reference key:}
-                  . $reference_id,
+                  . $reference_id
+                  . q{ genome build version:}
+                  . join $COMMA,
+                @{ $cache{$version} },
             );
             exit 1;
         }
+
     }
     return;
 }

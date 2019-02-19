@@ -40,11 +40,28 @@ log_file:
   data_type: SCALAR
   type: path
   update_path: absolute_path
+max_cores_per_node:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 16
+  type: mip
 mip:
   associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
+  type: mip
+node_ram_memory:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 128
+  type: mip
+project_id:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
   type: mip
 temp_directory:
   associated_recipe:

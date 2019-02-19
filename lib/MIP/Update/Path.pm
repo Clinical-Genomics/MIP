@@ -13,19 +13,19 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $SPACE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ update_to_absolute_path };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub update_to_absolute_path {
 

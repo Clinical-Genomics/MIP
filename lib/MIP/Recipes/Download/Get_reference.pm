@@ -35,8 +35,8 @@ sub get_reference {
 ## Function : Write get reference recipe (download, decompress and validate)
 ## Returns  :
 ## Arguments: $FILEHANDLE     => Filehandle to write to
-##          : $parameter_href => Holds all parameters {REF}
 ##          : $recipe_name    => Recipe name
+##          : $reference_dir  => Reference directory
 ##          : $reference_href => Reference hash {REF}
 ##          : $quiet          => Quiet (no output)
 ##          : $verbose        => Verbosity
@@ -45,8 +45,8 @@ sub get_reference {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $parameter_href;
     my $recipe_name;
+    my $reference_dir;
     my $reference_href;
 
     ## Default(s)
@@ -54,18 +54,17 @@ sub get_reference {
     my $verbose;
 
     my $tmpl = {
-        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
+        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
         recipe_name => {
             defined     => 1,
             required    => 1,
             store       => \$recipe_name,
+            strict_type => 1,
+        },
+        reference_dir => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_dir,
             strict_type => 1,
         },
         reference_href => {
@@ -82,7 +81,8 @@ sub get_reference {
             strict_type => 1,
         },
         verbose => {
-            default     => $arg_href->{parameter_href}{verbose},
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
             store       => \$verbose,
             strict_type => 1,
         },
@@ -107,7 +107,7 @@ sub get_reference {
         ## Install reference
         my $file         = $reference_href->{$key};
         my $outfile      = $reference_href->{ q{out} . $key };
-        my $outfile_path = catfile( $parameter_href->{reference_dir}, $outfile );
+        my $outfile_path = catfile( $reference_dir, $outfile );
         my $url          = $reference_href->{url_prefix} . $file;
 
         ## Download
@@ -128,7 +128,7 @@ sub get_reference {
         decompress_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                outdir_path  => $parameter_href->{reference_dir},
+                outdir_path  => $reference_dir,
                 outfile_path => $outfile_path,
                 decompress_program =>
                   $reference_href->{ q{out} . $key . $UNDERSCORE . q{decompress} },
@@ -145,7 +145,7 @@ sub get_reference {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

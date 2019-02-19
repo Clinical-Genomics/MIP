@@ -19,7 +19,6 @@ use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run }
   ;    # MooseX::App required sub. Called internally by MooseX::App
 
@@ -157,26 +156,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
             documentation => q{Use large page memory},
             is            => q{rw},
             isa           => Bool,
-        )
-    );
-
-    option(
-        q{max_cores_per_node} => (
-            cmd_aliases   => [qw{ mcpn }],
-            cmd_tags      => [q{Default: 16}],
-            documentation => q{Maximum number of processor cores per node},
-            is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
-        q{node_ram_memory} => (
-            cmd_aliases   => [qw{ nrm }],
-            cmd_tags      => [q{Default: 128}],
-            documentation => q{RAM memory size of the node(s) in GigaBytes},
-            is            => q{rw},
-            isa           => Int,
         )
     );
 

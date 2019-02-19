@@ -14,13 +14,13 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use List::MoreUtils qw { any };
 use MooseX::App::Command;
-use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
+use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Num Str };
 use Moose::Util::TypeConstraints;
 
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.18;
+our $VERSION = 1.19;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -66,16 +66,18 @@ sub run {
     ## %parameter holds all defined parameters for MIP
     ## mip analyse rd_dna parameters
     my %parameter;
+
+  DEFINITION_FILE:
     foreach my $definition_file (@definition_files) {
 
         %parameter = (
             %parameter,
             parse_definition_file(
                 {
-                    define_parameters_path => $definition_file,
+                    define_parameters_path        => $definition_file,
+                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
                     non_mandatory_parameter_keys_path =>
                       $non_mandatory_parameter_keys_path,
-                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
                 }
             ),
         );
@@ -119,6 +121,8 @@ sub run {
     ### Actual order of parameters in definition parameters file(s) does not matter
     ## Adds the order of first level keys from yaml files to array
     my @order_parameters;
+
+  DEFINITION_FILE:
     foreach my $define_parameters_file (@definition_files) {
 
         push @order_parameters,
