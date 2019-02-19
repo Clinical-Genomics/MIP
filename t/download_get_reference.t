@@ -69,15 +69,13 @@ my $file_content;
 open $FILEHANDLE, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
-my $test_dir  = File::Temp->newdir();
-my $file_path = catfile( $test_dir, q{recipe_script.sh} );
-my $log       = test_log( { log_name => q{MIP_DOWNLOAD}, no_screen => 1, } );
+my $test_dir = File::Temp->newdir();
+my $log      = test_log( { log_name => q{MIP_DOWNLOAD}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $genome_version    = q{grch37};
 my $recipe_name       = q{human_reference};
 my $reference_version = q{decoy_5};
-my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
     {
@@ -101,4 +99,5 @@ my $is_ok = get_reference(
 ## Then
 ok( $is_ok, q{ Executed download recipe } . $recipe_name );
 
+close $FILEHANDLE;
 done_testing();

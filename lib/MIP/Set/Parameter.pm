@@ -1544,7 +1544,7 @@ sub _set_infile_dirs {
 
 sub _set_reference_dir {
 
-## Function : Set default infile dirs to active parameters
+## Function : Set default reference dir to active parameters
 ## Returns  :
 ## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
 ##          : $parameter_name        => Parameter name

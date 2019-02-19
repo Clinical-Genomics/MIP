@@ -38,14 +38,14 @@ sub download_human_reference {
 ## Function : Download human genome reference builds
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
-##          : $job_id_href          => The job_id hash {REF}
-##          : $profile_base_command => Submission profile base command
-##          : $recipe_name          => Recipe name
-##          : $reference_href       => Reference hash {REF}
-##          : $reference_version    => Reference version
-##          : $quiet                => Quiet (no output)
-##          : $temp_directory       => Temporary directory for recipe
-##          : $verbose              => Verbosity
+##          : $job_id_href           => The job_id hash {REF}
+##          : $profile_base_command  => Submission profile base command
+##          : $recipe_name           => Recipe name
+##          : $reference_href        => Reference hash {REF}
+##          : $reference_version     => Reference version
+##          : $quiet                 => Quiet (no output)
+##          : $temp_directory        => Temporary directory for recipe
+##          : $verbose               => Verbosity
 
     my ($arg_href) = @_;
 
