@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_human_reference };
@@ -37,21 +37,21 @@ sub download_human_reference {
 
 ## Function : Download human genome reference builds
 ## Returns  :
-## Arguments: $job_id_href          => The job_id hash {REF}
-##          : $parameter_href       => Parameter hash {REF}
-##          : $profile_base_command => Submission profile base command
-##          : $recipe_name          => Recipe name
-##          : $reference_href       => Reference hash {REF}
-##          : $reference_version    => Reference version
-##          : $quiet                => Quiet (no output)
-##          : $temp_directory       => Temporary directory for recipe
-##          : $verbose              => Verbosity
+## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
+##          : $job_id_href           => The job_id hash {REF}
+##          : $profile_base_command  => Submission profile base command
+##          : $recipe_name           => Recipe name
+##          : $reference_href        => Reference hash {REF}
+##          : $reference_version     => Reference version
+##          : $quiet                 => Quiet (no output)
+##          : $temp_directory        => Temporary directory for recipe
+##          : $verbose               => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $active_parameter_href;
     my $job_id_href;
-    my $parameter_href;
     my $recipe_name;
     my $reference_href;
     my $reference_version;
@@ -63,18 +63,18 @@ sub download_human_reference {
     my $verbose;
 
     my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
         job_id_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$job_id_href,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
             strict_type => 1,
         },
         profile_base_command => {
@@ -116,6 +116,7 @@ sub download_human_reference {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Cwd;
+    use MIP::Get::Parameter qw{ get_recipe_parameters };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -126,16 +127,18 @@ sub download_human_reference {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
 
+    ## Set recipe mode
+    my $recipe_mode = $active_parameter_href->{$recipe_name};
+
     ## Unpack parameters
-    my @reference_genome_versions = @{ $parameter_href->{reference_genome_versions} };
-    ## Enable slurm submission
-    my $recipe_mode = 1;
-
-    if ( $parameter_href->{dry_run_all} ) {
-
-        ## Dry run mode
-        $recipe_mode = 0;
-    }
+    my @reference_genome_versions =
+      @{ $active_parameter_href->{reference_genome_versions} };
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
 
     ## Filehandle(s)
     # Create anonymous filehandle
@@ -144,13 +147,13 @@ sub download_human_reference {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href => $parameter_href,
+            active_parameter_href => $active_parameter_href,
             directory_id          => q{mip_download},
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
             log                   => $log,
-            outdata_dir           => $parameter_href->{reference_dir},
-            outscript_dir         => $parameter_href->{reference_dir},
+            outdata_dir           => $active_parameter_href->{reference_dir},
+            outscript_dir         => $active_parameter_href->{reference_dir},
             recipe_directory      => $recipe_name . $UNDERSCORE . $reference_version,
             recipe_name           => $recipe_name,
         }
@@ -163,8 +166,8 @@ sub download_human_reference {
     get_reference(
         {
             FILEHANDLE     => $FILEHANDLE,
-            parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
+            reference_dir  => $active_parameter_href->{reference_dir},
             reference_href => $reference_href,
             quiet          => $quiet,
             verbose        => $verbose,

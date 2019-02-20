@@ -28,7 +28,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions};
 
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -140,17 +140,14 @@ sub _build_usage {
 
     option(
         q{installations} => (
-            cmd_aliases   => [qw{ install }],
-            cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip ecnvnator edelly epeddy eperl_5.26 epy3 etiddit evep}],
+            cmd_aliases => [qw{ install }],
+            cmd_flag    => q{installations},
+            cmd_tags =>
+              [q{Default: emip ecnvnator edelly epeddy eperl_5.26 epy3 etiddit evep}],
             documentation => q{Environments to install},
             is            => q{rw},
             isa           => ArrayRef [
-                enum(
-                    [
-                        qw{ emip ecnvnator edelly epeddy eperl_5.26 epy3 etiddit evep }
-                    ]
-                ),
+                enum( [qw{ emip ecnvnator edelly epeddy eperl_5.26 epy3 etiddit evep }] ),
             ],
             required => 0,
         ),
@@ -218,18 +215,6 @@ sub _build_usage {
             cmd_flag      => q{cnvnator_root_binary},
             cmd_tags      => [q{Default: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz}],
             documentation => q{Set the cnvnator root binary},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{reference_dir} => (
-            cmd_aliases   => [qw{ rd }],
-            cmd_flag      => q{reference_dir},
-            cmd_tags      => [q{Default: ""}],
-            documentation => q{Install references to this dir},
             is            => q{rw},
             isa           => Str,
             required      => 0,
@@ -345,9 +330,8 @@ sub _build_usage {
         q{shell:vep:vep_cache_dir} => (
             cmd_aliases => [qw{ vepc }],
             cmd_flag    => q{vep_cache_dir},
-            cmd_tags    => [
-                q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}
-            ],
+            cmd_tags =>
+              [q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}],
             documentation => q{Specify the cache directory to use},
             is            => q{rw},
             isa           => Str,

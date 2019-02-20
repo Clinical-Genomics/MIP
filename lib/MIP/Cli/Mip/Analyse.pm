@@ -19,12 +19,11 @@ use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run }
   ;    # MooseX::App required sub. Called internally by MooseX::App
 
 # Set the version for version checking
-our $VERSION = 1.07;
+our $VERSION = 1.08;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -161,26 +160,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
     );
 
     option(
-        q{max_cores_per_node} => (
-            cmd_aliases   => [qw{ mcpn }],
-            cmd_tags      => [q{Default: 16}],
-            documentation => q{Maximum number of processor cores per node},
-            is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
-        q{node_ram_memory} => (
-            cmd_aliases   => [qw{ nrm }],
-            cmd_tags      => [q{Default: 128}],
-            documentation => q{RAM memory size of the node(s) in GigaBytes},
-            is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
         q{outdata_dir} => (
             cmd_aliases   => [qw{ odd }],
             documentation => q{Data output directory},
@@ -233,15 +212,6 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
             documentation => q{Print all recipes that are supported in [mode]},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{reference_dir} => (
-            cmd_aliases   => [qw{ rd }],
-            documentation => q{Reference(s) directory},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 

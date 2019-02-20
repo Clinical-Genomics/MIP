@@ -164,18 +164,6 @@ sub _build_usage {
     );
 
     option(
-        q{reference_dir} => (
-            cmd_aliases   => [qw{ rd }],
-            cmd_flag      => q{reference_dir},
-            cmd_tags      => [q{Default: ""}],
-            documentation => q{Install references to this dir},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
         q{reference_genome_versions} => (
             cmd_aliases   => [qw{ rg }],
             cmd_flag      => q{reference_genome_versions},

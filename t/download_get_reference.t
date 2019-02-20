@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Recipes::Download::Get_reference} => [qw{ get_reference }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Recipes::Download::Get_reference qw{ get_reference };
 
-diag(   q{Test SUB_ROUTINE from Module.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test get_reference from Get_reference.pm v}
+      . $MIP::Recipes::Download::Get_reference::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,15 +59,23 @@ diag(   q{Test SUB_ROUTINE from Module.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $test_dir  = File::Temp->newdir();
-my $file_path = catfile( $test_dir, q{recipe_script.sh} );
-my $log       = test_log( { log_name => q{MIP_DOWNLOAD}, no_screen => 1, } );
+# Create anonymous filehandle
+my $FILEHANDLE = IO::Handle->new();
+
+# For storing info to write
+my $file_content;
+
+## Store file content in memory by using referenced variable
+open $FILEHANDLE, q{>}, \$file_content
+  or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
+
+my $test_dir = File::Temp->newdir();
+my $log      = test_log( { log_name => q{MIP_DOWNLOAD}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $genome_version    = q{grch37};
-my $recipe_name       = q{RECIPE_NAME};
-my $reference_version = q{REFERENCE_VERSION};
-my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );
+my $recipe_name       = q{human_reference};
+my $reference_version = q{decoy_5};
 
 my %active_parameter = test_mip_hashes(
     {
@@ -79,21 +87,17 @@ $active_parameter{reference_dir} = catfile($test_dir);
 my $reference_href =
   $active_parameter{reference_feature}{$recipe_name}{$genome_version}{$reference_version};
 
-my %job_id;
-
-my $is_ok = SUB_ROUTINE(
+my $is_ok = get_reference(
     {
-        active_parameter_href => \%active_parameter,
-        job_id_href           => \%job_id,
-        profile_base_command  => $slurm_mock_cmd,
-        recipe_name           => $recipe_name,
-        reference_href        => $reference_href,
-        reference_version     => $reference_version,
-        temp_directory        => catfile($test_dir),
+        FILEHANDLE     => $FILEHANDLE,
+        recipe_name    => $recipe_name,
+        reference_dir  => $active_parameter{reference_dir},
+        reference_href => $reference_href,
     }
 );
 
 ## Then
 ok( $is_ok, q{ Executed download recipe } . $recipe_name );
 
+close $FILEHANDLE;
 done_testing();

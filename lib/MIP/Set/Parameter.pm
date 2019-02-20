@@ -3,6 +3,7 @@ package MIP::Set::Parameter;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
+use Cwd;
 use English qw{ -no_match_vars };
 use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catdir catfile splitpath };
@@ -156,6 +157,7 @@ sub set_custom_default_to_active_parameter {
         gatk_path                        => \&_set_dynamic_path,
         infile_dirs                      => \&_set_infile_dirs,
         picardtools_path                 => \&_set_dynamic_path,
+        reference_dir                    => \&_set_reference_dir,
         rtg_vcfeval_reference_genome     => \&_set_human_genome,
         salmon_quant_reference_genome    => \&_set_human_genome,
         star_aln_reference_genome        => \&_set_human_genome,
@@ -1031,7 +1033,7 @@ sub _get_default_repeat_specs_dir_path {
 
         ## Get version
         my @genome_version_dirs = File::Spec->splitdir($repeat_specs_version);
-        my $genome_version_dir = splice @genome_version_dirs, $MINUS_ONE;
+        my $genome_version_dir  = splice @genome_version_dirs, $MINUS_ONE;
 
         ## Match version to reference used
         if ( $genome_reference =~ / $genome_version_dir /ixms ) {
@@ -1537,6 +1539,36 @@ sub _set_infile_dirs {
 
         $active_parameter_href->{$parameter_name}{$path} = $sample_id;
     }
+    return;
+}
+
+sub _set_reference_dir {
+
+## Function : Set default reference dir to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $active_parameter_href->{$parameter_name} = cwd();
     return;
 }
 

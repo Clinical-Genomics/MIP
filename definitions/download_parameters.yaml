@@ -1,0 +1,64 @@
+dry_run_all:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+load_env:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+print_parameter_default:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
+reference:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  type: mip
+reference_genome_versions:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  default:
+   - GRCh37
+   - hg38
+  element_separator: ,
+  type: recipe_argument
+sacct_format_fields:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  default:
+   - jobid
+   - "jobname%50"
+   - account
+   - partition
+   - alloccpus
+   - TotalCPU
+   - elapsed
+   - start
+   - end
+   - state
+   - exitcode
+  element_separator: ,
+  type: recipe_argument
+sbatch_mode:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
+submission_profile:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: slurm
+  type: mip

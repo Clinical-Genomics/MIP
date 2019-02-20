@@ -12,9 +12,13 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
-use MooseX::Types::Moose qw{ Str Int HashRef Bool };
+use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 
-our $VERSION = 0.0.1;
+## MIPs lib/
+use MIP::Cli::Utils qw{ run }
+  ;    # MooseX::App required sub. Called internally by MooseX::App
+
+our $VERSION = 1.01;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -26,13 +30,6 @@ command_usage(q{download <pipeline>});
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
-
-sub run {
-    my ($arg_href) = @_;
-
-    say {*STDERR} q{Please choose a pipeline to start generation of the download script};
-    return;
-}
 
 sub _build_usage {
 
@@ -61,14 +58,36 @@ sub _build_usage {
     );
 
     option(
-        q{reference_dir} => (
-            cmd_aliases   => [qw{ rd }],
-            cmd_flag      => q{reference_dir},
-            cmd_tags      => [q{Default: ""}],
-            documentation => q{Download references to this dir},
+        q{reference} => (
+            cmd_aliases   => [qw{ ref }],
+            cmd_flag      => q{reference},
+            documentation => q{References to download},
             is            => q{rw},
-            isa           => Str,
+            isa           => HashRef,
         ),
+    );
+
+    option(
+        q{reference_genome_versions} => (
+            cmd_aliases   => [qw{ rg }],
+            cmd_flag      => q{reference_genome_versions},
+            cmd_tags      => [q{Default: GRCh37, hg38}],
+            documentation => q{Reference genomes to download},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
+        ),
+    );
+
+    option(
+        q{sacct_format_fields} => (
+            cmd_aliases => [qw{ sacfrf }],
+            cmd_tags    => [
+q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
+            ],
+            documentation => q{Format and fields of sacct output},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
     );
 
     option(
@@ -79,6 +98,15 @@ sub _build_usage {
             required      => 0,
 
         ),
+    );
+
+    option(
+        q{submission_profile} => (
+            cmd_aliases   => [qw{ sbp }],
+            documentation => q{Submission profile},
+            is            => q{rw},
+            isa           => enum( [qw{ slurm }] ),
+        )
     );
 
     return;

@@ -3,6 +3,7 @@
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
+use Cwd;
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
@@ -20,10 +21,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw { $COMMA $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,11 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA      => q{,};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 BEGIN {
 
@@ -113,7 +110,7 @@ foreach my $definition_file (@definition_files) {
 
 ## Given custom default parameters
 my @custom_default_parameters =
-  qw{ analysis_type bwa_build_reference expansionhunter_repeat_specs_dir exome_target_bed infile_dirs rtg_vcfeval_reference_genome sample_info_file };
+  qw{ analysis_type bwa_build_reference expansionhunter_repeat_specs_dir exome_target_bed infile_dirs reference_dir rtg_vcfeval_reference_genome sample_info_file };
 
 PARAMETER_NAME:
 foreach my $parameter_name (@custom_default_parameters) {
@@ -141,6 +138,8 @@ is(
     $active_parameter{human_genome_reference},
     q{Set human_genome_reference default for rtg vcfeval reference genome}
 );
+
+is( $active_parameter{reference_dir}, cwd(), q{Set reference_dir default } );
 
 ## Given an analysis type, when unset for a sample
 # Clear analysis type

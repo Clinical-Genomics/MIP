@@ -85,7 +85,7 @@ sub mip_analyse {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $file_info_href        => File info hash {REF}
-    #           : $order_parameters_ref  => Order of addition to parameter array {REF}
+##          : $order_parameters_ref  => Order of addition to parameter array {REF}
 ##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
@@ -130,13 +130,20 @@ sub mip_analyse {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Transfer to lexical variables
+    # Parameters to include in each analysis run
     my %active_parameter = %{$active_parameter_href};
 
     # Holds all active parameters values for broadcasting
     my @broadcasts;
-    my %file_info        = %{$file_info_href};
+
+    # File information
+    my %file_info = %{$file_info_href};
+
+    # Order parameters for logical broadcast of parameters
     my @order_parameters = @{$order_parameters_ref};
-    my %parameter        = %{$parameter_href};
+
+    # All parameters MIP analyse knows
+    my %parameter = %{$parameter_href};
 
 #### Script parameters
 
@@ -243,7 +250,7 @@ sub mip_analyse {
     my $log = initiate_logger(
         {
             file_path => $active_parameter{log_file},
-            log_name  => uc q{mip},
+            log_name  => uc q{mip_analyse},
         }
     );
 
@@ -443,7 +450,6 @@ sub mip_analyse {
     );
 
 ## Check email adress syntax and mail host
-
     check_email_address(
         {
             email => $active_parameter{email},
@@ -513,7 +519,7 @@ sub mip_analyse {
         );
     }
 
-## Check that the module core number do not exceed the maximum per node
+## Check that the recipe core number do not exceed the maximum per node
     foreach my $recipe_name ( keys %{ $active_parameter{recipe_core_number} } ) {
 
         ## Limit number of cores requested to the maximum number of cores available per node
