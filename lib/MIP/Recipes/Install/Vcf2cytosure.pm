@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vcf2cytosure };
@@ -118,15 +118,15 @@ sub install_vcf2cytosure {
         }
     );
 
+    my $program_name = q{vcf2cytosure};
     ## Store original working directory
     my $pwd = cwd();
 
     say {$FILEHANDLE} q{### Install Vcf2cytosure};
 
     ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $vcf2cytosure_dir =
-      catdir( $conda_prefix_path, q{vcf2cytosure} . $vcf2cytosure_version );
-    my $install_check = check_existing_installation(
+    my $vcf2cytosure_dir = catdir( $conda_prefix_path, $program_name );
+    my $install_check    = check_existing_installation(
         {
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
@@ -134,7 +134,7 @@ sub install_vcf2cytosure {
             log                    => $log,
             noupdate               => $noupdate,
             program_directory_path => $vcf2cytosure_dir,
-            program_name           => q{vcf2cytosure},
+            program_name           => $program_name,
         }
     );
 
@@ -158,18 +158,13 @@ sub install_vcf2cytosure {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ## Creating temporary install directory
-    say {$FILEHANDLE} q{## Create temporary vcf2cytosure install directory};
-    my $temp_dir = create_temp_dir( { FILEHANDLE => $FILEHANDLE } );
-    say {$FILEHANDLE} $NEWLINE;
-
     ## Download
     say {$FILEHANDLE} q{## Download vcf2cytosure};
     git_clone(
         {
             FILEHANDLE  => $FILEHANDLE,
             quiet       => $quiet,
-            outdir_path => $temp_dir,
+            outdir_path => $vcf2cytosure_dir,
             url         => q{https://github.com/NBISweden/vcf2cytosure.git},
             verbose     => $verbose,
         }
@@ -180,7 +175,7 @@ sub install_vcf2cytosure {
     say {$FILEHANDLE} q{## Move to vcf2cytosure directory};
     gnu_cd(
         {
-            directory_path => $temp_dir,
+            directory_path => $vcf2cytosure_dir,
             FILEHANDLE     => $FILEHANDLE,
         }
     );
@@ -188,12 +183,11 @@ sub install_vcf2cytosure {
 
     ## Pip install the downloaded vcf2cytosure package
     say {$FILEHANDLE} q{## Install};
-    ## Vcf2cytosure seems to require a numpy version higher then what is
-    ## currently specified in the install parameter file (1.9.3)
+    ## Cyvcf2 needs to be downgraded
     pip_install(
         {
             FILEHANDLE   => $FILEHANDLE,
-            packages_ref => [qw{ numpy==1.14.0 }],
+            packages_ref => [qw{ cyvcf2==0.9.0 }],
             quiet        => $quiet,
             verbose      => $verbose,
         }
@@ -201,10 +195,10 @@ sub install_vcf2cytosure {
     print {$FILEHANDLE} $NEWLINE;
     pip_install(
         {
-            FILEHANDLE   => $FILEHANDLE,
-            packages_ref => [$DOT],
-            quiet        => $quiet,
-            verbose      => $verbose,
+            editable   => $DOT,
+            FILEHANDLE => $FILEHANDLE,
+            quiet      => $quiet,
+            verbose    => $verbose,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -218,18 +212,6 @@ sub install_vcf2cytosure {
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    ## Remove the temporary install directory
-    say {$FILEHANDLE} q{## Remove temporary install directory};
-    gnu_rm(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            force       => 1,
-            infile_path => $temp_dir,
-            recursive   => 1,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE . $NEWLINE;
 
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {

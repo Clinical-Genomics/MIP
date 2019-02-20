@@ -68,7 +68,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.7};
+our $VERSION = q{1.2.8};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -575,7 +575,8 @@ sub get_programs_for_installation {
         push @{ $parameter_href->{select_program} }, q{sambamba};
     }
     if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_program} } ) {
-        push @{ $parameter_href->{select_program} }, qw{ samtools bcftools };
+        push @{ $parameter_href->{select_program} },
+          qw{ bcftools gatk samtools };
     }
     if ( any { $_ eq q{freebayes} } @{ $parameter_href->{select_program} } ) {
         push @{ $parameter_href->{select_program} }, qw{ bcftools gatk };
