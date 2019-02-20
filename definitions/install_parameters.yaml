@@ -19,6 +19,7 @@ bioconda:
   gatk: 3.8=5
   gcc: 4.8.5
   htslib: 1.6
+  libstdcxx-ng: 8.2
   libxml2: 2.9.4
   libxslt: 1.1.29
   manta: 1.1.0

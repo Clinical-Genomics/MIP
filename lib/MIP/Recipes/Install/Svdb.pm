@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_svdb };
@@ -104,7 +104,7 @@ sub install_svdb {
     use MIP::Package_manager::Pip qw{ check_pip_package pip_install };
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Compression::Zip qw{ unzip };
-    
+
     ## Unpack parameters
     my $svdb_version = $svdb_parameters_href->{version};
 
@@ -216,10 +216,10 @@ sub install_svdb {
     say {$FILEHANDLE} q{## Install};
     pip_install(
         {
-            packages_ref => [$DOT],
-            quiet        => $quiet,
-            verbose      => $verbose,
-            FILEHANDLE   => $FILEHANDLE,
+            editable   => $DOT,
+            quiet      => $quiet,
+            verbose    => $verbose,
+            FILEHANDLE => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
