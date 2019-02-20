@@ -148,6 +148,16 @@ sub _build_usage {
     );
 
     option(
+        q{reference_dir} => (
+            cmd_aliases   => [qw{ rd }],
+            cmd_tags      => [q{Default: ""}],
+            documentation => q{Reference directory},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{slurm_quality_of_service} => (
             cmd_aliases   => [qw{ qos }],
             documentation => q{SLURM quality of service},

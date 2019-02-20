@@ -18,7 +18,7 @@ use Params::Check qw{ check allow last_error };
 use autodie qw{ :all };
 use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
-use MooseX::Types::Moose qw{ Str Int HashRef Bool ArrayRef };
+use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use Readonly;
 
 ## MIPs lib
@@ -26,7 +26,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Download qw{ mip_download };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 extends(qw{ MIP::Cli::Mip::Download });
 
@@ -111,16 +111,6 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
-
-    option(
-        q{reference} => (
-            cmd_aliases   => [qw{ ref }],
-            cmd_flag      => q{reference},
-            documentation => q{References to download},
-            is            => q{rw},
-            isa           => HashRef,
-        ),
-    );
 
     return;
 }

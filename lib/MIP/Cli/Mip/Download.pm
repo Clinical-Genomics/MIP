@@ -18,7 +18,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use MIP::Cli::Utils qw{ run }
   ;    # MooseX::App required sub. Called internally by MooseX::App
 
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -58,13 +58,12 @@ sub _build_usage {
     );
 
     option(
-        q{reference_dir} => (
-            cmd_aliases   => [qw{ rd }],
-            cmd_flag      => q{reference_dir},
-            cmd_tags      => [q{Default: ""}],
-            documentation => q{Download references to this dir},
+        q{reference} => (
+            cmd_aliases   => [qw{ ref }],
+            cmd_flag      => q{reference},
+            documentation => q{References to download},
             is            => q{rw},
-            isa           => Str,
+            isa           => HashRef,
         ),
     );
 

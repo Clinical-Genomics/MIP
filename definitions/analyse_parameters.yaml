@@ -112,13 +112,6 @@ load_env:
   data_type: HASH
   mandatory: no
   type: mip
-reference_dir:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 sample_ids:
   associated_recipe:
    - mip

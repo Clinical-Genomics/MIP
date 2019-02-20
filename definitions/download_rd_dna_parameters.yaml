@@ -22,11 +22,6 @@ recipe_time:
   default:
     human_reference: 1
   type: mip
-reference:
-  associated_recipe:
-   - mip
-  data_type: HASH
-  type: mip
 reference_feature:
   associated_recipe:
    - mip
