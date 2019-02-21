@@ -1202,16 +1202,17 @@ sub analysis_rankvariant_sv {
 
 sub analysis_rankvariant_sv_unaffected {
 
-## Function : Annotate variants using genmod anotate only.
+## Function : Annotate variants using genmod annotate only.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $reference_dir_ref       => MIP reference directory {REF}
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -1229,6 +1230,7 @@ sub analysis_rankvariant_sv_unaffected {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $reference_dir_ref;
     my $temp_directory;
 
@@ -1272,6 +1274,11 @@ sub analysis_rankvariant_sv_unaffected {
             required    => 1,
             strict_type => 1,
             store       => \$parameter_href,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
         },
         recipe_name => {
             defined     => 1,
@@ -1466,8 +1473,9 @@ sub analysis_rankvariant_sv_unaffected {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -1478,7 +1486,7 @@ sub analysis_rankvariant_sv_unaffected {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;
