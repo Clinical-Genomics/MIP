@@ -223,7 +223,7 @@ sub analysis_vcf2cytosure {
     $infile_tag =
       $file_info_href->{$family_id}{psv_combinevariantcallsets}{file_tag};
 
-    $merged_sv_vcf = $family_id . $infile_tag . q{SV} . $DOT . q{vcf};
+    $merged_sv_vcf      = $family_id . $infile_tag . q{SV} . $DOT . q{vcf};
     $merged_sv_vcf_path = catfile( $infamily_directory, $merged_sv_vcf );
 
     say {$FILEHANDLE} q{## Log vcf2cytosure version - use dummy parameters}
@@ -389,8 +389,10 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
             {
                 coverage_file => $file_path_prefix{$sample_id}{out}
                   . $cov_outfile_suffix,
-                FILEHANDLE      => $FILEHANDLE,
-                outfile_path    => $cgh_outfile_path,
+                FILEHANDLE   => $FILEHANDLE,
+                maxbnd       => $active_parameter_href->{vcf2cytosure_maxbnd},
+                outfile_path => $cgh_outfile_path,
+                sex          => $sample_info_href->{sample}{$sample_id}{sex},
                 vcf_infile_path => catfile( $temp_directory, $sample_vcf_file ),
             }
         );

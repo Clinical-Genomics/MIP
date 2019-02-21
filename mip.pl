@@ -151,7 +151,7 @@ check_parameter_hash(
 );
 
 ## Set MIP version
-our $VERSION = 'v6.0.19';
+our $VERSION = 'v6.0.20';
 
 ## Holds all active parameters
 my %active_parameter;
@@ -361,8 +361,9 @@ GetOptions(
     q{v2csfq|vcf2cytosure_freq=n} => \$active_parameter{vcf2cytosure_freq},
     q{v2csfqt|vcf2cytosure_freq_tag=s} =>
       \$active_parameter{vcf2cytosure_freq_tag},
-    q{v2csnf|vf2cytosure_no_filter=s} =>
-      \$active_parameter{vf2cytosure_no_filter},
+    q{v2csmb|vcf2cytosure_maxbndr=n} => \$active_parameter{vcf2cytosure_maxbnd},
+    q{v2csnf|vcf2cytosure_no_filter=s} =>
+      \$active_parameter{vcf2cytosure_no_filter},
     q{v2csvs|vcf2cytosure_var_size=n} =>
       \$active_parameter{vcf2cytosure_var_size},
     q{psvv|psv_varianteffectpredictor=n} =>

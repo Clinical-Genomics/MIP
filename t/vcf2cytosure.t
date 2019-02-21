@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.2;
 
 ## Constants
 Readonly my $COMMA         => q{,};
@@ -146,6 +146,10 @@ my %specific_argument = (
         input           => q{FRQ},
         expected_output => q{--frequency_tag FRQ},
     },
+    maxbnd => {
+        input           => 5000,
+        expected_output => q{--maxbnd 5000},
+    },
     no_filter => {
         input           => 1,
         expected_output => q{--no-filter},
@@ -153,6 +157,10 @@ my %specific_argument = (
     outfile_path => {
         input           => q{path_to_vcf2cytosure_cgh_files},
         expected_output => q{--out path_to_vcf2cytosure_cgh_files},
+    },
+    sex => {
+        input           => q{female},
+        expected_output => q{--sex female},
     },
     variant_size => {
         input           => $VARIANT_SIZE,

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ vcf2cytosure_convert };
@@ -34,14 +34,16 @@ Readonly my $SPACE => q{ };
 
 sub vcf2cytosure_convert {
 
-## Function : Perl wrapper for Vcf2cytosure 0.2.0.
+## Function : Perl wrapper for Vcf2cytosure 0.4.3
 ## Returns  : @commands
 ## Arguments: $coverage_file          => Path to coverage file
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $frequency              => Maximum frequency
 ##          : $frequency_tag          => Frequency tag of the info field
+##          : $maxbnd                 => Maximum BND size
 ##          : $no_filter              => Disable any filtering
 ##          : $outfile_path           => Outfile path to write to
+##          : $sex                    => Sample sex
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -54,7 +56,9 @@ sub vcf2cytosure_convert {
     ## Flatten argument(s)
     my $coverage_file;
     my $FILEHANDLE;
+    my $maxbnd;
     my $outfile_path;
+    my $sex;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -87,6 +91,11 @@ sub vcf2cytosure_convert {
             store       => \$frequency_tag,
             strict_type => 1,
         },
+        maxbnd => {
+            allow       => qr/ ^\d+$ /xsm,
+            store       => \$maxbnd,
+            strict_type => 1,
+        },
         no_filter => {
             allow       => [ 0, 1 ],
             default     => 0,
@@ -94,8 +103,13 @@ sub vcf2cytosure_convert {
             strict_type => 1,
         },
         outfile_path => {
-            strict_type => 1,
             store       => \$outfile_path,
+            strict_type => 1,
+        },
+        sex => {
+            allow       => [ undef, qw{ female male } ],
+            store       => \$sex,
+            strict_type => 1,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -155,6 +169,10 @@ sub vcf2cytosure_convert {
         push @commands, q{--frequency_tag} . $SPACE . $frequency_tag;
     }
 
+    if ($maxbnd) {
+        push @commands, q{--maxbnd} . $SPACE . $maxbnd;
+    }
+
     # Option: no filtering. Overrides previous filtering options
     if ($no_filter) {
         push @commands, q{--no-filter};
@@ -163,6 +181,10 @@ sub vcf2cytosure_convert {
     if ($outfile_path) {
 
         push @commands, q{--out} . $SPACE . $outfile_path;
+    }
+
+    if ($sex) {
+        push @commands, q{--sex} . $SPACE . $sex;
     }
 
     # Coverage file
