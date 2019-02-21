@@ -20,11 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,9 +35,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA         => q{,};
+Readonly my $MAXBND        => 5000;
 Readonly my $MAX_FREQUENCY => 0.01;
-Readonly my $SPACE         => q{ };
 Readonly my $VARIANT_SIZE  => 5000;
 
 BEGIN {
@@ -111,6 +111,10 @@ my %specific_argument = (
         input           => q{FRQ},
         expected_output => q{--frequency_tag FRQ},
     },
+    maxbnd => {
+        input           => $MAXBND,
+        expected_output => q{--maxbnd} . $SPACE . $MAXBND,
+    },
     no_filter => {
         input           => 1,
         expected_output => q{--no-filter},
@@ -153,36 +157,3 @@ foreach my $argument_href (@arguments) {
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

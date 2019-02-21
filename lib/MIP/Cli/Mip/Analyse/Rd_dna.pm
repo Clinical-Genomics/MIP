@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.19;
+our $VERSION = 1.20;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -976,7 +976,17 @@ q{Convert a VCF with structural variants to the “.CGH” format used by the co
     );
 
     option(
-        q{vf2cytosure_no_filter} => (
+        q{vcf2cytosure_maxbnd} => (
+            cmd_aliases   => [qw{ v2csmb }],
+            cmd_tags      => [q{Default: 5000}],
+            documentation => q{Specify maximum BND},
+            is            => q{rw},
+            isa           => Num,
+        )
+    );
+
+    option(
+        q{vcf2cytosure_no_filter} => (
             cmd_aliases   => [qw{ v2csnf }],
             documentation => q{Do not use any filtering},
             is            => q{rw},

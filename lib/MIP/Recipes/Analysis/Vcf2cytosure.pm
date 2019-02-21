@@ -16,13 +16,17 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $AMPERSAND $ASTERISK $DOT $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -30,14 +34,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $AMPERSAND    => q{&};
-Readonly my $ASTERISK     => q{*};
-Readonly my $DOT          => q{.};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $SPACE        => q{ };
-Readonly my $SV_LENGTH    => 3000;
-Readonly my $UNDERSCORE   => q{_};
+Readonly my $SV_LENGTH => 3000;
 
 sub analysis_vcf2cytosure {
 
@@ -412,6 +409,7 @@ sub analysis_vcf2cytosure {
             {
                 coverage_file   => $vcf2cytosure_file_info{$sample_id}{in}{q{.tab}},
                 FILEHANDLE      => $FILEHANDLE,
+                maxbnd          => $active_parameter_href->{vcf2cytosure_maxbnd},
                 outfile_path    => $outfile_path{$sample_id},
                 sex             => $sample_id_sex,
                 vcf_infile_path => $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}},
