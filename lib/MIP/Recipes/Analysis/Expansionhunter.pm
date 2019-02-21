@@ -164,7 +164,7 @@ sub analysis_expansionhunter {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};

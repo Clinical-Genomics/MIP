@@ -70,7 +70,7 @@ sub blast_blastn {
     ## Constants
     Readonly my $EXPECT_VALUE      => 1e-3;
     Readonly my $MAX_TARGET_SEQS   => 1000;
-    Readonly my $MAX_THREAD_NUMBER => 16;
+    Readonly my $MAX_THREAD_NUMBER => 36;
     Readonly my $TABULAR           => 6;
     Readonly my $THREAD_NUMBER     => 1;
     Readonly my $WORD_SIZE         => 11;

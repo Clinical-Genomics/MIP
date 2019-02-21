@@ -157,7 +157,7 @@ sub analysis_bwa_mem {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Set MIP recipe name
     my $recipe_mode = $active_parameter_href->{$recipe_name};

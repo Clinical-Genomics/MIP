@@ -134,7 +134,7 @@ sub analysis_analysisrunstatus {
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Set recipe mode
     my $recipe_mode = $active_parameter_href->{$recipe_name};
