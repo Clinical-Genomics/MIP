@@ -20,14 +20,14 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Gnu::Coreutils qw{ gnu_echo };
-use MIP::Constants qw{ $DOUBLE_QUOTE $NEWLINE $QUOTE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $NEWLINE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
