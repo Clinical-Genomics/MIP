@@ -161,7 +161,7 @@ sub analysis_rankvariant {
     Readonly my $CORE_NUMBER_REQUESTED => $active_parameter_href->{max_cores_per_node};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
 ## Get the io infiles per chain and id
@@ -586,7 +586,7 @@ sub analysis_rankvariant_unaffected {
     Readonly my $CORE_NUMBER_REQUESTED => $active_parameter_href->{max_cores_per_node};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
 ## Get the io infiles per chain and id
@@ -926,7 +926,7 @@ sub analysis_rankvariant_sv {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -1320,7 +1320,7 @@ sub analysis_rankvariant_sv_unaffected {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my %io = get_io_files(

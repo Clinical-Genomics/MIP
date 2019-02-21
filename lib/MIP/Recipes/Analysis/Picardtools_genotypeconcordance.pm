@@ -166,7 +166,7 @@ sub analysis_picardtools_genotypeconcordance {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
