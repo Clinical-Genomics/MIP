@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_plink };
@@ -389,11 +389,11 @@ sub analysis_plink {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    my $inbreeding_outfile_prefix_hets =
-      $binary_fileset_prefix . $DOT . $plink_outanalysis_prefix{inbreeding_factor};
-
     # Only perform if more than 1 sample
     if ( scalar @sample_ids > 1 ) {
+
+        my $inbreeding_outfile_prefix_hets =
+          $binary_fileset_prefix . $DOT . $plink_outanalysis_prefix{inbreeding_factor};
 
         say {$FILEHANDLE} q{## Calculate inbreeding coefficients per case};
         plink_calculate_inbreeding(

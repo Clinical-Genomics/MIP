@@ -16,20 +16,20 @@ use warnings qw{ FATAL utf8 };
 use List::MoreUtils qw { any };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $SPACE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rd_dna };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub pipeline_rd_dna {
 
@@ -210,7 +210,8 @@ sub pipeline_rd_dna {
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
-    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
+    use MIP::Set::Analysis
+      qw{ set_recipe_on_analysis_type set_recipe_gatk_variantrecalibration set_rankvariants_ar };
 
     ### Pipeline specific checks
     check_rd_dna(
@@ -266,12 +267,13 @@ sub pipeline_rd_dna {
         gatk_haplotypecaller        => \&analysis_gatk_haplotypecaller,
         gatk_variantevalall         => \&analysis_gatk_variantevalall,
         gatk_variantevalexome       => \&analysis_gatk_variantevalexome,
-        gatk_variantrecalibration => undef,                     # Depends on analysis type
-        gzip_fastq                => \&analysis_gzip_fastq,
-        manta                     => \&analysis_manta,
-        markduplicates            => \&analysis_markduplicates,
-        multiqc_ar                => \&analysis_multiqc,
-        peddy_ar                  => \&analysis_peddy,
+        gatk_variantrecalibration =>
+          undef,    # Depends on analysis type and/or number of samples
+        gzip_fastq                   => \&analysis_gzip_fastq,
+        manta                        => \&analysis_manta,
+        markduplicates               => \&analysis_markduplicates,
+        multiqc_ar                   => \&analysis_multiqc,
+        peddy_ar                     => \&analysis_peddy,
         picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
         picardtools_collectmultiplemetrics =>
           \&analysis_picardtools_collectmultiplemetrics,
@@ -329,6 +331,16 @@ sub pipeline_rd_dna {
         {
             analysis_recipe_href    => \%analysis_recipe,
             consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+        }
+    );
+
+    ## Update which recipe to use depending on number of samples
+    set_recipe_gatk_variantrecalibration(
+        {
+            analysis_recipe_href => \%analysis_recipe,
+            log                  => $log,
+            parameter_href       => $parameter_href,
+            sample_ids_ref       => $active_parameter_href->{sample_ids},
         }
     );
 
