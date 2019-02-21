@@ -156,7 +156,7 @@ sub analysis_prepareforvariantannotationblock {
     use MIP::Script::Setup_script qw(setup_script);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ### PREPROCESSING:
 

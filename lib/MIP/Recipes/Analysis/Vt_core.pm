@@ -213,7 +213,7 @@ sub analysis_vt_core {
     Readonly my $PROCESS_TIME      => 20;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Set MIP recipe name
     my $job_id_chain = get_recipe_attributes(
@@ -581,7 +581,7 @@ sub analysis_vt_core_rio {
     Readonly my $MAX_RANDOM_NUMBER => 10_000;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Set MIP recipe name
     my $recipe_mode = $active_parameter_href->{$recipe_name};

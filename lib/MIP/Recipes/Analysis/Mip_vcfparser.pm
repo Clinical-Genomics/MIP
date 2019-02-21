@@ -164,7 +164,7 @@ sub analysis_mip_vcfparser {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -199,8 +199,7 @@ sub analysis_mip_vcfparser {
 
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
-            vcfparser_outfile_count =>
-              $active_parameter_href->{vcfparser_outfile_count},
+            vcfparser_outfile_count => $active_parameter_href->{vcfparser_outfile_count},
         }
     );
 
@@ -422,8 +421,8 @@ sub analysis_mip_vcfparser {
 
         submit_recipe(
             {
-              base_command            => $profile_base_command,
-              case_id                 => $case_id,
+                base_command            => $profile_base_command,
+                case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
@@ -562,7 +561,7 @@ sub analysis_vcfparser_sv_wes {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -749,8 +748,8 @@ sub analysis_vcfparser_sv_wes {
 
         submit_recipe(
             {
-              base_command            => $profile_base_command,
-              case_id                 => $case_id,
+                base_command            => $profile_base_command,
+                case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
@@ -890,7 +889,7 @@ sub analysis_vcfparser_sv_wgs {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -1157,8 +1156,8 @@ sub analysis_vcfparser_sv_wgs {
 
         submit_recipe(
             {
-              base_command            => $profile_base_command,
-              case_id                 => $case_id,
+                base_command            => $profile_base_command,
+                case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,

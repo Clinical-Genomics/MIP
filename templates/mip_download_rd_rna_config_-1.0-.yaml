@@ -12,7 +12,7 @@ reference:
   1000g_indels:
     - phase1
   mills_and_1000g_indels:
-    - gold_standard_indel
+    - gold_standard_indels
   dbsnp:
     - 138_esa_129
     - 138
