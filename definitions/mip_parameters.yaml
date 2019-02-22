@@ -43,7 +43,7 @@ max_cores_per_node:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 16
+  default: 36
   type: mip
 ## Enable MIP
 mip:

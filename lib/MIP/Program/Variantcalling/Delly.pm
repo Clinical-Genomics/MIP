@@ -15,6 +15,7 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,14 +24,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ delly_call delly_filter delly_merge };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub delly_call {
 
@@ -84,13 +82,13 @@ sub delly_call {
             strict_type => 1,
         },
         mad_cutoff => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
             default     => $INSERT_SIZE_CUTOFF,
             store       => \$mad_cutoff,
             strict_type => 1,
         },
         mapping_qual => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
             default     => $MIN_MAP_QUAL,
             store       => \$mapping_qual,
             strict_type => 1,
@@ -121,7 +119,7 @@ sub delly_call {
             strict_type => 1,
         },
         sv_type => {
-            allow       => [qw{ DEL DUP INV INS TRA }],
+            allow       => [qw{ DEL DUP INV INS BND }],
             store       => \$sv_type,
             strict_type => 1,
         },
@@ -232,12 +230,12 @@ sub delly_merge {
             store       => \$infile_paths_ref,
         },
         max_size => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
             strict_type => 1,
             store       => \$max_size,
         },
         min_size => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
             strict_type => 1,
             store       => \$min_size,
         },
@@ -255,7 +253,7 @@ sub delly_merge {
             store       => \$stdoutfile_path,
         },
         sv_type => {
-            allow       => [qw{ DEL DUP INV INS TRA }],
+            allow       => [qw{ DEL DUP INV INS BND }],
             strict_type => 1,
             store       => \$sv_type,
         },
@@ -358,12 +356,12 @@ sub delly_filter {
             store       => \$infile_path,
         },
         max_size => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
             strict_type => 1,
             store       => \$max_size,
         },
         min_size => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
             strict_type => 1,
             store       => \$min_size,
         },
@@ -383,7 +381,7 @@ sub delly_filter {
         sv_type => {
             required    => 1,
             defined     => 1,
-            allow       => [qw{ DEL DUP INV INS TRA }],
+            allow       => [qw{ DEL DUP INV INS BND }],
             strict_type => 1,
             store       => \$sv_type,
         },

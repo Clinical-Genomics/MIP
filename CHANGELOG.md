@@ -73,7 +73,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - cutadapt: 1.14 -> 1.18-py27_0
 - cramtools: 3.0.b47 -> 3.0.b127-2
 - expansionhunter: 2.5.5
-- delly: 0.7.7 -> 0.7.8-h278814d_3
+- delly: 0.7.7 ->0.8.1-h4037b6b_00
 - fastqc: 0.11.4 -> 0.11.8-0
 - freebayes: 1.1.0 -> 1.2.0-py27h82df9c4_3
 - genmod: 3.7.2 -> 3.7.3
