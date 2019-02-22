@@ -168,7 +168,7 @@ recipe_core_number:
     gatk_haplotypecaller: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
-    gatk_variantrecalibration: 4
+    gatk_variantrecalibration: 5
     gzip_fastq: 0
     manta: 16
     markduplicates: 16
