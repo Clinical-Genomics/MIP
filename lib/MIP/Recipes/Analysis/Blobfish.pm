@@ -149,7 +149,7 @@ sub analysis_blobfish {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Collect infiles for all sample_ids
     my @sample_indir_paths;

@@ -153,7 +153,7 @@ sub analysis_gatk_variantrecalibration_wes {
     Readonly my $MAX_GAUSSIAN_LEVEL => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
 ## Unpack parameters
     my %io = get_io_files(
@@ -648,7 +648,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     Readonly my $MAX_GAUSSIAN_LEVEL_SNV_SINGLE_SAMPLE => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my %io = get_io_files(

@@ -589,24 +589,6 @@ sub mip_analyse {
         }
     );
 
-    my $consensus_analysis_type = $parameter{cache}{consensus_analysis_type};
-
-## Get initiation recipe, downstream dependencies and update recipe modes for start_with_recipe parameter depending on pipeline
-    my $initiation_file = catfile( $Bin, qw{ definitions rd_dna_initiation_map.yaml } );
-
-    # For Rd RNA pipeline
-    if ( $consensus_analysis_type eq q{wts} ) {
-
-        $initiation_file = catfile( $Bin, qw{ definitions rd_rna_initiation_map.yaml } );
-    }
-
-    # For Vcf rerun pipeline
-    if ( $consensus_analysis_type eq q{vrn} ) {
-
-        $initiation_file =
-          catfile( $Bin, qw{ definitions rd_dna_vcf_rerun_initiation_map.yaml } );
-    }
-
 ## Check that recipe name and program name are not identical
     check_recipe_name(
         {
@@ -618,7 +600,6 @@ sub mip_analyse {
     parse_start_with_recipe(
         {
             active_parameter_href => \%active_parameter,
-            initiation_file       => $initiation_file,
             log                   => $log,
             parameter_href        => \%parameter,
         },
@@ -694,6 +675,8 @@ sub mip_analyse {
             sample_info_href => \%sample_info,
         }
     );
+
+    my $consensus_analysis_type = $parameter{cache}{consensus_analysis_type};
 
 ### Rd RNA
     if ( $consensus_analysis_type eq q{wts} ) {

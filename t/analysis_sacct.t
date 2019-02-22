@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Rankvariant} => [qw{ analysis_rankvariant_unaffected }],
+        q{MIP::Recipes::Analysis::Sacct} => [qw{ analysis_sacct }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Rankvariant qw{ analysis_rankvariant_unaffected };
+use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
 
-diag(   q{Test analysis_rankvariant_unaffected from Rankvariant.pm v}
-      . $MIP::Recipes::Analysis::Rankvariant::VERSION
+diag(   q{Test analysis_sacct from Sacct.pm v}
+      . $MIP::Recipes::Analysis::Sacct::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,7 +62,7 @@ diag(   q{Test analysis_rankvariant_unaffected from Rankvariant.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{rankvariant};
+my $recipe_name    = q{sacct};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -75,9 +75,6 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{genmod_annotate_regions} = 0;
-$active_parameter{genmod_models_case_type} = q{cmms};
-$active_parameter{rank_model_file}         = q{rank:rank_model_file};
 
 my %file_info = test_mip_hashes(
     {
@@ -85,11 +82,7 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
-    }
-);
+
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -99,11 +92,10 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 my %sample_info;
 
-my $is_ok = analysis_rankvariant_unaffected(
+my $is_ok = analysis_sacct(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,

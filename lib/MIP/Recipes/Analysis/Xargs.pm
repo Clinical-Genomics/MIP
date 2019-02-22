@@ -119,7 +119,7 @@ sub xargs_command {
     use MIP::Language::Java qw{java_core};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## File
     my $xargs_file_number = $DOT . $xargs_file_counter;
