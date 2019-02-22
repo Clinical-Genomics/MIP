@@ -566,7 +566,7 @@ sambamba_depth_noduplicates:
   associated_recipe:
    - sambamba_depth
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sambamba_depth_mapping_quality:
   associated_recipe:
