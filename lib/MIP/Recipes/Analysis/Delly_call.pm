@@ -248,7 +248,7 @@ sub analysis_delly_call {
         {
             exclude_file_path  => $active_parameter_href->{delly_exclude_file},
             FILEHANDLE         => $FILEHANDLE,
-            no_small_indel     => 1,
+            small_indel        => 0,
             infile_path        => $infile_path,
             outfile_path       => $outfile_path,
             referencefile_path => $active_parameter_href->{human_genome_reference},

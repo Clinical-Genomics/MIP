@@ -40,7 +40,7 @@ sub delly_call {
 ##          : $infile_path            => Infile path
 ##          : $mad_cutoff             => Insert size cutoff, median+s*MAD (deletions only)
 ##          : $mapping_qual           => Minimum paired-end mapping quality
-##          : $no_small_indel         => No small indel calling
+##          : $small_indel            => Small indel calling
 ##          : $outfile_path           => Outfile path
 ##          : $referencefile_path     => Reference sequence file
 ##          : $stderrfile_path        => Stderrfile path
@@ -57,7 +57,7 @@ sub delly_call {
     my $infile_path;
     my $mad_cutoff;
     my $mapping_qual;
-    my $no_small_indel;
+    my $small_indel;
     my $outfile_path;
     my $referencefile_path;
     my $stderrfile_path;
@@ -93,10 +93,10 @@ sub delly_call {
             store       => \$mapping_qual,
             strict_type => 1,
         },
-        no_small_indel => {
+        small_indel => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
-            store       => \$no_small_indel,
+            store       => \$small_indel,
             strict_type => 1,
         },
         outfile_path       => { store => \$outfile_path, strict_type => 1, },
@@ -140,9 +140,9 @@ sub delly_call {
 
     push @commands, q{--mad-cutoff} . $SPACE . $mad_cutoff;
 
-    if ($no_small_indel) {
+    if ($small_indel) {
 
-        push @commands, q{--noindels};
+        push @commands, q{--i};
     }
 
     if ($exclude_file_path) {
