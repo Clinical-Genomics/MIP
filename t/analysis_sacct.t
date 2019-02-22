@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Rtg_vcfeval} => [qw{ analysis_rtg_vcfeval }],
+        q{MIP::Recipes::Analysis::Sacct} => [qw{ analysis_sacct }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval };
+use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
 
-diag(   q{Test analysis_rtg_vcfeval from Rtg_vcfeval.pm v}
-      . $MIP::Recipes::Analysis::Rtg_vcfeval::VERSION
+diag(   q{Test analysis_sacct from Sacct.pm v}
+      . $MIP::Recipes::Analysis::Sacct::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,7 +62,7 @@ diag(   q{Test analysis_rtg_vcfeval from Rtg_vcfeval.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{rtg_vcfeval};
+my $recipe_name    = q{sacct};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -74,25 +74,12 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $case_id   = $active_parameter{case_id};
-my $sample_id = $active_parameter{sample_ids}[0];
-my $nist_id   = q{NA12878};
-$active_parameter{nist_id}{$sample_id} = $nist_id;
-my $nist_version = q{3.3.2};
-@{ $active_parameter{nist_versions} } = ( $nist_version, );
-$active_parameter{nist_call_set_vcf}{$nist_version}{$nist_id} = q{a_file.vcf};
-$active_parameter{nist_call_set_bed}{$nist_version}{$nist_id} = q{a_file.bed};
-$active_parameter{rtg_vcfeval_reference_genome}               = q{a_genome.fasta};
+my $case_id = $active_parameter{case_id};
 
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
         recipe_name   => $recipe_name,
-    }
-);
-%{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
     }
 );
 
@@ -108,16 +95,16 @@ my %parameter = test_mip_hashes(
 
 my %sample_info;
 
-my $is_ok = analysis_rtg_vcfeval(
+my $is_ok = analysis_sacct(
     {
         active_parameter_href   => \%active_parameter,
+        case_id                 => $case_id,
         file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
         profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
-        sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );

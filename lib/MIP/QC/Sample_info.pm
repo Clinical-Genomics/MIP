@@ -18,13 +18,16 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $EMPTY_STR $NEWLINE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -41,12 +44,75 @@ BEGIN {
 
 }
 
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
+sub get_sequence_run_type {
+
+## Function : Return sequence run type
+## Returns  : $sequence_run_type | %sequence_run_type
+## Arguments: $infile_lane_prefix      => Infile lane prefix
+##          : $infile_lane_prefix_href => Infile lane prefix hash {REF}
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_lane_prefix;
+    my $infile_lane_prefix_href;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        infile_lane_prefix => {
+            store       => \$infile_lane_prefix,
+            strict_type => 1,
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            required    => 1,
+            defined     => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( %{$infile_lane_prefix_href} ) {
+
+        my %sequence_run_type;
+
+      INFILE_LANE_PREFIX:
+        foreach my $infile_lane_prefix ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
+            $sequence_run_type{$infile_lane_prefix} =
+              $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
+              {sequence_run_type};
+        }
+
+        return %sequence_run_type;
+    }
+    elsif ( defined $infile_lane_prefix ) {
+
+        return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
+          {sequence_run_type};
+
+    }
+    else {
+
+        croak q{Either $infile_lane_prefix_href or $infile_prefix must be provided!};
+    }
+    return;
+}
 
 sub set_gene_panel {
 
@@ -970,76 +1036,6 @@ sub set_in_sample_info {
         my $path = dirname( dirname( $active_parameter_href->{log_file} ) );
         $sample_info_href->{log_file_dir}       = $path;
         $sample_info_href->{last_log_file_path} = $active_parameter_href->{log_file};
-    }
-    return;
-}
-
-sub get_sequence_run_type {
-
-## Function : Return sequence run type
-## Returns  : $sequence_run_type | %sequence_run_type
-## Arguments: $infile_lane_prefix      => Infile lane prefix
-##          : $infile_lane_prefix_href => Infile lane prefix hash {REF}
-##          : $sample_id               => Sample id
-##          : $sample_info_href        => Sample info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile_lane_prefix;
-    my $infile_lane_prefix_href;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        infile_lane_prefix => {
-            store       => \$infile_lane_prefix,
-            strict_type => 1,
-        },
-        infile_lane_prefix_href => {
-            default     => {},
-            store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( %{$infile_lane_prefix_href} ) {
-
-        my %sequence_run_type;
-
-      INFILE_LANE_PREFIX:
-        foreach my $infile_lane_prefix ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
-            $sequence_run_type{$infile_lane_prefix} =
-              $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-              {sequence_run_type};
-        }
-
-        return %sequence_run_type;
-    }
-    elsif ( defined $infile_lane_prefix ) {
-
-        return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
-          {sequence_run_type};
-
-    }
-    else {
-
-        croak q{Either $infile_lane_prefix_href or $infile_prefix must be provided!};
     }
     return;
 }
