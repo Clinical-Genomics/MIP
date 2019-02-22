@@ -64,12 +64,6 @@ java_use_large_pages:
   data_type: SCALAR
   default: 0
   type: recipe_argument
-max_cores_per_node:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 36
-  type: mip
 node_ram_memory:
   associated_recipe:
    - mip
@@ -118,18 +112,6 @@ load_env:
   data_type: HASH
   mandatory: no
   type: mip
-project_id:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  type: mip
-reference_dir:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 sample_ids:
   associated_recipe:
    - mip

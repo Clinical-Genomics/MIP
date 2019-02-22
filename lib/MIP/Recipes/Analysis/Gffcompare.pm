@@ -158,7 +158,7 @@ sub analysis_gffcompare {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
@@ -259,7 +259,7 @@ sub analysis_gffcompare {
 
     ## Rename output files
     say {$FILEHANDLE} q{## Rename and move GFFCompare output};
-    my $gff_output_path = $outfile_path_prefix . $DOT . q{annotated.gtf};
+    my $gff_output_path    = $outfile_path_prefix . $DOT . q{annotated.gtf};
     my $refmap_infile_path = catfile( $indir_path,
         $outfile_name_prefix . $DOT . $infile_name . $DOT . q{refmap} );
     my $tmap_infile_path =
@@ -300,7 +300,7 @@ sub analysis_gffcompare {
 
         submit_recipe(
             {
-              base_command            => $profile_base_command,
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,

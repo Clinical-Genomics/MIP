@@ -16,12 +16,15 @@ use warnings qw{ FATAL utf8 };
 use List::MoreUtils qw { uniq };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $COLON $DOT $EMPTY_STR $SPACE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -46,12 +49,8 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $COLON     => q{:};
-Readonly my $DOT       => q{.};
-Readonly my $EMPTY_STR => q{};
 Readonly my $MINUS_ONE => -1;
 Readonly my $MINUS_TWO => -2;
-Readonly my $SPACE     => q{ };
 
 sub get_bin_file_path {
 
@@ -109,13 +108,13 @@ sub get_bin_file_path {
     ## Check environments special case env first
     if ( $environment_key and $environment_href->{$environment_key} ) {
 
-        $environment = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
+        $environment   = @{ $environment_href->{$environment_key} }[$MINUS_ONE];
         $bin_file_path = catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
     }
     ## Assume installed in conda base environment
     else {
 
-        $environment = q{base};
+        $environment   = q{base};
         $bin_file_path = catfile( $conda_path, q{bin}, $bin_file );
     }
 
@@ -374,7 +373,7 @@ sub get_env_method_cmds {
 
     my %method_cmd = (
         conda => {
-            load => [ ( conda_activate( { env_name => $env_name, } ), ) ],
+            load   => [ ( conda_activate(   { env_name => $env_name, } ), ) ],
             unload => [ ( conda_deactivate( {} ), ) ],
         },
     );

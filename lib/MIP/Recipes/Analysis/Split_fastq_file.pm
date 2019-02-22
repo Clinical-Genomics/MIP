@@ -154,7 +154,7 @@ sub analysis_split_fastq_file {
     Readonly my $SUFFIX_LENGTH              => 4;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     ## Get the io infiles per chain and id

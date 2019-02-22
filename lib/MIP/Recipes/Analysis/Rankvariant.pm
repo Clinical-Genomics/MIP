@@ -161,7 +161,7 @@ sub analysis_rankvariant {
     Readonly my $CORE_NUMBER_REQUESTED => $active_parameter_href->{max_cores_per_node};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
 ## Get the io infiles per chain and id
@@ -470,6 +470,7 @@ sub analysis_rankvariant_unaffected {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -488,6 +489,7 @@ sub analysis_rankvariant_unaffected {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -530,6 +532,11 @@ sub analysis_rankvariant_unaffected {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -579,7 +586,7 @@ sub analysis_rankvariant_unaffected {
     Readonly my $CORE_NUMBER_REQUESTED => $active_parameter_href->{max_cores_per_node};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
 ## Get the io infiles per chain and id
@@ -781,8 +788,9 @@ sub analysis_rankvariant_unaffected {
         }
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -793,7 +801,7 @@ sub analysis_rankvariant_unaffected {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub analysis_rankvariant_sv {
@@ -807,6 +815,7 @@ sub analysis_rankvariant_sv {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $reference_dir_ref       => MIP reference directory {REF}
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -825,6 +834,7 @@ sub analysis_rankvariant_sv {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $reference_dir_ref;
     my $temp_directory;
 
@@ -869,6 +879,11 @@ sub analysis_rankvariant_sv {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -911,7 +926,7 @@ sub analysis_rankvariant_sv {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -1169,8 +1184,9 @@ sub analysis_rankvariant_sv {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -1181,21 +1197,22 @@ sub analysis_rankvariant_sv {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub analysis_rankvariant_sv_unaffected {
 
-## Function : Annotate variants using genmod anotate only.
+## Function : Annotate variants using genmod annotate only.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $reference_dir_ref       => MIP reference directory {REF}
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -1213,6 +1230,7 @@ sub analysis_rankvariant_sv_unaffected {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $reference_dir_ref;
     my $temp_directory;
 
@@ -1257,6 +1275,11 @@ sub analysis_rankvariant_sv_unaffected {
             strict_type => 1,
             store       => \$parameter_href,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -1297,7 +1320,7 @@ sub analysis_rankvariant_sv_unaffected {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -1450,8 +1473,9 @@ sub analysis_rankvariant_sv_unaffected {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
@@ -1462,7 +1486,7 @@ sub analysis_rankvariant_sv_unaffected {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

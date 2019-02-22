@@ -85,7 +85,7 @@ sub mip_analyse {
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $file_info_href        => File info hash {REF}
-    #           : $order_parameters_ref  => Order of addition to parameter array {REF}
+##          : $order_parameters_ref  => Order of addition to parameter array {REF}
 ##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
@@ -130,13 +130,20 @@ sub mip_analyse {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Transfer to lexical variables
+    # Parameters to include in each analysis run
     my %active_parameter = %{$active_parameter_href};
 
     # Holds all active parameters values for broadcasting
     my @broadcasts;
-    my %file_info        = %{$file_info_href};
+
+    # File information
+    my %file_info = %{$file_info_href};
+
+    # Order parameters for logical broadcast of parameters
     my @order_parameters = @{$order_parameters_ref};
-    my %parameter        = %{$parameter_href};
+
+    # All parameters MIP analyse knows
+    my %parameter = %{$parameter_href};
 
 #### Script parameters
 
@@ -243,7 +250,7 @@ sub mip_analyse {
     my $log = initiate_logger(
         {
             file_path => $active_parameter{log_file},
-            log_name  => uc q{mip},
+            log_name  => uc q{mip_analyse},
         }
     );
 
@@ -443,7 +450,6 @@ sub mip_analyse {
     );
 
 ## Check email adress syntax and mail host
-
     check_email_address(
         {
             email => $active_parameter{email},
@@ -513,7 +519,7 @@ sub mip_analyse {
         );
     }
 
-## Check that the module core number do not exceed the maximum per node
+## Check that the recipe core number do not exceed the maximum per node
     foreach my $recipe_name ( keys %{ $active_parameter{recipe_core_number} } ) {
 
         ## Limit number of cores requested to the maximum number of cores available per node
@@ -583,24 +589,6 @@ sub mip_analyse {
         }
     );
 
-    my $consensus_analysis_type = $parameter{cache}{consensus_analysis_type};
-
-## Get initiation recipe, downstream dependencies and update recipe modes for start_with_recipe parameter depending on pipeline
-    my $initiation_file = catfile( $Bin, qw{ definitions rd_dna_initiation_map.yaml } );
-
-    # For Rd RNA pipeline
-    if ( $consensus_analysis_type eq q{wts} ) {
-
-        $initiation_file = catfile( $Bin, qw{ definitions rd_rna_initiation_map.yaml } );
-    }
-
-    # For Vcf rerun pipeline
-    if ( $consensus_analysis_type eq q{vrn} ) {
-
-        $initiation_file =
-          catfile( $Bin, qw{ definitions rd_dna_vcf_rerun_initiation_map.yaml } );
-    }
-
 ## Check that recipe name and program name are not identical
     check_recipe_name(
         {
@@ -612,7 +600,6 @@ sub mip_analyse {
     parse_start_with_recipe(
         {
             active_parameter_href => \%active_parameter,
-            initiation_file       => $initiation_file,
             log                   => $log,
             parameter_href        => \%parameter,
         },
@@ -688,6 +675,8 @@ sub mip_analyse {
             sample_info_href => \%sample_info,
         }
     );
+
+    my $consensus_analysis_type = $parameter{cache}{consensus_analysis_type};
 
 ### Rd RNA
     if ( $consensus_analysis_type eq q{wts} ) {

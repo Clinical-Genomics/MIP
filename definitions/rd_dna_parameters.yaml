@@ -846,7 +846,13 @@ vcf2cytosure_freq_tag:
   data_type: SCALAR
   default: FRQ
   type: recipe_argument
-vf2cytosure_no_filter:
+vcf2cytosure_maxbnd:
+  associated_recipe:
+   - vcf2cytosure_ar
+  data_type: SCALAR
+  default: 5000
+  type: recipe_argument
+vcf2cytosure_no_filter:
   associated_recipe:
    - vcf2cytosure_ar
   data_type: SCALAR

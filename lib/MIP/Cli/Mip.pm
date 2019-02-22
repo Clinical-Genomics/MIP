@@ -63,6 +63,16 @@ sub _build_usage {
     );
 
     option(
+        q{config_file} => (
+            cmd_aliases   => [qw{ config c }],
+            documentation => q{File with configuration parameters in YAML format},
+            is            => q{rw},
+            isa           => Str,
+            required      => 1,
+        )
+    );
+
+    option(
         q{conda_path} => (
             cmd_aliases   => [qw{ conp }],
             documentation => q{Conda path},
@@ -99,6 +109,26 @@ sub _build_usage {
         )
     );
 
+    option(
+        q{max_cores_per_node} => (
+            cmd_aliases   => [qw{ mcpn }],
+            cmd_tags      => [q{Default: 16}],
+            documentation => q{Maximum number of processor cores per node},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{node_ram_memory} => (
+            cmd_aliases   => [qw{ nrm }],
+            cmd_tags      => [q{Default: 128}],
+            documentation => q{RAM memory size of the node(s) in GigaBytes},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
     ## Special case:Enable/activate MIP. Cannot be changed from cmd or config
     has(
         q{mip} => (
@@ -112,6 +142,16 @@ sub _build_usage {
         q{project_id} => (
             cmd_aliases   => [qw{ pro }],
             documentation => q{Project id},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{reference_dir} => (
+            cmd_aliases   => [qw{ rd }],
+            cmd_tags      => [q{Default: ""}],
+            documentation => q{Reference directory},
             is            => q{rw},
             isa           => Str,
         )

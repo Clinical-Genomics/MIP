@@ -13,11 +13,11 @@ Input parameters to each sub routine are validated via the core module validate 
 
 ## Command modules
 Each command module in MIP must be accompanied by a test for each sub routine that controls whether the command module yields the expected output.
-**Template**: [test_commands.t]
+**Template**: [command_module.t]
 
 ## Recipes
 Are tested by test scripts and using sbatch traps upon execution. MIP thus relies on the processes coded within the recipe to supply a correct error code when throwing errors. This is catched through the traps and propagated to the STDERR file of the entire process or the sub process that threw the error. Since each command sub routine in MIP can write to the unix standard stream it is possible to add a stderr log file for each command process that is executed within the recipe.
-**Template**: [test_recipe.t]
+**Template**: [recipe_analysis_case.t] [recipe_analysis_sample.t]
 
 ## Analysis
 Are tested by running ``mip_[PROCESS]_[PIPELINE].test both locally and with continous integration using TRAVIS.
@@ -29,12 +29,12 @@ Basic templates for writing tests to new MIP modules is provided in [code dir] a
 ## test.t
 This is a basic template for writing tests for modules with sub routines that do not return a commands array and thus do not utilize the MIP/lib/MIP/Test/Commands.pm module for testing. The template includes a test to check the availability of the module that is to be tested.
 
-## test_commands.t
+## command_module.t
 This template is intended for testing modules with sub routines that returns a `@commands` array, which consists of the base command followed by testable arguments. The arguments can be of three types either base, required or specific. The ´@command´ array is used by the test_function subroutine in the Commands module in order to control that the expected output is generated. Furthermore, the Commands module includes a test for writing to an already open filehandle.
 
 Three types of input arguments can be tested using this template. Each type is hold in a separate hash array (`%base_argument`, `%required_argument` and `%specific_argument`). The required arguments are always supplied to the test function, either by themselves or in conjunction with a base or specific argument. The testable arguments can either be a Scalar ($scalar) or an Array (@array).
 
-## test_recipe.t
+## recipe_analysis_case.t & recipe_analysis_sample.t
 This is intended to test the code dependencies and compilation of the recipe and not the actual data output.
 
 ## Using the templates
@@ -113,10 +113,11 @@ env_name => {
     expected_output => q{--name test_env},
 },
 ```
-[t dir]: https://github.com/Clinical-Genomics/MIP/tree/master/t
+[t dir]: https://github.com/Clinical-Genomics/MIP/tree/develop/t
 [Given-When-Then]: https://www.agilealliance.org/glossary/gwt/#q=~(filters~(postType~(~'page~'post~'aa_book~'aa_event_session~'aa_experience_report~'aa_glossary~'aa_research_paper~'aa_video)~tags~(~'given*20when*20then))~searchTerm~'~sort~false~sortDirection~'asc~page~1)
 [here]: Tests/Exit_signals.md
-[code dir]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/code/
-[test_commands.t]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/code/test_commands.t
-[test_recipe.t]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/code/test_recipe.t
-[test.t]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/code/test.t
+[code dir]: https://github.com/Clinical-Genomics/MIP/tree/develop/templates/code/
+[command_module.t]: https://github.com/Clinical-Genomics/MIP/tree/develop/templates/code/commad_module.t
+[recipe_analysis_case.t]: https://github.com/Clinical-Genomics/MIP/tree/develop/templates/code/recipe_analysis_case.t
+[recipe_analysis_sample.t]: https://github.com/Clinical-Genomics/MIP/tree/develop/templates/code/recipe_analysis_sample.t
+[test.t]: https://github.com/Clinical-Genomics/MIP/tree/develop/templates/code/test.t

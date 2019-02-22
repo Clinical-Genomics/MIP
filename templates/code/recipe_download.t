@@ -69,26 +69,27 @@ my $recipe_name       = q{RECIPE_NAME};
 my $reference_version = q{REFERENCE_VERSION};
 my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
-my %parameter = test_mip_hashes(
+my %active_parameter = test_mip_hashes(
     {
-        mip_hash_name => q{download_parameter},
+        mip_hash_name => q{download_active_parameter},
     }
 );
-$parameter{project_id}    = q{test};
-$parameter{reference_dir} = catfile($test_dir);
-my $reference_href = $parameter{$recipe_name}{$genome_version}{$REFERENCE_VERSION};
+$active_parameter{project_id}    = q{test};
+$active_parameter{reference_dir} = catfile($test_dir);
+my $reference_href =
+  $active_parameter{reference_feature}{$recipe_name}{$genome_version}{$reference_version};
 
 my %job_id;
 
 my $is_ok = SUB_ROUTINE(
     {
-        job_id_href          => \%job_id,
-        parameter_href       => \%parameter,
-        profile_base_command => $slurm_mock_cmd,
-        recipe_name          => $recipe_name,
-        reference_href       => $reference_href,
-        reference_version    => $reference_version,
-        temp_directory       => catfile($test_dir),
+        active_parameter_href => \%active_parameter,
+        job_id_href           => \%job_id,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        reference_href        => $reference_href,
+        reference_version     => $reference_version,
+        temp_directory        => catfile($test_dir),
     }
 );
 

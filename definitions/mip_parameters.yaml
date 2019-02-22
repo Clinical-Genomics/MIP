@@ -1,14 +1,6 @@
 ---
 ## Version: 1.0.0
-## Enable MIP
 ## Bash
-conda_path:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: path
-  update_path: absolute_path
 bash_set_errexit:
   associated_recipe:
    - mip
@@ -27,6 +19,13 @@ bash_set_pipefail:
   data_type: SCALAR
   default: 0
   type: mip
+conda_path:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: path
+  update_path: absolute_path
 config_file:
   associated_recipe:
    - mip
@@ -40,12 +39,37 @@ log_file:
   data_type: SCALAR
   type: path
   update_path: absolute_path
+max_cores_per_node:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 16
+  type: mip
+## Enable MIP
 mip:
   associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
   type: mip
+node_ram_memory:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 128
+  type: mip
+project_id:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: mip
+reference_dir:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
 temp_directory:
   associated_recipe:
    - mip

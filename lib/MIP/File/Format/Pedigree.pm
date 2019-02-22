@@ -20,13 +20,14 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Gnu::Coreutils qw{ gnu_echo };
+use MIP::Constants qw{ $NEWLINE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -34,19 +35,13 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $DOUBLE_QUOTE       => q{"};
-Readonly my $NEWLINE            => qq{\n};
-Readonly my $QUOTE              => q{'};
-Readonly my $SPACE              => q{ };
-Readonly my $TAB                => qq{\t};
 Readonly my $TRIO_MEMBERS_COUNT => 3;
-Readonly my $UNDERSCORE         => q{_};
 
 sub create_fam_file {
 
 ## Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using execution_mode=sbatch.
 ## Returns  :
-## Arguments: $active_parameter_href => The ac:tive parameters for this analysis hash {REF}
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
 ##          : $case_id               => Case_id
 ##          : $execution_mode        => Either system (direct) or via sbatch
 ##          : $fam_file_path         => Case file path
