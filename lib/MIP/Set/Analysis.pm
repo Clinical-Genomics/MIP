@@ -15,19 +15,20 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $SPACE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ set_recipe_on_analysis_type set_rankvariants_ar };
+    our @EXPORT_OK =
+      qw{ set_recipe_on_analysis_type set_recipe_gatk_variantrecalibration set_rankvariants_ar };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub set_recipe_on_analysis_type {
 
@@ -102,22 +103,86 @@ sub set_recipe_on_analysis_type {
     return;
 }
 
-sub set_rankvariants_ar {
+sub set_recipe_gatk_variantrecalibration {
 
-## Function : Update which rankvariants recipe to use
+## Function : Update which gatk variant recalibration to use depending on number of samples
 ## Returns  :
-## Arguments: $sample_ids_ref   => Active parameters for this analysis hash {REF}
-##          : $analysis_recipe_href    => Analysis recipe hash {REF}
-##          : $log                     => Log object to write to
-##          : $parameter_href          => Parameter hash {REF}
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $log                  => Log object to write to
+##          : $parameter_href       => Parameter hash {REF}
+##          : $sample_ids_ref       => sample ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_ids_ref;
     my $analysis_recipe_href;
     my $log;
     my $parameter_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Gatk_cnnscorevariants
+      qw{ analysis_gatk_cnnscorevariants };
+
+    ## Use already set gatk_variantrecalibration recipe
+    return if ( @{$sample_ids_ref} != 1 );
+
+    $log->warn(
+q{Switched from VariantRecalibration to CNNScoreVariants for single sample analysis}
+    );
+
+    ## Use new CNN recipe for single samples
+    $analysis_recipe_href->{gatk_variantrecalibration} = \&analysis_gatk_cnnscorevariants;
+
+    return;
+}
+
+sub set_rankvariants_ar {
+
+## Function : Update which rankvariants recipe to use
+## Returns  :
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $log                  => Log object to write to
+##          : $parameter_href       => Parameter hash {REF}
+##          : $sample_ids_ref       => Sample ids {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $log;
+    my $parameter_href;
+    my $sample_ids_ref;
 
     my $tmpl = {
         analysis_recipe_href => {

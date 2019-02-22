@@ -68,7 +68,7 @@ node_ram_memory:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 128
+  default: 192
   type: mip
 outdata_dir:
   associated_recipe:

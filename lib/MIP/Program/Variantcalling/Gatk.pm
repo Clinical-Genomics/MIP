@@ -30,12 +30,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       gatk_applyvqsr
       gatk_calculategenotypeposteriors
+      gatk_cnnscorevariants
       gatk_combinevariants
       gatk_concatenate_variants
       gatk_gathervcfscloud
@@ -244,22 +245,22 @@ sub gatk_selectvariants {
 
 ## Function : Perl wrapper for writing GATK SelectVariants recipe to $FILEHANDLE. Based on GATK 4.0.8
 ## Returns  : @commands
-## Arguments: $exclude_non_variants                  => Exclude non-variant sites
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $infile_path                           => Infile paths
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $java_use_large_pages                  => Use java large pages
-##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $outfile_path                          => Outfile path
-##          : $pedigree                              => Pedigree files for samples
-##          : $referencefile_path                    => Reference sequence file
-##          : $restrict_alleles_to                   => Restrict allele output
-##          : $sample_names_ref                      => Include genotypes from this sample {REF}
-##          : $select_type_to_include_ref            => Select which variants to include {REF}
-##          : $stderrfile_path                       => Stderrfile path
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $verbosity                             => Set the minimum level of logging
-##          : $xargs_mode                            => Set if the program will be executed via xargs
+## Arguments: $exclude_non_variants       => Exclude non-variant sites
+##          : $FILEHANDLE                 => Sbatch filehandle to write to
+##          : $infile_path                => Infile paths
+##          : $intervals_ref              => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages       => Use java large pages
+##          : $memory_allocation          => Memory allocation to run Gatk
+##          : $outfile_path               => Outfile path
+##          : $pedigree                   => Pedigree files for samples
+##          : $referencefile_path         => Reference sequence file
+##          : $restrict_alleles_to        => Restrict allele output
+##          : $sample_names_ref           => Include genotypes from this sample {REF}
+##          : $select_type_to_include_ref => Select which variants to include {REF}
+##          : $stderrfile_path            => Stderrfile path
+##          : $temp_directory             => Redirect tmp files to java temp
+##          : $verbosity                  => Set the minimum level of logging
+##          : $xargs_mode                 => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
@@ -1082,6 +1083,173 @@ sub gatk_calculategenotypeposteriors {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
+
+    return @commands;
+}
+
+sub gatk_cnnscorevariants {
+
+## Function : Perl wrapper for writing GATK CNNScoreVariants recipe to $FILEHANDLE. Based on GATK 4.1.0
+## Returns  : @commands
+## Arguments: $alignment_infile_paths_ref => BAM/SAM/CRAM file containing reads {REF}
+##          : $FILEHANDLE                 => Sbatch filehandle to write to
+##          : $infile_path                => Infile paths
+##          : $intervals_ref              => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages       => Use java large pages
+##          : $memory_allocation          => Memory allocation to run Gatk
+##          : $outfile_path               => Outfile path
+##          : $pedigree                   => Pedigree files for samples
+##          : $referencefile_path         => Reference sequence file
+##          : $stderrfile_path            => Stderrfile path
+##          : $temp_directory             => Redirect tmp files to java temp
+##          : $verbosity                  => Set the minimum level of logging
+##          : $xargs_mode                 => Set if the program will be executed via xargs
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $alignment_infile_paths_ref;
+    my $FILEHANDLE;
+    my $infile_path;
+    my $intervals_ref;
+    my $memory_allocation;
+    my $outfile_path;
+    my $pedigree;
+    my $referencefile_path;
+    my $stderrfile_path;
+    my $temp_directory;
+    my $xargs_mode;
+
+    ## Default(s)
+    my $java_use_large_pages;
+    my $verbosity;
+
+    my $tmpl = {
+        alignment_infile_paths_ref => {
+            default     => [],
+            store       => \$alignment_infile_paths_ref,
+            strict_type => 1,
+        },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        intervals_ref => {
+            default     => [],
+            store       => \$intervals_ref,
+            strict_type => 1,
+        },
+        java_use_large_pages => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => {
+            store       => \$memory_allocation,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        pedigree => {
+            store       => \$pedigree,
+            strict_type => 1,
+        },
+        referencefile_path => {
+            defined     => 1,
+            store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        verbosity => {
+            allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$verbosity,
+            strict_type => 1,
+        },
+        xargs_mode => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$xargs_mode,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## GATK SelectVariants
+
+    # Stores commands depending on input parameters
+    my @commands = qw{ gatk };
+
+    ## Add java options
+    gatk_java_options(
+        {
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+            xargs_mode           => $xargs_mode,
+        }
+    );
+
+    ## Add tool command
+    push @commands, q{CNNScoreVariants};
+
+    ## Add infile
+    push @commands, q{--variant} . $SPACE . $infile_path;
+
+    ## Add common options
+    gatk_common_options(
+        {
+            commands_ref       => \@commands,
+            intervals_ref      => $intervals_ref,
+            pedigree           => $pedigree,
+            referencefile_path => $referencefile_path,
+            temp_directory     => $temp_directory,
+            verbosity          => $verbosity,
+        }
+    );
+
+    if ( @{$alignment_infile_paths_ref} ) {
+
+        push @commands, q{--input} . $SPACE . join $SPACE . q{--input} . $SPACE,
+          @{$alignment_infile_paths_ref};
+
+        ## Modify tensor-type accordingly
+        push @commands, q{--tensor-type} . $SPACE . q{read_tensor};
+    }
+
+    ## Output
+    push @commands, q{--output} . $SPACE . $outfile_path;
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+        }
+      );
 
     return @commands;
 }
