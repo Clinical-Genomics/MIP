@@ -68,13 +68,13 @@ max_cores_per_node:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 16
+  default: 36
   type: mip
 node_ram_memory:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 128
+  default: 192
   type: mip
 outdata_dir:
   associated_recipe:
