@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
-Readonly my $COMMA              => q{,};
 Readonly my $MIN_MAP_QUAL       => q{20};
 Readonly my $INSERT_SIZE_CUTOFF => q{15};
-Readonly my $SPACE              => q{ };
 
 BEGIN {
 
@@ -111,12 +110,10 @@ my %specific_argument = (
         expected_output => q{--exclude delly_exclude_file},
     },
     genotypefile_path => {
-        input => catfile(
-            qw{ outfile_path prefix_contig_infile_suffix_sv-type_suffix }),
+        input => catfile(qw{ outfile_path prefix_contig_infile_suffix_sv-type_suffix }),
         expected_output => q{--vcffile}
           . $SPACE
-          . catfile(
-            qw{ outfile_path prefix_contig_infile_suffix_sv-type_suffix }),
+          . catfile(qw{ outfile_path prefix_contig_infile_suffix_sv-type_suffix }),
     },
     mad_cutoff => {
         input           => $INSERT_SIZE_CUTOFF,
@@ -126,13 +123,12 @@ my %specific_argument = (
         input           => $MIN_MAP_QUAL,
         expected_output => q{--map-qual} . $SPACE . $MIN_MAP_QUAL,
     },
-    no_small_indel => {
+    small_indel => {
         input           => 1,
-        expected_output => q{--noindels},
+        expected_output => q{--i},
     },
     outfile_path => {
-        input =>
-          catfile(qw{ outfile_path prefix_contig_infile_suffix_sv-type }),
+        input => catfile(qw{ outfile_path prefix_contig_infile_suffix_sv-type }),
         expected_output => q{--outfile}
           . $SPACE
           . catfile(qw{ outfile_path prefix_contig_infile_suffix_sv-type }),
