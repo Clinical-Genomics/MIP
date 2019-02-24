@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
 
@@ -28,6 +28,7 @@ BEGIN {
       $AMPERSAND
       %ANALYSIS
       $ASTERISK
+      $BACKTICK
       $CLOSE_BRACE
       $CLOSE_BRACKET
       $COLON
@@ -60,6 +61,7 @@ Readonly our $MIP_VERSION => q{v7.0.1};
 ## Symbols
 Readonly our $AMPERSAND     => q{&};
 Readonly our $ASTERISK      => q{*};
+Readonly our $BACKTICK      => q{`};
 Readonly our $CLOSE_BRACE   => q{\}};
 Readonly our $CLOSE_BRACKET => q{]};
 Readonly our $COLON         => q{:};

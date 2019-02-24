@@ -52,17 +52,17 @@ gatk_bundle_download_version:
   type: recipe_argument
 gatk_logging_level:
   associated_recipe:
-   - gatk_baserecalibration
-   - gatk_haplotypecaller
-   - gatk_genotypegvcfs
-   - gatk_gathervcfs
    - bcftools_mpileup
-   - gatk_variantrecalibration
+   - gatk_baserecalibration
    - gatk_combinevariantcallsets
+   - gatk_gathervcfs
+   - gatk_genotypegvcfs
+   - gatk_haplotypecaller
    - gatk_variantevalall
    - gatk_variantevalexome
-   - varianteffectpredictor
+   - gatk_variantrecalibration
    - rankvariant
+   - varianteffectpredictor
   data_type: SCALAR
   default: INFO
   type: recipe_argument
@@ -93,24 +93,24 @@ genomic_set:
 ## HumanGenomeReference
 human_genome_reference:
   associated_recipe:
-   - mip
+   - bcftools_mpileup
    - bwa_mem
+   - cnvnator_ar
+   - delly_call
    - expansionhunter
+   - freebayes_ar
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
-   - bcftools_mpileup
-   - freebayes_ar
-   - manta
-   - delly_call
-   - cnvnator_ar
-   - tiddit
-   - gatk_variantrecalibration
-   - vt_ar
    - gatk_variantevalall
    - gatk_variantevalexome
+   - gatk_variantrecalibration
+   - manta
+   - mip
    - picardtools_collecthsmetrics
    - picardtools_collectmultiplemetrics
+   - tiddit
+   - vt_ar
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
   exists_check: file
@@ -118,23 +118,23 @@ human_genome_reference:
   type: path
 human_genome_reference_file_endings:
   associated_recipe:
+   - bcftools_mpileup
    - bwa_mem
+   - cnvnator_ar
+   - delly_call
    - expansionhunter
+   - freebayes_ar
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
-   - bcftools_mpileup
-   - freebayes_ar
-   - manta
-   - delly_call
-   - cnvnator_ar
-   - tiddit
-   - gatk_variantrecalibration
-   - vt_ar
    - gatk_variantevalall
    - gatk_variantevalexome
+   - gatk_variantrecalibration
+   - manta
    - picardtools_collecthsmetrics
    - picardtools_collectmultiplemetrics
+   - tiddit
+   - vt_ar
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -153,7 +153,7 @@ recipe_core_number:
     cadd_ar: 16
     chanjo_sexcheck: 1
     cnvnator_ar: 16
-    delly_call: 16
+    delly_call: 36
     delly_reformat: 16
     endvariantannotationblock: 1
     evaluation: 1
@@ -204,7 +204,7 @@ recipe_time:
     cadd_ar: 10
     chanjo_sexcheck: 2
     cnvnator_ar: 5
-    delly_call: 10
+    delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
     evaluation: 3
@@ -566,7 +566,7 @@ sambamba_depth_noduplicates:
   associated_recipe:
    - sambamba_depth
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 sambamba_depth_mapping_quality:
   associated_recipe:

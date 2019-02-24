@@ -1,9 +1,10 @@
-package MIP::Recipes::Analysis::Samtools_subsample_mt;
+package MIP::Recipes::Analysis::Gatk_cnnscorevariants;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -13,11 +14,11 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw{ first_value };
+use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKTICK $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DASH $DOT $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,32 +26,27 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_samtools_subsample_mt };
+    our @EXPORT_OK = qw{ analysis_gatk_cnnscorevariants };
 
 }
 
-## Constants
-Readonly my $MAX_DEPTH_TRESHOLD          => 500_000;
-Readonly my $MAX_LIMIT_SEED              => 100;
-Readonly my $SAMTOOLS_UNMAPPED_READ_FLAG => 4;
+sub analysis_gatk_cnnscorevariants {
 
-sub analysis_samtools_subsample_mt {
-
-## Function : Creates a BAM file containing a subset of the MT alignments
+## Function : GATK CNNScoreVariants analysis recipe for single sample calling
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
-##          : $file_info_href          => File_info hash {REF}
+##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
-##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -60,13 +56,13 @@ sub analysis_samtools_subsample_mt {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $parameter_href;
-    my $profile_base_command;
     my $recipe_name;
-    my $sample_id;
     my $sample_info_href;
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
+    my $temp_directory;
 
     my $tmpl = {
         active_parameter_href => {
@@ -120,12 +116,6 @@ sub analysis_samtools_subsample_mt {
             store       => \$recipe_name,
             strict_type => 1,
         },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -133,41 +123,46 @@ sub analysis_samtools_subsample_mt {
             store       => \$sample_info_href,
             strict_type => 1,
         },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Cluster qw{ get_memory_constrained_core_number };
+    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Alignment::Samtools
-      qw{ samtools_depth samtools_index samtools_view };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_cnnscorevariants };
     use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Unpack parameters
-    ## Get the io infiles per chain and id
+## Unpack parameters
     my %io = get_io_files(
         {
-            id             => $sample_id,
+            id             => $case_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
+            temp_directory => $temp_directory,
         }
     );
-    my $infile_name_prefix   = $io{in}{file_name_prefix};
-    my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my @infile_paths         = @{ $io{in}{file_paths} };
 
-    ## Find Mitochondrial contig infile_path
-    my $infile_path = first_value { / $infile_name_prefix [.]M /sxm } @infile_paths;
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path        = $io{in}{file_path};
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -176,8 +171,8 @@ sub analysis_samtools_subsample_mt {
             attribute      => q{chain},
         }
     );
-    my $mt_subsample_depth = $active_parameter_href->{samtools_subsample_mt_depth};
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
@@ -190,20 +185,20 @@ sub analysis_samtools_subsample_mt {
         parse_io_outfiles(
             {
                 chain_id               => $job_id_chain,
-                id                     => $sample_id,
+                id                     => $case_id,
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref => \@infile_name_prefixes,
+                file_name_prefixes_ref => [$infile_name_prefix],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
+                temp_directory         => $temp_directory,
             }
         )
     );
-
-    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_suffix};
-    my $outfile_path        = catfile( $outfile_path_prefix . $outfile_suffix );
+    my $outfile_path        = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -214,7 +209,7 @@ sub analysis_samtools_subsample_mt {
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $core_number,
-            directory_id                    => $sample_id,
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
@@ -222,97 +217,134 @@ sub analysis_samtools_subsample_mt {
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
             source_environment_commands_ref => \@source_environment_cmds,
+            temp_directory                  => $temp_directory,
         }
     );
 
-    ### SHELL:
+    ## Split to enable submission to &sample_info_qc later
+    my ( $volume, $directory, $stderr_file ) =
+      splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
 
-    ## Set up seed and fraction combination
-    say {$FILEHANDLE} q{## Creating subsample filter for samtools view};
+    ## Collect BAM infiles for dependence recipes streams for all sample_ids
+    my %recipe_tag_keys = ( gatk_baserecalibration => q{out}, );
 
-    ## Get average coverage over MT bases
-    print {$FILEHANDLE} q{MT_COVERAGE=} . $BACKTICK;
+    ## Store sample id bam infiles
+    my @bam_infiles_paths;
+    while ( my ( $sample_id_index, $sample_id ) =
+        each @{ $active_parameter_href->{sample_ids} } )
+    {
 
-    # Get depth per base
-    samtools_depth(
+      PROGRAM_TAG:
+        while ( my ( $recipe_tag, $stream ) = each %recipe_tag_keys ) {
+
+            ## Get the io infiles per chain and id
+            my %sample_io = get_io_files(
+                {
+                    id             => $sample_id,
+                    file_info_href => $file_info_href,
+                    parameter_href => $parameter_href,
+                    recipe_name    => $recipe_tag,
+                    stream         => $stream,
+                    temp_directory => $temp_directory,
+                }
+            );
+            my $infile_path_prefix_bam = $sample_io{$stream}{file_path_prefix};
+            my $infile_suffix_bam      = $sample_io{$stream}{file_suffix};
+            my $infile_path_bam        = $infile_path_prefix_bam . $infile_suffix_bam;
+            push @bam_infiles_paths, $infile_path_bam;
+        }
+    }
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+    ## Create .fam file to be used in variant calling analyses
+    my $fam_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
+    create_fam_file(
         {
-            FILEHANDLE         => $FILEHANDLE,
-            infile_path        => $infile_path,
-            max_depth_treshold => $MAX_DEPTH_TRESHOLD,
+            active_parameter_href => $active_parameter_href,
+            execution_mode        => q{system},
+            fam_file_path         => $fam_file_path,
+            FILEHANDLE            => $FILEHANDLE,
+            log                   => $log,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
-    # Pipe to AWK
-    print {$FILEHANDLE} $PIPE . $SPACE;
-
-    # Add AWK statment for calculation of avgerage coverage
-    print {$FILEHANDLE} _awk_calculate_average_coverage();
-
-    # Close statment
-    say {$FILEHANDLE} $BACKTICK;
-
-    ## Get random seed
-    my $seed = int rand $MAX_LIMIT_SEED;
-
-    ## Add seed to fraction for ~100x
-    # Create bash variable
-    say {$FILEHANDLE} q{SEED_FRACTION=}
-
-      # Open statment
-      . $BACKTICK
-
-      # Lauch perl and print
-      . q?perl -e "print ?
-
-      # Add the random seed number to..
-      . $seed . q{ + }
-
-      # ...the subsample fraction, consisting of the desired subsample coverag...
-      . $mt_subsample_depth
-
-      # ...divided by the starting coverage
-      . q? / $MT_COVERAGE"?
-
-      # Close statment
-      . $BACKTICK . $NEWLINE;
-
-    ## Filter the bam file to only include a subset of reads that maps to the MT
-    say {$FILEHANDLE} q{## Filter the BAM file};
-    samtools_view(
+    ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+    my %commands = gatk_pedigree_flag(
         {
-            exclude_reads_with_these_flags => $SAMTOOLS_UNMAPPED_READ_FLAG,
-            FILEHANDLE                     => $FILEHANDLE,
-            fraction                       => q{"$SEED_FRACTION"},
-            infile_path                    => $infile_path,
-            outfile_path                   => $outfile_path,
-            with_header                    => 1,
+            fam_file_path => $fam_file_path,
+        }
+    );
+
+    ## GATK CNNScoreVariants
+    say {$FILEHANDLE} q{## GATK CNNScoreVariants};
+
+    my $cnn_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{cnn} . $outfile_suffix;
+    my $mv_infile_path   = $cnn_outfile_path;
+    gatk_cnnscorevariants(
+        {
+            alignment_infile_paths_ref => \@bam_infiles_paths,
+            FILEHANDLE                 => $FILEHANDLE,
+            infile_path                => $infile_path,
+            outfile_path               => $cnn_outfile_path,
+            referencefile_path         => $referencefile_path,
+            temp_directory             => $temp_directory,
+            verbosity                  => $active_parameter_href->{gatk_logging_level},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Index new bam file
-    say {$FILEHANDLE} q{## Index the subsampled BAM file};
-    samtools_index(
+    if ( not $active_parameter_href->{gatk_variantrecalibration_keep_unnormalised} ) {
+
+        ## Bcftools norm, left-align and normalize indels, split multiallelics
+        my $norm_outfile_path =
+          $outfile_path_prefix . $UNDERSCORE . q{normalized} . $outfile_suffix;
+        $mv_infile_path = $norm_outfile_path;
+        bcftools_norm(
+            {
+                FILEHANDLE      => $FILEHANDLE,
+                infile_path     => $cnn_outfile_path,
+                multiallelic    => $DASH,
+                outfile_path    => $norm_outfile_path,
+                output_type     => q{v},
+                reference_path  => $referencefile_path,
+                stderrfile_path => $outfile_path_prefix
+                  . $UNDERSCORE
+                  . q{normalized.stderr},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+
+    ## Change name of file to accomodate downstream
+    gnu_mv(
         {
-            bai_format  => 1,
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_path,
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => $mv_infile_path,
+            outfile_path => $outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $FILEHANDLE;
 
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $outfile_name_prefix,
                 path             => $outfile_path,
-                recipe_name      => q{samtools_subsample_mt},
-                sample_id        => $sample_id,
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        # Used to find order of samples in qccollect downstream
+        set_recipe_outfile_in_sample_info(
+            {
+                path             => $outfile_path,
+                recipe_name      => q{pedigree_check},
                 sample_info_href => $sample_info_href,
             }
         );
@@ -321,42 +353,18 @@ sub analysis_samtools_subsample_mt {
             {
                 base_command            => $profile_base_command,
                 case_id                 => $case_id,
-                dependency_method       => q{sample_to_island},
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
                 job_id_chain            => $job_id_chain,
-                sample_id               => $sample_id,
                 recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
     return 1;
-}
-
-sub _awk_calculate_average_coverage {
-
-## Function : Writes an awk expression to an open filehandle. The awk expression calculates the average coverage based on input from samtools depth and prints it.
-## Returns  : $awk_statment
-
-    my $awk_statment =
-
-      # Start awk
-      q?awk '?
-
-      # Sum the coverage data for each base ()
-      . q?{cov += $3}?
-
-      # Add end rule
-      . q?END?
-
-      # Divide the total coverage sum with the number of covered
-      # bases (rows of output from samtools depth),
-      # stored in the awk built in "NR"
-      . q?{ if (NR > 0) print cov / NR }'?;
-
-    return $awk_statment;
 }
 
 1;
