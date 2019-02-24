@@ -93,7 +93,7 @@ ecnvnator:
 edelly:
   conda:
     bcftools: 1.9=h4da6232_0
-    delly: 0.7.8=h278814d_3
+    delly: 0.8.1=h4037b6b_0
     picard: 2.18.14=0
     pip:
     python: 2.7
