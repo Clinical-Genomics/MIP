@@ -354,6 +354,7 @@ sub analysis_snpeff {
             if ( not $annotation_file_counter ) {
 
                 $annotate_infile_path = $infile_path{$contig};
+
             }
             else {
 

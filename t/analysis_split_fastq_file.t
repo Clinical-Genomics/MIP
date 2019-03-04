@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Snpeff} => [qw{ analysis_snpeff }],
+        q{MIP::Recipes::Analysis::Split_fastq_file} => [qw{ analysis_split_fastq_file }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
+use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
 
-diag(   q{Test analysis_snpeff from Snpeff.pm v}
-      . $MIP::Recipes::Analysis::Snpeff::VERSION
+diag(   q{Test analysis_split_fastq_file from Split_fastq_file.pm v}
+      . $MIP::Recipes::Analysis::Split_fastq_file::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,7 +62,7 @@ diag(   q{Test analysis_snpeff from Snpeff.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{snpeff};
+my $recipe_name    = q{split_fastq_file};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -74,13 +74,8 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $case_id = $active_parameter{case_id};
-$active_parameter{snpeff_ann}                     = 1;
-$active_parameter{snpsift_annotation_outinfo_key} = { file_name => q{vcf_key}, };
-$active_parameter{snpeff_genome_build_version}    = q{1};
-$active_parameter{snpeff_path}                    = q{a_path};
-@{ $active_parameter{snpsift_dbnsfp_annotations} } = [qw{ GERP }];
-$active_parameter{snpsift_dbnsfp_file} = q{a_dbnsfp_file};
+my $sample_id = $active_parameter{sample_ids}[0];
+$active_parameter{split_fastq_file_read_batch} = 1;
 
 my %file_info = test_mip_hashes(
     {
@@ -88,11 +83,7 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-%{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
-    {
-        mip_hash_name => q{io},
-    }
-);
+
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -102,46 +93,23 @@ my %parameter = test_mip_hashes(
     }
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
-$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
-
 my %sample_info;
 
-my $is_ok = analysis_snpeff(
+my $is_ok = analysis_split_fastq_file(
     {
         active_parameter_href   => \%active_parameter,
-        case_id                 => $case_id,
         file_info_href          => \%file_info,
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
         parameter_href          => \%parameter,
         profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
+        sample_id               => $sample_id,
         sample_info_href        => \%sample_info,
     }
 );
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
-
-## Given do not perform snpeff annotate, when single file
-$active_parameter{snpeff_ann} = 0;
-$active_parameter{snpsift_annotation_files}{a_file} = q{a_key};
-
-$is_ok = analysis_snpeff(
-    {
-        active_parameter_href   => \%active_parameter,
-        case_id                 => $case_id,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_info_href        => \%sample_info,
-    }
-);
-
-## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ no snpeff annotation} );
 
 done_testing();
