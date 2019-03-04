@@ -153,7 +153,7 @@ recipe_core_number:
     cadd_ar: 16
     chanjo_sexcheck: 1
     cnvnator_ar: 16
-    delly_call: 16
+    delly_call: 36
     delly_reformat: 16
     endvariantannotationblock: 1
     evaluation: 1
@@ -168,7 +168,7 @@ recipe_core_number:
     gatk_haplotypecaller: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
-    gatk_variantrecalibration: 4
+    gatk_variantrecalibration: 5
     gzip_fastq: 0
     manta: 16
     markduplicates: 16
@@ -204,7 +204,7 @@ recipe_time:
     cadd_ar: 10
     chanjo_sexcheck: 2
     cnvnator_ar: 5
-    delly_call: 10
+    delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
     evaluation: 3
