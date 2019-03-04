@@ -16,34 +16,34 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $NEWLINE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
 
 }
 
-## Constants
-Readonly my $ASTERISK => q{*};
-Readonly my $NEWLINE  => qq{\n};
-
 sub analysis_star_fusion {
 
 ## Function : Analysis recipe for star-fusion v1.4.0
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $recipe_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -62,6 +62,7 @@ sub analysis_star_fusion {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -103,6 +104,11 @@ sub analysis_star_fusion {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -264,10 +270,10 @@ sub analysis_star_fusion {
     gnu_cp(
         {
             FILEHANDLE   => $FILEHANDLE,
+            force        => 1,
             infile_path  => catfile( $temp_directory, $ASTERISK ),
             outfile_path => $outdir_path,
             recursive    => 1,
-            force        => 1,
         }
     );
 
@@ -287,19 +293,20 @@ sub analysis_star_fusion {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_sample},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $recipe_attribute{chain},
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $recipe_attribute{chain},
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

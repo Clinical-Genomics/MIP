@@ -2,7 +2,7 @@
 ADM1059A1:
   mip_infiles_dir: infile_dir
   mip_infiles:
-   - 7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz
+   - 7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq
 ADM1059A2:
   mip_infiles_dir: infile_dir
   mip_infiles:

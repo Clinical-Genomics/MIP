@@ -16,24 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_stringtie };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_stringtie {
 
@@ -45,6 +42,7 @@ sub analysis_stringtie {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -65,6 +63,7 @@ sub analysis_stringtie {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $temp_directory;
     my $xargs_file_counter;
 
@@ -107,6 +106,11 @@ sub analysis_stringtie {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -287,6 +291,7 @@ sub analysis_stringtie {
 
         submit_recipe(
             {
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
@@ -299,7 +304,7 @@ sub analysis_stringtie {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;
