@@ -27,7 +27,7 @@ emip:
     gcc: 4.8.5
     htslib: 1.9=hc238db4_4
     ldc: 1.11.0=hb2c9046_0
-    manta: 1.4.0=py27_1
+    manta: 1.5.0-py27_0 
     numpy:
     picard: 2.18.14=0
     pip:
