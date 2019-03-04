@@ -170,7 +170,7 @@ recipe_core_number:
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 5
     gzip_fastq: 0
-    manta: 16
+    manta: 36
     markduplicates: 16
     multiqc_ar: 1
     peddy_ar: 4
