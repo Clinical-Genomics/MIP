@@ -1,4 +1,4 @@
-package MIP::Recipes::Pipeline::Rd_dna;
+package MIP::Recipes::Pipeline::Analyse_rd_dna;
 
 use 5.026;
 use Carp;
@@ -28,10 +28,10 @@ BEGIN {
     our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_rd_dna };
+    our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
 }
 
-sub pipeline_rd_dna {
+sub pipeline_analyse_rd_dna {
 
 ## Function : Pipeline recipe for wes and or wgs data analysis.
 ## Returns  :

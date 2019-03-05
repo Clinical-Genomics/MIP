@@ -63,9 +63,10 @@ use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 ## Recipes
-use MIP::Recipes::Pipeline::Rd_dna qw{ pipeline_rd_dna };
-use MIP::Recipes::Pipeline::Rd_rna qw{ pipeline_rd_rna };
-use MIP::Recipes::Pipeline::Rd_dna_vcf_rerun qw{ pipeline_rd_dna_vcf_rerun };
+use MIP::Recipes::Pipeline::Analyse_rd_dna qw{ pipeline_analyse_rd_dna };
+use MIP::Recipes::Pipeline::Analyse_rd_rna qw{ pipeline_analyse_rd_rna };
+use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
+  qw{ pipeline_analyse_rd_dna_vcf_rerun };
 
 BEGIN {
 
@@ -73,7 +74,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -678,76 +679,31 @@ sub mip_analyse {
 
     my $consensus_analysis_type = $parameter{cache}{consensus_analysis_type};
 
-### Rd RNA
-    if ( $consensus_analysis_type eq q{wts} ) {
+    ## Create dispatch table of pipelines
+    my %pipeline = (
+        mixed => \&pipeline_analyse_rd_dna,
+        vrn   => \&pipeline_analyse_rd_dna_vcf_rerun,
+        wes   => \&pipeline_analyse_rd_dna,
+        wgs   => \&pipeline_analyse_rd_dna,
+        wts   => \&pipeline_rd_rna,
+    );
 
-        $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
-
-        ## Pipeline recipe for rna data
-        pipeline_rd_rna(
-            {
-                active_parameter_href           => \%active_parameter,
-                broadcasts_ref                  => \@broadcasts,
-                file_info_href                  => \%file_info,
-                infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-                infile_lane_prefix_href         => \%infile_lane_prefix,
-                job_id_href                     => \%job_id,
-                log                             => $log,
-                order_parameters_ref            => \@order_parameters,
-                order_recipes_ref => \@{ $parameter{cache}{order_recipes_ref} },
-                parameter_href    => \%parameter,
-                sample_info_href  => \%sample_info,
-            }
-        );
-    }
-
-### Vcf rerun
-    if ( $consensus_analysis_type eq q{vrn} ) {
-
-        $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
-
-        ## Pipeline recipe for DNA vcf rerun data
-        pipeline_rd_dna_vcf_rerun(
-            {
-                active_parameter_href   => \%active_parameter,
-                broadcasts_ref          => \@broadcasts,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                log                     => $log,
-                order_parameters_ref    => \@order_parameters,
-                order_recipes_ref       => \@{ $parameter{cache}{order_recipes_ref} },
-                parameter_href          => \%parameter,
-                sample_info_href        => \%sample_info,
-            }
-        );
-    }
-
-### WES|WGS
-    if (   $consensus_analysis_type eq q{wgs}
-        || $consensus_analysis_type eq q{wes}
-        || $consensus_analysis_type eq q{mixed} )
-    {
-
-        $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
-
-        ## Pipeline recipe for DNA data
-        pipeline_rd_dna(
-            {
-                active_parameter_href           => \%active_parameter,
-                broadcasts_ref                  => \@broadcasts,
-                file_info_href                  => \%file_info,
-                infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-                infile_lane_prefix_href         => \%infile_lane_prefix,
-                job_id_href                     => \%job_id,
-                log                             => $log,
-                order_parameters_ref            => \@order_parameters,
-                order_recipes_ref => \@{ $parameter{cache}{order_recipes_ref} },
-                parameter_href    => \%parameter,
-                sample_info_href  => \%sample_info,
-            }
-        );
-    }
+    $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
+    $pipeline{$consensus_analysis_type}->(
+        {
+            active_parameter_href           => \%active_parameter,
+            broadcasts_ref                  => \@broadcasts,
+            file_info_href                  => \%file_info,
+            infile_both_strands_prefix_href => \%infile_both_strands_prefix,
+            infile_lane_prefix_href         => \%infile_lane_prefix,
+            job_id_href                     => \%job_id,
+            log                             => $log,
+            order_parameters_ref            => \@order_parameters,
+            order_recipes_ref               => \@{ $parameter{cache}{order_recipes_ref} },
+            parameter_href                  => \%parameter,
+            sample_info_href                => \%sample_info,
+        }
+    );
 
 ## Write QC for recipes used in analysis
     # Write sample info to yaml file

@@ -1,10 +1,10 @@
-package MIP::Recipes::Pipeline::Rd_rna;
+package MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -13,31 +13,27 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use List::MoreUtils qw { any };
 use Readonly;
 
-## MIPs lib/
+use MIP::Constants qw{ $CLOSE_BRACKET $OPEN_BRACKET $SPACE };
 
 BEGIN {
+
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_rd_rna };
+    our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_vcf_rerun };
 }
 
-## Constants
-Readonly my $CLOSE_BRACKET => q{]};
-Readonly my $OPEN_BRACKET  => q{[};
-Readonly my $SPACE         => q{ };
+sub pipeline_analyse_rd_dna_vcf_rerun {
 
-sub pipeline_rd_rna {
-
-## Function : Pipeline recipe for rare disease rna data analysis.
+## Function : Pipeline recipe for wes and or wgs data analysis rerun
 ## Returns  :
-
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href                  => File info hash {REF}
@@ -46,7 +42,7 @@ sub pipeline_rd_rna {
 ##          : $job_id_href                     => Job id hash {REF}
 ##          : $log                             => Log object to write to
 ##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
-##          : $order_recipes_ref               => Execution order of recipes {REF}
+##          : $order_recipes_ref               => Order of recipes
 ##          : $parameter_href                  => Parameter hash {REF}
 ##          : $sample_info_href                => Info on samples and case hash {REF}
 
@@ -89,8 +85,6 @@ sub pipeline_rd_rna {
         },
         infile_both_strands_prefix_href => {
             default     => {},
-            defined     => 1,
-            required    => 1,
             store       => \$infile_both_strands_prefix_href,
             strict_type => 1,
         },
@@ -145,59 +139,54 @@ sub pipeline_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Pipeline qw{ check_rd_rna };
+    use MIP::Check::Pipeline qw{ check_rd_dna_vcf_rerun };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
-    use MIP::Recipes::Analysis::Bcftools_merge qw{ analysis_bcftools_merge };
-    use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
-    use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
-    use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
-    use MIP::Recipes::Analysis::Gatk_asereadcounter qw{ analysis_gatk_asereadcounter };
-    use MIP::Recipes::Analysis::Gatk_baserecalibration
-      qw{ analysis_gatk_baserecalibration };
-    use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
-    use MIP::Recipes::Analysis::Gatk_splitncigarreads
-      qw{ analysis_gatk_splitncigarreads };
-    use MIP::Recipes::Analysis::Gatk_variantfiltration
-      qw{ analysis_gatk_variantfiltration };
-    use MIP::Recipes::Analysis::Genebody_coverage qw{ analysis_genebody_coverage };
-    use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
-    use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
-    use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
-    use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
-    use MIP::Recipes::Analysis::Picardtools_mergesamfiles
-      qw{ analysis_picardtools_mergesamfiles };
-    use MIP::Recipes::Analysis::Preseq qw{ analysis_preseq };
-    use MIP::Recipes::Analysis::Rseqc qw{ analysis_rseqc };
+    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
+    use MIP::Recipes::Analysis::Endvariantannotationblock
+      qw{ analysis_endvariantannotationblock };
+    use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
+    use MIP::Recipes::Analysis::Mip_vcfparser
+      qw{ analysis_mip_vcfparser analysis_vcfparser_sv_wes analysis_vcfparser_sv_wgs };
+    use MIP::Recipes::Analysis::Prepareforvariantannotationblock
+      qw{ analysis_prepareforvariantannotationblock };
+    use MIP::Recipes::Analysis::Rankvariant
+      qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
+    use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
-    use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
-    use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
-    use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
-    use MIP::Recipes::Analysis::Stringtie qw{ analysis_stringtie };
-    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_rna };
-    use MIP::Recipes::Build::Rd_rna qw{build_rd_rna_meta_files};
+    use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
+    use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
+    use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
+    use MIP::Recipes::Analysis::Vcf_rerun_reformat
+      qw{ analysis_vcf_rerun_reformat_sv analysis_vcf_rerun_reformat };
+    use MIP::Recipes::Analysis::Vep
+      qw{ analysis_vep analysis_vep_sv_wes analysis_vep_sv_wgs };
+    use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
+    use MIP::Recipes::Build::Human_genome_prerequisites
+      qw{ build_human_genome_prerequisites };
+    use MIP::Recipes::Build::Rd_dna_vcf_rerun qw{build_rd_dna_vcf_rerun_meta_files};
+    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
 
     ### Pipeline specific checks
-    check_rd_rna(
+    check_rd_dna_vcf_rerun(
         {
-            active_parameter_href           => $active_parameter_href,
-            broadcasts_ref                  => $broadcasts_ref,
-            file_info_href                  => $file_info_href,
-            infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
-            infile_lane_prefix_href         => $infile_lane_prefix_href,
-            log                             => $log,
-            order_parameters_ref            => $order_parameters_ref,
-            parameter_href                  => $parameter_href,
-            sample_info_href                => $sample_info_href,
+            active_parameter_href   => $active_parameter_href,
+            broadcasts_ref          => $broadcasts_ref,
+            file_info_href          => $file_info_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            log                     => $log,
+            order_parameters_ref    => $order_parameters_ref,
+            parameter_href          => $parameter_href,
+            sample_info_href        => $sample_info_href,
         }
     );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
 
-    build_rd_rna_meta_files(
+    build_rd_dna_vcf_rerun_meta_files(
         {
             active_parameter_href   => $active_parameter_href,
             file_info_href          => $file_info_href,
@@ -209,31 +198,46 @@ sub pipeline_rd_rna {
         }
     );
 
-    ## Dispatch table
+    ### Analysis recipes
+    ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        analysisrunstatus         => \&analysis_analysisrunstatus,
-        bcftools_merge            => \&analysis_bcftools_merge,
-        blobfish                  => \&analysis_blobfish,
-        bootstrapann              => \&analysis_bootstrapann,
-        fastqc_ar                 => \&analysis_fastqc,
-        gatk_asereadcounter       => \&analysis_gatk_asereadcounter,
-        gatk_baserecalibration    => \&analysis_gatk_baserecalibration,
-        gatk_haplotypecaller      => \&analysis_gatk_haplotypecaller,
-        gatk_splitncigarreads     => \&analysis_gatk_splitncigarreads,
-        gatk_variantfiltration    => \&analysis_gatk_variantfiltration,
-        genebody_coverage         => \&analysis_genebody_coverage,
-        gffcompare_ar             => \&analysis_gffcompare,
-        markduplicates            => \&analysis_markduplicates,
-        multiqc_ar                => \&analysis_multiqc,
-        picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles,
-        preseq_ar                 => \&analysis_preseq,
-        rseqc                     => \&analysis_rseqc,
-        sacct                     => \&analysis_sacct,
-        salmon_quant              => \&analysis_salmon_quant,
-        star_aln                  => \&analysis_star_aln,
-        star_fusion               => \&analysis_star_fusion,
-        stringtie_ar              => \&analysis_stringtie,
-        varianteffectpredictor    => \&analysis_vep_rna,
+        analysisrunstatus                => \&analysis_analysisrunstatus,
+        cadd_ar                          => \&analysis_cadd,
+        endvariantannotationblock        => \&analysis_endvariantannotationblock,
+        frequency_filter                 => \&analysis_frequency_filter,
+        prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
+        rankvariant    => undef,                         # Depends on sample features
+        rhocall_ar     => \&analysis_rhocall_annotate,
+        sacct          => \&analysis_sacct,
+        snpeff         => \&analysis_snpeff,
+        sv_annotate    => \&analysis_sv_annotate,
+        sv_rankvariant => undef,                         # Depends on sample features
+        sv_reformat    => \&analysis_reformat_sv,
+        sv_vcf_rerun_reformat => \&analysis_vcf_rerun_reformat_sv,
+        sv_varianteffectpredictor => undef,                    # Depends on analysis type,
+        sv_vcfparser              => undef,                    # Depends on analysis type
+        varianteffectpredictor    => \&analysis_vep,
+        vcfparser_ar              => \&analysis_mip_vcfparser,
+        vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
+        vt_ar              => \&analysis_vt,
+    );
+
+    ## Special case for rankvariants recipe
+    set_rankvariants_ar(
+        {
+            analysis_recipe_href => \%analysis_recipe,
+            log                  => $log,
+            parameter_href       => $parameter_href,
+            sample_ids_ref       => $active_parameter_href->{sample_ids},
+        }
+    );
+
+    ## Update which recipe to use depending on consensus analysis type
+    set_recipe_on_analysis_type(
+        {
+            analysis_recipe_href    => \%analysis_recipe,
+            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+        }
     );
 
   RECIPE:
@@ -242,7 +246,7 @@ sub pipeline_rd_rna {
         ## Skip not active recipes
         next RECIPE if ( not $active_parameter_href->{$recipe} );
 
-        ## Skip recipe if not part of dispatch table (such as gzip fastq)
+        ## Skip recipe if not part of dispatch table (such as gzip_fastq)
         next RECIPE if ( not $analysis_recipe{$recipe} );
 
         ## For displaying
@@ -256,7 +260,7 @@ sub pipeline_rd_rna {
         ## Sample mode
         if ( $parameter_href->{$recipe}{analysis_mode} eq q{sample} ) {
 
-          SAMPLE:
+          SAMPLE_ID:
             foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
                 $analysis_recipe{$recipe}->(
@@ -273,7 +277,8 @@ sub pipeline_rd_rna {
                 );
             }
         }
-        ## Family mode
+
+        ## Case mode
         elsif ( $parameter_href->{$recipe}{analysis_mode} eq q{case} ) {
 
             $analysis_recipe{$recipe}->(
@@ -289,7 +294,6 @@ sub pipeline_rd_rna {
             );
         }
     }
-
     return;
 }
 
