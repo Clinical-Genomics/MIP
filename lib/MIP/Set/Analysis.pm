@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -110,7 +110,8 @@ sub set_recipe_gatk_variantrecalibration {
 ## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
 ##          : $log                  => Log object to write to
 ##          : $parameter_href       => Parameter hash {REF}
-##          : $sample_ids_ref       => sample ids {REF}
+##          : $sample_ids_ref       => Sample ids {REF}
+##          : $use_cnnscorevariants => Use gatk cnnscorevariants recipe
 
     my ($arg_href) = @_;
 
@@ -119,6 +120,7 @@ sub set_recipe_gatk_variantrecalibration {
     my $log;
     my $parameter_href;
     my $sample_ids_ref;
+    my $use_cnnscorevariants;
 
     my $tmpl = {
         analysis_recipe_href => {
@@ -147,6 +149,10 @@ sub set_recipe_gatk_variantrecalibration {
             store       => \$sample_ids_ref,
             strict_type => 1,
         },
+        use_cnnscorevariants => {
+            store       => \$use_cnnscorevariants,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -156,6 +162,8 @@ sub set_recipe_gatk_variantrecalibration {
 
     ## Use already set gatk_variantrecalibration recipe
     return if ( @{$sample_ids_ref} != 1 );
+
+    return if ( not $use_cnnscorevariants );
 
     $log->warn(
 q{Switched from VariantRecalibration to CNNScoreVariants for single sample analysis}

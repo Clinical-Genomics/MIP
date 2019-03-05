@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.20;
+our $VERSION = 1.21;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1435,6 +1435,17 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             documentation => q{Perform gatk calculate genotype posterior},
             is            => q{rw},
             isa           => Bool,
+        )
+    );
+
+    option(
+        q{gatk_cnnscorevariants} => (
+            cmd_aliases => [qw{ gcnn }],
+            cmd_flag    => q{gatk_cnnscorevariants},
+            documentation =>
+              q{Perform gatk cnnscorevariants instead of gatk variantscore recalibration},
+            is  => q{rw},
+            isa => Bool,
         )
     );
 

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_rd_dna };
@@ -341,6 +341,7 @@ sub pipeline_rd_dna {
             log                  => $log,
             parameter_href       => $parameter_href,
             sample_ids_ref       => $active_parameter_href->{sample_ids},
+            use_cnnscorevariants => $active_parameter_href->{gatk_cnnscorevariants},
         }
     );
 
