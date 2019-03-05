@@ -685,7 +685,7 @@ sub mip_analyse {
         vrn   => \&pipeline_analyse_rd_dna_vcf_rerun,
         wes   => \&pipeline_analyse_rd_dna,
         wgs   => \&pipeline_analyse_rd_dna,
-        wts   => \&pipeline_rd_rna,
+        wts   => \&pipeline_analyse_rd_rna,
     );
 
     $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
