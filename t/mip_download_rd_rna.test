@@ -80,7 +80,16 @@ my $cmds_ref = [
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
   run( command => $cmds_ref, verbose => $VERBOSE );
-ok( $success, q{Executed mip download rd_rna} );
+ok( $success, q{Executed mip download rd_rna sbatch mode} );
+
+$cmds_ref = [
+    q{perl},      $mip_path,       qw{ download rd_rna }, q{--config},
+    $config_file, q{--conda_path}, $conda_path,
+];
+
+( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
+  run( command => $cmds_ref, verbose => $VERBOSE );
+ok( $success, q{Executed mip download rd_rna bash mode} );
 
 ## Clean-up
 my @clenup_dirs = qw{ download_reference.sh mip_download mip_log };
