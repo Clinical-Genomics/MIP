@@ -16,6 +16,7 @@ use warnings qw{ FATAL utf8 };
 use List::MoreUtils qw { any };
 use Readonly;
 
+## MIPs lib/
 use MIP::Constants qw{ $CLOSE_BRACKET $OPEN_BRACKET $SPACE };
 
 BEGIN {
@@ -257,29 +258,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
             }
         );
 
-        ## Sample mode
-        if ( $parameter_href->{$recipe}{analysis_mode} eq q{sample} ) {
-
-          SAMPLE_ID:
-            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-                $analysis_recipe{$recipe}->(
-                    {
-                        active_parameter_href   => $active_parameter_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        parameter_href          => $parameter_href,
-                        recipe_name             => $recipe,
-                        sample_id               => $sample_id,
-                        sample_info_href        => $sample_info_href,
-                    }
-                );
-            }
-        }
-
-        ## Case mode
-        elsif ( $parameter_href->{$recipe}{analysis_mode} eq q{case} ) {
+        if ( $parameter_href->{$recipe}{analysis_mode} eq q{case} ) {
 
             $analysis_recipe{$recipe}->(
                 {

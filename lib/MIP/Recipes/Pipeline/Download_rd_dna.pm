@@ -126,20 +126,8 @@ sub pipeline_download_rd_dna {
 
         next REFERENCE if ( not exists $download_recipe{$reference_id} );
 
-        ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
-
-        my @reference_versions;
-        if ( ref $versions_ref eq q{ARRAY} ) {
-
-            @reference_versions = @{$versions_ref};
-        }
-        else {
-
-            push @reference_versions, $versions_ref;
-        }
-
       REFERENCE_VERSION:
-        foreach my $reference_version (@reference_versions) {
+        foreach my $reference_version ( @{$versions_ref} ) {
 
           GENOME_VERSION:
             foreach my $genome_version (
