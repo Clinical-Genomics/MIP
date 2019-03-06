@@ -1,6 +1,12 @@
 ---
 ## Version: 1.0.0
 #Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
+download_pipeline_type:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: rd_dna
+  type: mip
 human_reference:
   analysis_mode: case
   associated_recipe:

@@ -1,23 +1,24 @@
 package MIP::Program::Variantcalling::Manta;
 
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use FindBin qw{ $Bin };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile};
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;    #Allow unicode characters in this script
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use utf8;
 
+## CPANM
 use Readonly;
 
-use FindBin qw{ $Bin };    #Find directory of script
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile};
-
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -26,69 +27,63 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ manta_config manta_workflow };
 
 }
 
-## Constants
-Readonly my $SPACE => q{ };
-
 sub manta_config {
 
-    ## manta_config
-
-    ## Function : Perl wrapper for writing Manta config recipe to $FILEHANDLE or return commands array. Based on Manta 1.1.0.
-    ## Returns  : "@commands"
-    ## Arguments: $infile_paths_ref, $referencefile_path, $outdirectory_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $exome_analysis
-    ##          : $infile_paths_ref       => Infile paths {REF}
-    ##          : $referencefile_path     => Reference sequence file
-    ##          : $outdirectory_path      => Outfile path
-    ##          : $stderrfile_path        => Stderrfile path
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $exome_analysis         => Set options for WES input: turn off depth filters
+## Function : Perl wrapper for writing Manta config recipe to $FILEHANDLE or return commands array. Based on Manta 1.5.0.
+## Returns  : "@commands"
+## Arguments: $exome_analysis         => Set options for WES input: turn off depth filters
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $infile_paths_ref       => Infile paths {REF}
+##          : $outdirectory_path      => Outfile path
+##          : $referencefile_path     => Reference sequence file
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_paths_ref;
+    my $outdirectory_path;
+    my $referencefile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
 
     ## Default(s)
     my $exome_analysis;
 
-    ## Flatten argument(s)
-    my $infile_paths_ref;
-    my $referencefile_path;
-    my $outdirectory_path;
-    my $stderrfile_path;
-    my $stderrfile_path_append;
-    my $FILEHANDLE;
-
     my $tmpl = {
-        infile_paths_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$infile_paths_ref
-        },
-        referencefile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$referencefile_path
-        },
-        outdirectory_path => { strict_type => 1, store => \$outdirectory_path },
-        stderrfile_path   => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE     => { store => \$FILEHANDLE },
         exome_analysis => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$exome_analysis,
             strict_type => 1,
-            store       => \$exome_analysis
         },
+        FILEHANDLE       => { store => \$FILEHANDLE, },
+        infile_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_paths_ref,
+            strict_type => 1,
+        },
+        outdirectory_path  => { store => \$outdirectory_path, strict_type => 1, },
+        referencefile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -96,7 +91,6 @@ sub manta_config {
     # Stores commands depending on input parameters
     my @commands = qw{ configManta.py };
 
-    #Reference sequence file
     if ($referencefile_path) {
 
         push @commands, q{--referenceFasta} . $SPACE . $referencefile_path;
@@ -127,8 +121,8 @@ sub manta_config {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 
@@ -137,56 +131,65 @@ sub manta_config {
 
 sub manta_workflow {
 
-    ## manta_workflow
-
-    ## Function : Perl wrapper for writing Manta workflow recipe to $FILEHANDLE or return commands array. Based on Manta 1.1.0.
-    ## Returns  : "@commands"
-    ## Arguments: $outdirectory_path, $stderrfile_path, $stderrfile_path_append, $outdirectory_path, $FILEHANDLE, $mode
-    ##          : $outdirectory_path      => Outfile path
-    ##          : $stderrfile_path        => Stderrfile path
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $mode                   => Mode of parallel
+## Function : Perl wrapper for writing Manta workflow recipe to $FILEHANDLE or return commands array. Based on Manta 1.5.0.
+## Returns  : "@commands"
+## Arguments: $core_number            => Number of cores to use
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $mode                   => Mode of parallel
+##          : $outdirectory_path      => Outfile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $core_number;
+    my $FILEHANDLE;
+    my $outdirectory_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
 
     ## Default(s)
     my $mode;
 
-    ## Flatten argument(s)
-    my $outdirectory_path;
-    my $stderrfile_path;
-    my $stderrfile_path_append;
-    my $FILEHANDLE;
-
     my $tmpl = {
-        outdirectory_path => {
-            required    => 1,
-            defined     => 1,
+        core_number => {
+            allow       => qr{ \A\d+\z }sxm,
+            store       => \$core_number,
             strict_type => 1,
-            store       => \$outdirectory_path
         },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE => { store => \$FILEHANDLE },
+        FILEHANDLE => { store => \$FILEHANDLE, },
         mode       => {
-            default     => q{local},
             allow       => [qw{ undef local sge }],
+            default     => q{local},
+            store       => \$mode,
             strict_type => 1,
-            store       => \$mode
         },
+        outdirectory_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outdirectory_path,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Manta
-    my @commands = catfile( $outdirectory_path, q{runWorkflow.py} );
+    my @commands = ( catfile( $outdirectory_path, q{runWorkflow.py} ), );
 
     ## Options
     if ($mode) {
 
         push @commands, q{--mode} . $SPACE . $mode;
+    }
+
+    if ($core_number) {
+
+        push @commands, q{-j} . $SPACE . $core_number;
     }
 
     push @commands,
@@ -200,8 +203,8 @@ sub manta_workflow {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 

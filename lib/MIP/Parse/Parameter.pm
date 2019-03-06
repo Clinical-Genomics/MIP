@@ -30,8 +30,44 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_start_with_recipe parse_toml_config_parameters };
+      qw{ parse_download_reference_parameter parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_start_with_recipe parse_toml_config_parameters };
 
+}
+
+sub parse_download_reference_parameter {
+
+## Function : Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
+## Returns  :
+## Arguments: $reference_href => Reference hash {REF}
+
+    my ($arg_href) = @_;
+
+## Flatten argument(s)
+    my $reference_href;
+
+    my $tmpl = {
+        reference_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  VERSION_REF:
+    foreach my $versions_ref ( values %{$reference_href} ) {
+
+        if ( ref $versions_ref ne q{ARRAY} ) {
+
+            ## Make scalar from CLI '--ref key=value' option into array
+            $versions_ref = [$versions_ref];
+        }
+    }
+
+    return;
 }
 
 sub parse_infiles {

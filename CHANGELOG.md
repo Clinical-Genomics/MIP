@@ -79,7 +79,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - genmod: 3.7.2 -> 3.7.3
 - GATK: 3.8 -> 4.1.0.0-0 (and some modules still use 3.8)
 - htslib: 1.6 -> 1.9-hc238db4_4
-- manta: 1.1.0 -> 1.4.0-py27_1
+- manta: 1.1.0 -> 1.5.0-py27_0
 - multiqc: 1.4 -> 1.6
 - peddy: 0.3.1 -> 0.4.2-py_0
 - picardtools: 2.14.1 -> 2.18.14-0

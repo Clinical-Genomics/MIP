@@ -24,6 +24,9 @@ use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Check::Parameter
+  qw{ check_cmd_config_vs_definition_file check_email_address check_recipe_exists_in_hash check_recipe_mode };
+use MIP::Check::Path qw{ check_parameter_files };
 use MIP::Cluster qw{ check_max_core_number };
 use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
@@ -31,11 +34,11 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Language::Shell qw{ create_bash_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
-use MIP::Check::Parameter
-  qw{ check_cmd_config_vs_definition_file check_email_address check_recipe_exists_in_hash check_recipe_mode };
-use MIP::Check::Path qw{ check_parameter_files };
 use MIP::Set::Parameter
   qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_to_active_parameter set_cache };
+use MIP::Parse::Parameter qw{ parse_download_reference_parameter };
+use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
+use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
 use MIP::Script::Utils qw{ create_temp_dir };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
@@ -44,7 +47,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -319,6 +322,10 @@ sub mip_download {
         }
     );
 
+    ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
+    parse_download_reference_parameter(
+        { reference_href => \%{ $active_parameter{reference} }, } );
+
     check_user_reference(
         {
             user_supplied_reference_ref => \%{ $active_parameter{reference} },
@@ -376,8 +383,16 @@ q{Will write sbatch install instructions to for sbatch enabled references to ind
 
     if ( $active_parameter{sbatch_mode} ) {
 
-## Build install references recipe in bash file
-        sbatch_build_reference_install_recipe(
+        my $pipeline_type = $active_parameter{download_pipeline_type};
+
+        ## Create dispatch table of pipelines
+        my %pipeline = (
+            rd_dna => \&pipeline_download_rd_dna,
+            rd_rna => \&pipeline_download_rd_rna,
+        );
+
+        $log->info( q{Pipeline download type: } . $pipeline_type );
+        $pipeline{$pipeline_type}->(
             {
                 active_parameter_href => \%active_parameter,
                 FILEHANDLE            => $FILEHANDLE,
@@ -469,9 +484,6 @@ sub build_reference_install_recipe {
     ## Create code reference table for download recipes
     my %download_recipe = ( human_reference => \&download_human_reference, );
 
-    # Storing job_ids from SLURM
-    my %job_id;
-
     say {$FILEHANDLE} q{## Create reference directory};
     gnu_mkdir(
         {
@@ -496,20 +508,8 @@ sub build_reference_install_recipe {
         each %{ $active_parameter_href->{reference} } )
     {
 
-        ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
-
-        my @reference_versions;
-        if ( ref $versions_ref eq q{ARRAY} ) {
-
-            @reference_versions = @{$versions_ref};
-        }
-        else {
-
-            push @reference_versions, $versions_ref;
-        }
-
       REFERENCE_VERSION:
-        foreach my $reference_version (@reference_versions) {
+        foreach my $reference_version ( @{$versions_ref} ) {
 
           GENOME_VERSION:
             foreach my $genome_version (
@@ -565,176 +565,6 @@ sub build_reference_install_recipe {
                     {
                         reference_href => $reference_href,
                         FILEHANDLE     => $FILEHANDLE,
-                    }
-                );
-            }
-        }
-    }
-
-    ## Move back to original
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-    return;
-}
-
-sub sbatch_build_reference_install_recipe {
-
-## Function : Build install references recipe in bash file
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
-##          : $FILEHANDLE            => Filehandle to write to
-##          : $quiet                 => Be quiet
-##          : $temp_directory        => Temporary directory
-##          : $verbose               => Verbosity
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $FILEHANDLE;
-
-    ## Default(s)
-    my $quiet;
-    my $temp_directory;
-    my $verbose;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
-        quiet      => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$quiet,
-            strict_type => 1,
-        },
-        temp_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$temp_directory,
-            strict_type => 1,
-        },
-        verbose => {
-            default     => $arg_href->{active_parameter_href}{verbose},
-            store       => \$verbose,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
-    use MIP::Recipes::Download::Get_reference qw{ get_reference };
-    use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
-
-    ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger( uc q{mip_download} );
-
-    my $pwd = cwd();
-
-    ### Download recipes
-    ## Create code reference table for download recipes
-    my %download_recipe = ( human_reference => \&download_human_reference, );
-
-    # Storing job_ids from SLURM
-    my %job_id;
-
-    say {$FILEHANDLE} q{## Create reference directory};
-    gnu_mkdir(
-        {
-            indirectory_path => $active_parameter_href->{reference_dir},
-            parents          => 1,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Since all commands should assume working directory to be the reference directory
-    gnu_cd(
-        {
-            directory_path => $active_parameter_href->{reference_dir},
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-  REFERENCE:
-    while ( my ( $reference_id, $versions_ref ) =
-        each %{ $active_parameter_href->{reference} } )
-    {
-
-        next REFERENCE if ( not exists $download_recipe{$reference_id} );
-
-        ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
-
-        my @reference_versions;
-        if ( ref $versions_ref eq q{ARRAY} ) {
-
-            @reference_versions = @{$versions_ref};
-        }
-        else {
-
-            push @reference_versions, $versions_ref;
-        }
-
-      REFERENCE_VERSION:
-        foreach my $reference_version (@reference_versions) {
-
-          GENOME_VERSION:
-            foreach my $genome_version (
-                @{ $active_parameter_href->{reference_genome_versions} } )
-            {
-
-                my $reference_href =
-                  $active_parameter_href->{reference_feature}{$reference_id}
-                  {$genome_version}{$reference_version};
-
-                next GENOME_VERSION
-                  if (
-                    not exists $active_parameter_href->{reference_feature}{$reference_id}
-                    {$genome_version} );
-
-                next GENOME_VERSION
-                  if (
-                    not exists $active_parameter_href->{reference_feature}{$reference_id}
-                    {$genome_version}{$reference_version} );
-
-                ## Build file name and path
-                my $outfile_name = $reference_href->{outfile};
-                my $outfile_path =
-                  catfile( $active_parameter_href->{reference_dir}, $outfile_name );
-
-                ## Check if reference already exists in reference directory
-                next GENOME_VERSION if ( -f $outfile_path );
-
-                $log->info( q{Cannot find reference file:} . $outfile_path );
-                $log->info(
-                        q{Will try to download: }
-                      . $reference_id
-                      . q{ version: }
-                      . $reference_version,
-                );
-
-                $download_recipe{$reference_id}->(
-                    {
-                        active_parameter_href => $active_parameter_href,
-                        job_id_href           => \%job_id,
-                        recipe_name           => $reference_id,
-                        reference_href        => $reference_href,
-                        reference_version     => $reference_version,
-                        quiet                 => $quiet,
-                        temp_directory        => $temp_directory,
                     }
                 );
             }
@@ -808,19 +638,8 @@ sub check_user_reference {
             exit 1;
         }
 
-## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
-        my @reference_versions;
-        if ( ref $versions_ref eq q{ARRAY} ) {
-
-            @reference_versions = @{$versions_ref};
-        }
-        else {
-
-            push @reference_versions, $versions_ref;
-        }
-
       REFERENCE_VERSION:
-        foreach my $version (@reference_versions) {
+        foreach my $version ( @{$versions_ref} ) {
 
           GENOME_VERSION:
             foreach my $reference_genome_version ( @{$reference_genome_versions_ref} ) {

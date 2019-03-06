@@ -16,23 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_manta };
 
 }
-
-## Constants
-Readonly my $UNDERSCORE => q{_};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $ASTERISK   => q{*};
 
 sub analysis_manta {
 
@@ -270,15 +268,15 @@ sub analysis_manta {
     say {$FILEHANDLE} q{## Manta};
 
     ## Get parameters
-    my $exome_analysis;
+    my $is_exome_analysis;
     if ( $consensus_analysis_type ne q{wgs} ) {
 
-        $exome_analysis = 1;
+        $is_exome_analysis = 1;
     }
 
     manta_config(
         {
-            exome_analysis     => $exome_analysis,
+            exome_analysis     => $is_exome_analysis,
             FILEHANDLE         => $FILEHANDLE,
             infile_paths_ref   => \@manta_temp_infile_paths,
             outdirectory_path  => $temp_directory,
@@ -291,6 +289,7 @@ sub analysis_manta {
     manta_workflow(
         {
             FILEHANDLE        => $FILEHANDLE,
+            core_number       => $core_number,
             mode              => q{local},
             outdirectory_path => $temp_directory,
         }

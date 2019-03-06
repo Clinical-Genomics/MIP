@@ -1,4 +1,4 @@
-package MIP::Recipes::Pipeline::Rd_dna_vcf_rerun;
+package MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun;
 
 use 5.026;
 use Carp;
@@ -16,37 +16,36 @@ use warnings qw{ FATAL utf8 };
 use List::MoreUtils qw { any };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $CLOSE_BRACKET $OPEN_BRACKET $SPACE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_rd_dna_vcf_rerun };
+    our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_vcf_rerun };
 }
 
-## Constants
-Readonly my $CLOSE_BRACKET => q{]};
-Readonly my $OPEN_BRACKET  => q{[};
-Readonly my $SPACE         => q{ };
+sub pipeline_analyse_rd_dna_vcf_rerun {
 
-sub pipeline_rd_dna_vcf_rerun {
-
-## Function : Pipeline recipe for wes and or wgs data analysis.
+## Function : Pipeline recipe for wes and or wgs data analysis rerun
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $broadcasts_ref          => Holds the parameters info for broadcasting later {REF}
-##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $log                     => Log object to write to
-##          : $order_parameters_ref    => Order of parameters (for structured output) {REF}
-##          : $order_recipes_ref       => Order of recipes
-##          : $parameter_href          => Parameter hash {REF}
-##          : $sample_info_href        => Info on samples and case hash {REF}
+## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
+##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
+##          : $file_info_href                  => File info hash {REF}
+##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
+##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
+##          : $job_id_href                     => Job id hash {REF}
+##          : $log                             => Log object to write to
+##          : $order_parameters_ref            => Order of parameters (for structured output) {REF}
+##          : $order_recipes_ref               => Order of recipes
+##          : $parameter_href                  => Parameter hash {REF}
+##          : $sample_info_href                => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -54,6 +53,7 @@ sub pipeline_rd_dna_vcf_rerun {
     my $active_parameter_href;
     my $broadcasts_ref;
     my $file_info_href;
+    my $infile_both_strands_prefix_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $log;
@@ -82,6 +82,11 @@ sub pipeline_rd_dna_vcf_rerun {
             defined     => 1,
             required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
+        },
+        infile_both_strands_prefix_href => {
+            default     => {},
+            store       => \$infile_both_strands_prefix_href,
             strict_type => 1,
         },
         infile_lane_prefix_href => {
@@ -253,29 +258,7 @@ sub pipeline_rd_dna_vcf_rerun {
             }
         );
 
-        ## Sample mode
-        if ( $parameter_href->{$recipe}{analysis_mode} eq q{sample} ) {
-
-          SAMPLE_ID:
-            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-                $analysis_recipe{$recipe}->(
-                    {
-                        active_parameter_href   => $active_parameter_href,
-                        file_info_href          => $file_info_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        parameter_href          => $parameter_href,
-                        recipe_name             => $recipe,
-                        sample_id               => $sample_id,
-                        sample_info_href        => $sample_info_href,
-                    }
-                );
-            }
-        }
-
-        ## Case mode
-        elsif ( $parameter_href->{$recipe}{analysis_mode} eq q{case} ) {
+        if ( $parameter_href->{$recipe}{analysis_mode} eq q{case} ) {
 
             $analysis_recipe{$recipe}->(
                 {
