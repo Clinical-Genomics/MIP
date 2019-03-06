@@ -1,4 +1,4 @@
-package MIP::Recipes::Pipeline::Rd_rna;
+package MIP::Recipes::Pipeline::Analyse_rd_rna;
 
 use 5.026;
 use Carp;
@@ -16,24 +16,20 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $CLOSE_BRACKET $OPEN_BRACKET $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.19;
+    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_rd_rna };
+    our @EXPORT_OK = qw{ pipeline_analyse_rd_rna };
 }
 
-## Constants
-Readonly my $CLOSE_BRACKET => q{]};
-Readonly my $OPEN_BRACKET  => q{[};
-Readonly my $SPACE         => q{ };
-
-sub pipeline_rd_rna {
+sub pipeline_analyse_rd_rna {
 
 ## Function : Pipeline recipe for rare disease rna data analysis.
 ## Returns  :
