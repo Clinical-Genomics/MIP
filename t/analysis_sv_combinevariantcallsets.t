@@ -81,7 +81,6 @@ $active_parameter{cnvnator_ar}                        = 1;
 $active_parameter{recipe_core_number}{$recipe_name}   = 1;
 $active_parameter{recipe_time}{$recipe_name}          = 1;
 $active_parameter{sv_combinevariantcallsets_bcf_file} = 1;
-@{ $active_parameter{sample_ids} } = $active_parameter{sample_ids}[0];
 
 my $case_id                    = $active_parameter{case_id};
 my @structural_variant_callers = qw{ tiddit manta delly_reformat cnvnator_ar };
@@ -150,5 +149,25 @@ my $is_ok = analysis_sv_combinevariantcallsets(
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+
+## Given a single samples
+@{ $active_parameter{sample_ids} } = $active_parameter{sample_ids}[0];
+
+$is_ok = analysis_sv_combinevariantcallsets(
+    {
+        active_parameter_href   => \%active_parameter,
+        case_id                 => $case_id,
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        parameter_href          => \%parameter,
+        profile_base_command    => $slurm_mock_cmd,
+        recipe_name             => $recipe_name,
+        sample_info_href        => \%sample_info,
+    }
+);
+
+## Then return TRUE
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ single sample} );
 
 done_testing();
