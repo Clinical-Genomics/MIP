@@ -73,13 +73,16 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$active_parameter{$recipe_name}                     = 1;
-$active_parameter{tiddit}                           = 1;
-$active_parameter{manta}                            = 1;
-$active_parameter{delly_reformat}                   = 1;
-$active_parameter{cnvnator_ar}                      = 1;
-$active_parameter{recipe_core_number}{$recipe_name} = 1;
-$active_parameter{recipe_time}{$recipe_name}        = 1;
+$active_parameter{$recipe_name}                       = 1;
+$active_parameter{tiddit}                             = 1;
+$active_parameter{manta}                              = 1;
+$active_parameter{delly_reformat}                     = 1;
+$active_parameter{cnvnator_ar}                        = 1;
+$active_parameter{recipe_core_number}{$recipe_name}   = 1;
+$active_parameter{recipe_time}{$recipe_name}          = 1;
+$active_parameter{sv_combinevariantcallsets_bcf_file} = 1;
+@{ $active_parameter{sample_ids} } = $active_parameter{sample_ids}[0];
+
 my $case_id                    = $active_parameter{case_id};
 my @structural_variant_callers = qw{ tiddit manta delly_reformat cnvnator_ar };
 
