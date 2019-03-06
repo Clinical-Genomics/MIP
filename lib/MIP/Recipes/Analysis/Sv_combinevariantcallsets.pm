@@ -18,26 +18,21 @@ use autodie qw{ :all };
 use List::MoreUtils qw { any };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $COLON $DOT $EMPTY_STR $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $COLON      => q{:};
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_sv_combinevariantcallsets {
 
@@ -49,6 +44,7 @@ sub analysis_sv_combinevariantcallsets {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and case hash {REF}
@@ -67,6 +63,7 @@ sub analysis_sv_combinevariantcallsets {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $reference_dir;
     my $temp_directory;
 
@@ -109,6 +106,11 @@ sub analysis_sv_combinevariantcallsets {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -388,12 +390,13 @@ sub analysis_sv_combinevariantcallsets {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 parallel_chains_ref     => \@parallel_chains,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
@@ -401,7 +404,7 @@ sub analysis_sv_combinevariantcallsets {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub _add_to_parallel_chain {
@@ -453,7 +456,7 @@ sub _migrate_joint_callers_file {
 ## Function : Migrate joint calling per case callers like Manta and Delly
 ## Returns  :
 ## Arguments: $active_parameter_href          => Active parameters for this analysis hash {REF}
-##          : $case_id                      => Family id
+##          : $case_id                        => Family id
 ##          : $FILEHANDLE                     => Filehandle to write to
 ##          : $file_info_href                 => File info hash {REF
 ##          : $file_path_href                 => Store file path prefix {REF}
@@ -567,6 +570,7 @@ sub _migrate_joint_callers_file {
                 temp_directory => $temp_directory,
             }
         );
+
         my $infile_path_prefix = $sample_io{$stream}{file_path_prefix};
         my $infile_suffix      = $sample_io{$stream}{file_suffix};
         my $infile_path =
@@ -760,12 +764,12 @@ sub _merge_or_reformat_single_callers_file {
 ## Function : Merged sample files to one case file (samples > 1) else reformat to standardise
 ## Returns  :
 ## Arguments: $active_parameter_href          => Active parameters for this analysis hash {REF}
-##          : $case_id                      => Family ID
+##          : $case_id                        => Family ID
 ##          : $FILEHANDLE                     => Filehandle to write to
 ##          : $file_path_href                 => Store file path prefix {REF}
 ##          : $outfile_suffix                 => Outfile suffix
 ##          : $parameter_href                 => Parameter hash {REF}
-##          : $recipe_info_path              => Program info path
+##          : $recipe_info_path               => Program info path
 ##          : $structural_variant_callers_ref => Structural variant callers that do not use joint calling
 ##          : $temp_directory                 => Temporary directory
 

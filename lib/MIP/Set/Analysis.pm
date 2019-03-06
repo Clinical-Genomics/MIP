@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -109,7 +109,6 @@ sub set_recipe_gatk_variantrecalibration {
 ## Returns  :
 ## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
 ##          : $log                  => Log object to write to
-##          : $parameter_href       => Parameter hash {REF}
 ##          : $sample_ids_ref       => Sample ids {REF}
 ##          : $use_cnnscorevariants => Use gatk cnnscorevariants recipe
 
@@ -118,7 +117,6 @@ sub set_recipe_gatk_variantrecalibration {
     ## Flatten argument(s)
     my $analysis_recipe_href;
     my $log;
-    my $parameter_href;
     my $sample_ids_ref;
     my $use_cnnscorevariants;
 
@@ -134,13 +132,6 @@ sub set_recipe_gatk_variantrecalibration {
             defined  => 1,
             required => 1,
             store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
         },
         sample_ids_ref => {
             default     => [],
