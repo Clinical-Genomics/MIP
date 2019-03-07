@@ -16,36 +16,33 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $AMPERSAND $ASTERISK $NEWLINE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit };
 
 }
 
-## Constants
-Readonly my $UNDERSCORE => q{_};
-Readonly my $SPACE      => q{ };
-Readonly my $ASTERISK   => q{*};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $AMPERSAND  => q{&};
-
 sub analysis_tiddit {
 
 ## Function : Call structural variants using Tiddit
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => The file info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
@@ -63,6 +60,7 @@ sub analysis_tiddit {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
     my $reference_dir;
     my $temp_directory;
 
@@ -105,6 +103,11 @@ sub analysis_tiddit {
             defined     => 1,
             required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
         recipe_name => {
@@ -153,9 +156,9 @@ sub analysis_tiddit {
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};
@@ -348,19 +351,20 @@ sub analysis_tiddit {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;
