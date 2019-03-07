@@ -24,6 +24,7 @@ use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Check::Download qw{ check_user_reference };
 use MIP::Check::Parameter
   qw{ check_cmd_config_vs_definition_file check_email_address check_recipe_exists_in_hash check_recipe_mode };
 use MIP::Check::Path qw{ check_parameter_files };
@@ -47,7 +48,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -579,99 +580,6 @@ sub build_reference_install_recipe {
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-    return;
-}
-
-sub check_user_reference {
-
-## Function : Check that the user supplied reference id and version
-## Returns  :
-## Arguments: $reference_genome_versions_ref => Reference genome build versions
-##          : $reference_ref                 => Defined reference id and version
-##          : $user_supplied_reference_ref   => User supplied reference id and version
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $reference_genome_versions_ref;
-    my $reference_ref;
-    my $user_supplied_reference_ref;
-
-    my $tmpl = {
-        reference_genome_versions_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$reference_genome_versions_ref,
-            strict_type => 1,
-        },
-        reference_ref => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$reference_ref,
-            strict_type => 1,
-        },
-        user_supplied_reference_ref => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$user_supplied_reference_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger( uc q{mip_download} );
-
-    ## Store what has been seen
-    my %cache;
-
-  REFERENCE:
-    while ( my ( $reference_id, $versions_ref ) = each %{$user_supplied_reference_ref} ) {
-
-        if ( not exists $reference_ref->{$reference_id} ) {
-
-            $log->fatal( q{Cannot find reference key:} . $reference_id );
-            exit 1;
-        }
-
-      REFERENCE_VERSION:
-        foreach my $version ( @{$versions_ref} ) {
-
-          GENOME_VERSION:
-            foreach my $reference_genome_version ( @{$reference_genome_versions_ref} ) {
-
-                ## Found match
-                if (
-                    exists $reference_ref->{$reference_id}{$reference_genome_version}
-                    {$version} )
-                {
-
-                    $cache{$reference_id}++;
-                }
-                ## Store mismatch
-                push @{ $cache{$version} }, $reference_genome_version;
-            }
-
-            ## Require at least one match
-            next REFERENCE if ( $cache{$reference_id} );
-
-            $log->fatal(
-                q{Cannot find version key: }
-                  . $version
-                  . q{ reference key:}
-                  . $reference_id
-                  . q{ genome build version:}
-                  . join $COMMA,
-                @{ $cache{$version} },
-            );
-            exit 1;
-        }
-
-    }
     return;
 }
 
