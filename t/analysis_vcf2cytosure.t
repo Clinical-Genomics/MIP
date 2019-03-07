@@ -132,7 +132,7 @@ $parameter{sv_annotate}{chain}            = q{TEST};
 my %sample_info = (
     sample => {
         ADM1059A1 => { sex => q{male}, },
-        ADM1059A2 => { sex => q{male}, },
+        ADM1059A2 => { sex => q{unknown}, },
         ADM1059A3 => { sex => q{female}, },
     }
 );
