@@ -92,6 +92,7 @@ my $is_ok = analysis_vt_core(
         active_parameter_href   => \%active_parameter,
         bgzip                   => 1,
         case_id                 => $case_id,
+        contig                  => 1,
         gnu_sed                 => 1,
         decompose               => 1,
         normalize               => 1,
@@ -104,6 +105,7 @@ my $is_ok = analysis_vt_core(
         profile_base_command    => $slurm_mock_cmd,
         recipe_name             => $recipe_name,
         tabix                   => 1,
+        xargs_file_path_prefix  => q{a_file_prefix},
     }
 );
 
