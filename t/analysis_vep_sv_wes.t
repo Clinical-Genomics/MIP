@@ -87,8 +87,10 @@ $active_parameter{vep_custom_annotation}{a_ref} = {
     force_report_coordinates => 0,
     annotation_type          => q{exact},
 };
-$active_parameter{vep_plugins}         = [qw{ LoF ExACpLI }];
-$active_parameter{vep_directory_cache} = q{a_cache};
+$active_parameter{vep_directory_cache}            = q{a_cache};
+$active_parameter{sv_vep_plugins}                 = [qw{ LoF ExACpLI }];
+$active_parameter{vep_plugin_pli_value_file_path} = q{a_file_path};
+$active_parameter{sv_vep_features}                = [qw{ refseq }];
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},

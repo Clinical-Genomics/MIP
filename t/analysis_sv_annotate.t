@@ -75,6 +75,8 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
+$active_parameter{sv_vcfanno}        = 1;
+$active_parameter{sv_vcfanno_config} = q{a_vcfanno_config};
 
 my %file_info = test_mip_hashes(
     {
