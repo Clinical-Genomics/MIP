@@ -16,23 +16,19 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt_core analysis_vt_core_rio };
 }
-
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $PIPE       => q{|};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_vt_core {
 
@@ -56,6 +52,7 @@ sub analysis_vt_core {
 ##          : $normalize               => Vt program normalize for normalizing to reference used in analysis
 ##          : $outfile_path            => Outfile path
 ##          : $parameter_href          => Hash with paremters from yaml file {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_directory        => Program directory to write to in sbatch script
 ##          : $recipe_name             => Program name
 ##          : $tabix                   => Index compressed output using tabix
@@ -63,6 +60,16 @@ sub analysis_vt_core {
 ##          : $xargs_file_path_prefix  => The xargs sbatch script file name {OPTIONAL}
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $contig;
+    my $FILEHANDLE;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $infile_path;
+    my $parameter_href;
+    my $xargs_file_path_prefix;
 
     ## Default(s)
     my $bcftools_output_type;
@@ -76,20 +83,11 @@ sub analysis_vt_core {
     my $instream;
     my $normalize;
     my $outfile_path;
+    my $profile_base_command;
     my $recipe_directory;
     my $recipe_name;
     my $tabix;
     my $uniq;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $contig;
-    my $FILEHANDLE;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $infile_path;
-    my $parameter_href;
-    my $xargs_file_path_prefix;
 
     my $tmpl = {
         active_parameter_href => {
@@ -175,6 +173,11 @@ sub analysis_vt_core {
             store       => \$outfile_path,
         },
         parameter_href => { default => {}, strict_type => 1, store => \$parameter_href },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_directory =>
           { default => q{vt}, strict_type => 1, store => \$recipe_directory },
         recipe_name => { default => q{vt_ar}, strict_type => 1, store => \$recipe_name },
@@ -336,7 +339,7 @@ sub analysis_vt_core {
         );
     }
 
-    ## tabix has been/will be used on file, compress again
+    ## Tabix has been/will be used on file, compress again
     my $tabix_suffix    = $DOT . q{tbi};
     my $infile_path_tbi = $infile_path . $tabix_suffix;
     if ( -e $infile_path_tbi || $bgzip ) {
@@ -409,6 +412,7 @@ sub analysis_vt_core {
 
         slurm_submit_job_no_dependency_add_to_samples(
             {
+                base_command     => $profile_base_command,
                 case_id          => $case_id,
                 job_id_href      => $job_id_href,
                 log              => $log,
@@ -418,7 +422,7 @@ sub analysis_vt_core {
             }
         );
     }
-    return;
+    return 1;
 }
 
 sub analysis_vt_core_rio {
@@ -432,7 +436,7 @@ sub analysis_vt_core_rio {
 ##          : $contig                  => The contig to extract {OPTIONAL, REF}
 ##          : $core_number             => The number of cores to allocate
 ##          : $decompose               => Vt program decompose for splitting multiallelic variants
-##          : $case_id               => The case ID
+##          : $case_id                 => The case ID
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $gnu_sed                 => Sed program for changing vcf #FORMAT field in variant vcfs
 ##          : $human_genome_reference  => Human genome reference
@@ -440,8 +444,8 @@ sub analysis_vt_core_rio {
 ##          : $instream                => Data to vt is supplied as a unix pipe
 ##          : $normalize               => Vt program normalize for normalizing to reference used in analysis
 ##          : $outfile_path            => Outfile path
-##          : $recipe_directory       => Program directory to write to in sbatch script
-##          : $recipe_name            => Program name
+##          : $recipe_directory        => Program directory to write to in sbatch script
+##          : $recipe_name             => Program name
 ##          : $tabix                   => Index compressed output using tabix
 ##          : $uniq                    => Vt program uniq for removing variant duplication that appear later in file
 ##          : $xargs_file_path_prefix  => The xargs sbatch script file name {OPTIONAL}
@@ -511,7 +515,7 @@ sub analysis_vt_core_rio {
             strict_type => 1,
             store       => \$case_id
         },
-        FILEHANDLE => { store => \$FILEHANDLE },
+        FILEHANDLE => { required => 1, store => \$FILEHANDLE },
         gnu_sed    => {
             default     => 0,
             allow       => [ undef, 0, 1 ],
@@ -739,7 +743,7 @@ sub analysis_vt_core_rio {
     );
     print {$FILEHANDLE} $cmd_break;
 
-    return;
+    return 1;
 }
 
 1;
