@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -107,11 +107,8 @@ sub get_sequence_run_type {
           {sequence_run_type};
 
     }
-    else {
 
-        croak q{Either $infile_lane_prefix_href or $infile_prefix must be provided!};
-    }
-    return;
+    croak q{Either $infile_lane_prefix_href or $infile_prefix must be provided!};
 }
 
 sub set_gene_panel {

@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -68,9 +68,10 @@ my $parameter_href = { Test => q{value} };
 trap {
     print_parameter_defaults(
         {
-            parameter_href => $parameter_href,
+            parameter_href          => $parameter_href,
+            print_parameter_default => 1,
         }
-      )
+    )
 };
 
 like( $trap->stderr, qr/Default/xms, q{Print default message} );

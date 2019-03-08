@@ -26,7 +26,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Download qw{ mip_download };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 extends(qw{ MIP::Cli::Mip::Download });
 
@@ -88,13 +88,12 @@ sub run {
     }
 
     ## Print parameters from config file and exit
-    if ( $arg_href->{print_parameter_default} ) {
-        print_parameter_defaults(
-            {
-                parameter_href => \%parameter,
-            }
-        );
-    }
+    print_parameter_defaults(
+        {
+            parameter_href          => \%parameter,
+            print_parameter_default => $arg_href->{print_parameter_default},
+        }
+    );
 
     ## Start generating the installation script
     mip_download(

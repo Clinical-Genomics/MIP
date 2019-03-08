@@ -18,6 +18,9 @@ use warnings;
 use Readonly;
 use autodie;
 
+## MIPs lib/
+use MIP::Constants qw{ $COLON $DOT $NEWLINE $SPACE $UNDERSCORE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
@@ -33,13 +36,6 @@ BEGIN {
       print_parameter_defaults
       update_program_versions };
 }
-
-## Constants
-Readonly my $COLON      => q{:};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq(\n);
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub help {
 
@@ -143,10 +139,12 @@ sub print_parameter_defaults {
 
 ## Function : Print all parameters and their default values
 ## Returns  :
-## Arguments: $parameter_href => Holds all parameters {REF}
-##          : $colored        => Colorize output
-##          : $index          => Display array indices
-##          : $scalar_quotes  => Quote symbols to enclose scalar values
+## Arguments: $colored                 => Colorize output
+##          : $index                   => Display array indices
+##          : $output                  => Output stream
+##          : $parameter_href          => Holds all parameters {REF}
+##          : $print_parameter_default => Print parameter default
+##          : $scalar_quotes           => Quote symbols to enclose scalar values
 
     my ($arg_href) = @_;
 
@@ -157,6 +155,7 @@ sub print_parameter_defaults {
     my $colored;
     my $index;
     my $output;
+    my $print_parameter_default;
     my $scalar_quotes;
 
     my $tmpl = {
@@ -184,6 +183,12 @@ sub print_parameter_defaults {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        print_parameter_default => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$print_parameter_default,
+            strict_type => 1,
+        },
         scalar_quotes => {
             allow       => [ undef, q{"} ],
             default     => q{"},
@@ -196,17 +201,21 @@ sub print_parameter_defaults {
 
     use Data::Printer;
 
-    ## Print parameter hash an exit
-    say {*STDERR} q{Default values from config file:};
-    p(
-        %{$parameter_href},
-        colored       => $colored,
-        index         => $index,
-        scalar_quotes => $scalar_quotes,
-        output        => $output,
-    );
+    if ($print_parameter_default) {
 
-    exit 0;
+        ## Print parameter hash an exit
+        say {*STDERR} q{Default values from config file:};
+        p(
+            %{$parameter_href},
+            colored       => $colored,
+            index         => $index,
+            scalar_quotes => $scalar_quotes,
+            output        => $output,
+        );
+
+        exit 0;
+    }
+    return;
 }
 
 sub nest_hash {
@@ -232,7 +241,7 @@ sub nest_hash {
 
     ## Nest the shell parameters
     my @installations = @{ $cmd_href->{installations} };
-    my @colon_keys = grep { /:/xms } keys %{$cmd_href};
+    my @colon_keys    = grep { /:/xms } keys %{$cmd_href};
   PARAMETER:
     foreach my $parameter (@colon_keys) {
 
@@ -240,8 +249,8 @@ sub nest_hash {
         foreach my $installation (@installations) {
             _recursive_nesting(
                 {
-                    array_to_shift_ref => [ ( split /:/xms, $parameter ) ],
-                    final_value => $final_value,
+                    array_to_shift_ref    => [ ( split /:/xms, $parameter ) ],
+                    final_value           => $final_value,
                     hash_to_populate_href => $cmd_href->{$installation},
                 }
             );
