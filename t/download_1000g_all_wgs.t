@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Recipes::Download::1000g_all_wgs} => [qw{ download_1000g_all_wgs }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Recipes::Download::1000g_all_wgs qw{ download_1000g_all_wgs };
 
-diag(   q{Test SUB_ROUTINE from Module.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test download_1000g_all_wgs from 1000g_all_wgs.pm v}
+      . $MIP::Recipes::Download::1000g_all_wgs::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -65,8 +65,8 @@ my $log       = test_log( { log_name => uc q{mip_download}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $genome_version    = q{grch37};
-my $recipe_name       = q{RECIPE_NAME};
-my $reference_version = q{REFERENCE_VERSION};
+my $recipe_name       = q{1000g_all_wgs};
+my $reference_version = q{phase3_v5b.20130502};
 my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -82,7 +82,7 @@ my $reference_href =
 
 my %job_id;
 
-my $is_ok = SUB_ROUTINE(
+my $is_ok = download_1000g_all_wgs(
     {
         active_parameter_href => \%active_parameter,
         job_id_href           => \%job_id,

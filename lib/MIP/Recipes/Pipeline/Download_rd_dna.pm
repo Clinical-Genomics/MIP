@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -95,7 +95,10 @@ sub pipeline_download_rd_dna {
 
     ### Download recipes
     ## Create code reference table for download recipes
-    my %download_recipe = ( human_reference => \&download_human_reference, );
+    my %download_recipe = (
+        human_reference  => \&download_human_reference,
+        q{1000g_all_wgs} => \&download_1000g_all_wgs,
+    );
 
     # Storing job_ids from SLURM
     my %job_id;
