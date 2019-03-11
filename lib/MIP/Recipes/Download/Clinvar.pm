@@ -136,6 +136,7 @@ sub download_clinvar {
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
 
     ## Unpack parameters
+    my $reference_dir = $active_parameter_href->{reference_dir};
     my @reference_genome_versions =
       @{ $active_parameter_href->{reference_genome_versions} };
     my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
@@ -161,8 +162,8 @@ sub download_clinvar {
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
             log                   => $log,
-            outdata_dir           => $active_parameter_href->{reference_dir},
-            outscript_dir         => $active_parameter_href->{reference_dir},
+            outdata_dir           => $reference_dir,
+            outscript_dir         => $reference_dir,
             process_time          => $time,
             recipe_directory      => $recipe_name . $UNDERSCORE . $reference_version,
             recipe_name           => $recipe_name,
@@ -178,7 +179,7 @@ sub download_clinvar {
         {
             FILEHANDLE     => $FILEHANDLE,
             recipe_name    => $recipe_name,
-            reference_dir  => $active_parameter_href->{reference_dir},
+            reference_dir  => $reference_dir,
             reference_href => $reference_href,
             quiet          => $quiet,
             verbose        => $verbose,
@@ -186,12 +187,12 @@ sub download_clinvar {
     );
 
     say {$FILEHANDLE} q{## Build clinvar variation ID header file};
-    my $header_file = catfile(q{clnvid_header.txt});
+    my $header_file_path = catfile( $reference_dir, q{clnvid_header.txt} );
     ## Build clinvar variation ID header file
     _build_clnvid_head_file(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            header_file => $header_file,
+            FILEHANDLE       => $FILEHANDLE,
+            header_file_path => $header_file_path,
         }
     );
 
@@ -199,8 +200,8 @@ sub download_clinvar {
     bcftools_annotate(
         {
             FILEHANDLE      => $FILEHANDLE,
-            headerfile_path => $header_file,
-            infile_path     => $reference_href->{outfile},
+            headerfile_path => $header_file_path,
+            infile_path     => catfile( $reference_dir, $reference_href->{outfile} ),
             output_type     => q{v},
         }
     );
@@ -210,12 +211,13 @@ sub download_clinvar {
       (
         $genome_version, $recipe_name, q{reformated}, q{-} . $reference_version . q{-.vcf}
       );
+    my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
 
     ## Add clinvar variation ID to vcf info file
     _add_clnvid_to_vcf_info(
         {
-            FILEHANDLE => $FILEHANDLE,
-            outfile    => $reformated_outfile,
+            FILEHANDLE   => $FILEHANDLE,
+            outfile_path => $reformated_outfile_path,
         }
     );
 
@@ -224,7 +226,7 @@ sub download_clinvar {
     htslib_bgzip(
         {
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $reformated_outfile,
+            infile_path => $reformated_outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -234,7 +236,7 @@ sub download_clinvar {
         {
             FILEHANDLE  => $FILEHANDLE,
             force       => 1,
-            infile_path => $reformated_outfile . q{.gz},
+            infile_path => $reformated_outfile_path . q{.gz},
             preset      => q{vcf},
         }
     );
@@ -262,21 +264,21 @@ sub _build_clnvid_head_file {
 
     ## Function : Build clinvar variation ID header file
     ## Returns  :
-    ## Arguments: $FILEHANDLE  => Filehandle to write to
-    ##          : $header_file => VCF header file
+    ## Arguments: $FILEHANDLE       => Filehandle to write to
+    ##          : $header_file_path => VCF header file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $header_file;
+    my $header_file_path;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE, },
-        header_file => {
+        FILEHANDLE       => { store => \$FILEHANDLE, },
+        header_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$header_file,
+            store       => \$header_file_path,
             strict_type => 1,
         },
     };
@@ -286,12 +288,12 @@ sub _build_clnvid_head_file {
     ## Execute perl
     print {$FILEHANDLE} q{perl -e '};
 
-    ## Print header line for Clnvar variation ID
+    ## Print header line for Clinvar variation ID
     print {$FILEHANDLE}
 q? print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} '?;
 
     ## Write to files
-    say {$FILEHANDLE} q{ > } . $header_file . $NEWLINE;
+    say {$FILEHANDLE} q{ > } . $header_file_path . $NEWLINE;
 
     return;
 }
@@ -300,21 +302,21 @@ sub _add_clnvid_to_vcf_info {
 
     ## Function : Add clinvar variation ID to vcf info file
     ## Returns  :
-    ## Arguments: $FILEHANDLE => Filehandle to write to
-    ##          : $outfile    => VCF header file
+    ## Arguments: $FILEHANDLE   => Filehandle to write to
+    ##          : $outfile_path => VCF header file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $outfile;
+    my $outfile_path;
 
     my $tmpl = {
-        FILEHANDLE => { store => \$FILEHANDLE, },
-        outfile    => {
+        FILEHANDLE   => { store => \$FILEHANDLE, },
+        outfile_path => {
             defined     => 1,
             required    => 1,
-            store       => \$outfile,
+            store       => \$outfile_path,
             strict_type => 1,
         },
     };
@@ -332,7 +334,7 @@ sub _add_clnvid_to_vcf_info {
       q?else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] } '?;
 
     ## Write to files
-    say {$FILEHANDLE} q{ > } . $outfile . $NEWLINE;
+    say {$FILEHANDLE} q{ > } . $outfile_path . $NEWLINE;
 
     return;
 }
