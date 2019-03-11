@@ -21,6 +21,27 @@ download_pipeline_type:
   data_type: SCALAR
   default: 1
   type: recipe
+1000g_indels:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_omni:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_snps:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 clinvar:
   analysis_mode: case
   associated_recipe:
@@ -42,6 +63,9 @@ recipe_core_number:
   default:
     1000g_all_sv: 1
     1000g_all_wgs: 1
+    1000g_indels: 1
+    1000g_omni: 1
+    1000g_snps: 1
     clinvar: 1
     human_reference: 1
   type: mip
@@ -52,6 +76,9 @@ recipe_time:
   default:
     1000g_all_sv: 1
     1000g_all_wgs: 1
+    1000g_indels: 1
+    1000g_omni: 1
+    1000g_snps: 1
     clinvar: 1
     human_reference: 1
   type: mip

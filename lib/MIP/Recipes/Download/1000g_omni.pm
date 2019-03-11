@@ -1,4 +1,4 @@
-package MIP::Recipes::Download::RECIPE_NAME;
+package MIP::Recipes::Download::1000g_omni;
 
 use 5.026;
 use Carp;
@@ -29,13 +29,13 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ download_RECIPE_NAME };
+    our @EXPORT_OK = qw{ download_1000g_omni };
 
 }
 
-sub download_RECIPE_NAME {
+sub download_1000g_omni {
 
-## Function : Download RECIPE_NAME
+## Function : Download 1000g_omni from gatk bundle
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
 ##          : $genome_version        => Human genome version
