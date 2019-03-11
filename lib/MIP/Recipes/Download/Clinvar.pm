@@ -1,4 +1,4 @@
-package MIP::Recipes::Download::RECIPE_NAME;
+package MIP::Recipes::Download::Clinvar;
 
 use 5.026;
 use Carp;
@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -29,13 +29,13 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ download_RECIPE_NAME };
+    our @EXPORT_OK = qw{ download_clinvar };
 
 }
 
-sub download_RECIPE_NAME {
+sub download_clinvar {
 
-## Function : Download RECIPE_NAME
+## Function : Download clinvar references
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
 ##          : $genome_version        => Human genome version
@@ -122,6 +122,8 @@ sub download_RECIPE_NAME {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Cwd;
+    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -173,6 +175,57 @@ sub download_RECIPE_NAME {
         }
     );
 
+    my $header_file = catfile(q{clnid_header.txt});
+    ## Build clinvar variation ID header file
+    _build_clnvid_head_file(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            header_file => $header_file,
+        }
+    );
+
+    bcftools_annotate(
+        {
+            FILEHANDLE      => $FILEHANDLE,
+            headerfile_path => $header_file,
+            infile_path     => $reference_href->{outfile},
+            output_type     => q{v},
+        }
+    );
+    say {$FILEHANDLE} $PIPE;
+
+    my $reformated_outfile = join $UNDERSCORE,
+      (
+        $genome_version, $recipe_name, q{reformated}, q{-} . $reference_version . q{-.vcf}
+      );
+
+    ## Add clinvar variation ID to vcf info file
+    _add_clnvid_to_vcf_info(
+        {
+            FILEHANDLE => $FILEHANDLE,
+            outfile    => $reformated_outfile,
+        }
+    );
+
+    ## Compress file
+    htslib_bgzip(
+        {
+            FILEHANDLE      => $FILEHANDLE,
+            infile_path     => $reformated_outfile,
+            write_to_stdout => 1,
+        }
+    );
+
+    ## Index file using tabix
+    htslib_tabix(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => $reformated_outfile . q{.gz},
+            preset      => q{vcf},
+        }
+    );
+
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
@@ -189,6 +242,85 @@ sub download_RECIPE_NAME {
         );
     }
     return 1;
+}
+
+sub _build_clnvid_head_file {
+
+    ## Function : Build clinvar variation ID header file
+    ## Returns  :
+    ## Arguments: $FILEHANDLE  => Filehandle to write to
+    ##          : $header_file => VCF header file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $header_file;
+
+    my $tmpl = {
+        FILEHANDLE  => { store => \$FILEHANDLE, },
+        header_file => {
+            defined     => 1,
+            required    => 1,
+            store       => \$header_file,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Execute perl
+    say {$FILEHANDLE} q{perl -e '};
+
+    ## Print header line for Clnvar variation ID
+    say {$FILEHANDLE}
+q? print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} '?;
+
+    ## Write to files
+    say {$FILEHANDLE} q{ > } . $header_file;
+
+    return;
+}
+
+sub _add_clnvid_to_vcf_info {
+
+    ## Function : Add clinvar variation ID to vcf info file
+    ## Returns  :
+    ## Arguments: $FILEHANDLE => Filehandle to write to
+    ##          : $outfile    => VCF header file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $outfile;
+
+    my $tmpl = {
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        outfile    => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Execute perl
+    say {$FILEHANDLE} q{perl -nae ' };
+
+    ## Skip header lines
+    say {$FILEHANDLE} q?if($_=~/^#/) { print $_;} ?;
+
+    ## Else add CLVID to INFO
+    say {$FILEHANDLE}
+      q?else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] } '?;
+
+    ## Write to files
+    say {$FILEHANDLE} q{ > } . $outfile;
+
+    return;
 }
 
 1;

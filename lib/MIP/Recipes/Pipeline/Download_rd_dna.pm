@@ -86,7 +86,8 @@ sub pipeline_download_rd_dna {
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
-    use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
+    use MIP::Recipes::Download::Human_reference
+      qw{ download_clinvar download_human_reference download_1000g_all_sv download_1000g_all_wgs };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
@@ -96,7 +97,9 @@ sub pipeline_download_rd_dna {
     ### Download recipes
     ## Create code reference table for download recipes
     my %download_recipe = (
+        clinvar          => \&download_clinvar,
         human_reference  => \&download_human_reference,
+        q{1000g_all_sv}  => \&download_1000g_all_sv,
         q{1000g_all_wgs} => \&download_1000g_all_wgs,
     );
 
@@ -170,6 +173,7 @@ sub pipeline_download_rd_dna {
                 $download_recipe{$reference_id}->(
                     {
                         active_parameter_href => $active_parameter_href,
+                        genome_version        => $genome_version,
                         job_id_href           => \%job_id,
                         recipe_name           => $reference_id,
                         reference_href        => $reference_href,

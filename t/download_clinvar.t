@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Recipes::Download::Clinvar} => [qw{ download_clinvar }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Recipes::Download::Clinvar qw{ download_clinvar };
 
-diag(   q{Test SUB_ROUTINE from Module.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test download_clinvar from Clinvar.pm v}
+      . $MIP::Recipes::Download::Clinvar::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -65,8 +65,8 @@ my $log       = test_log( { log_name => uc q{mip_download}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $genome_version    = q{grch37};
-my $recipe_name       = q{RECIPE_NAME};
-my $reference_version = q{REFERENCE_VERSION};
+my $recipe_name       = q{clinvar};
+my $reference_version = q{20181028};
 my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -82,7 +82,7 @@ my $reference_href =
 
 my %job_id;
 
-my $is_ok = SUB_ROUTINE(
+my $is_ok = download_clinvar(
     {
         active_parameter_href => \%active_parameter,
         genome_version        => $genome_version,
