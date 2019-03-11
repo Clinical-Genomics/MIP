@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit analysis_tiddit_coverage };
@@ -34,6 +34,7 @@ Readonly my $SPACE      => q{ };
 Readonly my $ASTERISK   => q{*};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $AMPERSAND  => q{&};
+Readonly my $TWO        => 2;
 
 sub analysis_tiddit {
 
@@ -179,7 +180,7 @@ sub analysis_tiddit {
     my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
     my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};
     my $modifier_core_number =
-      scalar( @{ $active_parameter_href->{sample_ids} } );
+      scalar( @{ $active_parameter_href->{sample_ids} } ) * $TWO;
     my $program_outdirectory_name =
       $parameter_href->{$mip_program_name}{outdir_name};
     my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
@@ -225,7 +226,7 @@ sub analysis_tiddit {
     my %file_path_prefix;
     my $outfile_tag =
       $file_info_href->{$family_id}{$mip_program_name}{file_tag};
-    my $outfile_prefix = $family_id . $outfile_tag . $call_type;
+    my $outfile_prefix      = $family_id . $outfile_tag . $call_type;
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
     ## Assign suffix
@@ -574,7 +575,7 @@ sub analysis_tiddit_coverage {
     my %file_path_prefix;
     my $outfile_tag =
       $file_info_href->{$family_id}{$mip_program_name}{file_tag};
-    my $outfile_prefix = $family_id . $outfile_tag;
+    my $outfile_prefix      = $family_id . $outfile_tag;
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
     ## Assign suffix

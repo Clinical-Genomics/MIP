@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bamcalibrationblock };
@@ -32,6 +32,7 @@ BEGIN {
 Readonly my $TAB        => qq{\t};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
+Readonly my $SPACE => q{ };
 
 sub analysis_bamcalibrationblock {
 
@@ -155,6 +156,7 @@ sub analysis_bamcalibrationblock {
     Readonly my $PROCESS_TIME => 80;
 
     my $core_number = $active_parameter_href->{max_cores_per_node};
+    my $source_environment_cmd = join $SPACE, @{ $active_parameter_href->{source_main_environment_commands} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -198,13 +200,14 @@ sub analysis_bamcalibrationblock {
         my ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $sample_id,
-                program_name          => $program_name,
-                program_directory     => $outaligner_dir,
                 core_number           => $core_number,
+                directory_id          => $sample_id,
+                FILEHANDLE            => $FILEHANDLE,
+                job_id_href           => $job_id_href,
                 process_time          => $PROCESS_TIME,
+                program_directory     => $outaligner_dir,
+                program_name          => $program_name,
+                source_environment_commands_ref => [$source_environment_cmd],
                 temp_directory        => $temp_directory,
             }
         );
