@@ -74,7 +74,6 @@ temp_directory:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: /scratch/$SLURM_JOB_ID
   type: path
 verbose:
   associated_recipe:

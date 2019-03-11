@@ -122,6 +122,7 @@ sub download_1000g_all_sv {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Cwd;
+    use MIP::Get::Parameter qw{ get_recipe_parameters };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -135,6 +136,12 @@ sub download_1000g_all_sv {
     ## Unpack parameters
     my @reference_genome_versions =
       @{ $active_parameter_href->{reference_genome_versions} };
+    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
 
     ## Set recipe mode
     my $recipe_mode = $active_parameter_href->{$recipe_name};
@@ -147,12 +154,14 @@ sub download_1000g_all_sv {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
             directory_id          => q{mip_download},
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
             log                   => $log,
             outdata_dir           => $active_parameter_href->{reference_dir},
             outscript_dir         => $active_parameter_href->{reference_dir},
+            process_time          => $time,
             recipe_directory      => $recipe_name . $UNDERSCORE . $reference_version,
             recipe_name           => $recipe_name,
         }

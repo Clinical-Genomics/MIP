@@ -122,7 +122,7 @@ reference_feature:
         outfile_reformat_command: "perl -e ' print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} ' > header_lines.txt; bcftools annotate -h header_lines.txt GRCh37_clinvar_-2018-10-28-.vcf.gz | perl -nae ' if($_=~/^#/) { print $_;} else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] }' > GRCh37_clinvar_reformat_-2018-10-28-.vcf"
         outfile_bgzip_command: 'bgzip GRCh37_clinvar_reformat_-2018-10-28-.vcf'
         outfile_tabix_command: 'tabix -p vcf GRCh37_clinvar_reformat_-2018-10-28-.vcf.gz'
-        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
+        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2018/
       20180429:
         file: clinvar_20180429.vcf.gz
         file_check: clinvar_20180429.vcf.gz.md5
