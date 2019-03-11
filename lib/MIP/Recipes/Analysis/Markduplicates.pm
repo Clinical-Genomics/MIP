@@ -6,6 +6,7 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
+use POSIX;
 use strict;
 use utf8;
 use warnings;
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rio };
@@ -265,6 +266,12 @@ sub analysis_markduplicates {
             temp_directory                  => $temp_directory,
         }
     );
+
+    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+
+    # Division by X according to java Heap size
+    $core_number = floor(
+        $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
 
     ## Copy file(s) to temporary directory
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -708,6 +715,12 @@ sub analysis_markduplicates_rio {
     if ( $active_parameter_href->{markduplicates_picardtools_markduplicates} ) {
 
         $markduplicates_program = q{picardtools_markduplicates};
+
+        Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+
+        # Division by X according to java Heap size
+        $core_number = floor( $active_parameter_href->{node_ram_memory} /
+              $JAVA_MEMORY_ALLOCATION );
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(

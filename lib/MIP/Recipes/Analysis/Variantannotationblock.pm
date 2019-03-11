@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_variantannotationblock };
@@ -33,6 +33,7 @@ Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $TAB        => qq{\t};
 Readonly my $UNDERSCORE => q{_};
+Readonly my $SPACE      => q{ };
 
 sub analysis_variantannotationblock {
 
@@ -159,7 +160,9 @@ sub analysis_variantannotationblock {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my $core_number = $active_parameter_href->{max_cores_per_node};
+    my $core_number            = $active_parameter_href->{max_cores_per_node};
+    my $source_environment_cmd = join $SPACE,
+      @{ $active_parameter_href->{source_main_environment_commands} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -197,14 +200,15 @@ sub analysis_variantannotationblock {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $family_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            process_time          => $PROCESS_TIME,
-            program_directory     => $outaligner_dir,
-            program_name          => $program_name,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            process_time                    => $PROCESS_TIME,
+            program_directory               => $outaligner_dir,
+            program_name                    => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
         }
     );
 

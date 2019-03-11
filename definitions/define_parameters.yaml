@@ -244,7 +244,7 @@ module_time:
     pbedtools_genomecov: 15
     pchanjo_sexcheck: 2
     pcnvnator: 5
-    pdelly_call: 10
+    pdelly_call: 15
     pdelly_reformat: 5
     pendvariantannotationblock: 2
     pevaluation: 1

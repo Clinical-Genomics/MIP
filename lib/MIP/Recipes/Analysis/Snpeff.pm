@@ -6,6 +6,7 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
+use POSIX;
 use strict;
 use utf8;
 use warnings;
@@ -21,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_snpeff analysis_snpeff_rio };
@@ -35,6 +36,7 @@ Readonly my $EMPTY_STR  => q{};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
+Readonly my $TWO        => 2;
 
 sub analysis_snpeff {
 
@@ -169,6 +171,7 @@ sub analysis_snpeff {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Cluster qw{ get_core_number };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Get::File qw{ get_file_suffix };
@@ -216,7 +219,8 @@ sub analysis_snpeff {
     $core_number = get_core_number(
         {
             module_core_number   => $core_number,
-            modifier_core_number => scalar @{ $file_info_href->{contigs} },
+            modifier_core_number => scalar @{ $file_info_href->{contigs} } *
+              $TWO,
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
         }
     );
@@ -277,6 +281,19 @@ sub analysis_snpeff {
 
     # Set default
     my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };
+
+    ## Division by X according to the java heap
+    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+    $core_number = floor(
+        $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
+
+    ## Limit number of cores requested to the maximum number of cores available per node
+    $core_number = check_max_core_number(
+        {
+            core_number_requested => $core_number,
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+        }
+    );
 
     ## Determined by vcfparser output
   VCFPARSER_OUTFILE:
@@ -785,6 +802,7 @@ sub analysis_snpeff_rio {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::Cluster qw{ get_core_number };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Get::File qw{ get_file_suffix };
@@ -831,7 +849,8 @@ sub analysis_snpeff_rio {
     $core_number = get_core_number(
         {
             module_core_number   => $core_number,
-            modifier_core_number => scalar @{ $file_info_href->{contigs} },
+            modifier_core_number => scalar @{ $file_info_href->{contigs} } *
+              $TWO,
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
         }
     );
@@ -875,6 +894,19 @@ sub analysis_snpeff_rio {
 
     # Set default
     my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };
+
+    ## Division by X according to the java heap
+    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+    $core_number = floor(
+        $active_parameter_href->{node_ram_memory} / $JAVA_MEMORY_ALLOCATION );
+
+    ## Limit number of cores requested to the maximum number of cores available per node
+    $core_number = check_max_core_number(
+        {
+            core_number_requested => $core_number,
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+        }
+    );
 
     ## Determined by vcfparser output
   VCFPARSER_OUTFILE:
