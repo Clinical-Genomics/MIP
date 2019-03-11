@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $BACKWARD_SLASH $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -175,7 +175,8 @@ sub download_clinvar {
         }
     );
 
-    my $header_file = catfile(q{clnid_header.txt});
+    say {$FILEHANDLE} q{## Build clinvar variation ID header file};
+    my $header_file = catfile(q{clnvid_header.txt});
     ## Build clinvar variation ID header file
     _build_clnvid_head_file(
         {
@@ -184,6 +185,7 @@ sub download_clinvar {
         }
     );
 
+    say {$FILEHANDLE} q{## Annotate vcf with new header};
     bcftools_annotate(
         {
             FILEHANDLE      => $FILEHANDLE,
@@ -192,7 +194,7 @@ sub download_clinvar {
             output_type     => q{v},
         }
     );
-    say {$FILEHANDLE} $PIPE;
+    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
 
     my $reformated_outfile = join $UNDERSCORE,
       (
@@ -207,6 +209,7 @@ sub download_clinvar {
         }
     );
 
+    say {$FILEHANDLE} q{## Compress and index file};
     ## Compress file
     htslib_bgzip(
         {
@@ -215,6 +218,7 @@ sub download_clinvar {
             write_to_stdout => 1,
         }
     );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Index file using tabix
     htslib_tabix(
@@ -270,14 +274,14 @@ sub _build_clnvid_head_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Execute perl
-    say {$FILEHANDLE} q{perl -e '};
+    print {$FILEHANDLE} q{perl -e '};
 
     ## Print header line for Clnvar variation ID
-    say {$FILEHANDLE}
+    print {$FILEHANDLE}
 q? print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} '?;
 
     ## Write to files
-    say {$FILEHANDLE} q{ > } . $header_file;
+    say {$FILEHANDLE} q{ > } . $header_file . $NEWLINE;
 
     return;
 }
@@ -308,17 +312,17 @@ sub _add_clnvid_to_vcf_info {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Execute perl
-    say {$FILEHANDLE} q{perl -nae ' };
+    print {$FILEHANDLE} q{perl -nae ' };
 
     ## Skip header lines
-    say {$FILEHANDLE} q?if($_=~/^#/) { print $_;} ?;
+    print {$FILEHANDLE} q?if($_=~/^#/) { print $_;} ?;
 
     ## Else add CLVID to INFO
-    say {$FILEHANDLE}
+    print {$FILEHANDLE}
       q?else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] } '?;
 
     ## Write to files
-    say {$FILEHANDLE} q{ > } . $outfile;
+    say {$FILEHANDLE} q{ > } . $outfile . $NEWLINE;
 
     return;
 }

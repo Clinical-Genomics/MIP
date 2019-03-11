@@ -7,6 +7,27 @@ download_pipeline_type:
   data_type: SCALAR
   default: rd_dna
   type: mip
+1000g_all_sv:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_all_wgs:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+clinvar:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 human_reference:
   analysis_mode: case
   associated_recipe:
@@ -19,6 +40,9 @@ recipe_core_number:
    - mip
   data_type: HASH
   default:
+    1000g_all_sv: 1
+    1000g_all_wgs: 1
+    clinvar: 1
     human_reference: 1
   type: mip
 recipe_time:
@@ -26,6 +50,9 @@ recipe_time:
    - mip
   data_type: HASH
   default:
+    1000g_all_sv: 1
+    1000g_all_wgs: 1
+    clinvar: 1
     human_reference: 1
   type: mip
 reference_feature:

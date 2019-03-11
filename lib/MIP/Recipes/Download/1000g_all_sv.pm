@@ -38,6 +38,7 @@ sub download_1000g_all_sv {
 ## Function : Download 1000g_all_sv from 1000G
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
+##          : $genome_version        => Human genome version
 ##          : $job_id_href           => The job_id hash {REF}
 ##          : $profile_base_command  => Submission profile base command
 ##          : $recipe_name           => Recipe name
@@ -51,6 +52,7 @@ sub download_1000g_all_sv {
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $genome_version;
     my $job_id_href;
     my $recipe_name;
     my $reference_href;
@@ -68,6 +70,10 @@ sub download_1000g_all_sv {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        genome_version => {
+            store       => \$genome_version,
             strict_type => 1,
         },
         job_id_href => {

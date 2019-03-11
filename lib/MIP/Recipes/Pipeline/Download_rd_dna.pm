@@ -86,8 +86,10 @@ sub pipeline_download_rd_dna {
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
-    use MIP::Recipes::Download::Human_reference
-      qw{ download_clinvar download_human_reference download_1000g_all_sv download_1000g_all_wgs };
+    use MIP::Recipes::Download::1000g_all_sv qw{ download_1000g_all_sv };
+    use MIP::Recipes::Download::1000g_all_wgs qw{ download_1000g_all_wgs };
+    use MIP::Recipes::Download::Clinvar qw{ download_clinvar };
+    use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
