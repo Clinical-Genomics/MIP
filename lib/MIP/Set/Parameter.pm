@@ -196,47 +196,6 @@ sub set_custom_default_to_active_parameter {
     return;
 }
 
-sub _set_temp_directory {
-
-## Function : Set default temp directory to active parameters
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Mip download
-    if ( exists $active_parameter_href->{download_pipeline_type} ) {
-
-        $active_parameter_href->{temp_directory} =
-          catfile( cwd(), qw{mip_download $SLURM_JOB_ID} );
-        return;
-    }
-
-    ## Mip analyse
-    $active_parameter_href->{temp_directory} =
-      catfile( $active_parameter_href->{outdata_dir}, q{$SLURM_JOB_ID} );
-
-    return;
-}
-
 sub set_default_config_dynamic_parameters {
 
 ## Function : Set default for config dynamic parameter using default definitions
@@ -1664,6 +1623,47 @@ sub _set_sample_info_file {
     ## Set qccollect sampleinfo file input
     $parameter_href->{qccollect_sampleinfo_file}{default} =
       $parameter_href->{sample_info_file}{default};
+    return;
+}
+
+sub _set_temp_directory {
+
+## Function : Set default temp directory to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Mip download
+    if ( exists $active_parameter_href->{download_pipeline_type} ) {
+
+        $active_parameter_href->{temp_directory} =
+          catfile( cwd(), qw{mip_download $SLURM_JOB_ID} );
+        return;
+    }
+
+    ## Mip analyse
+    $active_parameter_href->{temp_directory} =
+      catfile( $active_parameter_href->{outdata_dir}, q{$SLURM_JOB_ID} );
+
     return;
 }
 
