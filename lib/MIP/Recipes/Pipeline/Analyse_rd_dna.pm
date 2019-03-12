@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -149,7 +149,6 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Bamcalibrationblock qw{ analysis_bamcalibrationblock };
     use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
-    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
@@ -211,7 +210,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
     use MIP::Set::Analysis
-      qw{ set_recipe_on_analysis_type set_recipe_gatk_variantrecalibration set_rankvariants_ar };
+      qw{ set_recipe_on_analysis_type set_recipe_bwa_mem set_recipe_gatk_variantrecalibration set_rankvariants_ar };
 
     ### Pipeline specific checks
     check_rd_dna(
@@ -246,14 +245,14 @@ sub pipeline_analyse_rd_dna {
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        analysisrunstatus           => \&analysis_analysisrunstatus,
-        bcftools_mpileup            => \&analysis_bcftools_mpileup,
-        bwa_mem                     => \&analysis_bwa_mem,
-        cadd_ar                     => \&analysis_cadd,
-        chanjo_sexcheck             => \&analysis_chanjo_sex_check,
-        cnvnator_ar                 => \&analysis_cnvnator,
-        delly_call                  => \&analysis_delly_call,
-        delly_reformat              => \&analysis_delly_reformat,
+        analysisrunstatus => \&analysis_analysisrunstatus,
+        bcftools_mpileup  => \&analysis_bcftools_mpileup,
+        bwa_mem           => undef,                          # Depends on genome build
+        cadd_ar           => \&analysis_cadd,
+        chanjo_sexcheck   => \&analysis_chanjo_sex_check,
+        cnvnator_ar       => \&analysis_cnvnator,
+        delly_call        => \&analysis_delly_call,
+        delly_reformat    => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
         evaluation                  => \&analysis_picardtools_genotypeconcordance,
@@ -331,6 +330,17 @@ sub pipeline_analyse_rd_dna {
         {
             analysis_recipe_href    => \%analysis_recipe,
             consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+        }
+    );
+
+    ## Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or GRCh)
+    set_recipe_bwa_mem(
+        {
+            analysis_recipe_href => \%analysis_recipe,
+            human_genome_reference_source =>
+              $file_info_href->{human_genome_reference_source},
+            human_genome_reference_version =>
+              $file_info_href->{human_genome_reference_version},
         }
     );
 

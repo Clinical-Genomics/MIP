@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln };
@@ -140,15 +140,14 @@ sub analysis_star_aln {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_recipe_parameters get_recipe_attributes get_read_group };
+    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_addorreplacereadgroups };
     use MIP::Program::Alignment::Star qw{ star_aln };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::QC::Sample_info
-      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info set_processing_metafile_in_sample_info };
+      qw{ get_read_group get_sequence_run_type set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info set_processing_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## PREPROCESSING:
@@ -231,9 +230,13 @@ sub analysis_star_aln {
         my $outfile_path_prefix = $outfile_path_prefixes[$infile_index];
 
         # Collect paired-end or single-end sequence run mode
-        my $sequence_run_mode =
-          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {sequence_run_type};
+        my $sequence_run_type = get_sequence_run_type(
+            {
+                infile_lane_prefix => $infile_prefix,
+                sample_id          => $sample_id,
+                sample_info_href   => $sample_info_href,
+            }
+        );
 
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -268,7 +271,7 @@ sub analysis_star_aln {
         );
 
         # If second read direction is present
-        if ( $sequence_run_mode eq q{paired-end} ) {
+        if ( $sequence_run_type eq q{paired-end} ) {
 
             # Read 2
             migrate_file(
@@ -289,7 +292,7 @@ sub analysis_star_aln {
         my @fastq_files = $temp_infile_paths[$paired_end_tracker];
 
         # If second read direction is present
-        if ( $sequence_run_mode eq q{paired-end} ) {
+        if ( $sequence_run_type eq q{paired-end} ) {
 
             # Increment to collect correct read 2 from %infile
             $paired_end_tracker++;
