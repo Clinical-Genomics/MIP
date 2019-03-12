@@ -25,7 +25,7 @@ use MIP::Constants qw { $COMMA $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 $VERBOSE = test_standard_cli(
     {
@@ -110,7 +110,7 @@ foreach my $definition_file (@definition_files) {
 
 ## Given custom default parameters
 my @custom_default_parameters =
-  qw{ analysis_type bwa_build_reference expansionhunter_repeat_specs_dir exome_target_bed infile_dirs reference_dir rtg_vcfeval_reference_genome sample_info_file };
+  qw{ analysis_type bwa_build_reference expansionhunter_repeat_specs_dir exome_target_bed infile_dirs reference_dir rtg_vcfeval_reference_genome sample_info_file temp_directory };
 
 PARAMETER_NAME:
 foreach my $parameter_name (@custom_default_parameters) {
@@ -140,6 +140,29 @@ is(
 );
 
 is( $active_parameter{reference_dir}, cwd(), q{Set reference_dir default } );
+
+is(
+    $active_parameter{temp_directory},
+    catfile( $active_parameter{outdata_dir}, q{$SLURM_JOB_ID} ),
+    q{Set temp_directory default }
+);
+
+## Given an download pipe
+$active_parameter{download_pipeline_type} = q{rd_dna};
+
+set_custom_default_to_active_parameter(
+    {
+        active_parameter_href => \%active_parameter,
+        parameter_href        => \%parameter,
+        parameter_name        => q{temp_directory},
+    }
+);
+
+is(
+    $active_parameter{temp_directory},
+    catfile( cwd(), qw{mip_download $SLURM_JOB_ID} ),
+    q{Set temp_directory default for download pipe }
+);
 
 ## Given an analysis type, when unset for a sample
 # Clear analysis type

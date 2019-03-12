@@ -182,7 +182,7 @@ sub mip_download {
             and not ref $active_parameter{$parameter_name} );
 
         ### Special case for parameters that are dependent on other parameters values
-        my @custom_default_parameters = qw{ reference_dir };
+        my @custom_default_parameters = qw{ reference_dir temp_directory };
 
         if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
 

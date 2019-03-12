@@ -74,7 +74,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -325,6 +325,7 @@ sub mip_analyse {
           snpeff_path
           star_aln_reference_genome
           rtg_vcfeval_reference_genome
+          temp_directory
           vep_directory_path
         };
 

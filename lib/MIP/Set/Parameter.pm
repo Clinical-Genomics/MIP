@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -162,6 +162,7 @@ sub set_custom_default_to_active_parameter {
         salmon_quant_reference_genome    => \&_set_human_genome,
         star_aln_reference_genome        => \&_set_human_genome,
         snpeff_path                      => \&_set_dynamic_path,
+        temp_directory                   => \&_set_temp_directory,
         vep_directory_path               => \&_set_dynamic_path,
     );
 
@@ -1622,6 +1623,47 @@ sub _set_sample_info_file {
     ## Set qccollect sampleinfo file input
     $parameter_href->{qccollect_sampleinfo_file}{default} =
       $parameter_href->{sample_info_file}{default};
+    return;
+}
+
+sub _set_temp_directory {
+
+## Function : Set default temp directory to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Mip download
+    if ( exists $active_parameter_href->{download_pipeline_type} ) {
+
+        $active_parameter_href->{temp_directory} =
+          catfile( cwd(), qw{mip_download $SLURM_JOB_ID} );
+        return;
+    }
+
+    ## Mip analyse
+    $active_parameter_href->{temp_directory} =
+      catfile( $active_parameter_href->{outdata_dir}, q{$SLURM_JOB_ID} );
+
     return;
 }
 
