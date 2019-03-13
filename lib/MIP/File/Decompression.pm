@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ decompress_file };
@@ -53,7 +53,7 @@ sub decompress_file {
         FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
         outdir_path => {
             default     => cwd(),
-            store       => \$outfile_path,
+            store       => \$outdir_path,
             strict_type => 1,
         },
         outfile_path => {

@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -64,7 +64,7 @@ sub pipeline_download_rd_dna {
         FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
         quiet      => {
             allow       => [ undef, 0, 1 ],
-            default     => 1,
+            default     => 0,
             store       => \$quiet,
             strict_type => 1,
         },
@@ -88,8 +88,16 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipes::Download::1000g_all_sv qw{ download_1000g_all_sv };
     use MIP::Recipes::Download::1000g_all_wgs qw{ download_1000g_all_wgs };
+    use MIP::Recipes::Download::1000g_indels qw{ download_1000g_indels };
+    use MIP::Recipes::Download::1000g_omni qw{ download_1000g_omni };
+    use MIP::Recipes::Download::1000g_sites qw{ download_1000g_sites };
+    use MIP::Recipes::Download::1000g_snps qw{ download_1000g_snps };
     use MIP::Recipes::Download::Clinvar qw{ download_clinvar };
+    use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
+    use MIP::Recipes::Download::Hapmap qw{ download_hapmap };
+    use MIP::Recipes::Download::Mills_and_1000g_indels
+      qw{ download_mills_and_1000g_indels };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
@@ -99,10 +107,17 @@ sub pipeline_download_rd_dna {
     ### Download recipes
     ## Create code reference table for download recipes
     my %download_recipe = (
-        clinvar          => \&download_clinvar,
-        human_reference  => \&download_human_reference,
-        q{1000g_all_sv}  => \&download_1000g_all_sv,
-        q{1000g_all_wgs} => \&download_1000g_all_wgs,
+        q{1000g_all_sv}        => \&download_1000g_all_sv,
+        q{1000g_all_wgs}       => \&download_1000g_all_wgs,
+        q{1000g_indels}        => \&download_1000g_indels,
+        q{1000g_omni}          => \&download_1000g_omni,
+        q{1000g_sites}         => \&download_1000g_sites,
+        q{1000g_snps}          => \&download_1000g_snps,
+        clinvar                => \&download_clinvar,
+        dbsnp                  => \&download_dbsnp,
+        human_reference        => \&download_human_reference,
+        hapmap                 => \&download_hapmap,
+        mills_and_1000g_indels => \&download_mills_and_1000g_indels,
     );
 
     # Storing job_ids from SLURM
