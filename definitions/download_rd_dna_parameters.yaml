@@ -1,12 +1,6 @@
 ---
 ## Version: 1.0.0
 #Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
-download_pipeline_type:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: rd_dna
-  type: mip
 1000g_all_sv:
   analysis_mode: case
   associated_recipe:
@@ -35,6 +29,13 @@ download_pipeline_type:
   data_type: SCALAR
   default: 1
   type: recipe
+1000g_sites:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 1000g_snps:
   analysis_mode: case
   associated_recipe:
@@ -42,6 +43,19 @@ download_pipeline_type:
   data_type: SCALAR
   default: 1
   type: recipe
+dbsnp:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+download_pipeline_type:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: rd_dna
+  type: mip
 clinvar:
   analysis_mode: case
   associated_recipe:
@@ -49,7 +63,21 @@ clinvar:
   data_type: SCALAR
   default: 1
   type: recipe
+hapmap:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 human_reference:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+mills_and_1000g_indels:
   analysis_mode: case
   associated_recipe:
    - mip
@@ -65,9 +93,13 @@ recipe_core_number:
     1000g_all_wgs: 1
     1000g_indels: 1
     1000g_omni: 1
+    1000g_sites: 1
     1000g_snps: 1
+    dbsnp: 1
     clinvar: 1
     human_reference: 1
+    hapmap: 1
+    mills_and_1000g_indels: 1
   type: mip
 recipe_time:
   associated_recipe:
@@ -78,9 +110,13 @@ recipe_time:
     1000g_all_wgs: 1
     1000g_indels: 1
     1000g_omni: 1
+    1000g_sites: 1
     1000g_snps: 1
+    dbsnp: 1
     clinvar: 1
+    hapmap: 1
     human_reference: 1
+    mills_and_1000g_indels: 1
   type: mip
 reference_feature:
   associated_recipe:

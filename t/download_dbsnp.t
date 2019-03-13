@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Recipes::Download::Dbsnp} => [qw{ download_dbsnp }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
 
-diag(   q{Test SUB_ROUTINE from Module.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test download_dbsnp from Dbsnp.pm v}
+      . $MIP::Recipes::Download::Dbsnp::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,9 +64,9 @@ my $file_path = catfile( $test_dir, q{recipe_script.sh} );
 my $log       = test_log( { log_name => uc q{mip_download}, no_screen => 1, } );
 
 ## Given download parameters for recipe
-my $genome_version    = q{grch37};
-my $recipe_name       = q{RECIPE_NAME};
-my $reference_version = q{REFERENCE_VERSION};
+my $genome_version    = q{hg38};
+my $recipe_name       = q{dbsnp};
+my $reference_version = q{146};
 my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -84,7 +84,7 @@ my $reference_href =
 
 my %job_id;
 
-my $is_ok = SUB_ROUTINE(
+my $is_ok = download_dbsnp(
     {
         active_parameter_href => \%active_parameter,
         genome_version        => $genome_version,
