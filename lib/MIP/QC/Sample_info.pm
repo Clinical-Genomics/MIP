@@ -27,11 +27,13 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      get_read_group
       get_sequence_run_type
+      get_sequence_run_type_is_interleaved
       set_gene_panel
       set_infile_info
       set_most_complete_vcf
@@ -42,6 +44,84 @@ BEGIN {
       set_in_sample_info
     };
 
+}
+
+sub get_read_group {
+
+## Function : Builds hash with read group headers
+## Returns  : %read_group
+## Arguments: $infile_prefix    => Name of Fastq file minus read direction information
+##          : $platform         => Sequencing platform
+##          : $sample_id        => Sample ID
+##          : $sample_info_href => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_prefix;
+    my $platform;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        infile_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_prefix,
+            strict_type => 1,
+        },
+        platform => {
+            defined     => 1,
+            required    => 1,
+            store       => \$platform,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Traverse down $sample_info_href
+    my %fastq_file =
+      %{ $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
+          {read_direction_file}{ $infile_prefix . q{_1} } };
+
+    ## RG hash
+    my %rg;
+
+    ## Add ID
+    $rg{id} = $infile_prefix;
+
+    ## Add platform unit
+    $rg{pu} =
+        $fastq_file{flowcell}
+      . $DOT
+      . $fastq_file{lane}
+      . $DOT
+      . $fastq_file{sample_barcode};
+
+    ## Add sample
+    $rg{sm} = $sample_id;
+
+    ## Add platform
+    $rg{pl} = $platform;
+
+    ## Add molecular library (Dummy value since the actual LB isn't available)
+    $rg{lb} = $sample_id;
+
+    return %rg;
 }
 
 sub get_sequence_run_type {
@@ -109,6 +189,55 @@ sub get_sequence_run_type {
     }
 
     croak q{Either $infile_lane_prefix_href or $infile_prefix must be provided!};
+}
+
+sub get_sequence_run_type_is_interleaved {
+
+## Function : Get sequence run type interleaved info
+## Returns  : undef (not interleaved) | 1 (is interleaved)
+## Arguments: $infile_lane_prefix => Infile lane prefix
+##          : $sample_id          => Sample id
+##          : $sample_info_href   => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_lane_prefix;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        infile_lane_prefix => {
+            required    => 1,
+            defined     => 1,
+            store       => \$infile_lane_prefix,
+            strict_type => 1,
+        },
+        sample_id => {
+            required    => 1,
+            defined     => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return
+      if (
+        ref $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
+        {sequence_run_type} ne q{HASH} );
+
+    return $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_prefix}
+      {sequence_run_type}{interleaved};
+
 }
 
 sub set_gene_panel {

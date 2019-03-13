@@ -27,7 +27,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_recipe_on_analysis_type set_recipe_gatk_variantrecalibration set_rankvariants_ar };
+      qw{ set_recipe_on_analysis_type set_recipe_bwa_mem set_recipe_gatk_variantrecalibration set_rankvariants_ar };
 }
 
 sub set_recipe_on_analysis_type {
@@ -100,6 +100,83 @@ sub set_recipe_on_analysis_type {
         $analysis_recipe_href->{$recipe_name} =
           $analysis_type_recipe{$consensus_analysis_type}{$recipe_name};
     }
+    return;
+}
+
+sub set_recipe_bwa_mem {
+
+## Function : Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or GRCh)
+## Returns  :
+## Arguments: $analysis_recipe_href           => Analysis recipe hash {REF}
+##          : $human_genome_reference_source  => Human genome reference source
+##          : $human_genome_reference_version => Human genome reference version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $human_genome_reference_source;
+    my $human_genome_reference_version;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        human_genome_reference_source => {
+            defined     => 1,
+            required    => 1,
+            store       => \$human_genome_reference_source,
+            strict_type => 1,
+        },
+        human_genome_reference_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$human_genome_reference_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem analysis_run_bwa_mem };
+
+    Readonly my $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS => 37;
+    Readonly my $GENOME_BUILD_VERSION_HG_PRIOR_ALTS   => 19;
+
+    if ( $human_genome_reference_source eq q{GRCh} ) {
+
+        # Human genome version > GRCh37
+        if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS ) {
+
+            # Use bwa run mem recipe
+            $analysis_recipe_href->{bwa_mem} = \&analysis_run_bwa_mem;
+            return;
+        }
+
+        # Human genome version <= GRCh37
+        # Use bwa mem recipe
+        $analysis_recipe_href->{bwa_mem} = \&analysis_bwa_mem;
+        return;
+    }
+
+    # hgXX build
+
+    # Human genome version > hg19
+    if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_HG_PRIOR_ALTS ) {
+
+        # Use bwa run mem recipe
+        $analysis_recipe_href->{bwa_mem} = \&analysis_run_bwa_mem;
+        return;
+    }
+
+    ## Human genome version <= hg19
+    # Use bwa mem recipe
+    $analysis_recipe_href->{bwa_mem} = \&analysis_bwa_mem;
+
     return;
 }
 

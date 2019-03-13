@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -43,17 +43,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Parameter} => [qw{ get_read_group }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::QC::Sample_info} => [qw{ get_read_group }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Parameter qw{ get_read_group };
+use MIP::QC::Sample_info qw{ get_read_group };
 
-diag(   q{Test get_read_group from Parameters.pm v}
-      . $MIP::Get::Parameter::VERSION
+diag(   q{Test get_read_group from Sample_info.pm v}
+      . $MIP::QC::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -81,7 +81,7 @@ my %sample_info = (
 );
 
 my %active_parameter = ( platform => q{ILLUMINA}, );
-my $infile_prefix = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
+my $infile_prefix    = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
 
 ## When the subroutine is executed
 my %read_group = get_read_group(

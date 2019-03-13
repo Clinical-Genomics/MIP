@@ -71,3 +71,58 @@ sample: { #Hash of hashes
   },
 },
 ```
+
+## Methods
+get_read_group:
+Return hash with read group headers.
+```Perl
+my %read_group = get_read_group(
+            {
+                infile_prefix    => $infile_prefix,
+                platform         => $active_parameter_href->{platform},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+$rg{id} = <$infile_prefix>;
+$rg{pu} = <flowcell>.<lane>.<sample_barcode>;
+$rg{sm} = <$sample_id>;
+$rg{pl} = <$platform>;
+$rg{lb} = <$sample_id>; # Dummy value since the actual LB isn't available in MIP (yet)
+```
+
+get_sequence_run_type:
+Return scalar sequence run type, (e.g. paired-end or single-end) or a hash of sequence run types per infile prefix
+```Perl
+# Scalar
+my $sequence_run_type = get_sequence_run_type(
+        {
+            infile_lane_prefix => $infile_lane_prefix,
+            sample_id          => $sample_id,
+            sample_info_href   => $sample_info_href,
+        }
+    );
+$sequence_run_type = <string>;
+
+my %sequence_run_type = get_sequence_run_type(
+        {
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            sample_id               => $sample_id,
+            sample_info_href        => $sample_info_href,
+        }
+    );
+$sequence_run_type{$infile_lane_prefix} => <string>;
+```
+
+get_sequence_run_type_is_interleaved:
+Return boolean depending on interleaved status of fastq file
+```Perl
+my $is_interleaved_fastq = get_sequence_run_type_is_interleaved(
+        {
+            infile_lane_prefix => $infile_prefix,
+            sample_id               => $sample_id,
+            sample_info_href        => $sample_info_href,
+        }
+    );
+$is_interleaved_fastq = <boolean>;
+```

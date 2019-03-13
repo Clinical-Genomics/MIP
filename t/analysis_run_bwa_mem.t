@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -35,8 +35,8 @@ $VERBOSE = test_standard_cli(
 );
 
 ## Constants
+Readonly my $GENOME_BUILD_VERSION_38 => 38;
 Readonly my $GENOME_BUILD_VERSION_20 => 20;
-Readonly my $GENOME_BUILD_VERSION_19 => 19;
 
 BEGIN {
 
@@ -45,16 +45,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Bwa_mem} => [qw{ analysis_bwa_mem }],
+        q{MIP::Recipes::Analysis::Bwa_mem} => [qw{ analysis_run_bwa_mem }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem };
+use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_run_bwa_mem };
 
-diag(   q{Test analysis_bwa_mem from Bwa_mem.pm v}
+diag(   q{Test analysis_run_bwa_mem from Bwa_mem.pm v}
       . $MIP::Recipes::Analysis::Bwa_mem::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -123,10 +123,11 @@ my %sample_info = (
     },
 );
 
-## Will test the bwamem with hg19
-$file_info{human_genome_reference_source}  = q{hg};
-$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_19;
-my $is_ok = analysis_bwa_mem(
+## Will test the run-bwamem
+$file_info{human_genome_reference_source}  = q{GRCh};
+$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_38;
+
+my $is_ok = analysis_run_bwa_mem(
     {
         active_parameter_href   => \%active_parameter,
         file_info_href          => \%file_info,
@@ -145,6 +146,30 @@ ok( $is_ok,
         q{ Executed analysis recipe }
       . $recipe_name
       . q{ with genome build }
-      . $GENOME_BUILD_VERSION_19 );
+      . $GENOME_BUILD_VERSION_38 );
+
+## Will test the bwamem with hg19
+$file_info{human_genome_reference_source}  = q{hg};
+$file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_20;
+$is_ok                                     = analysis_run_bwa_mem(
+    {
+        active_parameter_href   => \%active_parameter,
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        parameter_href          => \%parameter,
+        profile_base_command    => $slurm_mock_cmd,
+        recipe_name             => $recipe_name,
+        sample_id               => $sample_id,
+        sample_info_href        => \%sample_info,
+    }
+);
+
+## Then return TRUE
+ok( $is_ok,
+        q{ Executed analysis recipe }
+      . $recipe_name
+      . q{ with genome build }
+      . $GENOME_BUILD_VERSION_20 );
 
 done_testing();
