@@ -31,8 +31,23 @@ BEGIN {
     our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ gnu_cat gnu_chmod gnu_cp gnu_echo gnu_ln gnu_md5sum gnu_mkdir gnu_mv gnu_printf gnu_rm gnu_sleep gnu_sort gnu_split gnu_tail gnu_touch };
+    our @EXPORT_OK = qw{ gnu_cat
+      gnu_chmod
+      gnu_cp
+      gnu_echo
+      gnu_head
+      gnu_ln
+      gnu_md5sum
+      gnu_mkdir
+      gnu_mv
+      gnu_printf
+      gnu_rm
+      gnu_sleep
+      gnu_sort
+      gnu_split
+      gnu_tail
+      gnu_touch
+    };
 }
 
 sub gnu_cat {
@@ -44,6 +59,7 @@ sub gnu_cat {
 ##          : $outfile_path           => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -53,6 +69,7 @@ sub gnu_cat {
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdoutfile_path;
 
     my $tmpl = {
         FILEHANDLE => {
@@ -77,6 +94,10 @@ sub gnu_cat {
             store       => \$stderrfile_path_append,
             strict_type => 1,
         },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -97,6 +118,7 @@ sub gnu_cat {
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
@@ -425,6 +447,88 @@ sub gnu_echo {
     return @commands;
 }
 
+sub gnu_head {
+
+## Function : Perl wrapper for writing head command to already open $FILEHANDLE or return commands array
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $lines                  => Lines to print
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $lines;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        lines => {
+            allow       => qr/ ^\d+$ /xms,
+            store       => \$lines,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = q{head};
+
+    if ($lines) {
+        push @commands, q{-n} . $SPACE . $lines;
+    }
+
+    if ($infile_path) {
+
+        push @commands, $infile_path;
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
 sub gnu_ln {
 
 ## Function : Perl wrapper for writing ln command to already open $FILEHANDLE or return commands array. Based on ln 8.4
@@ -593,6 +697,7 @@ sub gnu_md5sum {
 
         push @commands, $infile_path;
     }
+
     push @commands,
       unix_standard_streams(
         {

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rio };
@@ -433,7 +433,7 @@ sub analysis_markduplicates {
             FILEHANDLE => $FILEHANDLE,
             infile_paths_ref =>
               [ $temp_file_path_prefix . $DOT . $ASTERISK . $UNDERSCORE . q{metric} ],
-            outfile_path => $temp_file_path_prefix . $UNDERSCORE . q{metric_all},
+            stdoutfile_path => $temp_file_path_prefix . $UNDERSCORE . q{metric_all},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -909,7 +909,7 @@ sub analysis_markduplicates_rio {
             FILEHANDLE => $FILEHANDLE,
             infile_paths_ref =>
               [ $temp_file_path_prefix . $DOT . $ASTERISK . $UNDERSCORE . q{metric} ],
-            outfile_path => $temp_file_path_prefix . $UNDERSCORE . q{metric_all},
+            stdoutfile_path => $temp_file_path_prefix . $UNDERSCORE . q{metric_all},
         }
     );
     say {$FILEHANDLE} $NEWLINE;

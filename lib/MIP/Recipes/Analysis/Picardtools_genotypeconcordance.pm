@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_genotypeconcordance };
@@ -331,7 +331,7 @@ q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/ || $_=~/GL\d+/) {print $_}' 
             {
                 FILEHANDLE       => $FILEHANDLE,
                 infile_paths_ref => [ $genome_dict_file_path, $nist_bed_file_path, ],
-                outfile_path     => $nist_file_path . $DOT . q{bed.dict_body},
+                stdoutfile_path  => $nist_file_path . $DOT . q{bed.dict_body},
             }
         );
         say {$FILEHANDLE} $NEWLINE;

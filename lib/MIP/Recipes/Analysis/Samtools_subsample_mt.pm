@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_samtools_subsample_mt };
@@ -139,6 +139,7 @@ sub analysis_samtools_subsample_mt {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Language::Awk qw{ awk };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Alignment::Samtools
       qw{ samtools_depth samtools_index samtools_view };
@@ -246,7 +247,13 @@ sub analysis_samtools_subsample_mt {
     print {$FILEHANDLE} $PIPE . $SPACE;
 
     # Add AWK statment for calculation of avgerage coverage
-    print {$FILEHANDLE} _awk_calculate_average_coverage();
+    my $awk_statment = _awk_calculate_average_coverage();
+    awk(
+        {
+            FILEHANDLE => $FILEHANDLE,
+            statement  => $awk_statment,
+        }
+    );
 
     # Close statment
     say {$FILEHANDLE} $BACKTICK;
@@ -342,11 +349,8 @@ sub _awk_calculate_average_coverage {
 
     my $awk_statment =
 
-      # Start awk
-      q?awk '?
-
       # Sum the coverage data for each base ()
-      . q?{cov += $3}?
+      q?{cov += $3}?
 
       # Add end rule
       . q?END?
@@ -354,7 +358,7 @@ sub _awk_calculate_average_coverage {
       # Divide the total coverage sum with the number of covered
       # bases (rows of output from samtools depth),
       # stored in the awk built in "NR"
-      . q?{ if (NR > 0) print cov / NR }'?;
+      . q?{ if (NR > 0) print cov / NR }?;
 
     return $awk_statment;
 }

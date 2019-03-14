@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -438,7 +438,7 @@ sub _merge_sample_name_map_files {
         {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => [ $echo_outfile_path, $gatk_genotypegvcfs_ref_gvcf ],
-            outfile_path     => $outfile_path,
+            stdoutfile_path  => $outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

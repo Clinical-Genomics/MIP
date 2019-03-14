@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ xargs_command };
@@ -110,9 +110,9 @@ sub xargs_command {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Coreutils qw(gnu_cat);
-    use MIP::Gnu::Findutils qw(xargs);
-    use MIP::Language::Java qw{java_core};
+    use MIP::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Gnu::Findutils qw{ xargs };
+    use MIP::Language::Java qw{ java_core };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );

@@ -20,7 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $COMMA $SINGLE_QUOTE $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
@@ -41,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Gnu::Coreutils} => [qw{ gnu_tail }],
+        q{MIP::Language::Awk}  => [qw{ awk }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Gnu::Coreutils qw{ gnu_tail };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Language::Awk qw{ awk };
 
-diag(   q{Test gnu_tail from Coreutils.pm v}
-      . $MIP::Gnu::Coreutils::VERSION
+diag(   q{Test awk from Awk.pm v}
+      . $MIP::Language::Awk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,7 +60,7 @@ diag(   q{Test gnu_tail from Coreutils.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ tail };
+my @function_base_commands = qw{ awk };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -82,27 +81,38 @@ my %base_argument = (
     },
 );
 
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
+my %required_argument = (
+    statement => {
+        input           => q{$8 != "."},
+        expected_output => $SINGLE_QUOTE . q{$8 != "."} . $SINGLE_QUOTE,
+    },
+);
+
 my %specific_argument = (
-    lines => {
-        input           => q{5},
-        expected_output => q{--lines=5},
+    statement => {
+        input           => q{$8 != "."},
+        expected_output => $SINGLE_QUOTE . q{$8 != "."} . $SINGLE_QUOTE,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_tail;
+my $module_function_cref = \&awk;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
+
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

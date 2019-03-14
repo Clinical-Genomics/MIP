@@ -15,24 +15,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_capture_file_prerequisites };
 
 }
-
-##Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub build_capture_file_prerequisites {
 
@@ -239,7 +236,7 @@ sub build_capture_file_prerequisites {
                     $exome_target_bed_file_random . $DOT . q{dict},
                     $exome_target_bed_file
                 ],
-                outfile_path => $exome_target_bed_file_random . $DOT . q{dict_body},
+                stdoutfile_path => $exome_target_bed_file_random . $DOT . q{dict_body},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
