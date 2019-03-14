@@ -175,6 +175,7 @@ sub download_dbnsfp {
             process_time          => $time,
             recipe_directory      => $recipe_name . $UNDERSCORE . $reference_version,
             recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
             source_environment_commands_ref => \@source_environment_cmds,
         }
     );
@@ -228,7 +229,7 @@ sub download_dbnsfp {
             infile_paths_ref => [$dbnsfp_chr_file_path],
         }
     );
-    print {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
+    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
 
     ## Skip header line starting with "#chr"
     gnu_grep(
@@ -238,7 +239,7 @@ sub download_dbnsfp {
             pattern      => q{^#chr},
         }
     );
-    print {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
+    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
 
     ## If not DOT in column 8
     awk(
@@ -247,17 +248,17 @@ sub download_dbnsfp {
             statement  => q{$8 != "."},
         }
     );
-    print {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
+    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
 
 ## Sort nummerical on column 8 and 9
     gnu_sort(
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $DASH,
-            keys_ref    => [qw{ 8,8 9,9n }],
+            keys_ref    => [ q{8,8}, q{9,9n} ],
         }
     );
-    print {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
+    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
 
     ## Concatenate header and input stream (DASH)
     gnu_cat(

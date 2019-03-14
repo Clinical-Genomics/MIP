@@ -93,6 +93,7 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::1000g_sites qw{ download_1000g_sites };
     use MIP::Recipes::Download::1000g_snps qw{ download_1000g_snps };
     use MIP::Recipes::Download::Clinvar qw{ download_clinvar };
+    use MIP::Recipes::Download::Dbnsfp qw{ download_dbnsfp };
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
     use MIP::Recipes::Download::Hapmap qw{ download_hapmap };
@@ -114,6 +115,7 @@ sub pipeline_download_rd_dna {
         q{1000g_sites}         => \&download_1000g_sites,
         q{1000g_snps}          => \&download_1000g_snps,
         clinvar                => \&download_clinvar,
+        dbnsfp                 => \&download_dbnsfp,
         dbsnp                  => \&download_dbsnp,
         human_reference        => \&download_human_reference,
         hapmap                 => \&download_hapmap,

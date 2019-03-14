@@ -397,7 +397,7 @@ q{Will write sbatch install instructions to for sbatch enabled references to ind
             {
                 active_parameter_href => \%active_parameter,
                 FILEHANDLE            => $FILEHANDLE,
-                temp_directory        => $temp_dir,
+                temp_directory        => $active_parameter{temp_directory},
             }
         );
     }

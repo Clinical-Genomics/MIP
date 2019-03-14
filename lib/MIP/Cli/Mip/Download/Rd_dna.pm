@@ -95,6 +95,9 @@ sub run {
         }
     );
 
+## Set mip pipeline download type
+    $active_parameter{download_pipeline_type} = q{rd_dna};
+
     ## Start generating the installation script
     mip_download(
         {

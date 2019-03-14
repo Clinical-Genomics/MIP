@@ -1656,7 +1656,7 @@ sub _set_temp_directory {
     if ( exists $active_parameter_href->{download_pipeline_type} ) {
 
         $active_parameter_href->{temp_directory} =
-          catfile( cwd(), qw{mip_download $SLURM_JOB_ID} );
+          catfile( cwd(), qw{ mip_download $SLURM_JOB_ID } );
         return;
     }
 

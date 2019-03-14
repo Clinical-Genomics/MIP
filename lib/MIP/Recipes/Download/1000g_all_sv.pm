@@ -164,6 +164,8 @@ sub download_1000g_all_sv {
             process_time          => $time,
             recipe_directory      => $recipe_name . $UNDERSCORE . $reference_version,
             recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
+            source_environment_commands_ref => \@source_environment_cmds,
         }
     );
 
