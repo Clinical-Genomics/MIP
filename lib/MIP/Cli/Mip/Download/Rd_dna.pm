@@ -26,7 +26,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Download qw{ mip_download };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 extends(qw{ MIP::Cli::Mip::Download });
 
@@ -95,9 +95,6 @@ sub run {
         }
     );
 
-## Set mip pipeline download type
-    $active_parameter{download_pipeline_type} = q{rd_dna};
-
     ## Start generating the installation script
     mip_download(
         {
@@ -114,6 +111,14 @@ sub _build_usage {
 ## Returns  :
 ## Arguments:
 
+## Special case:Set download_pipeline_type. Cannot be changed from cmd or config
+    has(
+        q{download_pipeline_type} => (
+            default => q{rd_dna},
+            is      => q{rw},
+            isa     => Str,
+        )
+    );
     return;
 }
 

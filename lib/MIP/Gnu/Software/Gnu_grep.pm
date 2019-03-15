@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_grep };
@@ -39,10 +39,10 @@ sub gnu_grep {
 ##         : $filter_file_path       => Obtain patterns from file, one per line
 ##         : $infile_path            => Infile path
 ##         : $invert_match           => Invert the sense of matching, to select non-matching lines
-##         : $outfile_path           => Outfile path
 ##         : $pattern                => Pattern to match
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
+##         : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -50,10 +50,10 @@ sub gnu_grep {
     my $FILEHANDLE;
     my $filter_file_path;
     my $infile_path;
-    my $outfile_path;
     my $pattern;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdoutfile_path;
 
     ## Default(s)
     my $invert_match;
@@ -71,11 +71,14 @@ sub gnu_grep {
             store       => \$invert_match,
             strict_type => 1,
         },
-        outfile_path    => { store => \$outfile_path,    strict_type => 1, },
         pattern         => { store => \$pattern,         strict_type => 1, },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -99,17 +102,13 @@ sub gnu_grep {
 
         push @commands, $infile_path;
     }
-    ## Outfile
-    if ($outfile_path) {
-
-        push @commands, q{>} . $SPACE . $outfile_path;
-    }
 
     push @commands,
       unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 

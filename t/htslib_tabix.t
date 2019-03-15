@@ -20,11 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -125,7 +122,10 @@ my %specific_argument = (
         input           => 1,
         expected_output => q{--print-header},
     },
-
+    zero_based => {
+        input           => 1,
+        expected_output => q{--zero-based},
+    },
 );
 
 ## Coderef - enables generalized use of generate call

@@ -28,12 +28,13 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cat
       gnu_chmod
       gnu_cp
+      gnu_cut
       gnu_echo
       gnu_head
       gnu_ln
@@ -47,6 +48,7 @@ BEGIN {
       gnu_split
       gnu_tail
       gnu_touch
+      gnu_uniq
     };
 }
 
@@ -56,7 +58,6 @@ sub gnu_cat {
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $infile_paths_ref       => Infile paths {REF}
-##          : $outfile_path           => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -66,7 +67,6 @@ sub gnu_cat {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_paths_ref;
-    my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -80,10 +80,6 @@ sub gnu_cat {
             defined     => 1,
             required    => 1,
             store       => \$infile_paths_ref,
-            strict_type => 1,
-        },
-        outfile_path => {
-            store       => \$outfile_path,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -103,15 +99,10 @@ sub gnu_cat {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{cat};
+    my @commands = qw{ cat };
 
     ## Infiles
     push @commands, join $SPACE, @{$infile_paths_ref};
-
-    ## Outfile
-    if ($outfile_path) {
-        push @commands, q{>} . $SPACE . $outfile_path;
-    }
 
     push @commands,
       unix_standard_streams(
@@ -185,7 +176,7 @@ sub gnu_chmod {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = q{chmod};
+    my @commands = qw{ chmod };
 
     ## Add the permission
     push @commands, $permission;
@@ -301,7 +292,7 @@ sub gnu_cp {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{cp};
+    my @commands = qw{ cp };
 
     ## Preserve the specified attributes
     if ( @{$preserve_attributes_ref} ) {
@@ -344,6 +335,87 @@ sub gnu_cp {
         }
     );
 
+    return @commands;
+}
+
+sub gnu_cut {
+
+## Function : Perl wrapper for writing cut command to already open $FILEHANDLE or return commands array. Based on cut 8.4
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile paths {REF}
+##          : $list                   => List of specified fields
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append to stderrinfo to file
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $list;
+    my $infile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        list => {
+            store       => \$list,
+            strict_type => 1,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ cut };
+
+    if ($list) {
+
+        push @commands, q{-f} . $SPACE . $list;
+    }
+
+    ## Infiles
+    push @commands, $infile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+        }
+    );
     return @commands;
 }
 
@@ -1523,6 +1595,76 @@ sub gnu_touch {
             FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
+        }
+    );
+    return @commands;
+}
+
+sub gnu_uniq {
+
+## Function : Perl wrapper for writing uniq command to already open $FILEHANDLE or return commands array. Based on uniq 8.4
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile paths {REF}
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append to stderrinfo to file
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ uniq };
+
+    ## Infiles
+    push @commands, $infile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;

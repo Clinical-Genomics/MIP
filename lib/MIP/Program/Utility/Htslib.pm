@@ -157,6 +157,7 @@ sub htslib_tabix {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $with_header            => Include header
+##          : $zero_based             => Coordinates are zero-based
 
     my ($arg_href) = @_;
 
@@ -175,6 +176,7 @@ sub htslib_tabix {
     my $preset;
     my $sequence;
     my $with_header;
+    my $zero_based;
 
     my $tmpl = {
         begin => {
@@ -229,6 +231,12 @@ sub htslib_tabix {
             store       => \$with_header,
             strict_type => 1,
         },
+        zero_based => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$zero_based,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -252,6 +260,10 @@ sub htslib_tabix {
         push @commands, q{--print-header};
     }
 
+    if ($zero_based) {
+
+        push @commands, q{--zero-based};
+    }
     if ($begin) {
 
         push @commands, q{--begin} . $SPACE . $begin;

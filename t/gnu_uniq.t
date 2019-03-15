@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Gnu::Software::Gnu_grep} => [qw{ gnu_grep }],
-        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
+        q{MIP::Gnu::Coreutils} => [qw{ gnu_uniq }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
+use MIP::Gnu::Coreutils qw{ gnu_uniq };
 
-diag(   q{Test gnu_grep from Gnu_grep.pm v}
-      . $MIP::Gnu::Software::Gnu_grep::VERSION
+diag(   q{Test gnu_uniq from Coreutils.pm v}
+      . $MIP::Gnu::Coreutils::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,11 +59,8 @@ diag(   q{Test gnu_grep from Gnu_grep.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
-use MIP::Test::Commands qw(test_function);
-
 ## Base arguments
-my @function_base_commands = qw{ grep };
+my @function_base_commands = qw{ uniq };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -84,32 +81,29 @@ my %base_argument = (
     },
 );
 
-## Specific arguments
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
+my %required_argument = (
+    infile_path => {
+        input           => q{an_infile.txt},
+        expected_output => q{an_infile.txt},
+    },
+);
+
 my %specific_argument = (
     infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
-    },
-    invert_match => {
-        input           => 1,
-        expected_output => q{--invert-match},
-    },
-    filter_file_path => {
-        input           => q{test_file},
-        expected_output => q{--file=test_file},
-    },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+        input           => q{an_infile.txt},
+        expected_output => q{an_infile.txt},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_grep;
+my $module_function_cref = \&gnu_uniq;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
+ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
 
     my @commands = test_function(
@@ -118,6 +112,7 @@ foreach my $argument_href (@arguments) {
             do_test_base_command       => 1,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

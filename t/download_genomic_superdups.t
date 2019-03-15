@@ -41,17 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Download::Dbnsfp} => [qw{ download_dbnsfp }],
+        q{MIP::Recipes::Download::Genomic_superdups} =>
+          [qw{ download_genomic_superdups }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Download::Dbnsfp qw{ download_dbnsfp };
+use MIP::Recipes::Download::Genomic_superdups qw{ download_genomic_superdups };
 
-diag(   q{Test download_dbnsfp from Dbnsfp.pm v}
-      . $MIP::Recipes::Download::Dbnsfp::VERSION
+diag(   q{Test download_genomic_superdups from Genomic_superdups.pm v}
+      . $MIP::Recipes::Download::Genomic_superdups::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -63,10 +64,10 @@ my $test_dir  = File::Temp->newdir();
 my $file_path = catfile( $test_dir, q{recipe_script.sh} );
 my $log       = test_log( { log_name => uc q{mip_download}, no_screen => 1, } );
 
-## Given download parameters for recipe when genom build 37
+## Given download parameters for recipe
 my $genome_version    = q{grch37};
-my $recipe_name       = q{dbnsfp};
-my $reference_version = q{3.5a};
+my $recipe_name       = q{genomic_superdups};
+my $reference_version = q{20181009};
 my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -84,7 +85,7 @@ my $reference_href =
 
 my %job_id;
 
-my $is_ok = download_dbnsfp(
+my $is_ok = download_genomic_superdups(
     {
         active_parameter_href => \%active_parameter,
         genome_version        => $genome_version,
@@ -98,34 +99,6 @@ my $is_ok = download_dbnsfp(
 );
 
 ## Then
-ok( $is_ok,
-        q{ Executed download recipe }
-      . $recipe_name
-      . q{ for genome build }
-      . $genome_version );
-
-## Given download parameters for recipe when genom build 38
-$genome_version    = q{grch38};
-$reference_version = q{3.2a};
-
-$is_ok = download_dbnsfp(
-    {
-        active_parameter_href => \%active_parameter,
-        genome_version        => $genome_version,
-        job_id_href           => \%job_id,
-        profile_base_command  => $slurm_mock_cmd,
-        recipe_name           => $recipe_name,
-        reference_href        => $reference_href,
-        reference_version     => $reference_version,
-        temp_directory        => catfile($test_dir),
-    }
-);
-
-## Then
-ok( $is_ok,
-        q{ Executed download recipe }
-      . $recipe_name
-      . q{ for genome build }
-      . $genome_version );
+ok( $is_ok, q{ Executed download recipe } . $recipe_name );
 
 done_testing();
