@@ -1,6 +1,13 @@
 ---
 ## Version: 1.0.0
 #Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
+dbsnp:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 download_pipeline_type:
   associated_recipe:
    - mip
@@ -14,19 +21,30 @@ human_reference:
   data_type: SCALAR
   default: 1
   type: recipe
+mills_and_1000g_indels:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 recipe_core_number:
   associated_recipe:
    - mip
   data_type: HASH
   default:
+    dbsnp: 1
     human_reference: 1
+    mills_and_1000g_indels: 1
   type: mip
 recipe_time:
   associated_recipe:
    - mip
   data_type: HASH
   default:
+    dbsnp: 1
     human_reference: 1
+    mills_and_1000g_indels: 1
   type: mip
 reference_feature:
   associated_recipe:

@@ -85,10 +85,12 @@ sub pipeline_download_rd_rna {
 
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
-    use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
-    use MIP::Recipes::Download::Get_reference qw{ get_reference };
-    use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
     use MIP::Recipes::Download::1000g_indels qw{ download_1000g_indels };
+    use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
+    use MIP::Recipes::Download::Ctat_resource_lib qw{ download_ctat_resource_lib };
+    use MIP::Recipes::Download::Get_reference qw{ get_reference };
+    use MIP::Recipes::Download::Gencode_annotation qw{ download_gencode_annotation };
+    use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
     use MIP::Recipes::Download::Mills_and_1000g_indels
       qw{ download_mills_and_1000g_indels };
 
@@ -102,6 +104,8 @@ sub pipeline_download_rd_rna {
     my %download_recipe = (
         q{1000g_indels}        => \&download_1000g_indels,
         dbsnp                  => \&download_dbsnp,
+        ctat_resource_lib      => \&download_ctat_resource_lib,
+        gencode_annotation     => \&download_gencode_annotation,
         human_reference        => \&download_human_reference,
         mills_and_1000g_indels => \&download_mills_and_1000g_indels,
     );
