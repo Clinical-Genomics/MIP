@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -97,6 +97,9 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
     use MIP::Recipes::Download::Hapmap qw{ download_hapmap };
+    use MIP::Recipes::Download::Genomic_superdups qw{ download_genomic_superdups };
+    use MIP::Recipes::Download::Giab qw{ download_giab };
+    use MIP::Recipes::Download::Gnomad qw{ download_gnomad };
     use MIP::Recipes::Download::Mills_and_1000g_indels
       qw{ download_mills_and_1000g_indels };
 
@@ -119,6 +122,9 @@ sub pipeline_download_rd_dna {
         dbsnp                  => \&download_dbsnp,
         human_reference        => \&download_human_reference,
         hapmap                 => \&download_hapmap,
+        genomic_superdups      => \&download_genomic_superdups,
+        giab                   => \&download_giab,
+        gnomad                 => \&download_gnomad,
         mills_and_1000g_indels => \&download_mills_and_1000g_indels,
     );
 
@@ -205,7 +211,7 @@ sub pipeline_download_rd_dna {
         }
     }
 
-    ## Move back to original
+    ## Move back to original dir
     gnu_cd(
         {
             directory_path => $pwd,

@@ -1,4 +1,4 @@
-package MIP::Recipes::Download::Genomic_superdups;
+package MIP::Recipes::Download::Gnomad;
 
 use 5.026;
 use Carp;
@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $DASH $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -29,13 +29,13 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ download_genomic_superdups };
+    our @EXPORT_OK = qw{ download_gnomad };
 
 }
 
-sub download_genomic_superdups {
+sub download_gnomad {
 
-## Function : Download genomic_superdups
+## Function : Download gnomad
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
 ##          : $genome_version        => Human genome version
@@ -123,10 +123,6 @@ sub download_genomic_superdups {
 
     use Cwd;
     use MIP::Get::Parameter qw{ get_recipe_parameters };
-    use MIP::Gnu::Coreutils qw{ gnu_cut gnu_sort gnu_uniq };
-    use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
-    use MIP::Parse::File qw{ parse_file_suffix };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -187,93 +183,6 @@ sub download_genomic_superdups {
         }
     );
 
-    ## Parse file suffix in filename.suffix(.gz).
-    ## Removes suffix if matching else return undef
-    my $outfile_path_no_suffix = parse_file_suffix(
-        {
-            file_name   => $reference_href->{outfile},
-            file_suffix => $DOT . q{gz},
-        }
-    );
-
-    ## Build reformated outfile
-    my $reformated_outfile = join $UNDERSCORE,
-      (
-        $genome_version, $recipe_name, q{reformated}, q{-} . $reference_version . q{-.bed}
-      );
-    my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
-
-## Remove chr prefix in file
-    _remove_chr_prefix(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_path_no_suffix,
-        }
-    );
-
-    ## Skip header line starting with "#chr"
-    gnu_grep(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $DASH,
-            invert_match => 1,
-            pattern      => q{^#chr},
-        }
-    );
-    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
-
-    ## Sort nummerical on column 2 and 3
-    gnu_sort(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $DASH,
-            keys_ref    => [ q{2,2}, q{3,3n} ],
-        }
-    );
-    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
-
-    ## Keep chr, start, stop and fraction match
-    gnu_cut(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $DASH,
-            list        => q{2-4,27},
-        }
-    );
-    say {$FILEHANDLE} $PIPE . $SPACE . $BACKWARD_SLASH;
-
-    ## Keep uniq entries only
-    gnu_uniq(
-        {
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $DASH,
-            stdoutfile_path => $reformated_outfile_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    say {$FILEHANDLE} q{## Compress and index file};
-    ## Compress file
-    htslib_bgzip(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $reformated_outfile_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Index file using tabix
-    htslib_tabix(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            force       => 1,
-            infile_path => $reformated_outfile_path . q{.gz},
-            preset      => q{bed},
-            zero_based  => 1,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
@@ -290,44 +199,6 @@ sub download_genomic_superdups {
         );
     }
     return 1;
-}
-
-sub _remove_chr_prefix {
-
-## Function : Remove chr prefix in file
-## Returns  :
-## Arguments: $FILEHANDLE  => Filehandle to write to
-##          : $infile_path => Infile path
-
-    my ($arg_href) = @_;
-
-## Flatten argument(s)
-    my $FILEHANDLE;
-    my $infile_path;
-
-    my $tmpl = {
-        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
-        infile_path => {
-            default     => 1,
-            required    => 1,
-            store       => \$infile_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-## Remove chr prefix
-    # Execute perl and modify file inline
-    print {$FILEHANDLE} q{perl -i -p -e ' };
-
-    # Unless header - remove prefix
-    print {$FILEHANDLE} q?if($_!~/^#/) {s/chr(.+)/$1/g}' ?;
-
-    # Infile to modify
-    print {$FILEHANDLE} $infile_path;
-
-    return;
 }
 
 1;

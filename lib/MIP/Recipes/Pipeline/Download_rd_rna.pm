@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_rna };
@@ -64,7 +64,7 @@ sub pipeline_download_rd_rna {
         FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
         quiet      => {
             allow       => [ undef, 0, 1 ],
-            default     => 1,
+            default     => 0,
             store       => \$quiet,
             strict_type => 1,
         },
@@ -85,8 +85,12 @@ sub pipeline_download_rd_rna {
 
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
+    use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
+    use MIP::Recipes::Download::1000g_indels qw{ download_1000g_indels };
+    use MIP::Recipes::Download::Mills_and_1000g_indels
+      qw{ download_mills_and_1000g_indels };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
@@ -95,7 +99,12 @@ sub pipeline_download_rd_rna {
 
     ### Download recipes
     ## Create code reference table for download recipes
-    my %download_recipe = ( human_reference => \&download_human_reference, );
+    my %download_recipe = (
+        q{1000g_indels}        => \&download_1000g_indels,
+        dbsnp                  => \&download_dbsnp,
+        human_reference        => \&download_human_reference,
+        mills_and_1000g_indels => \&download_mills_and_1000g_indels,
+    );
 
     # Storing job_ids from SLURM
     my %job_id;
@@ -179,7 +188,7 @@ sub pipeline_download_rd_rna {
         }
     }
 
-    ## Move back to original
+    ## Move back to original dir
     gnu_cd(
         {
             directory_path => $pwd,

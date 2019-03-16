@@ -30,6 +30,12 @@ BEGIN {
     our @EXPORT_OK = qw{ get_reference };
 }
 
+## Constants
+Readonly my $READ_TIMEOUT_SEC => 20;
+Readonly my $TIMEOUT_SEC      => 20;
+Readonly my $DOWNLOAD_TRIES   => 12;
+Readonly my $WAIT_RETRY_SEC   => 300;
+
 sub get_reference {
 
 ## Function : Write get reference recipe (download, decompress and validate)
@@ -115,11 +121,17 @@ sub get_reference {
 
         wget(
             {
-                FILEHANDLE   => $FILEHANDLE,
-                outfile_path => $outfile_path,
-                quiet        => $quiet,
-                url          => $url,
-                verbose      => $verbose,
+                continue          => 1,
+                FILEHANDLE        => $FILEHANDLE,
+                outfile_path      => $outfile_path,
+                read_timeout      => $READ_TIMEOUT_SEC,
+                retry_connrefused => 1,
+                timeout           => $TIMEOUT_SEC,
+                tries             => $DOWNLOAD_TRIES,
+                wait_retry        => $WAIT_RETRY_SEC,
+                quiet             => $quiet,
+                url               => $url,
+                verbose           => $verbose,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
