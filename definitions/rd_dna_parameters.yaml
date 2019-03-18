@@ -150,7 +150,6 @@ recipe_core_number:
     analysisrunstatus: 1
     bcftools_mpileup: 16
     bwa_mem: 16
-    cadd_ar: 16
     chanjo_sexcheck: 1
     cnvnator_ar: 16
     delly_call: 36
@@ -163,26 +162,28 @@ recipe_core_number:
     frequency_filter: 16
     gatk_baserecalibration: 16
     gatk_combinevariantcallsets: 1
-    gatk_genotypegvcfs: 2
-    gatk_gathervcfs: 2
+    gatk_genotypegvcfs: 1
+    gatk_gathervcfs: 1
     gatk_haplotypecaller: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
-    gatk_variantrecalibration: 5
+    gatk_variantrecalibration: 1
     gzip_fastq: 0
     manta: 36
     markduplicates: 16
     multiqc_ar: 1
     peddy_ar: 4
-    picardtools_collecthsmetrics: 2
-    picardtools_collectmultiplemetrics: 2
+    picardtools_collecthsmetrics: 1
+    picardtools_collectmultiplemetrics: 1
     picardtools_mergesamfiles: 16
     plink: 1
     qccollect_ar: 1
+    rhocall_ar: 15
     rtg_vcfeval: 1
     sacct: 1
-    sambamba_depth: 2
+    sambamba_depth: 1
     samtools_subsample_mt: 1
+    snpeff: 15
     split_fastq_file: 4
     sv_annotate: 1
     sv_combinevariantcallsets: 1
@@ -192,6 +193,30 @@ recipe_core_number:
     sv_vcfparser: 16
     variant_integrity_ar: 1
     vcf2cytosure_ar: 0
+    vt_ar: 15
+  type: mip
+## Memory per parallel process/core
+recipe_memory:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  default:
+    cadd_ar: 4
+    chanjo_sexcheck: 2
+    delly_reformat: 3
+    expansionhunter: 2
+    gatk_gathervcfs: 7
+    gatk_genotypegvcfs: 12
+    gatk_variantrecalibration: 30
+    picardtools_collecthsmetrics: 8
+    picardtools_collectmultiplemetrics: 8
+    rhocall_ar: 2
+    sambamba_depth: 10
+    samtools_subsample_mt: 2
+    split_fastq_file: 2
+    tiddit: 8
+    vcf2cytosure_ar: 2
+    varianteffectpredictor: 4
   type: mip
 recipe_time:
   associated_recipe:

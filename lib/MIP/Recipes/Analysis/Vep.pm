@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -150,9 +150,9 @@ sub analysis_vep {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
@@ -193,13 +193,14 @@ sub analysis_vep {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
     my $xargs_file_path_prefix;
 
     ## Set and get the io files per chain, id and stream
@@ -234,13 +235,21 @@ sub analysis_vep {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
-            recipe_core_number =>
-              $active_parameter_href->{recipe_core_number}{$recipe_name},
+            recipe_core_number   => $core_number,
         }
     );
 
     # Adjust for the number of forks vep forks
-    $core_number = floor( $core_number / $VEP_FORK_NUMBER );
+    my $parallel_processes = floor( $core_number / $VEP_FORK_NUMBER );
+
+    ## Update memory depending on how many cores that are being used
+    my $memory_allocation = update_memory_allocation(
+        {
+            node_ram_memory           => $active_parameter_href->{node_ram_memory},
+            parallel_processes        => $parallel_processes,
+            process_memory_allocation => $recipe_resource{memory},
+        }
+    );
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -251,10 +260,11 @@ sub analysis_vep {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env},
             temp_directory                  => $temp_directory,
         }
     );
@@ -274,7 +284,7 @@ sub analysis_vep {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $parallel_processes,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
@@ -540,9 +550,9 @@ sub analysis_vep_sv_wes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
@@ -584,13 +594,15 @@ sub analysis_vep_sv_wes {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
+
     my $xargs_file_path_prefix;
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -623,8 +635,16 @@ sub analysis_vep_sv_wes {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => 1,
-            recipe_core_number =>
-              $active_parameter_href->{recipe_core_number}{$recipe_name},
+            recipe_core_number   => $core_number,
+        }
+    );
+
+    ## Update memory depending on how many cores that are being used
+    my $memory_allocation = update_memory_allocation(
+        {
+            node_ram_memory           => $active_parameter_href->{node_ram_memory},
+            parallel_processes        => $core_number,
+            process_memory_allocation => $recipe_resource{memory},
         }
     );
 
@@ -637,10 +657,11 @@ sub analysis_vep_sv_wes {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env},
             temp_directory                  => $temp_directory,
         }
     );
@@ -883,9 +904,9 @@ sub analysis_vep_sv_wgs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
@@ -929,8 +950,8 @@ sub analysis_vep_sv_wgs {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -967,12 +988,23 @@ sub analysis_vep_sv_wgs {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
-    $core_number = get_core_number(
+    my $core_number = get_core_number(
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs_size_ordered} },
-            recipe_core_number =>
-              $active_parameter_href->{recipe_core_number}{$recipe_name},
+            recipe_core_number   => $recipe_resource{core_number},
+        }
+    );
+
+    # Adjust for the number of forks vep forks
+    my $parallel_processes = floor( $core_number / $VEP_FORK_NUMBER );
+
+    ## Update memory depending on how many cores that are being used
+    my $memory_allocation = update_memory_allocation(
+        {
+            node_ram_memory           => $active_parameter_href->{node_ram_memory},
+            parallel_processes        => $parallel_processes,
+            process_memory_allocation => $recipe_resource{memory},
         }
     );
 
@@ -985,10 +1017,11 @@ sub analysis_vep_sv_wgs {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env},
             temp_directory                  => $temp_directory,
         }
     );
@@ -1063,7 +1096,7 @@ sub analysis_vep_sv_wgs {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $parallel_processes,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
@@ -1285,9 +1318,8 @@ sub analysis_vep_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
@@ -1324,13 +1356,14 @@ sub analysis_vep_rna {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
 
     ## Set and get the io files per chain, id and stream
     %io = parse_io_outfiles(
@@ -1353,32 +1386,20 @@ sub analysis_vep_rna {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    $core_number = get_core_number(
-        {
-            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
-            modifier_core_number => scalar @{ $file_info_href->{contigs} },
-            recipe_core_number =>
-              $active_parameter_href->{recipe_core_number}{$recipe_name},
-        }
-    );
-
-    # Adjust for the number of forks vep forks
-    $core_number = floor( $core_number / $VEP_FORK_NUMBER );
-
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env},
         }
     );
 

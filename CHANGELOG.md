@@ -33,6 +33,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added switch to add all research variants to clinical file for MT. Required to display all MT variants in Scout clinical view as they are all deemed clinically relevant.
 - Added gatk GatherBqsrReports to gather bqsr reports after parallelization
 - Renamed flag "gatk_calculategenotypeposteriors_support_set" to "gatk_calculate_genotype_call_set"
+- Added recipe_memory parameter to parameter definitions and all recipes
 
 **New Pipeline**
 - rd_dna

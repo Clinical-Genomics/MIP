@@ -120,6 +120,16 @@ sub _build_usage {
     );
 
     option(
+        q{core_ram_memory} => (
+            cmd_aliases   => [qw{ crm }],
+            cmd_tags      => [q{Default: 5}],
+            documentation => q{RAM memory size of the core(s) in GigaBytes},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
         q{node_ram_memory} => (
             cmd_aliases   => [qw{ nrm }],
             cmd_tags      => [q{Default: 128}],

@@ -45,7 +45,7 @@ use MIP::Check::Parameter qw{ check_allowed_temp_directory
 use MIP::Check::Path qw{ check_executable_in_path check_parameter_files };
 use MIP::Check::Reference qw{ check_human_genome_file_endings };
 use MIP::Constants qw{ $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $TAB };
-use MIP::Cluster qw{ check_max_core_number };
+use MIP::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
 use MIP::File::Format::Mip qw{ build_file_prefix_tag };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file detect_founders detect_sample_id_gender detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
@@ -74,7 +74,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -468,7 +468,7 @@ sub mip_analyse {
     );
 
 ## Parameters that have keys as MIP recipe names
-    my @parameter_keys_to_check = (qw{ recipe_time recipe_core_number });
+    my @parameter_keys_to_check = (qw{ recipe_time recipe_core_number recipe_memory });
   PARAMETER_NAME:
     foreach my $parameter_name (@parameter_keys_to_check) {
 
@@ -534,7 +534,19 @@ sub mip_analyse {
         );
     }
 
-## Check programs in path, and executable
+    ## Check that the recipe memory do not exceed the maximum per node
+    foreach my $recipe_name ( keys %{ $active_parameter{recipe_memory} } ) {
+
+        check_recipe_memory_allocation(
+            {
+                node_ram_memory => $active_parameter{node_ram_memory},
+                recipe_memory_allocation =>
+                  $active_parameter{recipe_memory}{$recipe_name},
+            }
+        );
+    }
+
+    ## Check programs in path, and executable
     check_executable_in_path(
         {
             active_parameter_href => \%active_parameter,

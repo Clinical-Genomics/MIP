@@ -52,6 +52,12 @@ mip:
   data_type: SCALAR
   default: 1
   type: mip
+core_ram_memory:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 5
+  type: mip
 node_ram_memory:
   associated_recipe:
    - mip

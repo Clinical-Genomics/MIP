@@ -17,24 +17,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $NEWLINE $SPACE $TAB $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_analysisrunstatus };
 
 }
-
-## Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $TAB        => qq{\t};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_analysisrunstatus {
 
@@ -129,7 +126,7 @@ sub analysis_analysisrunstatus {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_path_entries };
-    use MIP::Get::Parameter qw{ get_recipe_parameters };
+    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -140,8 +137,8 @@ sub analysis_analysisrunstatus {
     my $recipe_mode = $active_parameter_href->{$recipe_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$recipe_name}{chain};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $job_id_chain    = $parameter_href->{$recipe_name}{chain};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -155,15 +152,17 @@ sub analysis_analysisrunstatus {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $case_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $time,
-            recipe_directory      => $recipe_name,
-            recipe_name           => $recipe_name,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $recipe_resource{core_number},
+            directory_id                    => $case_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            memory_allocation               => $recipe_resource{memory_allocation},
+            process_time                    => $recipe_resource{time},
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe_resource{load_env},
         }
     );
 

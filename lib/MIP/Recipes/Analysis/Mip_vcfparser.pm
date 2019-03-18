@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -149,10 +149,10 @@ sub analysis_mip_vcfparser {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -189,8 +189,8 @@ sub analysis_mip_vcfparser {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -246,11 +246,19 @@ sub analysis_mip_vcfparser {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
-    $core_number = get_core_number(
+    my $core_number = get_core_number(
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs} },
-            recipe_core_number   => $core_number,
+            recipe_core_number   => $recipe_resource{core_number},
+        }
+    );
+    ## Update memory depending on how many cores that are being used
+    my $memory_allocation = update_memory_allocation(
+        {
+            node_ram_memory           => $active_parameter_href->{node_ram_memory},
+            parallel_processes        => $core_number,
+            process_memory_allocation => $recipe_resource{memory},
         }
     );
 
@@ -263,10 +271,11 @@ sub analysis_mip_vcfparser {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env},
             temp_directory                  => $temp_directory,
         }
     );
@@ -545,10 +554,10 @@ sub analysis_vcfparser_sv_wes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
@@ -588,8 +597,8 @@ sub analysis_vcfparser_sv_wes {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -602,15 +611,9 @@ sub analysis_vcfparser_sv_wes {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    $core_number = get_core_number(
-        {
-            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
-            modifier_core_number => 1,
-            recipe_core_number =>
-              $active_parameter_href->{recipe_core_number}{$recipe_name},
-        }
-    );
+    ## Always one file for wes
+    Readonly my $CORE_NUMBER       => 1;
+    Readonly my $MEMORY_ALLOCATION => 1;
 
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
@@ -646,15 +649,16 @@ sub analysis_vcfparser_sv_wes {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $CORE_NUMBER,
             directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $MEMORY_ALLOCATION,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env},
             temp_directory                  => $temp_directory,
         }
     );
@@ -875,7 +879,7 @@ sub analysis_vcfparser_sv_wgs {
     use MIP::Check::Hash qw{ check_element_exist_hash_of_array };
     use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -915,8 +919,8 @@ sub analysis_vcfparser_sv_wgs {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -966,15 +970,16 @@ sub analysis_vcfparser_sv_wgs {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env},
             temp_directory                  => $temp_directory,
         }
     );
@@ -987,7 +992,7 @@ sub analysis_vcfparser_sv_wgs {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $core_number,
+            core_number        => $recipe_resource{core_number},
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,

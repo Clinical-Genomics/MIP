@@ -18,25 +18,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $EMPTY_STR $NEWLINE $SPACE $UNDERSCORE };
+
 BEGIN {
 
     use base qw{ Exporter };
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ setup_script write_return_to_environment write_return_to_conda_environment write_source_environment_command };
 }
-
-## Constant
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub setup_script {
 
@@ -50,6 +46,7 @@ sub setup_script {
 ##          : $FILEHANDLE                      => FILEHANDLE to write to
 ##          : $job_id_href                     => The job_id hash {REF}
 ##          : $log                             => Log object
+##          : $memory_allocation               => Memory allocation
 ##          : $outdata_dir                     => MIP outdata directory {Optional}
 ##          : $outscript_dir                   => MIP outscript directory {Optional}
 ##          : $process_time                    => Allowed process time (Hours) {Optional}
@@ -70,6 +67,7 @@ sub setup_script {
     my $directory_id;
     my $FILEHANDLE;
     my $job_id_href;
+    my $memory_allocation;
     my $log;
     my $recipe_directory;
     my $recipe_name;
@@ -140,7 +138,12 @@ sub setup_script {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        log         => { defined => 1, required => 1, store => \$log, },
+        log               => { defined => 1, required => 1, store => \$log, },
+        memory_allocation => {
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
+            store       => \$memory_allocation,
+            strict_type => 1,
+        },
         outdata_dir => {
             default     => $arg_href->{active_parameter_href}{outdata_dir},
             store       => \$outdata_dir,
@@ -228,7 +231,7 @@ sub setup_script {
     my $submission_profile = $active_parameter_href->{submission_profile};
 
     my %submission_method = ( slurm => q{sbatch}, );
-    my $script_type = $submission_method{$submission_profile};
+    my $script_type       = $submission_method{$submission_profile};
 
     ### Script names and directory creation
     ## File
@@ -325,6 +328,7 @@ sub setup_script {
                 email_types_ref          => $email_types_ref,
                 FILEHANDLE               => $FILEHANDLE,
                 job_name                 => $job_name,
+                memory_allocation        => $memory_allocation,
                 process_time             => $process_time . q{:00:00},
                 project_id               => $active_parameter_href->{project_id},
                 slurm_quality_of_service => $slurm_quality_of_service,

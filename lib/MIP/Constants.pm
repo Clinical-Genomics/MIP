@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
 
@@ -41,6 +41,7 @@ BEGIN {
       $EMPTY_STR
       $ESCAPE
       $FORWARD_SLASH
+      $LOG
       $MIP_VERSION
       $NEWLINE
       $OPEN_BRACE
@@ -58,6 +59,9 @@ BEGIN {
 ## Set MIP version
 ## Constants
 Readonly our $MIP_VERSION => q{v7.0.1};
+
+## Log
+Readonly our $LOG => q{MIP_ANALYSE};
 
 ## Symbols
 Readonly our $AMPERSAND      => q{&};
@@ -89,6 +93,7 @@ Readonly our $UNDERSCORE     => q{_};
 Readonly our %ANALYSIS => (
     ANNOTATION_DISTANCE    => 5000,
     ANNOTATION_DISTANCE_MT => 0,
+    JAVA_GUEST_OS_MEMORY   => 3,
 );
 
 1;

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -141,7 +141,7 @@ sub analysis_star_fusion {
 
     use MIP::File::Format::Star_fusion qw{ create_star_fusion_sample_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
@@ -181,10 +181,10 @@ sub analysis_star_fusion {
     );
     my $outdir_path =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
-    my $outsample_name = $STAR_FUSION_PREFIX . $recipe_attribute{outfile_suffix};
-    my @file_paths     = catfile( $outdir_path, $outsample_name );
-    my $recipe_mode    = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $outsample_name  = $STAR_FUSION_PREFIX . $recipe_attribute{outfile_suffix};
+    my @file_paths      = catfile( $outdir_path, $outsample_name );
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -213,15 +213,16 @@ sub analysis_star_fusion {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            process_time                    => $time,
-            source_environment_commands_ref => \@source_environment_cmds,
+            process_time                    => $recipe_resource{time},
+            source_environment_commands_ref => $recipe_resource{load_env},
             temp_directory                  => $temp_directory,
         }
     );
@@ -257,7 +258,7 @@ sub analysis_star_fusion {
 
     star_fusion(
         {
-            cpu                   => $core_number,
+            cpu                   => $recipe_resource{core_number},
             examine_coding_effect => 1,
             FILEHANDLE            => $FILEHANDLE,
             genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},

@@ -18,13 +18,16 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -32,10 +35,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
+Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
 
 sub analysis_gatk_splitncigarreads {
 
@@ -155,9 +155,9 @@ sub analysis_gatk_splitncigarreads {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_memory_constrained_core_number };
+    use MIP::Cluster qw{ get_parallel_processes };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -196,12 +196,13 @@ sub analysis_gatk_splitncigarreads {
             recipe_name    => $recipe_name,
         }
     );
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -242,10 +243,11 @@ sub analysis_gatk_splitncigarreads {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env},
             temp_directory                  => $temp_directory,
         }
     );
@@ -270,14 +272,14 @@ sub analysis_gatk_splitncigarreads {
     );
 
     Readonly my $JAVA_MEMORY_ALLOCATION => 12;
+    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
 
     # Constrain parallelization to match available memory
-    my $program_core_number = get_memory_constrained_core_number(
+    my $parallel_processes = get_parallel_processes(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
-            node_ram_memory    => $active_parameter_href->{node_ram_memory},
-            recipe_core_number => $core_number,
+            process_memory_allocation => $process_memory_allocation,
+            recipe_memory_allocation  => $recipe_resource{memory},
+            core_number               => $core_number,
         }
     );
 
@@ -287,7 +289,7 @@ sub analysis_gatk_splitncigarreads {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $program_core_number,
+            core_number        => $parallel_processes,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,

@@ -16,22 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gzip_fastq };
 
 }
-
-## Constants
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
 
 sub analysis_gzip_fastq {
 
@@ -135,7 +134,7 @@ sub analysis_gzip_fastq {
 
     use MIP::Cluster qw{ check_max_core_number update_core_number_to_seq_mode };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Compression::Gzip qw{ gzip };
@@ -171,13 +170,14 @@ sub analysis_gzip_fastq {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
 
     ## Outpaths
     my @outfile_paths =
@@ -200,7 +200,7 @@ sub analysis_gzip_fastq {
 
     ## Adjust according to number of infiles to process
     # One full lane on Hiseq takes approx. 2 h for gzip to process
-    $time = $time * scalar @infile_names;
+    my $time = $recipe_resource{time} * scalar @infile_names;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -237,10 +237,11 @@ sub analysis_gzip_fastq {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
             process_time                    => $time,
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env},
         }
     );
 
