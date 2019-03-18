@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::QC::Sample_info} => [qw{ get_sequence_run_type_is_interleaved }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
+        q{MIP::Sample_info}    => [qw{ get_sequence_run_type_is_interleaved }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::QC::Sample_info qw{ get_sequence_run_type_is_interleaved };
+use MIP::Sample_info qw{ get_sequence_run_type_is_interleaved };
 
 diag(   q{Test get_sequence_run_type_is_interleaved from Sample_info.pm v}
-      . $MIP::QC::Sample_info::VERSION
+      . $MIP::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,12 +62,10 @@ diag(   q{Test get_sequence_run_type_is_interleaved from Sample_info.pm v}
 my $infile_prefix = q{an_infile_prefix};
 my $sample_id     = q{ADM1059A1};
 my %sample_info   = (
-    {
-        sample => {
-            $sample_id => {
-                file => {
-                    $infile_prefix => { sequence_run_type => { interleaved => undef, }, },
-                },
+    sample => {
+        $sample_id => {
+            file => {
+                $infile_prefix => { sequence_run_type => { interleaved => undef, }, },
             },
         },
     },

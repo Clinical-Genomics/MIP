@@ -157,8 +157,7 @@ sub analysis_endvariantannotationblock {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-    use MIP::QC::Sample_info
-      qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:

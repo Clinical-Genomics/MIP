@@ -146,7 +146,7 @@ sub analysis_sambamba_depth {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_depth };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script};
 
     ### PREPROCESSING:

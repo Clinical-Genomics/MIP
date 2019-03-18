@@ -138,7 +138,7 @@ sub analysis_variant_integrity {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Variant_integrity
       qw{ variant_integrity_mendel variant_integrity_father };
-    use MIP::QC::Sample_info qw{ set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:

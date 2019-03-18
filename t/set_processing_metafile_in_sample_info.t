@@ -69,7 +69,7 @@ BEGIN {
     }
 
     ## Modules
-    my @modules = (qw{MIP::QC::Sample_info});
+    my @modules = (qw{MIP::Sample_info});
 
   MODULES:
     for my $module (@modules) {
@@ -78,10 +78,10 @@ BEGIN {
     }
 }
 
-use MIP::QC::Sample_info qw{set_processing_metafile_in_sample_info};
+use MIP::Sample_info qw{set_processing_metafile_in_sample_info};
 
 diag(   q{Test set_processing_metafile_in_sample_info from Sample_info.pm v}
-      . $MIP::QC::Sample_info::VERSION
+      . $MIP::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

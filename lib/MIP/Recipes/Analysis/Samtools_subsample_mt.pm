@@ -144,7 +144,7 @@ sub analysis_samtools_subsample_mt {
     use MIP::Program::Alignment::Samtools
       qw{ samtools_depth samtools_index samtools_view };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:

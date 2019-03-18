@@ -103,7 +103,7 @@ sub parse_fastq_infiles {
     use MIP::Check::Parameter qw{ check_infile_contain_sample_id };
     use MIP::Get::File qw{ get_fastq_file_header_info get_read_length };
     use MIP::Set::File qw{ set_file_compression_features };
-    use MIP::QC::Sample_info qw{ set_infile_info };
+    use MIP::Sample_info qw{ set_infile_info };
 
   SAMPLE_ID:
     for my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
