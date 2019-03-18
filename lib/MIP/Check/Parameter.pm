@@ -1962,7 +1962,7 @@ sub check_salmon_compatibility {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Analysis qw{ get_recipe_chain get_chain_recipes };
-    use MIP::QC::Sample_info qw{ get_sequence_run_type };
+    use MIP::Sample_info qw{ get_sequence_run_type };
     use MIP::Set::Parameter qw{ set_recipe_mode };
 
     ## Check if program is gong to run

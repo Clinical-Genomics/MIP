@@ -147,7 +147,7 @@ sub analysis_bootstrapann {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::BootstrapAnn qw{ bootstrapann };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
 
     ### PREPROCESSING
 

@@ -138,7 +138,7 @@ sub analysis_genebody_coverage {
     use MIP::Program::Qc::Rseqc qw{ rseqc_bam2wig rseqc_genebody_coverage2 };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:

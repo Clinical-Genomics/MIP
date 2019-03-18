@@ -157,7 +157,7 @@ sub analysis_mip_vcfparser {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
-    use MIP::QC::Sample_info qw{ set_gene_panel set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_gene_panel set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -562,8 +562,7 @@ sub analysis_vcfparser_sv_wes {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
-    use MIP::QC::Sample_info
-      qw{ set_most_complete_vcf set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
 
@@ -885,8 +884,7 @@ sub analysis_vcfparser_sv_wgs {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
-    use MIP::QC::Sample_info
-      qw{ set_most_complete_vcf set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
 

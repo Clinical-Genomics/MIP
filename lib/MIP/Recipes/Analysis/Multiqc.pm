@@ -129,7 +129,7 @@ sub analysis_multiqc {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Qc::Multiqc qw{ multiqc };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::QC::Sample_info qw{ set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info };
 
     ### PREPROCESSING:
 

@@ -150,7 +150,7 @@ sub analysis_frequency_filter {
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate genmod_filter };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 

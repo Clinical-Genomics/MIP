@@ -163,7 +163,7 @@ sub analysis_delly_reformat {
     use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:

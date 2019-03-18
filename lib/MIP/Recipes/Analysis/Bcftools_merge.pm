@@ -133,7 +133,7 @@ sub analysis_bcftools_merge {
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_merge bcftools_view_and_index_vcf };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
