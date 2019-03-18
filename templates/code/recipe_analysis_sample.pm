@@ -130,7 +130,7 @@ sub analysis_RECIPE_NAME {
     use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Sample_info
+    use MIP::Sample_info
       qw{ add_recipe_metafile_to_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -163,13 +163,13 @@ sub analysis_RECIPE_NAME {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
     my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
-      );
+    );
 
     %io = (
         %io,

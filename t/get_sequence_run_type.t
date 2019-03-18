@@ -44,17 +44,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::QC::Sample_info} => [qw{ get_sequence_run_type }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
+        q{MIP::Sample_info}    => [qw{ get_sequence_run_type }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::QC::Sample_info qw{ get_sequence_run_type };
+use MIP::Sample_info qw{ get_sequence_run_type };
 
 diag(   q{Test get_sequence_run_type from Sample_info.pm v}
-      . $MIP::QC::Sample_info::VERSION
+      . $MIP::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -110,7 +110,7 @@ trap {
             sample_id        => $sample_id,
             sample_info_href => \%sample_info,
         }
-      )
+    )
 };
 ## Then croak
 is( $trap->leaveby, q{die}, q{Exit if lane info is missing} );

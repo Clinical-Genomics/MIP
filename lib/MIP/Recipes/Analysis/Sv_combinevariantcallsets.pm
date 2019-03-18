@@ -149,7 +149,7 @@ sub analysis_sv_combinevariantcallsets {
       qw{ bcftools_merge bcftools_view bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Vt qw{ vt_decompose };
-    use MIP::QC::Sample_info
+    use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 

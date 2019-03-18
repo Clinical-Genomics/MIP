@@ -162,7 +162,7 @@ sub analysis_markduplicates {
       qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::QC::Sample_info
+    use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
 
     ### PREPROCESSING:
@@ -688,7 +688,7 @@ sub analysis_markduplicates_rio {
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_flagstat sambamba_markdup };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
-    use MIP::QC::Sample_info
+    use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
 

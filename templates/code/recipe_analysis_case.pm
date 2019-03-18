@@ -124,7 +124,7 @@ sub analysis_RECIPE_NAME {
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -154,13 +154,13 @@ sub analysis_RECIPE_NAME {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
     my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
-      );
+    );
 
     ## Set and get the io files per chain, id and stream
     %io = (

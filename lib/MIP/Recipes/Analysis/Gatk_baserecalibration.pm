@@ -163,7 +163,7 @@ sub analysis_gatk_baserecalibration {
     use MIP::Program::Alignment::Gatk
       qw{ gatk_applybqsr gatk_baserecalibrator gatk_gatherbqsrreports };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
-    use MIP::QC::Sample_info
+    use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info set_processing_metafile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -667,7 +667,7 @@ sub analysis_gatk_baserecalibration_rio {
     use MIP::Program::Alignment::Gatk
       qw{ gatk_applybqsr gatk_baserecalibrator gatk_gatherbqsrreports };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
-    use MIP::QC::Sample_info
+    use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
 

@@ -140,7 +140,7 @@ sub analysis_plink {
     use MIP::Program::Variantcalling::Plink
       qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
     use MIP::Program::Variantcalling::Vt qw(vt_uniq);
-    use MIP::QC::Sample_info
+    use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 

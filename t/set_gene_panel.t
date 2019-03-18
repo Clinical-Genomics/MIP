@@ -44,18 +44,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::QC::Sample_info} => [qw{ set_gene_panel }],
-        q{MIP::Test::Fixtures}  => [qw{ test_log test_standard_cli }],
+        q{MIP::Sample_info}    => [qw{ set_gene_panel }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::QC::Sample_info qw{ set_gene_panel };
+use MIP::Sample_info qw{ set_gene_panel };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test set_gene_panel from Sample_info.pm v}
-      . $MIP::QC::Sample_info::VERSION
+      . $MIP::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

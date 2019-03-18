@@ -138,7 +138,7 @@ sub analysis_cadd {
     use MIP::Program::Variantcalling::Cadd qw{ cadd };
     use MIP::Program::Utility::Htslib qw{ htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::QC::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 

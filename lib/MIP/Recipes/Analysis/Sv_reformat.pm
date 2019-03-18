@@ -148,8 +148,7 @@ sub analysis_reformat_sv {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
-    use MIP::QC::Sample_info
-      qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
