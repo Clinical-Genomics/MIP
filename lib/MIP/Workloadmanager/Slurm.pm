@@ -2,23 +2,21 @@ package MIP::Workloadmanager::Slurm;
 
 use 5.026;
 use Carp;
-use charnames qw( :full :short );
-use FindBin qw($Bin);
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(catdir);
-use open qw( :encoding(UTF-8) :std );
-use Params::Check qw[check allow last_error];
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings;
-use warnings qw(FATAL utf8);
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie;
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $NEWLINE $PIPE $SPACE $TAB };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -28,7 +26,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -40,11 +38,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $PIPE    => q{|};
-Readonly my $SPACE   => q{ };
-Readonly my $TAB     => qq{\t};
+Readonly my $FIVE => 5;
 
 sub slurm_sacct {
 
@@ -73,7 +67,7 @@ sub slurm_sacct {
             store       => \$fields_format_ref,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
         job_ids_ref => {
             default     => [],
             store       => \$job_ids_ref,
@@ -151,20 +145,20 @@ sub slurm_reformat_sacct_output {
             store       => \$commands_ref,
             strict_type => 1,
         },
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+        log_file_path => {
+            store       => \$log_file_path,
+            strict_type => 1,
+        },
         reformat_sacct_headers_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
             store       => \$reformat_sacct_headers_ref,
             strict_type => 1,
-        },
-        log_file_path => {
-            store       => \$log_file_path,
-            strict_type => 1,
-        },
-        FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE,
         },
     };
 
@@ -300,6 +294,7 @@ sub slurm_build_sbatch_header {
 ##          : $email_types_ref          => When to send email for event {REF}
 ##          : $FILEHANDLE               => Filehandle to write to
 ##          : $job_name                 => Specify a name for the job allocation
+##          : $memory_allocation        => Memory allocation
 ##          : $process_time             => Time limit
 ##          : $project_id               => Project id
 ##          : $separator                => Separator to use when writing
@@ -313,6 +308,7 @@ sub slurm_build_sbatch_header {
     my $email;
     my $FILEHANDLE;
     my $job_name;
+    my $memory_allocation;
     my $project_id;
     my $slurm_quality_of_service;
     my $stderrfile_path;
@@ -327,26 +323,10 @@ sub slurm_build_sbatch_header {
     use MIP::Check::Parameter qw{ check_allowed_array_values };
 
     my $tmpl = {
-        project_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$project_id,
-            strict_type => 1,
-        },
-        slurm_quality_of_service => {
-            store       => \$slurm_quality_of_service,
-            strict_type => 1,
-        },
-        job_name => {
-            store       => \$job_name,
-            strict_type => 1,
-        },
-        stderrfile_path => {
-            store       => \$stderrfile_path,
-            strict_type => 1,
-        },
-        stdoutfile_path => {
-            store       => \$stdoutfile_path,
+        core_number => {
+            allow       => qr{ \A\d+\z }xms,
+            default     => 1,
+            store       => \$core_number,
             strict_type => 1,
         },
         email => {
@@ -368,22 +348,43 @@ sub slurm_build_sbatch_header {
             store       => \$email_types_ref,
             strict_type => 1,
         },
-        FILEHANDLE  => { store => \$FILEHANDLE },
-        core_number => {
-            allow       => qr/^\d+$/xms,
-            default     => 1,
-            store       => \$core_number,
+        FILEHANDLE => { store => \$FILEHANDLE },
+        job_name   => {
+            store       => \$job_name,
+            strict_type => 1,
+        },
+        memory_allocation => {
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
+            store       => \$memory_allocation,
             strict_type => 1,
         },
         process_time => {
-            allow       => [ qr/^\d+:\d+:\d+$/xms, qr/^\d-\d+:\d+:\d+$/xms ],
+            allow       => [ qr{ \A\d+:\d+:\d+\z }xms, qr{ \A\d-\d+:\d+:\d+\z }xms ],
             default     => q{1:00:00},
             store       => \$process_time,
+            strict_type => 1,
+        },
+        project_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$project_id,
             strict_type => 1,
         },
         separator => {
             default     => q{\n},
             store       => \$separator,
+            strict_type => 1,
+        },
+        slurm_quality_of_service => {
+            store       => \$slurm_quality_of_service,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
             strict_type => 1,
         },
     };
@@ -405,6 +406,11 @@ sub slurm_build_sbatch_header {
 
     # Time allocation
     push @commands, q{--time=} . $process_time;
+
+    # Memory allocation
+    if ($memory_allocation) {
+        push @commands, q{--mem=} . $memory_allocation . q{G};
+    }
 
     # Quality of service
     if ($slurm_quality_of_service) {

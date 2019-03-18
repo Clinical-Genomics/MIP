@@ -164,12 +164,13 @@ sub analysis_RECIPE_NAME {
         }
     );
     my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my ( $core_number, $time, @source_environment_cmds, $memory_allocation ) =
+      get_recipe_parameters(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
-    );
+      );
 
     %io = (
         %io,
@@ -204,6 +205,7 @@ sub analysis_RECIPE_NAME {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
+            memory_allocation               => $memory_allocation,
             process_time                    => $time,
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,

@@ -10,6 +10,7 @@ load_env:
 max_cores_per_node: '16'
 mip: 1
 node_ram_memory: '128'
+core_ram_memory: 5
 print_parameter_default: '0'
 project_id: development
 recipe_core_number:

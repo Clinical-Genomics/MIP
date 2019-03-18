@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_delly_call };
@@ -157,7 +157,7 @@ sub analysis_delly_call {
 
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Delly qw{ delly_call };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -193,8 +193,8 @@ sub analysis_delly_call {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -228,14 +228,15 @@ sub analysis_delly_call {
         {
             active_parameter_href           => $active_parameter_href,
             directory_id                    => $sample_id,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            process_time                    => $time,
-            source_environment_commands_ref => \@source_environment_cmds,
+            process_time                    => $recipe_resource{time},
+            source_environment_commands_ref => $recipe_resource{load_env},
             temp_directory                  => $temp_directory,
         }
     );

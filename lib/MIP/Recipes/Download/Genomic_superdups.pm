@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_genomic_superdups };
@@ -122,7 +122,7 @@ sub download_genomic_superdups {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Cwd;
-    use MIP::Get::Parameter qw{ get_recipe_parameters };
+    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cut gnu_sort gnu_uniq };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Parse::File qw{ parse_file_suffix };
@@ -140,7 +140,7 @@ sub download_genomic_superdups {
     ## Unpack parameters
     my $reference_dir = $active_parameter_href->{reference_dir};
 
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -158,17 +158,18 @@ sub download_genomic_superdups {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
+            core_number           => $recipe_resource{core_number},
             directory_id          => q{mip_download},
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
             log                   => $log,
+            memory_allocation     => $recipe_resource{memory},
             outdata_dir           => $reference_dir,
             outscript_dir         => $reference_dir,
-            process_time          => $time,
+            process_time          => $recipe_resource{time},
             recipe_directory      => $recipe_name . $UNDERSCORE . $reference_version,
             recipe_name           => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env},
         }
     );
 

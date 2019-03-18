@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -143,7 +143,7 @@ sub analysis_sv_annotate {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_parameters };
+      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -192,7 +192,7 @@ sub analysis_sv_annotate {
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $sequence_dict_file = catfile( $reference_dir,
         $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} );
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -232,15 +232,16 @@ sub analysis_sv_annotate {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env},
             temp_directory                  => $temp_directory,
         }
     );
