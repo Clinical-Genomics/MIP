@@ -67,7 +67,7 @@ recipe_time:
   data_type: HASH
   default:
     1000g_indels: 1
-    ctat_resource_lib: 1
+    ctat_resource_lib: 10
     dbsnp: 1
     human_reference: 1
     gencode_annotation: 1

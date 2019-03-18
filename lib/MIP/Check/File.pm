@@ -17,21 +17,22 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE $SPACE };
+use MIP::Constants qw{ $DOT $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_interleaved check_file_md5sum };
 }
 
 ## Constants
-Readonly my $THREE => q{3};
+Readonly my $THREE             => q{3};
+Readonly my $MAX_RANDOM_NUMBER => 10_000;
 
 sub check_interleaved {
 
@@ -154,6 +155,7 @@ sub check_file_md5sum {
     ## Skip file
     return if ( not defined $check_method );
 
+    my $random_integer = int rand $MAX_RANDOM_NUMBER;
     ## Parse file suffix in filename.suffix(.gz).
     ## Removes suffix if matching else return undef
     my $file_path = parse_file_suffix(
@@ -166,7 +168,7 @@ sub check_file_md5sum {
     #md5_file_path did not have a ".md5" suffix - skip
     return if ( not defined $file_path );
 
-    my $md5sum_check_file = q{md5sum_check.txt};
+    my $md5sum_check_file = q{md5sum_check} . $UNDERSCORE . $random_integer . q{.txt};
     _write_md5sum_check_file(
         {
             FILEHANDLE        => $FILEHANDLE,
@@ -191,7 +193,7 @@ sub check_file_md5sum {
         {
             FILEHANDLE  => $FILEHANDLE,
             force       => 1,
-            infile_path => q{md5sum_check.txt},
+            infile_path => $md5sum_check_file,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

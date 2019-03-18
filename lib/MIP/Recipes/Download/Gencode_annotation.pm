@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $BACKWARD_SLASH $DASH $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gencode_annotation };
@@ -184,8 +184,10 @@ sub download_gencode_annotation {
     );
 
     ### POST PROCESSING
-    my $outfile_path = join $UNDERSCORE,
+    my $outfile_name = join $UNDERSCORE,
       ( $genome_version, $recipe_name, q{-} . $reference_version . q{-.gtf} );
+    my $outfile_path = catfile( $reference_dir, $outfile_name );
+
     ## Build reformated outfile
     my $reformated_outfile = join $UNDERSCORE,
       (
@@ -204,7 +206,7 @@ sub download_gencode_annotation {
     _remove_chr_prefix(
         {
             FILEHANDLE   => $FILEHANDLE,
-            outfile_path => $reformated_outfile,
+            outfile_path => $reformated_outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -262,7 +264,7 @@ sub _remove_chr_prefix_rename_chrm {
     print {$FILEHANDLE} q?else { $_ =~ s/^(chrM)/MT/g; print $_;}' ?;
 
     # Infile
-    print {$FILEHANDLE} $infile_path;
+    print {$FILEHANDLE} $infile_path . $SPACE;
 
     return;
 }
@@ -302,8 +304,11 @@ sub _remove_chr_prefix {
     # Remove prefix
     print {$FILEHANDLE} q?else {$_ =~ s/^chr(.+)/$1/g; print $_; }' ?;
 
+    # Infile
+    print {$FILEHANDLE} $DASH . $SPACE;
+
     # Outfile
-    print {$FILEHANDLE} $outfile_path;
+    print {$FILEHANDLE} q{> } . $outfile_path;
 
     return;
 }
