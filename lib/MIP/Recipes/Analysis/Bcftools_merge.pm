@@ -18,22 +18,21 @@ use autodie qw{ :all };
 use Readonly;
 use List::MoreUtils qw{ each_array };
 
+## MIPs lib/
+use MIP::Constants qw{ $COLON $NEWLINE $SPACE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_merge };
 
 }
-
-## Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_bcftools_merge {
 
@@ -128,7 +127,8 @@ sub analysis_bcftools_merge {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_merge bcftools_view_and_index_vcf };
@@ -172,8 +172,8 @@ sub analysis_bcftools_merge {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -202,15 +202,16 @@ sub analysis_bcftools_merge {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
@@ -218,34 +219,51 @@ sub analysis_bcftools_merge {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
-    ## Iterate over two arrays taking each corresponding element of each array per iteration
-    my $infiles = each_array( @infile_paths, @infile_path_prefixes );
-  INFILE:
-    while ( my ( $infile_path, $infile_path_prefix ) = $infiles->() ) {
-        ## Index files before merging
-        bcftools_view_and_index_vcf(
+    ## Test if the case has samples to merge
+    if ( scalar @infile_paths > 1 ) {
+
+        ## Iterate over two arrays taking each corresponding element of each array per iteration
+        my $infiles = each_array( @infile_paths, @infile_path_prefixes );
+      INFILE:
+        while ( my ( $infile_path, $infile_path_prefix ) = $infiles->() ) {
+            ## Index files before merging
+            bcftools_view_and_index_vcf(
+                {
+                    FILEHANDLE          => $FILEHANDLE,
+                    infile_path         => $infile_path,
+                    outfile_path_prefix => $infile_path_prefix,
+                    output_type         => q{b},
+                }
+            );
+        }
+
+        ## Merge sample VCFs
+        say {$FILEHANDLE} q{## Merge bcf files};
+        @infile_paths = map { $_ . q{.bcf} } @infile_path_prefixes;
+        bcftools_merge(
             {
-                FILEHANDLE          => $FILEHANDLE,
-                infile_path         => $infile_path,
-                outfile_path_prefix => $infile_path_prefix,
-                output_type         => q{b},
+                FILEHANDLE       => $FILEHANDLE,
+                infile_paths_ref => \@infile_paths,
+                outfile_path     => $outfile_path,
+                output_type      => q{v},
+            }
+        );
+
+        say {$FILEHANDLE} $NEWLINE;
+    }
+    ## Otherwise just rename the sample
+    else {
+        say {$FILEHANDLE}
+          q{## Renaming single sample case to facilitate downstream processing};
+
+        gnu_cp(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $infile_paths[0],
+                outfile_path => $outfile_path,
             }
         );
     }
-
-    ## Merge sample VCFs
-    say {$FILEHANDLE} q{## Merge bcf files};
-    @infile_paths = map { $_ . q{.bcf} } @infile_path_prefixes;
-    bcftools_merge(
-        {
-            FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => \@infile_paths,
-            outfile_path     => $outfile_path,
-            output_type      => q{v},
-        }
-    );
-
-    say {$FILEHANDLE} $NEWLINE;
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});

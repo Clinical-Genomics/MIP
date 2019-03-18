@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -134,11 +134,10 @@ sub analysis_gatk_variantrecalibration_wes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
@@ -150,7 +149,8 @@ sub analysis_gatk_variantrecalibration_wes {
     ### PREPROCESSING:
 
     ## Constants
-    Readonly my $MAX_GAUSSIAN_LEVEL => 4;
+    Readonly my $JAVA_MEMORY_ALLOCATION => 10;
+    Readonly my $MAX_GAUSSIAN_LEVEL     => 4;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
@@ -188,7 +188,7 @@ sub analysis_gatk_variantrecalibration_wes {
       $active_parameter_href->{gatk_variantrecalibration_resource_indel};
     my $resource_snv_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_snv};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -224,15 +224,16 @@ sub analysis_gatk_variantrecalibration_wes {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -268,17 +269,6 @@ sub analysis_gatk_variantrecalibration_wes {
     # to use in the recalibration model even though using 30 exome BAMS in
     # Haplotypecaller step.
     my @modes = q{BOTH};
-
-    ## Set java memory allocation and check availability
-    Readonly my $JAVA_MEMORY_ALLOCATION => 10;
-    get_memory_constrained_core_number(
-        {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
-            node_ram_memory    => $active_parameter_href->{node_ram_memory},
-            recipe_core_number => $core_number,
-        }
-    );
 
     my $select_infile_path;
     my $norm_infile_path;
@@ -625,11 +615,10 @@ sub analysis_gatk_variantrecalibration_wgs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -643,6 +632,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     ### PREPROCESSING:
 
     ## Constants
+    Readonly my $JAVA_MEMORY_ALLOCATION               => 24;
     Readonly my $MAX_GAUSSIAN_LEVEL_INDEL             => 4;
     Readonly my $MAX_GAUSSIAN_LEVEL_SNV               => 6;
     Readonly my $MAX_GAUSSIAN_LEVEL_SNV_SINGLE_SAMPLE => 4;
@@ -683,7 +673,7 @@ sub analysis_gatk_variantrecalibration_wgs {
       $active_parameter_href->{gatk_variantrecalibration_resource_indel};
     my $resource_snv_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_snv};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -719,15 +709,16 @@ sub analysis_gatk_variantrecalibration_wgs {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -763,17 +754,6 @@ sub analysis_gatk_variantrecalibration_wgs {
     # because when you specify eg SNP mode, the indels are emitted
     # without modification, and vice-versa.
     my @modes = qw{ SNP INDEL };
-
-    ## Set java memory allocation and check availability
-    Readonly my $JAVA_MEMORY_ALLOCATION => 24;
-    get_memory_constrained_core_number(
-        {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
-            node_ram_memory    => $active_parameter_href->{node_ram_memory},
-            recipe_core_number => $core_number,
-        }
-    );
 
   MODE:
     foreach my $mode (@modes) {

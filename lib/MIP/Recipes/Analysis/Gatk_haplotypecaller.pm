@@ -19,7 +19,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,12 +27,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
 
 }
+
+## Constants
+Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
 
 sub analysis_gatk_haplotypecaller {
 
@@ -149,11 +152,11 @@ sub analysis_gatk_haplotypecaller {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_memory_constrained_core_number };
+    use MIP::Cluster qw{ get_parallel_processes };
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_gatk_intervals get_recipe_parameters get_recipe_attributes };
+      qw{ get_gatk_intervals get_recipe_attributes get_recipe_resources };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -204,22 +207,13 @@ sub analysis_gatk_haplotypecaller {
     my $xargs_file_path_prefix;
 
     ## Get module parameters
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-
-    # Constrain parallelization to match available memory
-    my $program_core_number = get_memory_constrained_core_number(
-        {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
-            node_ram_memory    => $active_parameter_href->{node_ram_memory},
-            recipe_core_number => $core_number,
-        }
-    );
+    my $core_number = $recipe_resource{core_number};
 
     ## Outpaths
     ## Set and get the io files per chain, id and stream
@@ -258,10 +252,11 @@ sub analysis_gatk_haplotypecaller {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -330,10 +325,21 @@ sub analysis_gatk_haplotypecaller {
     ## GATK HaplotypeCaller
     say {$FILEHANDLE} q{## GATK HaplotypeCaller};
 
+    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
+
+    # Constrain parallelization to match available memory
+    my $parallel_processes = get_parallel_processes(
+        {
+            process_memory_allocation => $process_memory_allocation,
+            recipe_memory_allocation  => $recipe_resource{memory},
+            core_number               => $core_number,
+        }
+    );
+
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $program_core_number,
+            core_number        => $parallel_processes,
             FILEHANDLE         => $FILEHANDLE,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,

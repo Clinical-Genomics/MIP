@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -41,7 +41,7 @@ BEGIN {
       get_program_executables
       get_program_version
       get_programs_for_shell_installation
-      get_recipe_parameters
+      get_recipe_resources
       get_recipe_attributes
       get_user_supplied_info
     };
@@ -50,6 +50,7 @@ BEGIN {
 ## Constants
 Readonly my $MINUS_ONE => -1;
 Readonly my $MINUS_TWO => -2;
+Readonly my $TWO       => 2;
 
 sub get_bin_file_path {
 
@@ -223,7 +224,7 @@ sub get_dynamic_conda_path {
 
 ## Function : Attempts to find path to directory with binary in conda env
 ## Returns  : Path to directory
-## Arguments: $active_parameters_href => Active parameter hash {REF}
+## Arguments: $active_parameter_href  => Active parameter hash {REF}
 ##          : $bin_file               => Bin file to test
 ##          : $conda_bin_file         => Conda bin file name
 ##          : $environment_key        => Key to conda environment
@@ -971,18 +972,20 @@ sub get_recipe_attributes {
     return %{ $parameter_href->{$recipe_name} };
 }
 
-sub get_recipe_parameters {
+sub get_recipe_resources {
 
-## Function : Get core number, time and source environment command
-## Returns  : $core_number, $time, @source_environment_cmds
+## Function : Return recipe resources
+## Returns  : $recipe_resource | %recipe_resource
 ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
 ##          : $recipe_name           => Recipe name
+##          : $recipe_resource       => Recipe parameter key
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $recipe_name;
+    my $resource;
 
     my $tmpl = {
         active_parameter_href => {
@@ -998,9 +1001,16 @@ sub get_recipe_parameters {
             store       => \$recipe_name,
             strict_type => 1,
         },
+        resource => {
+            allow       => [qw{ core_number load_env_ref memory time }],
+            store       => \$resource,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Cluster qw{ check_recipe_memory_allocation };
 
     ## Initilize variable
     my @source_environment_cmds = get_package_source_env_cmds(
@@ -1010,10 +1020,47 @@ sub get_recipe_parameters {
         }
     );
 
-    my $core_number = $active_parameter_href->{recipe_core_number}{$recipe_name};
-    my $time        = $active_parameter_href->{recipe_time}{$recipe_name};
+    my $core_number    = $active_parameter_href->{recipe_core_number}{$recipe_name};
+    my $process_memory = $active_parameter_href->{recipe_memory}{$recipe_name};
+    my $memory;
 
-    return $core_number, $time, @source_environment_cmds;
+    ## Multiply memory with processes that are to be launched in the recipe
+    if ( $process_memory and $core_number ) {
+        $memory = $process_memory * $core_number;
+    }
+    ## Set default recipe memory allocation if it hasn't been specified
+    elsif ( not $process_memory and $core_number ) {
+        $memory = $core_number * $active_parameter_href->{core_ram_memory};
+    }
+    elsif ( not $process_memory and not $core_number ) {
+        $memory = $active_parameter_href->{core_ram_memory};
+    }
+    else {
+        $memory = $process_memory;
+    }
+
+    check_recipe_memory_allocation(
+        {
+            node_ram_memory          => $active_parameter_href->{node_ram_memory},
+            recipe_memory_allocation => $memory,
+        }
+    );
+
+    my %recipe_resource = (
+        core_number => $core_number,
+        load_env_ref    => \@source_environment_cmds,
+        memory      => $memory,
+        time        => $active_parameter_href->{recipe_time}{$recipe_name},
+    );
+
+    ## Return specified recipe resource
+    if ( defined $resource && $resource ) {
+        return $recipe_resource{$resource};
+    }
+
+    ## Return recipe resource hash
+    return %recipe_resource;
+
 }
 
 sub get_user_supplied_info {

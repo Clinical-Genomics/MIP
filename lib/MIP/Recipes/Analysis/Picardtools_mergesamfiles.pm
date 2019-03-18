@@ -18,7 +18,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $EMPTY_STR $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
+use MIP::Constants
+  qw{ %ANALYSIS $ASTERISK $DOT $EMPTY_STR $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,13 +27,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
 
 }
+
+## Constants
+Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
 
 sub analysis_picardtools_mergesamfiles {
 
@@ -156,9 +160,9 @@ sub analysis_picardtools_mergesamfiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_memory_constrained_core_number };
+    use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters  get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_file migrate_files xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -204,12 +208,14 @@ sub analysis_picardtools_mergesamfiles {
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $recipe_mode             = $active_parameter_href->{$recipe_name};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number       = $recipe_resource{core_number};
+    my $memory_allocation = $recipe_resource{memory};
 
     ## Assign suffix
     my $outfile_suffix = $rec_atr{outfile_suffix};
@@ -264,6 +270,32 @@ sub analysis_picardtools_mergesamfiles {
     my $FILEHANDLE      = IO::Handle->new();
     my $XARGSFILEHANDLE = IO::Handle->new();
 
+    ## Get recipe memory allocation
+    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
+
+    ## Modify memory allocation according to which action is taken in recipe
+    if ( scalar @infile_name_prefixes > 1 ) {
+
+        # Get recipe memory allocation
+        $memory_allocation = update_memory_allocation(
+            {
+                node_ram_memory           => $active_parameter_href->{node_ram_memory},
+                parallel_processes        => $core_number,
+                process_memory_allocation => $process_memory_allocation,
+            }
+        );
+    }
+
+    # Constrain parallelization to match available memory
+    my $parallel_processes = get_parallel_processes(
+        {
+            process_memory_allocation => $process_memory_allocation,
+            recipe_memory_allocation  => $memory_allocation,
+            core_number               => $core_number,
+        }
+    );
+
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
@@ -273,10 +305,11 @@ sub analysis_picardtools_mergesamfiles {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -334,22 +367,10 @@ sub analysis_picardtools_mergesamfiles {
         ## picardtools_mergesamfiles
         say {$FILEHANDLE} q{## Merging alignment files};
 
-        Readonly my $JAVA_MEMORY_ALLOCATION => 4;
-
-        # Constrain parallelization to match available memory
-        my $program_core_number = get_memory_constrained_core_number(
-            {
-                max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-                memory_allocation  => $JAVA_MEMORY_ALLOCATION,
-                node_ram_memory    => $active_parameter_href->{node_ram_memory},
-                recipe_core_number => $core_number,
-            }
-        );
-
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                core_number   => $program_core_number,
+                core_number   => $parallel_processes,
                 FILEHANDLE    => $FILEHANDLE,
                 file_path     => $recipe_file_path,
                 first_command => q{java},
@@ -387,42 +408,6 @@ sub analysis_picardtools_mergesamfiles {
             );
             say {$XARGSFILEHANDLE} $NEWLINE;
         }
-
-        ## Gather BAM files
-        say {$FILEHANDLE} q{## Gather BAM files};
-
-        ## Assemble infile paths in contig order and not per size
-        my @gather_infile_paths =
-          map { $temp_outfile_path{$_} } @{ $file_info_href->{contigs} };
-
-        picardtools_gatherbamfiles(
-            {
-                create_index     => q{true},
-                FILEHANDLE       => $FILEHANDLE,
-                infile_paths_ref => \@gather_infile_paths,
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx4g},
-                outfile_path         => $temp_outfile_path_prefix . $outfile_suffix,
-                referencefile_path   => $referencefile_path,
-                temp_directory       => $temp_directory,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $temp_outfile_path_prefix
-                  . substr( $outfile_suffix, 0, 2 )
-                  . $ASTERISK,
-                outfile_path => $outdir_path_prefix,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
     }
     else {
         ## Only 1 infile - rename sample and index instead of merge to streamline handling of filenames downstream
@@ -476,6 +461,42 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
             say {$XARGSFILEHANDLE} $NEWLINE;
         }
     }
+
+    ## Gather BAM files
+    say {$FILEHANDLE} q{## Gather BAM files};
+
+    ## Assemble infile paths in contig order and not per size
+    my @gather_infile_paths =
+      map { $temp_outfile_path{$_} } @{ $file_info_href->{contigs} };
+
+    picardtools_gatherbamfiles(
+        {
+            create_index     => q{true},
+            FILEHANDLE       => $FILEHANDLE,
+            infile_paths_ref => \@gather_infile_paths,
+            java_jar =>
+              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            outfile_path         => $temp_outfile_path_prefix . $outfile_suffix,
+            referencefile_path   => $referencefile_path,
+            temp_directory       => $temp_directory,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Copies file from temporary directory.
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
+    migrate_file(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $temp_outfile_path_prefix
+              . substr( $outfile_suffix, 0, 2 )
+              . $ASTERISK,
+            outfile_path => $outdir_path_prefix,
+        }
+    );
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Copies file from temporary directory. Per contig
     say {$FILEHANDLE} q{## Copy file from temporary directory};
@@ -653,10 +674,10 @@ sub analysis_picardtools_mergesamfiles_rio {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_memory_constrained_core_number };
+    use MIP::Cluster qw{ get_parallel_processes };
     use MIP::Delete::File qw{ delete_files };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters };
+    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -702,12 +723,13 @@ sub analysis_picardtools_mergesamfiles_rio {
     my $recipe_mode   = $active_parameter_href->{$recipe_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
 
     ## Assign suffix
     my $outfile_suffix = $rec_atr{outfile_suffix};
@@ -771,6 +793,19 @@ sub analysis_picardtools_mergesamfiles_rio {
         }
     );
 
+    ## Get recipe memory allocation
+    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
+
+    # Constrain parallelization to match available memory
+    my $parallel_processes = get_parallel_processes(
+        {
+            process_memory_allocation => $process_memory_allocation,
+            recipe_memory_allocation  => $active_parameter_href->{node_ram_memory},
+            core_number               => $active_parameter_href->{max_cores_per_node},
+        }
+    );
+
     ### SHELL:
 
     ## Copies files from source to destination
@@ -815,20 +850,10 @@ sub analysis_picardtools_mergesamfiles_rio {
 
         Readonly my $JAVA_MEMORY_ALLOCATION => 4;
 
-        # Constrain parallelization to match available memory
-        my $program_core_number = get_memory_constrained_core_number(
-            {
-                max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-                memory_allocation  => $JAVA_MEMORY_ALLOCATION,
-                node_ram_memory    => $active_parameter_href->{node_ram_memory},
-                recipe_core_number => $core_number,
-            }
-        );
-
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                core_number          => $program_core_number,
+                core_number          => $parallel_processes,
                 FILEHANDLE           => $FILEHANDLE,
                 file_path            => $file_path,
                 first_command        => q{java},

@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.21;
+our $VERSION = 1.22;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -264,6 +264,16 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             cmd_aliases   => [qw{ rcn }],
             cmd_tags      => [q{recipe_name=X(cores)}],
             documentation => q{Set the number of cores for each recipe},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{recipe_memory} => (
+            cmd_aliases   => [qw{ rm }],
+            cmd_tags      => [q{recipe_name=X(G)}],
+            documentation => q{Set the memory for each recipe},
             is            => q{rw},
             isa           => HashRef,
         )

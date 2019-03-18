@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_samtools_subsample_mt };
@@ -138,7 +138,7 @@ sub analysis_samtools_subsample_mt {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Language::Awk qw{ awk };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Alignment::Samtools
@@ -179,7 +179,7 @@ sub analysis_samtools_subsample_mt {
     );
     my $mt_subsample_depth = $active_parameter_href->{samtools_subsample_mt_depth};
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource    = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -214,15 +214,16 @@ sub analysis_samtools_subsample_mt {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 

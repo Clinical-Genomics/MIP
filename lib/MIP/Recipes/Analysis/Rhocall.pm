@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rhocall_annotate };
@@ -142,9 +142,9 @@ sub analysis_rhocall_annotate {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_roh };
@@ -182,13 +182,14 @@ sub analysis_rhocall_annotate {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -217,15 +218,6 @@ sub analysis_rhocall_annotate {
     my $FILEHANDLE      = IO::Handle->new();
     my $XARGSFILEHANDLE = IO::Handle->new();
 
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    $core_number = get_core_number(
-        {
-            recipe_core_number   => $core_number,
-            modifier_core_number => scalar @{ $file_info_href->{contigs} },
-            max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
-        }
-    );
-
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
@@ -235,10 +227,11 @@ sub analysis_rhocall_annotate {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );

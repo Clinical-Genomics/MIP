@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bamcalibrationblock };
@@ -146,14 +146,15 @@ sub analysis_bamcalibrationblock {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
-    use MIP::Get::Parameter qw{ get_recipe_parameters };
+    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir };
+    use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
     Readonly my $PROCESS_TIME => 80;
     Readonly my $CORE_NUMBER  => $active_parameter_href->{max_cores_per_node};
+    Readonly my $MEMORY       => $active_parameter_href->{node_ram_memory};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -180,10 +181,11 @@ sub analysis_bamcalibrationblock {
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         my $xargs_file_counter = 0;
-        my ( $c_n, $t, @source_environment_cmds ) = get_recipe_parameters(
+        my $load_env_ref       = get_recipe_resources(
             {
                 active_parameter_href => $active_parameter_href,
                 recipe_name           => $recipe_name,
+                resource              => q{load_env_ref},
             }
         );
 
@@ -196,10 +198,11 @@ sub analysis_bamcalibrationblock {
                 FILEHANDLE                      => $FILEHANDLE,
                 job_id_href                     => $job_id_href,
                 log                             => $log,
+                memory_allocation               => $MEMORY,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 process_time                    => $PROCESS_TIME,
-                source_environment_commands_ref => \@source_environment_cmds,
+                source_environment_commands_ref => $load_env_ref,
                 temp_directory                  => $temp_directory,
             }
         );

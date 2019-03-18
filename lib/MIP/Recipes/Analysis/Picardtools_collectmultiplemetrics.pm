@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_collectmultiplemetrics };
@@ -138,9 +138,8 @@ sub analysis_picardtools_collectmultiplemetrics {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -180,8 +179,8 @@ sub analysis_picardtools_collectmultiplemetrics {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -218,16 +217,17 @@ sub analysis_picardtools_collectmultiplemetrics {
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             directory_id                    => $sample_id,
             job_id_href                     => $job_id_href,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -249,16 +249,6 @@ sub analysis_picardtools_collectmultiplemetrics {
     say {$FILEHANDLE} q{## Collecting multiple metrics on alignment};
 
     Readonly my $JAVA_MEMORY_ALLOCATION => 4;
-
-    # Check that enough memory is available
-    get_memory_constrained_core_number(
-        {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
-            node_ram_memory    => $active_parameter_href->{node_ram_memory},
-            recipe_core_number => $core_number,
-        }
-    );
 
     picardtools_collectmultiplemetrics(
         {

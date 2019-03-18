@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -131,10 +131,9 @@ sub analysis_gatk_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_memory_constrained_core_number };
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cat gnu_echo };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -145,6 +144,7 @@ sub analysis_gatk_genotypegvcfs {
 
     ## Constants
     Readonly my $INCLUDE_NONVARIANT_SITES_TIME => 50;
+    Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
 
     ### PREPROCESSING:
 
@@ -164,12 +164,14 @@ sub analysis_gatk_genotypegvcfs {
     my $recipe_files_tracker = 0;
 
     ## Gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
+    my $time        = $recipe_resource{time};
 
     ## If all sites should be included
     if ( $active_parameter_href->{gatk_genotypegvcfs_all_sites} == 1 ) {
@@ -215,17 +217,6 @@ sub analysis_gatk_genotypegvcfs {
         }
     );
 
-    ## Set java memory allocation and check availability
-    Readonly my $JAVA_MEMORY_ALLOCATION => 8;
-    get_memory_constrained_core_number(
-        {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            memory_allocation  => $JAVA_MEMORY_ALLOCATION,
-            node_ram_memory    => $active_parameter_href->{node_ram_memory},
-            recipe_core_number => $core_number,
-        }
-    );
-
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs} } ) {
 
@@ -238,11 +229,12 @@ sub analysis_gatk_genotypegvcfs {
                 FILEHANDLE                      => $FILEHANDLE,
                 job_id_href                     => $job_id_href,
                 log                             => $log,
+                memory_allocation               => $recipe_resource{memory},
                 process_time                    => $time,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 sleep                           => 1,
-                source_environment_commands_ref => \@source_environment_cmds,
+                source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );

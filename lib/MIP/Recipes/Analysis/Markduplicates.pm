@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SPACE $SEMICOLON $UNDERSCORE };
+use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $NEWLINE $SPACE $SEMICOLON $UNDERSCORE };
 
 BEGIN {
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_rio };
@@ -32,12 +32,7 @@ BEGIN {
 }
 
 ## Constants
-#Readonly my $ASTERISK   => q{*};
-#Readonly my $DOT        => q{.};
-#Readonly my $NEWLINE    => qq{\n};
-#Readonly my $SPACE      => q{ };
-#Readonly my $SEMICOLON  => q{;};
-#Readonly my $UNDERSCORE => q{_};
+Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
 
 sub analysis_markduplicates {
 
@@ -154,10 +149,10 @@ sub analysis_markduplicates {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_memory_constrained_core_number };
+    use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -202,12 +197,14 @@ sub analysis_markduplicates {
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $xargs_file_path_prefix;
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number       = $recipe_resource{core_number};
+    my $memory_allocation = $recipe_resource{memory};
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
@@ -260,6 +257,23 @@ sub analysis_markduplicates {
     # Store which program performed the markduplication
     my $markduplicates_program;
 
+    ## Update recipe memory allocation for picard
+    ## Variables used downstream of if statment
+    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
+
+    ## Update the memory allocation
+    if ( $active_parameter_href->{markduplicates_picardtools_markduplicates} ) {
+
+        # Get recipe memory allocation
+        $memory_allocation = update_memory_allocation(
+            {
+                process_memory_allocation => $process_memory_allocation,
+                node_ram_memory           => $active_parameter_href->{node_ram_memory},
+                parallel_processes        => $core_number,
+            }
+        );
+    }
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
@@ -269,10 +283,11 @@ sub analysis_markduplicates {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
@@ -305,22 +320,18 @@ sub analysis_markduplicates {
 
         $markduplicates_program = q{picardtools_markduplicates};
 
-        Readonly my $JAVA_MEMORY_ALLOCATION => 4;
-
-        # Constrain parallelization to match available memory
-        my $program_core_number = get_memory_constrained_core_number(
+        my $parallel_processes = get_parallel_processes(
             {
-                max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-                memory_allocation  => $JAVA_MEMORY_ALLOCATION,
-                node_ram_memory    => $active_parameter_href->{node_ram_memory},
-                recipe_core_number => $core_number,
+                process_memory_allocation => $process_memory_allocation,
+                recipe_memory_allocation  => $recipe_resource{memory},
+                core_number               => $core_number,
             }
         );
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                core_number   => $program_core_number,
+                core_number   => $parallel_processes,
                 FILEHANDLE    => $FILEHANDLE,
                 file_path     => $recipe_file_path,
                 first_command => q{java},
@@ -668,10 +679,9 @@ sub analysis_markduplicates_rio {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_memory_constrained_core_number };
+    use MIP::Cluster qw{ get_parallel_processes };
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Get::File qw{ get_merged_infile_prefix };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
@@ -716,12 +726,9 @@ sub analysis_markduplicates_rio {
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $xargs_file_path_prefix;
-    my ($core_number) = get_recipe_parameters(
-        {
-            active_parameter_href => $active_parameter_href,
-            recipe_name           => $recipe_name,
-        }
-    );
+
+    ## Default for rio recipes
+    my $core_number = $active_parameter_href->{max_cores_per_node};
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
@@ -782,21 +789,21 @@ sub analysis_markduplicates_rio {
         $markduplicates_program = q{picardtools_markduplicates};
 
         Readonly my $JAVA_MEMORY_ALLOCATION => 4;
+        my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
 
         # Constrain parallelization to match available memory
-        my $program_core_number = get_memory_constrained_core_number(
+        my $parallel_processes = get_parallel_processes(
             {
-                max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-                memory_allocation  => $JAVA_MEMORY_ALLOCATION,
-                node_ram_memory    => $active_parameter_href->{node_ram_memory},
-                recipe_core_number => $core_number,
+                process_memory_allocation => $process_memory_allocation,
+                recipe_memory_allocation  => $active_parameter_href->{node_ram_memory},
+                core_number               => $core_number,
             }
         );
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                core_number   => $program_core_number,
+                core_number   => $parallel_processes,
                 FILEHANDLE    => $FILEHANDLE,
                 file_path     => $file_path,
                 first_command => q{java},

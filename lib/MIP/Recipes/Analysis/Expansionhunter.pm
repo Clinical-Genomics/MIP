@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -143,10 +143,10 @@ sub analysis_expansionhunter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_parameters };
+      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -182,7 +182,7 @@ sub analysis_expansionhunter {
     my $recipe_mode = $active_parameter_href->{$recipe_name};
     my $repeat_specs_dir_path =
       $active_parameter_href->{expansionhunter_repeat_specs_dir};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -216,11 +216,19 @@ sub analysis_expansionhunter {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    $core_number = get_core_number(
+    ## Update number of cores and memory depending on how many samples that are processed
+    my $core_number = get_core_number(
         {
             max_cores_per_node   => $max_cores_per_node,
             modifier_core_number => $modifier_core_number,
-            recipe_core_number   => $core_number,
+            recipe_core_number   => $recipe_resource{core_number},
+        }
+    );
+    my $memory_allocation = update_memory_allocation(
+        {
+            node_ram_memory           => $active_parameter_href->{node_ram_memory},
+            parallel_processes        => $core_number,
+            process_memory_allocation => $recipe_resource{memory},
         }
     );
 
@@ -233,10 +241,11 @@ sub analysis_expansionhunter {
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );

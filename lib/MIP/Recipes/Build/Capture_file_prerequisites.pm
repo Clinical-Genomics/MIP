@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_capture_file_prerequisites };
@@ -145,7 +145,7 @@ sub build_capture_file_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_parameters };
+    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_rm gnu_cat gnu_ln };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -161,7 +161,7 @@ sub build_capture_file_prerequisites {
     my $submit_switch;
 
     ## Unpack parameters
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -190,7 +190,7 @@ sub build_capture_file_prerequisites {
                 log                             => $log,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
-                source_environment_commands_ref => \@source_environment_cmds,
+                source_environment_commands_ref => $recipe_resource{load_env_ref},
             }
         );
     }

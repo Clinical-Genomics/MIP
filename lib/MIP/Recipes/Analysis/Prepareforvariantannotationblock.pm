@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_prepareforvariantannotationblock };
@@ -146,9 +146,9 @@ sub analysis_prepareforvariantannotationblock {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_parameters get_recipe_attributes };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
@@ -184,8 +184,8 @@ sub analysis_prepareforvariantannotationblock {
             attribute      => q{chain},
         }
     );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my ( $core_number, $time, @source_environment_cmds ) = get_recipe_parameters(
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -219,11 +219,19 @@ sub analysis_prepareforvariantannotationblock {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
-    $core_number = get_core_number(
+    my $core_number = get_core_number(
         {
-            recipe_core_number   => $core_number,
-            modifier_core_number => scalar @{ $file_info_href->{contigs} },
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
+            modifier_core_number => scalar @{ $file_info_href->{contigs} },
+            recipe_core_number   => $recipe_resource{core_number},
+        }
+    );
+    ## Update memory depending on how many cores that are being used
+    my $memory_allocation = update_memory_allocation(
+        {
+            node_ram_memory           => $active_parameter_href->{node_ram_memory},
+            parallel_processes        => $core_number,
+            process_memory_allocation => $recipe_resource{memory},
         }
     );
 
@@ -236,10 +244,11 @@ sub analysis_prepareforvariantannotationblock {
             directory_id                    => $case_id,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            process_time                    => $time,
+            memory_allocation               => $memory_allocation,
+            process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => \@source_environment_cmds,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
