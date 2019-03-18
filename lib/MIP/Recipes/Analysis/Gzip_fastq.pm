@@ -241,7 +241,7 @@ sub analysis_gzip_fastq {
             process_time                    => $time,
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env},
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 

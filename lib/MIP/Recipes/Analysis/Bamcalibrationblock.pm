@@ -185,7 +185,7 @@ sub analysis_bamcalibrationblock {
             {
                 active_parameter_href => $active_parameter_href,
                 recipe_name           => $recipe_name,
-                resource              => q{load_env},
+                resource              => q{load_env_ref},
             }
         );
 

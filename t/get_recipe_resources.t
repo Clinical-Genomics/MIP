@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -74,7 +74,7 @@ my %expected = (
     core_number => 30,
     memory      => 120,
     time        => 30,
-    load_env    => [qw{conda activate test }],
+    load_env_ref    => [qw{conda activate test }],
 );
 is_deeply( \%recipe_resource, \%expected, q{Got recipe resource hash} );
 

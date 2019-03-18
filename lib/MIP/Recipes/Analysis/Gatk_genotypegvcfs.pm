@@ -234,7 +234,7 @@ sub analysis_gatk_genotypegvcfs {
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
                 sleep                           => 1,
-                source_environment_commands_ref => $recipe_resource{load_env},
+                source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );
