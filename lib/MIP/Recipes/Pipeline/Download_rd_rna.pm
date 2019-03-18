@@ -180,6 +180,7 @@ sub pipeline_download_rd_rna {
                 $download_recipe{$reference_id}->(
                     {
                         active_parameter_href => $active_parameter_href,
+                        genome_version        => $genome_version,
                         job_id_href           => \%job_id,
                         recipe_name           => $reference_id,
                         reference_href        => $reference_href,
