@@ -1002,7 +1002,7 @@ sub get_recipe_resources {
             strict_type => 1,
         },
         resource => {
-            allow       => [qw{ core_number load_env memory time }],
+            allow       => [qw{ core_number load_env_ref memory time }],
             store       => \$resource,
             strict_type => 1,
         },
@@ -1048,7 +1048,7 @@ sub get_recipe_resources {
 
     my %recipe_resource = (
         core_number => $core_number,
-        load_env    => \@source_environment_cmds,
+        load_env_ref    => \@source_environment_cmds,
         memory      => $memory,
         time        => $active_parameter_href->{recipe_time}{$recipe_name},
     );

@@ -281,7 +281,7 @@ sub analysis_bwa_mem {
                 recipe_name                     => $recipe_name,
                 process_time                    => $recipe_resource{time},
                 sleep                           => 1,
-                source_environment_commands_ref => $recipe_resource{load_env},
+                source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );
@@ -802,7 +802,7 @@ sub analysis_run_bwa_mem {
                 recipe_name                     => $recipe_name,
                 process_time                    => $recipe_resource{time},
                 sleep                           => 1,
-                source_environment_commands_ref => $recipe_resource{load_env},
+                source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );

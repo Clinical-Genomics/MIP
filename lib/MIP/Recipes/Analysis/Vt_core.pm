@@ -253,7 +253,7 @@ sub analysis_vt_core {
             process_time                    => $PROCESS_TIME,
             recipe_name                     => $recipe_name,
             recipe_directory                => $recipe_directory,
-            source_environment_commands_ref => $recipe_resource{load_env},
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 

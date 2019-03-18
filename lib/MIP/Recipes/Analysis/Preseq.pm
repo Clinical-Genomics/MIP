@@ -212,7 +212,7 @@ sub analysis_preseq {
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env},
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
