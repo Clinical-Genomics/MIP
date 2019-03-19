@@ -204,6 +204,7 @@ recipe_memory:
     cadd_ar: 4
     chanjo_sexcheck: 2
     delly_reformat: 3
+    endvariantannotationblock: 8
     expansionhunter: 2
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
@@ -214,8 +215,10 @@ recipe_memory:
     sambamba_depth: 10
     samtools_subsample_mt: 2
     split_fastq_file: 2
+    sv_reformat: 13
+    sv_varianteffectpredictor: 7
     tiddit: 8
-    vcf2cytosure_ar: 2
+    vcf2cytosure_ar: 4
     varianteffectpredictor: 4
   type: mip
 recipe_time:
