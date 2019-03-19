@@ -1,3 +1,5 @@
+bash_set_errexit: 1
+bash_set_pipefail: 1
 load_env:
   D_mip7.0_190110_hs:
    method: conda
@@ -12,9 +14,8 @@ reference:
   1000g_all_sv:
     - phase3_v8.20130502
   clinvar:
-    - 20180429
     - 20181028
-    - 20190211
+    - 20190305
   1000g_omni:
     - 2.5
   1000g_indels:
@@ -33,9 +34,8 @@ reference:
   hapmap:
     - 3.3
   dbnsfp:
-    - v2.9
-    - 3.2a
     - 3.5a
+    - 4.0b2a
   genomic_superdups:
     - 20181009
   giab:
@@ -99,18 +99,6 @@ reference_feature:
         url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/
   clinvar:
     grch37:
-      20171029:
-        file: clinvar_20171029.vcf.gz
-        file_check: clinvar_20171029.vcf.gz.md5
-        file_index: clinvar_20171029.vcf.gz.tbi
-        outfile: grch37_clinvar_-2017-10-29-.vcf.gz
-        outfile_check: grch37_clinvar_-2017-10-29-.vcf.gz.md5
-        outfile_index: grch37_clinvar_-2017-10-29-.vcf.gz.tbi
-        outfile_check_method: md5sum
-        outfile_reformat_command: "perl -e ' print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} ' > header_lines.txt; bcftools annotate -h header_lines.txt grch37_clinvar_-2017-10-29-.vcf.gz | perl -nae ' if($_=~/^#/) { print $_;} else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] }' > grch37_clinvar_reformat_-2017-10-29-.vcf"
-        outfile_bgzip_command: 'bgzip grch37_clinvar_reformat_-2017-10-29-.vcf'
-        outfile_tabix_command: 'tabix -p vcf grch37_clinvar_reformat_-2017-10-29-.vcf.gz'
-        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2017/
       20181028:
         file: clinvar_20181028.vcf.gz
         file_check: clinvar_20181028.vcf.gz.md5
@@ -119,36 +107,26 @@ reference_feature:
         outfile_check: grch37_clinvar_-2018-10-28-.vcf.gz.md5
         outfile_index: grch37_clinvar_-2018-10-28-.vcf.gz.tbi
         outfile_check_method: md5sum
-        outfile_reformat_command: "perl -e ' print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} ' > header_lines.txt; bcftools annotate -h header_lines.txt grch37_clinvar_-2018-10-28-.vcf.gz | perl -nae ' if($_=~/^#/) { print $_;} else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] }' > grch37_clinvar_reformat_-2018-10-28-.vcf"
-        outfile_bgzip_command: 'bgzip grch37_clinvar_reformat_-2018-10-28-.vcf'
-        outfile_tabix_command: 'tabix -p vcf grch37_clinvar_reformat_-2018-10-28-.vcf.gz'
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2018/
-      20180429:
-        file: clinvar_20180429.vcf.gz
-        file_check: clinvar_20180429.vcf.gz.md5
-        file_index: clinvar_20180429.vcf.gz.tbi
-        outfile: grch37_clinvar_-2018-04-29-.vcf.gz
-        outfile_check: grch37_clinvar_-2018-04-29-.vcf.gz.md5
-        outfile_index: grch37_clinvar_-2018-04-29-.vcf.gz.tbi
+      20190305:
+        file: clinvar_20190305.vcf.gz
+        file_check: clinvar_20190305.vcf.gz.md5
+        file_index: clinvar_20190305.vcf.gz.tbi
+        outfile: grch37_clinvar_-20190305-.vcf.gz
+        outfile_check: grch37_clinvar_-20190305-.vcf.gz.md5
+        outfile_index: grch37_clinvar_-20190305-.vcf.gz.tbi
         outfile_check_method: md5sum
-        outfile_reformat_command: "perl -e ' print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} ' > header_lines.txt; bcftools annotate -h header_lines.txt grch37_clinvar_-2018-04-29-.vcf.gz | perl -nae ' if($_=~/^#/) { print $_;} else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] }' > grch37_clinvar_reformat_-2018-04-29-.vcf"
-        outfile_bgzip_command: 'bgzip grch37_clinvar_reformat_-2018-04-29-.vcf'
-        outfile_tabix_command: 'tabix -p vcf grch37_clinvar_reformat_-2018-04-29-.vcf.gz'
-        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2018/
+        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2019/
     hg38:
-      20171029:
-        file: clinvar_20171029.vcf.gz
-        file_check: clinvar_20171029.vcf.gz.md5
-        file_index: clinvar_20171029.vcf.gz.tbi
-        outfile: hg38_clinvar_-2017-10-29-.vcf.gz
-        outfile_check: hg38_clinvar_-2017-10-29-.vcf.gz.md5
-        outfile_index: hg38_clinvar_-2017-10-29-.vcf.gz.tbi
+      20190305:
+        file: clinvar_20190305.vcf.gz
+        file_check: clinvar_20190305.vcf.gz.md5
+        file_index: clinvar_20190305.vcf.gz.tbi
+        outfile: hg38_clinvar_-20190305-.vcf.gz
+        outfile_check: hg38_clinvar_-20190305-.vcf.gz.md5
+        outfile_index: hg38_clinvar_-20190305-.vcf.gz.tbi
         outfile_check_method: md5sum
-        outfile_decompress: gzip
-        outfile_reformat_command: "perl -n -a -e ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(MT)/M/g; print $_;}' hg38_clinvar_-2017-10-29-.vcf | perl -n -a -e ' if($_=~/^#/) { print $_; } else {$_ =~ s/^(.+)/chr$1/g; print $_; }' > hg38_clinvar_reformat_-2017-10-29-.vcf"
-        outfile_bgzip_command: 'bgzip hg38_clinvar_reformat_-2017-10-29-.vcf'
-        outfile_tabix_command: 'tabix -p vcf hg38_clinvar_reformat_-2017-10-29-.vcf.gz'
-        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2017/
+        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2019/
   1000g_omni:
     grch37:
       2.5:
@@ -317,41 +295,24 @@ reference_feature:
         outfile_decompress: gzip
   dbnsfp:
     grch37:
-      v2.9:
-        file: dbNSFPv2.9.zip
-        outfile: grch37_dbnsfp_-v2.9-.zip
-        url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
-        outfile_decompress: unzip
-        outfile_reformat_command: '(cat dbNSFP2.9_variant.chr* | grep -v "^#" ) > grch37_dbnsfp_-v2.9-.txt; rm dbNSFP2.9_variant.chr*; rm tryhg*.in; rm search_dbNSFP29*'
-        outfile_bgzip_command: 'bgzip grch37_dbnsfp_-v2.9-.txt'
-        outfile_tabix_command: 'tabix -s 1 -b 2 -e 2 grch37_dbnsfp_-v2.9-.txt.gz'
       3.5a:
         file: dbNSFPv3.5a.zip
-        outfile: grch37_dbnsfp_-3.5a-.zip
+        outfile: grch37_dbnsfp_-v3.5a-.zip
         url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
         outfile_decompress: unzip
-        outfile_reformat_command: head -n1 dbNSFP3.5a_variant.chr1 > h; cat dbNSFP3.5a_variant.chr* | grep -v ^#chr | awk '$8 != "."' | sort -k8,8 -k9,9n - | cat h - > grch37_dbnsfp_-3.5a-.txt
-        outfile_bgzip_command: 'bgzip grch37_dbnsfp_-3.5a-.txt'
-        outfile_tabix_command: 'tabix -s 8 -b 9 -e 9 grch37_dbnsfp_-3.5.a-.txt.gz'
     hg38:
-      3.2a:
-        file: dbNSFPv3.2a.zip
-        outfile: hg38_dbnsfp_-3.2a-.zip
-        url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
+      4.0b2a:
+        file: dbNSFP4.0b2a.zip
+        outfile: hg38_dbnsfp_-4.0b2a-.zip
         outfile_decompress: unzip
-        outfile_reformat_command: '(cat dbNSFP3.2a_variant.chr* | grep -v "^#" ) > hg38_dbnsfp_-3.2a-.txt; rm dbNSFP3.2a_variant.chr*'
-        outfile_bgzip_command: 'bgzip hg38_dbnsfp_-3.2a-.txt'
-        outfile_tabix_command: 'tabix -s 1 -b 2 -e 2 hg38_dbnsfp_-3.2a-.txt.gz'
+        url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
   genomic_superdups:
     grch37:
       20181009:
         file: genomicSuperDups.txt.gz
-        outfile: grch37_genomics_super_dups_-20181009-.txt.gz 
-        url_prefix: http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/
+        outfile: grch37_genomics_super_dups_-20181009.txt.gz 
         outfile_decompress: gzip
-        outfile_reformat_command: perl -i -p -e 'if($_!~/^#/) {s/chr(.+)/$1/g}' grch37_genomics_super_dups_-20181009-.txt; grep -v ^# grch37_genomics_super_dups_-20181009-.txt | sort -k2,2 -k3,3n - | cut -f2-4,27 - | uniq > grch37_genomics_super_dups_-20181009-.bed
-        outfile_bgzip_command: 'bgzip grch37_genomics_super_dups_-20181009-.bed'
-        outfile_tabix_command: 'tabix -0 -p bed grch37_genomics_super_dups_-20181009-.bed.gz'
+        url_prefix: http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/
   giab:
     grch37:
       na12878_v2.19_wgs:

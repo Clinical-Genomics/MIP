@@ -91,16 +91,6 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
     );
 
     option(
-        q{sbatch_mode} => (
-            documentation => q{Write install script for sbatch submisson},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-
-        ),
-    );
-
-    option(
         q{submission_profile} => (
             cmd_aliases   => [qw{ sbp }],
             documentation => q{Submission profile},
