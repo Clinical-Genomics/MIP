@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_rna };
@@ -37,7 +37,6 @@ sub pipeline_download_rd_rna {
 ## Function : Download references recipes for rd_rna pipeline
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
-##          : $FILEHANDLE            => Filehandle to write to
 ##          : $quiet                 => Be quiet
 ##          : $temp_directory        => Temporary directory
 ##          : $verbose               => Verbosity
@@ -46,7 +45,6 @@ sub pipeline_download_rd_rna {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $FILEHANDLE;
 
     ## Default(s)
     my $quiet;
@@ -61,8 +59,7 @@ sub pipeline_download_rd_rna {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
-        quiet      => {
+        quiet => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$quiet,
@@ -83,13 +80,11 @@ sub pipeline_download_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Recipes::Download::1000g_indels qw{ download_1000g_indels };
-    use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
     use MIP::Recipes::Download::Ctat_resource_lib qw{ download_ctat_resource_lib };
-    use MIP::Recipes::Download::Get_reference qw{ get_reference };
+    use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
     use MIP::Recipes::Download::Gencode_annotation qw{ download_gencode_annotation };
+    use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
     use MIP::Recipes::Download::Mills_and_1000g_indels
       qw{ download_mills_and_1000g_indels };
@@ -97,40 +92,19 @@ sub pipeline_download_rd_rna {
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
 
-    my $pwd = cwd();
-
     ### Download recipes
     ## Create code reference table for download recipes
     my %download_recipe = (
         q{1000g_indels}        => \&download_1000g_indels,
-        dbsnp                  => \&download_dbsnp,
         ctat_resource_lib      => \&download_ctat_resource_lib,
+        dbsnp                  => \&download_dbsnp,
         gencode_annotation     => \&download_gencode_annotation,
         human_reference        => \&download_human_reference,
         mills_and_1000g_indels => \&download_mills_and_1000g_indels,
     );
 
-    # Storing job_ids from SLURM
+    # Storing job_ids from SLURM. However, all recipes are currently indepent
     my %job_id;
-
-    say {$FILEHANDLE} q{## Create reference directory};
-    gnu_mkdir(
-        {
-            indirectory_path => $active_parameter_href->{reference_dir},
-            parents          => 1,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Since all commands should assume working directory to be the reference directory
-    gnu_cd(
-        {
-            directory_path => $active_parameter_href->{reference_dir},
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
 
   REFERENCE:
     while ( my ( $reference_id, $versions_ref ) =
@@ -193,14 +167,6 @@ sub pipeline_download_rd_rna {
         }
     }
 
-    ## Move back to original dir
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
     return;
 }
 

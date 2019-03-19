@@ -5,6 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
+use File::Path qw{ remove_tree };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -121,8 +122,8 @@ sub download_clinvar {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Cwd;
     use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
@@ -156,19 +157,20 @@ sub download_clinvar {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
-            directory_id          => q{mip_download},
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            memory_allocation     => $recipe_resource{memory},
-            outdata_dir           => $reference_dir,
-            outscript_dir         => $reference_dir,
-            process_time          => $recipe_resource{time},
-            recipe_directory      => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name           => $recipe_name,
-            temp_directory        => $temp_directory,
+            active_parameter_href      => $active_parameter_href,
+            core_number                => $recipe_resource{core_number},
+            directory_id               => q{mip_download},
+            FILEHANDLE                 => $FILEHANDLE,
+            job_id_href                => $job_id_href,
+            log                        => $log,
+            memory_allocation          => $recipe_resource{memory},
+            outdata_dir                => $reference_dir,
+            outscript_dir              => $reference_dir,
+            process_time               => $recipe_resource{time},
+            recipe_data_directory_path => $active_parameter_href->{reference_dir},
+            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                => $recipe_name,
+            temp_directory             => $temp_directory,
             source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
@@ -189,7 +191,8 @@ sub download_clinvar {
     );
 
     say {$FILEHANDLE} q{## Build clinvar variation ID header file};
-    my $header_file_path = catfile( $reference_dir, q{clnvid_header.txt} );
+    my $header_file_path =
+      catfile( $reference_dir, $reference_version . $UNDERSCORE . q{clnvid_header.txt} );
     ## Build clinvar variation ID header file
     _build_clnvid_head_file(
         {
@@ -228,6 +231,7 @@ sub download_clinvar {
     htslib_bgzip(
         {
             FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
             infile_path => $reformated_outfile_path,
         }
     );
@@ -240,6 +244,15 @@ sub download_clinvar {
             force       => 1,
             infile_path => $reformated_outfile_path . q{.gz},
             preset      => q{vcf},
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Clean-up
+    gnu_rm(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $header_file_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

@@ -3,9 +3,8 @@ package MIP::Recipes::Pipeline::Download_rd_dna;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
-use Cwd;
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -26,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -37,7 +36,6 @@ sub pipeline_download_rd_dna {
 ## Function : Download references recipes for rd_dna pipeline
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
-##          : $FILEHANDLE            => Filehandle to write to
 ##          : $quiet                 => Be quiet
 ##          : $temp_directory        => Temporary directory
 ##          : $verbose               => Verbosity
@@ -46,7 +44,6 @@ sub pipeline_download_rd_dna {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $FILEHANDLE;
 
     ## Default(s)
     my $quiet;
@@ -61,8 +58,7 @@ sub pipeline_download_rd_dna {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
-        quiet      => {
+        quiet => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$quiet,
@@ -83,9 +79,6 @@ sub pipeline_download_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
-    use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipes::Download::1000g_all_sv qw{ download_1000g_all_sv };
     use MIP::Recipes::Download::1000g_all_wgs qw{ download_1000g_all_wgs };
     use MIP::Recipes::Download::1000g_indels qw{ download_1000g_indels };
@@ -95,18 +88,17 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Clinvar qw{ download_clinvar };
     use MIP::Recipes::Download::Dbnsfp qw{ download_dbnsfp };
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
-    use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
-    use MIP::Recipes::Download::Hapmap qw{ download_hapmap };
     use MIP::Recipes::Download::Genomic_superdups qw{ download_genomic_superdups };
+    use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipes::Download::Giab qw{ download_giab };
     use MIP::Recipes::Download::Gnomad qw{ download_gnomad };
+    use MIP::Recipes::Download::Hapmap qw{ download_hapmap };
+    use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
     use MIP::Recipes::Download::Mills_and_1000g_indels
       qw{ download_mills_and_1000g_indels };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
-
-    my $pwd = cwd();
 
     ### Download recipes
     ## Create code reference table for download recipes
@@ -120,35 +112,16 @@ sub pipeline_download_rd_dna {
         clinvar                => \&download_clinvar,
         dbnsfp                 => \&download_dbnsfp,
         dbsnp                  => \&download_dbsnp,
-        human_reference        => \&download_human_reference,
-        hapmap                 => \&download_hapmap,
         genomic_superdups      => \&download_genomic_superdups,
         giab                   => \&download_giab,
         gnomad                 => \&download_gnomad,
+        hapmap                 => \&download_hapmap,
+        human_reference        => \&download_human_reference,
         mills_and_1000g_indels => \&download_mills_and_1000g_indels,
     );
 
-    # Storing job_ids from SLURM
+    # Storing job_ids from SLURM, however currently all are independent
     my %job_id;
-
-    say {$FILEHANDLE} q{## Create reference directory};
-    gnu_mkdir(
-        {
-            indirectory_path => $active_parameter_href->{reference_dir},
-            parents          => 1,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Since all commands should assume working directory to be the reference directory
-    gnu_cd(
-        {
-            directory_path => $active_parameter_href->{reference_dir},
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
 
   REFERENCE:
     while ( my ( $reference_id, $versions_ref ) =
@@ -184,7 +157,7 @@ sub pipeline_download_rd_dna {
                 my $outfile_path =
                   catfile( $active_parameter_href->{reference_dir}, $outfile_name );
 
-                ## Check if reference already exists in reference directory
+                ## Check if reference file already exists in reference directory
                 next GENOME_VERSION if ( -f $outfile_path );
 
                 $log->info( q{Cannot find reference file:} . $outfile_path );
@@ -200,10 +173,10 @@ sub pipeline_download_rd_dna {
                         active_parameter_href => $active_parameter_href,
                         genome_version        => $genome_version,
                         job_id_href           => \%job_id,
+                        quiet                 => $quiet,
                         recipe_name           => $reference_id,
                         reference_href        => $reference_href,
                         reference_version     => $reference_version,
-                        quiet                 => $quiet,
                         temp_directory        => $temp_directory,
                     }
                 );
@@ -211,14 +184,6 @@ sub pipeline_download_rd_dna {
         }
     }
 
-    ## Move back to original dir
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
     return;
 }
 

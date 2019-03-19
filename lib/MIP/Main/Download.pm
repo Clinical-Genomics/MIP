@@ -3,14 +3,10 @@ package MIP::Main::Download;
 use 5.026;
 use Carp;
 use charnames qw( :full :short );
-use Cwd;
 use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename fileparse };
-use File::Spec::Functions qw{ catfile catdir devnull };
-use FindBin qw{ $Bin };
-use Getopt::Long;
-use IO::Handle;
+use File::Basename qw{ basename fileparse };
+use File::Path qw{ make_path };
 use warnings qw{ FATAL utf8 };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
@@ -20,7 +16,7 @@ use utf8;
 ## CPANM
 use autodie qw{ open close :all };
 use List::Util qw{ any };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -32,15 +28,12 @@ use MIP::Cluster qw{ check_max_core_number };
 use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml };
-use MIP::Gnu::Coreutils qw{ gnu_mkdir };
-use MIP::Language::Shell qw{ create_bash_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Set::Parameter
   qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_to_active_parameter set_cache };
 use MIP::Parse::Parameter qw{ parse_download_reference_parameter };
 use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
 use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
-use MIP::Script::Utils qw{ create_temp_dir };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
@@ -48,7 +41,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -114,7 +107,7 @@ sub mip_download {
     );
 
     ### Config file
-## If config from cmd
+    ## If config from cmd
     if ( exists $active_parameter{config_file}
         && defined $active_parameter{config_file} )
     {
@@ -123,8 +116,8 @@ sub mip_download {
         my %config_parameter =
           load_yaml( { yaml_file => $active_parameter{config_file}, } );
 
-## Set config parameters into %active_parameter unless $parameter
-## has been supplied on the command line
+        ## Set config parameters into %active_parameter unless $parameter
+        ## has been supplied on the command line
         set_config_to_active_parameters(
             {
                 active_parameter_href => \%active_parameter,
@@ -162,7 +155,8 @@ sub mip_download {
     $log->info(
         q{Writing log messages to} . $COLON . $SPACE . $active_parameter{log_file} );
 
-### Populate uninitilized active_parameters{parameter_name} with default from parameter
+    ### Populate uninitilized active_parameters{parameter_name} with
+    ### default from parameter
   PARAMETER:
     foreach my $parameter_name ( keys %parameter ) {
 
@@ -213,6 +207,9 @@ sub mip_download {
     @{ $active_parameter{reference_genome_versions} } =
       map { lc } @{ $active_parameter{reference_genome_versions} };
 
+    ## Create reference dir if it does not exists
+    make_path( $active_parameter{reference_dir} );
+
     ### Checks
 
     ## Check existence of files and directories
@@ -259,7 +256,7 @@ sub mip_download {
         );
     }
 
-## Parameters with key(s) that have elements as MIP recipe names
+    ## Parameters with key(s) that have elements as MIP recipe names
     my @parameter_element_to_check = qw{ associated_recipe };
   PARAMETER:
     foreach my $parameter ( keys %parameter ) {
@@ -336,83 +333,25 @@ sub mip_download {
         }
     );
 
-    # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
-    # Download temp directory
-    my $temp_dir = create_temp_dir( {} );
-
-    if ( $active_parameter{sbatch_mode} ) {
-
-        $log->info(
-q{Will write sbatch install instructions to for sbatch enabled references to individual sbatch scripts}
-        );
-
-    }
-
-    # Downloads instruction file
-    my $bash_file_path = catfile( cwd(), q{download_reference} . $DOT . q{sh} );
-
-    open $FILEHANDLE, '>', $bash_file_path
-      or
-      $log->logdie( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . "\n" );
-
-## Create bash file for writing install instructions
-    create_bash_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            file_name   => $bash_file_path,
-            log         => $log,
-            remove_dir  => $temp_dir,
-            set_errexit => 1,
-            set_nounset => 1,
-        }
+    $log->info(
+q{Will write sbatch install instructions for references to individual sbatch scripts}
     );
 
-    say {$FILEHANDLE} q{## Create temp dir};
-    gnu_mkdir(
+    my $pipeline_type = $active_parameter{download_pipeline_type};
+
+    ## Create dispatch table of pipelines
+    my %pipeline = (
+        rd_dna => \&pipeline_download_rd_dna,
+        rd_rna => \&pipeline_download_rd_rna,
+    );
+
+    $log->info( q{Pipeline download type: } . $pipeline_type );
+    $pipeline{$pipeline_type}->(
         {
-            FILEHANDLE       => $FILEHANDLE,
-            indirectory_path => $temp_dir,
-            parents          => 1,
+            active_parameter_href => \%active_parameter,
+            temp_directory        => $active_parameter{temp_directory},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
-
-    $log->info( q{Will write install instructions to '} . $bash_file_path,
-        $SINGLE_QUOTE );
-
-    if ( $active_parameter{sbatch_mode} ) {
-
-        my $pipeline_type = $active_parameter{download_pipeline_type};
-
-        ## Create dispatch table of pipelines
-        my %pipeline = (
-            rd_dna => \&pipeline_download_rd_dna,
-            rd_rna => \&pipeline_download_rd_rna,
-        );
-
-        $log->info( q{Pipeline download type: } . $pipeline_type );
-        $pipeline{$pipeline_type}->(
-            {
-                active_parameter_href => \%active_parameter,
-                FILEHANDLE            => $FILEHANDLE,
-                temp_directory        => $active_parameter{temp_directory},
-            }
-        );
-    }
-    else {
-
-        ## Build install references recipe in bash file
-        build_reference_install_recipe(
-            {
-                active_parameter_href => \%active_parameter,
-                FILEHANDLE            => $FILEHANDLE,
-                temp_directory        => $temp_dir,
-            }
-        );
-    }
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
     return;
 }
 
@@ -420,208 +359,25 @@ q{Will write sbatch install instructions to for sbatch enabled references to ind
 ###SubRoutines###
 #################
 
-sub build_reference_install_recipe {
+##Investigate potential autodie error
+if ( $EVAL_ERROR and $EVAL_ERROR->isa(q{autodie::exception}) ) {
 
-## Function : Build install references recipe in bash file
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
-##          : $FILEHANDLE            => Filehandle to write to
-##          : $quiet                 => Be quiet
-##          : $temp_directory        => Temporary directory
-##          : $verbose               => Verbosity
+    if ( $EVAL_ERROR->matches(q{default}) ) {
 
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $FILEHANDLE;
-
-    ## Default(s)
-    my $quiet;
-    my $temp_directory;
-    my $verbose;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
-        quiet      => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$quiet,
-            strict_type => 1,
-        },
-        temp_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$temp_directory,
-            strict_type => 1,
-        },
-        verbose => {
-            default     => $arg_href->{active_parameter_href}{verbose},
-            store       => \$verbose,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir };
-    use MIP::Recipes::Download::Get_reference qw{ get_reference };
-    use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
-
-    ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger(q{Download_reference});
-
-    my $pwd = cwd();
-
-    ### Download recipes
-    ## Create code reference table for download recipes
-    my %download_recipe = ( human_reference => \&download_human_reference, );
-
-    say {$FILEHANDLE} q{## Create reference directory};
-    gnu_mkdir(
-        {
-            indirectory_path => $active_parameter_href->{reference_dir},
-            parents          => 1,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Since all commands should assume working directory to be the reference directory
-    gnu_cd(
-        {
-            directory_path => $active_parameter_href->{reference_dir},
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-  REFERENCE:
-    while ( my ( $reference_id, $versions_ref ) =
-        each %{ $active_parameter_href->{reference} } )
-    {
-
-      REFERENCE_VERSION:
-        foreach my $reference_version ( @{$versions_ref} ) {
-
-          GENOME_VERSION:
-            foreach my $genome_version (
-                @{ $active_parameter_href->{reference_genome_versions} } )
-            {
-
-                ## Standardize case
-                $genome_version = lc $genome_version;
-
-                my $reference_href =
-                  $active_parameter_href->{reference_feature}{$reference_id}
-                  {$genome_version}{$reference_version};
-
-                next GENOME_VERSION
-                  if (
-                    not exists $active_parameter_href->{reference_feature}{$reference_id}
-                    {$genome_version} );
-
-                next GENOME_VERSION
-                  if (
-                    not exists $active_parameter_href->{reference_feature}{$reference_id}
-                    {$genome_version}{$reference_version} );
-
-                ## Build file name and path
-                my $outfile_name = $reference_href->{outfile};
-                my $outfile_path =
-                  catfile( $active_parameter_href->{reference_dir}, $outfile_name );
-
-                ## Check if reference already exists in reference directory
-                next GENOME_VERSION if ( -f $outfile_path );
-
-                $log->warn( q{Cannot find reference file:} . $outfile_path );
-                $log->warn(
-                        q{Will try to download: }
-                      . $reference_id
-                      . q{ version: }
-                      . $reference_version,
-                );
-
-                get_reference(
-                    {
-                        FILEHANDLE     => $FILEHANDLE,
-                        recipe_name    => $reference_id,
-                        reference_dir  => $active_parameter_href->{reference_dir},
-                        reference_href => $reference_href,
-                        quiet          => $quiet,
-                        verbose        => $verbose,
-                    }
-                );
-
-                ## Writes post processing commands associated with reference e.g. tabix
-                write_post_processing_command(
-                    {
-                        reference_href => $reference_href,
-                        FILEHANDLE     => $FILEHANDLE,
-                    }
-                );
-            }
-        }
+        say {*STDERR} q{Not an autodie error at all};
     }
+    if ( $EVAL_ERROR->matches(q{open}) ) {
 
-    ## Move back to original
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-    return;
+        say {*STDERR} q{Error from open};
+    }
+    if ( $EVAL_ERROR->matches(q{:io}) ) {
+
+        say {*STDERR} q{Non-open, IO error.};
+    }
 }
+elsif ($EVAL_ERROR) {
 
-sub write_post_processing_command {
-
-## Function : Writes post processing commands associated with reference e.g. tabic
-## Returns  :
-## Arguments: $reference_href => Reference hash {REF}
-##          : $FILEHANDLE     => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $reference_href;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        reference_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$reference_href,
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Process reference with commands
-    my @processing_commands =
-      qw{ outfile_reformat_command outfile_bgzip_command outfile_tabix_command};
-
-  COMMAND:
-    foreach my $command (@processing_commands) {
-
-        next COMMAND if ( not exists $reference_href->{$command} );
-
-        ## Command
-        say {$FILEHANDLE} $reference_href->{$command}, $NEWLINE;
-    }
-    return;
+    say {*STDERR} q{A non-autodie exception.};
 }
 
 1;

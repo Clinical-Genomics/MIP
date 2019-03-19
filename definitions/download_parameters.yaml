@@ -49,13 +49,6 @@ sacct_format_fields:
    - exitcode
   element_separator: ,
   type: recipe_argument
-sbatch_mode:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 0
-  mandatory: no
-  type: mip
 submission_profile:
   associated_recipe:
    - mip
