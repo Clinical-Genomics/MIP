@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Sample_info}    => [qw{ get_sample_info_recipe_attributes }],
+        q{MIP::Sample_info}    => [qw{ get_sample_info_case_recipe_attributes }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Sample_info qw{ get_sample_info_recipe_attributes };
+use MIP::Sample_info qw{ get_sample_info_case_recipe_attributes };
 
-diag(   q{Test get_sample_info_recipe_attributes from Sample_info.pm v}
+diag(   q{Test get_sample_info_case_recipe_attributes from Sample_info.pm v}
       . $MIP::Sample_info::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -71,7 +71,7 @@ my %sample_info = (
     },
 );
 
-my $got_attribute = get_sample_info_recipe_attributes(
+my $got_attribute = get_sample_info_case_recipe_attributes(
     {
         attribute        => q{path},
         recipe_name      => $recipe_name,
@@ -83,7 +83,7 @@ my $got_attribute = get_sample_info_recipe_attributes(
 is( $got_attribute, catfile(qw{ an_outdir an_outfile}), q{Got recipe attribute} );
 
 ## Given a recipe when called withiut an attribute
-my %got_attribute_href = get_sample_info_recipe_attributes(
+my %got_attribute = get_sample_info_case_recipe_attributes(
     {
         recipe_name      => $recipe_name,
         sample_info_href => \%sample_info,
@@ -92,7 +92,7 @@ my %got_attribute_href = get_sample_info_recipe_attributes(
 
 ## Then return attribute hash for recipes
 is_deeply(
-    \%got_attribute_href,
+    \%got_attribute,
     \%{ $sample_info{recipe}{$recipe_name} },
     q{Got recipe attribute hash}
 );
@@ -100,7 +100,7 @@ is_deeply(
 ## Given a recipe when sample_info attribute is undef
 delete $sample_info{recipe}{$recipe_name}{path};
 
-my $is_undef = get_sample_info_recipe_attributes(
+my $is_undef = get_sample_info_case_recipe_attributes(
     {
         attribute        => q{path},
         recipe_name      => $recipe_name,

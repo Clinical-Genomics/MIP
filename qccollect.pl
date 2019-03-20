@@ -295,13 +295,13 @@ sub case_qc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Sample_info qw{ get_sample_info_recipe_attributes };
+    use MIP::Sample_info qw{ get_sample_info_case_recipe_attributes };
 
     ## For every recipe
   RECIPE:
     for my $recipe ( keys %{ $sample_info_href->{recipe} } ) {
 
-        my %attribute = get_sample_info_recipe_attributes(
+        my %attribute = get_sample_info_case_recipe_attributes(
             {
                 recipe_name      => $recipe,
                 sample_info_href => \%sample_info,
@@ -311,36 +311,17 @@ sub case_qc {
         my $outdirectory = $attribute{outdirectory};
         my $outfile      = $attribute{outfile};
 
-        $qc_data_href->{recipe}{$recipe}{version} = $attribute{version};
-
         if ( exists $attribute{path} ) {
 
             ( $outfile, $outdirectory ) =
               fileparse( $attribute{path} );
         }
 
-        #if ( $sample_info_href->{recipe}{$recipe}{version} ) {
+        ## Set package executable version  from recipe to metrics hash
+        if ( exists $attribute{version} ) {
 
-        ## Add version to qc_data
-        #    $qc_data_href->{recipe}{$recipe}{version} =
-        #      $sample_info_href->{recipe}{$recipe}{version};
-        #}
-        #if ( $sample_info_href->{recipe}{$recipe}{outdirectory} ) {
-
-        ## Extract outdirectory
-        #    $outdirectory =
-        #      $sample_info_href->{recipe}{$recipe}{outdirectory};
-        #}
-        #if ( $sample_info_href->{recipe}{$recipe}{outfile} ) {
-
-        ## Extract outfile
-        #    $outfile = $sample_info_href->{recipe}{$recipe}{outfile};
-        #}
-        #if ( $sample_info_href->{recipe}{$recipe}{path} ) {
-
-        #    ( $outfile, $outdirectory ) =
-        #      fileparse( $sample_info_href->{recipe}{$recipe}{path} );
-        #}
+            $qc_data_href->{recipe}{$recipe}{version} = $attribute{version};
+        }
 
         ## Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
         parse_regexp_hash_and_collect(

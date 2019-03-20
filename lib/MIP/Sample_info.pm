@@ -32,7 +32,7 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_read_group
-      get_sample_info_recipe_attributes
+      get_sample_info_case_recipe_attributes
       get_sequence_run_type
       get_sequence_run_type_is_interleaved
       set_gene_panel
@@ -125,9 +125,9 @@ sub get_read_group {
     return %rg;
 }
 
-sub get_sample_info_recipe_attributes {
+sub get_sample_info_case_recipe_attributes {
 
-## Function : Get recipe attributes from sample_info hash
+## Function : Get case recipe attributes from sample_info hash
 ## Returns  : "$attribute" or "$attribute_href"
 ## Arguments: $attribute        => Attribute key
 ##          : $recipe_name      => Recipe to get attributes from
