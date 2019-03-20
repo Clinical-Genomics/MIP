@@ -128,7 +128,6 @@ sub download_dbnsfp {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Cwd;
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cat gnu_head gnu_sort };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
@@ -164,18 +163,19 @@ sub download_dbnsfp {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
-            directory_id          => q{mip_download},
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            memory_allocation     => $recipe_resource{memory},
-            outdata_dir           => $reference_dir,
-            outscript_dir         => $reference_dir,
-            process_time          => $recipe_resource{time},
-            recipe_directory      => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name           => $recipe_name,
+            active_parameter_href      => $active_parameter_href,
+            core_number                => $recipe_resource{core_number},
+            directory_id               => q{mip_download},
+            FILEHANDLE                 => $FILEHANDLE,
+            job_id_href                => $job_id_href,
+            log                        => $log,
+            memory_allocation          => $recipe_resource{memory},
+            outdata_dir                => $reference_dir,
+            outscript_dir              => $reference_dir,
+            process_time               => $recipe_resource{time},
+            recipe_data_directory_path => $active_parameter_href->{reference_dir},
+            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                => $recipe_name,
             source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
@@ -373,6 +373,7 @@ sub _reformat_for_grch37 {
     htslib_bgzip(
         {
             FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
             infile_path => $outfile_path,
         }
     );

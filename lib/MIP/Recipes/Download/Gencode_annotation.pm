@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $BACKWARD_SLASH $DASH $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -121,7 +121,6 @@ sub download_gencode_annotation {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Cwd;
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -153,18 +152,19 @@ sub download_gencode_annotation {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
-            directory_id          => q{mip_download},
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            memory_allocation     => $recipe_resource{memory},
-            outdata_dir           => $reference_dir,
-            outscript_dir         => $reference_dir,
-            process_time          => $recipe_resource{time},
-            recipe_directory      => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name           => $recipe_name,
+            active_parameter_href      => $active_parameter_href,
+            core_number                => $recipe_resource{core_number},
+            directory_id               => q{mip_download},
+            FILEHANDLE                 => $FILEHANDLE,
+            job_id_href                => $job_id_href,
+            log                        => $log,
+            memory_allocation          => $recipe_resource{memory},
+            outdata_dir                => $reference_dir,
+            outscript_dir              => $reference_dir,
+            process_time               => $recipe_resource{time},
+            recipe_data_directory_path => $active_parameter_href->{reference_dir},
+            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                => $recipe_name,
             source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
@@ -185,8 +185,10 @@ sub download_gencode_annotation {
     );
 
     ### POST PROCESSING
-    my $outfile_path = join $UNDERSCORE,
+    my $outfile_name = join $UNDERSCORE,
       ( $genome_version, $recipe_name, q{-} . $reference_version . q{-.gtf} );
+    my $outfile_path = catfile( $reference_dir, $outfile_name );
+
     ## Build reformated outfile
     my $reformated_outfile = join $UNDERSCORE,
       (
@@ -205,7 +207,7 @@ sub download_gencode_annotation {
     _remove_chr_prefix(
         {
             FILEHANDLE   => $FILEHANDLE,
-            outfile_path => $reformated_outfile,
+            outfile_path => $reformated_outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -263,7 +265,7 @@ sub _remove_chr_prefix_rename_chrm {
     print {$FILEHANDLE} q?else { $_ =~ s/^(chrM)/MT/g; print $_;}' ?;
 
     # Infile
-    print {$FILEHANDLE} $infile_path;
+    print {$FILEHANDLE} $infile_path . $SPACE;
 
     return;
 }
@@ -303,8 +305,11 @@ sub _remove_chr_prefix {
     # Remove prefix
     print {$FILEHANDLE} q?else {$_ =~ s/^chr(.+)/$1/g; print $_; }' ?;
 
+    # Infile
+    print {$FILEHANDLE} $DASH . $SPACE;
+
     # Outfile
-    print {$FILEHANDLE} $outfile_path;
+    print {$FILEHANDLE} q{> } . $outfile_path;
 
     return;
 }

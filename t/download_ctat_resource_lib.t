@@ -67,7 +67,7 @@ my $log       = test_log( { log_name => uc q{mip_download}, no_screen => 1, } );
 ## Given download parameters for recipe
 my $genome_version    = q{grch37};
 my $recipe_name       = q{ctat_resource_lib};
-my $reference_version = q{v19_CTAT_lib_Feb092018};
+my $reference_version = q{v19_ctat_lib_feb092018};
 my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(

@@ -155,19 +155,20 @@ sub download_mills_and_1000g_indels {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
-            directory_id          => q{mip_download},
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            memory_allocation     => $recipe_resource{memory},
-            outdata_dir           => $reference_dir,
-            outscript_dir         => $reference_dir,
-            process_time          => $recipe_resource{time},
-            recipe_directory      => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name           => $recipe_name,
-            temp_directory        => $temp_directory,
+            active_parameter_href      => $active_parameter_href,
+            core_number                => $recipe_resource{core_number},
+            directory_id               => q{mip_download},
+            FILEHANDLE                 => $FILEHANDLE,
+            job_id_href                => $job_id_href,
+            log                        => $log,
+            memory_allocation          => $recipe_resource{memory},
+            outdata_dir                => $reference_dir,
+            outscript_dir              => $reference_dir,
+            process_time               => $recipe_resource{time},
+            recipe_data_directory_path => $active_parameter_href->{reference_dir},
+            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                => $recipe_name,
+            temp_directory             => $temp_directory,
             source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );

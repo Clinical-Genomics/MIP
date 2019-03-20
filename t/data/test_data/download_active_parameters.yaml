@@ -34,7 +34,7 @@ reference:
     - '20180429'
     - '20181028'
   ctat_resource_lib:
-    - v19_CTAT_lib_Feb092018
+    - v19_ctat_lib_feb092018
   dbnsfp:
     - v2.9
     - 3.2a
@@ -214,15 +214,15 @@ reference_feature:
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2017/
   ctat_resource_lib:
     grch37:
-      v19_CTAT_lib_Feb092018:
+      v19_ctat_lib_feb092018:
         file: GRCh37_v19_CTAT_lib_Feb092018.plug-n-play.tar.gz
-        file_check: GRCh37_v19_CTAT_lib_Feb092018.plug-n-play.tar.gz.md5
-        outfile: GRCh37_CTAT_lib_plug-n-play_-feb092018-.tar.gz
-        outfile_check: GRCh37_CTAT_lib_plug-n-play_-feb092018-.tar.gz.md5
+        file_check: grch37_v19_CTAT_lib_Feb092018.plug-n-play.tar.gz.md5
+        outfile: grch37_ctat_lib_plug-n-play_-feb092018-.tar.gz
+        outfile_check: grch37_ctat_lib_plug-n-play_-feb092018-.tar.gz.md5
         url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/
         outfile_decompress: tar
         outfile_check_method: md5sum
-        outfile_reformat_command: 'mv GRCh37_v19_CTAT_lib_Feb092018/ctat_genome_lib_build_dir/* GRCh37_v19_CTAT_lib_Feb092018'
+        outfile_reformat_command: 'mv grch37_v19_ctat_lib_feb092018/ctat_genome_lib_build_dir/* grch37_v19_ctat_lib_feb092018'
   dbnsfp:
     grch37:
       v2.9:
@@ -432,9 +432,9 @@ reference_feature:
     grch37:
       v29:
         file: gencode.v29lift37.annotation.gtf.gz
-        outfile: GRCh37_gencode_annotation_-v29-.gtf.gz
+        outfile: grch37_gencode_annotation_-v29-.gtf.gz
         outfile_decompress: gzip
-        outfile_reformat_command: "perl -nae ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(chrM)/MT/g; print $_;}' GRCh37_gencode_annotation_-v29-.gtf | perl -nae ' if($_=~/^#/) { print $_; } else {$_ =~ s/^chr(.+)/$1/g; print $_; }' > GRCh37_gencode_annotation_reformat_-v29-.gtf"
+        outfile_reformat_command: "perl -nae ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(chrM)/MT/g; print $_;}' grch37_gencode_annotation_-v29-.gtf | perl -nae ' if($_=~/^#/) { print $_; } else {$_ =~ s/^chr(.+)/$1/g; print $_; }' > grch37_gencode_annotation_reformat_-v29-.gtf"
         url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/
 reference_genome_versions:
   - grch37

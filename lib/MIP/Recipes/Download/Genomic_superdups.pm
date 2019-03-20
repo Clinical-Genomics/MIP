@@ -18,7 +18,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH $DASH $DOT $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants
+  qw{ $BACKWARD_SLASH $DASH $DOT $NEWLINE $PIPE $SEMICOLON $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_genomic_superdups };
@@ -121,7 +122,6 @@ sub download_genomic_superdups {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Cwd;
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cut gnu_sort gnu_uniq };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
@@ -157,18 +157,19 @@ sub download_genomic_superdups {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
-            directory_id          => q{mip_download},
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            memory_allocation     => $recipe_resource{memory},
-            outdata_dir           => $reference_dir,
-            outscript_dir         => $reference_dir,
-            process_time          => $recipe_resource{time},
-            recipe_directory      => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name           => $recipe_name,
+            active_parameter_href      => $active_parameter_href,
+            core_number                => $recipe_resource{core_number},
+            directory_id               => q{mip_download},
+            FILEHANDLE                 => $FILEHANDLE,
+            job_id_href                => $job_id_href,
+            log                        => $log,
+            memory_allocation          => $recipe_resource{memory},
+            outdata_dir                => $reference_dir,
+            outscript_dir              => $reference_dir,
+            process_time               => $recipe_resource{time},
+            recipe_data_directory_path => $active_parameter_href->{reference_dir},
+            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                => $recipe_name,
             source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
@@ -192,7 +193,7 @@ sub download_genomic_superdups {
     ## Removes suffix if matching else return undef
     my $outfile_path_no_suffix = parse_file_suffix(
         {
-            file_name   => $reference_href->{outfile},
+            file_name   => catfile( $reference_dir, $reference_href->{outfile} ),
             file_suffix => $DOT . q{gz},
         }
     );
@@ -203,7 +204,12 @@ sub download_genomic_superdups {
         $genome_version, $recipe_name, q{reformated}, q{-} . $reference_version . q{-.bed}
       );
     my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
-
+    ## Repeat inline replace due to three chr entries  in file and use if "$1"
+    say {$FILEHANDLE}
+      q{## Repeat inline replace due to three chr entries  in file and use if "$1"};
+    say   {$FILEHANDLE} q?for nr_chr_in_line in {1..3}?;
+    say   {$FILEHANDLE} q{do};
+    print {$FILEHANDLE} $TAB;
 ## Remove chr prefix in file
     _remove_chr_prefix(
         {
@@ -211,12 +217,15 @@ sub download_genomic_superdups {
             infile_path => $outfile_path_no_suffix,
         }
     );
+    say {$FILEHANDLE} $SEMICOLON;
+    say {$FILEHANDLE} q{done} . $NEWLINE;
 
-    ## Skip header line starting with "#chr"
+    ## Reformat to bed
+    say {$FILEHANDLE} q{## Reformat to bed};
     gnu_grep(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $DASH,
+            infile_path  => $outfile_path_no_suffix,
             invert_match => 1,
             pattern      => q{^#chr},
         }
@@ -258,6 +267,7 @@ sub download_genomic_superdups {
     htslib_bgzip(
         {
             FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
             infile_path => $reformated_outfile_path,
         }
     );

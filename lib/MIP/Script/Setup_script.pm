@@ -27,7 +27,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -50,6 +50,7 @@ sub setup_script {
 ##          : $outdata_dir                     => MIP outdata directory {Optional}
 ##          : $outscript_dir                   => MIP outscript directory {Optional}
 ##          : $process_time                    => Allowed process time (Hours) {Optional}
+##          : $recipe_data_directory_path      => Set recipe data directory path
 ##          : $recipe_directory                => Builds from $directory_id
 ##          : $recipe_name                     => Assigns filename to sbatch script
 ##          : $set_errexit                     => Bash set -e {Optional}
@@ -69,6 +70,7 @@ sub setup_script {
     my $job_id_href;
     my $memory_allocation;
     my $log;
+    my $recipe_data_directory_path;
     my $recipe_directory;
     my $recipe_name;
     my $source_environment_commands_ref;
@@ -160,6 +162,10 @@ sub setup_script {
             store       => \$process_time,
             strict_type => 1,
         },
+        recipe_data_directory_path => {
+            store       => \$recipe_data_directory_path,
+            strict_type => 1,
+        },
         recipe_directory => {
             defined     => 1,
             required    => 1,
@@ -243,8 +249,11 @@ sub setup_script {
     my $file_path;
 
     ## Directory paths
-    my $recipe_data_directory_path =
-      catdir( $outdata_dir, $directory_id, $recipe_directory );
+    if ( not defined $recipe_data_directory_path ) {
+
+        $recipe_data_directory_path =
+          catdir( $outdata_dir, $directory_id, $recipe_directory );
+    }
     my $recipe_info_directory_path = catdir( $recipe_data_directory_path, q{info} );
     my $recipe_script_directory_path =
       catdir( $outscript_dir, $directory_id, $recipe_directory );

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_grep };
@@ -95,6 +95,11 @@ sub gnu_grep {
     if ($filter_file_path) {
 
         push @commands, q{--file=} . $filter_file_path;
+    }
+
+    if ($pattern) {
+
+        push @commands, $pattern;
     }
 
     ## Infile

@@ -195,6 +195,7 @@ evep:
     bcftools: 1.9=h4da6232_0
     openssl: 1.0.2p
     htslib: 1.9=hc238db4_4
+    openssl: 1.0.2p
     pip:
     python: 2.7
   pip:

@@ -19,7 +19,7 @@ use warnings qw{ FATAL utf8 };
 ## Cpanm
 use autodie qw{open close :all};
 use IPC::Cmd qw{ can_run run};
-use Modern::Perl qw{2014};
+use Modern::Perl qw{2018};
 use Readonly;
 
 ## MIPs lib/
@@ -74,25 +74,15 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 # Create array ref for cmd
 my $cmds_ref = [
     q{perl},      $mip_path,       qw{ download rd_dna }, q{--config},
-    $config_file, q{--conda_path}, $conda_path,           q{--sbatch_mode},
-    qw{ --dra },
+    $config_file, q{--conda_path}, $conda_path,           qw{ --dra },
 ];
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
   run( command => $cmds_ref, verbose => $VERBOSE );
-ok( $success, q{Executed mip download rd_dna sbatch mode} );
-
-$cmds_ref = [
-    q{perl},      $mip_path,       qw{ download rd_dna }, q{--config},
-    $config_file, q{--conda_path}, $conda_path,
-];
-
-( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
-  run( command => $cmds_ref, verbose => $VERBOSE );
-ok( $success, q{Executed mip download rd_dna bash mode} );
+ok( $success, q{Executed mip download rd_dna} );
 
 ## Clean-up
-my @clenup_dirs = qw{ download_reference.sh mip_download mip_log };
+my @clenup_dirs = qw{ mip_download mip_log };
 foreach my $dir (@clenup_dirs) {
 
     remove_tree( catfile( cwd(), $dir ) );

@@ -33,6 +33,9 @@ BEGIN {
 
 }
 
+## Constants
+Readonly my $JAVA_MEMORY_ALLOCATION => 10;
+
 sub analysis_reformat_sv {
 
 ## Function : Concatenate and sort contig files. Optionally remove variants from genelist.
@@ -147,14 +150,14 @@ sub analysis_reformat_sv {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
-    use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
+    use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
     use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+      ## Retrieve logger object
+      my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -261,13 +264,19 @@ sub analysis_reformat_sv {
             $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} );
 
         ## Sort variants in vcf format
-        sort_vcf(
+        picardtools_sortvcf(
             {
-                active_parameter_href => $active_parameter_href,
-                FILEHANDLE            => $FILEHANDLE,
-                sequence_dict_file    => $sequence_dict_file,
-                infile_paths_ref      => [$infile_path],
-                outfile               => $outfile_paths[$infile_index],
+                FILEHANDLE       => $FILEHANDLE,
+                infile_paths_ref => [$infile_path],
+                java_jar =>
+                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                outfile_path         => $outfile_paths[$infile_index],
+                referencefile_path   => $active_parameter_href->{human_genome_reference},
+                sequence_dict_file   => $sequence_dict_file,
+                sequence_dictionary  => $sequence_dict_file,
+                temp_directory       => $active_parameter_href->{temp_directory},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
