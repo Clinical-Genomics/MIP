@@ -46,13 +46,15 @@ BEGIN {
       parse_cpan_file { cpanfile_path => catfile( $Bin, qw{ definitions cpanfile } ), };
 
     ## Evaluate that all modules required are installed
-    #    check_perl_modules(
-    #        {
-    #            modules_ref  => \@modules,
-    #            program_name => $PROGRAM_NAME,
-    #        }
-    #    );
+    #        check_perl_modules(
+    #            {
+    #                modules_ref  => \@modules,
+    #                program_name => $PROGRAM_NAME,
+    #            }
+    #        );
 }
+
+my $VERSION = q{2.1.3};
 
 my ( $evaluate_plink_gender, $print_regexp, $regexp_file, $sample_info_file,
     $skip_evaluation, );
@@ -69,8 +71,6 @@ my %qc_header;
 ## Save data in each outfile
 my %qc_recipe_data;
 
-my $qccollect_version = q{2.1.2};
-
 ### User Options
 GetOptions(
     q{si|sample_info_file:s}        => \$sample_info_file,
@@ -85,8 +85,7 @@ GetOptions(
     q{h|help} => sub { say STDOUT $USAGE; exit; },
     ## Display version number
     q{v|version} => sub {
-        say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $qccollect_version,
-          $NEWLINE;
+        say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },
   )
@@ -161,7 +160,7 @@ case_qc(
 );
 
 ## Add qcCollect version to qc_data yaml file
-$qc_data{recipe}{qccollect}{version}     = $qccollect_version;
+$qc_data{recipe}{qccollect}{version}     = $VERSION;
 $qc_data{recipe}{qccollect}{regexp_file} = $regexp_file;
 
 SAMPLE_ID:
@@ -295,6 +294,7 @@ sub case_qc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Qc_data qw{ set_qc_data_case_recipe_version };
     use MIP::Sample_info qw{ get_sample_info_case_recipe_attributes };
 
     ## For every recipe
@@ -317,20 +317,23 @@ sub case_qc {
               fileparse( $attribute{path} );
         }
 
-        ## Set package executable version  from recipe to metrics hash
-        if ( exists $attribute{version} ) {
-
-            $qc_data_href->{recipe}{$recipe}{version} = $attribute{version};
-        }
+        ## Set package executable version from recipe to metrics hash
+        set_qc_data_case_recipe_version(
+            {
+                qc_data_href => $qc_data_href,
+                recipe_name  => $recipe,
+                version      => $attribute{version},
+            }
+        );
 
         ## Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
         parse_regexp_hash_and_collect(
             {
                 outdirectory        => $outdirectory,
                 outfile             => $outfile,
-                recipe              => $recipe,
                 qc_recipe_data_href => $qc_recipe_data_href,
                 qc_header_href      => $qc_header_href,
+                recipe              => $recipe,
                 regexp_href         => $regexp_href,
             }
         );
