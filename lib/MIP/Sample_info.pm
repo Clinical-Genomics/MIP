@@ -32,6 +32,7 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_read_group
+      get_sample_info_recipe_attributes
       get_sequence_run_type
       get_sequence_run_type_is_interleaved
       set_gene_panel
@@ -122,6 +123,54 @@ sub get_read_group {
     $rg{lb} = $sample_id;
 
     return %rg;
+}
+
+sub get_sample_info_recipe_attributes {
+
+## Function : Get recipe attributes from sample_info hash
+## Returns  : "$attribute" or "$attribute_href"
+## Arguments: $attribute        => Attribute key
+##          : $recipe_name      => Recipe to get attributes from
+##          : $sample_info_href => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $recipe_name;
+    my $sample_info_href;
+
+    my $tmpl = {
+        attribute => {
+            allow       => [qw{ outdirectory outfile path version }],
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get and return attribute value
+    if ( defined $attribute && $attribute ) {
+
+        return $sample_info_href->{recipe}{$recipe_name}{$attribute};
+    }
+
+    ## Get recipe attribute hash
+    return %{ $sample_info_href->{recipe}{$recipe_name} };
 }
 
 sub get_sequence_run_type {
