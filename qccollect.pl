@@ -40,29 +40,28 @@ our $USAGE = build_usage( {} );
 BEGIN {
 
     require MIP::Check::Modules;
-    require MIP::Check::Modules;
     use MIP::Check::Modules qw{ check_perl_modules parse_cpan_file };
 
     my @modules =
       parse_cpan_file { cpanfile_path => catfile( $Bin, qw{ definitions cpanfile } ), };
 
     ## Evaluate that all modules required are installed
-    check_perl_modules(
-        {
-            modules_ref  => \@modules,
-            program_name => $PROGRAM_NAME,
-        }
-    );
+    #    check_perl_modules(
+    #        {
+    #            modules_ref  => \@modules,
+    #            program_name => $PROGRAM_NAME,
+    #        }
+    #    );
 }
 
-my ( $sample_info_file, $regexp_file, $print_regexp, $skip_evaluation,
-    $evaluate_plink_gender );
+my ( $evaluate_plink_gender, $print_regexp, $regexp_file, $sample_info_file,
+    $skip_evaluation, );
 
 ## Scalar parameters with defaults
-my ( $outfile, $print_regexp_outfile, $log_file ) =
-  ( q{qcmetrics.yaml}, q{qc_regexp.yaml}, catfile( cwd(), q{qccollect.log} ) );
+my ( $log_file, $print_regexp_outfile, $outfile, ) =
+  ( catfile( cwd(), q{qccollect.log} ), q{qc_regexp.yaml}, q{qcmetrics.yaml}, );
 
-my ( %qc_data, %evaluate_metric );
+my ( %evaluate_metric, %qc_data, );
 
 ## Save header(s) in each outfile
 my %qc_header;
@@ -70,9 +69,9 @@ my %qc_header;
 ## Save data in each outfile
 my %qc_recipe_data;
 
-my $qccollect_version = q{2.1.1};
+my $qccollect_version = q{2.1.2};
 
-###User Options
+### User Options
 GetOptions(
     q{si|sample_info_file:s}        => \$sample_info_file,
     q{r|regexp_file:s}              => \$regexp_file,
@@ -102,17 +101,17 @@ GetOptions(
 my $log = initiate_logger(
     {
         file_path => $log_file,
-        log_name  => q{Qccollect},
+        log_name  => uc q{mip_qccollect},
     }
 );
 
-if ($print_regexp) {
-
-    ## Write default regexp to YAML
-    regexp_to_yaml( { print_regexp_outfile => $print_regexp_outfile, } );
-    $log->info( q{Wrote regexp YAML file to: } . $print_regexp_outfile );
-    exit;
-}
+## Write default regexp to YAML if demanded
+regexp_to_yaml(
+    {
+        is_print_regexp      => $print_regexp,
+        print_regexp_outfile => $print_regexp_outfile,
+    }
+);
 
 if ( not $sample_info_file ) {
 
@@ -142,26 +141,26 @@ $log->info( q{Loaded: } . $regexp_file );
 ## Extracts all qcdata on sample_id level using information in %sample_info and %regexp
 sample_qc(
     {
-        sample_info_href    => \%sample_info,
-        regexp_href         => \%regexp,
         qc_data_href        => \%qc_data,
         qc_header_href      => \%qc_header,
         qc_recipe_data_href => \%qc_recipe_data,
+        regexp_href         => \%regexp,
+        sample_info_href    => \%sample_info,
     }
 );
 
 ## Extracts all qcdata on case level using information in %sample_info_file and %regexp
 case_qc(
     {
-        sample_info_href    => \%sample_info,
-        regexp_href         => \%regexp,
         qc_data_href        => \%qc_data,
         qc_header_href      => \%qc_header,
         qc_recipe_data_href => \%qc_recipe_data,
+        regexp_href         => \%regexp,
+        sample_info_href    => \%sample_info,
     }
 );
 
-##Add qcCollect version to qc_data yaml file
+## Add qcCollect version to qc_data yaml file
 $qc_data{recipe}{qccollect}{version}     = $qccollect_version;
 $qc_data{recipe}{qccollect}{regexp_file} = $regexp_file;
 
@@ -171,8 +170,8 @@ foreach my $sample_id ( keys %{ $sample_info{sample} } ) {
     ## Defines recipes, metrics and thresholds to evaluate
     define_evaluate_metric(
         {
-            sample_info_href => \%sample_info,
             sample_id        => $sample_id,
+            sample_info_href => \%sample_info,
         }
     );
 }
@@ -182,8 +181,8 @@ if ( not $skip_evaluation ) {
     ## Evaluate the metrics
     evaluate_qc_parameters(
         {
-            qc_data_href         => \%qc_data,
             evaluate_metric_href => \%evaluate_metric,
+            qc_data_href         => \%qc_data,
         }
     );
 }
@@ -191,8 +190,8 @@ if ( not $skip_evaluation ) {
 ## Writes a YAML hash to file
 write_yaml(
     {
-        yaml_href      => \%qc_data,
         yaml_file_path => $outfile,
+        yaml_href      => \%qc_data,
     }
 );
 $log->info( q{Wrote: } . $outfile );
@@ -215,8 +214,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 
@@ -296,34 +295,32 @@ sub case_qc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Sample_info qw{ get_sample_info_case_recipe_attributes };
+
     ## For every recipe
   RECIPE:
     for my $recipe ( keys %{ $sample_info_href->{recipe} } ) {
 
-        my $outdirectory;
-        my $outfile;
+        my %attribute = get_sample_info_case_recipe_attributes(
+            {
+                recipe_name      => $recipe,
+                sample_info_href => \%sample_info,
+            }
+        );
 
-        if ( $sample_info_href->{recipe}{$recipe}{version} ) {
+        my $outdirectory = $attribute{outdirectory};
+        my $outfile      = $attribute{outfile};
 
-            ## Add version to qc_data
-            $qc_data_href->{recipe}{$recipe}{version} =
-              $sample_info_href->{recipe}{$recipe}{version};
-        }
-        if ( $sample_info_href->{recipe}{$recipe}{outdirectory} ) {
-
-            ## Extract outdirectory
-            $outdirectory =
-              $sample_info_href->{recipe}{$recipe}{outdirectory};
-        }
-        if ( $sample_info_href->{recipe}{$recipe}{outfile} ) {
-
-            ## Extract outfile
-            $outfile = $sample_info_href->{recipe}{$recipe}{outfile};
-        }
-        if ( $sample_info_href->{recipe}{$recipe}{path} ) {
+        if ( exists $attribute{path} ) {
 
             ( $outfile, $outdirectory ) =
-              fileparse( $sample_info_href->{recipe}{$recipe}{path} );
+              fileparse( $attribute{path} );
+        }
+
+        ## Set package executable version  from recipe to metrics hash
+        if ( exists $attribute{version} ) {
+
+            $qc_data_href->{recipe}{$recipe}{version} = $attribute{version};
         }
 
         ## Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
@@ -1557,14 +1554,22 @@ sub regexp_to_yaml {
 
 ##Function : Write default regexp to YAML
 ##Returns  :
-##Arguments: $print_regexp_outfile => File to print regexp to
+##Arguments: $is_print_regexp      => To print or not
+##         : $print_regexp_outfile => File to print regexp to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $is_print_regexp;
     my $print_regexp_outfile;
 
     my $tmpl = {
+        is_print_regexp => {
+            allow       => [ undef, 0, 1 ],
+            default     => undef,
+            store       => \$is_print_regexp,
+            strict_type => 1,
+        },
         print_regexp_outfile => {
             defined     => 1,
             required    => 1,
@@ -1575,91 +1580,95 @@ sub regexp_to_yaml {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Yaml qw{ write_yaml };
+
+    return if ( not $is_print_regexp );
+
     my %regexp;
 
-    #Add to %regexp to enable print in YAML
+    ## Add to %regexp to enable print in YAML
+    # Return FastQC version
     $regexp{fastqc}{version} =
-      q?perl -nae' if ($_=~/##FastQC\\s+(\\S+)/) {print $1;last;}' ?
-      ;    #Collect FastQC version
+      q?perl -nae' if ($_=~/##FastQC\\s+(\\S+)/) {print $1;last;}' ?;
 
+    # Return Encoding
     $regexp{fastqc}{encoding} =
-q?perl -nae' if ($_=~/Encoding\s+(\S+\s\S+\s\S+\s\S+|\S+\s\S+)/) { my $encoding = $1;$encoding=~s/\s/\_/g; print $encoding;last;}' ?
-      ;    #Collect Encoding
+q?perl -nae' if ($_=~/Encoding\s+(\S+\s\S+\s\S+\s\S+|\S+\s\S+)/) { my $encoding = $1;$encoding=~s/\s/\_/g; print $encoding;last;}' ?;
 
+    # Return Sequence length
     $regexp{fastqc}{sequence_length} =
-      q?perl -nae' if ($_=~/Sequence length\s(\d+)/) {print $1;last;}' ?
-      ;    #Collect Sequence length
+      q?perl -nae' if ($_=~/Sequence length\s(\d+)/) {print $1;last;}' ?;
 
+    # Return Total sequences
     $regexp{fastqc}{total_number_of_reads} =
-      q?perl -nae' if ($_=~/Total Sequences\s(\d+)/) {print $1;last;}' ?
-      ;    #Collect Total sequences
+      q?perl -nae' if ($_=~/Total Sequences\s(\d+)/) {print $1;last;}' ?;
 
-    $regexp{fastqc}{gc} =
-      q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;last;}' ?;    #Collect GC content
+    # Return GC content
+    $regexp{fastqc}{gc} = q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;last;}' ?;
 
+    # Return Sequence duplication level
     $regexp{fastqc}{sequence_duplication} =
-      q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;last;}' ?
-      ;    #Collect Sequence duplication level
+      q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;last;}' ?;
 
+    # Return Basic Statistics
     $regexp{fastqc}{basic_statistics} =
-      q?perl -nae' if ($_=~/>>Basic Statistics\s+(\S+)/) {print $1;last;}' ?
-      ;    #Collect Basic Statistics
+      q?perl -nae' if ($_=~/>>Basic Statistics\s+(\S+)/) {print $1;last;}' ?;
 
+    # Return Per base sequence quality
     $regexp{fastqc}{per_base_sequence_quality} =
-      q?perl -nae' if ($_=~/>>Per base sequence quality\s+(\S+)/) {print $1;last;}' ?
-      ;    #Collect Per base sequence quality
+      q?perl -nae' if ($_=~/>>Per base sequence quality\s+(\S+)/) {print $1;last;}' ?;
 
+    # Return Per sequence quality scores
     $regexp{fastqc}{per_sequence_quality_scores} =
-      q?perl -nae' if ($_=~/>>Per sequence quality scores\s+(\S+)/) {print $1;last;}' ?
-      ;    #Collect Per sequence quality scores
+      q?perl -nae' if ($_=~/>>Per sequence quality scores\s+(\S+)/) {print $1;last;}' ?;
 
+    # Return Per base sequence content
     $regexp{fastqc}{per_base_sequence_content} =
-      q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;last;}' ?
-      ;    #Collect Per base sequence content
+      q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;last;}' ?;
 
+    # Return Per base GC content
     $regexp{fastqc}{per_base_gc_content} =
-      q?perl -nae' if ($_=~/>>Per base GC content\s+(\S+)/) {print $1;last;}' ?
-      ;    #Collect Per base GC content
+      q?perl -nae' if ($_=~/>>Per base GC content\s+(\S+)/) {print $1;last;}' ?;
 
+    # Return Per sequence GC content
     $regexp{fastqc}{per_sequence_gc_content} =
-      q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;last;}' ?
-      ;    #Collect Per sequence GC content
+      q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;last;}' ?;
 
+    # Return Per base N content
     $regexp{fastqc}{per_base_n_content} =
-      q?perl -nae' if ($_=~/>>Per base N content\s+(\S+)/) {print $1;last;}' ?
-      ;    #Collect Per base N content
+      q?perl -nae' if ($_=~/>>Per base N content\s+(\S+)/) {print $1;last;}' ?;
 
+    # Return Sequence Duplication Levels
     $regexp{fastqc}{sequence_duplication_levels} =
-      q?perl -nae' if ($_=~/>>Sequence Duplication Levels\s+(\S+)/) {print $1;last;}' ?
-      ;    #Collect Sequence Duplication Levels
+      q?perl -nae' if ($_=~/>>Sequence Duplication Levels\s+(\S+)/) {print $1;last;}' ?;
 
+    # Return Overrepresented sequences
     $regexp{fastqc}{overrepresented_sequences} =
-      q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;last;}' ?
-      ;    #Collect Overrepresented sequences
+      q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;last;}' ?;
 
+    # Return Kmer Content
     $regexp{fastqc}{kmer_content} =
-      q?perl -nae' if ($_=~/>>Kmer Content\s+(\S+)/) {print $1;last;}' ?
-      ;    #Collect Kmer Content
+      q?perl -nae' if ($_=~/>>Kmer Content\s+(\S+)/) {print $1;last;}' ?;
 
+    # Return % mapped reads from BAM alignment
     $regexp{bamstats}{percentage_mapped_reads} =
-      q?perl -nae 'if($_=~/percentage mapped reads:\s+(\S+)/) {print $1;last}' ?
-      ;    #Collect % mapped reads from BAM alignment
+      q?perl -nae 'if($_=~/percentage mapped reads:\s+(\S+)/) {print $1;last}' ?;
 
+    # Return raw total sequences from BAM alignment
     $regexp{bamstats}{raw_total_sequences} =
-      q?perl -nae 'if($_=~/raw total sequences:\s+(\S+)/) {print $1;last}' ?
-      ;    #Collect raw total sequences from BAM alignment
+      q?perl -nae 'if($_=~/raw total sequences:\s+(\S+)/) {print $1;last}' ?;
 
+    # Return reads mapped from BAM alignment
     $regexp{bamstats}{reads_mapped} =
-      q?perl -nae 'if($_=~/reads mapped:\s+(\S+)/) {print $1;last}' ?
-      ;    #Collect reads mapped from BAM alignment
+      q?perl -nae 'if($_=~/reads mapped:\s+(\S+)/) {print $1;last}' ?;
 
+    # Return gender from chanjo_sexcheck
     $regexp{chanjo_sexcheck}{gender} =
-      q?perl -nae 'if( ($F[0]!~/^#/) && ($F[2] =~/\S+/) ) {print $F[2];}' ?
-      ;    #Collect gender from chanjo_sexcheck
+      q?perl -nae 'if( ($F[0]!~/^#/) && ($F[2] =~/\S+/) ) {print $F[2];}' ?;
 
+    # Return sample order from vcf file used to create ".ped", ".map" and hence ".mibs".
     $regexp{pedigree_check}{sample_order} =
-q?perl -nae 'if ($_=~/^#CHROM/) {chomp $_; my @line = split(/\t/,$_); for (my $sample=9;$sample<scalar(@line);$sample++) { print $line[$sample], "\t";}last;}' ?
-      ; #Collect sample order from vcf file used to create ".ped", ".map" and hence ".mibs".
+q?perl -nae 'if ($_=~/^#CHROM/) {chomp $_; my @line = split(/\t/,$_); for (my $sample=9;$sample<scalar(@line);$sample++) { print $line[$sample], "\t";}last;}' ?;
 
     $regexp{inbreeding_factor}{sample_inbreeding_factor} =
 q?perl -nae 'my @inbreedingFactor; if ($. > 1) {my @temp = split(/\s/,$_);push(@inbreedingFactor, $F[0].":".$F[5]); print $inbreedingFactor[0], "\t"; }' ?;
@@ -1667,292 +1676,318 @@ q?perl -nae 'my @inbreedingFactor; if ($. > 1) {my @temp = split(/\s/,$_);push(@
     $regexp{plink_sexcheck}{sample_sexcheck} =
 q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@sexCheckFactor,$temp[2].":".$temp[4]); print $sexCheckFactor[0], "\t"; }' ?;
 
-    $regexp{relation_check}{sample_relation_check} =
-      q?perl -nae 'print $_;' ?;    #Note will return whole file
+    # Get entire sample relation check file
+    $regexp{relation_check}{sample_relation_check} = q?perl -nae 'print $_;' ?;
 
+    # Return fraction duplicates
     $regexp{markduplicates}{fraction_duplicates} =
-      q?perl -nae 'if($_=~/Fraction Duplicates\: (\S+)/) {print $1;}' ?
-      ;                             #Collect fraction duplicates
+      q?perl -nae 'if($_=~/Fraction Duplicates\: (\S+)/) {print $1;}' ?;
 
+    # Get BAIT_SET line from header
     $regexp{collecthsmetrics}{header_info}{header} =
-      q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?
-      ;                             #Note return whole line (header)
+      q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?;
 
+    # Return line and only look at line 8 in file, where the data action is
     $regexp{collecthsmetrics}{header_info}{data} =
-      q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?
-      ;    #Note return whole line and only look at line 8, where the data action is
+      q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?;
 
+    # Return CATEGORY line from header
     $regexp{collectmultiplemetrics}{header_info}{header} =
-      q?perl -nae' if ($_ =~/^CATEGORY/ ) {print $_;last;}' ?
-      ;    #Note return whole line (header)
+      q?perl -nae' if ($_ =~/^CATEGORY/ ) {print $_;last;}' ?;
 
+    # Return FIRST_OF_PAIR
     $regexp{collectmultiplemetrics}{header_info}{first_of_pair} =
-      q?perl -nae' if ($_ =~/^FIRST_OF_PAIR/ ) {print $_;last;}' ?
-      ;    #Note return whole line (FIRST_OF_PAIR)
+      q?perl -nae' if ($_ =~/^FIRST_OF_PAIR/ ) {print $_;last;}' ?;
 
+    # Return SECOND_OF_PAIR
     $regexp{collectmultiplemetrics}{header_info}{second_of_pair} =
-      q?perl -nae' if ($_ =~/^SECOND_OF_PAIR/ ) {print $_;last;}' ?
-      ;    #Note return whole line (SECOND_OF_PAIR)
+      q?perl -nae' if ($_ =~/^SECOND_OF_PAIR/ ) {print $_;last;}' ?;
 
+    # Return PAIR line
     $regexp{collectmultiplemetrics}{header_info}{pair} =
-      q?perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  ?; #Note return whole line (PAIR)
+      q?perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  ?;
 
+    # Return MEDIAN_INSERT_SIZE line from header
     $regexp{collectmultiplemetricsinsertsize}{header_info}{header} =
-      q?perl -nae' if ($_ =~/^MEDIAN_INSERT_SIZE/ ) {print $_;last;}' ?
-      ;    #Note return whole line (header)
+      q?perl -nae' if ($_ =~/^MEDIAN_INSERT_SIZE/ ) {print $_;last;}' ?;
 
+    # Return line and only look at line 8 in file, where the data action is
     $regexp{collectmultiplemetricsinsertsize}{header_info}{data} =
-      q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?
-      ;    #Note return whole line and only look at line 8, where the data action is
+      q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?;
 
+# Return CompOverlap CompFeatureInput line and only look at line 8, where the data action is in header
     $regexp{variantevalall}{comp_overlap_header}{comp_overlap_header} =
-      q?perl -nae' if ($_ =~/^CompOverlap\s+CompFeatureInput/ ) {print $_;last;}' ?
-      ;    #Note return whole line (header)
+      q?perl -nae' if ($_ =~/^CompOverlap\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
+    # Return CompOverlap and all and none line
     $regexp{variantevalall}{comp_overlap_header}{comp_overlap_data_all} =
-q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print $_;last;}' ?
-      ;    #Note return whole line
+q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print $_;last;}' ?;
 
+    # Return CompOverlap and known line
     $regexp{variantevalall}{comp_overlap_header}{comp_overlap_data_known} =
-      q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/known\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+      q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
+    # Return CompOverlap and novel line
     $regexp{variantevalall}{comp_overlap_header}{comp_overlap_data_novel} =
-      q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+      q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
+    # Return CountVariants and CompFeatureInput line from header
     $regexp{variantevalall}{count_variants_header}{count_variants_header} =
-      q?perl -nae' if ($_ =~/^CountVariants\s+CompFeatureInput/ ) {print $_;last;}' ?
-      ;    #Note return whole line (header)
+      q?perl -nae' if ($_ =~/^CountVariants\s+CompFeatureInput/ ) {print $_;last;}' ?;
+
+    # Return CountVariants and all line
     $regexp{variantevalall}{count_variants_header}{count_variants_data_all} =
-      q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/all\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+      q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
+
+    # Return CountVariants and known line
     $regexp{variantevalall}{count_variants_header}{count_variants_data_known} =
-      q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/known\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+      q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
+
+    # Return CountVariants and novel line
     $regexp{variantevalall}{count_variants_header}{count_variants_data_novel} =
-      q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+      q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
+    # Return IndelSummary and CompFeatureInput line from header
     $regexp{variantevalall}{indel_summary_header}{indel_summary_header} =
-      q?perl -nae' if ($_ =~/^IndelSummary\s+CompFeatureInput/ ) {print $_;last;}' ?
-      ;    #Note return whole line (header)
+      q?perl -nae' if ($_ =~/^IndelSummary\s+CompFeatureInput/ ) {print $_;last;}' ?;
+
+    # Return IndelSummary and all line
     $regexp{variantevalall}{indel_summary_header}{indel_summary_data_all} =
-      q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+      q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
+
+    # Return IndelSummary and known line
     $regexp{variantevalall}{indel_summary_header}{indel_summary_data_known} =
-      q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+      q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
+
+    # Return IndelSummary and novel line
     $regexp{variantevalall}{indel_summary_header}{indel_summary_data_novel} =
-      q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+      q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
+    # Return MultiallelicSummary and CompFeatureInput line from header
     $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_header} =
-q?perl -nae' if ($_ =~/^MultiallelicSummary\s+CompFeatureInput/ ) {print $_;last;}' ?
-      ;    #Note return whole line (header)
-    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_all} =
-q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
-    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_known}
-      = q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
-    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_novel}
-      = q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+q?perl -nae' if ($_ =~/^MultiallelicSummary\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
+    # Return MultiallelicSummary and all line
+    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_all} =
+q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
+
+    # Return MultiallelicSummary and known line
+    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_known}
+      = q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
+
+    # Return MultiallelicSummary and novel line
+    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_novel}
+      = q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
+
+    # Return TiTvVariantEvaluator and CompFeatureInput line from header
     $regexp{variantevalall}{titv_variant_evaluator_header}{titv_variant_evaluator_header}
-      = q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+CompFeatureInput/ ) {print $_;last;}' ?
-      ;    #Note return whole line (header)
+      = q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+CompFeatureInput/ ) {print $_;last;}' ?;
+
+    # Return TiTvVariantEvaluator and all line
     $regexp{variantevalall}{titv_variant_evaluator_header}
       {titv_variant_evaluator_data_all} =
-q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/all\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
+
+    # Return TiTvVariantEvaluator and known line
     $regexp{variantevalall}{titv_variant_evaluator_header}
       {titv_variant_evaluator_data_known} =
-q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/known\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
+
+    # Return TiTvVariantEvaluator and novel line
     $regexp{variantevalall}{titv_variant_evaluator_header}
       {titv_variant_evaluator_data_novel} =
-q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
+    # Return ValidationReport and CompFeatureInput line from header
     $regexp{variantevalall}{validation_report_header}{validation_report_header} =
-      q?perl -nae' if ($_ =~/^ValidationReport\s+CompFeatureInput/ ) {print $_;last;}' ?
-      ;    #Note return whole line (header)
-    $regexp{variantevalall}{validation_report_header}{validation_report_data_all} =
-q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/all\s/) && ($_ =~/none\s/)) {print $_;last;}' ?
-      ;    #Note return whole line
-    $regexp{variantevalall}{validation_report_header}{validation_report_data_known} =
-q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/known\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
-    $regexp{variantevalall}{validation_report_header}{validation_report_data_novel} =
-q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+      q?perl -nae' if ($_ =~/^ValidationReport\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
+    # Return ValidationReport and all line
+    $regexp{variantevalall}{validation_report_header}{validation_report_data_all} =
+q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/all\s/) && ($_ =~/none\s/)) {print $_;last;}' ?;
+
+    # Return ValidationReport and known line
+    $regexp{variantevalall}{validation_report_header}{validation_report_data_known} =
+q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
+
+    # Return ValidationReport and novel line
+    $regexp{variantevalall}{validation_report_header}{validation_report_data_novel} =
+q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
+
+    # Return VariantSummary and CompFeatureInput line from header
     $regexp{variantevalall}{variant_summary_header}{variant_summary_header} =
-      q?perl -nae' if ($_ =~/^VariantSummary\s+CompFeatureInput/ ) {print $_;last;}' ?
-      ;    #Note return whole line (header)
+      q?perl -nae' if ($_ =~/^VariantSummary\s+CompFeatureInput/ ) {print $_;last;}' ?;
+
+    # Return VariantSummary and all line
     $regexp{variantevalall}{variant_summary_header}{variant_summary_data_all} =
-      q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+      q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
+
+    # Return VariantSummary and known line
     $regexp{variantevalall}{variant_summary_header}{variant_summary_data_known} =
-      q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
+
+    # Return VariantSummary and novel line
     $regexp{variantevalall}{variant_summary_header}{variant_summary_data_novel} =
-      q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?
-      ;    #Note return whole line
+q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     $regexp{variantevalexome} = $regexp{variantevalall};
 
+    # Return Genmod version
     $regexp{genmod}{version} =
-q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;}' ?
-      ;    #Collect Genmod version
+q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;}' ?;
 
+    # Return SnpEff version
     $regexp{snpeff}{version} =
-q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;print $ret;last;}' ?
-      ;    #Collect SnpEff version
+q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;print $ret;last;}' ?;
 
+    # Return varianteffectpredictor version
     $regexp{varianteffectpredictor}{version} =
-      q?perl -nae 'if($_=~/##VEP="(\w+)"/) {print $1;last;}' ?
-      ;    #Collect varianteffectpredictor version
+      q?perl -nae 'if($_=~/##VEP="(\w+)"/) {print $1;last;}' ?;
 
+    # Return varianteffectpredictor cache directory
     $regexp{varianteffectpredictor}{cache} =
-      q?perl -nae 'if($_=~/##VEP=\w+\s+cache=(\S+)/) {print $1;last;}' ?
-      ;    #Collect varianteffectpredictor cache directory
+      q?perl -nae 'if($_=~/##VEP=\w+\s+cache=(\S+)/) {print $1;last;}' ?;
 
+    # Return varianteffectpredictor polyPhen version
     $regexp{varianteffectpredictor}{polyphen} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/polyphen=(\S+)/) {print $1;last;}' ?
-      ;    #Collect varianteffectpredictor polyPhen version
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/polyphen=(\S+)/) {print $1;last;}' ?;
 
+    # Return varianteffectpredictor sift version
     $regexp{varianteffectpredictor}{sift} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/sift=sift(\S+)/) {print $1;last;}' ?
-      ;    #Collect varianteffectpredictor sift version
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/sift=sift(\S+)/) {print $1;last;}' ?;
 
+    # Return varianteffectpredictor geneBuild
     $regexp{varianteffectpredictor}{gene_build} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/genebuild=(\S+)/) {print $1;last;}' ?
-      ;    #Collect varianteffectpredictor geneBuild
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/genebuild=(\S+)/) {print $1;last;}' ?;
 
+    # Return varianteffectpredictor assembly
     $regexp{varianteffectpredictor}{assembly} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/assembly=(\S+)/) {print $1;last;}' ?
-      ;    #Collect varianteffectpredictor assembly
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/assembly=(\S+)/) {print $1;last;}' ?;
 
+    # Return varianteffectpredictor HGMD-PUBLIC version
     $regexp{varianteffectpredictor}{hgmd_public} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?
-      ;    #Collect varianteffectpredictor HGMD-PUBLIC version
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?;
 
+    # Return varianteffectpredictor regbuild version
     $regexp{varianteffectpredictor}{reg_build} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/regbuild=(\S+)/) {print $1;last;}' ?
-      ;    #Collect varianteffectpredictor regbuild version
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/regbuild=(\S+)/) {print $1;last;}' ?;
 
+    # Return varianteffectpredictor gencode version
     $regexp{varianteffectpredictor}{gencode} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?
-      ;    #Collect varianteffectpredictor gencode version
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?;
 
+    # Return vcfparser version
     $regexp{vcfparser}{version} =
-q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?
-      ;    #Collect vcfparser version
+q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?;
 
+    # Return Bwa version
     $regexp{bwa}{version} =
-      q?perl -nae 'if($_=~/\[main\]\sVersion:\s(\S+)/) {print $1;last;}' ?
-      ;    #Collect Bwa version
+      q?perl -nae 'if($_=~/\[main\]\sVersion:\s(\S+)/) {print $1;last;}' ?;
 
+    # Return Chanjo version
     $regexp{chanjo}{version} =
-      q?perl -nae 'if($_=~/version\s(\d+.\d+.\d+)/) {print $1;last;}' ?
-      ;    #Collect Chanjo version
+      q?perl -nae 'if($_=~/version\s(\d+.\d+.\d+)/) {print $1;last;}' ?;
 
-    $regexp{vt}{version} =
-      q?perl -nae 'if($_=~/decompose\sv(\S+)/) {print $1;last;}' ?;    #Collect vt version
+    # Return vt version
+    $regexp{vt}{version} = q?perl -nae 'if($_=~/decompose\sv(\S+)/) {print $1;last;}' ?;
 
+    # Return Samtools version
     $regexp{samtools}{version} =
-      q?perl -nae 'if($_=~/samtoolsVersion=(\S+)/) {print $1;last;}' ?
-      ;    #Collect Samtools version
+      q?perl -nae 'if($_=~/samtoolsVersion=(\S+)/) {print $1;last;}' ?;
 
+    # Return Bcftools version
     $regexp{bcftools}{version} =
-      q?perl -nae 'if($_=~/bcftools_\w+Version=(\S+)/) {print $1;last;}' ?
-      ;    #Collect Bcftools version
+      q?perl -nae 'if($_=~/bcftools_\w+Version=(\S+)/) {print $1;last;}' ?;
 
+    # Return Freebayes version
     $regexp{freebayes}{version} =
-      q?perl -nae 'if($_=~/source=freeBayes\s(\S+)/) {print $1;last;}' ?
-      ;    #Collect Freebayes version
+      q?perl -nae 'if($_=~/source=freeBayes\s(\S+)/) {print $1;last;}' ?;
 
+    # Return Delly version
     $regexp{delly}{version} =
-      q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?
-      ;    #Collect Delly version
+      q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?;
 
+    # Return Manta version
     $regexp{manta}{version} =
-      q?perl -nae 'if($_=~/GenerateSVCandidates\s+(\S+)/) {print $1;last}' ?
-      ;    #Collect Manta version
+      q?perl -nae 'if($_=~/GenerateSVCandidates\s+(\S+)/) {print $1;last}' ?;
 
+    # Return SVVCFAnno version
     $regexp{sv_combinevariantcallsets}{vcfanno} =
-      q?perl -nae 'if($_=~/vcfanno\sversion\s(\S+)/) {print $1;last;}' ?
-      ;    #Collect SVVCFAnno version
+      q?perl -nae 'if($_=~/vcfanno\sversion\s(\S+)/) {print $1;last;}' ?;
 
+    # Return sv_varianteffectpredictor version
     $regexp{sv_varianteffectpredictor}{version} =
-      q?perl -nae 'if($_=~/##VEP="(\w+)"/) {print $1;last;}' ?
-      ;    #Collect sv_varianteffectpredictor version
+      q?perl -nae 'if($_=~/##VEP="(\w+)"/) {print $1;last;}' ?;
 
+    # Return sv_varianteffectpredictor cache directory
     $regexp{sv_varianteffectpredictor}{cache} =
-      q?perl -nae 'if($_=~/##VEP=\w+\s+cache=(\S+)/) {print $1;last;}' ?
-      ;    #Collect sv_varianteffectpredictor cache directory
+      q?perl -nae 'if($_=~/##VEP=\w+\s+cache=(\S+)/) {print $1;last;}' ?;
 
+    # Return sv_varianteffectpredictor polyPhen version
     $regexp{sv_varianteffectpredictor}{polyphen} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/polyphen=(\S+)/) {print $1;last;}' ?
-      ;    #Collect sv_varianteffectpredictor polyPhen version
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/polyphen=(\S+)/) {print $1;last;}' ?;
 
+    # Return sv_varianteffectpredictor sift version
     $regexp{sv_varianteffectpredictor}{sift} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/sift=sift(\S+)/) {print $1;last;}' ?
-      ;    #Collect sv_varianteffectpredictor sift version
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/sift=sift(\S+)/) {print $1;last;}' ?;
 
+    # Return sv_varianteffectpredictor geneBuild
     $regexp{sv_varianteffectpredictor}{gene_build} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/genebuild=(\S+)/) {print $1;last;}' ?
-      ;    #Collect sv_varianteffectpredictor geneBuild
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/genebuild=(\S+)/) {print $1;last;}' ?;
 
+    # Return sv_varianteffectpredictor assembly
     $regexp{sv_varianteffectpredictor}{assembly} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/assembly=(\S+)/) {print $1;last;}' ?
-      ;    #Collect sv_varianteffectpredictor assembly
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/assembly=(\S+)/) {print $1;last;}' ?;
 
+    # Return sv_varianteffectpredictor HGMD-PUBLIC version
     $regexp{sv_varianteffectpredictor}{hgmd_public} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?
-      ;    #Collect sv_varianteffectpredictor HGMD-PUBLIC version
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?;
 
+    # Return sv_varianteffectpredictor regbuild version
     $regexp{sv_varianteffectpredictor}{reg_build} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/regbuild=(\S+)/) {print $1;last;}' ?
-      ;    #Collect sv_varianteffectpredictor regbuild version
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/regbuild=(\S+)/) {print $1;last;}' ?;
 
+    # Return sv_varianteffectpredictor gencode version
     $regexp{sv_varianteffectpredictor}{gencode} =
-      q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?
-      ;    #Collect sv_varianteffectpredictor gencode version
+      q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?;
 
+    # Return sv_vcfparser version
     $regexp{sv_vcfparser}{version} =
-q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} }' ?
-      ;    #Collect sv_vcfparser version
+q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} }' ?;
 
+    # Return SVGenmod version
     $regexp{sv_genmod}{version} =
-q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} } ' ?
-      ;    #Collect SVGenmod version
+q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} } ' ?;
 
+    # Return Plink2 version
     $regexp{plink2}{version} =
-q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\s/_/g;print $ret;last;}' ?
-      ;    #Collect Plink2 version
+q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\s/_/g;print $ret;last;}' ?;
 
+    # Return variant_integrity mendel fraction errors
     $regexp{mendel}{fraction_of_errors} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
 
+    # Return variant_integrity mendel mendelian_errors
     $regexp{mendel}{mendelian_errors} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
 
+    # Return variant_integrity father fraction of common_variants
     $regexp{father}{fraction_of_common_variants} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
 
+    # Return variant_integrity father common_variants
     $regexp{father}{common_variants} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
 
+    # Return tiddit version
     $regexp{tiddit}{version} =
 q?perl -nae 'if($_=~/^##source=TIDDIT-(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
 
+    # Return svdb version
     $regexp{svdb}{version} =
 q?perl -nae 'if($_=~/^##SVDB_version=(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
 
+    # Return vcf2cytosure version
     $regexp{vcf2cytosure_version}{version} =
       q?perl -nae 'if($_=~/cytosure\s+(\d+[.]\d+[.]\d+)/xsm) { print $1;last; }' ?;
 
@@ -1963,5 +1998,6 @@ q?perl -nae 'if($_=~/^##SVDB_version=(\S+)/) { print $1; last; } else { if($_=~/
             yaml_file_path => $print_regexp_outfile,
         }
     );
-    return;
+    $log->info( q{Wrote regexp YAML file to: } . $print_regexp_outfile );
+    exit;
 }

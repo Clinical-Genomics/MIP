@@ -91,6 +91,29 @@ $rg{pl} = <$platform>;
 $rg{lb} = <$sample_id>; # Dummy value since the actual LB isn't available in MIP (yet)
 ```
 
+get_sample_info_case_recipe_attributes:
+Return case recipe attribute or attributes hash
+```Perl
+# Scalar
+my $path = get_sample_info_case_recipe_attributes(
+    {
+        attribute        => q{path},
+        recipe_name      => $recipe_name,
+        sample_info_href => \%sample_info,
+    }
+);
+$path = <string>;
+
+# Hash
+my %attribute = get_sample_info_case_recipe_attributes(
+    {
+        recipe_name      => $recipe_name,
+        sample_info_href => \%sample_info,
+    }
+);
+$attribute{path} = <string>;
+```
+
 get_sequence_run_type:
 Return scalar sequence run type, (e.g. paired-end or single-end) or a hash of sequence run types per infile prefix
 ```Perl
@@ -104,6 +127,7 @@ my $sequence_run_type = get_sequence_run_type(
     );
 $sequence_run_type = <string>;
 
+# Hash
 my %sequence_run_type = get_sequence_run_type(
         {
             infile_lane_prefix_href => $infile_lane_prefix_href,
