@@ -149,7 +149,7 @@ recipe_core_number:
   default:
     analysisrunstatus: 1
     bcftools_mpileup: 16
-    bwa_mem: 16
+    bwa_mem: 36
     chanjo_sexcheck: 1
     cnvnator_ar: 16
     delly_call: 36
