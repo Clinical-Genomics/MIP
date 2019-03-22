@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -36,7 +36,9 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
+Readonly my $JAVA_MEMORY_RECIPE_ADDITION => 1;
+Readonly my $JAVA_GUEST_OS_MEMORY        => $ANALYSIS{JAVA_GUEST_OS_MEMORY} +
+  $JAVA_MEMORY_RECIPE_ADDITION;
 
 sub analysis_picardtools_mergesamfiles {
 

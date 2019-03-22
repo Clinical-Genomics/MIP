@@ -160,7 +160,7 @@ recipe_core_number:
     fastqc_ar: 0
     freebayes_ar: 16
     frequency_filter: 16
-    gatk_baserecalibration: 16
+    gatk_baserecalibration: 13
     gatk_combinevariantcallsets: 1
     gatk_genotypegvcfs: 1
     gatk_gathervcfs: 1
@@ -170,12 +170,12 @@ recipe_core_number:
     gatk_variantrecalibration: 1
     gzip_fastq: 0
     manta: 36
-    markduplicates: 16
+    markduplicates: 13
     multiqc_ar: 1
     peddy_ar: 4
     picardtools_collecthsmetrics: 1
     picardtools_collectmultiplemetrics: 1
-    picardtools_mergesamfiles: 16
+    picardtools_mergesamfiles: 13
     plink: 1
     qccollect_ar: 1
     rhocall_ar: 15
@@ -208,7 +208,9 @@ recipe_memory:
     expansionhunter: 2
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
+    gatk_baserecalibration: 10
     gatk_variantrecalibration: 30
+    markduplicates: 10
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
     rhocall_ar: 2

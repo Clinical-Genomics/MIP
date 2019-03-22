@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_reformat_sv };
@@ -156,8 +156,8 @@ sub analysis_reformat_sv {
 
     ### PREPROCESSING:
 
-      ## Retrieve logger object
-      my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my %io = get_io_files(
@@ -274,7 +274,6 @@ sub analysis_reformat_sv {
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 outfile_path         => $outfile_paths[$infile_index],
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
-                sequence_dict_file   => $sequence_dict_file,
                 sequence_dictionary  => $sequence_dict_file,
                 temp_directory       => $active_parameter_href->{temp_directory},
             }
