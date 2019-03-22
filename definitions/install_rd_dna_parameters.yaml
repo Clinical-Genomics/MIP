@@ -35,6 +35,7 @@ emip:
     pip:
     plink2: 1.90b3.35
     python: 2.7
+    R: 3.3.1 #GATK 3.8.5 req
     rtg-tools: 3.9.1=1
     sambamba: 0.6.8=h682856c_0
     samtools: 1.9=h8ee4bcc_1
