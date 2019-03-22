@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,7 +62,7 @@ diag(   q{Test analysis_bcftools_merge from Bcftools_merge.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given build parameters
-my $recipe_name = q{bcftools_merge};
+my $recipe_name    = q{bcftools_merge};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -81,6 +81,10 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+
+## Special case - remove second infile defined in test data
+shift @{ $file_info{ADM1059A1}{mip_infiles} };
+
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(

@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -91,6 +91,9 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+## Special case - remove second infile defined in test data
+shift @{ $file_info{ADM1059A1}{mip_infiles} };
+
 %{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
     {
         mip_hash_name => q{io},
