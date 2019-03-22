@@ -91,8 +91,6 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-## Special case - remove second infile defined in test data
-shift @{ $file_info{ADM1059A1}{mip_infiles} };
 
 %{ $file_info{io}{TEST}{$case_id}{$recipe_name} } = test_mip_hashes(
     {

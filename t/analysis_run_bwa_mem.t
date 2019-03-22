@@ -122,6 +122,9 @@ my %sample_info = (
         },
     },
 );
+## Special case - add second infile defined in test data
+push @{ $file_info{ADM1059A1}{mip_infiles} },
+  q{7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_2.fastq};
 
 ## Will test the run-bwamem
 $file_info{human_genome_reference_source}  = q{GRCh};

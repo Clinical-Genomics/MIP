@@ -82,9 +82,6 @@ my %file_info = test_mip_hashes(
     }
 );
 
-## Special case - remove second infile defined in test data
-shift @{ $file_info{ADM1059A1}{mip_infiles} };
-
 my %infile_lane_prefix;
 my %job_id;
 my %parameter = test_mip_hashes(
