@@ -1,13 +1,12 @@
 #!/usr/bin/env perl
 
-use 5.022;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname  };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
-use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
@@ -21,73 +20,35 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.01;
 
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Program::Variantcalling::Expansionhunter} => [qw{ expansionhunter }],
+        q{MIP::Test::Fixtures}                           => [qw{ test_standard_cli }],
+    );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Expansionhunter});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Variantcalling::Expansionhunter qw{ expansionhunter };
-use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test expansionhunter from Expansionhunter.pm v}
       . $MIP::Program::Variantcalling::Expansionhunter::VERSION
@@ -99,10 +60,6 @@ diag(   q{Test expansionhunter from Expansionhunter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Module test constants
-Readonly my $MIN_ANCHOR_MAPQ         => 60;
-Readonly my $MIN_BASEQ               => 30;
-Readonly my $MIN_SCORE               => 0.8;
-Readonly my $READ_DEPTH              => 30;
 Readonly my $REGION_EXTENSION_LENGTH => 1500;
 
 ## Base arguments
@@ -132,68 +89,38 @@ my %base_argument = (
 my %required_argument = (
     infile_path => {
         input           => catfile(qw{ a test path }),
-        expected_output => q{--bam} . $SPACE . catfile(qw{ a test path }),
-    },
-    json_outfile_path => {
-        input           => catfile(qw{ a test json }),
-        expected_output => q{--json} . $SPACE . catfile(qw{ a test json }),
-    },
-    log_outfile_path => {
-        input           => catfile(qw{ a test log }),
-        expected_output => q{--log} . $SPACE . catfile(qw{ a test log }),
+        expected_output => q{--reads} . $SPACE . catfile(qw{ a test path }),
     },
     reference_genome_path => {
         input           => catfile(qw{ a test fasta }),
-        expected_output => q{--ref-fasta}
-          . $SPACE
-          . catfile(qw{ a test fasta }),
+        expected_output => q{--reference} . $SPACE . catfile(qw{ a test fasta }),
     },
-    repeat_specs_dir_path => {
-        input           => catdir(qw{ a test rep_spec_dir }),
-        expected_output => q{--repeat-specs}
+    variant_catalog_file_path => {
+        input           => catdir(qw{ a test variant_catalog_file.json }),
+        expected_output => q{--variant-catalog}
           . $SPACE
-          . catdir(qw{ a test rep_spec_dir }),
+          . catdir(qw{ a test variant_catalog_file.json }),
     },
-    vcf_outfile_path => {
-        input           => catfile(qw{ a test vcf }),
-        expected_output => q{--vcf} . $SPACE . catfile(qw{ a test vcf }),
+    outfile_path_prefix => {
+        input           => catfile(qw{ a test outfile_path_prefix }),
+        expected_output => q{--output-prefix}
+          . $SPACE
+          . catfile(qw{ a test outfile_path_prefix }),
     },
 );
 
 my %specific_argument = (
     infile_path => {
         input           => catfile(qw{ a test path }),
-        expected_output => q{--bam} . $SPACE . catfile(qw{ a test path }),
+        expected_output => q{--reads} . $SPACE . catfile(qw{ a test path }),
     },
-    json_outfile_path => {
-        input           => catfile(qw{ a test json }),
-        expected_output => q{--json} . $SPACE . catfile(qw{ a test json }),
-    },
-    log_outfile_path => {
-        input           => catfile(qw{ a test log }),
-        expected_output => q{--log} . $SPACE . catfile(qw{ a test log }),
-    },
-    min_anchor_mapq => {
-        input           => $MIN_ANCHOR_MAPQ,
-        expected_output => q{--min-anchor-mapq} . $SPACE . $MIN_ANCHOR_MAPQ,
-    },
-    min_baseq => {
-        input           => $MIN_BASEQ,
-        expected_output => q{--min-baseq} . $SPACE . $MIN_BASEQ,
-    },
-    min_score => {
-        input           => $MIN_SCORE,
-        expected_output => q{--min-score} . $SPACE . $MIN_SCORE,
-    },
-    read_depth => {
-        input           => $READ_DEPTH,
-        expected_output => q{--read-depth} . $SPACE . $READ_DEPTH,
+    log_level => {
+        input           => q{debug},
+        expected_output => q{--log-level} . $SPACE . q{debug},
     },
     reference_genome_path => {
         input           => catfile(qw{ a test fasta }),
-        expected_output => q{--ref-fasta}
-          . $SPACE
-          . catfile(qw{ a test fasta }),
+        expected_output => q{--reference} . $SPACE . catfile(qw{ a test fasta }),
     },
     region_extension_length => {
         input           => $REGION_EXTENSION_LENGTH,
@@ -201,19 +128,21 @@ my %specific_argument = (
           . $SPACE
           . $REGION_EXTENSION_LENGTH,
     },
-    repeat_specs_dir_path => {
-        input           => catdir(qw{ a test rep_spec_dir }),
-        expected_output => q{--repeat-specs}
-          . $SPACE
-          . catdir(qw{ a test rep_spec_dir }),
-    },
     sex => {
         input           => q{female},
         expected_output => q{--sex female},
     },
-    vcf_outfile_path => {
-        input           => catfile(qw{ a test vcf }),
-        expected_output => q{--vcf} . $SPACE . catfile(qw{ a test vcf }),
+    variant_catalog_file_path => {
+        input           => catdir(qw{ a test variant_catalog_file.json }),
+        expected_output => q{--variant-catalog}
+          . $SPACE
+          . catdir(qw{ a test variant_catalog_file.json }),
+    },
+    outfile_path_prefix => {
+        input           => catfile(qw{ a test outfile_path_prefix }),
+        expected_output => q{--output-prefix}
+          . $SPACE
+          . catfile(qw{ a test outfile_path_prefix }),
     },
 );
 
@@ -225,6 +154,7 @@ my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
+
     my @commands = test_function(
         {
             argument_href              => $argument_href,
@@ -237,36 +167,3 @@ foreach my $argument_href (@arguments) {
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}
