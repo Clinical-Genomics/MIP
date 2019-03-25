@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_run_bwa_mem };
@@ -143,7 +143,6 @@ sub analysis_bwa_mem {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Bwa qw{ bwa_mem };
@@ -170,13 +169,11 @@ sub analysis_bwa_mem {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
     my @infile_paths         = @{ $io{in}{file_paths} };
     my @infile_names         = @{ $io{in}{file_names} };
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my @temp_infile_paths    = @{ $io{temp}{file_paths} };
 
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $job_id_chain            = get_recipe_attributes(
@@ -205,18 +202,15 @@ sub analysis_bwa_mem {
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
-                temp_directory         => $temp_directory,
             }
         )
     );
 
-    my $outdir_path                = $io{out}{dir_path};
-    my $outfile_suffix             = $io{out}{file_suffix};
-    my @outfile_name_prefixes      = @{ $io{out}{file_name_prefixes} };
-    my @outfile_paths              = @{ $io{out}{file_paths} };
-    my @outfile_path_prefixes      = @{ $io{out}{file_path_prefixes} };
-    my @temp_outfile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
-    my @temp_outfile_paths         = @{ $io{temp}{file_paths} };
+    my $outdir_path           = $io{out}{dir_path};
+    my $outfile_suffix        = $io{out}{file_suffix};
+    my @outfile_name_prefixes = @{ $io{out}{file_name_prefixes} };
+    my @outfile_paths         = @{ $io{out}{file_paths} };
+    my @outfile_path_prefixes = @{ $io{out}{file_path_prefixes} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -243,8 +237,6 @@ sub analysis_bwa_mem {
     {
 
         ## Assign file features
-        my $file_path           = $temp_outfile_paths[$infile_index];
-        my $file_path_prefix    = $temp_outfile_path_prefixes[$infile_index];
         my $outfile_name_prefix = $outfile_name_prefixes[$infile_index];
         my $outfile_path        = $outfile_paths[$infile_index];
         my $outfile_path_prefix = $outfile_path_prefixes[$infile_index];
@@ -292,32 +284,6 @@ sub analysis_bwa_mem {
 
         ### SHELL:
 
-        ## Copies file to temporary directory.
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-
-        # Read 1
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $infile_paths[$paired_end_tracker],
-                outfile_path => $temp_directory,
-            }
-        );
-
-        # If second read direction is present
-        if ( $sequence_run_type eq q{paired-end} ) {
-
-            # Read 2
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $infile_paths[ $paired_end_tracker + 1 ],
-                    outfile_path => $temp_directory,
-                }
-            );
-        }
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
-
         ### BWA MEM
         say {$FILEHANDLE} q{## Aligning reads with }
           . $recipe_name
@@ -326,7 +292,7 @@ sub analysis_bwa_mem {
         ### Get parameters
 
         ## Infile(s)
-        my $fastq_file_path = $temp_infile_paths[$paired_end_tracker];
+        my $fastq_file_path = $infile_paths[$paired_end_tracker];
         my $second_fastq_file_path;
 
         # If second read direction is present
@@ -334,7 +300,7 @@ sub analysis_bwa_mem {
 
             # Increment to collect correct read 2
             $paired_end_tracker     = $paired_end_tracker + 1;
-            $second_fastq_file_path = $temp_infile_paths[$paired_end_tracker];
+            $second_fastq_file_path = $infile_paths[$paired_end_tracker];
         }
 
         ## Read group header line
@@ -403,26 +369,12 @@ sub analysis_bwa_mem {
                 FILEHANDLE    => $FILEHANDLE,
                 infile_path   => $sambamba_sort_infile,
                 memory_limit  => $active_parameter_href->{bwa_sambamba_sort_memory_limit},
-                outfile_path  => $file_path,
+                outfile_path  => $outfile_path,
                 show_progress => 1,
                 temp_directory => $temp_directory,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-
-        ## BAMS, bwa_mem logs etc.
-        migrate_file(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $file_path_prefix . $DOT . $ASTERISK,
-                ,
-                outfile_path => $outdir_path,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
 
         if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
@@ -430,7 +382,7 @@ sub analysis_bwa_mem {
                 {
                     auto_detect_input_format => 1,
                     FILEHANDLE               => $FILEHANDLE,
-                    infile_path              => $file_path,
+                    infile_path              => $outfile_path,
                     remove_overlap           => 1,
                 }
             );
@@ -440,21 +392,10 @@ sub analysis_bwa_mem {
             _add_percentage_mapped_reads_from_samtools(
                 {
                     FILEHANDLE   => $FILEHANDLE,
-                    outfile_path => $file_path_prefix . $DOT . q{stats},
+                    outfile_path => $outfile_path_prefix . $DOT . q{stats},
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
-
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $file_path_prefix . $DOT . q{stats},
-                    outfile_path => $outdir_path,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
         }
 
         if (    $active_parameter_href->{bwa_mem_cram}
@@ -465,25 +406,14 @@ sub analysis_bwa_mem {
             samtools_view(
                 {
                     FILEHANDLE         => $FILEHANDLE,
-                    infile_path        => $file_path,
-                    outfile_path       => $file_path_prefix . $DOT . q{cram},
+                    infile_path        => $outfile_path,
+                    outfile_path       => $outfile_path_prefix . $DOT . q{cram},
                     output_format      => q{cram},
                     referencefile_path => $referencefile_path,
                     with_header        => 1,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
-
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $file_path_prefix . $DOT . q{cram},
-                    outfile_path => $outdir_path,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
         }
 
         close $FILEHANDLE;
@@ -673,7 +603,6 @@ sub analysis_run_bwa_mem {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Bwa qw{ bwa_mem run_bwamem };
@@ -706,7 +635,6 @@ sub analysis_run_bwa_mem {
     my @infile_paths         = @{ $io{in}{file_paths} };
     my @infile_names         = @{ $io{in}{file_names} };
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my @temp_infile_paths    = @{ $io{temp}{file_paths} };
 
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $job_id_chain            = get_recipe_attributes(
@@ -740,13 +668,11 @@ sub analysis_run_bwa_mem {
         )
     );
 
-    my $outdir_path                = $io{out}{dir_path};
-    my $outfile_suffix             = $io{out}{file_suffix};
-    my @outfile_name_prefixes      = @{ $io{out}{file_name_prefixes} };
-    my @outfile_paths              = @{ $io{out}{file_paths} };
-    my @outfile_path_prefixes      = @{ $io{out}{file_path_prefixes} };
-    my @temp_outfile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
-    my @temp_outfile_paths         = @{ $io{temp}{file_paths} };
+    my $outdir_path           = $io{out}{dir_path};
+    my $outfile_suffix        = $io{out}{file_suffix};
+    my @outfile_name_prefixes = @{ $io{out}{file_name_prefixes} };
+    my @outfile_paths         = @{ $io{out}{file_paths} };
+    my @outfile_path_prefixes = @{ $io{out}{file_path_prefixes} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -773,8 +699,6 @@ sub analysis_run_bwa_mem {
     {
 
         ## Assign file features
-        my $file_path           = $temp_outfile_paths[$infile_index];
-        my $file_path_prefix    = $temp_outfile_path_prefixes[$infile_index];
         my $outfile_name_prefix = $outfile_name_prefixes[$infile_index];
         my $outfile_path        = $outfile_paths[$infile_index];
         my $outfile_path_prefix = $outfile_path_prefixes[$infile_index];
@@ -813,32 +737,6 @@ sub analysis_run_bwa_mem {
 
         ### SHELL:
 
-        ## Copies file to temporary directory.
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-
-        # Read 1
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $infile_paths[$paired_end_tracker],
-                outfile_path => $temp_directory,
-            }
-        );
-
-        # If second read direction is present
-        if ( $sequence_run_type eq q{paired-end} ) {
-
-            # Read 2
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $infile_paths[ $paired_end_tracker + 1 ],
-                    outfile_path => $temp_directory,
-                }
-            );
-        }
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
-
         ### BWA MEM
         say {$FILEHANDLE} q{## Aligning reads with }
           . $recipe_name
@@ -847,7 +745,7 @@ sub analysis_run_bwa_mem {
         ### Get parameters
 
         ## Infile(s)
-        my $fastq_file_path = $temp_infile_paths[$paired_end_tracker];
+        my $fastq_file_path = $infile_paths[$paired_end_tracker];
         my $second_fastq_file_path;
 
         # If second read direction is present
@@ -855,7 +753,7 @@ sub analysis_run_bwa_mem {
 
             # Increment to collect correct read 2
             $paired_end_tracker     = $paired_end_tracker + 1;
-            $second_fastq_file_path = $temp_infile_paths[$paired_end_tracker];
+            $second_fastq_file_path = $infile_paths[$paired_end_tracker];
         }
 
         ## Read group header line
@@ -888,7 +786,7 @@ sub analysis_run_bwa_mem {
                 hla_typing           => $active_parameter_href->{bwa_mem_hla},
                 infile_path          => $fastq_file_path,
                 idxbase              => $referencefile_path,
-                outfiles_prefix_path => $file_path_prefix,
+                outfiles_prefix_path => $outfile_path_prefix,
                 read_group_header    => join( $EMPTY_STR, @read_group_headers ),
                 second_infile_path   => $second_fastq_file_path,
                 thread_number        => $recipe_resource{core_number},
@@ -899,7 +797,7 @@ sub analysis_run_bwa_mem {
         say   {$FILEHANDLE} $NEWLINE;
 
         ## Set sambamba sort input; Sort directly from run-bwakit
-        $sambamba_sort_infile = $file_path_prefix . $DOT . q{aln} . $outfile_suffix;
+        $sambamba_sort_infile = $outfile_path_prefix . $DOT . q{aln} . $outfile_suffix;
 
         ## Increment paired end tracker
         $paired_end_tracker++;
@@ -910,33 +808,12 @@ sub analysis_run_bwa_mem {
                 FILEHANDLE    => $FILEHANDLE,
                 infile_path   => $sambamba_sort_infile,
                 memory_limit  => $active_parameter_href->{bwa_sambamba_sort_memory_limit},
-                outfile_path  => $file_path,
+                outfile_path  => $outfile_path,
                 show_progress => 1,
                 temp_directory => $temp_directory,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        my @run_bwa_files = (
-            $file_path . substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
-            $file_path_prefix . $DOT . q{log} . $ASTERISK,
-            $file_path_prefix . $DOT . q{hla} . $ASTERISK,
-        );
-
-      OUTFILE:
-        foreach my $run_bwa_file (@run_bwa_files) {
-
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $run_bwa_file,
-                    outfile_path => $outdir_path,
-                }
-            );
-        }
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
 
         if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
@@ -944,7 +821,7 @@ sub analysis_run_bwa_mem {
                 {
                     auto_detect_input_format => 1,
                     FILEHANDLE               => $FILEHANDLE,
-                    infile_path              => $file_path,
+                    infile_path              => $outfile_path,
                     remove_overlap           => 1,
                 }
             );
@@ -954,21 +831,10 @@ sub analysis_run_bwa_mem {
             _add_percentage_mapped_reads_from_samtools(
                 {
                     FILEHANDLE   => $FILEHANDLE,
-                    outfile_path => $file_path_prefix . $DOT . q{stats},
+                    outfile_path => $outfile_path_prefix . $DOT . q{stats},
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
-
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $file_path_prefix . $DOT . q{stats},
-                    outfile_path => $outdir_path,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
         }
 
         if (    $active_parameter_href->{bwa_mem_cram}
@@ -979,25 +845,14 @@ sub analysis_run_bwa_mem {
             samtools_view(
                 {
                     FILEHANDLE         => $FILEHANDLE,
-                    infile_path        => $file_path,
-                    outfile_path       => $file_path_prefix . $DOT . q{cram},
+                    infile_path        => $outfile_path,
+                    outfile_path       => $outfile_path_prefix . $DOT . q{cram},
                     output_format      => q{cram},
                     referencefile_path => $referencefile_path,
                     with_header        => 1,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
-
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $file_path_prefix . $DOT . q{cram},
-                    outfile_path => $outdir_path,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
         }
 
         close $FILEHANDLE;
