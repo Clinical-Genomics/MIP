@@ -691,11 +691,11 @@ expansionhunter:
    - stranger
   recipe_type: repeats_variant_callers
   type: recipe
-expansionhunter_repeat_specs_dir:
+expansionhunter_variant_catalog_file_path:
   associated_recipe:
    - expansionhunter
   data_type: SCALAR
-  exists_check: directory
+  exists_check: file
   type: path
   update_path: absolute_path
 manta:

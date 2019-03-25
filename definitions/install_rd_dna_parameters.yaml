@@ -151,7 +151,7 @@ epy3:
   shell:
     expansionhunter:
       conda_dependency:
-      version: 2.5.5
+      version: 3.0.0
     sambamba:
       version: 0.6.1
 
