@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -180,8 +180,8 @@ sub analysis_expansionhunter {
         }
     );
     my $recipe_mode = $active_parameter_href->{$recipe_name};
-    my $repeat_specs_dir_path =
-      $active_parameter_href->{expansionhunter_repeat_specs_dir};
+    my $variant_catalog_file_path =
+      $active_parameter_href->{expansionhunter_variant_catalog_file_path};
     my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
@@ -199,18 +199,13 @@ sub analysis_expansionhunter {
             outdata_dir            => $active_parameter_href->{outdata_dir},
             parameter_href         => $parameter_href,
             recipe_name            => $recipe_name,
-            temp_directory         => $temp_directory,
         }
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_constant_suffix};
-    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_outfile_suffix      = $io{temp}{file_suffix};
-    my $temp_outfile_path        = $temp_outfile_path_prefix . $temp_outfile_suffix;
-    my $temp_file_suffix         = $DOT . q{vcf};
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_constant_suffix};
+    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -274,32 +269,11 @@ sub analysis_expansionhunter {
         );
         my $infile_path_prefix = $sample_io{in}{file_path_prefix};
         my $infile_suffix      = $sample_io{in}{file_suffix};
-        my $infile_path =
-          $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-        my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
-        my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+        my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-        $exphun_sample_file_info{$sample_id}{in}  = $temp_infile_path;
-        $exphun_sample_file_info{$sample_id}{out} = $temp_infile_path_prefix;
+        $exphun_sample_file_info{$sample_id}{in}  = $infile_path;
+        $exphun_sample_file_info{$sample_id}{out} = $infile_path_prefix;
 
-        $process_batches_count = print_wait(
-            {
-                FILEHANDLE            => $FILEHANDLE,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                process_counter       => $sample_id_index,
-            }
-        );
-
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $infile_path,
-                outfile_path => $temp_directory,
-            }
-        );
     }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
@@ -325,6 +299,9 @@ sub analysis_expansionhunter {
     $process_batches_count = 1;
 
     ## Expansion hunter calling per sample id
+    # Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
+    my @svdb_infile_paths;
+
   SAMPLE_ID:
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
@@ -339,33 +316,28 @@ sub analysis_expansionhunter {
             }
         );
 
-        my $sample_sex = $sample_info_href->{sample}{$sample_id}{sex};
+        my $sample_outfile_path_prefix = $outfile_path_prefix . $UNDERSCORE . $sample_id;
+        my $sample_sex                 = $sample_info_href->{sample}{$sample_id}{sex};
         expansionhunter(
             {
-                FILEHANDLE        => $FILEHANDLE,
-                infile_path       => $exphun_sample_file_info{$sample_id}{in},
-                json_outfile_path => $exphun_sample_file_info{$sample_id}{out}
-                  . $DOT . q{json},
-                log_outfile_path => $exphun_sample_file_info{$sample_id}{out}
-                  . $DOT . q{log},
-                reference_genome_path => $human_genome_reference,
-                repeat_specs_dir_path => $repeat_specs_dir_path,
-                sex                   => $sample_sex,
-                vcf_outfile_path      => $exphun_sample_file_info{$sample_id}{out}
-                  . $temp_file_suffix,
+                FILEHANDLE                => $FILEHANDLE,
+                infile_path               => $exphun_sample_file_info{$sample_id}{in},
+                reference_genome_path     => $human_genome_reference,
+                variant_catalog_file_path => $variant_catalog_file_path,
+                sex                       => $sample_sex,
+                outfile_path_prefix       => $sample_outfile_path_prefix,
             }
         );
         say {$FILEHANDLE} $AMPERSAND, $NEWLINE;
+        push @svdb_infile_paths, $sample_outfile_path_prefix . $outfile_suffix,;
+
     }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Get parameters
     ## Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
-    my @svdb_temp_infile_paths =
-      map { $exphun_sample_file_info{$_}{out} . $temp_file_suffix }
-      @{ $active_parameter_href->{sample_ids} };
-    my $svdb_temp_outfile_path =
-      $temp_outfile_path_prefix . $UNDERSCORE . q{svdbmerge} . $temp_file_suffix;
+    my $svdb_outfile_path =
+      $outfile_path_prefix . $UNDERSCORE . q{svdbmerge} . $outfile_suffix;
 
     my @program_source_commands = get_package_source_env_cmds(
         {
@@ -384,9 +356,9 @@ sub analysis_expansionhunter {
     svdb_merge(
         {
             FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => \@svdb_temp_infile_paths,
+            infile_paths_ref => \@svdb_infile_paths,
             notag            => 1,
-            stdoutfile_path  => $svdb_temp_outfile_path,
+            stdoutfile_path  => $svdb_outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -401,13 +373,13 @@ sub analysis_expansionhunter {
 
     ## Split multiallelic variants
     say {$FILEHANDLE} q{## Split multiallelic variants};
-    my $vt_temp_outfile_path =
-      $temp_outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt} . $temp_file_suffix;
+    my $vt_outfile_path =
+      $outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt} . $outfile_suffix;
     vt_decompose(
         {
             FILEHANDLE          => $FILEHANDLE,
-            infile_path         => $svdb_temp_outfile_path,
-            outfile_path        => $vt_temp_outfile_path,
+            infile_path         => $svdb_outfile_path,
+            outfile_path        => $vt_outfile_path,
             smart_decomposition => 1,
         }
     );
@@ -429,11 +401,11 @@ sub analysis_expansionhunter {
     say {$FILEHANDLE} q{## Stranger annotation};
 
     my $stranger_outfile_path =
-      $temp_outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt_ann} . $temp_file_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{svdbmerg_vt_ann} . $outfile_suffix;
     stranger(
         {
             FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $vt_temp_outfile_path,
+            infile_path     => $vt_outfile_path,
             stdoutfile_path => $stranger_outfile_path,
         }
     );
@@ -469,12 +441,12 @@ sub analysis_expansionhunter {
         submit_recipe(
             {
                 base_command            => $profile_base_command,
-                dependency_method       => q{sample_to_case},
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
