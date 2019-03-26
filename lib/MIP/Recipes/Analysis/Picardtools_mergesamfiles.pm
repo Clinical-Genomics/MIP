@@ -194,10 +194,9 @@ sub analysis_picardtools_mergesamfiles {
             stream         => q{in},
         }
     );
-    my $indir_path_prefix    = $io{in}{dir_path_prefix};
     my $infile_suffix        = $io{in}{file_suffix};
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my @infile_path_prefixes = @{ $io{in}{file_path_prefixes} };
+    my @infile_paths         = @{ $io{in}{file_paths} };
 
     my %rec_atr = get_recipe_attributes(
         {
@@ -258,12 +257,10 @@ sub analysis_picardtools_mergesamfiles {
         )
     );
 
-    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outdir_path = $io{out}{dir_path};
     @outfile_paths = @{ $io{out}{file_paths} };
-    my @outfile_suffixes    = @{ $io{out}{file_suffixes} };
-    my %outfile_path        = %{ $io{temp}{file_path_href} };
-    my $outfile_path_prefix = $io{temp}{file_path_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -275,7 +272,7 @@ sub analysis_picardtools_mergesamfiles {
     my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
 
     ## Modify memory allocation according to which action is taken in recipe
-    if ( scalar @infile_name_prefixes > 1 ) {
+    if ( scalar @infile_paths > 1 ) {
 
         # Get recipe memory allocation
         $memory_allocation = update_memory_allocation(
@@ -328,29 +325,29 @@ sub analysis_picardtools_mergesamfiles {
     ### SHELL:
 
   INFILE:
-    foreach my $infile (@infile_name_prefixes) {
+    while ( my ( $infile_index, $infile_path ) = each @infile_paths ) {
 
         ## Split BAMs
         say {$FILEHANDLE} q{## Split alignment files per contig};
         ($xargs_file_counter) = split_and_index_aligment_file(
             {
-                active_parameter_href => $active_parameter_href,
-                contigs_ref           => \@{ $file_info_href->{contigs_size_ordered} },
-                core_number           => $core_number,
-                FILEHANDLE            => $FILEHANDLE,
-                file_path             => $recipe_file_path,
-                infile                => $infile,
-                output_format         => substr( $infile_suffix, 1 ),
-                recipe_info_path      => $recipe_info_path,
-                temp_directory        => $temp_directory,
-                XARGSFILEHANDLE       => $XARGSFILEHANDLE,
-                xargs_file_counter    => $xargs_file_counter,
+                contigs_ref         => \@{ $file_info_href->{contigs_size_ordered} },
+                core_number         => $core_number,
+                FILEHANDLE          => $FILEHANDLE,
+                file_path           => $recipe_file_path,
+                infile_path         => $infile_path,
+                outfile_path_prefix => $outdir_path
+                  . $infile_name_prefixes[$infile_index],
+                output_format      => substr( $infile_suffix, 1 ),
+                recipe_info_path   => $recipe_info_path,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                xargs_file_counter => $xargs_file_counter,
             }
         );
     }
 
     ## More than one file - we have something to merge
-    if ( scalar @infile_name_prefixes > 1 ) {
+    if ( scalar @infile_paths > 1 ) {
 
         ## picardtools_mergesamfiles
         say {$FILEHANDLE} q{## Merging alignment files};
@@ -379,7 +376,8 @@ sub analysis_picardtools_mergesamfiles {
             ## Get parameters
             # Assemble infile paths by adding directory and file suffixes
             my @merge_infile_paths =
-              map { $_ . $DOT . $contig . $infile_suffix } @infile_path_prefixes;
+              map { $outdir_path . $_ . $DOT . $contig . $infile_suffix }
+              @infile_name_prefixes;
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
@@ -420,11 +418,11 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
           INFILES:
-            foreach my $infile_path_prefix (@infile_path_prefixes) {
+            foreach my $infile_name_prefix (@infile_name_prefixes) {
 
                 ## Get parameters
                 my $gnu_infile_path =
-                  $infile_path_prefix . $DOT . $contig . $infile_suffix;
+                  $outdir_path . $infile_name_prefix . $DOT . $contig . $infile_suffix;
                 my $gnu_outfile_path = $outfile_path{$contig};
 
                 ## Rename
@@ -660,10 +658,9 @@ sub analysis_picardtools_mergesamfiles_rio {
             stream         => q{in},
         }
     );
-    my $indir_path_prefix    = $io{in}{dir_path_prefix};
     my $infile_suffix        = $io{in}{file_suffix};
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my @infile_path_prefixes = @{ $io{in}{file_path_prefixes} };
+    my @infile_paths         = @{ $io{in}{file_paths} };
 
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my %rec_atr                 = get_recipe_attributes(
@@ -724,11 +721,9 @@ sub analysis_picardtools_mergesamfiles_rio {
         )
     );
 
-    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outdir_path = $io{out}{dir_path};
     @outfile_paths = @{ $io{out}{file_paths} };
-    my @outfile_suffixes = @{ $io{out}{file_suffixes} };
-    my %outfile_path     = %{ $io{temp}{file_path_href} };
+    my %outfile_path = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -761,29 +756,29 @@ sub analysis_picardtools_mergesamfiles_rio {
     ### SHELL:
 
   INFILE:
-    foreach my $infile (@infile_name_prefixes) {
+    while ( my ( $infile_index, $infile_path ) = each @infile_paths ) {
 
         ## Split BAMs using Samtools
         say {$FILEHANDLE} q{## Split alignment files per contig};
         ($xargs_file_counter) = split_and_index_aligment_file(
             {
-                active_parameter_href => $active_parameter_href,
-                contigs_ref           => \@{ $file_info_href->{contigs_size_ordered} },
-                core_number           => $core_number,
-                FILEHANDLE            => $FILEHANDLE,
-                file_path             => $file_path,
-                infile                => $infile,
-                output_format         => substr( $infile_suffix, 1 ),
-                recipe_info_path      => $recipe_info_path,
-                temp_directory        => $temp_directory,
-                XARGSFILEHANDLE       => $XARGSFILEHANDLE,
-                xargs_file_counter    => $xargs_file_counter,
+                contigs_ref         => \@{ $file_info_href->{contigs_size_ordered} },
+                core_number         => $core_number,
+                FILEHANDLE          => $FILEHANDLE,
+                file_path           => $file_path,
+                infile_path         => $infile_path,
+                output_format       => substr( $infile_suffix, 1 ),
+                outfile_path_prefix => $outdir_path
+                  . $infile_name_prefixes[$infile_index],
+                recipe_info_path   => $recipe_info_path,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                xargs_file_counter => $xargs_file_counter,
             }
         );
     }
 
     ## More than one file - we have something to merge
-    if ( scalar @infile_name_prefixes > 1 ) {
+    if ( scalar @infile_paths > 1 ) {
 
         ## picardtools_mergesamfiles
         say {$FILEHANDLE} q{## Merging alignment files};
@@ -814,7 +809,8 @@ sub analysis_picardtools_mergesamfiles_rio {
             ## Get parameters
             # Assemble infile paths by adding directory and file ending
             my @merge_infile_paths =
-              map { $_ . $DOT . $contig . $infile_suffix } @infile_path_prefixes;
+              map { $outdir_path . $_ . $DOT . $contig . $infile_suffix }
+              @infile_name_prefixes;
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
@@ -855,11 +851,11 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
           INFILES:
-            foreach my $infile_path_prefix (@infile_path_prefixes) {
+            foreach my $infile_name_prefix (@infile_name_prefixes) {
 
                 ## Get parameters
                 my $gnu_infile_path =
-                  $infile_path_prefix . $DOT . $contig . $infile_suffix;
+                  $outdir_path . $infile_name_prefix . $DOT . $contig . $infile_suffix;
                 my $gnu_outfile_path = $outfile_path{$contig};
 
                 ## Rename

@@ -1,11 +1,11 @@
 package MIP::Recipes::Analysis::Gatk_baserecalibration;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename };
-use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
+use File::Spec::Functions qw{ catdir catfile };
 use Params::Check qw{ allow check last_error };
 use POSIX;
 use strict;
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -35,8 +35,9 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
-Readonly my $MINUS_ONE            => -1;
+Readonly my $JAVA_MEMORY_ALLOCATION => 6;
+Readonly my $JAVA_GUEST_OS_MEMORY   => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
+Readonly my $MINUS_ONE              => -1;
 
 sub analysis_gatk_baserecalibration {
 
@@ -157,15 +158,14 @@ sub analysis_gatk_baserecalibration {
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter
       qw{ get_gatk_intervals get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Gatk
       qw{ gatk_applybqsr gatk_baserecalibrator gatk_gatherbqsrreports };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info set_processing_metafile_in_sample_info };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -182,13 +182,12 @@ sub analysis_gatk_baserecalibration {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
     my $indir_path_prefix  = $io{in}{dir_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %temp_infile_path   = %{ $io{temp}{file_path_href} };
+    my %infile_path        = %{ $io{in}{file_path_href} };
 
     my %rec_atr = get_recipe_attributes(
         {
@@ -196,10 +195,10 @@ sub analysis_gatk_baserecalibration {
             recipe_name    => $recipe_name,
         }
     );
+    my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
     my $job_id_chain       = $rec_atr{chain};
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
     my $xargs_file_path_prefix;
     my %recipe_resource = get_recipe_resources(
         {
@@ -246,10 +245,10 @@ sub analysis_gatk_baserecalibration {
         )
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix      = $io{out}{file_name_prefix};
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -286,39 +285,20 @@ sub analysis_gatk_baserecalibration {
             file_ending           => $file_info_href->{exome_target_bed}[0],
             max_cores_per_node    => $core_number,
             log                   => $log,
-            outdirectory          => $temp_directory,
+            outdirectory          => $outdir_path_prefix,
             reference_dir         => $active_parameter_href->{reference_dir},
             sample_id             => $sample_id,
         }
     );
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            core_number        => $core_number,
-            indirectory        => $indir_path_prefix,
-            infile             => $infile_name_prefix,
-            FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-            file_path          => $recipe_file_path,
-            recipe_info_path   => $recipe_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
-            temp_directory     => $temp_directory,
-        }
-    );
-
-    Readonly my $JAVA_MEMORY_ALLOCATION => 6;
     my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
 
     # Constrain parallelization to match available memory
     my $parallel_processes = get_parallel_processes(
         {
+            core_number               => $core_number,
             process_memory_allocation => $process_memory_allocation,
             recipe_memory_allocation  => $recipe_resource{memory},
-            core_number               => $core_number,
         }
     );
 
@@ -342,7 +322,7 @@ sub analysis_gatk_baserecalibration {
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         my $base_quality_score_recalibration_file =
-          $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
+          $outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
 
         ## Add for gathering base recal files later
         push @base_quality_score_recalibration_files,
@@ -352,7 +332,7 @@ sub analysis_gatk_baserecalibration {
         gatk_baserecalibrator(
             {
                 FILEHANDLE           => $XARGSFILEHANDLE,
-                infile_path          => $temp_infile_path{$contig},
+                infile_path          => $infile_path{$contig},
                 intervals_ref        => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 known_sites_ref =>
@@ -372,7 +352,7 @@ sub analysis_gatk_baserecalibration {
     ## GATK GatherBQSRReports
     say {$FILEHANDLE} q{## GATK GatherBQSRReports};
     my $gatk_gatherbqsr_outfile_path =
-      $temp_outfile_path_prefix . $DOT . $sample_id . $DOT . q{grp};
+      $outfile_path_prefix . $DOT . $sample_id . $DOT . q{grp};
     gatk_gatherbqsrreports(
         {
             base_quality_score_recalibration_files_ref =>
@@ -407,7 +387,7 @@ sub analysis_gatk_baserecalibration {
             {
                 base_quality_score_recalibration_file => $gatk_gatherbqsr_outfile_path,
                 FILEHANDLE                            => $XARGSFILEHANDLE,
-                infile_path                           => $temp_infile_path{$contig},
+                infile_path                           => $infile_path{$contig},
                 intervals_ref                         => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
@@ -419,7 +399,7 @@ sub analysis_gatk_baserecalibration {
                     $active_parameter_href
                       ->{gatk_baserecalibration_static_quantized_quals}
                 },
-                outfile_path       => $temp_outfile_path{$contig},
+                outfile_path       => $outfile_path{$contig},
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
@@ -429,30 +409,12 @@ sub analysis_gatk_baserecalibration {
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
-    ## Copies file from temporary directory. Per contig for variant callers.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
-            file_path          => $recipe_file_path,
-            outdirectory       => $outdir_path_prefix,
-            outfile            => $outfile_name_prefix,
-            recipe_info_path   => $recipe_info_path,
-            temp_directory     => $temp_directory,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
     ## Gather BAM files
     say {$FILEHANDLE} q{## Gather BAM files};
 
     ## Assemble infile paths in contig order and not per size
     my @gather_infile_paths =
-      map { $temp_outfile_path{$_} } @{ $file_info_href->{contigs} };
+      map { $outfile_path{$_} } @{ $file_info_href->{contigs} };
 
     picardtools_gatherbamfiles(
         {
@@ -463,25 +425,12 @@ sub analysis_gatk_baserecalibration {
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx4g},
-            outfile_path         => $temp_outfile_path_prefix . $outfile_suffix,
+            outfile_path         => $outfile_path_prefix . $outfile_suffix,
             referencefile_path   => $referencefile_path,
             temp_directory       => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $temp_outfile_path_prefix
-              . substr( $outfile_suffix, 0, 2 )
-              . $ASTERISK,
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $XARGSFILEHANDLE;
     close $FILEHANDLE;
@@ -655,21 +604,19 @@ sub analysis_gatk_baserecalibration_rio {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes };
-    use MIP::Delete::File qw{ delete_contig_files };
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
       qw{ get_exom_target_bed_file get_merged_infile_prefix get_io_files};
     use MIP::Get::Parameter qw{ get_gatk_intervals get_recipe_attributes };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Gatk
       qw{ gatk_applybqsr gatk_baserecalibrator gatk_gatherbqsrreports };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info
       qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
 
     ### PREPROCESSING:
 
@@ -685,14 +632,12 @@ sub analysis_gatk_baserecalibration_rio {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
-    my $indir_path_prefix       = $io{in}{dir_path_prefix};
-    my $infile_suffix           = $io{in}{file_suffix};
-    my $infile_name_prefix      = $io{in}{file_name_prefix};
-    my $temp_infile_name_prefix = $io{temp}{file_name_prefix};
-    my %temp_infile_path        = %{ $io{temp}{file_path_href} };
+    my $indir_path_prefix  = $io{in}{dir_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my %infile_path        = %{ $io{in}{file_path_href} };
 
     my %rec_atr = get_recipe_attributes(
         {
@@ -700,10 +645,10 @@ sub analysis_gatk_baserecalibration_rio {
             recipe_name    => $recipe_name,
         }
     );
+    my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
     my $job_id_chain       = $rec_atr{chain};
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
     my $xargs_file_path_prefix;
 
     ## Set default rio parameters
@@ -742,15 +687,14 @@ sub analysis_gatk_baserecalibration_rio {
                 file_paths_ref => \@outfile_paths,
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
-                temp_directory => $temp_directory,
             }
         )
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix      = $io{out}{file_name_prefix};
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -774,15 +718,14 @@ sub analysis_gatk_baserecalibration_rio {
         }
     );
 
-    Readonly my $JAVA_MEMORY_ALLOCATION => 6;
     my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
 
     # Constrain parallelization to match available memory
     my $parallel_processes = get_parallel_processes(
         {
+            core_number               => $core_number,
             process_memory_allocation => $process_memory_allocation,
             recipe_memory_allocation  => $memory_allocation,
-            core_number               => $core_number,
         }
     );
 
@@ -806,7 +749,7 @@ sub analysis_gatk_baserecalibration_rio {
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         my $base_quality_score_recalibration_file =
-          $temp_outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
+          $outfile_path_prefix . $DOT . $contig . $DOT . q{grp};
 ## Add for gathering base recal files later
         push @base_quality_score_recalibration_files,
           $base_quality_score_recalibration_file;
@@ -815,7 +758,7 @@ sub analysis_gatk_baserecalibration_rio {
         gatk_baserecalibrator(
             {
                 FILEHANDLE           => $XARGSFILEHANDLE,
-                infile_path          => $temp_infile_path{$contig},
+                infile_path          => $infile_path{$contig},
                 intervals_ref        => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
@@ -835,7 +778,7 @@ sub analysis_gatk_baserecalibration_rio {
     ## GATK GatherBQSRReports
     say {$FILEHANDLE} q{## GATK GatherBQSRReports};
     my $gatk_gatherbqsr_outfile_path =
-      $temp_outfile_path_prefix . $DOT . $sample_id . $DOT . q{grp};
+      $outfile_path_prefix . $DOT . $sample_id . $DOT . q{grp};
     gatk_gatherbqsrreports(
         {
             base_quality_score_recalibration_files_ref =>
@@ -870,7 +813,7 @@ sub analysis_gatk_baserecalibration_rio {
             {
                 base_quality_score_recalibration_file => $gatk_gatherbqsr_outfile_path,
                 FILEHANDLE                            => $XARGSFILEHANDLE,
-                infile_path                           => $temp_infile_path{$contig},
+                infile_path                           => $infile_path{$contig},
                 intervals_ref                         => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
@@ -881,7 +824,7 @@ sub analysis_gatk_baserecalibration_rio {
                     $active_parameter_href
                       ->{gatk_baserecalibration_static_quantized_quals}
                 },
-                outfile_path       => $temp_outfile_path{$contig},
+                outfile_path       => $outfile_path{$contig},
                 referencefile_path => $referencefile_path,
                 stderrfile_path    => $stderrfile_path,
                 temp_directory     => $temp_directory,
@@ -891,42 +834,12 @@ sub analysis_gatk_baserecalibration_rio {
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
-    ## Copies file from temporary directory. Per contig for variant callers.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
-            file_path          => $file_path,
-            core_number        => $core_number,
-            outdirectory       => $outdir_path_prefix,
-            outfile            => $outfile_name_prefix,
-            recipe_info_path   => $recipe_info_path,
-            temp_directory     => $temp_directory,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
-    ## Remove file at temporary directory
-    delete_contig_files(
-        {
-            core_number       => $core_number,
-            FILEHANDLE        => $FILEHANDLE,
-            file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
-            file_ending       => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-            file_name         => $temp_infile_name_prefix,
-            indirectory       => $temp_directory,
-        }
-    );
-
     ## Gather BAM files
     say {$FILEHANDLE} q{## Gather BAM files};
 
     ## Assemble infile paths in contig order and not per size
     my @gather_infile_paths =
-      map { $temp_outfile_path{$_} } @{ $file_info_href->{contigs} };
+      map { $outfile_path{$_} } @{ $file_info_href->{contigs} };
 
     picardtools_gatherbamfiles(
         {
@@ -937,25 +850,12 @@ sub analysis_gatk_baserecalibration_rio {
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx4g},
-            outfile_path         => $temp_outfile_path_prefix . $outfile_suffix,
+            outfile_path         => $outfile_path_prefix . $outfile_suffix,
             referencefile_path   => $referencefile_path,
             temp_directory       => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $temp_outfile_path_prefix
-              . substr( $outfile_suffix, 0, 2 )
-              . $ASTERISK,
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $XARGSFILEHANDLE;
     close $FILEHANDLE;

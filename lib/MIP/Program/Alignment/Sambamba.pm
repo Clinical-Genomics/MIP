@@ -1,120 +1,110 @@
 package MIP::Program::Alignment::Sambamba;
 
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use File::Spec::Functions qw{ catdir catfile };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use Carp;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use FindBin qw{ $Bin };
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile };
-use Params::Check qw{ check allow last_error };
+
+## CPANM
+use autodie qw{ :all };
+use Readonly;
+
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Inherit from Exporter to export functions and variables
     use base qw {Exporter};
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{sambamba_view sambamba_index sambamba_sort sambamba_markdup sambamba_flagstat sambamba_depth split_and_index_aligment_file};
+      qw{ sambamba_depth split_and_index_aligment_file sambamba_flagstat sambamba_index sambamba_markdup sambamba_sort sambamba_view };
 }
-
-## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
-use MIP::Unix::Standard_streams qw{ unix_standard_streams };
-use MIP::Unix::Write_to_file qw{ unix_write_to_file };
-
-## CPANM
-use Readonly;
-
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SEMICOLON  => q{;};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub sambamba_view {
 
-## sambamba_view
-
 ## Function : Perl wrapper for writing sambamba view recipe to $FILEHANDLE. Based on sambamba 0.6.5
-## Returns  : "@commands"
-## Arguments: $regions_ref, $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $with_header, $show_progress, $output_format, $referencefile_path
-##          : $regions_ref            => The regions to process {REF}
-##          : $FILEHANDLE             => Sbatch filehandle to write to
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
-##          : $stderrfile_path        => Stderrfile path
-##          : $referencefile_path     => Reference for writing CRAM
-##          : $with_header            => Include header
-##          : $show_progress          => Show progress
 ##          : $output_format          => Output format
+##          : $referencefile_path     => Reference for writing CRAM
+##          : $regions_ref            => The regions to process {REF}
+##          : $show_progress          => Show progress
+##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Stderrfile path append
+##          : $with_header            => Include header
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $with_header;
-    my $show_progress;
-    my $output_format;
-
     ## Flatten argument(s)
-    my $regions_ref;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
-    my $stderrfile_path;
     my $referencefile_path;
+    my $regions_ref;
+    my $stderrfile_path;
     my $stderrfile_path_append;
 
+    ## Default(s)
+    my $output_format;
+    my $show_progress;
+    my $with_header;
+
     my $tmpl = {
-        regions_ref => { default => [], strict_type => 1, store => \$regions_ref },
-        FILEHANDLE  => { required => 1, store => \$FILEHANDLE },
+        FILEHANDLE  => { required => 1, store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        outfile_path           => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
-        referencefile_path     => { strict_type => 1, store => \$referencefile_path },
-        with_header            => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$with_header
-        },
-        show_progress => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$show_progress
-        },
+        outfile_path  => { store => \$outfile_path, strict_type => 1, },
         output_format => {
-            default     => q{ bam },
             allow       => [qw{ sam bam cram json }],
+            default     => q{ bam },
+            store       => \$output_format,
             strict_type => 1,
-            store       => \$output_format
+        },
+        referencefile_path => { store => \$referencefile_path, strict_type => 1, },
+        regions_ref   => { default => [], store => \$regions_ref, strict_type => 1, },
+        show_progress => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$show_progress,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        with_header => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$with_header,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 )
       or croak q{Could not parse arguments!};
 
-    ## Array @commands stores commands depending on input parameters
     my @commands = qw{ sambamba view };
 
-    # Include header
     if ($with_header) {
 
         push @commands, q{--with-header};
@@ -122,7 +112,6 @@ sub sambamba_view {
 
     if ($output_format) {
 
-        # Output format
         push @commands, q{--format} . $SPACE . $output_format;
     }
 
@@ -140,11 +129,9 @@ sub sambamba_view {
 
     if ($outfile_path) {
 
-        # Specify output filename
         push @commands, q{--output-filename=} . $outfile_path;
     }
 
-    ## Infile
     push @commands, $infile_path;
 
     if ( @{$regions_ref} ) {
@@ -164,8 +151,8 @@ sub sambamba_view {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -173,21 +160,15 @@ sub sambamba_view {
 
 sub sambamba_index {
 
-## sambamba_index
-
 ## Function : Perl wrapper for writing sambamba index recipe to $FILEHANDLE. Based on sambamba 0.6.5
-## Returns  : "@commands"
-## Arguments: $FILEHANDLE, $infile_path, $stderrfile_path, $show_progress
-##          : $FILEHANDLE             => Sbatch filehandle to write to
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
-##          : $stderrfile_path        => Stderrfile path
 ##          : $show_progress          => Show progress
+##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Stderrfile path append
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $show_progress;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
@@ -195,27 +176,30 @@ sub sambamba_index {
     my $stderrfile_path;
     my $stderrfile_path_append;
 
+    ## Default(s)
+    my $show_progress;
+
     my $tmpl = {
-        FILEHANDLE  => { required => 1, store => \$FILEHANDLE },
+        FILEHANDLE  => { required => 1, store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
-        show_progress          => {
-            default     => 0,
+        show_progress => {
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$show_progress,
             strict_type => 1,
-            store       => \$show_progress
         },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## @commands stores commands depending on input parameters
     my @commands = qw{ sambamba index };
 
     if ($show_progress) {
@@ -224,10 +208,8 @@ sub sambamba_index {
         push @commands, q{--show-progress};
     }
 
-    ## Infile
     push @commands, $infile_path;
 
-    # Redirect stderr output to program specific stderr file
     push @commands,
       unix_standard_streams(
         {
@@ -239,8 +221,8 @@ sub sambamba_index {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -248,62 +230,59 @@ sub sambamba_index {
 
 sub sambamba_sort {
 
-## sambamba_sort
-
 ## Function : Perl wrapper for writing sambamba sort recipe to $FILEHANDLE. Based on sambamba 0.6.5
-## Returns  : "@commands"
-## Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $show_progress, $memory_limit, $temp_directory
-##          : $FILEHANDLE             => Sbatch filehandle to write to
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
-##          : $outfile_path           => Outfile path
-##          : $stderrfile_path        => Stderrfile path
-##          : $show_progress          => Show progress
 ##          : $memory_limit           => Approximate total memory limit for all threads
-##          : $temp_directory         => Directory for storing intermediate files; default is system directory for temporary files
+##          : $outfile_path           => Outfile path
+##          : $show_progress          => Show progress
+##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Stderrfile path append
+##          : $temp_directory         => Directory for storing intermediate files; default is system directory for temporary files
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $show_progress;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_path;
+    my $memory_limit;
     my $outfile_path;
     my $stderrfile_path;
-    my $memory_limit;
-    my $temp_directory;
     my $stderrfile_path_append;
+    my $temp_directory;
+
+    ## Default(s)
+    my $show_progress;
 
     my $tmpl = {
-        FILEHANDLE  => { required => 1, store => \$FILEHANDLE },
+        FILEHANDLE  => { required => 1, store => \$FILEHANDLE, },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        outfile_path           => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
-        memory_limit           => {
+        memory_limit => {
             allow       => qr/ ^\d+G$ /sxm,
+            store       => \$memory_limit,
             strict_type => 1,
-            store       => \$memory_limit
         },
-        temp_directory => { strict_type => 1, store => \$temp_directory },
-        show_progress  => {
-            default     => 0,
+        outfile_path  => { store => \$outfile_path, strict_type => 1, },
+        show_progress => {
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$show_progress,
             strict_type => 1,
-            store       => \$show_progress
         },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        temp_directory => { store => \$temp_directory, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## @commands stores commands depending on input parameters
     my @commands = qw{ sambamba sort };
 
     if ($show_progress) {
@@ -320,23 +299,19 @@ sub sambamba_sort {
 
     if ($temp_directory) {
 
-        # Directory for storing intermediate files
         push @commands, q{--tmpdir=} . $temp_directory;
     }
 
-    ## Outfile
     if ($outfile_path) {
 
         push @commands, q{--out=} . $outfile_path;
     }
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
     }
 
-    # Redirect stderr output to program specific stderr file
     push @commands,
       unix_standard_streams(
         {
@@ -348,8 +323,8 @@ sub sambamba_sort {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 
@@ -358,108 +333,105 @@ sub sambamba_sort {
 
 sub sambamba_markdup {
 
-## sambamba_markdup
-
 ## Function : Perl wrapper for writing sambamba markdup recipe to $FILEHANDLE. Based on sambamba 0.6.5
-## Returns  : "@commands"
-## Arguments: $infile_path, $stdoutfile_path, $stderrfile_path, $FILEHANDLE, temp_directory, $show_progress, $hash_table_size, $overflow_list_size, $io_buffer_size
-##          : $infile_path            => Infile path
-##          : $stdoutfile_path        => Standard outfile path
-##          : $stderrfile_path        => Stderrfile path
-##          : $FILEHANDLE             => Sbatch filehandle to write to
-##          : $temp_directory         => Specify directory for temporary files
-##          : $show_progress          => Show progress
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $hash_table_size        => Size of hash table for finding read pairs
-##          : $overflow_list_size     => Size of the overflow list where reads, thrown from the hash table, get a second chance to meet their pairs
+##          : $infile_path            => Infile path
 ##          : $io_buffer_size         => Two buffers of BUFFER_SIZE *megabytes* each are used for reading and writing BAM during the second pass
+##          : $overflow_list_size     => Size of the overflow list where reads, thrown from the hash table, get a second chance to meet their pairs
+##          : $show_progress          => Show progress
+##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Stderrfile path append
+##          : $stdoutfile_path        => Standard outfile path
+##          : $temp_directory         => Specify directory for temporary files
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $hash_table_size;
+    my $infile_path;
+    my $io_buffer_size;
+    my $overflow_list_size;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+    my $temp_directory;
 
     ## Default(s)
     my $show_progress;
 
-    ## Flatten argument(s)
-    my $infile_path;
-    my $stdoutfile_path;
-    my $stderrfile_path;
-    my $FILEHANDLE;
-    my $temp_directory;
-    my $hash_table_size;
-    my $overflow_list_size;
-    my $io_buffer_size;
-    my $stderrfile_path_append;
-
     my $tmpl = {
+        FILEHANDLE      => { required => 1, store => \$FILEHANDLE, },
+        hash_table_size => {
+            allow       => qr/ ^\d+$ /sxm,
+            store       => \$hash_table_size,
+            strict_type => 1,
+        },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
-        },
-        stdoutfile_path        => { strict_type => 1, store => \$stdoutfile_path },
-        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE             => { required    => 1, store => \$FILEHANDLE },
-        temp_directory         => { strict_type => 1, store => \$temp_directory },
-        hash_table_size        => {
-            allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
-            store       => \$hash_table_size
-        },
-        overflow_list_size => {
-            allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
-            store       => \$overflow_list_size
         },
         io_buffer_size => {
             allow       => qr/ ^\d+$ /sxm,
+            store       => \$io_buffer_size,
             strict_type => 1,
-            store       => \$io_buffer_size
+        },
+        overflow_list_size => {
+            allow       => qr/ ^\d+$ /sxm,
+            store       => \$overflow_list_size,
+            strict_type => 1,
         },
         show_progress => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$show_progress,
             strict_type => 1,
-            store       => \$show_progress
         },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        temp_directory  => { store => \$temp_directory,  strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## @commands stores commands depending on input parameters
     my @commands = qw{ sambamba markdup };
 
     if ($temp_directory) {
 
-        # Specify directory for temporary files
         push @commands, q{--tmpdir=} . $temp_directory;
     }
+
     if ($hash_table_size) {
 
         # Size of hash table for finding read pairs
         push @commands, q{--hash-table-size=} . $hash_table_size;
     }
+
     if ($overflow_list_size) {
 
-        # Size of the overflow list
         push @commands, q{--overflow-list-size=} . $overflow_list_size;
     }
+
     if ($io_buffer_size) {
 
         # Two buffers of BUFFER_SIZE *megabytes*
         push @commands, q{--io-buffer-size=} . $io_buffer_size;
     }
+
     if ($show_progress) {
 
         # Show progressbar in STDERR (works only for BAM files with no regions specified)
         push @commands, q{--show-progress};
     }
 
-    ## Infile
     push @commands, $infile_path;
 
-    # Redirect stderr output to program specific stderr file
     push @commands,
       unix_standard_streams(
         {
@@ -472,8 +444,8 @@ sub sambamba_markdup {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -481,12 +453,9 @@ sub sambamba_markdup {
 
 sub sambamba_flagstat {
 
-## sambamba_flagstat
-
 ## Function : Perl wrapper for writing sambamba flagstat recipe to $FILEHANDLE. Based on sambamba 0.6.5
-## Returns  : "@commands"
-## Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $show_progress, $memory_limit, $temp_directory
-##          : $FILEHANDLE             => Sbatch filehandle to write to
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
@@ -495,36 +464,35 @@ sub sambamba_flagstat {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
-    my $FILEHANDLE;
     my $stderrfile_path_append;
 
     my $tmpl = {
+        FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        outfile_path           => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
-        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
-        FILEHANDLE => { store => \$FILEHANDLE },
+        outfile_path    => { store => \$outfile_path,    strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ##  @commands stores commands depending on input parameters
     my @commands = qw{ sambamba flagstat };
 
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
     }
-    ## Outfile
+
     if ($outfile_path) {
 
         push @commands, q{>} . $SPACE . $outfile_path;
@@ -542,8 +510,8 @@ sub sambamba_flagstat {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -551,116 +519,116 @@ sub sambamba_flagstat {
 
 sub sambamba_depth {
 
-## sambamba_depth
-
 ## Function : Perl wrapper for writing sambamba depth recipe to $FILEHANDLE. Based on sambamba 0.6.5
-## Returns  : "@commands"
-## Arguments: $depth_cutoffs_ref, $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $region, $filter, $min_base_quality, $mode, $fix_mate_overlap
-##          : $depth_cutoffs_ref      => Multiple thresholds can be provided, for each one an extra column will be added, the percentage of bases in the region where coverage is more than this value {REF}
+## Returns  : @commands
+## Arguments: $depth_cutoffs_ref      => Multiple thresholds can be provided, for each one an extra column will be added, the percentage of bases in the region where coverage is more than this value {REF}
 ##          : $FILEHANDLE             => Sbatch filehandle to write to
-##          : $infile_path            => Infile path
-##          : $outfile_path           => Outfile path
-##          : $stderrfile_path        => Stderrfile path
-##          : $region                 => List or regions of interest or a single region in form chr:beg-end
 ##          : $filter                 => Set custom filter for alignments
 ##          : $fix_mate_overlap       => Detect overlaps of mate reads and handle them on per-base basis
+##          : $infile_path            => Infile path
 ##          : $min_base_quality       => Don't count bases with lower base quality
 ##          : $mode                   => Mode unit to print the statistics on
+##          : $outfile_path           => Outfile path
+##          : $region                 => List or regions of interest or a single region in form chr:beg-end
+##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Stderrfile path append
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $min_base_quality;
-    my $mode;
-    my $fix_mate_overlap;
-
     ## Flatten argument(s)
     my $depth_cutoffs_ref;
     my $FILEHANDLE;
+    my $filter;
     my $infile_path;
     my $outfile_path;
-    my $stderrfile_path;
     my $region;
-    my $filter;
+    my $stderrfile_path;
     my $stderrfile_path_append;
+
+    ## Default(s)
+    my $fix_mate_overlap;
+    my $min_base_quality;
+    my $mode;
 
     my $tmpl = {
         depth_cutoffs_ref =>
-          { default => [], strict_type => 1, store => \$depth_cutoffs_ref },
-        FILEHANDLE  => { required => 1, store => \$FILEHANDLE },
-        infile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        outfile_path           => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path        => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append => { strict_type => 1, store => \$stderrfile_path_append },
-        region                 => { strict_type => 1, store => \$region },
-        filter                 => { strict_type => 1, store => \$filter },
-        fix_mate_overlap       => {
-            default     => 0,
+          { default => [], store => \$depth_cutoffs_ref, strict_type => 1, },
+        FILEHANDLE       => { required => 1,        store       => \$FILEHANDLE, },
+        filter           => { store    => \$filter, strict_type => 1, },
+        fix_mate_overlap => {
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$fix_mate_overlap,
             strict_type => 1,
-            store       => \$fix_mate_overlap
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
         },
         min_base_quality => {
-            default     => 0,
             allow       => qr/ ^\d+$ /sxm,
+            default     => 0,
+            store       => \$min_base_quality,
             strict_type => 1,
-            store       => \$min_base_quality
         },
         mode => {
-            default     => q{region},
             allow       => [qw{ base region window }],
+            default     => q{region},
+            store       => \$mode,
             strict_type => 1,
-            store       => \$mode
         },
+        outfile_path    => { store => \$outfile_path,    strict_type => 1, },
+        region          => { store => \$region,          strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        stderrfile_path_append =>
+          { store => \$stderrfile_path_append, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## @commands stores commands depending on input parameters
     my @commands = qw{ sambamba depth };
 
     if ($mode) {
 
         push @commands, $mode;
     }
-    if ($region) {    # Limit output to regions
+
+    if ($region) {
 
         push @commands, q{--regions} . $SPACE . $region;
     }
+
     if ( @{$depth_cutoffs_ref} ) {
 
         push @commands,
           q{--cov-threshold} . $SPACE . join q{ --cov-threshold} . $SPACE,
           @{$depth_cutoffs_ref};
     }
+
     if ($min_base_quality) {
 
         push @commands, q{--min-base-quality} . $SPACE . $min_base_quality;
     }
+
     if ($fix_mate_overlap) {
 
         push @commands, q{--fix-mate-overlaps};
     }
+
     if ($filter) {
 
         push @commands, q{--filter} . $SPACE . $filter;
     }
+
     if ($outfile_path) {
 
-        # Specify output filename
         push @commands, q{--output-filename=} . $outfile_path;
     }
 
-    ## Infile
     push @commands, $infile_path;
 
-    # Redirect stderr output to program specific stderr file
     push @commands,
       unix_standard_streams(
         {
@@ -672,8 +640,8 @@ sub sambamba_depth {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 
@@ -684,62 +652,40 @@ sub split_and_index_aligment_file {
 
 ## Function : Split alignemnt file per contig and index new file. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
 ## Returns  : $xargs_file_counter
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $contigs_ref        => Contigs to process {REF}
-##          : $core_number        => Number of cores to use
-##          : $FILEHANDLE         => Sbatch filehandle to write to
-##          : $file_path          => File name - ususally sbatch
-##          : $infile             => Infile
-##          : $output_format      => Output format
-##          : $recipe_info_path   => Program info path
-##          : $temp_directory     => Temporary directory
-##          : $XARGSFILEHANDLE    => XARGS filehandle to write to
-##          : $xargs_file_counter => The xargs file counter
+## Arguments: $contigs_ref         => Contigs to process {REF}
+##          : $core_number         => Number of cores to use
+##          : $FILEHANDLE          => Sbatch filehandle to write to
+##          : $file_path           => File name - ususally sbatch
+##          : $infile_path         => Infile path
+##          : $outfile_path_prefix => Outfile path prefix
+##          : $output_format       => Output format
+##          : $recipe_info_path    => Program info path
+##          : $temp_directory      => Temporary directory
+##          : $XARGSFILEHANDLE     => XARGS filehandle to write to
+##          : $xargs_file_counter  => The xargs file counter
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
     my $contigs_ref;
     my $core_number;
     my $FILEHANDLE;
     my $file_path;
-    my $infile;
+    my $infile_path;
+    my $outfile_path_prefix;
     my $recipe_info_path;
     my $XARGSFILEHANDLE;
 
     ## Default(s)
     my $output_format;
-    my $temp_directory;
     my $xargs_file_counter;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
         contigs_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
             store       => \$contigs_ref,
-            strict_type => 1,
-        },
-        FILEHANDLE      => { defined => 1, required => 1, store => \$FILEHANDLE, },
-        XARGSFILEHANDLE => { defined => 1, required => 1, store => \$XARGSFILEHANDLE, },
-        file_path       => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_path,
-            strict_type => 1,
-        },
-        recipe_info_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$recipe_info_path,
             strict_type => 1,
         },
         core_number => {
@@ -748,22 +694,38 @@ sub split_and_index_aligment_file {
             store       => \$core_number,
             strict_type => 1,
         },
-        infile => { defined => 1, required => 1, store => \$infile, strict_type => 1, },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            store       => \$temp_directory,
+        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        file_path  => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
             strict_type => 1,
         },
-        xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
-            default     => 0,
-            store       => \$xargs_file_counter,
+        infile_path =>
+          { defined => 1, required => 1, store => \$infile_path, strict_type => 1, },
+        outfile_path_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path_prefix,
             strict_type => 1,
         },
         output_format => {
             allow       => [qw{ sam bam cram json }],
             default     => q{bam},
             store       => \$output_format,
+            strict_type => 1,
+        },
+        recipe_info_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_info_path,
+            strict_type => 1,
+        },
+        XARGSFILEHANDLE => { defined => 1, required => 1, store => \$XARGSFILEHANDLE, },
+        xargs_file_counter => {
+            allow       => qr/ ^\d+$ /xsm,
+            default     => 0,
+            store       => \$xargs_file_counter,
             strict_type => 1,
         },
     };
@@ -793,9 +755,8 @@ sub split_and_index_aligment_file {
     foreach my $contig ( @{$contigs_ref} ) {
 
         ## Get parameters
-        my $infile_path = catfile( $temp_directory, $infile . $file_suffix );
         my $outfile_path =
-          catfile( $temp_directory, $infile . $DOT . $contig . $file_suffix );
+          catfile( $outfile_path_prefix . $DOT . $contig . $file_suffix );
         my $stderrfile_path_view =
             $xargs_file_path_prefix
           . $UNDERSCORE . q{view}
