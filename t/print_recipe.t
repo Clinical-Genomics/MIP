@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -64,7 +61,7 @@ diag(   q{Test print_recipe from Analysis.pm v}
 
 ## Given the option to not print recipes
 my %parameter = ( bwa_mem => { type => q{recipe} } );
-my $return = print_recipe(
+my $return    = print_recipe(
     {
         define_parameters_files_ref =>
           [ catfile( $Bin, qw{ data test_data define_parameters.yaml } ) ],
@@ -88,7 +85,7 @@ trap {
             print_recipe      => $active_parameter{print_recipe},
             print_recipe_mode => 1,
         }
-      )
+    )
 };
 
 ## Then write bwa_mem recipe and mode
@@ -96,10 +93,5 @@ my ( $recipe, $recipe_mode ) = $trap->stdout =~ qr{ (bwa_mem)\s+(1)}sxm;
 is( $recipe, q{bwa_mem}, q{Printed recipe} );
 
 is( $recipe_mode, 1, q{Printed correct recipe mode} );
-
-## And do not write bamcalibrationblock recipe and mode
-my ($bamcal_recipe) = $trap->stdout =~ qr{ (bamcalibrationblock) }sxm;
-
-is( $bamcal_recipe, undef, q{Did not print rio block: bamcalibrationblock} );
 
 done_testing();

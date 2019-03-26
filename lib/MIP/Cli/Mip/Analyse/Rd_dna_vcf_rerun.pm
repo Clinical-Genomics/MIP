@@ -219,15 +219,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{reduce_io} => (
-            cmd_aliases   => [qw{ rio }],
-            documentation => q{Run consecutive models at node},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{sv_vcf_rerun_reformat} => (
             cmd_aliases   => [qw{ svrr }],
             cmd_tags      => [q{Analysis recipe switch}],

@@ -113,12 +113,6 @@ picardtools_path:
   exists_check: directory
   type: path
   update_path: absolute_path
-reduce_io:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
 ###Programs
 sv_vcf_rerun_reformat:
   analysis_mode: case

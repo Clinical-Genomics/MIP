@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.20;
+    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_rna };
@@ -33,7 +33,6 @@ sub pipeline_analyse_rd_rna {
 
 ## Function : Pipeline recipe for rare disease rna data analysis.
 ## Returns  :
-
 ## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##          : $broadcasts_ref                  => Holds the parameters info for broadcasting later {REF}
 ##          : $file_info_href                  => File info hash {REF}

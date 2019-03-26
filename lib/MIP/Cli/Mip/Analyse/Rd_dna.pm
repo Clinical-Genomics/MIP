@@ -309,15 +309,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{reduce_io} => (
-            cmd_aliases   => [qw{ rio }],
-            documentation => q{Run consecutive models at node},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{replace_iupac} => (
             cmd_aliases   => [qw{ riu }],
             documentation => q{Replace IUPAC code in alternative alleles with N},

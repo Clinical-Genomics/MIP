@@ -6,7 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - New framework structure with sub commands - for analysis, install and download
 - New pipelines: rd_dna (previous MIP), rd_dna_vcf_rerun (light rerun from rd_dna data) and rd_rna
 - Install now has sbatch features
-- Added initiation_maps for pipeline engine
+- Download is now only sbatch
+- Added initiation_maps for pipeline engines
 - Changed family to case
 - Changed output data dir structure to flat for each ID
 - Removed call type value in file names
@@ -18,15 +19,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Two-step model for reruns. Fix https://github.com/Clinical-Genomics/MIP/issues/546
 - Add input SV vcf for rd_dna_vcf_rerun to qc_sample_info. Fix https://github.com/Clinical-Genomics/MIP/issues/548
 - Added io to all recipes
-- Updated GATK to version 4.0.11 for most GATK recipes
+- Updated GATK to version 4.1.0 for most GATK recipes
 - Removed bed_cov and corresponding R scripts from rare disease analysis 
-- Removed variantannotation block - "--rio" now only operates on BAM block
+- Removed bamcalibrationblock and variantannotation block
+- Removed "--rio" option
 - Refactored and updated Delly to "0.7.8". Removed small-indel calling for better speed.
 - Use "--use-best-n-alleles" in freebayes and added default of "4"
 - Add Expansion Hunter Fix https://github.com/Clinical-Genomics/MIP/issues/442
 - One case one Multiqc report Fix https://github.com/Clinical-Genomics/MIP/issues/515
 - Added exclude contig option. Fix https://github.com/Clinical-Genomics/MIP/issues/509.
-- Add UCSC genomicsSuperDups to annoation and rank model. Fix https://github.com/Clinical-Genomics/MIP/issues/574
+- Add UCSC genomicsSuperDups to annotation and rank model. Fix https://github.com/Clinical-Genomics/MIP/issues/574
 - Switched to using conda instead of source with conda e.g. "conda activate [ENV]" instead of "source activate [ENV]"
 - Changed default for gatk_calculategenotypeposteriors to 0 (=no). 
 - Switched 1000G phase3_v4_2013-05-02 to gnomad r2.0.1 as default for gatk_calculategenotypeposteriors_support_set option
@@ -38,6 +40,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **New Pipeline**
 - rd_dna
 - rd_dna_vcf_rerun
+- rd_rna
 
 **New recipes**
 *Rd_dna*
