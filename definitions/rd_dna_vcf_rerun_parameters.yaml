@@ -55,7 +55,7 @@ recipe_core_number:
     frequency_filter: 16
     rhocall_ar: 15
     sacct: 1
-    snpeff: 15
+    snpeff: 13
     sv_annotate: 2
     sv_rankvariant: 16
     sv_reformat: 1
@@ -73,7 +73,11 @@ recipe_memory:
   default:
     # Per process 
     cadd_ar: 3
+    endvariantannotationblock: 8
     rhocall_ar: 2
+    snpeff: 8
+    sv_reformat: 24
+    sv_varianteffectpredictor: 7
     varianteffectpredictor: 3
     vcf2cytosure_ar: 2
   type: mip
@@ -87,18 +91,18 @@ recipe_time:
     endvariantannotationblock: 2
     frequency_filter: 2
     prepareforvariantannotationblock: 5
-    vcf_rerun_reformat: 1
-    rhocall_ar: 1
     rankvariant: 10
+    rhocall_ar: 1
     sacct: 1
     snpeff: 10
     sv_annotate: 1
-    sv_rankvariant: 2
+    sv_rankvariant: 3
     sv_reformat: 1
-    sv_vcf_rerun_reformat: 1
     sv_varianteffectpredictor: 10
+    sv_vcf_rerun_reformat: 1
     sv_vcfparser: 2
     varianteffectpredictor: 10
+    vcf_rerun_reformat: 1
     vcfparser_ar: 5
     vt_ar: 10
   type: mip

@@ -37,9 +37,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $JAVA_MEMORY_RECIPE_ADDITION => 1;
-Readonly my $JAVA_GUEST_OS_MEMORY        => $ANALYSIS{JAVA_GUEST_OS_MEMORY} +
-  $JAVA_MEMORY_RECIPE_ADDITION;
+Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
 
 sub analysis_picardtools_mergesamfiles {
 

@@ -218,7 +218,7 @@ recipe_memory:
     samtools_subsample_mt: 2
     split_fastq_file: 2
     sv_reformat: 13
-    sv_varianteffectpredictor: 7
+    sv_varianteffectpredictor: 8
     tiddit: 8
     vcf2cytosure_ar: 4
     varianteffectpredictor: 4
