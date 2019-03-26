@@ -140,6 +140,7 @@ recipe_memory:
     star_aln: 3
     star_fusion: 3
     stringtie_ar: 2
+    varianteffectpredictor: 8
   type: mip
 recipe_core_number:
   associated_recipe:

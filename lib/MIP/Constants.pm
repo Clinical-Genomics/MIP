@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
 
@@ -93,7 +93,7 @@ Readonly our $UNDERSCORE     => q{_};
 Readonly our %ANALYSIS => (
     ANNOTATION_DISTANCE    => 5000,
     ANNOTATION_DISTANCE_MT => 0,
-    JAVA_GUEST_OS_MEMORY   => 3,
+    JAVA_GUEST_OS_MEMORY   => 4,
 );
 
 1;
