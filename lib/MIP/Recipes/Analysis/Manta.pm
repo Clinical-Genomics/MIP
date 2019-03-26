@@ -140,9 +140,8 @@ sub analysis_manta {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Compression::Gzip qw{ gzip };
     use MIP::Program::Variantcalling::Manta qw{ manta_config manta_workflow };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
@@ -157,9 +156,9 @@ sub analysis_manta {
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $job_id_chain            = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode     = $active_parameter_href->{$recipe_name};
@@ -181,17 +180,12 @@ sub analysis_manta {
             outdata_dir            => $active_parameter_href->{outdata_dir},
             parameter_href         => $parameter_href,
             recipe_name            => $recipe_name,
-            temp_directory         => $temp_directory,
         }
     );
-
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_outfile_suffix      = $io{temp}{file_suffix};
-    my $temp_outfile_path        = $temp_outfile_path_prefix . $temp_outfile_suffix;
+    my $outdir_path         = $io{out}{dir_path};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -218,20 +212,10 @@ sub analysis_manta {
     ### SHELL:
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
-    my @manta_temp_infile_paths;
-    my $process_batches_count = 1;
+    my @manta_infile_paths;
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
-
-        $process_batches_count = print_wait(
-            {
-                FILEHANDLE            => $FILEHANDLE,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                process_counter       => $sample_id_index,
-            }
-        );
 
         ## Get the io infiles per chain and id
         my %sample_io = get_io_files(
@@ -241,28 +225,14 @@ sub analysis_manta {
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
                 stream         => q{in},
-                temp_directory => $temp_directory,
             }
         );
         my $infile_path_prefix = $sample_io{in}{file_path_prefix};
         my $infile_suffix      = $sample_io{in}{file_suffix};
-        my $infile_path =
-          $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-        my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
-        my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+        my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-        ## Store temp infile path for each sample_id
-        push @manta_temp_infile_paths, $temp_infile_path;
-
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $infile_path,
-                outfile_path => $temp_directory,
-            }
-        );
+        ## Store infile path for each sample_id
+        push @manta_infile_paths, $infile_path;
     }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
@@ -280,8 +250,8 @@ sub analysis_manta {
         {
             exome_analysis     => $is_exome_analysis,
             FILEHANDLE         => $FILEHANDLE,
-            infile_paths_ref   => \@manta_temp_infile_paths,
-            outdirectory_path  => $temp_directory,
+            infile_paths_ref   => \@manta_infile_paths,
+            outdirectory_path  => $outdir_path,
             referencefile_path => $referencefile_path,
         }
     );
@@ -293,13 +263,13 @@ sub analysis_manta {
             FILEHANDLE        => $FILEHANDLE,
             core_number       => $core_number,
             mode              => q{local},
-            outdirectory_path => $temp_directory,
+            outdirectory_path => $outdir_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
     my $manta_temp_outfile_path =
-      catfile( $temp_directory, qw{ results variants diploidSV.vcf.gz } );
+      catfile( $outdir_path, qw{ results variants diploidSV.vcf.gz } );
 
     ## Perl wrapper for writing gzip recipe to $FILEHANDLE
     gzip(
@@ -307,22 +277,12 @@ sub analysis_manta {
             decompress   => 1,
             FILEHANDLE   => $FILEHANDLE,
             infile_path  => $manta_temp_outfile_path,
-            outfile_path => $temp_outfile_path,
+            outfile_path => $outfile_path,
             stdout       => 1,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_outfile_path . $ASTERISK,
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
     close $FILEHANDLE;
 
     if ( $recipe_mode == 1 ) {
@@ -340,9 +300,9 @@ sub analysis_manta {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

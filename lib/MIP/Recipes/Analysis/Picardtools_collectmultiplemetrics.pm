@@ -1,9 +1,10 @@
 package MIP::Recipes::Analysis::Picardtools_collectmultiplemetrics;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -24,12 +25,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_collectmultiplemetrics };
 
 }
+
+## Constants
+Readonly my $JAVA_MEMORY_ALLOCATION => 4;
 
 sub analysis_picardtools_collectmultiplemetrics {
 
@@ -140,7 +144,6 @@ sub analysis_picardtools_collectmultiplemetrics {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -162,21 +165,18 @@ sub analysis_picardtools_collectmultiplemetrics {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path = $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $job_id_chain = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode     = $active_parameter_href->{$recipe_name};
@@ -198,16 +198,12 @@ sub analysis_picardtools_collectmultiplemetrics {
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
-                temp_directory         => $temp_directory,
             }
         )
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix      = $io{out}{file_name_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -233,86 +229,50 @@ sub analysis_picardtools_collectmultiplemetrics {
     );
 
     ### SHELL:
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
     ## CollectMultipleMetrics
     say {$FILEHANDLE} q{## Collecting multiple metrics on alignment};
-
-    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
 
     picardtools_collectmultiplemetrics(
         {
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $temp_infile_path,
+            infile_path => $infile_path,
             java_jar =>
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            outfile_path         => $temp_outfile_path_prefix,
+            outfile_path         => $outfile_path_prefix,
             referencefile_path   => $active_parameter_href->{human_genome_reference},
             temp_directory       => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    my @metric_temp_outfiles = (
-        $temp_outfile_path_prefix . $DOT . q{alignment_summary_metrics},
-        $temp_outfile_path_prefix . $DOT . q{quality} . $ASTERISK,
-        $temp_outfile_path_prefix . $DOT . q{insert} . $ASTERISK,
-    );
-
-  OUTFILE:
-    foreach my $metric_temp_outfile (@metric_temp_outfiles) {
-
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $metric_temp_outfile,
-                outfile_path => $outdir_path_prefix,
-            }
-        );
-    }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
     close $FILEHANDLE;
 
     if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        my $metrics_outfile_path =
-          $outfile_path_prefix . $DOT . q{alignment_summary_metrics};
-        set_recipe_outfile_in_sample_info(
-            {
-                infile           => $outfile_name_prefix,
-                path             => $metrics_outfile_path,
-                recipe_name      => q{collectmultiplemetrics},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
+        my %metric_outfile_path = (
+            collectmultiplemetrics => $outfile_path_prefix
+              . $DOT
+              . q{alignment_summary_metrics},
+            collectmultiplemetricsinsertsize => $outfile_path_prefix
+              . $DOT
+              . q{insert_size_metrics},
         );
-        my $insertsize_outfile_path =
-          $outfile_path_prefix . $DOT . q{insert_size_metrics};
-        set_recipe_outfile_in_sample_info(
-            {
-                infile           => $outfile_name_prefix,
-                path             => $insertsize_outfile_path,
-                recipe_name      => q{collectmultiplemetricsinsertsize},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
+
+        while ( my ( $recipe, $metric_outfile_path ) = each %metric_outfile_path ) {
+
+            set_recipe_outfile_in_sample_info(
+                {
+                    infile           => $outfile_name_prefix,
+                    path             => $metric_outfile_path,
+                    recipe_name      => $recipe,
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+        }
 
         submit_recipe(
             {
@@ -320,9 +280,9 @@ sub analysis_picardtools_collectmultiplemetrics {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

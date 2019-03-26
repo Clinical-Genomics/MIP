@@ -713,18 +713,15 @@ sub _migrate_and_preprocess_single_callers_file {
                     parameter_href => $parameter_href,
                     recipe_name    => $structural_variant_caller,
                     stream         => $stream,
-                    temp_directory => $temp_directory,
                 }
             );
+
             my $infile_path_prefix = $sample_io{$stream}{file_path_prefix};
             my $infile_suffix      = $sample_io{$stream}{file_suffix};
-            my $infile_path =
-              $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-            my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
-            my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+            my $infile_path        = $infile_path_prefix . $infile_suffix;
 
             push @{ $file_path_href->{$structural_variant_caller} },
-              $temp_infile_path . $DOT . q{gz};
+              $infile_path . $DOT . q{gz};
 
             _add_to_parallel_chain(
                 {
@@ -734,23 +731,11 @@ sub _migrate_and_preprocess_single_callers_file {
                 }
             );
 
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $infile_path,
-                    outfile_path => $temp_directory
-                }
-            );
-
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
-
             ## Reformat variant calling file and index
             bcftools_view_and_index_vcf(
                 {
-                    infile_path         => $temp_infile_path,
-                    outfile_path_prefix => $temp_infile_path_prefix,
+                    infile_path         => $infile_path,
+                    outfile_path_prefix => $infile_path_prefix,
                     output_type         => q{z},
                     FILEHANDLE          => $FILEHANDLE,
                 }
