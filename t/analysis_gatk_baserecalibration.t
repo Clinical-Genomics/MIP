@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -63,7 +63,7 @@ diag(   q{Test analysis_gatk_baserecalibration from Gatk_baserecalibration.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name = q{gatk_baserecalibration};
+my $recipe_name    = q{gatk_baserecalibration};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -93,7 +93,7 @@ my %file_info = test_mip_hashes(
 CONTIG:
 foreach my $contig ( @{ $file_info{contigs} } ) {
 
-    $file_info{io}{TEST}{$sample_id}{$recipe_name}{temp}{file_path_href}{$contig} =
+    $file_info{io}{TEST}{$sample_id}{$recipe_name}{in}{file_path_href}{$contig} =
       q{a_file.bam};
 }
 

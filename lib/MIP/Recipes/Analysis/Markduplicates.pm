@@ -1,9 +1,10 @@
 package MIP::Recipes::Analysis::Markduplicates;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -32,6 +33,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $JAVA_MEMORY_ALLOCATION      => 4;
 Readonly my $JAVA_MEMORY_RECIPE_ADDITION => 1;
 Readonly my $JAVA_GUEST_OS_MEMORY        => $ANALYSIS{JAVA_GUEST_OS_MEMORY} +
   $JAVA_MEMORY_RECIPE_ADDITION;
@@ -152,20 +154,18 @@ sub analysis_markduplicates {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
-    use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Alignment::Sambamba qw{ sambamba_flagstat sambamba_markdup };
     use MIP::Program::Alignment::Picardtools
       qw{ picardtools_markduplicates picardtools_gatherbamfiles };
+    use MIP::Program::Alignment::Sambamba qw{ sambamba_flagstat sambamba_markdup };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Sample_info
       qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 
@@ -181,13 +181,9 @@ sub analysis_markduplicates {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %temp_infile_path   = %{ $io{temp}{file_path_href} };
+    my %infile_path = %{ $io{in}{file_path_href} };
 
     my %rec_atr = get_recipe_attributes(
         {
@@ -240,16 +236,12 @@ sub analysis_markduplicates {
                 file_paths_ref => \@outfile_paths,
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
-                temp_directory => $temp_directory,
             }
         )
     );
-
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix      = $io{out}{file_name_prefix};
-    my $outfile_path_name_prefix = $io{out}{file_path_prefix};
-    my $temp_file_path_prefix    = $io{temp}{file_path_prefix};
-    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -261,7 +253,6 @@ sub analysis_markduplicates {
 
     ## Update recipe memory allocation for picard
     ## Variables used downstream of if statment
-    Readonly my $JAVA_MEMORY_ALLOCATION => 4;
     my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
 
     ## Update the memory allocation
@@ -270,9 +261,9 @@ sub analysis_markduplicates {
         # Get recipe memory allocation
         $memory_allocation = update_memory_allocation(
             {
-                process_memory_allocation => $process_memory_allocation,
                 node_ram_memory           => $active_parameter_href->{node_ram_memory},
                 parallel_processes        => $core_number,
+                process_memory_allocation => $process_memory_allocation,
             }
         );
     }
@@ -296,24 +287,6 @@ sub analysis_markduplicates {
 
     ### SHELL:
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-            file_path          => $recipe_file_path,
-            indirectory        => $indir_path_prefix,
-            infile             => $infile_name_prefix,
-            recipe_info_path   => $recipe_info_path,
-            temp_directory     => $temp_directory,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
     ## Marking Duplicates
     say {$FILEHANDLE} q{## Marking Duplicates};
 
@@ -324,9 +297,9 @@ sub analysis_markduplicates {
 
         my $parallel_processes = get_parallel_processes(
             {
+                core_number               => $core_number,
                 process_memory_allocation => $process_memory_allocation,
                 recipe_memory_allocation  => $recipe_resource{memory},
-                core_number               => $core_number,
             }
         );
 
@@ -353,14 +326,14 @@ sub analysis_markduplicates {
 
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-            my $metrics_file = $temp_file_path_prefix . $DOT . $contig . $DOT . q{metric};
+            my $metrics_file = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
             picardtools_markduplicates(
                 {
                     create_index       => q{true},
                     FILEHANDLE         => $XARGSFILEHANDLE,
-                    infile_paths_ref   => [ $temp_infile_path{$contig} ],
+                    infile_paths_ref   => [ $infile_path{$contig} ],
                     metrics_file       => $metrics_file,
-                    outfile_path       => $temp_outfile_path{$contig},
+                    outfile_path       => $outfile_path{$contig},
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
                 }
@@ -371,8 +344,8 @@ sub analysis_markduplicates {
             sambamba_flagstat(
                 {
                     FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $temp_outfile_path{$contig},
-                    outfile_path => $temp_file_path_prefix
+                    infile_path  => $outfile_path{$contig},
+                    outfile_path => $outfile_path_prefix
                       . $DOT
                       . $contig
                       . $UNDERSCORE
@@ -410,14 +383,14 @@ sub analysis_markduplicates {
                     FILEHANDLE      => $XARGSFILEHANDLE,
                     hash_table_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_hash_table_size},
-                    infile_path    => $temp_infile_path{$contig},
+                    infile_path    => $infile_path{$contig},
                     io_buffer_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_io_buffer_size},
                     overflow_list_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_overflow_list_size},
                     show_progress   => 1,
                     stderrfile_path => $stderrfile_path,
-                    stdoutfile_path => $temp_outfile_path{$contig},
+                    stdoutfile_path => $outfile_path{$contig},
                     temp_directory  => $temp_directory,
                 }
             );
@@ -427,8 +400,8 @@ sub analysis_markduplicates {
             sambamba_flagstat(
                 {
                     FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $temp_outfile_path{$contig},
-                    outfile_path => $temp_file_path_prefix
+                    infile_path  => $outfile_path{$contig},
+                    outfile_path => $outfile_path_prefix
                       . $DOT
                       . $contig
                       . $UNDERSCORE
@@ -445,8 +418,8 @@ sub analysis_markduplicates {
         {
             FILEHANDLE => $FILEHANDLE,
             infile_paths_ref =>
-              [ $temp_file_path_prefix . $DOT . $ASTERISK . $UNDERSCORE . q{metric} ],
-            stdoutfile_path => $temp_file_path_prefix . $UNDERSCORE . q{metric_all},
+              [ $outfile_path_prefix . $DOT . $ASTERISK . $UNDERSCORE . q{metric} ],
+            stdoutfile_path => $outfile_path_prefix . $UNDERSCORE . q{metric_all},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -456,22 +429,13 @@ sub analysis_markduplicates {
     _calculate_fraction_duplicates_for_all_metric_files(
         {
             FILEHANDLE          => $FILEHANDLE,
-            outfile_path_prefix => $temp_file_path_prefix,
+            outfile_path_prefix => $outfile_path_prefix,
         }
     );
-
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_file_path_prefix . $UNDERSCORE . q{metric},
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Gather bam files in contig order
     my @gather_infile_paths =
-      map { $temp_outfile_path{$_} } @{ $file_info_href->{contigs} };
+      map { $outfile_path{$_} } @{ $file_info_href->{contigs} };
     picardtools_gatherbamfiles(
         {
             create_index     => q{true},
@@ -481,43 +445,12 @@ sub analysis_markduplicates {
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx4g},
-            outfile_path         => $temp_file_path_prefix . $outfile_suffix,
+            outfile_path         => $outfile_path_prefix . $outfile_suffix,
             referencefile_path   => $referencefile_path,
             temp_directory       => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    ## Copies file from temporary directory. Per contig
-    say {$FILEHANDLE} q{## Copy contig files from temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
-            file_path          => $recipe_file_path,
-            file_ending        => substr( $outfile_suffix, 0, 2 ) . $ASTERISK,
-            outdirectory       => $outdir_path_prefix,
-            outfile            => $outfile_name_prefix,
-            recipe_info_path   => $recipe_info_path,
-            temp_directory     => $temp_directory,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $temp_file_path_prefix
-              . substr( $outfile_suffix, 0, 2 )
-              . $ASTERISK,
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Close FILEHANDLES
     close $XARGSFILEHANDLE;
@@ -528,10 +461,10 @@ sub analysis_markduplicates {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile => $outfile_name_prefix,
-                path   => catfile( $outfile_path_name_prefix . $UNDERSCORE . q{metric} ),
-                recipe_name      => q{markduplicates},
-                sample_id        => $sample_id,
+                infile      => $outfile_name_prefix,
+                path        => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
+                recipe_name => q{markduplicates},
+                sample_id   => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -682,10 +615,8 @@ sub analysis_markduplicates_rio {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes };
-    use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Get::File qw{ get_merged_infile_prefix };
     use MIP::Gnu::Coreutils qw{ gnu_cat };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_flagstat sambamba_markdup };
@@ -708,14 +639,9 @@ sub analysis_markduplicates_rio {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
-    my $indir_path_prefix       = $io{in}{dir_path_prefix};
-    my $infile_suffix           = $io{in}{file_suffix};
-    my $infile_name_prefix      = $io{in}{file_name_prefix};
-    my $temp_infile_name_prefix = $io{temp}{file_name_prefix};
-    my %temp_infile_path        = %{ $io{temp}{file_path_href} };
+    my %infile_path = %{ $io{in}{file_path_href} };
 
     ## Unpack parameters
     my %rec_atr = get_recipe_attributes(
@@ -764,16 +690,13 @@ sub analysis_markduplicates_rio {
                 file_paths_ref => \@outfile_paths,
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
-                temp_directory => $temp_directory,
             }
         )
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix      = $io{out}{file_name_prefix};
-    my $outfile_path_name_prefix = $io{out}{file_path_prefix};
-    my $temp_file_path_prefix    = $io{temp}{file_path_prefix};
-    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -790,15 +713,14 @@ sub analysis_markduplicates_rio {
 
         $markduplicates_program = q{picardtools_markduplicates};
 
-        Readonly my $JAVA_MEMORY_ALLOCATION => 4;
         my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
 
         # Constrain parallelization to match available memory
         my $parallel_processes = get_parallel_processes(
             {
+                core_number               => $core_number,
                 process_memory_allocation => $process_memory_allocation,
                 recipe_memory_allocation  => $active_parameter_href->{node_ram_memory},
-                core_number               => $core_number,
             }
         );
 
@@ -825,14 +747,14 @@ sub analysis_markduplicates_rio {
 
             my $stderrfile_path =
               $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-            my $metrics_file = $temp_file_path_prefix . $DOT . $contig . $DOT . q{metric};
+            my $metrics_file = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
             picardtools_markduplicates(
                 {
                     create_index       => q{true},
                     FILEHANDLE         => $XARGSFILEHANDLE,
-                    infile_paths_ref   => [ $temp_infile_path{$contig} ],
+                    infile_paths_ref   => [ $infile_path{$contig} ],
                     metrics_file       => $metrics_file,
-                    outfile_path       => $temp_outfile_path{$contig},
+                    outfile_path       => $outfile_path{$contig},
                     referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
                 }
@@ -843,8 +765,8 @@ sub analysis_markduplicates_rio {
             sambamba_flagstat(
                 {
                     FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $temp_outfile_path{$contig},
-                    outfile_path => $temp_file_path_prefix
+                    infile_path  => $outfile_path{$contig},
+                    outfile_path => $outfile_path_prefix
                       . $DOT
                       . $contig
                       . $UNDERSCORE
@@ -882,14 +804,14 @@ sub analysis_markduplicates_rio {
                     FILEHANDLE      => $XARGSFILEHANDLE,
                     hash_table_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_hash_table_size},
-                    infile_path    => $temp_infile_path{$contig},
+                    infile_path    => $infile_path{$contig},
                     io_buffer_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_io_buffer_size},
                     overflow_list_size => $active_parameter_href
                       ->{markduplicates_sambamba_markdup_overflow_list_size},
                     show_progress   => 1,
                     stderrfile_path => $stderrfile_path,
-                    stdoutfile_path => $temp_outfile_path{$contig},
+                    stdoutfile_path => $outfile_path{$contig},
                     temp_directory  => $temp_directory,
                 }
             );
@@ -899,8 +821,8 @@ sub analysis_markduplicates_rio {
             sambamba_flagstat(
                 {
                     FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $temp_outfile_path{$contig},
-                    outfile_path => $temp_file_path_prefix
+                    infile_path  => $outfile_path{$contig},
+                    outfile_path => $outfile_path_prefix
                       . $DOT
                       . $contig
                       . $UNDERSCORE
@@ -917,8 +839,8 @@ sub analysis_markduplicates_rio {
         {
             FILEHANDLE => $FILEHANDLE,
             infile_paths_ref =>
-              [ $temp_file_path_prefix . $DOT . $ASTERISK . $UNDERSCORE . q{metric} ],
-            stdoutfile_path => $temp_file_path_prefix . $UNDERSCORE . q{metric_all},
+              [ $outfile_path_prefix . $DOT . $ASTERISK . $UNDERSCORE . q{metric} ],
+            stdoutfile_path => $outfile_path_prefix . $UNDERSCORE . q{metric_all},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -928,28 +850,7 @@ sub analysis_markduplicates_rio {
     _calculate_fraction_duplicates_for_all_metric_files(
         {
             FILEHANDLE          => $FILEHANDLE,
-            outfile_path_prefix => $temp_file_path_prefix,
-        }
-    );
-
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_file_path_prefix . $UNDERSCORE . q{metric},
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-    ## Remove file at temporary Directory
-    delete_contig_files(
-        {
-            core_number       => $core_number,
-            FILEHANDLE        => $FILEHANDLE,
-            file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
-            file_ending       => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-            file_name         => $temp_infile_name_prefix,
-            indirectory       => $temp_directory,
+            outfile_path_prefix => $outfile_path_prefix,
         }
     );
 
@@ -960,10 +861,10 @@ sub analysis_markduplicates_rio {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile => $outfile_name_prefix,
-                path   => catfile( $outfile_path_name_prefix . $UNDERSCORE . q{metric} ),
-                recipe_name      => q{markduplicates},
-                sample_id        => $sample_id,
+                infile      => $outfile_name_prefix,
+                path        => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
+                recipe_name => q{markduplicates},
+                sample_id   => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
