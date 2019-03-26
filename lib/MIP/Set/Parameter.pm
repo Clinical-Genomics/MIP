@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -150,20 +150,19 @@ sub set_custom_default_to_active_parameter {
 
     ## Set default value only to active_parameter
     my %set_to_active_parameter = (
-        analysis_type                    => \&_set_analysis_type,
-        bwa_build_reference              => \&_set_human_genome,
-        expansionhunter_repeat_specs_dir => \&_set_expansionhunter_repeat_specs_dir,
-        fusion_filter_reference_genome   => \&_set_human_genome,
-        gatk_path                        => \&_set_dynamic_path,
-        infile_dirs                      => \&_set_infile_dirs,
-        picardtools_path                 => \&_set_dynamic_path,
-        reference_dir                    => \&_set_reference_dir,
-        rtg_vcfeval_reference_genome     => \&_set_human_genome,
-        salmon_quant_reference_genome    => \&_set_human_genome,
-        star_aln_reference_genome        => \&_set_human_genome,
-        snpeff_path                      => \&_set_dynamic_path,
-        temp_directory                   => \&_set_temp_directory,
-        vep_directory_path               => \&_set_dynamic_path,
+        analysis_type                  => \&_set_analysis_type,
+        bwa_build_reference            => \&_set_human_genome,
+        fusion_filter_reference_genome => \&_set_human_genome,
+        gatk_path                      => \&_set_dynamic_path,
+        infile_dirs                    => \&_set_infile_dirs,
+        picardtools_path               => \&_set_dynamic_path,
+        reference_dir                  => \&_set_reference_dir,
+        rtg_vcfeval_reference_genome   => \&_set_human_genome,
+        salmon_quant_reference_genome  => \&_set_human_genome,
+        star_aln_reference_genome      => \&_set_human_genome,
+        snpeff_path                    => \&_set_dynamic_path,
+        temp_directory                 => \&_set_temp_directory,
+        vep_directory_path             => \&_set_dynamic_path,
     );
 
     ## Set default value to parameter and/or active parameter
@@ -952,106 +951,6 @@ sub set_conda_env_names_and_paths {
     return;
 }
 
-sub _get_default_repeat_specs_dir_path {
-
-## Function : Return the path to the repeat specs directory in the Expansionhunter directory
-## Returns  : $repeat_specs_dir_path
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $reference_genome_path => Path to the reference genome used
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $reference_genome_path;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        reference_genome_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$reference_genome_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Cwd qw{ abs_path };
-    use File::Basename qw{ fileparse };
-    use File::Find::Rule;
-    use IPC::Cmd qw{ can_run };
-    use MIP::Get::Parameter qw{ get_dynamic_conda_path };
-
-    ## Path to set
-    my $repeat_specs_dir_path;
-
-    my $binary      = q{ExpansionHunter};
-    my $recipe_name = q{expansionhunter};
-
-    ## Search for binary in PATH in any MIP conda env defined by config
-    ## or conda base
-    my $expansionhunter_bin_path = get_dynamic_conda_path(
-        {
-            active_parameter_href => $active_parameter_href,
-            bin_file              => $binary,
-            environment_key       => $recipe_name,
-        }
-    );
-
-    ## Return if path not found,
-    ## MIP requires a defined variable in order to flag that it can't find the dir
-    return q{Failed to find default path} if ( not $expansionhunter_bin_path );
-
-    ## Follow potential link
-    $expansionhunter_bin_path = abs_path($expansionhunter_bin_path);
-
-    ## Get the path to the repeat specs dirs
-    my @expansionhunter_dirs = File::Spec->splitdir($expansionhunter_bin_path);
-    splice @expansionhunter_dirs, $MINUS_ONE;
-    my $parent_repeat_specs_dir_path =
-      catdir( @expansionhunter_dirs, qw{ data repeat-specs } );
-
-    ## Get list of genome version directories
-    my @repeat_specs_dir_paths =
-      File::Find::Rule->directory->in($parent_repeat_specs_dir_path);
-
-    ## Remove top directory
-    @repeat_specs_dir_paths =
-      grep { !/^$parent_repeat_specs_dir_path$/xms } @repeat_specs_dir_paths;
-
-    ## Find correct repeat spec folder
-    my $genome_reference = fileparse($reference_genome_path);
-
-  REPEAT_SPECS_VERSION:
-    foreach my $repeat_specs_version (@repeat_specs_dir_paths) {
-
-        ## Get version
-        my @genome_version_dirs = File::Spec->splitdir($repeat_specs_version);
-        my $genome_version_dir  = splice @genome_version_dirs, $MINUS_ONE;
-
-        ## Match version to reference used
-        if ( $genome_reference =~ / $genome_version_dir /ixms ) {
-            $repeat_specs_dir_path = $repeat_specs_version;
-            last;
-        }
-    }
-
-    ## MIP requires a defined variable in order to flag that it can't find the dir
-    if (   not $repeat_specs_dir_path
-        or not -d $repeat_specs_dir_path )
-    {
-        return q{Failed to find default path};
-    }
-    return $repeat_specs_dir_path;
-}
-
 sub set_programs_for_installation {
 
 ## Function : Process the lists of programs that has been selected for or omitted from installation
@@ -1414,47 +1313,6 @@ sub _set_dynamic_path {
             environment_key       => $dynamic_path{$parameter_name}{environment_key},
         }
     );
-    return;
-}
-
-sub _set_expansionhunter_repeat_specs_dir {
-
-## Function : Set default expansionhunter repeat specs dir to active parameters
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Already set
-    return if ( $active_parameter_href->{expansionhunter_repeat_specs_dir} );
-
-    ## Set default path to expansionhunter repeat specs if needed
-    $active_parameter_href->{expansionhunter_repeat_specs_dir} =
-      _get_default_repeat_specs_dir_path(
-        {
-            active_parameter_href => $active_parameter_href,
-            reference_genome_path => $active_parameter_href->{human_genome_reference},
-        }
-      );
-
     return;
 }
 
