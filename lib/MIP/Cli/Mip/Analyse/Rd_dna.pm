@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.22;
+our $VERSION = 1.23;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -770,10 +770,10 @@ q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mill
     );
 
     option(
-        q{expansionhunter_repeat_specs_dir} => (
-            cmd_aliases   => [qw{ exphun_rspd }],
-            cmd_flag      => q{exphun_rep_spec_dir},
-            documentation => q{Path to reference genome specic folder with repeat specs},
+        q{expansionhunter_variant_catalog_file_path} => (
+            cmd_aliases   => [qw{ exphun_vcfp }],
+            cmd_flag      => q{exphun_var_cat_fp},
+            documentation => q{Path to variant catalog json file},
             is            => q{rw},
             isa           => Str,
         )
