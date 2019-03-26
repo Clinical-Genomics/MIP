@@ -29,10 +29,6 @@ program_executables:
   key_data_type: ARRAY
 element_separator:
   key_data_type: SCALAR
-reduce_io:
-  key_data_type: SCALAR
-  values:
-    - 1
 recipe_type:
   key_data_type: SCALAR
   values:

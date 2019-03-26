@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -520,9 +520,9 @@ sub print_recipe {
             strict_type => 1,
         },
         print_recipe_mode => {
-            allow => [ undef, 0, 1, 2 ],
-            default => $arg_href->{print_recipe_mode} //= 2,
-            store => \$print_recipe_mode,
+            allow       => [ undef, 0, 1, 2 ],
+            default     => $arg_href->{print_recipe_mode} //= 2,
+            store       => \$print_recipe_mode,
             strict_type => 1,
         },
     };
@@ -564,11 +564,8 @@ sub print_recipe {
           )
         {
 
-            if ( not $parameter eq q{bamcalibrationblock} ) {
+            print {*STDOUT} q{--} . $parameter . $SPACE . $print_recipe_mode . $SPACE;
 
-                print {*STDOUT} q{--} . $parameter . $SPACE . $print_recipe_mode . $SPACE;
-
-            }
         }
     }
     print {*STDOUT} $NEWLINE;

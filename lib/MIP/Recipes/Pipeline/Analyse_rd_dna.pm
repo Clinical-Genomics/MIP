@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -143,11 +143,10 @@ sub pipeline_analyse_rd_dna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Pipeline qw{ check_rd_dna };
+    use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
 
     ## Recipes
-    use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
-    use MIP::Recipes::Analysis::Bamcalibrationblock qw{ analysis_bamcalibrationblock };
     use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
@@ -161,7 +160,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
-      qw{ analysis_gatk_baserecalibration analysis_gatk_baserecalibration_rio };
+      qw{ analysis_gatk_baserecalibration };
     use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
       qw{ analysis_gatk_combinevariantcallsets };
     use MIP::Recipes::Analysis::Gatk_gathervcfs qw{ analysis_gatk_gathervcfs };
@@ -172,8 +171,7 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_gatk_variantevalexome };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
-    use MIP::Recipes::Analysis::Markduplicates
-      qw{ analysis_markduplicates analysis_markduplicates_rio };
+    use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
     use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Peddy qw{ analysis_peddy };
@@ -184,7 +182,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Picardtools_genotypeconcordance
       qw{ analysis_picardtools_genotypeconcordance };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
-      qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
+      qw{ analysis_picardtools_mergesamfiles };
     use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
     use MIP::Recipes::Analysis::Prepareforvariantannotationblock
       qw{ analysis_prepareforvariantannotationblock };
@@ -302,19 +300,6 @@ sub pipeline_analyse_rd_dna {
         vt_ar                => \&analysis_vt,
     );
 
-    ### Special case for '--rio' capable analysis recipes
-    ## Define rio block recipes and order
-    my $is_bamcalibrationblock_done;
-    my @order_bamcal_recipes;
-    my %bamcal_ar;
-    _define_bamcalibration_ar(
-        {
-            active_parameter_href    => $active_parameter_href,
-            bamcal_ar_href           => \%bamcal_ar,
-            order_bamcal_recipes_ref => \@order_bamcal_recipes,
-        }
-    );
-
     ## Special case for rankvariants recipe
     set_rankvariants_ar(
         {
@@ -363,76 +348,19 @@ sub pipeline_analyse_rd_dna {
         ## Skip recipe if not part of dispatch table (such as gzip_fastq)
         next RECIPE if ( not $analysis_recipe{$recipe} );
 
-        ## Skip recipe if bamcalibration block is done
-        ## and recipe is part of bamcalibration block
-        next RECIPE
-          if ( $is_bamcalibrationblock_done
-            and any { $_ eq $recipe } @order_bamcal_recipes );
-
         ### Analysis recipes
-        ## rio enabled and bamcalibration block analysis recipe
-        if ( $active_parameter_href->{reduce_io}
-            and any { $_ eq $recipe } @order_bamcal_recipes )
-        {
-
-            ## For displaying
-            log_display_recipe_for_user(
-                {
-                    log    => $log,
-                    recipe => q{bamcalibrationblock},
-                }
-            );
-
-            analysis_bamcalibrationblock(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    bamcal_ar_href          => \%bamcal_ar,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    log                     => $log,
-                    order_recipes_ref       => \@order_bamcal_recipes,
-                    parameter_href          => $parameter_href,
-                    recipe_name             => q{bamcalibrationblock},
-                    sample_info_href        => $sample_info_href,
-                }
-            );
-
-            ## Done with bamcalibration block
-            $is_bamcalibrationblock_done = 1;
-        }
-        else {
-
-            ## For displaying
-            log_display_recipe_for_user(
-                {
-                    log    => $log,
-                    recipe => $recipe,
-                }
-            );
-            ## Sample mode
-            if ( $parameter_href->{$recipe}{analysis_mode} eq q{sample} ) {
-
-              SAMPLE_ID:
-                foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-                    $analysis_recipe{$recipe}->(
-                        {
-                            active_parameter_href   => $active_parameter_href,
-                            file_info_href          => $file_info_href,
-                            infile_lane_prefix_href => $infile_lane_prefix_href,
-                            job_id_href             => $job_id_href,
-                            parameter_href          => $parameter_href,
-                            recipe_name             => $recipe,
-                            sample_id               => $sample_id,
-                            sample_info_href        => $sample_info_href,
-                        }
-                    );
-                }
+        ## For displaying
+        log_display_recipe_for_user(
+            {
+                log    => $log,
+                recipe => $recipe,
             }
+        );
+        ## Sample mode
+        if ( $parameter_href->{$recipe}{analysis_mode} eq q{sample} ) {
 
-            ## Family mode
-            elsif ( $parameter_href->{$recipe}{analysis_mode} eq q{case} ) {
+          SAMPLE_ID:
+            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
                 $analysis_recipe{$recipe}->(
                     {
@@ -442,78 +370,31 @@ sub pipeline_analyse_rd_dna {
                         job_id_href             => $job_id_href,
                         parameter_href          => $parameter_href,
                         recipe_name             => $recipe,
+                        sample_id               => $sample_id,
                         sample_info_href        => $sample_info_href,
                     }
                 );
             }
-
-            ## Special case
-            exit if ( $recipe eq q{split_fastq_file} );
         }
-    }
-    return;
-}
 
-sub _define_bamcalibration_ar {
+        ## Family mode
+        elsif ( $parameter_href->{$recipe}{analysis_mode} eq q{case} ) {
 
-## Function : Define bamcalibration recipes, order, coderefs and activate
-## Returns  :
-## Arguments: $active_parameter_href     => Active parameters for this analysis hash {REF}
-##          : $order_bamcal_recipes_ref  => Order of recipes in bamcalibration block {REF}
-##          : $bamcal_ar_href            => Bamcalibration analysis recipe hash {REF}
+            $analysis_recipe{$recipe}->(
+                {
+                    active_parameter_href   => $active_parameter_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    parameter_href          => $parameter_href,
+                    recipe_name             => $recipe,
+                    sample_info_href        => $sample_info_href,
+                }
+            );
+        }
 
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $order_bamcal_recipes_ref;
-    my $bamcal_ar_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        order_bamcal_recipes_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$order_bamcal_recipes_ref,
-            strict_type => 1,
-        },
-        bamcal_ar_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$bamcal_ar_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Define rio blocks recipes and order
-    @{$order_bamcal_recipes_ref} = qw{ picardtools_mergesamfiles
-      markduplicates
-      gatk_baserecalibration
-    };
-
-    %{$bamcal_ar_href} = (
-        gatk_baserecalibration    => \&analysis_gatk_baserecalibration_rio,
-        markduplicates            => \&analysis_markduplicates_rio,
-        picardtools_mergesamfiles => \&analysis_picardtools_mergesamfiles_rio,
-    );
-
-    ## Enable bamcalibration as analysis recipe
-    $active_parameter_href->{bamcalibrationblock} = 1;
-
-    if ( $active_parameter_href->{dry_run_all} ) {
-
-        ## Dry run
-        $active_parameter_href->{bamcalibrationblock} = 2;
+        ## Special case
+        exit if ( $recipe eq q{split_fastq_file} );
     }
     return;
 }
