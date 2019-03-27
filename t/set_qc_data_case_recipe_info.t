@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Qc_data}        => [qw{ set_qc_data_case_recipe_version }],
+        q{MIP::Qc_data}        => [qw{ set_qc_data_case_recipe_info }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Qc_data qw{ set_qc_data_case_recipe_version };
+use MIP::Qc_data qw{ set_qc_data_case_recipe_info };
 
-diag(   q{Test set_qc_data_case_recipe_version from Qc_data.pm v}
+diag(   q{Test set_qc_data_case_recipe_info from Qc_data.pm v}
       . $MIP::Qc_data::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -58,32 +58,21 @@ diag(   q{Test set_qc_data_case_recipe_version from Qc_data.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a case level recipe and no version
+## Given a key value pair
+my $key = q{greeting};
 my %qc_data;
-my $recipe_name = q{bwa_mem};
-set_qc_data_case_recipe_version(
+my $recipe_name = q{japan};
+my $value       = q{konnichi wa};
+set_qc_data_case_recipe_info(
     {
+        key          => $key,
         qc_data_href => \%qc_data,
         recipe_name  => $recipe_name,
-        version      => undef,
+        value        => $value,
     }
 );
 
-## Then skip setting version in qc_data for recipe
-is( $qc_data{recipe}{$recipe_name}{version},
-    undef, q{Skip setting case level recipe version} );
-
-## Given a case level recipe and version
-my $version = q{1.0.0};
-set_qc_data_case_recipe_version(
-    {
-        qc_data_href => \%qc_data,
-        recipe_name  => $recipe_name,
-        version      => $version,
-    }
-);
-
-## Then set version in qc_data for recipe
-is( $qc_data{recipe}{$recipe_name}{version}, $version, q{Set case level recipe version} );
+## Then
+is( $qc_data{recipe}{$recipe_name}{$key}, $value, q{Set case level recipe info} );
 
 done_testing();

@@ -33,6 +33,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants qw{ $NEWLINE $SPACE };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
+use MIP::Qc_data qw{ set_qc_data_case_recipe_info set_qc_data_case_recipe_version };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
@@ -137,6 +138,25 @@ $log->info( q{Loaded: } . $sample_info_file );
 my %regexp = load_yaml( { yaml_file => $regexp_file, } );
 $log->info( q{Loaded: } . $regexp_file );
 
+## Set qccollect version to qc_data hash
+set_qc_data_case_recipe_version(
+    {
+        qc_data_href => \%qc_data,
+        recipe_name  => q{qccollect},
+        version      => $VERSION,
+    }
+);
+
+## Set regexp file to qc_data hash
+set_qc_data_case_recipe_info(
+    {
+        key          => q{regexp_file},
+        qc_data_href => \%qc_data,
+        recipe_name  => q{qccollect},
+        value        => $regexp_file,
+    }
+);
+
 ## Extracts all qcdata on sample_id level using information in %sample_info and %regexp
 sample_qc(
     {
@@ -158,10 +178,6 @@ case_qc(
         sample_info_href    => \%sample_info,
     }
 );
-
-## Add qcCollect version to qc_data yaml file
-$qc_data{recipe}{qccollect}{version}     = $VERSION;
-$qc_data{recipe}{qccollect}{regexp_file} = $regexp_file;
 
 SAMPLE_ID:
 foreach my $sample_id ( keys %{ $sample_info{sample} } ) {
@@ -239,11 +255,11 @@ sub case_qc {
 
 ## Function : Extracts all qcdata on case level using information in %sample_info_file and %regexp
 ## Returns  :
-## Arguments: $qc_data_href         => QCData hash {REF}
-##          : $qc_header_href       => Save header(s) in each outfile {REF}
-##          : $qc_recipe_data_href  => Hash to save data in each outfile {REF}
-##          : $regexp_href          => RegExp hash {REF}
-##          : $sample_info_href     => Info on samples and case hash {REF}
+## Arguments: $qc_data_href        => Qc data hash {REF}
+##          : $qc_header_href      => Save header(s) in each outfile {REF}
+##          : $qc_recipe_data_href => Hash to save data in each outfile {REF}
+##          : $regexp_href         => RegExp hash {REF}
+##          : $sample_info_href    => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
