@@ -61,7 +61,7 @@ diag(   q{Test analysis_bcftools_merge from Bcftools_merge.pm v}
 
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
-## Given build parameters
+## Given recipe parameters when sample infiles to merge
 my $recipe_name    = q{bcftools_merge};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
@@ -108,6 +108,26 @@ my $is_ok = analysis_bcftools_merge(
 );
 
 ## Then return TRUE
-ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ merging files} );
+
+## Given a single sample
+@{ $active_parameter{sample_ids} } = $active_parameter{sample_ids}[0];
+
+$is_ok = analysis_bcftools_merge(
+    {
+        active_parameter_href   => \%active_parameter,
+        case_id                 => $active_parameter{case_id},
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        parameter_href          => \%parameter,
+        profile_base_command    => $slurm_mock_cmd,
+        recipe_name             => $recipe_name,
+        sample_info_href        => \%sample_info,
+    }
+);
+
+## Then return TRUE
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ renaming files} );
 
 done_testing();
