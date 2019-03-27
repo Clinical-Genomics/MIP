@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile devnull splitpath };
+use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -15,7 +15,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
@@ -28,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -145,7 +144,6 @@ sub analysis_sv_annotate {
     use MIP::Get::Parameter
       qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw(gnu_mv);
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
@@ -171,22 +169,19 @@ sub analysis_sv_annotate {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path = $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $job_id_chain            = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
@@ -210,19 +205,13 @@ sub analysis_sv_annotate {
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
-                temp_directory         => $temp_directory,
             }
         )
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix      = $io{out}{file_name_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_outfile_suffix      = $io{temp}{file_suffix};
-    my $temp_outfile_path        = $temp_outfile_path_prefix . $temp_outfile_suffix;
+    my $outfile_path        = $io{out}{file_path};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -253,24 +242,13 @@ sub analysis_sv_annotate {
 
     ### SHELL:
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $temp_directory
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
     ## Alternative file tag
     my $alt_file_tag = $EMPTY_STR;
 
     if ( $active_parameter_href->{sv_svdb_query} ) {
 
         ## Set for first infile
-        my $svdb_infile_path = $temp_infile_path;
+        my $svdb_infile_path = $infile_path;
 
         ## Update alternative ending
         $alt_file_tag .= $UNDERSCORE . q{svdbq};
@@ -289,9 +267,9 @@ sub analysis_sv_annotate {
             if ($annotation_file_counter) {
 
                 $svdb_infile_path =
-                    $temp_infile_path_prefix
+                    $outfile_path_prefix
                   . $alt_file_tag
-                  . $infile_suffix
+                  . $outfile_suffix
                   . $DOT
                   . $outfile_tracker;
 
@@ -306,9 +284,9 @@ sub analysis_sv_annotate {
                     frequency_tag   => $query_db_tag . q{AF},
                     hit_tag         => $query_db_tag,
                     infile_path     => $svdb_infile_path,
-                    stdoutfile_path => $temp_infile_path_prefix
+                    stdoutfile_path => $outfile_path_prefix
                       . $alt_file_tag
-                      . $infile_suffix
+                      . $outfile_suffix
                       . $DOT
                       . $outfile_tracker,
                     overlap => 0.8,
@@ -322,12 +300,12 @@ sub analysis_sv_annotate {
         gnu_mv(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                infile_path => $temp_infile_path_prefix
+                infile_path => $outfile_path_prefix
                   . $alt_file_tag
-                  . $infile_suffix
+                  . $outfile_suffix
                   . $DOT
                   . $outfile_tracker,
-                outfile_path => $temp_infile_path_prefix . $alt_file_tag . $infile_suffix,
+                outfile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -342,10 +320,8 @@ sub analysis_sv_annotate {
             active_parameter_href => $active_parameter_href,
             FILEHANDLE            => $FILEHANDLE,
             infile_paths_ref =>
-              [ $temp_infile_path_prefix . $alt_file_tag . $infile_suffix ],
-            outfile => $temp_outfile_path_prefix
-              . $outfile_alt_file_tag
-              . $outfile_suffix,
+              [ $outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
+            outfile => $outfile_path_prefix . $outfile_alt_file_tag . $outfile_suffix,
             sequence_dict_file => $sequence_dict_file,
         }
     );
@@ -361,10 +337,8 @@ sub analysis_sv_annotate {
             {
                 apply_filters_ref => [qw{ PASS }],
                 FILEHANDLE        => $FILEHANDLE,
-                infile_path       => $temp_outfile_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
-                outfile_path => $temp_outfile_path_prefix
+                infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                outfile_path => $outfile_path_prefix
                   . $alt_file_tag
                   . $UNDERSCORE . q{filt}
                   . $outfile_suffix,
@@ -383,9 +357,7 @@ sub analysis_sv_annotate {
         vcfanno(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                infile_path => $temp_outfile_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
+                infile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
                 stderrfile_path_append => $stderrfile_path,
                 toml_configfile_path   => $active_parameter_href->{fqf_vcfanno_config},
             }
@@ -408,10 +380,8 @@ sub analysis_sv_annotate {
             {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $DASH,
-                outfile_path => $temp_outfile_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
-                output_type            => q{v},
+                outfile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                output_type  => q{v},
                 stderrfile_path_append => $stderrfile_path,
                 exclude                => $exclude_filter,
             }
@@ -425,12 +395,10 @@ sub analysis_sv_annotate {
         say {$FILEHANDLE} q{## Annotate 1000G structural variants};
         vcfanno(
             {
-                ends        => 1,
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $temp_outfile_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
-                luafile_path         => $active_parameter_href->{sv_vcfanno_lua},
+                ends         => 1,
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                luafile_path => $active_parameter_href->{sv_vcfanno_lua},
                 toml_configfile_path => $active_parameter_href->{sv_vcfanno_config},
             }
         );
@@ -445,7 +413,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
 
         say {$FILEHANDLE} q{>}
           . $SPACE
-          . $temp_outfile_path_prefix
+          . $outfile_path_prefix
           . $alt_file_tag
           . $outfile_suffix, $NEWLINE;
 
@@ -466,10 +434,8 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
                 FILEHANDLE => $FILEHANDLE,
                 headerfile_path =>
                   $active_parameter_href->{sv_vcfannotation_header_lines_file},
-                infile_path => $temp_outfile_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix,
-                outfile_path => $temp_outfile_path_prefix
+                infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                outfile_path => $outfile_path_prefix
                   . $alt_file_tag
                   . $UNDERSCORE
                   . q{bcftools_annotate}
@@ -492,24 +458,13 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
                 active_parameter_href => $active_parameter_href,
                 FILEHANDLE            => $FILEHANDLE,
                 infile_paths_ref =>
-                  [ $temp_outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
-                outfile            => $temp_outfile_path,
+                  [ $outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
+                outfile            => $outfile_path,
                 sequence_dict_file => $sequence_dict_file,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
     }
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_outfile_path,
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 

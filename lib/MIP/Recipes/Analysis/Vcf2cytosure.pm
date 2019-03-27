@@ -4,7 +4,6 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -26,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -143,7 +142,6 @@ sub analysis_vcf2cytosure {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
       qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
@@ -160,9 +158,9 @@ sub analysis_vcf2cytosure {
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode     = $active_parameter_href->{$recipe_name};
@@ -184,13 +182,12 @@ sub analysis_vcf2cytosure {
             iterators_ref    => $active_parameter_href->{sample_ids},
             parameter_href   => $parameter_href,
             recipe_name      => $recipe_name,
-            temp_directory   => $temp_directory,
         }
     );
 
-    my %outfile_name             = %{ $io{out}{file_name_href} };
-    my %outfile_path             = %{ $io{out}{file_path_href} };
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my %outfile_name        = %{ $io{out}{file_name_href} };
+    my %outfile_path        = %{ $io{out}{file_path_href} };
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -232,8 +229,6 @@ sub analysis_vcf2cytosure {
         }
     );
 
-    ### SHELL:
-
     ## Store file info from ".bam", ".tab" and ".vcf"
     my %vcf2cytosure_file_info;
 
@@ -246,27 +241,13 @@ sub analysis_vcf2cytosure {
             parameter_href => $parameter_href,
             recipe_name    => q{sv_annotate},
             stream         => q{out},
-            temp_directory => $temp_directory,
         }
     );
     my $infile_path_prefix = $case_io{out}{file_path_prefix};
     my $infile_suffix      = $case_io{out}{file_suffix};
-    my $infile_path = $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-    my $temp_infile_path_prefix = $case_io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
     $vcf2cytosure_file_info{$case_id}{in}{$infile_suffix} =
-      $temp_infile_path;
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+      $infile_path;
 
     ## Collect BAM infiles for dependence recipes streams for all sample_ids
     my %recipe_tag_keys = ( gatk_baserecalibration => q{out}, );
@@ -287,40 +268,18 @@ sub analysis_vcf2cytosure {
                     parameter_href => $parameter_href,
                     recipe_name    => $recipe_tag,
                     stream         => $stream,
-                    temp_directory => $temp_directory,
                 }
             );
             my $infile_path_prefix_bam = $sample_io{$stream}{file_path_prefix};
             my $infile_suffix_bam      = $sample_io{$stream}{file_suffix};
-            my $infile_path_bam =
-              $infile_path_prefix_bam . substr( $infile_suffix_bam, 0, 2 ) . $ASTERISK;
-            my $temp_infile_path_prefix_bam = $sample_io{temp}{file_path_prefix};
-            my $temp_infile_path_bam = $temp_infile_path_prefix_bam . $infile_suffix_bam;
+            my $infile_path_bam        = $infile_path_prefix_bam . $infile_suffix_bam;
 
             $vcf2cytosure_file_info{$sample_id}{in}{$infile_suffix_bam} =
-              $temp_infile_path_bam;
-
-            $process_batches_count = print_wait(
-                {
-                    FILEHANDLE            => $FILEHANDLE,
-                    max_process_number    => $core_number,
-                    process_batches_count => $process_batches_count,
-                    process_counter       => $sample_id_index,
-                }
-            );
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $infile_path_bam,
-                    outfile_path => $temp_directory,
-                }
-            );
+              $infile_path_bam;
         }
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+    ### SHELL:
 
     ## Excute vcf2cytosure just to get an error message for version
     say {$FILEHANDLE} q{## Log vcf2cytosure version - use dummy parameters} . $NEWLINE;
@@ -345,12 +304,12 @@ sub analysis_vcf2cytosure {
         each @{ $active_parameter_href->{sample_ids} } )
     {
 
-        my $tiddit_temp_cov_file_path =
-          $temp_outfile_path_prefix . $UNDERSCORE . q{tiddit} . $UNDERSCORE . $sample_id;
+        my $tiddit_cov_file_path =
+          $outfile_path_prefix . $UNDERSCORE . q{tiddit} . $UNDERSCORE . $sample_id;
 
         ## Store file for use downstream
         $vcf2cytosure_file_info{$sample_id}{in}{q{.tab}} =
-          $tiddit_temp_cov_file_path . q{.tab};
+          $tiddit_cov_file_path . q{.tab};
 
         ## Tiddit coverage
         tiddit_coverage(
@@ -358,7 +317,7 @@ sub analysis_vcf2cytosure {
                 bin_size            => $bin_size,
                 FILEHANDLE          => $FILEHANDLE,
                 infile_path         => $vcf2cytosure_file_info{$sample_id}{in}{q{.bam}},
-                outfile_path_prefix => $tiddit_temp_cov_file_path,
+                outfile_path_prefix => $tiddit_cov_file_path,
             }
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
@@ -372,15 +331,16 @@ sub analysis_vcf2cytosure {
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
-        my $bcftools_temp_outfile_path =
-            $temp_outfile_path_prefix
+        my $bcftools_outfile_path =
+            $outfile_path_prefix
           . $UNDERSCORE
           . q{filtered}
           . $UNDERSCORE
           . $sample_id . q{.vcf};
+
         ## Store file for use downstream
         $vcf2cytosure_file_info{$sample_id}{in}{q{.vcf}} =
-          $bcftools_temp_outfile_path;
+          $bcftools_outfile_path;
 
         # Bcftools view
         bcftools_view(
@@ -389,7 +349,7 @@ sub analysis_vcf2cytosure {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $vcf2cytosure_file_info{$case_id}{in}{q{.vcf}},
                 samples_ref  => [$sample_id],
-                outfile_path => $bcftools_temp_outfile_path,
+                outfile_path => $bcftools_outfile_path,
             }
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
@@ -436,9 +396,9 @@ sub analysis_vcf2cytosure {
             set_recipe_outfile_in_sample_info(
                 {
                     infile           => $outfile_name{$sample_id},
-                    sample_id        => $sample_id,
                     path             => $outfile_path{$sample_id},
                     recipe_name      => q{vcf2cytosure},
+                    sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,
                 }
             );
@@ -447,9 +407,9 @@ sub analysis_vcf2cytosure {
             set_recipe_outfile_in_sample_info(
                 {
                     infile           => $outfile_name{$sample_id},
-                    sample_id        => $sample_id,
                     path             => $stderrfile_path,
                     recipe_name      => q{vcf2cytosure_version},
+                    sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,
                 }
             );
