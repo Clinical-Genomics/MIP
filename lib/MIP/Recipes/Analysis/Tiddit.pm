@@ -4,7 +4,6 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -25,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit };
@@ -140,7 +139,6 @@ sub analysis_tiddit {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
@@ -182,17 +180,12 @@ sub analysis_tiddit {
             outdata_dir            => $active_parameter_href->{outdata_dir},
             parameter_href         => $parameter_href,
             recipe_name            => $recipe_name,
-            temp_directory         => $temp_directory,
         }
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_outfile_suffix      = $io{temp}{file_suffix};
-    my $temp_outfile_path        = $temp_outfile_path_prefix . $temp_outfile_suffix;
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_path        = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -235,7 +228,6 @@ sub analysis_tiddit {
     ### SHELL:
 
     my %tiddit_sample_file_info;
-    my $process_batches_count = 1;
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
   SAMPLE_ID:
@@ -251,43 +243,20 @@ sub analysis_tiddit {
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
                 stream         => q{in},
-                temp_directory => $temp_directory,
             }
         );
         my $infile_path_prefix = $sample_io{in}{file_path_prefix};
         my $infile_suffix      = $sample_io{in}{file_suffix};
-        my $infile_path =
-          $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-        my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
-        my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+        my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-        $tiddit_sample_file_info{$sample_id}{in} = $temp_infile_path;
+        $tiddit_sample_file_info{$sample_id}{in} = $infile_path;
         $tiddit_sample_file_info{$sample_id}{out} =
-          $temp_infile_path_prefix . $UNDERSCORE . $sample_id;
-
-        $process_batches_count = print_wait(
-            {
-                FILEHANDLE            => $FILEHANDLE,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                process_counter       => $sample_id_index,
-            }
-        );
-
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $infile_path,
-                outfile_path => $temp_directory,
-            }
-        );
+          $outfile_path_prefix . $UNDERSCORE . $sample_id;
     }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    # Restart counter
-    $process_batches_count = 1;
+    # Start counter
+    my $process_batches_count = 1;
 
     ## Tiddit sv calling per sample id
   SAMPLE_ID:
@@ -317,34 +286,22 @@ sub analysis_tiddit {
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Get parameters
     ## Tiddit sample outfiles needs to be lexiographically sorted for svdb merge
-    my @svdb_temp_infile_paths =
+    my @svdb_infile_paths =
       map { $tiddit_sample_file_info{$_}{out} . $outfile_suffix }
       @{ $active_parameter_href->{sample_ids} };
 
     svdb_merge(
         {
             FILEHANDLE       => $FILEHANDLE,
-            infile_paths_ref => \@svdb_temp_infile_paths,
+            infile_paths_ref => \@svdb_infile_paths,
             notag            => 1,
-            stdoutfile_path  => $temp_outfile_path,
+            stdoutfile_path  => $outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_outfile_path . $ASTERISK,
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $FILEHANDLE;
 

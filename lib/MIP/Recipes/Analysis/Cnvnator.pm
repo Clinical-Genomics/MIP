@@ -404,7 +404,7 @@ sub analysis_cnvnator {
                 stderrfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{convert_to_vcf.stderr.txt},
-                referencedirectory_path => $temp_directory,
+                referencedirectory_path => $outdir_path_prefix,
                 FILEHANDLE              => $XARGSFILEHANDLE,
             }
         );
@@ -425,7 +425,7 @@ sub analysis_cnvnator {
         {
             FILEHANDLE     => $FILEHANDLE,
             sample_ids_ref => [$rename_sample],
-            temp_directory => $temp_directory,
+            temp_directory => $outdir_path_prefix,
         }
     );
 
@@ -456,7 +456,7 @@ sub analysis_cnvnator {
                 infile              => $cnvnator_outfile_path,
                 outfile_path_prefix => $fixed_vcffile_path_prefix,
                 output_type         => q{v},
-                temp_directory      => $temp_directory,
+                temp_directory      => $outdir_path_prefix,
                 sample_ids_ref      => [$rename_sample],
             }
         );
@@ -465,7 +465,7 @@ sub analysis_cnvnator {
         bcftools_annotate(
             {
                 FILEHANDLE      => $FILEHANDLE,
-                headerfile_path => catfile( $temp_directory, q{contig_header.txt} ),
+                headerfile_path => catfile( $outdir_path_prefix, q{contig_header.txt} ),
                 infile_path     => $fixed_vcffile_path_prefix . $outfile_suffix,
                 outfile_path    => $fixed_header_vcffile_path,
                 output_type     => q{v},

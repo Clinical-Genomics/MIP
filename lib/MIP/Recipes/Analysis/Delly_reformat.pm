@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -16,13 +16,16 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_delly_reformat };
@@ -30,12 +33,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SEMICOLON  => q{;};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
+Readonly my $SV_MAX_SIZE => 100_000_000;
 
 sub analysis_delly_reformat {
 
@@ -151,11 +149,9 @@ sub analysis_delly_reformat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_merge bcftools_index bcftools_view };
@@ -168,18 +164,15 @@ sub analysis_delly_reformat {
 
     ### PREPROCESSING:
 
-    ## Constants
-    Readonly my $SV_MAX_SIZE => 100_000_000;
-
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
@@ -202,17 +195,13 @@ sub analysis_delly_reformat {
             outdata_dir            => $active_parameter_href->{outdata_dir},
             parameter_href         => $parameter_href,
             recipe_name            => $recipe_name,
-            temp_directory         => $temp_directory,
         }
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_outfile_suffix      = $io{temp}{file_suffix};
-    my $temp_outfile_path        = $temp_outfile_path_prefix . $temp_outfile_suffix;
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandles
@@ -237,8 +226,6 @@ sub analysis_delly_reformat {
         }
     );
 
-    ### SHELL:
-
     ## Collect infiles for dependence recipes streams for all sample_ids
     my %recipe_tag_keys = (
         gatk_baserecalibration => q{out},
@@ -262,43 +249,21 @@ sub analysis_delly_reformat {
                     parameter_href => $parameter_href,
                     recipe_name    => $recipe_tag,
                     stream         => $stream,
-                    temp_directory => $temp_directory,
                 }
             );
             my $infile_path_prefix = $sample_io{$stream}{file_path_prefix};
             my $infile_suffix      = $sample_io{$stream}{file_suffix};
-            my $infile_path =
-              $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-            my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
-            my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+            my $infile_path        = $infile_path_prefix . $infile_suffix;
 
             $delly_sample_file_info{$sample_id}{in}{$infile_suffix} =
-              $temp_infile_path;
-
-            $process_batches_count = print_wait(
-                {
-                    FILEHANDLE            => $FILEHANDLE,
-                    max_process_number    => $core_number,
-                    process_batches_count => $process_batches_count,
-                    process_counter       => $sample_id_index,
-                }
-            );
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $infile_path,
-                    outfile_path => $temp_directory,
-                }
-            );
+              $infile_path;
         }
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+    ### SHELL:
 
     ## Delly call bcf sample infiles
-    my @delly_merge_temp_infile_paths =
+    my @delly_merge_infile_paths =
       map { $delly_sample_file_info{$_}{in}{q{.bcf}} }
       @{ $active_parameter_href->{sample_ids} };
 
@@ -317,10 +282,10 @@ sub analysis_delly_reformat {
         delly_merge(
             {
                 FILEHANDLE       => $FILEHANDLE,
-                infile_paths_ref => \@delly_merge_temp_infile_paths,
+                infile_paths_ref => \@delly_merge_infile_paths,
                 min_size         => 0,
                 max_size         => $SV_MAX_SIZE,
-                outfile_path     => $temp_outfile_path_prefix
+                outfile_path     => $outfile_path_prefix
                   . $UNDERSCORE
                   . q{merged}
                   . $DOT . q{bcf},
@@ -342,7 +307,7 @@ sub analysis_delly_reformat {
         say {$FILEHANDLE} q{## delly call regenotype};
 
         ## Store outfiles
-        my @delly_genotype_temp_outfile_paths;
+        my @delly_genotype_outfile_paths;
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -363,19 +328,19 @@ sub analysis_delly_reformat {
             my $alignment_sample_file_path =
               $delly_sample_file_info{$sample_id}{in}{q{.bam}};
             my $bcf_sample_outfile_path =
-                $temp_outfile_path_prefix
+                $outfile_path_prefix
               . $UNDERSCORE
               . q{merged}
               . $UNDERSCORE . q{geno}
               . $UNDERSCORE
               . $sample_id
               . $DOT . q{bcf};
-            push @delly_genotype_temp_outfile_paths, $bcf_sample_outfile_path;
+            push @delly_genotype_outfile_paths, $bcf_sample_outfile_path;
             delly_call(
                 {
                     exclude_file_path => $active_parameter_href->{delly_exclude_file},
                     FILEHANDLE        => $XARGSFILEHANDLE,
-                    genotypefile_path => $temp_outfile_path_prefix
+                    genotypefile_path => $outfile_path_prefix
                       . $UNDERSCORE
                       . q{merged}
                       . $DOT . q{bcf},
@@ -406,8 +371,8 @@ sub analysis_delly_reformat {
         bcftools_merge(
             {
                 FILEHANDLE       => $FILEHANDLE,
-                infile_paths_ref => \@delly_genotype_temp_outfile_paths,
-                outfile_path     => $temp_outfile_path_prefix
+                infile_paths_ref => \@delly_genotype_outfile_paths,
+                outfile_path     => $outfile_path_prefix
                   . $UNDERSCORE
                   . q{to_sort}
                   . $outfile_suffix,
@@ -429,8 +394,8 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
             {
                 FILEHANDLE   => $FILEHANDLE,
                 output_type  => q{v},
-                infile_path  => $delly_merge_temp_infile_paths[0],
-                outfile_path => $temp_outfile_path_prefix
+                infile_path  => $delly_merge_infile_paths[0],
+                outfile_path => $outfile_path_prefix
                   . $UNDERSCORE
                   . q{to_sort}
                   . $outfile_suffix,
@@ -445,12 +410,12 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
         {
             FILEHANDLE => $FILEHANDLE,
             infile_paths_ref =>
-              [ $temp_outfile_path_prefix . $UNDERSCORE . q{to_sort} . $outfile_suffix ],
+              [ $outfile_path_prefix . $UNDERSCORE . q{to_sort} . $outfile_suffix ],
             java_jar =>
               catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx2g},
-            outfile_path         => $temp_outfile_path_prefix . $DOT . q{vcf},
+            outfile_path         => $outfile_path_prefix . $DOT . q{vcf},
             referencefile_path   => $referencefile_path,
             sequence_dictionary  => catfile(
                 $reference_dir,
@@ -460,17 +425,6 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} $NEWLINE . q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_outfile_path,
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
