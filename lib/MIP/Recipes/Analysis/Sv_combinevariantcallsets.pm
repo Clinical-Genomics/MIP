@@ -239,7 +239,7 @@ sub analysis_sv_combinevariantcallsets {
     # Paths for structural variant callers to be merged
     my %file_path;
 
-    _migrate_and_preprocess_single_callers_file(
+    _preprocess_single_callers_file(
         {
             active_parameter_href          => $active_parameter_href,
             FILEHANDLE                     => $FILEHANDLE,
@@ -266,7 +266,7 @@ sub analysis_sv_combinevariantcallsets {
     );
 
     ## Migrate joint calling per case callers like Manta and Delly
-    _migrate_joint_callers_file(
+    _preprocess_joint_callers_file(
         {
             active_parameter_href          => $active_parameter_href,
             FILEHANDLE                     => $FILEHANDLE,
@@ -446,9 +446,9 @@ sub _add_to_parallel_chain {
     return;
 }
 
-sub _migrate_joint_callers_file {
+sub _preprocess_joint_callers_file {
 
-## Function : Migrate joint calling per case callers like Manta and Delly
+## Function : Preprocess joint calling per case callers like Manta and Delly. And store merged outfile per caller
 ## Returns  :
 ## Arguments: $active_parameter_href          => Active parameters for this analysis hash {REF}
 ##          : $case_id                        => Family id
@@ -601,9 +601,9 @@ sub _migrate_joint_callers_file {
     return;
 }
 
-sub _migrate_and_preprocess_single_callers_file {
+sub _preprocess_single_callers_file {
 
-## Function : Collect infiles for all sample_ids for programs that do not do joint calling to enable migration to temporary directory. Add chain of structural variant caller to parallel chains
+## Function : Collect infiles for all sample_ids for programs that do not do joint calling. Add chain of structural variant caller to parallel chains
 ## Returns  :
 ## Arguments: $active_parameter_href          => Active parameters for this analysis hash {REF}
 ##          : $FILEHANDLE                     => Filehandle to write to

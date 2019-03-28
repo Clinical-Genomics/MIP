@@ -158,7 +158,7 @@ recipe_core_number:
     evaluation: 1
     expansionhunter: 0
     fastqc_ar: 0
-    freebayes_ar: 16
+    freebayes_ar: 13
     frequency_filter: 16
     gatk_baserecalibration: 13
     gatk_combinevariantcallsets: 1

@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -25,12 +25,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
 
 }
+
+## Constants
+Readonly my $INCLUDE_NONVARIANT_SITES_TIME => 50;
+Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
 
 sub analysis_gatk_genotypegvcfs {
 
@@ -142,10 +146,6 @@ sub analysis_gatk_genotypegvcfs {
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ## Constants
-    Readonly my $INCLUDE_NONVARIANT_SITES_TIME => 50;
-    Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
-
     ### PREPROCESSING:
 
     ## Retrieve logger object
@@ -163,7 +163,7 @@ sub analysis_gatk_genotypegvcfs {
     my $recipe_mode          = $active_parameter_href->{$recipe_name};
     my $recipe_files_tracker = 0;
 
-    ## Gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
+    ## Gatk genotype is most safely processed in single thread mode, but we need some java heap allocation
     my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
@@ -191,13 +191,11 @@ sub analysis_gatk_genotypegvcfs {
             outdata_dir      => $active_parameter_href->{outdata_dir},
             parameter_href   => $parameter_href,
             recipe_name      => $recipe_name,
-            temp_directory   => $temp_directory,
         }
     );
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my %outfile_path             = %{ $io{out}{file_path_href} };
-    my $temp_outdir_path_prefix  = $io{temp}{dir_path_prefix};
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -258,7 +256,6 @@ sub analysis_gatk_genotypegvcfs {
                     parameter_href => $parameter_href,
                     recipe_name    => $recipe_name,
                     stream         => q{in},
-                    temp_directory => $temp_directory,
                 }
             );
             if ( $consensus_analysis_type eq q{wes} ) {
@@ -279,9 +276,9 @@ sub analysis_gatk_genotypegvcfs {
         if ( $consensus_analysis_type eq q{wes} ) {
 
             $sample_name_map_path =
-              catfile( $temp_outdir_path_prefix, q{analysis_sample_map.txt} );
+              catfile( $outdir_path_prefix, q{analysis_sample_map.txt} );
             my $echo_outfile_path =
-              catfile( $temp_outdir_path_prefix, q{dynamic_sample_map.txt} );
+              catfile( $outdir_path_prefix, q{dynamic_sample_map.txt} );
             _merge_sample_name_map_files(
                 {
                     echo_outfile_path => $echo_outfile_path,
@@ -297,10 +294,9 @@ sub analysis_gatk_genotypegvcfs {
         gatk_genomicsdbimport(
             {
                 FILEHANDLE                => $FILEHANDLE,
-                genomicsdb_workspace_path => $temp_outfile_path_prefix
-                  . $UNDERSCORE . q{DB},
-                intervals_ref        => [$contig],
-                infile_paths_ref     => \@genotype_infile_paths,
+                genomicsdb_workspace_path => $outfile_path_prefix . $UNDERSCORE . q{DB},
+                intervals_ref             => [$contig],
+                infile_paths_ref          => \@genotype_infile_paths,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
@@ -321,10 +317,8 @@ sub analysis_gatk_genotypegvcfs {
                 FILEHANDLE => $FILEHANDLE,
                 include_nonvariant_sites =>
                   $active_parameter_href->{gatk_genotypegvcfs_all_sites},
-                infile_path => q{gendb://}
-                  . $temp_outfile_path_prefix
-                  . $UNDERSCORE . q{DB},
-                intervals_ref        => [$contig],
+                infile_path   => q{gendb://} . $outfile_path_prefix . $UNDERSCORE . q{DB},
+                intervals_ref => [$contig],
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 outfile_path         => $outfile_path{$contig},
@@ -348,9 +342,9 @@ sub analysis_gatk_genotypegvcfs {
                     case_id                 => $case_id,
                     dependency_method       => q{sample_to_case_parallel},
                     infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_chain            => $job_id_chain,
                     job_id_href             => $job_id_href,
                     log                     => $log,
-                    job_id_chain            => $job_id_chain,
                     recipe_file_path        => $recipe_file_path,
                     recipe_files_tracker    => $recipe_files_tracker,
                     sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },

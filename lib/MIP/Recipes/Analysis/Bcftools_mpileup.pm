@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -25,12 +25,17 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_mpileup };
 
 }
+
+## Constants
+Readonly my $ADJUST_MQ => 50;
+Readonly my $SNP_GAP   => 3;
+Readonly my $INDEL_GAP => 10;
 
 sub analysis_bcftools_mpileup {
 
@@ -142,7 +147,6 @@ sub analysis_bcftools_mpileup {
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
@@ -153,20 +157,15 @@ sub analysis_bcftools_mpileup {
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ## Constants
-    Readonly my $ADJUST_MQ => 50;
-    Readonly my $SNP_GAP   => 3;
-    Readonly my $INDEL_GAP => 10;
-
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode     = $active_parameter_href->{$recipe_name};
@@ -194,11 +193,10 @@ sub analysis_bcftools_mpileup {
             temp_directory         => $temp_directory,
         }
     );
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -240,7 +238,7 @@ sub analysis_bcftools_mpileup {
     ### SHELL:
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
-    my %mpileup_temp_infile_path;
+    my %mpileup_infile_path;
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
@@ -253,37 +251,15 @@ sub analysis_bcftools_mpileup {
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
                 stream         => q{in},
-                temp_directory => $temp_directory,
             }
         );
-        my $indir_path_prefix       = $sample_io{in}{dir_path_prefix};
-        my $infile_name_prefix      = $sample_io{in}{file_name_prefix};
-        my $infile_name             = $sample_io{in}{file_name};
-        my $infile_suffix           = $sample_io{in}{file_suffix};
-        my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
-        my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+        my $infile_suffix      = $sample_io{in}{file_suffix};
+        my $infile_path_prefix = $sample_io{in}{file_path_prefix};
+        my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-        ## Store temp infile path for each sample_id
-        $mpileup_temp_infile_path{$sample_id} =
-          $sample_io{temp}{file_path_href};
-
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        ($xargs_file_counter) = xargs_migrate_contig_files(
-            {
-                contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-                core_number        => $core_number,
-                file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-                file_path          => $recipe_file_path,
-                FILEHANDLE         => $FILEHANDLE,
-                infile             => $infile_name_prefix,
-                indirectory        => $indir_path_prefix,
-                recipe_info_path   => $recipe_info_path,
-                temp_directory     => $temp_directory,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                xargs_file_counter => $xargs_file_counter,
-            }
-        );
+        ## Store temp infile path for each sample_id and contig
+        $mpileup_infile_path{$sample_id} =
+          $sample_io{in}{file_path_href};
     }
 
     ## Bcftools mpileup
@@ -306,7 +282,7 @@ sub analysis_bcftools_mpileup {
 
         ## Assemble contig file paths for mpileup
         my @mpileup_file_paths =
-          map { $mpileup_temp_infile_path{$_}{$contig} }
+          map { $mpileup_infile_path{$_}{$contig} }
           @{ $active_parameter_href->{sample_ids} };
 
         my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
@@ -331,7 +307,7 @@ sub analysis_bcftools_mpileup {
 
         ## Get parameter
         my $samples_file;
-        ## Special case: bcftools version 1.9 does not output GQ when contsraint is applied
+        ## Special case: bcftools version 1.9 does not output GQ when constraint is applied
         my $constrain = $active_parameter_href->{bcftools_mpileup_constrain};
         if ( $parameter_href->{cache}{trio} and $constrain ) {
 
@@ -402,7 +378,7 @@ sub analysis_bcftools_mpileup {
 
             ## End stream and write to disc
             $bcftools_outfile_path =
-              $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
+              $outfile_path_prefix . $DOT . $contig . $outfile_suffix;
         }
         bcftools_view(
             {
@@ -420,7 +396,7 @@ sub analysis_bcftools_mpileup {
 
             ## End stream and write to disc
             $bcftools_outfile_path =
-              $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
+              $outfile_path_prefix . $DOT . $contig . $outfile_suffix;
             ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
             replace_iupac(
                 {
@@ -437,15 +413,14 @@ sub analysis_bcftools_mpileup {
     }
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
-    my $concat_temp_infile_path_prefix =
-      $temp_outfile_path_prefix . $UNDERSCORE . q{ordered};
+    my $concat_infile_path_prefix = $outfile_path_prefix . $UNDERSCORE . q{ordered};
     gatk_concatenate_variants(
         {
             active_parameter_href => $active_parameter_href,
             FILEHANDLE            => $FILEHANDLE,
             elements_ref          => \@{ $file_info_href->{contigs} },
             infile_postfix        => $outfile_suffix,
-            infile_prefix         => $temp_outfile_path_prefix,
+            infile_prefix         => $outfile_path_prefix,
             outfile_path_prefix   => $outfile_path_prefix,
             outfile_suffix        => $outfile_suffix,
         }

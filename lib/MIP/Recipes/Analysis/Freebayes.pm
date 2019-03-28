@@ -4,7 +4,6 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -25,21 +24,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_freebayes_calling };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DASH       => q{-};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $PIPE       => q{|};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_freebayes_calling {
 
@@ -150,7 +140,6 @@ sub analysis_freebayes_calling {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
@@ -170,9 +159,9 @@ sub analysis_freebayes_calling {
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
@@ -196,14 +185,12 @@ sub analysis_freebayes_calling {
             outdata_dir            => $active_parameter_href->{outdata_dir},
             parameter_href         => $parameter_href,
             recipe_name            => $recipe_name,
-            temp_directory         => $temp_directory,
         }
     );
 
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -231,7 +218,7 @@ sub analysis_freebayes_calling {
     ### SHELL:
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
-    my %freebayes_temp_infile_path;
+    my %freebayes_infile_path;
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
@@ -244,37 +231,16 @@ sub analysis_freebayes_calling {
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
                 stream         => q{in},
-                temp_directory => $temp_directory,
             }
         );
-        my $indir_path_prefix       = $sample_io{in}{dir_path_prefix};
-        my $infile_name_prefix      = $sample_io{in}{file_name_prefix};
-        my $infile_name             = $sample_io{in}{file_name};
-        my $infile_suffix           = $sample_io{in}{file_suffix};
-        my $temp_infile_path_prefix = $sample_io{temp}{file_path_prefix};
-        my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+        my $infile_suffix      = $sample_io{in}{file_suffix};
+        my $infile_path_prefix = $sample_io{in}{file_path_prefix};
+        my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-        ## Store temp infile path for each sample_id
-        $freebayes_temp_infile_path{$sample_id} =
-          $sample_io{temp}{file_path_href};
+        ## Store temp infile path for each sample_id and contig
+        $freebayes_infile_path{$sample_id} =
+          $sample_io{in}{file_path_href};
 
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        ($xargs_file_counter) = xargs_migrate_contig_files(
-            {
-                contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-                core_number        => $core_number,
-                file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-                file_path          => $recipe_file_path,
-                FILEHANDLE         => $FILEHANDLE,
-                infile             => $infile_name_prefix,
-                indirectory        => $indir_path_prefix,
-                recipe_info_path   => $recipe_info_path,
-                temp_directory     => $temp_directory,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                xargs_file_counter => $xargs_file_counter,
-            }
-        );
     }
 
     ## Freebayes
@@ -300,7 +266,7 @@ sub analysis_freebayes_calling {
 
         ## Assemble contig file paths for freebayes
         my @freebayes_file_paths =
-          map { $freebayes_temp_infile_path{$_}{$contig} }
+          map { $freebayes_infile_path{$_}{$contig} }
           @{ $active_parameter_href->{sample_ids} };
 
         freebayes_calling(
@@ -359,7 +325,7 @@ sub analysis_freebayes_calling {
 
             ## End stream and write to disc
             $bcftools_outfile_path =
-              $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
+              $outfile_path_prefix . $DOT . $contig . $outfile_suffix;
         }
         bcftools_view(
             {
@@ -377,7 +343,7 @@ sub analysis_freebayes_calling {
             print {$XARGSFILEHANDLE} $PIPE . $SPACE;
             ## End stream and write to disc
             $bcftools_outfile_path =
-              $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
+              $outfile_path_prefix . $DOT . $contig . $outfile_suffix;
             ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
             replace_iupac(
                 {
@@ -407,18 +373,17 @@ sub analysis_freebayes_calling {
         }
     );
 
+  CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
-        my $view_temp_infile_path =
-          $temp_outfile_path_prefix . $DOT . $contig . $outfile_suffix;
-        my $view_temp_outfile_path_prefix =
-          $temp_outfile_path_prefix . $UNDERSCORE . q{ordered};
+        my $view_infile_path = $outfile_path_prefix . $DOT . $contig . $outfile_suffix;
+        my $view_outfile_path_prefix = $outfile_path_prefix . $UNDERSCORE . q{ordered};
         bcftools_view(
             {
                 FILEHANDLE   => $XARGSFILEHANDLE,
-                infile_path  => $view_temp_infile_path,
-                outfile_path => $view_temp_outfile_path_prefix
+                infile_path  => $view_infile_path,
+                outfile_path => $view_outfile_path_prefix
                   . $DOT
                   . $contig
                   . $outfile_suffix,
@@ -434,15 +399,14 @@ sub analysis_freebayes_calling {
 
     ## GatherVCFs
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
-    my $concat_temp_infile_path_prefix =
-      $temp_outfile_path_prefix . $UNDERSCORE . q{ordered};
+    my $concat_infile_path_prefix = $outfile_path_prefix . $UNDERSCORE . q{ordered};
     gatk_concatenate_variants(
         {
             active_parameter_href => $active_parameter_href,
             elements_ref          => \@{ $file_info_href->{contigs} },
             FILEHANDLE            => $FILEHANDLE,
             infile_postfix        => $outfile_suffix,
-            infile_prefix         => $concat_temp_infile_path_prefix,
+            infile_prefix         => $concat_infile_path_prefix,
             outfile_path_prefix   => $outfile_path_prefix,
             outfile_suffix        => $outfile_suffix,
         }
@@ -465,12 +429,12 @@ sub analysis_freebayes_calling {
         submit_recipe(
             {
                 base_command            => $profile_base_command,
-                dependency_method       => q{sample_to_case},
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
