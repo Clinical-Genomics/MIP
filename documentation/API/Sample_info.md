@@ -114,6 +114,33 @@ my %attribute = get_sample_info_case_recipe_attributes(
 $attribute{path} = <string>;
 ```
 
+get_sample_info_sample_recipe_attributes:
+Return sample recipe attribute or attributes hash for infile key
+```Perl
+# Scalar
+my $path = get_sample_info_sample_recipe_attributes(
+    {
+        attribute        => q{path},
+        infile => $infile,
+        recipe_name      => $recipe_name,
+        sample_id => $sample_id,
+        sample_info_href => \%sample_info,
+    }
+);
+$path = <string>;
+
+# Hash
+my %attribute = get_sample_info_sample_recipe_attributes(
+    {
+        infile => $infile,
+        recipe_name      => $recipe_name,
+        sample_id => $sample_id,
+        sample_info_href => \%sample_info,
+    }
+);
+$attribute{path} = <string>;
+```
+
 get_sequence_run_type:
 Return scalar sequence run type, (e.g. paired-end or single-end) or a hash of sequence run types per infile prefix
 ```Perl

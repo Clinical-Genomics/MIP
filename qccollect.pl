@@ -8,7 +8,7 @@ use charnames qw{ :full :short };
 use Cwd;
 use Cwd qw{ abs_path };
 use File::Basename qw{ dirname basename fileparse };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use English qw{ -no_match_vars };
 use Getopt::Long;
@@ -83,10 +83,10 @@ GetOptions(
     q{epg|evaluate_plink_gender}    => \$evaluate_plink_gender,
     q{l|log_file:s}                 => \$log_file,
     ## Display help text
-    q{h|help} => sub { say STDOUT $USAGE; exit; },
+    q{h|help} => sub { say {*STDOUT} $USAGE; exit; },
     ## Display version number
     q{v|version} => sub {
-        say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },
   )
@@ -157,7 +157,7 @@ set_qc_data_case_recipe_info(
     }
 );
 
-## Extracts all qcdata on sample_id level using information in %sample_info and %regexp
+## Extracts all Qc data on sample_id level using information in %sample_info and %regexp
 sample_qc(
     {
         qc_data_href        => \%qc_data,
@@ -168,7 +168,7 @@ sample_qc(
     }
 );
 
-## Extracts all qcdata on case level using information in %sample_info_file and %regexp
+## Extracts all Qc data on case level using information in %sample_info_file and %regexp
 case_qc(
     {
         qc_data_href        => \%qc_data,
@@ -253,7 +253,7 @@ END_USAGE
 
 sub case_qc {
 
-## Function : Extracts all qcdata on case level using information in %sample_info_file and %regexp
+## Function : Extracts all Qc data on case level using information in %sample_info_file and %regexp
 ## Returns  :
 ## Arguments: $qc_data_href        => Qc data hash {REF}
 ##          : $qc_header_href      => Save header(s) in each outfile {REF}
@@ -271,20 +271,6 @@ sub case_qc {
     my $sample_info_href;
 
     my $tmpl = {
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-        regexp_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$regexp_href,
-            strict_type => 1,
-        },
         qc_data_href => {
             default     => {},
             defined     => 1,
@@ -304,6 +290,20 @@ sub case_qc {
             defined     => 1,
             required    => 1,
             store       => \$qc_recipe_data_href,
+            strict_type => 1,
+        },
+        regexp_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
         },
     };
@@ -374,60 +374,62 @@ sub sample_qc {
 
 ## Function : Collects all sample qc in files defined by sample_info_file and regular expressions defined by regexp.
 ## Returns  :
-## Arguments: $sample_info_href     => Info on samples and case hash {REF}
-##          : $regexp_href          => RegExp hash {REF}
-##          : $qc_data_href         => QCData hash {REF}
-##          : $qc_header_href       => Save header(s) in each outfile {REF}
-##          : $qc_recipe_data_href  => Hash to save data in each outfile {REF}
+## Arguments: $qc_data_href        => Qc data hash {REF}
+##          : $qc_header_href      => Save header(s) in each outfile {REF}
+##          : $qc_recipe_data_href => Hash to save data in each outfile {REF}
+##          : $regexp_href         => RegExp hash {REF}
+##          : $sample_info_href    => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_info_href;
-    my $regexp_href;
     my $qc_data_href;
     my $qc_header_href;
     my $qc_recipe_data_href;
+    my $regexp_href;
+    my $sample_info_href;
 
     my $tmpl = {
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        regexp_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$regexp_href
-        },
         qc_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
             strict_type => 1,
-            store       => \$qc_data_href
         },
         qc_header_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_header_href,
             strict_type => 1,
-            store       => \$qc_header_href
         },
         qc_recipe_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_recipe_data_href,
             strict_type => 1,
-            store       => \$qc_recipe_data_href
+        },
+        regexp_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Sample_info qw{ get_sample_info_sample_recipe_attributes };
 
   SAMPLE_ID:
     for my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
@@ -440,43 +442,34 @@ sub sample_qc {
                 keys %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe} } )
             {
 
-                my $outdirectory;
-                my $outfile;
-                if ( $sample_info_href->{sample}{$sample_id}{recipe}{$recipe}
-                    {$infile}{outdirectory} )
-                {
+                my %attribute = get_sample_info_sample_recipe_attributes(
+                    {
+                        infile           => $infile,
+                        recipe_name      => $recipe,
+                        sample_id        => $sample_id,
+                        sample_info_href => \%sample_info,
+                    }
+                );
 
-                    ## Extract OutDirectory
-                    $outdirectory =
-                      $sample_info_href->{sample}{$sample_id}{recipe}
-                      {$recipe}{$infile}{outdirectory};
-                }
-                if ( $sample_info_href->{sample}{$sample_id}{recipe}{$recipe}
-                    {$infile}{outfile} )
-                {
+                my $outdirectory = $attribute{outdirectory};
+                my $outfile      = $attribute{outfile};
 
-                    ## Extract OutFile
-                    $outfile = $sample_info_href->{sample}{$sample_id}{recipe}
-                      {$recipe}{$infile}{outfile};
-                }
-                if ( $sample_info_href->{sample}{$sample_id}{recipe}{$recipe}
-                    {$infile}{path} )
-                {
+                if ( exists $attribute{path} ) {
 
                     ( $outfile, $outdirectory ) =
-                      fileparse( $sample_info_href->{sample}{$sample_id}{recipe}
-                          {$recipe}{$infile}{path} );
+                      fileparse( $attribute{path} );
                 }
 
-                ## Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
+                ## Parses the RegExpHash structure to identify if the info is
+                ## 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
                 parse_regexp_hash_and_collect(
                     {
-                        regexp_href         => $regexp_href,
-                        qc_recipe_data_href => $qc_recipe_data_href,
-                        qc_header_href      => $qc_header_href,
-                        recipe              => $recipe,
                         outdirectory        => $outdirectory,
                         outfile             => $outfile,
+                        qc_header_href      => $qc_header_href,
+                        qc_recipe_data_href => $qc_recipe_data_href,
+                        recipe              => $recipe,
+                        regexp_href         => $regexp_href,
                     }
                 );
 
@@ -503,12 +496,12 @@ sub parse_regexp_hash_and_collect {
 
 ## Function  : Parses the regexp hash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
 ## Returns   :
-## Arguments : $outdirectory         => Recipes outdirectory
-##           : $outfile              => Recipes outfile containing parameter to evaluate
-##           : $qc_header_href       => Save header(s) in each outfile {REF}
-##           : $qc_recipe_data_href  => Hash to save data in each outfile {REF}
-##           : $recipe               => The recipe to examine
-##           : $regexp_href          => Regexp hash {REF}
+## Arguments : $outdirectory        => Recipes outdirectory
+##           : $outfile             => Recipes outfile containing parameter to evaluate
+##           : $qc_header_href      => Save header(s) in each outfile {REF}
+##           : $qc_recipe_data_href => Hash to save data in each outfile {REF}
+##           : $recipe              => The recipe to examine
+##           : $regexp_href         => Regexp hash {REF}
 
     my ($arg_href) = @_;
 
@@ -521,13 +514,8 @@ sub parse_regexp_hash_and_collect {
     my $regexp_href;
 
     my $tmpl = {
-        regexp_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$regexp_href,
-            strict_type => 1,
-        },
+        outdirectory   => { store => \$outdirectory, strict_type => 1, },
+        outfile        => { store => \$outfile,      strict_type => 1, },
         qc_header_href => {
             default     => {},
             defined     => 1,
@@ -548,8 +536,13 @@ sub parse_regexp_hash_and_collect {
             store       => \$recipe,
             strict_type => 1,
         },
-        outdirectory => { store => \$outdirectory, strict_type => 1, },
-        outfile      => { store => \$outfile,      strict_type => 1, },
+        regexp_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp_href,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -564,8 +557,16 @@ sub parse_regexp_hash_and_collect {
   REG_EXP:
     for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
 
+<<"FUNCTION";
+        ## Detect if the outfile contains paragrafs/header info in the outfile
+        ## i.e. data is formated as a paragraf with header(s) and line(s).
+        ## "regexp_key" should either start with or end with "header". This
+        ## section extracts the header line(s) for the entire outdata file.
+        ## Necessary to assign correct data entry to header entry later
+        ## (headers and data are saved in seperate hashes).
+FUNCTION
+
         if ( $regexp_key =~ /^header|header$/i ) {
-## Detect if the outfile contains paragrafs/header info in the outfile i.e. data is formated as a paragraf with header(s) and line(s). "regexp_key" should either start with or end with "header". This section extracts the header line(s) for the entire outdata file. Necessary to assign correct data entry to header entry later (headers and data are saved in seperate hashes).
 
             ## Format outfile: Paragraf section
           PARAGRAPH:
@@ -577,58 +578,36 @@ sub parse_regexp_hash_and_collect {
 
                 ## Loop through possible separators to seperate any eventual header elements
               SEPARATOR:
-                for (
-                    my $separator_element_counter = 0 ;
-                    $separator_element_counter < scalar(@separators) ;
-                    $separator_element_counter++
-                  )
-                {
+                foreach my $separator (@separators) {
 
                     ## Detect if the regexp key is a paragraf header and not paragraf data (header line and data line(s))
                     if ( $regexp_header_key =~ /^header|header$/i ) {
 
                         ## Collect paragraf header
                         @{ ${$qc_header_href}{$recipe}{$regexp_key}{$regexp_header_key} }
-                          = split(
-                            /$separators[$separator_element_counter]/,
-                            `$regexp $outdirectory/$outfile`
-                          );
+                          = split( /$separator/, `$regexp $outdirectory/$outfile` );
 
-                        #Then split should have been successful
-                        if (
-                            defined(
-                                ${$qc_header_href}{$recipe}{$regexp_key}
-                                  {$regexp_header_key}
-                            )
-                          )
-                        {
-
-                            ## Found correct separator - do not continue
-                            last SEPARATOR;
-                        }
+                        # Then split should have been successful
+                        last SEPARATOR
+                          if (
+                            defined $qc_header_href->{$recipe}{$regexp_key}
+                            {$regexp_header_key} );
                     }
                     else {
                         ## For paragraf data line(s)
 
                         ## Collect paragraf data
                         @{ $qc_recipe_data_href->{$recipe}{$regexp_key}
-                              {$regexp_header_key} } = split(
-                            /$separators[$separator_element_counter]/,
-                            `$regexp $outdirectory/$outfile`
-                              );
+                              {$regexp_header_key} } =
+                          split( /$separator/, `$regexp $outdirectory/$outfile` );
 
                         ## Then split should have been successful
-                        if (
-                            defined(
-                                $qc_recipe_data_href->{$recipe}{$regexp_key}
-                                  {$regexp_header_key}[1]
-                            )
-                          )
-                        {
+                        last SEPARATOR
+                          if (
+                            defined $qc_recipe_data_href->{$recipe}{$regexp_key}
+                            {$regexp_header_key}[1]
 
-                            ## Found correct separator - do not continue
-                            last SEPARATOR;
-                        }
+                          );
                     }
                 }
             }
@@ -641,25 +620,15 @@ sub parse_regexp_hash_and_collect {
 
             ## Loop through possible separators
           SEPARATOR:
-            for (
-                my $separator_element_counter = 0 ;
-                $separator_element_counter < scalar(@separators) ;
-                $separator_element_counter++
-              )
-            {
+            foreach my $separator (@separators) {
 
                 ## Collect data. Use regexp_key as element header
-                @{ $qc_recipe_data_href->{$recipe}{$regexp_key} } = split(
-                    /$separators[$separator_element_counter]/,
-                    `$regexp $outdirectory/$outfile`
-                );
+                @{ $qc_recipe_data_href->{$recipe}{$regexp_key} } =
+                  split( /$separator/, `$regexp $outdirectory/$outfile` );
 
                 ## Then split should have been successful
-                if ( defined( $qc_recipe_data_href->{$recipe}{$regexp_key}[1] ) ) {
-
-                    ## Found correct separator do not continue
-                    last SEPARATOR;
-                }
+                last SEPARATOR
+                  if ( defined $qc_recipe_data_href->{$recipe}{$regexp_key}[1] );
             }
         }
     }
@@ -673,7 +642,7 @@ sub add_to_qc_data {
 ## Arguments : $evaluate_plink_gender => Evaluate plink gender
 ##           : $infile                => Infile to recipe
 ##           : $recipe                => Recipe to examine
-##           : $qc_data_href          => QCData hash {REF}
+##           : $qc_data_href          => Qc data hash {REF}
 ##           : $qc_header_href        => Save header(s) in each outfile {REF}
 ##           : $qc_recipe_data_href   => Hash to save data in each outfile {REF}
 ##           : $regexp_href           => RegExp hash {REF}
@@ -1139,7 +1108,7 @@ sub check_metric {
 
 ## Function : Check and add result of check if below threshold
 ## Returns  :
-## Arguments: $qc_data_href           => QCData hash {REF}
+## Arguments: $qc_data_href           => Qc data hash {REF}
 ##          : $reference_metric_href  => Metrics to evaluate
 ##          : $recipe                 => The recipe to examine
 ##          : $metric                 => Metric to evaluate
@@ -1210,7 +1179,7 @@ sub relation_check {
 ## Function : Uses the .mibs file produced by PLINK to test if case members are indeed related.
 ## Returns  :
 ## Arguments: $sample_info_href        => Info on samples and case hash {REF}
-##          : $qc_data_href            => QCData hash {REF}
+##          : $qc_data_href            => Qc data hash {REF}
 ##          : $sample_orders_ref       => The sample order so that correct estimation can be connected to the correct sample_ids {REF}
 ##          : $relationship_values_ref => All relationship estimations {REF}
 
@@ -1407,7 +1376,7 @@ sub _chanjo_gender_check {
 ## Returns  :
 ## Arguments: $chanjo_sexcheck_gender => Chanjo calculated gender
 ##          : $infile                 => Infile {REF}
-##          : $qc_data_href           => QCData hash {REF}
+##          : $qc_data_href           => Qc data hash {REF}
 ##          : $sample_id              => Sample ID
 ##          : $sample_info_href       => Info on samples and case hash {REF}
 
@@ -1495,7 +1464,7 @@ sub plink_gender_check {
 ##Function : Checks that the gender predicted by Plink sexcheck is confirmed in the pedigee for the sample
 ##Returns  :
 ##Arguments: $sample_info_href          => Info on samples and case hash {REF}
-##         : $qc_data_href              => QCData hash {REF}
+##         : $qc_data_href              => Qc data hash {REF}
 ##         : $sample_id_ref             => SampleID {REF}
 ##         : $plink_sexcheck_gender_ref => Plink calculated gender {REF}
 

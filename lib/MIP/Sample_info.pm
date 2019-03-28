@@ -33,6 +33,7 @@ BEGIN {
     our @EXPORT_OK = qw{
       get_read_group
       get_sample_info_case_recipe_attributes
+      get_sample_info_sample_recipe_attributes
       get_sequence_run_type
       get_sequence_run_type_is_interleaved
       set_gene_panel
@@ -171,6 +172,70 @@ sub get_sample_info_case_recipe_attributes {
 
     ## Get recipe attribute hash
     return %{ $sample_info_href->{recipe}{$recipe_name} };
+}
+
+sub get_sample_info_sample_recipe_attributes {
+
+## Function : Get sample recipe attributes from sample_info hash
+## Returns  : "$attribute" or "$attribute_href"
+## Arguments: $attribute        => Attribute key
+##          : $infile           => Infile key
+##          : $recipe_name      => Recipe to get attributes from
+##          : $sample_id        => Sample id
+##          : $sample_info_href => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $infile;
+    my $recipe_name;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        attribute => {
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        infile => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get and return attribute value
+    if ( defined $attribute && $attribute ) {
+
+        return $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}
+          {$infile}{$attribute};
+    }
+
+    ## Get recipe attribute hash
+    return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile} };
 }
 
 sub get_sequence_run_type {
