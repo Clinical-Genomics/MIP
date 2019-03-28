@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -167,9 +167,9 @@ sub analysis_gatk_combinevariantcallsets {
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
     my $job_id_chain = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
@@ -191,7 +191,6 @@ sub analysis_gatk_combinevariantcallsets {
             outdata_dir            => $active_parameter_href->{outdata_dir},
             parameter_href         => $parameter_href,
             recipe_name            => $recipe_name,
-            temp_directory         => $temp_directory,
         }
     );
 
@@ -240,7 +239,6 @@ sub analysis_gatk_combinevariantcallsets {
                 parameter_href => $parameter_href,
                 recipe_name    => $variant_caller,
                 stream         => $stream,
-                temp_directory => $temp_directory,
             }
         );
         my $infile_path_prefix = $sample_io{$stream}{file_path_prefix};
@@ -249,6 +247,7 @@ sub analysis_gatk_combinevariantcallsets {
 
         ## Only use first part of name
         my ($variant_caller_prio_tag) = split /_/sxm, $variant_caller;
+
         ## Collect both tag and path in the same string
         $file_path{$variant_caller} = $variant_caller_prio_tag . $SPACE . $infile_path;
 
@@ -336,9 +335,9 @@ sub analysis_gatk_combinevariantcallsets {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 parallel_chains_ref     => \@parallel_chains,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },

@@ -1,11 +1,12 @@
 package MIP::Recipes::Analysis::Cnvnator;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings;
@@ -16,41 +17,35 @@ use autodie qw{ :all };
 use List::MoreUtils qw{ first_value };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $AMPERSAND $ASTERISK $DOT $EMPTY_STR $NEWLINE $SEMICOLON $SPACE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cnvnator };
 
 }
 
-## Constants
-Readonly my $AMPERSAND  => q{&};
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SEMICOLON  => q{;};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
-
 sub analysis_cnvnator {
 
 ## Function : Call structural variants using cnvnator
 ## Returns  :
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
-##          : $recipe_name            => Program name
+##          : $recipe_name             => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $sample_id               => Sample id
@@ -165,7 +160,6 @@ sub analysis_cnvnator {
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Samtools qw{ samtools_create_chromosome_files };
@@ -191,20 +185,17 @@ sub analysis_cnvnator {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %temp_infile_path   = %{ $io{temp}{file_path_href} };
+    my %infile_path        = %{ $io{in}{file_path_href} };
 
     my $human_genome_reference = $active_parameter_href->{human_genome_reference};
     my $job_id_chain           = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode     = $active_parameter_href->{$recipe_name};
@@ -228,17 +219,14 @@ sub analysis_cnvnator {
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
-                temp_directory         => $temp_directory,
             }
         )
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_outfile_path        = $temp_outfile_path_prefix . $outfile_suffix;
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path        = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -286,7 +274,7 @@ sub analysis_cnvnator {
         {
             FILEHANDLE             => $FILEHANDLE,
             human_genome_reference => $human_genome_reference,
-            temp_directory         => $temp_directory,
+            temp_directory         => $outdir_path_prefix,
         }
     );
 
@@ -299,28 +287,10 @@ sub analysis_cnvnator {
             max_process_number => $core_number,
             regions_ref        => \@size_ordered_contigs,
             suffix             => $DOT . q{fa},
-            temp_directory     => $temp_directory,
+            temp_directory     => $outdir_path_prefix,
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            contigs_ref        => \@size_ordered_contigs,
-            file_path          => $recipe_file_path,
-            recipe_info_path   => $recipe_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-            infile             => $infile_name_prefix,
-            indirectory        => $indir_path_prefix,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-            temp_directory     => $temp_directory,
-        }
-    );
 
     ## cnvnator
     say {$FILEHANDLE} q{## cnvnator};
@@ -344,13 +314,12 @@ sub analysis_cnvnator {
 
         ## Assemble parameter
         # Output ROOT file
-        my $root_file = $temp_infile_path{$contig} . $DOT . q{root};
-        my $temp_outfile_path_prefix_contig =
-          $temp_outfile_path_prefix . $UNDERSCORE . $contig;
+        my $root_file                  = $infile_path{$contig} . $DOT . q{root};
+        my $outfile_path_prefix_contig = $outfile_path_prefix . $UNDERSCORE . $contig;
 
         cnvnator_read_extraction(
             {
-                infile_paths_ref => [ $temp_infile_path{$contig} ],
+                infile_paths_ref => [ $infile_path{$contig} ],
                 outfile_path     => $root_file,
                 regions_ref      => [$contig],
                 unique           => 1,
@@ -366,7 +335,7 @@ sub analysis_cnvnator {
                 infile_path             => $root_file,
                 regions_ref             => [$contig],
                 cnv_bin_size            => $active_parameter_href->{cnv_bin_size},
-                referencedirectory_path => $temp_directory,
+                referencedirectory_path => $outdir_path_prefix,
                 FILEHANDLE              => $XARGSFILEHANDLE,
                 stdoutfile_path         => $stdbasefile_path_prefix
                   . $UNDERSCORE
@@ -413,7 +382,7 @@ sub analysis_cnvnator {
         cnvnator_calling(
             {
                 infile_path     => $root_file,
-                stdoutfile_path => $temp_outfile_path_prefix
+                stdoutfile_path => $outfile_path_prefix
                   . $UNDERSCORE
                   . $contig
                   . $DOT
@@ -430,12 +399,12 @@ sub analysis_cnvnator {
 
         cnvnator_convert_to_vcf(
             {
-                infile_path     => $temp_outfile_path_prefix_contig . $DOT . q{cnvnator},
-                stdoutfile_path => $temp_outfile_path_prefix_contig . $outfile_suffix,
+                infile_path     => $outfile_path_prefix_contig . $DOT . q{cnvnator},
+                stdoutfile_path => $outfile_path_prefix_contig . $outfile_suffix,
                 stderrfile_path => $stdbasefile_path_prefix
                   . $UNDERSCORE
                   . q{convert_to_vcf.stderr.txt},
-                referencedirectory_path => $temp_directory,
+                referencedirectory_path => $outdir_path_prefix,
                 FILEHANDLE              => $XARGSFILEHANDLE,
             }
         );
@@ -456,7 +425,7 @@ sub analysis_cnvnator {
         {
             FILEHANDLE     => $FILEHANDLE,
             sample_ids_ref => [$rename_sample],
-            temp_directory => $temp_directory,
+            temp_directory => $outdir_path_prefix,
         }
     );
 
@@ -465,11 +434,11 @@ sub analysis_cnvnator {
 
         ## Name intermediary files
         my $cnvnator_outfile_path =
-          $temp_outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
+          $outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
         my $fixed_vcffile_path_prefix =
-          $temp_outfile_path_prefix . $UNDERSCORE . $contig . $UNDERSCORE . q{fixed};
+          $outfile_path_prefix . $UNDERSCORE . $contig . $UNDERSCORE . q{fixed};
         my $fixed_header_vcffile_path =
-            $temp_outfile_path_prefix
+            $outfile_path_prefix
           . $UNDERSCORE
           . $contig
           . $UNDERSCORE
@@ -487,7 +456,7 @@ sub analysis_cnvnator {
                 infile              => $cnvnator_outfile_path,
                 outfile_path_prefix => $fixed_vcffile_path_prefix,
                 output_type         => q{v},
-                temp_directory      => $temp_directory,
+                temp_directory      => $outdir_path_prefix,
                 sample_ids_ref      => [$rename_sample],
             }
         );
@@ -496,7 +465,7 @@ sub analysis_cnvnator {
         bcftools_annotate(
             {
                 FILEHANDLE      => $FILEHANDLE,
-                headerfile_path => catfile( $temp_directory, q{contig_header.txt} ),
+                headerfile_path => catfile( $outdir_path_prefix, q{contig_header.txt} ),
                 infile_path     => $fixed_vcffile_path_prefix . $outfile_suffix,
                 outfile_path    => $fixed_header_vcffile_path,
                 output_type     => q{v},
@@ -532,12 +501,12 @@ sub analysis_cnvnator {
         submit_recipe(
             {
                 base_command            => $profile_base_command,
-                dependency_method       => q{sample_to_sample},
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},

@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -15,7 +15,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Readonly;
-use List::MoreUtils qw{ first_index };
 
 # MIPs lib/
 use MIP::Constants qw{ $DOT $EMPTY_STR $NEWLINE $UNDERSCORE };
@@ -26,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_reformat_sv };
@@ -167,7 +166,6 @@ sub analysis_reformat_sv {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
 
@@ -177,9 +175,9 @@ sub analysis_reformat_sv {
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my $job_id_chain            = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode     = $active_parameter_href->{$recipe_name};
@@ -200,6 +198,7 @@ sub analysis_reformat_sv {
     ## Set and get the io files per chain, id and stream
     my @set_outfile_name_prefixes =
       map { $infile_name_prefix . $_ } @vcfparser_analysis_types;
+
     ## Set and get the io files per chain, id and stream
     %io = (
         %io,
@@ -213,7 +212,6 @@ sub analysis_reformat_sv {
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 recipe_name      => $recipe_name,
-                temp_directory   => $temp_directory,
             }
         )
     );

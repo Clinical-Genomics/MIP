@@ -158,7 +158,7 @@ recipe_core_number:
     evaluation: 1
     expansionhunter: 0
     fastqc_ar: 0
-    freebayes_ar: 16
+    freebayes_ar: 13
     frequency_filter: 16
     gatk_baserecalibration: 13
     gatk_combinevariantcallsets: 1
@@ -217,6 +217,7 @@ recipe_memory:
     sambamba_depth: 10
     samtools_subsample_mt: 2
     split_fastq_file: 2
+    sv_annotate: 7
     sv_reformat: 13
     sv_varianteffectpredictor: 8
     tiddit: 8

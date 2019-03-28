@@ -1,9 +1,9 @@
 package MIP::Recipes::Analysis::Sambamba_depth;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -13,7 +13,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
@@ -25,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sambamba_depth };
@@ -142,7 +141,6 @@ sub analysis_sambamba_depth {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file};
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_depth };
@@ -163,15 +161,12 @@ sub analysis_sambamba_depth {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path = $infile_path_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK;
-    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -199,18 +194,12 @@ sub analysis_sambamba_depth {
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
-                temp_directory         => $temp_directory,
             }
         )
     );
 
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_name_prefix      = $io{out}{file_name_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $outfile_path             = $outfile_path_prefix . $outfile_suffix;
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_outfile_path        = $temp_outfile_path_prefix . $outfile_suffix;
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_path        = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -235,17 +224,6 @@ sub analysis_sambamba_depth {
     );
 
     ### SHELL:
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $temp_directory
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## sambamba_depth
     say {$FILEHANDLE} q{## Annotating bed from alignment};
@@ -277,25 +255,15 @@ sub analysis_sambamba_depth {
             FILEHANDLE        => $FILEHANDLE,
             filter            => $sambamba_filter,
             fix_mate_overlap  => 1,
-            infile_path       => $temp_infile_path,
+            infile_path       => $infile_path,
             min_base_quality  => $active_parameter_href->{sambamba_depth_base_quality},
             mode              => $active_parameter_href->{sambamba_depth_mode},
-            outfile_path      => $temp_outfile_path,
+            outfile_path      => $outfile_path,
             region            => $active_parameter_href->{sambamba_depth_bed},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_outfile_path,
-            outfile_path => $outdir_path_prefix,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
     close $FILEHANDLE;
 
     if ( $recipe_mode == 1 ) {

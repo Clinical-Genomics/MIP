@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile splitpath };
+use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -155,7 +155,7 @@ sub analysis_gatk_variantrecalibration_wes {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
-## Unpack parameters
+    ## Unpack parameters
     my %io = get_io_files(
         {
             id             => $case_id,
@@ -163,7 +163,6 @@ sub analysis_gatk_variantrecalibration_wes {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
 
@@ -177,9 +176,9 @@ sub analysis_gatk_variantrecalibration_wes {
       $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
     my $job_id_chain = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
@@ -206,15 +205,13 @@ sub analysis_gatk_variantrecalibration_wes {
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
-                temp_directory         => $temp_directory,
             }
         )
     );
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $outfile_path             = $io{out}{file_path};
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path        = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -307,7 +304,7 @@ sub analysis_gatk_variantrecalibration_wes {
             $max_gaussian_level = $MAX_GAUSSIAN_LEVEL;
         }
 
-        my $recal_file_path = $temp_outfile_path_prefix . $DOT . q{intervals};
+        my $recal_file_path = $outfile_path_prefix . $DOT . q{intervals};
         gatk_variantrecalibrator(
             {
                 annotations_ref      => \@annotations,
@@ -504,9 +501,9 @@ sub analysis_gatk_variantrecalibration_wes {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},
@@ -648,7 +645,6 @@ sub analysis_gatk_variantrecalibration_wgs {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
 
@@ -662,9 +658,9 @@ sub analysis_gatk_variantrecalibration_wgs {
       $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
     my $job_id_chain = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
@@ -691,15 +687,13 @@ sub analysis_gatk_variantrecalibration_wgs {
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
-                temp_directory         => $temp_directory,
             }
         )
     );
-    my $outdir_path_prefix       = $io{out}{dir_path_prefix};
-    my $outfile_path_prefix      = $io{out}{file_path_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my $outfile_path             = $io{out}{file_path};
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path        = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -773,9 +767,11 @@ sub analysis_gatk_variantrecalibration_wgs {
 
                 ## Use fewer Gaussians for single sample cases
                 if ( scalar @{ $active_parameter_href->{sample_ids} } == 1 ) {
+
                     $max_gaussian_level = $MAX_GAUSSIAN_LEVEL_SNV_SINGLE_SAMPLE;
                 }
                 else {
+
                     $max_gaussian_level = $MAX_GAUSSIAN_LEVEL_SNV;
                 }
             }
@@ -785,7 +781,7 @@ sub analysis_gatk_variantrecalibration_wgs {
         if ( $mode eq q{INDEL} ) {
 
             $varrecal_infile_path =
-              $temp_outfile_path_prefix . $DOT . q{SNV} . $outfile_suffix;
+              $outfile_path_prefix . $DOT . q{SNV} . $outfile_suffix;
 
             ## Use hard filtering
             if ($enable_indel_max_gaussians_filter) {
@@ -821,7 +817,7 @@ sub analysis_gatk_variantrecalibration_wgs {
               _build_gatk_resource_command( { resources_href => $resource_indel_href, } );
         }
 
-        my $recal_file_path = $temp_outfile_path_prefix . $DOT . q{intervals};
+        my $recal_file_path = $outfile_path_prefix . $DOT . q{intervals};
         gatk_variantrecalibrator(
             {
                 annotations_ref       => \@annotations,
@@ -856,7 +852,7 @@ sub analysis_gatk_variantrecalibration_wgs {
 
             $applyvqsr_infile_path = $varrecal_infile_path;
             $applyvqsr_outfile_path =
-              $temp_outfile_path_prefix . $DOT . q{SNV} . $outfile_suffix;
+              $outfile_path_prefix . $DOT . q{SNV} . $outfile_suffix;
             $ts_filter_level =
               $active_parameter_href->{gatk_variantrecalibration_snv_tsfilter_level};
         }
@@ -865,7 +861,7 @@ sub analysis_gatk_variantrecalibration_wgs {
         if ( $mode eq q{INDEL} ) {
 
             $applyvqsr_infile_path =
-              $temp_outfile_path_prefix . $DOT . q{SNV} . $outfile_suffix;
+              $outfile_path_prefix . $DOT . q{SNV} . $outfile_suffix;
             $applyvqsr_outfile_path = $outfile_path;
             $ts_filter_level =
               $active_parameter_href->{gatk_variantrecalibration_indel_tsfilter_level};

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.17;
+    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
@@ -35,7 +35,9 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
+Readonly my $JAVA_GUEST_OS_MEMORY          => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
+Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
+Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
 
 sub analysis_gatk_haplotypecaller {
 
@@ -157,7 +159,6 @@ sub analysis_gatk_haplotypecaller {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
       qw{ get_gatk_intervals get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Gatk qw{ gatk_haplotypecaller };
@@ -166,10 +167,6 @@ sub analysis_gatk_haplotypecaller {
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Set::File qw{ set_io_files };
     use MIP::Script::Setup_script qw{ setup_script };
-
-    ## Constants
-    Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
-    Readonly my $STANDARD_MIN_CONFIDENCE_THRSD => 10;
 
     ### PREPROCESSING:
 
@@ -185,14 +182,10 @@ sub analysis_gatk_haplotypecaller {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
-    my $indir_path_prefix       = $io{in}{dir_path_prefix};
-    my $infile_suffix           = $io{in}{file_suffix};
-    my $infile_name_prefix      = $io{in}{file_name_prefix};
-    my $temp_infile_name_prefix = $io{temp}{file_name_prefix};
-    my %temp_infile_path        = %{ $io{temp}{file_path_href} };
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my %infile_path        = %{ $io{in}{file_path_href} };
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -229,14 +222,13 @@ sub analysis_gatk_haplotypecaller {
                 outdata_dir      => $active_parameter_href->{outdata_dir},
                 parameter_href   => $parameter_href,
                 recipe_name      => $recipe_name,
-                temp_directory   => $temp_directory,
             }
         )
     );
+    my $outdir_path         = $io{out}{dir_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_suffix};
     my %outfile_path        = %{ $io{out}{file_path_href} };
-    my %temp_outfile_path   = %{ $io{temp}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -285,13 +277,13 @@ sub analysis_gatk_haplotypecaller {
         {
             analysis_type         => $analysis_type,
             contigs_ref           => \@{ $file_info_href->{contigs_size_ordered} },
-            FILEHANDLE            => $FILEHANDLE,
-            max_cores_per_node    => $core_number,
-            outdirectory          => $temp_directory,
-            reference_dir         => $active_parameter_href->{reference_dir},
             exome_target_bed_href => $active_parameter_href->{exome_target_bed},
+            FILEHANDLE            => $FILEHANDLE,
             file_ending           => $file_info_href->{exome_target_bed}[1],
             log                   => $log,
+            max_cores_per_node    => $core_number,
+            outdirectory          => $outdir_path,
+            reference_dir         => $active_parameter_href->{reference_dir},
             sample_id             => $sample_id,
         }
     );
@@ -299,26 +291,8 @@ sub analysis_gatk_haplotypecaller {
     ## Set the PCR indel model for haplotypecaller
     my $pcr_indel_model = _get_pcr_indel_model(
         {
-            analysis_type         => $analysis_type,
             active_parameter_href => $active_parameter_href,
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            core_number        => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-            file_path          => $recipe_file_path,
-            indirectory        => $indir_path_prefix,
-            infile             => $infile_name_prefix,
-            recipe_info_path   => $recipe_info_path,
-            temp_directory     => $temp_directory,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
+            analysis_type         => $analysis_type,
         }
     );
 
@@ -330,9 +304,9 @@ sub analysis_gatk_haplotypecaller {
     # Constrain parallelization to match available memory
     my $parallel_processes = get_parallel_processes(
         {
+            core_number               => $core_number,
             process_memory_allocation => $process_memory_allocation,
             recipe_memory_allocation  => $recipe_resource{memory},
-            core_number               => $core_number,
         }
     );
 
@@ -365,13 +339,13 @@ sub analysis_gatk_haplotypecaller {
                 emit_ref_confidence =>
                   $active_parameter_href->{gatk_haplotypecaller_emit_ref_confidence},
                 FILEHANDLE           => $XARGSFILEHANDLE,
-                infile_path          => $temp_infile_path{$contig},
+                infile_path          => $infile_path{$contig},
                 intervals_ref        => $gatk_intervals{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 num_ref_samples_if_no_call =>
                   $active_parameter_href->{gatk_num_reference_samples_if_no_call},
-                outfile_path    => $temp_outfile_path{$contig},
+                outfile_path    => $outfile_path{$contig},
                 pcr_indel_model => $pcr_indel_model,
                 pedigree        => $fam_file_path,
                 population_callset =>
@@ -398,7 +372,7 @@ sub analysis_gatk_haplotypecaller {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs} } ) {
 
-        push @contig_vcf_paths, $temp_outfile_path{$contig};
+        push @contig_vcf_paths, $outfile_path{$contig};
     }
 
     gatk_gathervcfscloud(
@@ -448,9 +422,9 @@ sub analysis_gatk_haplotypecaller {
                 case_id                 => $case_id,
                 dependency_method       => q{sample_to_sample},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
                 submission_profile      => $active_parameter_href->{submission_profile},
