@@ -3,11 +3,11 @@ package MIP::Processmanagement::Processes;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
-use FindBin qw{$Bin};
-use File::Basename qw{dirname};
-use File::Spec::Functions qw{catdir};
+use FindBin qw{ $Bin };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{check allow last_error};
+use Params::Check qw{ check allow last_error };
 use strict;
 use utf8;
 use warnings;
@@ -18,16 +18,16 @@ use autodie;
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
-use MIP::Unix::Standard_streams qw{unix_standard_streams};
-use MIP::Unix::Write_to_file qw{unix_write_to_file};
+use MIP::Constants qw{ $DOT $EMPTY_STR $COLON $LOG $NEWLINE $UNDERSCORE };
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
-    use base qw (Exporter);
+    use base qw{ Exporter };
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -55,14 +55,9 @@ BEGIN {
       limit_job_id_string
       print_wait
       submit_recipe
+      write_job_ids_to_file
     };
 }
-
-## Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $COLON      => q{:};
 
 sub add_to_job_id_dependency_string {
 
@@ -1843,6 +1838,72 @@ sub submit_recipe {
 
         }
     );
+    return 1;
+}
+
+sub write_job_ids_to_file {
+
+## Function : Write job_ids to file
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $date_time_stamp       => The date and time
+##          : $job_id_href           => Job id hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $date_time_stamp;
+    my $job_id_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        date_time_stamp => {
+            defined     => 1,
+            required    => 1,
+            store       => \$date_time_stamp,
+            strict_type => 1,
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Yaml qw{ write_yaml };
+
+    ## Write job_ids file
+    return if ( not keys %{$job_id_href} );
+
+    my $log = Log::Log4perl->get_logger($LOG);
+
+    my $log_dir      = dirname( $active_parameter_href->{log_file} );
+    my $job_ids_file = catfile( $log_dir,
+        q{slurm_job_ids} . $UNDERSCORE . $date_time_stamp . $DOT . q{yaml} );
+
+    ## Remove all undef elements
+    my @job_ids = grep { defined } @{ $job_id_href->{ALL}{ALL} };
+
+    ## Writes a YAML hash to file
+    my %out_job_id = ( $active_parameter_href->{case_id} => [@job_ids], );
+    write_yaml(
+        {
+            yaml_file_path => $job_ids_file,
+            yaml_href      => \%out_job_id,
+        }
+    );
+    $log->info( q{Wrote: } . $job_ids_file );
     return 1;
 }
 

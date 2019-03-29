@@ -8,7 +8,7 @@ use charnames qw{ :full :short };
 use Cwd;
 use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname fileparse };
+use File::Basename qw{ basename fileparse };
 use File::Copy qw{ copy };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use FindBin qw{ $Bin };
@@ -54,6 +54,7 @@ use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Get::Parameter qw{ get_program_executables };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Parse::Parameter qw{ parse_start_with_recipe };
+use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
   qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_cache set_human_genome_reference_features set_no_dry_run_parameters set_parameter_reference_dir_path };
@@ -74,7 +75,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -731,6 +732,16 @@ sub mip_analyse {
         );
         $log->info( q{Wrote: } . $active_parameter{sample_info_file} );
     }
+
+## Write job_ids to file
+    write_job_ids_to_file(
+        {
+            active_parameter_href => \%active_parameter,
+            date_time_stamp       => $date_time_stamp,
+            job_id_href           => \%job_id,
+        }
+    );
+
     return;
 }
 
