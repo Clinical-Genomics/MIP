@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_manta };
@@ -140,6 +140,7 @@ sub analysis_manta {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Gnu::Coreutils qw{ gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Compression::Gzip qw{ gzip };
@@ -209,8 +210,6 @@ sub analysis_manta {
         }
     );
 
-    ### SHELL:
-
     ## Collect infiles for all sample_ids to enable migration to temporary directory
     my @manta_infile_paths;
     while ( my ( $sample_id_index, $sample_id ) =
@@ -234,7 +233,20 @@ sub analysis_manta {
         ## Store infile path for each sample_id
         push @manta_infile_paths, $infile_path;
     }
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+    ### SHELL:
+
+    say {$FILEHANDLE} q{## Remove potential previous Manta runWorkflow};
+    my $manta_workflow_file_path = catfile( $outdir_path, q{runWorkflow.py} . $ASTERISK );
+    gnu_rm(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => $manta_workflow_file_path,
+            recursive   => 1,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Manta
     say {$FILEHANDLE} q{## Manta};
