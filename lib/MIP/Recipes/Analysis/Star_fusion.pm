@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -169,8 +169,7 @@ sub analysis_star_fusion {
             temp_directory => $temp_directory,
         }
     );
-    my $indir_path        = $io{in}{dir_path};
-    my @temp_infile_paths = @{ $io{temp}{file_paths} };
+    my @infile_paths = @{ $io{in}{file_paths} };
 
     ## Build outfile_paths
     my %recipe_attribute = get_recipe_attributes(
@@ -229,16 +228,6 @@ sub analysis_star_fusion {
 
     ### SHELL
 
-    ## Copy infiles to temp directory
-    gnu_cp(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $indir_path . $ASTERISK,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
     ## Star-fusion
     say {$FILEHANDLE} q{## Performing fusion transcript detections using } . $recipe_name;
 
@@ -247,7 +236,7 @@ sub analysis_star_fusion {
     create_star_fusion_sample_file(
         {
             FILEHANDLE              => $FILEHANDLE,
-            infile_paths_ref        => \@temp_infile_paths,
+            infile_paths_ref        => \@infile_paths,
             infile_lane_prefix_href => $infile_lane_prefix_href,
             samples_file_path       => $sample_files_path,
             sample_id               => $sample_id,
@@ -262,21 +251,11 @@ sub analysis_star_fusion {
             examine_coding_effect => 1,
             FILEHANDLE            => $FILEHANDLE,
             genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
-            output_directory_path => $temp_directory,
+            output_directory_path => $outdir_path,
             samples_file_path     => $sample_files_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    gnu_cp(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            force        => 1,
-            infile_path  => catfile( $temp_directory, $ASTERISK ),
-            outfile_path => $outdir_path,
-            recursive    => 1,
-        }
-    );
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});

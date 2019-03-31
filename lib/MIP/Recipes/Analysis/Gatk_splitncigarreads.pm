@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -185,9 +185,7 @@ sub analysis_gatk_splitncigarreads {
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
-    my %temp_infile_path   = %{ $io{temp}{file_path_href} };
+    my %infile_path        = %{ $io{in}{file_path_href} };
     my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $job_id_chain       = get_recipe_attributes(
         {
@@ -221,12 +219,10 @@ sub analysis_gatk_splitncigarreads {
             }
         )
     );
-    my $outfile_name_prefix      = $io{out}{file_name_prefix};
-    my $outfile_suffix           = $io{out}{file_suffix};
-    my @outfile_paths            = @{ $io{out}{file_paths} };
-    my $outdir_path              = $io{out}{dir_path};
-    my %temp_outfile_path        = %{ $io{temp}{file_path_href} };
-    my $temp_outfile_path_prefix = $io{temp}{file_path_prefix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
+    my @outfile_paths       = @{ $io{out}{file_paths} };
+    my %outfile_path        = %{ $io{out}{file_path_href} };
     my $xargs_file_path_prefix;
 
     ## Filehandles
@@ -253,23 +249,6 @@ sub analysis_gatk_splitncigarreads {
     );
 
     ### SHELL
-
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    ($xargs_file_counter) = xargs_migrate_contig_files(
-        {
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            core_number        => $core_number,
-            file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-            file_path          => $recipe_file_path,
-            FILEHANDLE         => $FILEHANDLE,
-            indirectory        => $indir_path_prefix,
-            infile             => $infile_name_prefix,
-            recipe_info_path   => $recipe_info_path,
-            temp_directory     => $temp_directory,
-            xargs_file_counter => $xargs_file_counter,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-        }
-    );
 
     Readonly my $JAVA_MEMORY_ALLOCATION => 12;
     my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
@@ -303,18 +282,16 @@ sub analysis_gatk_splitncigarreads {
         each @{ $file_info_href->{contigs_size_ordered} } )
     {
 
-        my $infile_path  = $temp_infile_path{$contig};
-        my $outfile_path = $temp_outfile_path{$contig};
         my $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
         gatk_splitncigarreads(
             {
                 FILEHANDLE           => $XARGSFILEHANDLE,
-                infile_path          => $infile_path,
+                infile_path          => $infile_path{$contig},
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                outfile_path         => $outfile_path,
+                outfile_path         => $outfile_path{$contig},
                 referencefile_path   => $active_parameter_href->{human_genome_reference},
                 stderrfile_path      => $stderrfile_path,
                 temp_directory       => $temp_directory,
@@ -324,16 +301,6 @@ sub analysis_gatk_splitncigarreads {
         );
         print {$XARGSFILEHANDLE} $NEWLINE;
     }
-
-    ## Copies out files from temporary directory.
-    say {$FILEHANDLE} q{## Copy file(s) from temporary directory};
-    gnu_cp(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $temp_outfile_path_prefix . $ASTERISK,
-            outfile_path => $outdir_path,
-        }
-    );
 
     close $FILEHANDLE;
     close $XARGSFILEHANDLE;

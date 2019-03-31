@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_salmon_quant };
@@ -166,10 +166,8 @@ sub analysis_salmon_quant {
             temp_directory => $temp_directory,
         }
     );
-    my @infile_names      = @{ $io{in}{file_names} };
-    my $indir_path        = $io{in}{dir_path};
-    my @temp_infile_paths = @{ $io{temp}{file_paths} };
-    my $recipe_mode       = $active_parameter_href->{$recipe_name};
+    my @infile_paths = @{ $io{in}{file_paths} };
+    my $recipe_mode  = $active_parameter_href->{$recipe_name};
     my $referencefile_dir_path =
         $active_parameter_href->{salmon_quant_reference_genome}
       . $file_info_href->{salmon_quant_reference_genome}[0];
@@ -248,18 +246,6 @@ sub analysis_salmon_quant {
 
     ### SHELL
 
-    ## Copies file to temporary directory.
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_files(
-        {
-            core_number  => $recipe_resource{core_number},
-            FILEHANDLE   => $FILEHANDLE,
-            infiles_ref  => \@infile_names,
-            indirectory  => $indir_path,
-            outfile_path => $temp_directory,
-        }
-    );
-
     ## Salmon quant
     say {$FILEHANDLE} q{## Quantifying transcripts using } . $recipe_name;
 
@@ -269,11 +255,10 @@ sub analysis_salmon_quant {
         ## Grep every other read file and place in new arrays
         # Even array indexes get a 0 remainder and are evalauted as false
         my @read_1_fastq_paths =
-          @temp_infile_paths[ grep { !( $_ % 2 ) } 0 .. $#temp_infile_paths ];
+          @infile_paths[ grep { !( $_ % 2 ) } 0 .. $#infile_paths ];
 
         # Odd array indexes get a 1 remainder and are evalauted as true
-        my @read_2_fastq_paths =
-          @temp_infile_paths[ grep { $_ % 2 } 0 .. $#temp_infile_paths ];
+        my @read_2_fastq_paths = @infile_paths[ grep { $_ % 2 } 0 .. $#infile_paths ];
 
         salmon_quant(
             {
@@ -296,7 +281,7 @@ sub analysis_salmon_quant {
                 gc_bias                => 1,
                 index_path             => $referencefile_dir_path,
                 outdir_path            => $outdir_path,
-                read_1_fastq_paths_ref => \@temp_infile_paths,
+                read_1_fastq_paths_ref => \@infile_paths,
             }
         );
         say {$FILEHANDLE} $NEWLINE;

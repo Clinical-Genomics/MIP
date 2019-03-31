@@ -366,6 +366,18 @@ stringtie_ar:
   program_executables:
     - stringtie
   type: recipe
+stringtie_junction_reads:
+    associated_recipe:
+      - stringtie_ar
+    data_type: SCALAR
+    default: 2
+    type: recipe_argument
+stringtie_minimum_coverage:
+    associated_recipe:
+      - stringtie_ar
+    data_type: SCALAR
+    default: 5
+    type: recipe_argument
 ## GffCompare
 gffcompare_ar:
   analysis_mode: sample

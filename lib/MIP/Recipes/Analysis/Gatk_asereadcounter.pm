@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $NEWLINE };
+use MIP::Constants qw{ $ASTERISK $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_asereadcounter };
@@ -172,11 +172,9 @@ sub analysis_gatk_asereadcounter {
             temp_directory => $temp_directory,
         }
     );
-    my $variant_infile_name_prefix    = $io{in}{file_name_prefix};
-    my $variant_infile_path           = ${ $io{in}{file_paths} }[0];
-    my $variant_suffix                = $io{in}{file_suffix};
-    my $temp_variant_file_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_variant_file_path        = $temp_variant_file_path_prefix . $variant_suffix;
+    my $variant_infile_name_prefix = $io{in}{file_name_prefix};
+    my $variant_infile_path        = ${ $io{in}{file_paths} }[0];
+    my $variant_suffix             = $io{in}{file_suffix};
 
     ## Get bam infile from GATK BaseRecalibration
     my %alignment_io = get_io_files(
@@ -189,11 +187,9 @@ sub analysis_gatk_asereadcounter {
             temp_directory => $temp_directory,
         }
     );
-    my $alignment_file_path_prefix      = $alignment_io{out}{file_path_prefix};
-    my $alignment_suffix                = $alignment_io{out}{file_suffix};
-    my $alignment_file_path             = $alignment_file_path_prefix . $alignment_suffix;
-    my $temp_alignment_file_path_prefix = $alignment_io{temp}{file_path_prefix};
-    my $temp_alignment_file_path = $temp_alignment_file_path_prefix . $alignment_suffix;
+    my $alignment_file_path_prefix = $alignment_io{out}{file_path_prefix};
+    my $alignment_suffix           = $alignment_io{out}{file_suffix};
+    my $alignment_file_path        = $alignment_file_path_prefix . $alignment_suffix;
 
     my $job_id_chain = get_recipe_attributes(
         {
@@ -230,9 +226,11 @@ sub analysis_gatk_asereadcounter {
             }
         )
     );
-    my $outfile_name = ${ $io{out}{file_names} }[0];
-    my $outfile_path = ${ $io{out}{file_paths} }[0];
-    my $outdir_path  = $io{out}{dir_path};
+    my $outfile_name      = ${ $io{out}{file_names} }[0];
+    my $outfile_path      = ${ $io{out}{file_paths} }[0];
+    my $outdir_path       = $io{out}{dir_path};
+    my $variant_file_path = catfile( $outdir_path,
+        $variant_infile_name_prefix . $UNDERSCORE . q{restricted} . $variant_suffix );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -258,19 +256,6 @@ sub analysis_gatk_asereadcounter {
 
     ### SHELL
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy bam file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $alignment_file_path_prefix
-              . substr( $alignment_suffix, 0, 2 )
-              . $ASTERISK,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
-
     ## Restrict analysis to biallelic, heterogenous SNPs
     say {$FILEHANDLE} q{## Bcftools view};
     bcftools_view(
@@ -280,7 +265,7 @@ sub analysis_gatk_asereadcounter {
             infile_path  => $variant_infile_path,
             max_alleles  => $ALLELES,
             min_alleles  => $ALLELES,
-            outfile_path => $temp_variant_file_path,
+            outfile_path => $variant_file_path,
             types        => q{snps},
         }
     );
@@ -291,7 +276,7 @@ sub analysis_gatk_asereadcounter {
     gatk_indexfeaturefile(
         {
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $temp_variant_file_path,
+            infile_path => $variant_file_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -301,12 +286,12 @@ sub analysis_gatk_asereadcounter {
     gatk_asereadcounter(
         {
             FILEHANDLE           => $FILEHANDLE,
-            infile_path          => $temp_alignment_file_path,
+            infile_path          => $alignment_file_path,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path         => $outfile_path,
             referencefile_path   => $active_parameter_href->{human_genome_reference},
-            variant_infile_path  => $temp_variant_file_path,
+            variant_infile_path  => $variant_file_path,
             verbosity            => $active_parameter_href->{gatk_logging_level},
             temp_directory       => $temp_directory,
         }
