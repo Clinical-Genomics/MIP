@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -385,6 +385,10 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
         my $cgh_outfile_path = catfile( $temp_directory,
             $sample_id . $infile_tag . q{SV} . $DOT . q{cgh} );
 
+        my $sample_sex = $sample_info_href->{sample}{$sample_id}{sex};
+
+        $sample_sex = undef if $sample_sex eq q{unknown};
+
         vcf2cytosure_convert(
             {
                 coverage_file => $file_path_prefix{$sample_id}{out}
@@ -392,7 +396,7 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
                 FILEHANDLE   => $FILEHANDLE,
                 maxbnd       => $active_parameter_href->{vcf2cytosure_maxbnd},
                 outfile_path => $cgh_outfile_path,
-                sex          => $sample_info_href->{sample}{$sample_id}{sex},
+                sex          => $sample_sex,
                 variant_size => $active_parameter_href->{vcf2cytosure_var_size},
                 vcf_infile_path => catfile( $temp_directory, $sample_vcf_file ),
             }
