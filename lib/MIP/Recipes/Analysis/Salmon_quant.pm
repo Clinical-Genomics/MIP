@@ -142,7 +142,6 @@ sub analysis_salmon_quant {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources};
-    use MIP::IO::Files qw{ migrate_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Salmon qw{ salmon_quant };
     use MIP::Processmanagement::Processes qw{ submit_recipe };

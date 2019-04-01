@@ -142,7 +142,6 @@ sub analysis_split_fastq_file {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_mkdir gnu_mv gnu_rm gnu_split };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Compression::Pigz qw{ pigz };
     use MIP::Script::Setup_script qw{ setup_script };

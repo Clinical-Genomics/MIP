@@ -159,7 +159,6 @@ sub analysis_gatk_splitncigarreads {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
-    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Gatk qw{ gatk_splitncigarreads };

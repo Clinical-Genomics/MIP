@@ -141,7 +141,6 @@ sub analysis_star_aln {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_addorreplacereadgroups };
     use MIP::Program::Alignment::Star qw{ star_aln };
