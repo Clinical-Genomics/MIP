@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln };
@@ -141,7 +141,6 @@ sub analysis_star_aln {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_addorreplacereadgroups };
     use MIP::Program::Alignment::Star qw{ star_aln };
@@ -170,7 +169,6 @@ sub analysis_star_aln {
     my @infile_paths         = @{ $io{in}{file_paths} };
     my @infile_names         = @{ $io{in}{file_names} };
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my @temp_infile_paths    = @{ $io{temp}{file_paths} };
     my $recipe_mode          = $active_parameter_href->{$recipe_name};
     my $job_id_chain         = get_recipe_attributes(
         {
@@ -201,13 +199,10 @@ sub analysis_star_aln {
             }
         )
     );
-    my $outdir_path                = $io{out}{dir_path};
-    my $outfile_suffix             = $io{out}{file_suffix};
-    my @outfile_name_prefixes      = @{ $io{out}{file_name_prefixes} };
-    my @outfile_paths              = @{ $io{out}{file_paths} };
-    my @outfile_path_prefixes      = @{ $io{out}{file_path_prefixes} };
-    my @temp_outfile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
-    my @temp_outfile_paths         = @{ $io{temp}{file_paths} };
+    my $outfile_suffix        = $io{out}{file_suffix};
+    my @outfile_name_prefixes = @{ $io{out}{file_name_prefixes} };
+    my @outfile_paths         = @{ $io{out}{file_paths} };
+    my @outfile_path_prefixes = @{ $io{out}{file_path_prefixes} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -223,8 +218,6 @@ sub analysis_star_aln {
     {
 
         ## Assign file features
-        my $file_path           = $temp_outfile_paths[$infile_index];
-        my $file_path_prefix    = $temp_outfile_path_prefixes[$infile_index];
         my $outfile_name_prefix = $outfile_name_prefixes[$infile_index];
         my $outfile_path        = $outfile_paths[$infile_index];
         my $outfile_path_prefix = $outfile_path_prefixes[$infile_index];
@@ -259,45 +252,19 @@ sub analysis_star_aln {
 
         ### SHELL
 
-        ## Copies file to temporary directory.
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-
-        # Read 1
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $infile_paths[$paired_end_tracker],
-                outfile_path => $temp_directory,
-            }
-        );
-
-        # If second read direction is present
-        if ( $sequence_run_type eq q{paired-end} ) {
-
-            # Read 2
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $infile_paths[ $paired_end_tracker + 1 ],
-                    outfile_path => $temp_directory,
-                }
-            );
-        }
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
-
         ## Star aln
         say {$FILEHANDLE} q{## Aligning reads with } . $recipe_name;
 
         ### Get parameters
         ## Infile(s)
-        my @fastq_files = $temp_infile_paths[$paired_end_tracker];
+        my @fastq_files = $infile_paths[$paired_end_tracker];
 
         # If second read direction is present
         if ( $sequence_run_type eq q{paired-end} ) {
 
             # Increment to collect correct read 2 from %infile
             $paired_end_tracker++;
-            push @fastq_files, $temp_infile_paths[$paired_end_tracker];
+            push @fastq_files, $infile_paths[$paired_end_tracker];
         }
         my $referencefile_dir_path =
             $active_parameter_href->{star_aln_reference_genome}
@@ -315,7 +282,7 @@ sub analysis_star_aln {
                 chim_segment_min    => $active_parameter_href->{chim_segment_min},
                 genome_dir_path     => $referencefile_dir_path,
                 infile_paths_ref    => \@fastq_files,
-                outfile_name_prefix => $file_path_prefix . $DOT,
+                outfile_name_prefix => $outfile_path_prefix . $DOT,
                 thread_number       => $recipe_resource{core_number},
                 two_pass_mode       => $active_parameter_href->{two_pass_mode},
             },
@@ -338,7 +305,7 @@ sub analysis_star_aln {
             {
                 create_index => q{true},
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $file_path_prefix
+                infile_path  => $outfile_path_prefix
                   . $DOT
                   . q{Aligned.sortedByCoord.out}
                   . $outfile_suffix,
@@ -346,7 +313,7 @@ sub analysis_star_aln {
                   catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages    => $active_parameter_href->{java_use_large_pages},
                 memory_allocation       => q{Xmx1g},
-                outfile_path            => $file_path,
+                outfile_path            => $outfile_path,
                 readgroup_id            => $read_group{id},
                 readgroup_library       => $read_group{lb},
                 readgroup_platform      => $read_group{pl},
@@ -356,18 +323,6 @@ sub analysis_star_aln {
         );
 
         say {$FILEHANDLE} $NEWLINE;
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $file_path_prefix . $ASTERISK,
-                outfile_path => $outdir_path,
-                recursive    => 1,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
 
         ## Close FILEHANDLES
         close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});

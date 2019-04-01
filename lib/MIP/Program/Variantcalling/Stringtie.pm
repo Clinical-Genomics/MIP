@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ stringtie };
@@ -40,7 +40,9 @@ sub stringtie {
 ##          : $gene_abundance_outfile_path      => Gene aboundances
 ##          : $gtf_reference_path               => Input GTF refrence file
 ##          : $infile_path                      => Input bam file path
+##          : $junction_reads                   => Required number of junction spanning reads
 ##          : $library_type                     => Orientation and strandedness of the library
+##          : $minimum_coverage                 => Only output transcripts with coverage above this value
 ##          : $outfile_path                     => Path to output GTF
 ##          : $stderrfile_path                  => Stderrfile path
 ##          : $stderrfile_path_append           => Append stderr info to file path
@@ -55,7 +57,9 @@ sub stringtie {
     my $gene_abundance_outfile_path;
     my $gtf_reference_path;
     my $infile_path;
+    my $junction_reads;
     my $library_type;
+    my $minimum_coverage;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -86,9 +90,17 @@ sub stringtie {
             store       => \$infile_path,
             strict_type => 1,
         },
+        junction_reads => {
+            store       => \$junction_reads,
+            strict_type => 1,
+        },
         library_type => {
             defined     => 1,
             store       => \$library_type,
+            strict_type => 1,
+        },
+        minimum_coverage => {
+            store       => \$minimum_coverage,
             strict_type => 1,
         },
         outfile_path => {
@@ -132,11 +144,19 @@ sub stringtie {
 
     push @commands, q{-G} . $SPACE . $gtf_reference_path;
 
+    if ($junction_reads) {
+        push @commands, q{-j} . $SPACE . $junction_reads;
+    }
+
     if ( $library_type and $library_type eq q{forward_stranded} ) {
         push @commands, q{--fr};
     }
     elsif ( $library_type and $library_type eq q{reverse_stranded} ) {
         push @commands, q{--rf};
+    }
+
+    if ($minimum_coverage) {
+        push @commands, q{-c} . $SPACE . $minimum_coverage;
     }
 
     if ($threads) {

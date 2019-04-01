@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.13;
+our $VERSION = 1.14;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -824,12 +824,30 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
     );
 
     option(
-        q{stringtie} => (
+        q{stringtie_ar} => (
             cmd_aliases   => [qw{ strg }],
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Assemble alignments using StringTie},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{stringtie_junction_reads} => (
+            cmd_aliases   => [qw{ strj }],
+            documentation => q{StringTie min junction spanning reads},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{stringtie_minimum_coverage} => (
+            cmd_aliases   => [qw{ strmc }],
+            documentation => q{StringTie min transcript coverage},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 

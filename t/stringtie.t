@@ -20,11 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -63,7 +60,8 @@ diag(   q{Test stringtie from Stringtie.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $THREADS => 16;
+Readonly my $MIN_COVERAGE => 5;
+Readonly my $THREADS      => 16;
 
 ## Base arguments
 my @function_base_commands = qw{ stringtie };
@@ -121,9 +119,17 @@ my %specific_argument = (
         input           => catfile(qw{ path to infile.bam }),
         expected_output => catfile(qw{ path to infile.bam }),
     },
+    junction_reads => {
+        input           => q{2.5},
+        expected_output => q{-j 2.5},
+    },
     library_type => {
         input           => q{forward_stranded},
         expected_output => q{--fr},
+    },
+    minimum_coverage => {
+        input           => $MIN_COVERAGE,
+        expected_output => q{-c} . $SPACE . $MIN_COVERAGE,
     },
     outfile_path => {
         input           => catfile(qw{ path to gtf }),

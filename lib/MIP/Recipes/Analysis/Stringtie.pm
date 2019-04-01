@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_stringtie };
@@ -149,7 +149,6 @@ sub analysis_stringtie {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Stringtie qw{ stringtie };
@@ -173,13 +172,11 @@ sub analysis_stringtie {
             temp_directory => $temp_directory,
         }
     );
-    my $infile_name_prefix      = $io{in}{file_name_prefix};
-    my $infile_path_prefix      = $io{in}{file_path_prefix};
-    my $infile_suffix           = $io{in}{file_suffix};
-    my $infile_name             = $infile_name_prefix . $infile_suffix;
-    my $infile_path             = $infile_path_prefix . $infile_suffix;
-    my $temp_infile_path_prefix = $io{temp}{file_path_prefix};
-    my $temp_infile_path        = $temp_infile_path_prefix . $infile_suffix;
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_name        = $infile_name_prefix . $infile_suffix;
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my %recipe_attribute = get_recipe_attributes(
         {
@@ -243,19 +240,6 @@ sub analysis_stringtie {
 
     ### SHELL:
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy bam file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $infile_path_prefix
-              . substr( $infile_suffix, 0, 2 )
-              . $ASTERISK,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait} . $NEWLINE;
-
     ## StringTie
     say {$FILEHANDLE} q{## StringTie};
     stringtie(
@@ -266,8 +250,10 @@ sub analysis_stringtie {
             FILEHANDLE                  => $FILEHANDLE,
             gene_abundance_outfile_path => $outfile_path_prefix . q{_gene_abound.txt},
             gtf_reference_path => $active_parameter_href->{transcript_annotation},
-            infile_path        => $temp_infile_path,
+            infile_path        => $infile_path,
+            junction_reads     => $active_parameter_href->{stringtie_junction_reads},
             library_type       => $active_parameter_href->{library_type},
+            minimum_coverage   => $active_parameter_href->{stringtie_minimum_coverage},
             outfile_path       => $outfile_path,
             threads            => $recipe_resource{core_number},
         }
