@@ -366,6 +366,32 @@ sub case_qc {
                 sample_info_href      => $sample_info_href,
             }
         );
+
+        ## Check gender for sample_id
+        if (    $recipe eq q{plink_sexcheck}
+            and $evaluate_plink_gender )
+        {
+
+          SAMPLE_SEX:
+            foreach my $data_metric (
+                @{ $qc_data_href->{recipe}{plink_sexcheck}{sample_sexcheck} } )
+            {
+
+                ## Array ref
+                my @sexchecks = split q{:}, $data_metric;
+
+                ## Check that assumed gender is supported by variants on chrX and chrY
+                _plink_gender_check(
+                    {
+                        plink_sexcheck_gender => $sexchecks[1],
+                        qc_data_href          => $qc_data_href,
+                        sample_id             => $sexchecks[0],
+                        sample_info_href      => $sample_info_href,
+                    }
+                );
+            }
+        }
+
     }
     return;
 }
@@ -486,6 +512,24 @@ sub sample_qc {
                         sample_info_href    => $sample_info_href,
                     }
                 );
+
+                ## Check gender for sample_id
+                if ( $recipe eq q{chanjo_sexcheck} ) {
+
+                    my $chanjo_sexcheck_gender =
+                      $qc_data_href->{sample}{$sample_id}{$infile}{chanjo_sexcheck}
+                      {gender};
+                    ## Check that assumed gender is supported by coverage on chrX and chrY
+                    _chanjo_gender_check(
+                        {
+                            chanjo_sexcheck_gender => $chanjo_sexcheck_gender,
+                            infile                 => $infile,
+                            qc_data_href           => $qc_data_href,
+                            sample_id              => $sample_id,
+                            sample_info_href       => $sample_info_href,
+                        }
+                    );
+                }
             }
         }
     }
@@ -547,6 +591,8 @@ sub parse_regexp_hash_and_collect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Qcc_regexp qw{ get_qcc_regexp_recipe_attribute };
+
     ## Holds the current regexp
     my $regexp;
 
@@ -583,7 +629,7 @@ FUNCTION
             foreach my $separator (@separators) {
 
                 ## Collect paragraf header
-                @{ ${$qc_header_href}{$recipe}{$regexp_key} } =
+                @{ $qc_header_href->{$recipe}{$regexp_key} } =
                   split( /$separator/, `$regexp $outdirectory/$outfile` );
 
                 last SEPARATOR
@@ -614,10 +660,10 @@ sub add_to_qc_data {
 ## Returns   :
 ## Arguments : $evaluate_plink_gender => Evaluate plink gender
 ##           : $infile                => Infile to recipe
-##           : $recipe                => Recipe to examine
 ##           : $qc_data_href          => Qc data hash {REF}
 ##           : $qc_header_href        => Save header(s) in each outfile {REF}
 ##           : $qc_recipe_data_href   => Hash to save data in each outfile {REF}
+##           : $recipe                => Recipe to examine
 ##           : $regexp_href           => RegExp hash {REF}
 ##           : $sample_id             => SampleID
 ##           : $sample_info_href      => Info on samples and case hash {REF}
@@ -627,10 +673,10 @@ sub add_to_qc_data {
     ## Flatten argument(s)
     my $evaluate_plink_gender;
     my $infile;
-    my $recipe;
     my $qc_data_href;
     my $qc_header_href;
     my $qc_recipe_data_href;
+    my $recipe;
     my $regexp_href;
     my $sample_id;
     my $sample_info_href;
@@ -676,6 +722,7 @@ sub add_to_qc_data {
             store       => \$regexp_href,
             strict_type => 1,
         },
+        sample_id        => { store => \$sample_id, strict_type => 1, },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -683,89 +730,51 @@ sub add_to_qc_data {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        sample_id => { store => \$sample_id, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-  REGEXP:
+    use MIP::Qc_data qw{ set_qc_data_case_recipe_info };
+
+  REG_EXP_ATTRIBUTE:
     for my $attribute ( keys %{ $regexp_href->{$recipe} } ) {
 
-        ## For info contained in entry --> Value i.e. same line
+        ## For info contained in entry --> Value i.e. same line without header
         if ( $attribute !~ /^header|header$/i ) {
 
             ## Enable seperation of writing array or key-->value in qc_data
             if ( scalar @{ $qc_recipe_data_href->{$recipe}{$attribute} } == 1 ) {
 
-                if ( $sample_id and $infile ) {
+                my $data_metric = $qc_recipe_data_href->{$recipe}{$attribute}[0];
 
-                    ## key-->value for sample_id
-                    $qc_data_href->{sample}{$sample_id}{$infile}{$recipe}{$attribute} =
-                      $qc_recipe_data_href->{$recipe}{$attribute}[0];
-                }
-                else {
-                    ## Family level
-
-                    ## key-->value for caseID
-                    $qc_data_href->{recipe}{$recipe}{$attribute} =
-                      $qc_recipe_data_href->{$recipe}{$attribute}[0];
-                }
-
-                ## Check gender for sample_id
-                if ( $recipe eq q{chanjo_sexcheck} ) {
-
-                    ## Array_ref
-                    my $chanjo_sexcheck =
-                      @{ $qc_recipe_data_href->{$recipe}{$attribute} }[0];
-
-                    ## Check that assumed gender is supported by coverage on chrX and chrY
-                    _chanjo_gender_check(
-                        {
-                            sample_info_href       => $sample_info_href,
-                            qc_data_href           => $qc_data_href,
-                            sample_id              => $sample_id,
-                            infile                 => $infile,
-                            chanjo_sexcheck_gender => $chanjo_sexcheck,
-                        }
-                    );
-                }
+                set_qc_data_case_recipe_info(
+                    {
+                        key          => $attribute,
+                        infile       => $infile,
+                        qc_data_href => \%qc_data,
+                        recipe_name  => $recipe,
+                        sample_id    => $sample_id,
+                        value        => $data_metric,
+                    }
+                );
             }
-            else {
-                ## Write array to qc_data
+            elsif ( not exists $qc_header_href->{$recipe} ) {
+                ## Write array to qc_data for metrics without header
 
-                while ( my ( $data_metric_index, $data_metric ) =
-                    each @{ $qc_recipe_data_href->{$recipe}{$attribute} } )
+              DATA_METRIC:
+                foreach
+                  my $data_metric ( @{ $qc_recipe_data_href->{$recipe}{$attribute} } )
                 {
 
                     if ( $sample_id and $infile ) {
 
-                        $qc_data_href->{sample}{$sample_id}{$infile}{$recipe}
-                          {$attribute}[$data_metric_index] = $data_metric;
+                        push @{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe}
+                              {$attribute} }, $data_metric;
                     }
                     else {
 
-                        $qc_data_href->{recipe}{$recipe}{$attribute}[$data_metric_index]
-                          = $data_metric;
-                    }
-                    ## Check gender for sample_id
-                    if (   $recipe eq q{plink_sexcheck}
-                        && $evaluate_plink_gender )
-                    {
-
-                        ## Array ref
-                        my @sexchecks = split( q{:},
-                            @{ $qc_recipe_data_href->{$recipe}{$attribute} }
-                              [$data_metric_index] );
-
-                        ## Check that assumed gender is supported by variants on chrX and chrY
-                        plink_gender_check(
-                            {
-                                sample_info_href          => $sample_info_href,
-                                qc_data_href              => $qc_data_href,
-                                sample_id_ref             => \$sexchecks[0],
-                                plink_sexcheck_gender_ref => \$sexchecks[1],
-                            }
-                        );
+                        push @{ $qc_data_href->{recipe}{$recipe}{$attribute} },
+                          $data_metric;
                     }
                 }
                 if (
@@ -777,12 +786,12 @@ sub add_to_qc_data {
 
                     relation_check(
                         {
-                            sample_info_href        => $sample_info_href,
                             qc_data_href            => $qc_data_href,
                             relationship_values_ref => \@{
                                 $qc_data_href->{recipe}{relation_check}
                                   {sample_relation_check}
                             },
+                            sample_info_href => $sample_info_href,
                             sample_orders_ref =>
                               \@{ $qc_data_href->{recipe}{pedigree_check}{sample_order} },
                         }
@@ -791,30 +800,41 @@ sub add_to_qc_data {
             }
         }
         else {
-            ## Paragraf data i.e. header and subsequent data lines
+            ## Paragraf data i.e. header and subsequent data lines - can be multiple per file
 
-            ## Detect if the regexp id for headers and not data.
-            if ( $attribute !~ /^header|header$/i ) {
+          PARAGRAPH_HEADER_KEY:
+            for my $regexp_header_key ( keys %{ $qc_header_href->{$recipe} } ) {
 
-                ## For all collected headers
-                while ( my ( $qc_header_index, $qc_header ) =
-                    each( @{ $qc_header_href->{$recipe}{$attribute} } ) )
-                {
+              PARAGRAPH_KEYS:
+                for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
 
-                    ## Data metrics
-                    my $data_metric =
-                      $qc_recipe_data_href->{$recipe}{$attribute}[$qc_header_index];
+                    ## Detect if the regexp id for headers and not data.
+                    if ( $regexp_key !~ /^header|header$/i ) {
 
-                    if ( ($sample_id) && ($infile) ) {
+                        ## For all collected headers for this paragraph
+                      HEADER_VALUE:
+                        while ( my ( $qc_header_index, $qc_header ) =
+                            each( @{ $qc_header_href->{$recipe}{$regexp_header_key} } ) )
+                        {
 
-                        ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
-                        $qc_data_href->{sample}{$sample_id}{$infile}
-                          {$recipe}{$qc_header}{$attribute} = $data_metric;
-                    }
-                    else {
+                            ## Data metric
+                            my $data_metric =
+                              $qc_recipe_data_href->{$recipe}{$regexp_key}
+                              [$qc_header_index];
 
-                        ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
-                        $qc_data_href->{$recipe}{$qc_header}{$attribute} = $data_metric;
+                            if ( $sample_id and $infile ) {
+
+                                ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
+                                $qc_data_href->{sample}{$sample_id}{$infile}
+                                  {$recipe}{$regexp_key}{$qc_header} = $data_metric;
+                            }
+                            else {
+
+                                ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
+                                $qc_data_href->{$recipe}{$regexp_key}{$qc_header} =
+                                  $data_metric;
+                            }
+                        }
                     }
                 }
             }
@@ -1114,96 +1134,93 @@ sub relation_check {
 
 ## Function : Uses the .mibs file produced by PLINK to test if case members are indeed related.
 ## Returns  :
-## Arguments: $sample_info_href        => Info on samples and case hash {REF}
-##          : $qc_data_href            => Qc data hash {REF}
-##          : $sample_orders_ref       => The sample order so that correct estimation can be connected to the correct sample_ids {REF}
+## Arguments: $qc_data_href            => Qc data hash {REF}
 ##          : $relationship_values_ref => All relationship estimations {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
+##          : $sample_orders_ref       => The sample order so that correct estimation can be connected to the correct sample_ids {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_info_href;
     my $qc_data_href;
     my $relationship_values_ref;
+    my $sample_info_href;
     my $sample_orders_ref;
 
     my $tmpl = {
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
         qc_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
             strict_type => 1,
-            store       => \$qc_data_href
         },
         relationship_values_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$relationship_values_ref,
             strict_type => 1,
-            store       => \$relationship_values_ref
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
         },
         sample_orders_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_orders_ref,
             strict_type => 1,
-            store       => \$sample_orders_ref
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-#Stores case relations and pairwise comparisons case{$sample_id}{$sample_id}["column"] -> [pairwise]
+# Stores case relations and pairwise comparisons case{$sample_id}{$sample_id}["column"] -> [pairwise]
     my %case;
-    my $sample_id_counter  = 0;
     my $incorrect_relation = 0;
     my @pairwise_comparisons;
+    my $sample_id_counter = 0;
 
-    ##Copy array to avoid removing actual values in later splice
+    ## Copy array to avoid removing actual values in later splice
     my @relationship_values = @{$relationship_values_ref};
 
-    ## Splice all relationship extimations from regexp into pairwise comparisons calculated for each sample_id
-    for (
-        my $realtionship_counter = 0 ;
-        $realtionship_counter < scalar(@relationship_values) ;
-        $realtionship_counter++
-      )
-    {
+    ## Splice all relationship estimations from regexp into pairwise comparisons calculated for each sample_id
+  RELATIONSHIP:
+    foreach my $relationship (@relationship_values) {
 
         ## Splices array into each sample_ids line
-        my @pairwise_comparisons =
-          splice( @relationship_values, 0, scalar( @{$sample_orders_ref} ) );
+        my @pairwise_comparisons = splice @relationship_values, 0,
+          scalar @{$sample_orders_ref};
 
         ## All columns in .mibs file
-        for ( my $column = 0 ; $column < scalar(@$sample_orders_ref) ; $column++ ) {
+      COLUMN:
+        while ( my ( $column_index, $sample_id ) = each @{$sample_orders_ref} ) {
 
-            ## Store sample_id, case membersID (including self) and each pairwise comparison. Uses array for to accomodate sibling info.
-            push(
-                @{
-                    $case{ $sample_orders_ref->[$sample_id_counter] }
-                      { $sample_orders_ref->[$column] }
-                },
-                $pairwise_comparisons[$column]
-            );
+            ## Store sample_id, case membersID (including self) and each pairwise comparison. Uses array to accomodate sibling info.
+            my $sample            = $sample_orders_ref->[$sample_id_counter];
+            my $sample_to_compare = $sample_orders_ref->[$column_index];
+            push
+              @{ $case{$sample}{$sample_to_compare} },
+              $pairwise_comparisons[$column_index];
         }
+        ## Increment counter for next sample to use as base in comparisons
         $sample_id_counter++;
     }
+
     ## Father_id for the case
-    my $father_id = "YYY";
+    my $father_id = q{YYY};
 
     ## Mother_id for the case
-    my $mother_id = "XXX";
+    my $mother_id = q{XXX};
 
     ## Collect father and mother id
   SAMPLE_ID:
-    for my $sample_id ( keys %case ) {    #For all sample_ids
+    for my $sample_id ( keys %case ) {
 
         ## Currently only 1 father or Mother per pedigree is supported
 
@@ -1362,8 +1379,16 @@ sub _chanjo_gender_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+
     ## Get sample id sex
-    my $sample_id_sex = $sample_info_href->{sample}{$sample_id}{sex};
+    my $sample_id_sex = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{sex},
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
 
     ## Female
     if (   $chanjo_sexcheck_gender eq q{female}
@@ -1395,81 +1420,87 @@ sub _chanjo_gender_check {
     return;
 }
 
-sub plink_gender_check {
+sub _plink_gender_check {
 
 ##Function : Checks that the gender predicted by Plink sexcheck is confirmed in the pedigee for the sample
 ##Returns  :
-##Arguments: $sample_info_href          => Info on samples and case hash {REF}
-##         : $qc_data_href              => Qc data hash {REF}
-##         : $sample_id_ref             => SampleID {REF}
-##         : $plink_sexcheck_gender_ref => Plink calculated gender {REF}
+##Arguments: $plink_sexcheck_gender => Plink calculated gender
+##         : $qc_data_href          => Qc data hash {REF}
+##         : $sample_id             => Sample id
+##         : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_info_href;
+    my $plink_sexcheck_gender;
     my $qc_data_href;
-    my $sample_id_ref;
-    my $plink_sexcheck_gender_ref;
+    my $sample_id;
+    my $sample_info_href;
 
     my $tmpl = {
-        sample_info_href => {
-            required    => 1,
+        plink_sexcheck_gender => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$plink_sexcheck_gender,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         qc_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$qc_data_href
-        },
-        sample_id_ref => {
-            required    => 1,
             defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        plink_sexcheck_gender_ref => {
             required    => 1,
-            defined     => 1,
-            default     => \$$,
+            store       => \$qc_data_href,
             strict_type => 1,
-            store       => \$plink_sexcheck_gender_ref
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Alias
-    my $sample_id_sex_ref = \$sample_info_href->{sample}{$$sample_id_ref}{sex};
+    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+
+    ## Get sample id sex
+    my $sample_id_sex = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{sex},
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
 
     ## Female
-    if (   ( $$plink_sexcheck_gender_ref eq q{2} )
-        && ( $$sample_id_sex_ref =~ /2|female/ ) )
+    if (    $plink_sexcheck_gender eq q{2}
+        and $sample_id_sex =~ /2|female/ )
     {
 
-        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $$sample_id_ref . q{:PASS};
+        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $sample_id . q{:PASS};
     }
-    elsif (( $$plink_sexcheck_gender_ref eq q{1} )
-        && ( $$sample_id_sex_ref =~ /1|^male/ ) )
+    elsif ( $plink_sexcheck_gender eq q{1}
+        and $sample_id_sex =~ /1|^male/ )
     {
         ## Male
 
-        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $$sample_id_ref . q{:PASS};
+        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $sample_id . q{:PASS};
     }
-    elsif ( $$sample_id_sex_ref =~ /other|unknown/ ) {
+    elsif ( $sample_id_sex =~ /other|unknown/ ) {
         ## Other|Unknown
 
-        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $$sample_id_ref . q{:PASS};
+        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $sample_id . q{:PASS};
     }
     else {
 
-        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $$sample_id_ref . q{:FAIL};
+        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $sample_id . q{:FAIL};
     }
     return;
 }

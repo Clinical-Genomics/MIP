@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -59,9 +59,11 @@ diag(   q{Test set_qc_data_case_recipe_info from Qc_data.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given a key value pair
-my $key = q{greeting};
+my $key    = q{greeting};
+my $infile = q{an_infile};
 my %qc_data;
 my $recipe_name = q{japan};
+my $sample_id   = q{sample_1};
 my $value       = q{konnichi wa};
 set_qc_data_case_recipe_info(
     {
@@ -74,5 +76,21 @@ set_qc_data_case_recipe_info(
 
 ## Then
 is( $qc_data{recipe}{$recipe_name}{$key}, $value, q{Set case level recipe info} );
+
+## Given a sample id and infile
+set_qc_data_case_recipe_info(
+    {
+        key          => $key,
+        infile       => $infile,
+        qc_data_href => \%qc_data,
+        recipe_name  => $recipe_name,
+        sample_id    => $sample_id,
+        value        => $value,
+    }
+);
+
+## Then
+is( $qc_data{sample}{$sample_id}{$infile}{$recipe_name}{$key},
+    $value, q{Set sample id and infile level recipe info} );
 
 done_testing();
