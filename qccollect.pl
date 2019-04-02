@@ -826,13 +826,14 @@ sub add_to_qc_data {
 
                                 ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
                                 $qc_data_href->{sample}{$sample_id}{$infile}
-                                  {$recipe}{$regexp_key}{$qc_header} = $data_metric;
+                                  {$recipe}{$regexp_header_key}{$regexp_key}{$qc_header}
+                                  = $data_metric;
                             }
                             else {
 
                                 ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
-                                $qc_data_href->{$recipe}{$regexp_key}{$qc_header} =
-                                  $data_metric;
+                                $qc_data_href->{$recipe}{$regexp_header_key}{$regexp_key}
+                                  {$qc_header} = $data_metric;
                             }
                         }
                     }
