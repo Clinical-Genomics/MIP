@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Qc_data}        => [qw{ set_qc_data_case_recipe_info }],
+        q{MIP::Qcc_regexp}     => [qw{ get_qcc_regexp_recipe_attribute }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Qc_data qw{ set_qc_data_case_recipe_info };
+use MIP::Qcc_regexp qw{ get_qcc_regexp_recipe_attribute };
 
-diag(   q{Test set_qc_data_case_recipe_info from Qc_data.pm v}
-      . $MIP::Qc_data::VERSION
+diag(   q{Test get_qcc_regexp_recipe_attribute from Qcc_regexp.pm v}
+      . $MIP::Qcc_regexp::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,39 +58,20 @@ diag(   q{Test set_qc_data_case_recipe_info from Qc_data.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a key value pair
-my $key    = q{greeting};
-my $infile = q{an_infile};
-my %qc_data;
-my $recipe_name = q{japan};
-my $sample_id   = q{sample_1};
-my $value       = q{konnichi wa};
-set_qc_data_case_recipe_info(
+## Given a recipe when called with attribute
+my $attribute       = q{version};
+my %qcc_regexp_href = ( fastqc => { version => q{a_version}, } );
+my $recipe_name     = q{fastqc};
+
+my $got_attribute = get_qcc_regexp_recipe_attribute(
     {
-        key          => $key,
-        qc_data_href => \%qc_data,
-        recipe_name  => $recipe_name,
-        value        => $value,
+        attribute       => $attribute,
+        qcc_regexp_href => \%qcc_regexp_href,
+        recipe_name     => $recipe_name,
     }
 );
 
-## Then
-is( $qc_data{recipe}{$recipe_name}{$key}, $value, q{Set case level recipe info} );
-
-## Given a sample id and infile
-set_qc_data_case_recipe_info(
-    {
-        key          => $key,
-        infile       => $infile,
-        qc_data_href => \%qc_data,
-        recipe_name  => $recipe_name,
-        sample_id    => $sample_id,
-        value        => $value,
-    }
-);
-
-## Then
-is( $qc_data{sample}{$sample_id}{$infile}{$recipe_name}{$key},
-    $value, q{Set sample id and infile level recipe info} );
+## Then return attribute for recipe
+is( $got_attribute, q{a_version}, q{Got recipe attribute} );
 
 done_testing();
