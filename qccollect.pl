@@ -557,7 +557,7 @@ sub parse_regexp_hash_and_collect {
   REG_EXP:
     for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
 
-<<"FUNCTION";
+        <<"FUNCTION";
         ## Detect if the outfile contains paragrafs/header info in the outfile
         ## i.e. data is formated as a paragraf with header(s) and line(s).
         ## "regexp_key" should either start with or end with "header". This
@@ -566,70 +566,43 @@ sub parse_regexp_hash_and_collect {
         ## (headers and data are saved in seperate hashes).
 FUNCTION
 
+## Regular expression used to collect paragraf header info
+        $regexp = get_qcc_regexp_recipe_attribute(
+            {
+                attribute       => $regexp_key,
+                qcc_regexp_href => $regexp_href,
+                recipe_name     => $recipe,
+            }
+        );
+
+        ## Detect if the regexp key is a paragraf header and not paragraf
         if ( $regexp_key =~ /^header|header$/i ) {
 
-            ## Format outfile: Paragraf section
-          PARAGRAPH:
-            for my $regexp_header_key ( keys %{ $regexp_href->{$recipe}{$regexp_key} } ) {
-
-                ## Regular expression used to collect paragraf header info
-                $regexp =
-                  $regexp_href->{$recipe}{$regexp_key}{$regexp_header_key};
-
-                ## Loop through possible separators to seperate any eventual header elements
-              SEPARATOR:
-                foreach my $separator (@separators) {
-
-                    ## Detect if the regexp key is a paragraf header and not paragraf data (header line and data line(s))
-                    if ( $regexp_header_key =~ /^header|header$/i ) {
-
-                        ## Collect paragraf header
-                        @{ ${$qc_header_href}{$recipe}{$regexp_key}{$regexp_header_key} }
-                          = split( /$separator/, `$regexp $outdirectory/$outfile` );
-
-                        # Then split should have been successful
-                        last SEPARATOR
-                          if (
-                            defined $qc_header_href->{$recipe}{$regexp_key}
-                            {$regexp_header_key} );
-                    }
-                    else {
-                        ## For paragraf data line(s)
-
-                        ## Collect paragraf data
-                        @{ $qc_recipe_data_href->{$recipe}{$regexp_key}
-                              {$regexp_header_key} } =
-                          split( /$separator/, `$regexp $outdirectory/$outfile` );
-
-                        ## Then split should have been successful
-                        last SEPARATOR
-                          if (
-                            defined $qc_recipe_data_href->{$recipe}{$regexp_key}
-                            {$regexp_header_key}[1]
-
-                          );
-                    }
-                }
-            }
-        }
-        else {
-            ##For info contained in Entry --> Value i.e. same line.
-
-            ## The regular expression used to collect info
-            $regexp = $regexp_href->{$recipe}{$regexp_key};
-
-            ## Loop through possible separators
+            ## Loop through possible separators to seperate any eventual header elements
           SEPARATOR:
             foreach my $separator (@separators) {
 
-                ## Collect data. Use regexp_key as element header
-                @{ $qc_recipe_data_href->{$recipe}{$regexp_key} } =
+                ## Collect paragraf header
+                @{ ${$qc_header_href}{$recipe}{$regexp_key} } =
                   split( /$separator/, `$regexp $outdirectory/$outfile` );
 
-                ## Then split should have been successful
                 last SEPARATOR
-                  if ( defined $qc_recipe_data_href->{$recipe}{$regexp_key}[1] );
+                  if ( defined $qc_header_href->{$recipe}{$regexp_key} );
             }
+        }
+
+### For info contained in Entry --> Value i.e. same line.
+## Loop through possible separators
+      SEPARATOR:
+        foreach my $separator (@separators) {
+
+            ## Collect data. Use regexp_key as element header
+            @{ $qc_recipe_data_href->{$recipe}{$regexp_key} } =
+              split( /$separator/, `$regexp $outdirectory/$outfile` );
+
+            ## Then split should have been successful
+            last SEPARATOR
+              if ( defined $qc_recipe_data_href->{$recipe}{$regexp_key}[1] );
         }
     }
     return;
@@ -716,26 +689,26 @@ sub add_to_qc_data {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
   REGEXP:
-    for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
+    for my $attribute ( keys %{ $regexp_href->{$recipe} } ) {
 
         ## For info contained in entry --> Value i.e. same line
-        if ( $regexp_key !~ /^header|header$/i ) {
+        if ( $attribute !~ /^header|header$/i ) {
 
             ## Enable seperation of writing array or key-->value in qc_data
-            if ( scalar( @{ $qc_recipe_data_href->{$recipe}{$regexp_key} } ) == 1 ) {
+            if ( scalar @{ $qc_recipe_data_href->{$recipe}{$attribute} } == 1 ) {
 
-                if ( ($sample_id) && ($infile) ) {
+                if ( $sample_id and $infile ) {
 
                     ## key-->value for sample_id
-                    $qc_data_href->{sample}{$sample_id}{$infile}{$recipe}{$regexp_key} =
-                      $qc_recipe_data_href->{$recipe}{$regexp_key}[0];
+                    $qc_data_href->{sample}{$sample_id}{$infile}{$recipe}{$attribute} =
+                      $qc_recipe_data_href->{$recipe}{$attribute}[0];
                 }
                 else {
                     ## Family level
 
                     ## key-->value for caseID
-                    $qc_data_href->{recipe}{$recipe}{$regexp_key} =
-                      $qc_recipe_data_href->{$recipe}{$regexp_key}[0];
+                    $qc_data_href->{recipe}{$recipe}{$attribute} =
+                      $qc_recipe_data_href->{$recipe}{$attribute}[0];
                 }
 
                 ## Check gender for sample_id
@@ -743,7 +716,7 @@ sub add_to_qc_data {
 
                     ## Array_ref
                     my $chanjo_sexcheck =
-                      @{ $qc_recipe_data_href->{$recipe}{$regexp_key} }[0];
+                      @{ $qc_recipe_data_href->{$recipe}{$attribute} }[0];
 
                     ## Check that assumed gender is supported by coverage on chrX and chrY
                     _chanjo_gender_check(
@@ -760,27 +733,19 @@ sub add_to_qc_data {
             else {
                 ## Write array to qc_data
 
-                for (
-                    my $regexp_key_counter = 0 ;
-                    $regexp_key_counter <
-                    scalar( @{ $qc_recipe_data_href->{$recipe}{$regexp_key} } ) ;
-                    $regexp_key_counter++
-                  )
+                while ( my ( $data_metric_index, $data_metric ) =
+                    each @{ $qc_recipe_data_href->{$recipe}{$attribute} } )
                 {
 
-                    if ( ($sample_id) && ($infile) ) {
+                    if ( $sample_id and $infile ) {
 
                         $qc_data_href->{sample}{$sample_id}{$infile}{$recipe}
-                          {$regexp_key}[$regexp_key_counter] =
-                          $qc_recipe_data_href->{$recipe}{$regexp_key}
-                          [$regexp_key_counter];
-
+                          {$attribute}[$data_metric_index] = $data_metric;
                     }
                     else {
 
-                        $qc_data_href->{recipe}{$recipe}{$regexp_key}[$regexp_key_counter]
-                          = $qc_recipe_data_href->{$recipe}{$regexp_key}
-                          [$regexp_key_counter];
+                        $qc_data_href->{recipe}{$recipe}{$attribute}[$data_metric_index]
+                          = $data_metric;
                     }
                     ## Check gender for sample_id
                     if (   $recipe eq q{plink_sexcheck}
@@ -789,8 +754,8 @@ sub add_to_qc_data {
 
                         ## Array ref
                         my @sexchecks = split( q{:},
-                            @{ $qc_recipe_data_href->{$recipe}{$regexp_key} }
-                              [$regexp_key_counter] );
+                            @{ $qc_recipe_data_href->{$recipe}{$attribute} }
+                              [$data_metric_index] );
 
                         ## Check that assumed gender is supported by variants on chrX and chrY
                         plink_gender_check(
@@ -804,11 +769,9 @@ sub add_to_qc_data {
                     }
                 }
                 if (
-                    defined(
-                        $qc_data_href->{recipe}{relation_check}{sample_relation_check}
-                    )
-                    && (
-                        defined( $qc_data_href->{recipe}{pedigree_check}{sample_order} ) )
+                    defined $qc_data_href->{recipe}{relation_check}{sample_relation_check}
+
+                    and defined $qc_data_href->{recipe}{pedigree_check}{sample_order}
                   )
                 {
 
@@ -830,55 +793,28 @@ sub add_to_qc_data {
         else {
             ## Paragraf data i.e. header and subsequent data lines
 
-          HEADER_INFO:
-            for
-              my $regexp_header_key ( keys %{ ${$qc_header_href}{$recipe}{$regexp_key} } )
-            {
+            ## Detect if the regexp id for headers and not data.
+            if ( $attribute !~ /^header|header$/i ) {
 
-              PARAGRAPH_KEYS:
-                for
-                  my $regexp_key_header ( keys %{ $regexp_href->{$recipe}{$regexp_key} } )
+                ## For all collected headers
+                while ( my ( $qc_header_index, $qc_header ) =
+                    each( @{ $qc_header_href->{$recipe}{$attribute} } ) )
                 {
-                    ## All paragraf keys (header and data line(s))
 
-                    ## Detect if the regexp id for headers and not data.
-                    if ( $regexp_key_header !~ /^header|header$/i ) {
+                    ## Data metrics
+                    my $data_metric =
+                      $qc_recipe_data_href->{$recipe}{$attribute}[$qc_header_index];
 
-                        ## For all collected headers
-                        for (
-                            my $qc_headers_counter = 0 ;
-                            $qc_headers_counter < scalar(
-                                @{
-                                    ${$qc_header_href}{$recipe}{$regexp_key}
-                                      {$regexp_header_key}
-                                }
-                            ) ;
-                            $qc_headers_counter++
-                          )
-                        {
+                    if ( ($sample_id) && ($infile) ) {
 
-                            if ( ($sample_id) && ($infile) ) {
+                        ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
+                        $qc_data_href->{sample}{$sample_id}{$infile}
+                          {$recipe}{$qc_header}{$attribute} = $data_metric;
+                    }
+                    else {
 
-                                ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
-                                $qc_data_href->{sample}{$sample_id}{$infile}
-                                  {$recipe}{$regexp_header_key}{$regexp_key_header}
-                                  { ${$qc_header_href}{$recipe}{$regexp_key}
-                                      {$regexp_header_key}[$qc_headers_counter] } =
-                                  $qc_recipe_data_href->{$recipe}
-                                  {$regexp_key}{$regexp_key_header}[$qc_headers_counter];
-                            }
-                            else {
-
-                                ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
-                                $qc_data_href->{$recipe}{$regexp_header_key}
-                                  {$regexp_key_header}
-                                  { ${$qc_header_href}{$recipe}{$regexp_key}
-                                      {$regexp_header_key}[$qc_headers_counter] } =
-                                  $qc_recipe_data_href->{$recipe}
-                                  {$regexp_key}{$regexp_key_header}[$qc_headers_counter];
-
-                            }
-                        }
+                        ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
+                        $qc_data_href->{$recipe}{$qc_header}{$attribute} = $data_metric;
                     }
                 }
             }
@@ -1672,150 +1608,147 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
       q?perl -nae 'if($_=~/Fraction Duplicates\: (\S+)/) {print $1;}' ?;
 
     # Get BAIT_SET line from header
-    $regexp{collecthsmetrics}{header_info}{header} =
+    $regexp{collecthsmetrics}{header} =
       q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?;
 
     # Return line and only look at line 8 in file, where the data action is
-    $regexp{collecthsmetrics}{header_info}{data} =
+    $regexp{collecthsmetrics}{data} =
       q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?;
 
     # Return CATEGORY line from header
-    $regexp{collectmultiplemetrics}{header_info}{header} =
+    $regexp{collectmultiplemetrics}{header} =
       q?perl -nae' if ($_ =~/^CATEGORY/ ) {print $_;last;}' ?;
 
     # Return FIRST_OF_PAIR
-    $regexp{collectmultiplemetrics}{header_info}{first_of_pair} =
+    $regexp{collectmultiplemetrics}{first_of_pair} =
       q?perl -nae' if ($_ =~/^FIRST_OF_PAIR/ ) {print $_;last;}' ?;
 
     # Return SECOND_OF_PAIR
-    $regexp{collectmultiplemetrics}{header_info}{second_of_pair} =
+    $regexp{collectmultiplemetrics}{second_of_pair} =
       q?perl -nae' if ($_ =~/^SECOND_OF_PAIR/ ) {print $_;last;}' ?;
 
     # Return PAIR line
-    $regexp{collectmultiplemetrics}{header_info}{pair} =
+    $regexp{collectmultiplemetrics}{pair} =
       q?perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  ?;
 
     # Return MEDIAN_INSERT_SIZE line from header
-    $regexp{collectmultiplemetricsinsertsize}{header_info}{header} =
+    $regexp{collectmultiplemetricsinsertsize}{header} =
       q?perl -nae' if ($_ =~/^MEDIAN_INSERT_SIZE/ ) {print $_;last;}' ?;
 
     # Return line and only look at line 8 in file, where the data action is
-    $regexp{collectmultiplemetricsinsertsize}{header_info}{data} =
+    $regexp{collectmultiplemetricsinsertsize}{data} =
       q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?;
 
 # Return CompOverlap CompFeatureInput line and only look at line 8, where the data action is in header
-    $regexp{variantevalall}{comp_overlap_header}{comp_overlap_header} =
+    $regexp{variantevalall}{comp_overlap_data_header} =
       q?perl -nae' if ($_ =~/^CompOverlap\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
     # Return CompOverlap and all and none line
-    $regexp{variantevalall}{comp_overlap_header}{comp_overlap_data_all} =
+    $regexp{variantevalall}{comp_overlap_data_all} =
 q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print $_;last;}' ?;
 
     # Return CompOverlap and known line
-    $regexp{variantevalall}{comp_overlap_header}{comp_overlap_data_known} =
+    $regexp{variantevalall}{comp_overlap_data_known} =
       q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
     # Return CompOverlap and novel line
-    $regexp{variantevalall}{comp_overlap_header}{comp_overlap_data_novel} =
+    $regexp{variantevalall}{comp_overlap_data_novel} =
       q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     # Return CountVariants and CompFeatureInput line from header
-    $regexp{variantevalall}{count_variants_header}{count_variants_header} =
+    $regexp{variantevalall}{count_variants_data_header} =
       q?perl -nae' if ($_ =~/^CountVariants\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
     # Return CountVariants and all line
-    $regexp{variantevalall}{count_variants_header}{count_variants_data_all} =
+    $regexp{variantevalall}{count_variants_data_all} =
       q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
 
     # Return CountVariants and known line
-    $regexp{variantevalall}{count_variants_header}{count_variants_data_known} =
+    $regexp{variantevalall}{count_variants_data_known} =
       q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
     # Return CountVariants and novel line
-    $regexp{variantevalall}{count_variants_header}{count_variants_data_novel} =
+    $regexp{variantevalall}{count_variants_data_novel} =
       q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     # Return IndelSummary and CompFeatureInput line from header
-    $regexp{variantevalall}{indel_summary_header}{indel_summary_header} =
+    $regexp{variantevalall}{indel_summary_data_header} =
       q?perl -nae' if ($_ =~/^IndelSummary\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
     # Return IndelSummary and all line
-    $regexp{variantevalall}{indel_summary_header}{indel_summary_data_all} =
+    $regexp{variantevalall}{indel_summary_data_all} =
       q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
 
     # Return IndelSummary and known line
-    $regexp{variantevalall}{indel_summary_header}{indel_summary_data_known} =
+    $regexp{variantevalall}{indel_summary_data_known} =
       q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
     # Return IndelSummary and novel line
-    $regexp{variantevalall}{indel_summary_header}{indel_summary_data_novel} =
+    $regexp{variantevalall}{indel_summary_data_novel} =
       q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     # Return MultiallelicSummary and CompFeatureInput line from header
-    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_header} =
+    $regexp{variantevalall}{multiallelic_summary_data_header} =
 q?perl -nae' if ($_ =~/^MultiallelicSummary\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
     # Return MultiallelicSummary and all line
-    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_all} =
+    $regexp{variantevalall}{multiallelic_summary_data_all} =
 q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
 
     # Return MultiallelicSummary and known line
-    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_known}
-      = q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
+    $regexp{variantevalall}{multiallelic_summary_data_known} =
+q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
     # Return MultiallelicSummary and novel line
-    $regexp{variantevalall}{multiallelic_summary_header}{multiallelic_summary_data_novel}
-      = q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
+    $regexp{variantevalall}{multiallelic_summary_data_novel} =
+q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     # Return TiTvVariantEvaluator and CompFeatureInput line from header
-    $regexp{variantevalall}{titv_variant_evaluator_header}{titv_variant_evaluator_header}
-      = q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+CompFeatureInput/ ) {print $_;last;}' ?;
+    $regexp{variantevalall}{titv_variant_evaluator_data_header} =
+q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
     # Return TiTvVariantEvaluator and all line
-    $regexp{variantevalall}{titv_variant_evaluator_header}
-      {titv_variant_evaluator_data_all} =
+    $regexp{variantevalall}{titv_variant_evaluator_data_all} =
 q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
 
     # Return TiTvVariantEvaluator and known line
-    $regexp{variantevalall}{titv_variant_evaluator_header}
-      {titv_variant_evaluator_data_known} =
+    $regexp{variantevalall}{titv_variant_evaluator_data_known} =
 q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
     # Return TiTvVariantEvaluator and novel line
-    $regexp{variantevalall}{titv_variant_evaluator_header}
-      {titv_variant_evaluator_data_novel} =
+    $regexp{variantevalall}{titv_variant_evaluator_data_novel} =
 q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     # Return ValidationReport and CompFeatureInput line from header
-    $regexp{variantevalall}{validation_report_header}{validation_report_header} =
+    $regexp{variantevalall}{validation_report_header} =
       q?perl -nae' if ($_ =~/^ValidationReport\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
     # Return ValidationReport and all line
-    $regexp{variantevalall}{validation_report_header}{validation_report_data_all} =
+    $regexp{variantevalall}{validation_report_data_all} =
 q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/all\s/) && ($_ =~/none\s/)) {print $_;last;}' ?;
 
     # Return ValidationReport and known line
-    $regexp{variantevalall}{validation_report_header}{validation_report_data_known} =
+    $regexp{variantevalall}{validation_report_data_known} =
 q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
     # Return ValidationReport and novel line
-    $regexp{variantevalall}{validation_report_header}{validation_report_data_novel} =
+    $regexp{variantevalall}{validation_report_data_novel} =
 q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     # Return VariantSummary and CompFeatureInput line from header
-    $regexp{variantevalall}{variant_summary_header}{variant_summary_header} =
+    $regexp{variantevalall}{variant_summary_header} =
       q?perl -nae' if ($_ =~/^VariantSummary\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
     # Return VariantSummary and all line
-    $regexp{variantevalall}{variant_summary_header}{variant_summary_data_all} =
+    $regexp{variantevalall}{variant_summary_data_all} =
       q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
 
     # Return VariantSummary and known line
-    $regexp{variantevalall}{variant_summary_header}{variant_summary_data_known} =
+    $regexp{variantevalall}{variant_summary_data_known} =
 q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
     # Return VariantSummary and novel line
-    $regexp{variantevalall}{variant_summary_header}{variant_summary_data_novel} =
+    $regexp{variantevalall}{variant_summary_data_novel} =
 q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     $regexp{variantevalexome} = $regexp{variantevalall};
