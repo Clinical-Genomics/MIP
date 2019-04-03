@@ -194,7 +194,14 @@ foreach my $sample_id ( keys %{ $sample_info{sample} } ) {
 if ( not $skip_evaluation ) {
 
     ## Evaluate the metrics
-    evaluate_qc_parameters(
+    evaluate_family_qc_parameters(
+        {
+            evaluate_metric_href => \%evaluate_metric,
+            qc_data_href         => \%qc_data,
+        }
+    );
+
+    evaluate_sample_qc_parameters(
         {
             evaluate_metric_href => \%evaluate_metric,
             qc_data_href         => \%qc_data,
@@ -896,8 +903,9 @@ sub define_evaluate_metric {
       $PCT_ADAPTER;
     $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} =
       $FRACTION_DUPLICATES;
-    $evaluate_metric{mendel}{fraction_of_errors}{gt} = $FRACTION_OF_ERRORS;
-    $evaluate_metric{father}{fraction_of_common_variants}{lt} =
+    $evaluate_metric{variant_integrity_ar_mendel}{fraction_of_errors}{gt} =
+      $FRACTION_OF_ERRORS;
+    $evaluate_metric{variant_integrity_ar_father}{fraction_of_common_variants}{lt} =
       $FRACTION_OF_COMMON_VARIANTS;
 
     ## Get sample id expected_coverage
@@ -916,65 +924,93 @@ sub define_evaluate_metric {
     return;
 }
 
-sub evaluate_qc_parameters {
+sub evaluate_family_qc_parameters {
 
-## Function : Evaluate parameters to detect parameters falling below threshold
+## Function : Evaluate family qc metrics to detect metrics falling below threshold
 ## Returns  :
-## Arguments: $qc_data_href         => QC data hash {REF}
-##          : $evaluate_metric_href => Hash for metrics to evaluate
+## Arguments: $evaluate_metric_href => Hash for metrics to evaluate
+##          : $qc_data_href         => QC data hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $qc_data_href;
     my $evaluate_metric_href;
+    my $qc_data_href;
 
     my $tmpl = {
         qc_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
             strict_type => 1,
-            store       => \$qc_data_href
         },
         evaluate_metric_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$evaluate_metric_href,
             strict_type => 1,
-            store       => \$evaluate_metric_href
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
   RECIPE:
-    for my $recipe ( keys %{ $qc_data_href->{recipe} } ) {
+    for my $recipe ( keys %{$evaluate_metric_href} ) {
 
-        ## Recipe to be evaluated
-        if ( exists $evaluate_metric_href->{$recipe} ) {
+        next RECIPE if ( not exists $qc_data_href->{recipe}{$recipe} );
 
-          METRIC:
-            for my $metric ( keys %{ $qc_data_href->{recipe}{$recipe} } ) {
+      METRIC:
+        for my $metric ( keys %{ $evaluate_metric_href->{$recipe} } ) {
 
-              FAMILY_LEVEL:
-                if ( exists $evaluate_metric_href->{$recipe}{$metric} ) {
+            next METRIC if ( not exists $qc_data_href->{recipe}{$recipe}{$metric} );
 
-                    check_metric(
-                        {
-                            qc_data_href => $qc_data_href,
-                            reference_metric_href =>
-                              $evaluate_metric_href->{$recipe}{$metric},
-                            recipe          => $recipe,
-                            metric          => $metric,
-                            qc_metric_value => $qc_data_href->{recipe}{$recipe}{$metric},
-                        }
-                    );
-
+            check_metric(
+                {
+                    metric                => $metric,
+                    qc_data_href          => $qc_data_href,
+                    qc_metric_value       => $qc_data_href->{recipe}{$recipe}{$metric},
+                    recipe                => $recipe,
+                    reference_metric_href => $evaluate_metric_href->{$recipe}{$metric},
                 }
-            }
+            );
         }
     }
+    return;
+}
+
+sub evaluate_sample_qc_parameters {
+
+## Function : Evaluate sample qc metrics to detect metrics falling below threshold
+## Returns  :
+## Arguments: $evaluate_metric_href => Hash for metrics to evaluate
+##          : $qc_data_href         => QC data hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $evaluate_metric_href;
+    my $qc_data_href;
+
+    my $tmpl = {
+        evaluate_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$evaluate_metric_href,
+            strict_type => 1,
+        },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
   SAMPLE_LEVEL:
     for my $sample_id ( keys %{ $qc_data_href->{sample} } ) {
@@ -1006,73 +1042,56 @@ sub evaluate_qc_parameters {
           RECIPE:
             for my $recipe ( keys %{ $qc_data_href->{sample}{$sample_id}{$infile} } ) {
 
-                ## Recipe to be evaluated
-                if ( exists $evaluate_metric_href->{$sample_id}{$recipe} ) {
+                next RECIPE
+                  if ( not exists $evaluate_metric_href->{$sample_id}{$recipe} );
 
-                  METRIC:
-                    for my $metric (
-                        keys %{ $evaluate_metric_href->{$sample_id}{$recipe} } )
-                    {
+                ## Alias
+                my $qc_data_recipe_href =
+                  \%{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe} };
 
-                        if (
-                            exists $qc_data_href->{sample}{$sample_id}{$infile}
-                            {$recipe}{$metric} )
-                        {
+              METRIC:
+                for my $metric ( keys %{ $evaluate_metric_href->{$sample_id}{$recipe} } )
+                {
 
-                            check_metric(
-                                {
-                                    qc_data_href => $qc_data_href,
-                                    reference_metric_href =>
-                                      $evaluate_metric_href->{$sample_id}
-                                      {$recipe}{$metric},
-                                    recipe => $recipe,
-                                    metric => $metric,
-                                    qc_metric_value =>
-                                      $qc_data_href->{sample}{$sample_id}
-                                      {$infile}{$recipe}{$metric},
-                                }
-                            );
-                        }
-                        else {
+                    if ( exists $qc_data_recipe_href->{$metric} ) {
 
-                            if (
-                                exists $qc_data_href->{sample}{$sample_id}
-                                {$infile}{$recipe}{header} )
+                        check_metric(
                             {
-
-                              HEADER:
-                                for my $data_header (
-                                    keys %{
-                                        $qc_data_href->{sample}{$sample_id}
-                                          {$infile}{$recipe}{header}
-                                    }
-                                  )
-                                {
-
-                                    if (
-                                        exists $qc_data_href->{sample}
-                                        {$sample_id}{$infile}{$recipe}{header}
-                                        {$data_header}{$metric} )
-                                    {
-
-                                        check_metric(
-                                            {
-                                                qc_data_href => $qc_data_href,
-                                                reference_metric_href =>
-                                                  $evaluate_metric_href->{$sample_id}
-                                                  {$recipe}{$metric},
-                                                recipe => $recipe,
-                                                metric => $metric,
-                                                qc_metric_value =>
-                                                  $qc_data_href->{sample}
-                                                  {$sample_id}{$infile}{$recipe}{header}
-                                                  {$data_header}{$metric},
-                                            }
-                                        );
-                                    }
-                                }
+                                metric          => $metric,
+                                qc_data_href    => $qc_data_href,
+                                qc_metric_value => $qc_data_recipe_href->{$metric},
+                                recipe          => $recipe,
+                                reference_metric_href =>
+                                  $evaluate_metric_href->{$sample_id}{$recipe}{$metric},
                             }
-                        }
+                        );
+                        next METRIC;
+                    }
+
+                    next METRIC
+                      if ( not exists $qc_data_recipe_href->{header} );
+
+                  HEADER:
+                    for my $data_header ( keys %{ $qc_data_recipe_href->{header} } ) {
+
+                        next HEADER
+                          if (
+                            not
+                            exists $qc_data_recipe_href->{header}{$data_header}{$metric}
+                          );
+
+                        check_metric(
+                            {
+                                metric       => $metric,
+                                qc_data_href => $qc_data_href,
+                                qc_metric_value =>
+                                  $qc_data_recipe_href->{header}{$data_header}{$metric},
+                                recipe => $recipe,
+                                reference_metric_href =>
+                                  $evaluate_metric_href->{$sample_id}{$recipe}{$metric},
+                            }
+                        );
+                        next METRIC;
                     }
                 }
             }
@@ -1937,19 +1956,19 @@ q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {prin
 q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\s/_/g;print $ret;last;}' ?;
 
     # Return variant_integrity mendel fraction errors
-    $regexp{mendel}{fraction_of_errors} =
+    $regexp{variant_integrity_ar_mendel}{fraction_of_errors} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
 
     # Return variant_integrity mendel mendelian_errors
-    $regexp{mendel}{mendelian_errors} =
+    $regexp{variant_integrity_ar_mendel}{mendelian_errors} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
 
     # Return variant_integrity father fraction of common_variants
-    $regexp{father}{fraction_of_common_variants} =
+    $regexp{variant_integrity_ar_father}{fraction_of_common_variants} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
 
     # Return variant_integrity father common_variants
-    $regexp{father}{common_variants} =
+    $regexp{variant_integrity_ar_father}{common_variants} =
       q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
 
     # Return tiddit version
