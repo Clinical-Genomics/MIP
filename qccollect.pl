@@ -846,53 +846,73 @@ sub add_to_qc_data {
 
 sub define_evaluate_metric {
 
-## Function  : Sets recipes and recipe metrics and thresholds to be evaluated
+## Function  : Sets recipes, metrics and thresholds to be evaluated
 ## Returns   :
-## Arguments : $sample_info_href => Info on samples and case hash {REF}
-##           : $sample_id        => Sample ID
+## Arguments : $sample_id        => Sample id
+##           : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_info_href;
     my $sample_id;
+    my $sample_info_href;
 
     my $tmpl = {
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
         sample_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$sample_id
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} = 95;
-    $evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_10X}{lt} =
-      0.95;
-    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} = 0.95;
-    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_ADAPTER}{gt} =
-      0.0005;
-    $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} = 0.2;
+    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
 
-    if ( exists $sample_info_href->{sample}{$sample_id}{expected_coverage} ) {
+    ## Constants
+    Readonly my $PERCENTAGE_MAPPED_READS     => 95;
+    Readonly my $PCT_TARGET_BASES_10X        => 0.95;
+    Readonly my $PCT_PF_READS_ALIGNED        => 0.95;
+    Readonly my $PCT_ADAPTER                 => 0.0005;
+    Readonly my $FRACTION_DUPLICATES         => 0.2;
+    Readonly my $FRACTION_OF_ERRORS          => 0.06;
+    Readonly my $FRACTION_OF_COMMON_VARIANTS => 0.55;
+
+    $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} =
+      $PERCENTAGE_MAPPED_READS;
+    $evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_10X}{lt} =
+      $PCT_TARGET_BASES_10X;
+    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} =
+      $PCT_PF_READS_ALIGNED;
+    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_ADAPTER}{gt} =
+      $PCT_ADAPTER;
+    $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} =
+      $FRACTION_DUPLICATES;
+    $evaluate_metric{mendel}{fraction_of_errors}{gt} = $FRACTION_OF_ERRORS;
+    $evaluate_metric{father}{fraction_of_common_variants}{lt} =
+      $FRACTION_OF_COMMON_VARIANTS;
+
+    ## Get sample id expected_coverage
+    my $expected_coverage = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{expected_coverage},
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+    if ($expected_coverage) {
 
         $evaluate_metric{$sample_id}{collecthsmetrics}{MEAN_TARGET_COVERAGE}{lt} =
-          $sample_info_href->{sample}{$sample_id}{expected_coverage};
+          $expected_coverage;
     }
-
-    $evaluate_metric{mendel}{fraction_of_errors}{gt} = 0.06;
-    $evaluate_metric{father}{fraction_of_common_variants}{lt} =
-      0.55;
-
     return;
 }
 
