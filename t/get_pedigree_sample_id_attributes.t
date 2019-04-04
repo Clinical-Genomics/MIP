@@ -17,13 +17,15 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -94,7 +92,6 @@ my %attribute = (
 
 while ( my ( $attribute, $attribute_value ) = each %attribute ) {
 
-## Then
     my $got_attribute = get_pedigree_sample_id_attributes(
         {
             attribute        => $attribute,
@@ -103,6 +100,7 @@ while ( my ( $attribute, $attribute_value ) = each %attribute ) {
         }
     );
 
+    ## Then we should get an attribute
     is( $got_attribute, $attribute_value,
             q{Got }
           . $sample_id
@@ -110,5 +108,36 @@ while ( my ( $attribute, $attribute_value ) = each %attribute ) {
           . $attribute . q{ => }
           . $attribute_value );
 }
+
+## Given a undefined attibute, when not mandatory
+delete $sample_info{sample}{$sample_id}{expected_coverage};
+
+my $got_attribute = get_pedigree_sample_id_attributes(
+    {
+        attribute        => q{expected_coverage},
+        sample_id        => $sample_id,
+        sample_info_href => \%sample_info,
+    }
+);
+
+## Then return false
+is( $got_attribute, undef, q{Returned undef for not mandatory pedigree attribute} );
+
+## Given a undefined attibute, when mandatory
+delete $sample_info{sample}{$sample_id}{sex};
+
+trap {
+    $got_attribute = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{sex},
+            sample_id        => $sample_id,
+            sample_info_href => \%sample_info,
+        }
+    )
+};
+
+## Then exit and throw FATAL log message
+is( $trap->leaveby, q{die}, q{Exit if the attibute is undef} );
+like( $trap->die, qr/Could\s+not\s+find\s+sample_info_name/xms, q{Throw error} );
 
 done_testing();

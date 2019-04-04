@@ -41,9 +41,6 @@ fastqc:
   sequence_length: "perl -nae' if ($_=~/Sequence length\\s(\\d+)/) {print $1;last;}' "
   total_number_of_reads: "perl -nae' if ($_=~/Total Sequences\\s(\\d+)/) {print $1;last;}' "
   version: "perl -nae' if ($_=~/##FastQC\\s+(\\S+)/) {print $1;last;}' "
-father:
-  common_variants: "perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' "
-  fraction_of_common_variants: "perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' "
 freebayes:
   version: "perl -nae 'if($_=~/source=freeBayes\\s(\\S+)/) {print $1;last;}' "
 genmod:
@@ -54,9 +51,6 @@ manta:
   version: "perl -nae 'if($_=~/GenerateSVCandidates\\s+(\\S+)/) {print $1;last}' "
 markduplicates:
   fraction_duplicates: "perl -nae 'if($_=~/Fraction Duplicates\\: (\\S+)/) {print $1;}' "
-mendel:
-  fraction_of_errors: "perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' "
-  mendelian_errors: "perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' "
 pedigree_check:
   sample_order: "perl -nae 'if ($_=~/^#CHROM/) {chomp $_; my @line = split(/\\t/,$_); for (my $sample=9;$sample<scalar(@line);$sample++) { print $line[$sample], \"\\t\";}last;}' "
 plink2:
@@ -89,6 +83,12 @@ svdb:
   version: "perl -nae 'if($_=~/^##SVDB_version=(\\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' "
 tiddit:
   version: "perl -nae 'if($_=~/^##source=TIDDIT-(\\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' "
+variant_integrity_ar_father:
+  common_variants: "perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' "
+  fraction_of_common_variants: "perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' "
+variant_integrity_ar_mendel:
+  fraction_of_errors: "perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' "
+  mendelian_errors: "perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' "
 varianteffectpredictor:
   assembly: "perl -nae 'if($_=~/##VEP=/ && $_=~/assembly=(\\S+)/) {print $1;last;}' "
   cache: "perl -nae 'if($_=~/##VEP=\\w+\\s+cache=(\\S+)/) {print $1;last;}' "

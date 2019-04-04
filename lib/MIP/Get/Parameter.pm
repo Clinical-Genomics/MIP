@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -705,11 +705,21 @@ sub get_pedigree_sample_id_attributes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Make sure that the supplied key exists
-    croak(qq{Could not find sample_info_name key: '$attribute' in hash})
-      if ( not exists $sample_info_href->{sample}{$sample_id}{$attribute} );
+    ## Define mandatory attributes
+    my %mandatory_attribute = map { $_ => 0 }
+      qw{ analysis_type capture_kit father mother phenotype sample_id sex };
 
-    return $sample_info_href->{sample}{$sample_id}{$attribute};
+    ## Get attribute
+    my $stored_attribute = $sample_info_href->{sample}{$sample_id}{$attribute};
+
+    ## Make sure that the supplied key exists for mandatory attributes
+    if ( not $stored_attribute
+        and exists $mandatory_attribute{$attribute} )
+    {
+        croak(qq{Could not find sample_info_name key: '$attribute' in hash});
+    }
+
+    return $stored_attribute;
 }
 
 sub get_program_executables {
@@ -1047,10 +1057,10 @@ sub get_recipe_resources {
     );
 
     my %recipe_resource = (
-        core_number => $core_number,
-        load_env_ref    => \@source_environment_cmds,
-        memory      => $memory,
-        time        => $active_parameter_href->{recipe_time}{$recipe_name},
+        core_number  => $core_number,
+        load_env_ref => \@source_environment_cmds,
+        memory       => $memory,
+        time         => $active_parameter_href->{recipe_time}{$recipe_name},
     );
 
     ## Return specified recipe resource
