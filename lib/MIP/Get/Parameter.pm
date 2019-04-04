@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -713,7 +713,7 @@ sub get_pedigree_sample_id_attributes {
     my $stored_attribute = $sample_info_href->{sample}{$sample_id}{$attribute};
 
     ## Make sure that the supplied key exists for mandatory attributes
-    if ( not $stored_attribute
+    if ( not defined $stored_attribute
         and exists $mandatory_attribute{$attribute} )
     {
         croak(qq{Could not find sample_info_name key: '$attribute' in hash});

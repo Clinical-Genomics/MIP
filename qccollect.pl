@@ -462,6 +462,7 @@ sub sample_qc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Qccollect qw{ chanjo_gender_check };
     use MIP::Sample_info qw{ get_sample_info_sample_recipe_attributes };
 
   SAMPLE_ID:
@@ -526,8 +527,9 @@ sub sample_qc {
                     my $chanjo_sexcheck_gender =
                       $qc_data_href->{sample}{$sample_id}{$infile}{chanjo_sexcheck}
                       {gender};
+
                     ## Check that assumed gender is supported by coverage on chrX and chrY
-                    _chanjo_gender_check(
+                    chanjo_gender_check(
                         {
                             chanjo_sexcheck_gender => $chanjo_sexcheck_gender,
                             infile                 => $infile,
@@ -1359,103 +1361,6 @@ sub relation_check {
 
             $qc_data_href->{sample}{$sample_id}{relation_check} = "PASS";
         }
-    }
-    return;
-}
-
-sub _chanjo_gender_check {
-
-## Function : Checks that the gender predicted by chanjo_sexcheck is confirmed in the pedigee for the sample
-## Returns  :
-## Arguments: $chanjo_sexcheck_gender => Chanjo calculated gender
-##          : $infile                 => Infile {REF}
-##          : $qc_data_href           => Qc data hash {REF}
-##          : $sample_id              => Sample ID
-##          : $sample_info_href       => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $chanjo_sexcheck_gender;
-    my $infile;
-    my $qc_data_href;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        chanjo_sexcheck_gender => {
-            defined     => 1,
-            required    => 1,
-            store       => \$chanjo_sexcheck_gender,
-            strict_type => 1,
-        },
-        infile => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile,
-            strict_type => 1,
-        },
-        qc_data_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$qc_data_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
-
-    ## Get sample id sex
-    my $sample_id_sex = get_pedigree_sample_id_attributes(
-        {
-            attribute        => q{sex},
-            sample_id        => $sample_id,
-            sample_info_href => $sample_info_href,
-        }
-    );
-
-    ## Female
-    if (   $chanjo_sexcheck_gender eq q{female}
-        && $sample_id_sex =~ /2|female/ )
-    {
-
-        $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
-          q{PASS};
-    }
-    elsif ($chanjo_sexcheck_gender eq q{male}
-        && $sample_id_sex =~ /1|^male/ )
-    {
-        ## Male
-
-        $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
-          q{PASS};
-    }
-    elsif ( $sample_id_sex =~ /other|unknown/ ) {
-        ## Other|Unknown
-
-        $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
-          q{PASS};
-    }
-    else {
-
-        $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
-          q{FAIL};
     }
     return;
 }
