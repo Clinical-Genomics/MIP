@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Qc_data}        => [qw{ set_qc_data_case_recipe_info }],
+        q{MIP::Qc_data}        => [qw{ set_qc_data_recipe_info }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Qc_data qw{ set_qc_data_case_recipe_info };
+use MIP::Qc_data qw{ set_qc_data_recipe_info };
 
-diag(   q{Test set_qc_data_case_recipe_info from Qc_data.pm v}
+diag(   q{Test set_qc_data_recipe_info from Qc_data.pm v}
       . $MIP::Qc_data::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -65,7 +65,7 @@ my %qc_data;
 my $recipe_name = q{japan};
 my $sample_id   = q{sample_1};
 my $value       = q{konnichi wa};
-set_qc_data_case_recipe_info(
+set_qc_data_recipe_info(
     {
         key          => $key,
         qc_data_href => \%qc_data,
@@ -78,7 +78,7 @@ set_qc_data_case_recipe_info(
 is( $qc_data{recipe}{$recipe_name}{$key}, $value, q{Set case level recipe info} );
 
 ## Given a sample id and infile
-set_qc_data_case_recipe_info(
+set_qc_data_recipe_info(
     {
         key          => $key,
         infile       => $infile,

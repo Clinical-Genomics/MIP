@@ -33,7 +33,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants qw{ $NEWLINE $SPACE };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
-use MIP::Qc_data qw{ set_qc_data_case_recipe_info set_qc_data_case_recipe_version };
+use MIP::Qc_data qw{ set_qc_data_recipe_info set_qc_data_case_recipe_version };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
@@ -148,7 +148,7 @@ set_qc_data_case_recipe_version(
 );
 
 ## Set regexp file to qc_data hash
-set_qc_data_case_recipe_info(
+set_qc_data_recipe_info(
     {
         key          => q{regexp_file},
         qc_data_href => \%qc_data,
@@ -524,18 +524,14 @@ sub sample_qc {
                 ## Check gender for sample_id
                 if ( $recipe eq q{chanjo_sexcheck} ) {
 
-                    my $chanjo_sexcheck_gender =
-                      $qc_data_href->{sample}{$sample_id}{$infile}{chanjo_sexcheck}
-                      {gender};
-
                     ## Check that assumed gender is supported by coverage on chrX and chrY
                     chanjo_gender_check(
                         {
-                            chanjo_sexcheck_gender => $chanjo_sexcheck_gender,
-                            infile                 => $infile,
-                            qc_data_href           => $qc_data_href,
-                            sample_id              => $sample_id,
-                            sample_info_href       => $sample_info_href,
+                            infile           => $infile,
+                            qc_data_href     => $qc_data_href,
+                            recipe_name      => $recipe,
+                            sample_id        => $sample_id,
+                            sample_info_href => $sample_info_href,
                         }
                     );
                 }
@@ -743,7 +739,7 @@ sub add_to_qc_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Qc_data qw{ set_qc_data_case_recipe_info };
+    use MIP::Qc_data qw{ set_qc_data_recipe_info };
 
   REG_EXP_ATTRIBUTE:
     for my $attribute ( keys %{ $regexp_href->{$recipe} } ) {
@@ -756,7 +752,7 @@ sub add_to_qc_data {
 
                 my $data_metric = $qc_recipe_data_href->{$recipe}{$attribute}[0];
 
-                set_qc_data_case_recipe_info(
+                set_qc_data_recipe_info(
                     {
                         key          => $attribute,
                         infile       => $infile,

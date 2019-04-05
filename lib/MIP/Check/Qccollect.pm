@@ -31,30 +31,24 @@ BEGIN {
 
 sub chanjo_gender_check {
 
-## Function : Checks that the gender predicted by chanjo_sexcheck is confirmed in the pedigee for the sample
+## Function : Checks that the gender predicted by chanjo sexcheck is confirmed in the pedigee for the sample
 ## Returns  :
-## Arguments: $chanjo_sexcheck_gender => Chanjo calculated gender
-##          : $infile                 => Infile {REF}
+## Arguments: $infile                 => Infile {REF}
 ##          : $qc_data_href           => Qc data hash {REF}
+##          : $recipe_name            => Recipe to set attributes for
 ##          : $sample_id              => Sample ID
 ##          : $sample_info_href       => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $chanjo_sexcheck_gender;
     my $infile;
     my $qc_data_href;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
 
     my $tmpl = {
-        chanjo_sexcheck_gender => {
-            defined     => 1,
-            required    => 1,
-            store       => \$chanjo_sexcheck_gender,
-            strict_type => 1,
-        },
         infile => {
             defined     => 1,
             required    => 1,
@@ -66,6 +60,12 @@ sub chanjo_gender_check {
             defined     => 1,
             required    => 1,
             store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_id => {
@@ -86,6 +86,18 @@ sub chanjo_gender_check {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+    use MIP::Qc_data qw{ get_qc_data_sample_recipe_attributes set_qc_data_recipe_info };
+
+    ## Get chanjo estimated gender
+    my $chanjo_sexcheck_gender = get_qc_data_sample_recipe_attributes(
+        {
+            attribute    => q{gender},
+            infile       => $infile,
+            recipe_name  => $recipe_name,
+            sample_id    => $sample_id,
+            qc_data_href => $qc_data_href,
+        }
+    );
 
     ## Get sample id sex
     my $sample_id_sex = get_pedigree_sample_id_attributes(
@@ -96,6 +108,7 @@ sub chanjo_gender_check {
         }
     );
 
+    ## Create map of allowed keys per sex
     my %gender_map = (
         female => {
             female => undef,
@@ -115,16 +128,23 @@ sub chanjo_gender_check {
         },
     );
 
+## Set initial gender check status
+    my $status = q{FAIL};
+
     if ( exists $gender_map{$chanjo_sexcheck_gender}{$sample_id_sex} ) {
 
-        $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
-          q{PASS};
-        return;
+        $status = q{PASS};
     }
-
-    $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
-      q{FAIL};
-
+    set_qc_data_recipe_info(
+        {
+            key          => q{gender_check},
+            infile       => $infile,
+            qc_data_href => $qc_data_href,
+            recipe_name  => $recipe_name,
+            sample_id    => $sample_id,
+            value        => $status,
+        }
+    );
     return;
 }
 
