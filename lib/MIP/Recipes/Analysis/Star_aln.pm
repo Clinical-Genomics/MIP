@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln };
@@ -279,6 +279,7 @@ sub analysis_star_aln {
                   $active_parameter_href->{align_sjdb_overhang_min},
                 chim_junction_overhang_min =>
                   $active_parameter_href->{chim_junction_overhang_min},
+                chim_out_type       => $active_parameter_href->{chim_out_type},
                 chim_segment_min    => $active_parameter_href->{chim_segment_min},
                 genome_dir_path     => $referencefile_dir_path,
                 infile_paths_ref    => \@fastq_files,

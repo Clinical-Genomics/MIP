@@ -16,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,14 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_aln star_genome_generate };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub star_aln {
 
@@ -50,6 +48,7 @@ sub star_aln {
 ##           : $outfile_name_prefix        => Prefix of the output files (remember to end with a ".")
 ##           : $out_sam_strand_field       => Cufflinks-like strand field flag
 ##           : $out_sam_type               => Format of the output aligned reads
+##           : $pe_overlap_nbases_min      => Min overlapp to trigger merging and realignment
 ##           : $quant_mode                 => Types of quantification requested
 ##           : $read_files_command         => A command which will be applied to the input files
 ##           : $stderrfile_path            => Stderrfile path
@@ -62,9 +61,11 @@ sub star_aln {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
+    my $chim_out_type;
     my $genome_dir_path;
     my $infile_paths_ref;
     my $outfile_name_prefix;
+    my $pe_overlap_nbases_min;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -100,10 +101,19 @@ sub star_aln {
             store       => \$align_sjdb_overhang_min,
             strict_type => 1,
         },
-
         chim_junction_overhang_min => {
             default     => 12,
             store       => \$chim_junction_overhang_min,
+            strict_type => 1,
+        },
+        chim_out_type => {
+            allow => [
+                undef,
+                qw{ Junctions SeparateSAMold WithinBAM },
+                q{WithinBAM HardClip},
+                q{WithinBAM SoftClip}
+            ],
+            store       => \$chim_out_type,
             strict_type => 1,
         },
         chim_segment_min => {
@@ -152,6 +162,10 @@ sub star_aln {
         out_sam_type => {
             default     => q{BAM} . $SPACE . q{SortedByCoordinate},
             store       => \$out_sam_type,
+            strict_type => 1,
+        },
+        pe_overlap_nbases_min => {
+            store       => \$pe_overlap_nbases_min,
             strict_type => 1,
         },
         quant_mode => {
@@ -228,12 +242,20 @@ sub star_aln {
           q{--chimJunctionOverhangMin} . $SPACE . $chim_junction_overhang_min;
 
     }
+    if ($chim_out_type) {
+        push @commands, q{--chimOutType} . $SPACE . $chim_out_type;
+
+    }
     if ($chim_segment_read_gap_max) {
         push @commands, q{--chimSegmentReadGapMax} . $SPACE . $chim_segment_read_gap_max;
 
     }
     if ($limit_bam_sort_ram) {
         push @commands, q{--limitBAMsortRAM} . $SPACE . $limit_bam_sort_ram;
+
+    }
+    if ($pe_overlap_nbases_min) {
+        push @commands, q{--peOverlapNbasesMin} . $SPACE . $pe_overlap_nbases_min;
 
     }
     if ($quant_mode) {
