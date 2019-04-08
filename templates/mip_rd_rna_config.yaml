@@ -27,6 +27,7 @@ load_env:
     method: conda
     star_aln:
     star_fusion:
+    trim_galore_ar:
   MIP_rd_rna_vep:
     method: conda
     installation: evep

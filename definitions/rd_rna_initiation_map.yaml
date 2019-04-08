@@ -3,8 +3,10 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     - gzip_fastq
 # Parallel chains (branch)
-  - CHAIN_FASTQ:
+  - CHAIN_FASTQC:
     - fastqc_ar
+  - CHAIN_MAIN:
+    - trim_galore_ar
   - CHAIN_DE:
     - salmon_quant
     - blobfish
