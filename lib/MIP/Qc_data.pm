@@ -27,18 +27,138 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ get_qc_data_sample_recipe_attributes set_qc_data_recipe_info set_qc_data_case_recipe_version };
+      qw{ add_qc_data_recipe_info get_qc_data_case_recipe_attributes get_qc_data_sample_recipe_attributes set_qc_data_recipe_info set_qc_data_case_recipe_version };
+}
+
+sub add_qc_data_recipe_info {
+
+## Function : Add recipe arbitrary info in qc_data hash
+## Returns  :
+## Arguments: $infile       => Infile key
+##          : $key          => Metafile tag
+##          : $qc_data_href => Qc_data hash {REF}
+##          : $recipe_name  => Recipe to set attributes for
+##          : $sample_id    => Sample ID
+##          : $value        => Value to store
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile;
+    my $key;
+    my $qc_data_href;
+    my $recipe_name;
+    my $sample_id;
+    my $value;
+
+    my $tmpl = {
+        infile => {
+            store       => \$infile,
+            strict_type => 1,
+        },
+        key => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$key,
+        },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        value => {
+            defined     => 1,
+            required    => 1,
+            store       => \$value,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set recipe key value pair for arbitrary info on sample and infile level
+    if ( $sample_id and $infile ) {
+
+        ## Add to array
+        push @{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe_name}{$key} },
+          $value;
+        return;
+    }
+
+    ## Add recipe key value pair for arbitrary info on case level
+    push @{ $qc_data_href->{recipe}{$recipe_name}{$key} }, $value;
+    return;
+}
+
+sub get_qc_data_case_recipe_attributes {
+
+## Function : Get case recipe attributes from qc_data hash
+## Returns  : "$attribute" or "attributes_ref" or "$attribute_href"
+## Arguments: $attribute    => Attribute key
+##          : $qc_data_href => Sample info hash {REF}
+##          : $recipe_name  => Recipe to get attributes from
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $qc_data_href;
+    my $recipe_name;
+
+    my $tmpl = {
+        attribute => {
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get and return attribute value
+    if ( defined $attribute && $attribute ) {
+
+        return $qc_data_href->{recipe}{$recipe_name}{$attribute};
+    }
+
+    ## Return recipe attribute hash
+    return %{ $qc_data_href->{recipe}{$recipe_name} };
 }
 
 sub get_qc_data_sample_recipe_attributes {
 
 ## Function : Get sample recipe attributes from qc_data hash
 ## Returns  : "$attribute" or "$attribute_href"
-## Arguments: $attribute        => Attribute key
-##          : $infile           => Infile key
-##          : $qc_data_href     => Sample info hash {REF}
-##          : $recipe_name      => Recipe to get attributes from
-##          : $sample_id        => Sample id
+## Arguments: $attribute    => Attribute key
+##          : $infile       => Infile key
+##          : $qc_data_href => Sample info hash {REF}
+##          : $recipe_name  => Recipe to get attributes from
+##          : $sample_id    => Sample id
 
     my ($arg_href) = @_;
 
@@ -102,7 +222,7 @@ sub set_qc_data_recipe_info {
 ##          : $qc_data_href => Qc_data hash {REF}
 ##          : $recipe_name  => Recipe to set attributes for
 ##          : $sample_id    => Sample ID
-##          : $value        => Version of program executable
+##          : $value        => Value to store
 
     my ($arg_href) = @_;
 

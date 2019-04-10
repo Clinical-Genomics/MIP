@@ -317,6 +317,7 @@ sub case_qc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Qccollect qw{ plink_gender_check };
     use MIP::Qc_data qw{ set_qc_data_case_recipe_version };
     use MIP::Sample_info qw{ get_sample_info_case_recipe_attributes };
 
@@ -379,26 +380,14 @@ sub case_qc {
             and $evaluate_plink_gender )
         {
 
-          SAMPLE_SEX:
-            foreach my $data_metric (
-                @{ $qc_data_href->{recipe}{plink_sexcheck}{sample_sexcheck} } )
-            {
-
-                ## Array ref
-                my @sexchecks = split q{:}, $data_metric;
-
-                ## Check that assumed gender is supported by variants on chrX and chrY
-                _plink_gender_check(
-                    {
-                        plink_sexcheck_gender => $sexchecks[1],
-                        qc_data_href          => $qc_data_href,
-                        sample_id             => $sexchecks[0],
-                        sample_info_href      => $sample_info_href,
-                    }
-                );
-            }
+            ## Check that assumed gender is supported by variants on chrX and chrY
+            plink_gender_check(
+                {
+                    qc_data_href     => $qc_data_href,
+                    sample_info_href => $sample_info_href,
+                }
+            );
         }
-
     }
     return;
 }
@@ -1357,91 +1346,6 @@ sub relation_check {
 
             $qc_data_href->{sample}{$sample_id}{relation_check} = "PASS";
         }
-    }
-    return;
-}
-
-sub _plink_gender_check {
-
-##Function : Checks that the gender predicted by Plink sexcheck is confirmed in the pedigee for the sample
-##Returns  :
-##Arguments: $plink_sexcheck_gender => Plink calculated gender
-##         : $qc_data_href          => Qc data hash {REF}
-##         : $sample_id             => Sample id
-##         : $sample_info_href      => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $plink_sexcheck_gender;
-    my $qc_data_href;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        plink_sexcheck_gender => {
-            defined     => 1,
-            required    => 1,
-            store       => \$plink_sexcheck_gender,
-            strict_type => 1,
-        },
-        qc_data_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$qc_data_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
-
-    ## Get sample id sex
-    my $sample_id_sex = get_pedigree_sample_id_attributes(
-        {
-            attribute        => q{sex},
-            sample_id        => $sample_id,
-            sample_info_href => $sample_info_href,
-        }
-    );
-
-    ## Female
-    if (    $plink_sexcheck_gender eq q{2}
-        and $sample_id_sex =~ /2|female/ )
-    {
-
-        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $sample_id . q{:PASS};
-    }
-    elsif ( $plink_sexcheck_gender eq q{1}
-        and $sample_id_sex =~ /1|^male/ )
-    {
-        ## Male
-
-        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $sample_id . q{:PASS};
-    }
-    elsif ( $sample_id_sex =~ /other|unknown/ ) {
-        ## Other|Unknown
-
-        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $sample_id . q{:PASS};
-    }
-    else {
-
-        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $sample_id . q{:FAIL};
     }
     return;
 }
