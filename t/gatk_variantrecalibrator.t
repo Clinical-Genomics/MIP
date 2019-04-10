@@ -132,7 +132,7 @@ my %specific_argument = (
     },
     ts_tranches_ref => {
         inputs_ref      => [qw{ 100 99.9 }],
-        expected_output => q{--TStranche 100 --TStranche 99.9},
+        expected_output => q{-tranche 100 -tranche 99.9},
     },
     trust_all_polymorphic => {
         input           => 1,

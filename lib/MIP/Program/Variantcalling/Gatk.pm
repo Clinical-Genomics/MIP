@@ -682,7 +682,7 @@ sub gatk_variantrecalibrator {
 
     if ($ts_tranches_ref) {
 
-        push @commands, q{--TStranche} . $SPACE . join $SPACE . q{--TStranche} . $SPACE,
+        push @commands, q{-tranche} . $SPACE . join $SPACE . q{-tranche} . $SPACE,
           @{$ts_tranches_ref};
     }
 
