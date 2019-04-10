@@ -728,7 +728,7 @@ sub add_to_qc_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Qc_data qw{ set_qc_data_recipe_info };
+    use MIP::Qc_data qw{ add_qc_data_recipe_info set_qc_data_recipe_info };
 
   REG_EXP_ATTRIBUTE:
     for my $attribute ( keys %{ $regexp_href->{$recipe} } ) {
@@ -760,16 +760,13 @@ sub add_to_qc_data {
                   my $data_metric ( @{ $qc_recipe_data_href->{$recipe}{$attribute} } )
                 {
 
-                    if ( $sample_id and $infile ) {
-
-                        push @{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe}
-                              {$attribute} }, $data_metric;
-                    }
-                    else {
-
-                        push @{ $qc_data_href->{recipe}{$recipe}{$attribute} },
-                          $data_metric;
-                    }
+                              add_qc_data_recipe_info({key => $attribute,
+                              infile => $infile,
+                                qc_data_href => $qc_data_href,
+                                recipe_name => $recipe,
+                                sample_id => $sample_id,
+                                value => $data_metric,
+                              });
                 }
                 if (
                     defined $qc_data_href->{recipe}{relation_check}{sample_relation_check}
