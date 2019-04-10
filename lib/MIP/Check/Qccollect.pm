@@ -183,6 +183,7 @@ sub plink_gender_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Qc_data qw{ add_qc_data_recipe_info get_qc_data_case_recipe_attributes };
     use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
 
     ## Create map of allowed keys per sex
@@ -202,10 +203,16 @@ sub plink_gender_check {
         },
     );
 
+    my $data_metrics_ref = get_qc_data_case_recipe_attributes(
+        {
+            attribute    => q{sample_sexcheck},
+            qc_data_href => \%{$qc_data_href},
+            recipe_name  => q{plink_sexcheck},
+        }
+    );
+
   SAMPLE_SEX:
-    foreach
-      my $data_metric ( @{ $qc_data_href->{recipe}{plink_sexcheck}{sample_sexcheck} } )
-    {
+    foreach my $data_metric ( @{$data_metrics_ref} ) {
 
         ## Array
         my ( $sample_id, $plink_sexcheck_gender, $unexpected_data ) = split $COLON,
@@ -228,11 +235,26 @@ sub plink_gender_check {
         );
 
         if ( exists $gender_map{$plink_sexcheck_gender}{$sample_id_sex} ) {
-            push @{ $qc_data_href->{recipe}{plink_gender_check} }, $sample_id . q{:PASS};
+
+            add_qc_data_recipe_info(
+                {
+                    key          => q{plink_gender_check},
+                    qc_data_href => $qc_data_href,
+                    recipe_name  => q{plink_sexcheck},
+                    value        => $sample_id . q{:PASS},
+                }
+            );
             next SAMPLE_SEX;
         }
 
-        push @{ $qc_data_href->{recipe}{plink_gender_check} }, $sample_id . q{:FAIL};
+        add_qc_data_recipe_info(
+            {
+                key          => q{plink_gender_check},
+                qc_data_href => $qc_data_href,
+                recipe_name  => q{plink_sexcheck},
+                value        => $sample_id . q{:FAIL},
+            }
+        );
     }
     return;
 }

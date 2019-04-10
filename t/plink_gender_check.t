@@ -17,6 +17,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -59,8 +60,12 @@ diag(   q{Test plink_gender_check from Qccollect.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given pedigree, qc_data gender and sample_info sex, when represented by letters
-my %expected_qc_data = ( recipe =>
-      { plink_gender_check => [qw{ ADM1059A1:PASS ADM1059A2:PASS ADM1059A3:PASS }], }, );
+my %expected_qc_data = (
+    recipe => {
+        plink_sexcheck =>
+          { plink_gender_check => [qw{ ADM1059A1:PASS ADM1059A2:PASS ADM1059A3:PASS }], },
+    },
+);
 my %qc_data = (
     recipe => {
         plink_sexcheck =>
@@ -84,8 +89,8 @@ plink_gender_check(
 
 ## Then PASS should be added to qc_data for sample
 is_deeply(
-    \@{ $qc_data{recipe}{plink_gender_check} },
-    \@{ $expected_qc_data{recipe}{plink_gender_check} },
+    \@{ $qc_data{recipe}{plink_sexcheck}{plink_gender_check} },
+    \@{ $expected_qc_data{recipe}{plink_sexcheck}{plink_gender_check} },
     q{Passed gender as numbers}
 );
 
@@ -96,7 +101,7 @@ $sample_info{sample}{ADM1059A2}{sex} = q{male};
 $sample_info{sample}{ADM1059A3}{sex} = q{unknown};
 
 # Remove prior plink gender check
-delete $qc_data{recipe}{plink_gender_check};
+delete $qc_data{recipe}{plink_sexcheck}{plink_gender_check};
 
 plink_gender_check(
     {
@@ -107,8 +112,8 @@ plink_gender_check(
 
 ## Then PASS should be added to qc_data for sample
 is_deeply(
-    \@{ $qc_data{recipe}{plink_gender_check} },
-    \@{ $expected_qc_data{recipe}{plink_gender_check} },
+    \@{ $qc_data{recipe}{plink_sexcheck}{plink_gender_check} },
+    \@{ $expected_qc_data{recipe}{plink_sexcheck}{plink_gender_check} },
     q{Passed as letters}
 );
 
@@ -118,8 +123,8 @@ $qc_data{recipe}{plink_sexcheck}{sample_sexcheck} =
   [qw{ ADM1059A1:1 ADM1059A2:1 ADM1059A3:0 }];
 
 # Remove prior plink gender check
-delete $qc_data{recipe}{plink_gender_check};
-$expected_qc_data{recipe}{plink_gender_check} =
+delete $qc_data{recipe}{plink_sexcheck}{plink_gender_check};
+$expected_qc_data{recipe}{plink_sexcheck}{plink_gender_check} =
   [qw{ ADM1059A1:FAIL ADM1059A2:PASS ADM1059A3:PASS }];
 
 plink_gender_check(
@@ -130,9 +135,24 @@ plink_gender_check(
 );
 
 is_deeply(
-    \@{ $qc_data{recipe}{plink_gender_check} },
-    \@{ $expected_qc_data{recipe}{plink_gender_check} },
+    \@{ $qc_data{recipe}{plink_sexcheck}{plink_gender_check} },
+    \@{ $expected_qc_data{recipe}{plink_sexcheck}{plink_gender_check} },
     q{Failed gender }
 );
+
+## Given an incorrect metrics when trailing garbage
+$qc_data{recipe}{plink_sexcheck}{sample_sexcheck} =
+  [qw{ ADM1059A1:1:garbage ADM1059A2:1 ADM1059A3:0 }];
+
+trap {
+    plink_gender_check(
+        {
+            qc_data_href     => \%qc_data,
+            sample_info_href => \%sample_info,
+        }
+    )
+};
+## Then exit and throw FATAL log message
+like( $trap->stderr, qr/Unexpected\s+trailing/xms, q{Throw warning log message} );
 
 done_testing();
