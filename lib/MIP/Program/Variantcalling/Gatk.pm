@@ -30,7 +30,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -472,6 +472,7 @@ sub gatk_variantrecalibrator {
 ##          : $temp_directory        => Redirect tmp files to java temp
 ##          : $tranches_file_path    => The output tranches file used by ApplyRecalibration
 ##          : $trust_all_polymorphic => Trust that all the input training sets' unfiltered records contain only polymorphic sites to speed up computation
+##          : $ts_tranches_ref            => Levels of truth sensitivity at which to slice the data. (in percent, that is 1.0 for 1 percent)
 ##          : $verbosity	     => Set the minimum level of logging
 ##          : $xargs_mode            => Set if the program will be executed via xargs
 
@@ -494,6 +495,7 @@ sub gatk_variantrecalibrator {
     my $temp_directory;
     my $tranches_file_path;
     my $trust_all_polymorphic;
+    my $ts_tranches_ref;
 
     ## Default(s)
     my $java_use_large_pages;
@@ -594,6 +596,11 @@ sub gatk_variantrecalibrator {
             store       => \$trust_all_polymorphic,
             strict_type => 1,
         },
+        ts_tranches_ref => {
+            default     => [],
+            store       => \$ts_tranches_ref,
+            strict_type => 1,
+        },
         verbosity => {
             allow       => [qw{ INFO ERROR FATAL }],
             default     => q{INFO},
@@ -672,6 +679,12 @@ sub gatk_variantrecalibrator {
     push @commands,
       q{--resource} . $COLON . join $SPACE . q{--resource} . $COLON,
       @{$resources_ref};
+
+    if ($ts_tranches_ref) {
+
+        push @commands, q{--TStranche} . $SPACE . join $SPACE . q{--TStranche} . $SPACE,
+          @{$ts_tranches_ref};
+    }
 
     ## Add path to tranches file
     push @commands, q{--tranches-file} . $SPACE . $tranches_file_path;

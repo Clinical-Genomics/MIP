@@ -179,7 +179,7 @@ recipe_core_number:
     plink: 1
     qccollect_ar: 1
     rhocall_ar: 15
-    rtg_vcfeval: 1
+    rtg_vcfeval: 36
     sacct: 1
     sambamba_depth: 1
     samtools_subsample_mt: 1
@@ -1063,7 +1063,7 @@ bcftools_mpileup:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _mpileup
   program_executables:
    - bcftools
@@ -1094,7 +1094,7 @@ freebayes_ar:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _freebayes
   program_executables:
    - freebayes
@@ -1293,7 +1293,7 @@ gatk_variantrecalibration_indel_tsfilter_level:
   associated_recipe:
    - gatk_variantrecalibration
   data_type: SCALAR
-  default: 99.9
+  default: 99.99
   type: recipe_argument
 gatk_variantrecalibration_keep_unnormalised:
   associated_recipe:
@@ -1307,7 +1307,7 @@ gatk_variantrecalibration_resource_indel:
   data_type: HASH
   default:
      GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
-     GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,known=true,training=true,truth=true,prior=12.0"
+     GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,known=false,training=true,truth=true,prior=12.0"
   exists_check: file
   reference: reference_dir
   type: path
@@ -1318,7 +1318,7 @@ gatk_variantrecalibration_resource_snv:
   default:
      GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
      GRCh37_hapmap_-3.3-.vcf: "hapmap,known=false,training=true,truth=true,prior=15.0"
-     GRCh37_1000g_omni_-2.5-.vcf: "omni,known=false,training=true,truth=false,prior=12.0"
+     GRCh37_1000g_omni_-2.5-.vcf: "omni,known=false,training=true,truth=truth,prior=12.0"
      GRCh37_1000g_snps_high_confidence_-phase1-.vcf: "1000G,known=false,training=true,truth=false,prior=10.0"
   exists_check: file
   reference: reference_dir
@@ -1333,7 +1333,19 @@ gatk_variantrecalibration_snv_tsfilter_level:
   associated_recipe:
    - gatk_variantrecalibration
   data_type: SCALAR
-  default: 99.9
+  default: 99.99
+  type: recipe_argument
+gatk_variantrecalibration_ts_tranches:
+  associated_recipe:
+   - gatk_variantrecalibration
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - 100
+   - 99.99
+   - 99.9
+   - 99.0
+   - 90
   type: recipe_argument
 gatk_variantrecalibration_trust_all_polymorphic:
   associated_recipe:

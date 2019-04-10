@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.22;
+our $VERSION = 1.23;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1539,6 +1539,15 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
               q{Truth sensitivity level for snvs at which to start filtering},
             is  => q{rw},
             isa => Num,
+        )
+    );
+
+    option(
+        q{gatk_variantrecalibration_ts_tranches} => (
+            cmd_aliases   => [qw{ gvrtst }],
+            documentation => q{Tranches to slice data},
+            is            => q{rw},
+            isa           => ArrayRef,
         )
     );
 
