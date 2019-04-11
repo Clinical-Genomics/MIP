@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE };
+use MIP::Constants qw{ $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_multiqc };
@@ -217,8 +217,17 @@ sub analysis_multiqc {
             ## Collect QC metadata info for later use
             set_recipe_metafile_in_sample_info(
                 {
-                    metafile_tag     => $report_id,
+                    metafile_tag     => $report_id . $UNDERSCORE . q{html},
                     path             => catfile( $outdir_path, q{multiqc_report.html} ),
+                    recipe_name      => q{multiqc},
+                    sample_info_href => $sample_info_href,
+                }
+            );
+            set_recipe_metafile_in_sample_info(
+                {
+                    metafile_tag => $report_id . $UNDERSCORE . q{json},
+                    path =>
+                      catfile( $outdir_path, q{multiqc_data}, q{multiqc_data.json} ),
                     recipe_name      => q{multiqc},
                     sample_info_href => $sample_info_href,
                 }
