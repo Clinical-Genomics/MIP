@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -69,7 +69,7 @@ diag(   q{Test analysis_gatk_variantrecalibration_wgs from Gatk_variantrecalibra
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name = q{gatk_variantrecalibration_wgs};
+my $recipe_name    = q{gatk_variantrecalibration_wgs};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -93,6 +93,7 @@ $active_parameter{gatk_variantrecalibration_indel_tsfilter_level} =
 $active_parameter{gatk_calculategenotypeposteriors}              = 1;
 $active_parameter{gatk_variantrecalibration_snv_max_gaussians}   = 1;
 $active_parameter{gatk_variantrecalibration_indel_max_gaussians} = 1;
+$active_parameter{gatk_variantrecalibration_ts_tranches}         = [qw{ 100 99.9 }];
 
 my %file_info = test_mip_hashes(
     {

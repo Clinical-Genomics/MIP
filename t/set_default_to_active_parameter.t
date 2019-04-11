@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -121,7 +121,7 @@ is( $active_parameter{bcftools_mpileup_filter_variant},
 my %expected_resource_indel = (
     q{GRCh37_dbsnp_-138-.vcf} => q{dbsnp,known=true,training=false,truth=false,prior=2.0},
     q{GRCh37_mills_and_1000g_indels_-gold_standard-.vcf} =>
-      q{mills,known=true,training=true,truth=true,prior=12.0},
+      q{mills,known=false,training=true,truth=true,prior=12.0},
 );
 is_deeply( \%{ $active_parameter{gatk_variantrecalibration_resource_indel} },
     \%expected_resource_indel, 'Set default for hash parameter' );
