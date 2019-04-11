@@ -98,7 +98,7 @@ qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_pat
 ### Analysis
 ### Programs
 ## Parameters
-gatk_combinevariants_prioritize_caller: gatk,bcftools,freebayes
+gatk_combinevariants_prioritize_caller: gatk
 gatk_gathervcfs_bcf_file: 1
 gatk_path: cluster_constant_path!
 gatk_haplotypecaller_no_soft_clipped_bases: 1
