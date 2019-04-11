@@ -292,7 +292,7 @@ sub analysis_gatk_combinevariantcallsets {
         gnu_cp(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => q{KALLE},        #$file_path{infile_path},
+                infile_path  => $file_path{infile_path},
                 outfile_path => $outfile_path,
             }
         );
