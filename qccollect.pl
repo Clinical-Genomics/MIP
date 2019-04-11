@@ -728,6 +728,7 @@ sub add_to_qc_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Qccollect qw{ relation_check };
     use MIP::Qc_data qw{ add_qc_data_recipe_info set_qc_data_recipe_info };
 
   REG_EXP_ATTRIBUTE:
@@ -760,13 +761,16 @@ sub add_to_qc_data {
                   my $data_metric ( @{ $qc_recipe_data_href->{$recipe}{$attribute} } )
                 {
 
-                              add_qc_data_recipe_info({key => $attribute,
-                              infile => $infile,
-                                qc_data_href => $qc_data_href,
-                                recipe_name => $recipe,
-                                sample_id => $sample_id,
-                                value => $data_metric,
-                              });
+                    add_qc_data_recipe_info(
+                        {
+                            key          => $attribute,
+                            infile       => $infile,
+                            qc_data_href => $qc_data_href,
+                            recipe_name  => $recipe,
+                            sample_id    => $sample_id,
+                            value        => $data_metric,
+                        }
+                    );
                 }
                 if (
                     defined $qc_data_href->{recipe}{relation_check}{sample_relation_check}
@@ -996,6 +1000,9 @@ sub evaluate_sample_qc_parameters {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Skip evaluation for these infiles
+    my @skip_infile = qw{ evaluation Undetermined };
+
   SAMPLE_LEVEL:
     for my $sample_id ( keys %{ $qc_data_href->{sample} } ) {
 
@@ -1003,10 +1010,7 @@ sub evaluate_sample_qc_parameters {
         for my $infile ( keys %{ $qc_data_href->{sample}{$sample_id} } ) {
 
             ## Special case skip evaluation
-            next INFILE if ( $infile =~ /evaluation/ );
-
-            ## Special case do not evaluate fastq files with Undetermined in file name
-            next INFILE if ( $infile =~ /Undetermined/i );
+            next INFILE if ( any { $infile =~ /$_/i } @skip_infile );
 
             ## Special case
             if ( $infile =~ /relation_check/ ) {
@@ -1088,11 +1092,11 @@ sub check_metric {
 
 ## Function : Check and add result of check if below threshold
 ## Returns  :
-## Arguments: $qc_data_href           => Qc data hash {REF}
-##          : $reference_metric_href  => Metrics to evaluate
-##          : $recipe                 => The recipe to examine
-##          : $metric                 => Metric to evaluate
-##          : $qc_metric_value        => Qc metric value
+## Arguments: $qc_data_href          => Qc data hash {REF}
+##          : $reference_metric_href => Metrics to evaluate
+##          : $recipe                => The recipe to examine
+##          : $metric                => Metric to evaluate
+##          : $qc_metric_value       => Qc metric value
 
     my ($arg_href) = @_;
 
@@ -1149,199 +1153,6 @@ sub check_metric {
 
             $status .= $recipe . q{_} . $metric . q{:} . $qc_metric_value;
             push @{ $qc_data_href->{evaluation}{$recipe} }, $status;
-        }
-    }
-    return;
-}
-
-sub relation_check {
-
-## Function : Uses the .mibs file produced by PLINK to test if case members are indeed related.
-## Returns  :
-## Arguments: $qc_data_href            => Qc data hash {REF}
-##          : $relationship_values_ref => All relationship estimations {REF}
-##          : $sample_info_href        => Info on samples and case hash {REF}
-##          : $sample_orders_ref       => The sample order so that correct estimation can be connected to the correct sample_ids {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $qc_data_href;
-    my $relationship_values_ref;
-    my $sample_info_href;
-    my $sample_orders_ref;
-
-    my $tmpl = {
-        qc_data_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$qc_data_href,
-            strict_type => 1,
-        },
-        relationship_values_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$relationship_values_ref,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-        sample_orders_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_orders_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-# Stores case relations and pairwise comparisons case{$sample_id}{$sample_id}["column"] -> [pairwise]
-    my %case;
-    my $incorrect_relation = 0;
-    my @pairwise_comparisons;
-    my $sample_id_counter = 0;
-
-    ## Copy array to avoid removing actual values in later splice
-    my @relationship_values = @{$relationship_values_ref};
-
-    ## Splice all relationship estimations from regexp into pairwise comparisons calculated for each sample_id
-  RELATIONSHIP:
-    foreach my $relationship (@relationship_values) {
-
-        ## Splices array into each sample_ids line
-        my @pairwise_comparisons = splice @relationship_values, 0,
-          scalar @{$sample_orders_ref};
-
-        ## All columns in .mibs file
-      COLUMN:
-        while ( my ( $column_index, $sample_id ) = each @{$sample_orders_ref} ) {
-
-            ## Store sample_id, case membersID (including self) and each pairwise comparison. Uses array to accomodate sibling info.
-            my $sample            = $sample_orders_ref->[$sample_id_counter];
-            my $sample_to_compare = $sample_orders_ref->[$column_index];
-            push
-              @{ $case{$sample}{$sample_to_compare} },
-              $pairwise_comparisons[$column_index];
-        }
-        ## Increment counter for next sample to use as base in comparisons
-        $sample_id_counter++;
-    }
-
-    ## Father_id for the case
-    my $father_id = q{YYY};
-
-    ## Mother_id for the case
-    my $mother_id = q{XXX};
-
-    ## Collect father and mother id
-  SAMPLE_ID:
-    for my $sample_id ( keys %case ) {
-
-        ## Currently only 1 father or Mother per pedigree is supported
-
-        ## Save father_id if not 0
-        if ( $sample_info_href->{sample}{$sample_id}{father} ne 0 ) {
-
-            $father_id = $sample_info_href->{sample}{$sample_id}{father};
-        }
-
-        ## Save mother_id if not 0
-        if ( $sample_info_href->{sample}{$sample_id}{mother} ne 0 ) {
-
-            $mother_id = $sample_info_href->{sample}{$sample_id}{mother};
-        }
-    }
-
-  SAMPLE_ID:
-    for my $sample_id ( keys %case ) {
-
-      MEMBER:
-        for my $members ( keys %{ $case{$sample_id} } ) {
-            ## For every relation within case (mother/father/child)
-
-          RELATIVES:
-            for (
-                my $members_count = 0 ;
-                $members_count < scalar( @{ $case{$sample_id}{$members} } ) ;
-                $members_count++
-              )
-            {
-                ## Necessary for siblings
-
-                ## Should only hit self
-                if ( $case{$sample_id}{$members}[$members_count] == 1 ) {
-
-                    if ( $sample_id eq $members ) {
-
-#print "Self: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
-                    }
-                    else {
-
-                        $incorrect_relation++;
-                        $qc_data_href->{sample}{$sample_id}{relation_check} =
-                          "FAIL: Duplicated sample?;";
-
-#print  "Incorrect should be self: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
-                    }
-                }
-                elsif ( $case{$sample_id}{$members}[$members_count] >= 0.70 )
-                { #Should include parent to child and child to siblings unless inbreed parents
-
-                    if (
-                        ( ( $sample_id ne $father_id ) && ( $sample_id ne $mother_id ) )
-                        || (   ( $members ne $father_id )
-                            && ( $members ne $mother_id ) )
-                      )
-                    {    #Correct
-                         #print "Parent-to-child or child-to-child: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
-                    }
-                    else {
-
-                        $incorrect_relation++;
-                        $qc_data_href->{sample}{$sample_id}{relation_check} =
-                          "FAIL: Parents related?;";
-
-#print "Incorrect: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
-                    }
-                }
-                elsif ( $case{$sample_id}{$members}[$members_count] < 0.70 )
-                {        #Parents unless inbreed
-
-                    if (   ( $sample_id eq $father_id )
-                        && ( $members eq $mother_id ) )
-                    {
-
-#print "Parents: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
-                    }
-                    elsif (( $sample_id eq $mother_id )
-                        && ( $members eq $father_id ) )
-                    {
-
-#print "Parents: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
-                    }
-                    else {
-
-                        $incorrect_relation++;
-                        $qc_data_href->{sample}{$sample_id}{relation_check} =
-                          "FAIL:" . $sample_id . " not related to " . $members . ";";
-
-#print "Incorrect: ".$sample_id,"\t", $members, "\t", $case{$sample_id}{$members}[$members_count], "\n";
-                    }
-                }
-            }
-        }
-        if ( $incorrect_relation == 0 ) {
-
-            $qc_data_href->{sample}{$sample_id}{relation_check} = "PASS";
         }
     }
     return;
