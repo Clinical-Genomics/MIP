@@ -70,6 +70,13 @@ download_pipeline_type:
   data_type: SCALAR
   default: rd_dna
   type: mip
+expansionhunter:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 genomic_superdups:
   analysis_mode: case
   associated_recipe:
@@ -123,9 +130,10 @@ recipe_core_number:
     1000g_omni: 1
     1000g_sites: 1
     1000g_snps: 1
+    clinvar: 1
     dbnsfp: 1
     dbsnp: 1
-    clinvar: 1
+    expansionhunter: 1
     genomic_superdups: 1
     giab: 1
     gnomad: 1
@@ -144,9 +152,10 @@ recipe_time:
     1000g_omni: 1
     1000g_sites: 1
     1000g_snps: 1
+    clinvar: 1
     dbnsfp: 15
     dbsnp: 1
-    clinvar: 1
+    expansionhunter: 1
     genomic_superdups: 1
     giab: 1
     gnomad: 1

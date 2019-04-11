@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -88,6 +88,7 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Clinvar qw{ download_clinvar };
     use MIP::Recipes::Download::Dbnsfp qw{ download_dbnsfp };
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
+    use MIP::Recipes::Download::Expansionhunter qw{ download_expansionhunter };
     use MIP::Recipes::Download::Genomic_superdups qw{ download_genomic_superdups };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipes::Download::Giab qw{ download_giab };
@@ -112,6 +113,7 @@ sub pipeline_download_rd_dna {
         clinvar                => \&download_clinvar,
         dbnsfp                 => \&download_dbnsfp,
         dbsnp                  => \&download_dbsnp,
+        expansionhunter        => \&download_expansionhunter,
         genomic_superdups      => \&download_genomic_superdups,
         giab                   => \&download_giab,
         gnomad                 => \&download_gnomad,
