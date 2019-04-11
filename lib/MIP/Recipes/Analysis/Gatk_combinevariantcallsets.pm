@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -133,6 +133,7 @@ sub analysis_gatk_combinevariantcallsets {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -250,33 +251,53 @@ sub analysis_gatk_combinevariantcallsets {
 
         ## Collect both tag and path in the same string
         $file_path{$variant_caller} = $variant_caller_prio_tag . $SPACE . $infile_path;
+        ## For single caller use - collect infile path without prio tag
+        $file_path{infile_path} = $infile_path;
 
         push @parallel_chains, $parameter_href->{$variant_caller}{chain};
     }
 
-    ## GATK CombineVariants
-    say {$FILEHANDLE} q{## GATK CombineVariants};
-
     my @combine_infile_paths = map { $file_path{$_} } @variant_callers;
-    gatk_combinevariants(
-        {
-            exclude_nonvariants => 1,
-            FILEHANDLE          => $FILEHANDLE,
-            genotype_merge_option =>
-              $active_parameter_href->{gatk_combinevariants_genotype_merge_option},
-            infile_paths_ref     => \@combine_infile_paths,
-            java_jar             => $gatk_jar,
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            logging_level        => $active_parameter_href->{gatk_logging_level},
-            memory_allocation    => q{Xmx2g},
-            outfile_path         => $outfile_path,
-            prioritize_caller =>
-              $active_parameter_href->{gatk_combinevariants_prioritize_caller},
-            referencefile_path => $referencefile_path,
-            temp_directory     => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+
+    ## Check that we have something to combine
+    if ( scalar @variant_callers > 1 ) {
+
+        ## GATK CombineVariants
+        say {$FILEHANDLE} q{## GATK CombineVariants};
+
+        gatk_combinevariants(
+            {
+                exclude_nonvariants => 1,
+                FILEHANDLE          => $FILEHANDLE,
+                genotype_merge_option =>
+                  $active_parameter_href->{gatk_combinevariants_genotype_merge_option},
+                infile_paths_ref     => \@combine_infile_paths,
+                java_jar             => $gatk_jar,
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                logging_level        => $active_parameter_href->{gatk_logging_level},
+                memory_allocation    => q{Xmx2g},
+                outfile_path         => $outfile_path,
+                prioritize_caller =>
+                  $active_parameter_href->{gatk_combinevariants_prioritize_caller},
+                referencefile_path => $referencefile_path,
+                temp_directory     => $temp_directory,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+    else {
+
+        say {$FILEHANDLE} q{## Renaming case to facilitate downstream processing};
+
+        gnu_cp(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => q{KALLE},        #$file_path{infile_path},
+                outfile_path => $outfile_path,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
 
     if ( $active_parameter_href->{gatk_combinevariantcallsets_bcf_file} ) {
 
