@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -276,7 +276,8 @@ sub analysis_gatk_variantrecalibration_wes {
 
         ## Get parameters
         my $max_gaussian_level;
-
+        my @ts_tranches =
+          @{ $active_parameter_href->{gatk_variantrecalibration_ts_tranches} };
         my @annotations =
           @{ $active_parameter_href->{gatk_variantrecalibration_annotations} };
 
@@ -320,6 +321,7 @@ sub analysis_gatk_variantrecalibration_wes {
                 rscript_file_path    => $recal_file_path . $DOT . q{plots.R},
                 temp_directory       => $temp_directory,
                 tranches_file_path   => $recal_file_path . $DOT . q{tranches},
+                ts_tranches_ref      => \@ts_tranches,
                 verbosity            => $active_parameter_href->{gatk_logging_level},
             }
         );
@@ -757,6 +759,8 @@ sub analysis_gatk_variantrecalibration_wgs {
         ## Get parameters
         my $max_gaussian_level;
         my $varrecal_infile_path;
+        my @ts_tranches =
+          @{ $active_parameter_href->{gatk_variantrecalibration_ts_tranches} };
 
         if ( $mode eq q{SNP} ) {
 
@@ -833,6 +837,7 @@ sub analysis_gatk_variantrecalibration_wgs {
                 rscript_file_path     => $recal_file_path . $DOT . q{plots.R},
                 temp_directory        => $temp_directory,
                 tranches_file_path    => $recal_file_path . $DOT . q{tranches},
+                ts_tranches_ref       => \@ts_tranches,
                 trust_all_polymorphic => $active_parameter_href
                   ->{gatk_variantrecalibration_trust_all_polymorphic},
                 verbosity => $active_parameter_href->{gatk_logging_level},

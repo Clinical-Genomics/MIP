@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -129,6 +129,10 @@ my %specific_argument = (
     tranches_file_path => {
         input           => catfile(qw{ my output.tranches }),
         expected_output => q{--tranches-file } . catdir(qw{ my output.tranches }),
+    },
+    ts_tranches_ref => {
+        inputs_ref      => [qw{ 100 99.9 }],
+        expected_output => q{-tranche 100 -tranche 99.9},
     },
     trust_all_polymorphic => {
         input           => 1,
