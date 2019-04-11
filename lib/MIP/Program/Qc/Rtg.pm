@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rtg_format rtg_vcfeval };
@@ -130,6 +130,7 @@ sub rtg_vcfeval {
 ## Function : Perl wrapper for rtg tools 3.9.1.
 ## Returns  : @commands
 ## Arguments: $all_record             => Use all records regardless of FILTER status
+##          : $bed_regionsfile_path   => If set, only read VCF records that overlap the ranges contained in the specified BED file
 ##          : $baselinefile_path      => VCF file containing baseline variants
 ##          : $callfile_path          => VCF file containing called variants
 ##          : $eval_region_file_path  => Evaluate within regions contained in the supplied BED file, allowing transborder matches
@@ -141,11 +142,13 @@ sub rtg_vcfeval {
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $thread_number          => Number of threads
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $baselinefile_path;
+    my $bed_regionsfile_path;
     my $callfile_path;
     my $eval_region_file_path;
     my $FILEHANDLE;
@@ -155,6 +158,7 @@ sub rtg_vcfeval {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $thread_number;
 
     ## Default(s)
     my $all_record;
@@ -165,6 +169,10 @@ sub rtg_vcfeval {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$all_record,
+            strict_type => 1,
+        },
+        bed_regionsfile_path => {
+            store       => \$bed_regionsfile_path,
             strict_type => 1,
         },
         baselinefile_path => {
@@ -222,6 +230,10 @@ sub rtg_vcfeval {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        thread_number => {
+            store       => \$thread_number,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -234,8 +246,17 @@ sub rtg_vcfeval {
         push @commands, q{--all-records};
     }
 
+    if ($thread_number) {
+
+        push @commands, q{--threads=} . $thread_number;
+    }
+
     push @commands, q{--baseline=} . $baselinefile_path;
 
+    if ($bed_regionsfile_path) {
+
+        push @commands, q{--bed-regions=} . $bed_regionsfile_path;
+    }
     push @commands, q{--calls=} . $callfile_path;
 
     push @commands, q{--evaluation-regions=} . $eval_region_file_path;

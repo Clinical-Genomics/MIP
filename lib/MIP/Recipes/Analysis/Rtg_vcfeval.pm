@@ -188,6 +188,7 @@ sub analysis_rtg_vcfeval {
             recipe_name           => $recipe_name,
         }
     );
+    my $core_number = $recipe_resource{core_number};
 
     ## Set and get the io files per chain, id and stream
     %io = (
@@ -217,7 +218,7 @@ sub analysis_rtg_vcfeval {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
+            core_number                     => $core_number,
             directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
@@ -248,7 +249,7 @@ sub analysis_rtg_vcfeval {
           . $nist_version;
 
         my $nist_file_path =
-          catfile( $temp_directory, q{nist} . $UNDERSCORE . $nist_version );
+          catfile( $outdir_path_prefix, q{nist} . $UNDERSCORE . $nist_version );
         my $nist_vcf_file_path =
           $active_parameter_href->{nist_call_set_vcf}{$nist_version}{$nist_id};
         my $nist_bed_file_path =
@@ -263,7 +264,7 @@ sub analysis_rtg_vcfeval {
                 infile              => $nist_vcf_file_path,
                 outfile_path_prefix => $nist_file_path . $UNDERSCORE . q{refrm},
                 output_type         => q{z},
-                temp_directory      => $temp_directory,
+                temp_directory      => $outdir_path_prefix,
                 sample_ids_ref      => [$sample_id],
             }
         );
@@ -297,6 +298,7 @@ sub analysis_rtg_vcfeval {
         rtg_vcfeval(
             {
                 baselinefile_path     => $nist_file_path . $UNDERSCORE . q{refrm.vcf.gz},
+                bed_regionsfile_path  => $nist_bed_file_path,
                 callfile_path         => $outfile_path_prefix . $DOT . q{vcf.gz},
                 eval_region_file_path => $nist_bed_file_path,
                 FILEHANDLE            => $FILEHANDLE,
@@ -306,6 +308,7 @@ sub analysis_rtg_vcfeval {
                   $active_parameter_href->{rtg_vcfeval_reference_genome}
                   . $file_info_href->{rtg_vcfeval_reference_genome}[0]
                 ,    # Only one directory for sdf
+                thread_number => $core_number,
             }
         );
 

@@ -24,7 +24,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -120,6 +120,10 @@ my %specific_argument = (
         input           => catfile(qw{path to baselinefile}),
         expected_output => q{--baseline=} . catfile(qw{path to baselinefile}),
     },
+    bed_regionsfile_path => {
+        input           => catfile(qw{path to bed_regionsfile_path}),
+        expected_output => q{--bed-regions=} . catfile(qw{path to bed_regionsfile_path}),
+    },
     callfile_path => {
         input           => catfile(qw{path to callfile}),
         expected_output => q{--calls=} . catfile(qw{path to callfile}),
@@ -144,6 +148,10 @@ my %specific_argument = (
     sdf_template_file_path => {
         input           => catfile(qw{path to sdf_template_file_path}),
         expected_output => q{--template=} . catfile(qw{path to sdf_template_file_path}),
+    },
+    thread_number => {
+        input           => 2,
+        expected_output => q{--threads=2},
     },
 );
 
