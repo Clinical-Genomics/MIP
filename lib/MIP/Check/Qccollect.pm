@@ -91,10 +91,10 @@ sub chanjo_gender_check {
     ## Get chanjo estimated gender
     my $chanjo_sexcheck_gender = get_qc_data_sample_recipe_attributes(
         {
-            attribute        => q{gender},
-            infile           => $infile,
-            recipe_name      => $recipe_name,
-            sample_id        => $sample_id,
+            attribute    => q{gender},
+            infile       => $infile,
+            recipe_name  => $recipe_name,
+            sample_id    => $sample_id,
             qc_data_href => $qc_data_href,
         }
     );
@@ -118,31 +118,33 @@ sub chanjo_gender_check {
             male => undef,
             1    => undef,
         },
-        other   => { other   => undef,
-      0 => undef, },
-        unknown => { unknown => undef,
-      0 => undef,
-    },
+        other => {
+            other => undef,
+            0     => undef,
+        },
+        unknown => {
+            unknown => undef,
+            0       => undef,
+        },
     );
 
 ## Set initial gender check status
-my $status = q{FAIL};
+    my $status = q{FAIL};
 
-        if ( exists $gender_map{$chanjo_sexcheck_gender}{$sample_id_sex}
-         ) {
+    if ( exists $gender_map{$chanjo_sexcheck_gender}{$sample_id_sex} ) {
 
-           $status = q{PASS};
+        $status = q{PASS};
+    }
+    set_qc_data_recipe_info(
+        {
+            key          => q{gender_check},
+            infile       => $infile,
+            qc_data_href => $qc_data_href,
+            recipe_name  => $recipe_name,
+            sample_id    => $sample_id,
+            value        => $status,
         }
-        set_qc_data_recipe_info(
-            {
-                key          => q{gender_check},
-                infile       => $infile,
-                qc_data_href => $qc_data_href,
-                recipe_name  => $recipe_name,
-                sample_id    => $sample_id,
-                value        => $status,
-            }
-        );
+    );
     return;
 }
 
@@ -182,7 +184,7 @@ sub plink_gender_check {
     use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
 
     ## Constants
-    Readonly my $FIELD_COUNTER    => 2;
+    Readonly my $FIELD_COUNTER => 2;
 
     ## Create map of allowed keys per sex
     my %gender_map = (
@@ -194,55 +196,66 @@ sub plink_gender_check {
             male => undef,
             1    => undef,
         },
-        0   => { other   => undef,
-      0 => undef,
-    unknown => undef,
-   },
+        0 => {
+            other   => undef,
+            0       => undef,
+            unknown => undef,
+        },
     );
 
-my $data_metrics_ref = get_qc_data_case_recipe_attributes({attribute => q{sample_sexcheck},
-qc_data_href => \%{$qc_data_href},
-  recipe_name => q{plink_sexcheck},});
+    my $data_metrics_ref = get_qc_data_case_recipe_attributes(
+        {
+            attribute    => q{sample_sexcheck},
+            qc_data_href => \%{$qc_data_href},
+            recipe_name  => q{plink_sexcheck},
+        }
+    );
 
-    SAMPLE_SEX:
-    foreach my $data_metric (@{$data_metrics_ref}) {
+  SAMPLE_SEX:
+    foreach my $data_metric ( @{$data_metrics_ref} ) {
 
-          ## Array
-          my ( $sample_id, $plink_sexcheck_gender, $unexpected_data ) = split $COLON, $data_metric, $FIELD_COUNTER + 1;
+        ## Array
+        my ( $sample_id, $plink_sexcheck_gender, $unexpected_data ) = split $COLON,
+          $data_metric, $FIELD_COUNTER + 1;
 
-          ## Make sure that we get what we expect
+        ## Make sure that we get what we expect
         if ( defined $unexpected_data ) {
 
             carp q{Unexpected trailing garbage in data metric '} . $data_metric . q{':},
               $NEWLINE . $TAB . $unexpected_data . $NEWLINE;
         }
 
-          ## Get sample id sex
-          my $sample_id_sex = get_pedigree_sample_id_attributes(
-              {
-                  attribute        => q{sex},
-                  sample_id        => $sample_id,
-                  sample_info_href => $sample_info_href,
-              }
-          );
+        ## Get sample id sex
+        my $sample_id_sex = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{sex},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
 
-    if ( exists $gender_map{$plink_sexcheck_gender}{$sample_id_sex}
-     ) {
+        if ( exists $gender_map{$plink_sexcheck_gender}{$sample_id_sex} ) {
 
-       add_qc_data_recipe_info({key => q{plink_gender_check},
-         qc_data_href => $qc_data_href,
-         recipe_name => q{plink_sexcheck},
-         value => $sample_id . q{:PASS},
-       });
-       next SAMPLE_SEX;
-     }
+            add_qc_data_recipe_info(
+                {
+                    key          => q{plink_gender_check},
+                    qc_data_href => $qc_data_href,
+                    recipe_name  => q{plink_sexcheck},
+                    value        => $sample_id . q{:PASS},
+                }
+            );
+            next SAMPLE_SEX;
+        }
 
-     add_qc_data_recipe_info({key => q{plink_gender_check},
-       qc_data_href => $qc_data_href,
-       recipe_name => q{plink_sexcheck},
-       value => $sample_id . q{:FAIL},
-     });
-      }
+        add_qc_data_recipe_info(
+            {
+                key          => q{plink_gender_check},
+                qc_data_href => $qc_data_href,
+                recipe_name  => q{plink_sexcheck},
+                value        => $sample_id . q{:FAIL},
+            }
+        );
+    }
     return;
 }
 
@@ -296,16 +309,18 @@ sub relation_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Qc_data qw{ set_qc_data_recipe_info };
     use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
 
     ## Constants
     Readonly my $RELATIONSHIP_CUTOFF => 0.70;
+
     ## Stores case relations and pairwise comparisons case{$sample_id}{$sample_id}["column"] -> [pairwise]
     my %case;
     my $incorrect_relation = 0;
-    my $sample_id_counter = 0;
+    my $sample_id_counter  = 0;
 
-    ## Copy array to avoid removing actual values in later splice
+    ## Copy array to avoid removing actual values in downstream splice
     my @relationship_values = @{$relationship_values_ref};
 
     ## Splice all relationship estimations from regexp into pairwise comparisons calculated for each sample_id
@@ -322,7 +337,7 @@ sub relation_check {
 
             ## Store sample_id, case membersID (including self) and each pairwise comparison.
             ## Uses array to accomodate sibling info.
-            my $sample            = $sample_orders_ref->[$sample_id_counter];
+            my $sample = $sample_orders_ref->[$sample_id_counter];
             push
               @{ $case{$sample}{$sample_to_compare} },
               $pairwise_comparisons[$column_index];
@@ -376,51 +391,76 @@ sub relation_check {
             ## For every relation within case (mother/father/child)
 
           RELATIVE:
-          foreach my $relative_metric (@{ $case{$sample_id}{$members} }) {
+            foreach my $relative_metric ( @{ $case{$sample_id}{$members} } ) {
 
                 ## Should only hit self
                 if ( $relative_metric == 1 ) {
 
-                  ## If self
-                  next RELATIVE if ( $sample_id eq $members );
+                    ## If self
+                    next RELATIVE if ( $sample_id eq $members );
 
-                        $incorrect_relation++;
-                        $qc_data_href->{sample}{$sample_id}{relation_check} =
-                          q{FAIL: Duplicated sample?};
+                    $incorrect_relation++;
+                    set_qc_data_recipe_info(
+                        {
+                            key          => q{relation_check},
+                            qc_data_href => $qc_data_href,
+                            sample_id    => $sample_id,
+                            value        => q{FAIL: Duplicated sample?},
+                        }
+                    );
                 }
-                elsif ( $relative_metric >= $RELATIONSHIP_CUTOFF )
-                {
-                  ## Should include parent to child and child to siblings unless inbreed parents
+                elsif ( $relative_metric >= $RELATIONSHIP_CUTOFF ) {
+                    ## Should include parent to child and child to siblings unless inbreed parents
 
-                  ## Check comparison is not done between parents
-                  next RELATIVE if( $sample_id ne $father_id && $sample_id ne $mother_id );
+                    ## Check comparison is not done between parents
+                    next RELATIVE
+                      if ( $sample_id ne $father_id && $sample_id ne $mother_id );
 
-                  next RELATIVE if( $members ne $father_id && $members ne $mother_id);
+                    next RELATIVE if ( $members ne $father_id && $members ne $mother_id );
 
-                        $incorrect_relation++;
-                        $qc_data_href->{sample}{$sample_id}{relation_check} =
-                          q{FAIL: Parents related?};
+                    $incorrect_relation++;
+                    set_qc_data_recipe_info(
+                        {
+                            key          => q{relation_check},
+                            qc_data_href => $qc_data_href,
+                            sample_id    => $sample_id,
+                            value        => q{FAIL: Parents related?},
+                        }
+                    );
                 }
-                elsif ( $relative_metric < $RELATIONSHIP_CUTOFF )
-                {
-                  ## Parents unless inbreed
+                elsif ( $relative_metric < $RELATIONSHIP_CUTOFF ) {
+                    ## Parents unless inbreed
 
-                  next RELATIVE if( $sample_id eq $father_id
-                      and $members eq $mother_id);
+                    next RELATIVE
+                      if (  $sample_id eq $father_id
+                        and $members eq $mother_id );
 
-next RELATIVE if ( $sample_id eq $mother_id
-    and $members eq $father_id );
+                    next RELATIVE
+                      if (  $sample_id eq $mother_id
+                        and $members eq $father_id );
 
-                        $incorrect_relation++;
-                        $qc_data_href->{sample}{$sample_id}{relation_check} =
-                          qq{FAIL:$sample_id not related to $members};
-
+                    $incorrect_relation++;
+                    set_qc_data_recipe_info(
+                        {
+                            key          => q{relation_check},
+                            qc_data_href => $qc_data_href,
+                            sample_id    => $sample_id,
+                            value        => qq{FAIL:$sample_id not related to $members},
+                        }
+                    );
                 }
             }
         }
         if ( not $incorrect_relation ) {
 
-            $qc_data_href->{sample}{$sample_id}{relation_check} = q{PASS};
+            set_qc_data_recipe_info(
+                {
+                    key          => q{relation_check},
+                    qc_data_href => $qc_data_href,
+                    sample_id    => $sample_id,
+                    value        => q{PASS},
+                }
+            );
         }
     }
     return;
