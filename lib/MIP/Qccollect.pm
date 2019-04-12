@@ -152,7 +152,7 @@ sub chanjo_gender_check {
 sub get_case_pairwise_comparison {
 
 ## Function : Uses the .mibs file produced by PLINK to test if case members are indeed related.
-## Returns  :
+## Returns  : %case
 ## Arguments: $relationship_values_ref => All relationship estimations {REF}
 ##          : $sample_orders_ref       => The sample order so that correct estimation can be connected to the correct sample_ids {REF}
 
