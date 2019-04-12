@@ -317,7 +317,7 @@ sub case_qc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Qccollect qw{ plink_gender_check };
+    use MIP::Qccollect qw{ plink_gender_check };
     use MIP::Qc_data qw{ set_qc_data_case_recipe_version };
     use MIP::Sample_info qw{ get_sample_info_case_recipe_attributes };
 
@@ -451,7 +451,7 @@ sub sample_qc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Qccollect qw{ chanjo_gender_check };
+    use MIP::Qccollect qw{ chanjo_gender_check };
     use MIP::Sample_info qw{ get_sample_info_sample_recipe_attributes };
 
   SAMPLE_ID:
@@ -728,7 +728,7 @@ sub add_to_qc_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Qccollect qw{ relation_check };
+    use MIP::Qccollect qw{ relation_check };
     use MIP::Qc_data qw{ add_qc_data_recipe_info set_qc_data_recipe_info };
 
   REG_EXP_ATTRIBUTE:

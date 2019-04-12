@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Qccollect} => [qw{ relation_check }],
-        q{MIP::Test::Fixtures}   => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Qccollect}      => [qw{ relation_check }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Qccollect qw{ relation_check };
+use MIP::Qccollect qw{ relation_check };
 
 diag(   q{Test relation_check from Qccollect.pm v}
-      . $MIP::Check::Qccollect::VERSION
+      . $MIP::Qccollect::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -67,7 +67,6 @@ Readonly my $SIBLING_RELATED_METRIC      => 0.72;
 Readonly my $SIBLING_INDEX               => 11;
 
 ## Given
-my @samples             = qw{ ADM1059A2 ADM1059A3 ADM1059A1 sample_4 };
 my @relationship_values = (
     $IS_SELF,                     $UNRELATED_METRIC,
     $PARENT_CHILD_RELATED_METRIC, $PARENT_CHILD_RELATED_METRIC,
@@ -78,6 +77,7 @@ my @relationship_values = (
     $PARENT_CHILD_RELATED_METRIC, $PARENT_CHILD_RELATED_METRIC,
     $SIBLING_RELATED_METRIC,      $IS_SELF,
 );
+my @samples = qw{ ADM1059A2 ADM1059A3 ADM1059A1 sample_4 };
 my %qc_data = (
     recipe => {
         relation_check => { sample_relation_check => [@relationship_values], },
