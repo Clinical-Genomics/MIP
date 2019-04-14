@@ -1000,17 +1000,16 @@ sub evaluate_sample_qc_parameters {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Skip evaluation for these infiles
-    my @skip_infile = qw{ evaluation Undetermined };
-
   SAMPLE_LEVEL:
     for my $sample_id ( keys %{ $qc_data_href->{sample} } ) {
 
       INFILE:
         for my $infile ( keys %{ $qc_data_href->{sample}{$sample_id} } ) {
 
-            ## Special case skip evaluation
-            next INFILE if ( any { $infile =~ /$_/i } @skip_infile );
+            ## Skip evaluation for these infiles
+            next INFILE if ( $infile =~ /evaluation/i );
+
+            next INFILE if ( $infile =~ /Undetermined/i );
 
             ## Special case
             if ( $infile =~ /relation_check/ ) {
