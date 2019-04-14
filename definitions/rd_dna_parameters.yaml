@@ -697,6 +697,7 @@ expansionhunter_variant_catalog_file_path:
   data_type: SCALAR
   default: grch37_expansionhunter_variant_catalog_-3.0.0-.json 
   exists_check: file
+  reference: reference_dir
   type: path
   update_path: absolute_path
 manta:

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -147,7 +147,7 @@ sub analysis_expansionhunter {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
       qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
@@ -282,9 +282,10 @@ sub analysis_expansionhunter {
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-        gnu_mv(
+        gnu_cp(
             {
                 FILEHANDLE   => $FILEHANDLE,
+                force        => 1,
                 infile_path  => $exphun_sample_file_info{$sample_id}{out} . q{.bai},
                 outfile_path => $exphun_sample_file_info{$sample_id}{in} . q{.bai},
             }
@@ -320,12 +321,17 @@ sub analysis_expansionhunter {
         my $sample_sex                 = $sample_info_href->{sample}{$sample_id}{sex};
         expansionhunter(
             {
-                FILEHANDLE                => $FILEHANDLE,
-                infile_path               => $exphun_sample_file_info{$sample_id}{in},
-                reference_genome_path     => $human_genome_reference,
+                FILEHANDLE            => $FILEHANDLE,
+                infile_path           => $exphun_sample_file_info{$sample_id}{in},
+                outfile_path_prefix   => $sample_outfile_path_prefix,
+                reference_genome_path => $human_genome_reference,
+                sex                   => $sample_sex,
+                stderrfile_path       => $outfile_path_prefix
+                  . $UNDERSCORE
+                  . $sample_id
+                  . $DOT
+                  . q{stderr.txt},
                 variant_catalog_file_path => $variant_catalog_file_path,
-                sex                       => $sample_sex,
-                outfile_path_prefix       => $sample_outfile_path_prefix,
             }
         );
         say {$FILEHANDLE} $AMPERSAND, $NEWLINE;
