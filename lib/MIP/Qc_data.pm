@@ -26,8 +26,11 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ add_qc_data_recipe_info get_qc_data_case_recipe_attributes get_qc_data_sample_recipe_attributes set_qc_data_recipe_info set_qc_data_case_recipe_version };
+    our @EXPORT_OK = qw{ add_qc_data_recipe_info
+      get_qc_data_case_recipe_attributes
+      get_qc_data_sample_recipe_attributes
+      set_qc_data_recipe_info
+      set_qc_data_case_recipe_version };
 }
 
 sub add_qc_data_recipe_info {
@@ -257,8 +260,6 @@ sub set_qc_data_recipe_info {
             strict_type => 1,
         },
         recipe_name => {
-            defined     => 1,
-            required    => 1,
             store       => \$recipe_name,
             strict_type => 1,
         },
@@ -275,12 +276,20 @@ sub set_qc_data_recipe_info {
     ## Set recipe key value pair for arbitrary info on sample and infile level
     if ( $sample_id and $infile ) {
 
-        ## key-->value for sample_id
         $qc_data_href->{sample}{$sample_id}{$infile}{$recipe_name}{$key} = $value;
         return;
     }
+    if ( $sample_id and $recipe_name ) {
 
-    ## Set recipe key value pair for arbitrary info on case level
+        $qc_data_href->{sample}{$sample_id}{$recipe_name}{$key} = $value;
+        return;
+    }
+    if ($sample_id) {
+
+        $qc_data_href->{sample}{$sample_id}{$key} = $value;
+        return;
+    }
+
     $qc_data_href->{recipe}{$recipe_name}{$key} = $value;
 
     return;

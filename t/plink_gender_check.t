@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Qccollect} => [qw{ plink_gender_check }],
-        q{MIP::Test::Fixtures}   => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Qccollect}      => [qw{ plink_gender_check }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Qccollect qw{ plink_gender_check };
+use MIP::Qccollect qw{ plink_gender_check };
 
 diag(   q{Test plink_gender_check from Qccollect.pm v}
-      . $MIP::Check::Qccollect::VERSION
+      . $MIP::Qccollect::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

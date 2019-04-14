@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -74,7 +74,7 @@ set_qc_data_recipe_info(
     }
 );
 
-## Then
+## Then set info on case level
 is( $qc_data{recipe}{$recipe_name}{$key}, $value, q{Set case level recipe info} );
 
 ## Given a sample id and infile
@@ -89,8 +89,37 @@ set_qc_data_recipe_info(
     }
 );
 
-## Then
+## Then set info for sample id and infile level
 is( $qc_data{sample}{$sample_id}{$infile}{$recipe_name}{$key},
     $value, q{Set sample id and infile level recipe info} );
+
+## Given a sample id and recipe name
+set_qc_data_recipe_info(
+    {
+        key          => $key,
+        qc_data_href => \%qc_data,
+        recipe_name  => $recipe_name,
+        sample_id    => $sample_id,
+        value        => $value,
+    }
+);
+
+## Then set info for sample id and recipe level
+is( $qc_data{sample}{$sample_id}{$recipe_name}{$key},
+    $value, q{Set sample id and recipe level recipe info} );
+
+## Given a sample id and key
+set_qc_data_recipe_info(
+    {
+        key          => $key,
+        qc_data_href => \%qc_data,
+        sample_id    => $sample_id,
+        value        => $value,
+    }
+);
+
+## Then set info for sample id and recipe level
+is( $qc_data{sample}{$sample_id}{$key},
+    $value, q{Set sample id and key level recipe info} );
 
 done_testing();
