@@ -24,7 +24,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.04;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -135,10 +135,10 @@ trap {
         {
             active_parameter_href => \%active_parameter,
             associated_recipes_ref =>
-              \@{ $parameter{expansionhunter_repeat_specs_dir}{associated_recipe} },
+              \@{ $parameter{sv_vcfparser_select_file}{associated_recipe} },
             log            => $log,
             parameter_href => \%parameter,
-            parameter_name => q{expansionhunter_repeat_specs_dir},
+            parameter_name => q{sv_vcfparser_select_file},
         }
     )
 };

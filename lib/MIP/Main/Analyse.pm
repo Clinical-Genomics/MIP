@@ -75,7 +75,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -316,7 +316,6 @@ sub mip_analyse {
           analysis_type
           bwa_build_reference
           exome_target_bed
-          expansionhunter_repeat_specs_dir
           fusion_filter_reference_genome
           gatk_path
           infile_dirs

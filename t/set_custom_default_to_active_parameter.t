@@ -25,7 +25,7 @@ use MIP::Constants qw { $COMMA $SPACE $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.07;
+our $VERSION = 1.08;
 
 $VERBOSE = test_standard_cli(
     {
@@ -110,7 +110,7 @@ foreach my $definition_file (@definition_files) {
 
 ## Given custom default parameters
 my @custom_default_parameters =
-  qw{ analysis_type bwa_build_reference expansionhunter_repeat_specs_dir exome_target_bed infile_dirs reference_dir rtg_vcfeval_reference_genome sample_info_file temp_directory };
+  qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs reference_dir rtg_vcfeval_reference_genome sample_info_file temp_directory };
 
 PARAMETER_NAME:
 foreach my $parameter_name (@custom_default_parameters) {
@@ -213,9 +213,6 @@ my $path = catfile(
     q{sample_1}, q{fastq}
 );
 is( $active_parameter{infile_dirs}{$path}, q{sample_1}, q{Set default infile_dirs} );
-
-ok( $active_parameter{expansionhunter_repeat_specs_dir},
-    q{Set expansionhunter_repeat_specs_dir} );
 
 ## Test setting custom paths
 my %test_hash = (
