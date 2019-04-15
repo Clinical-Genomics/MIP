@@ -76,7 +76,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - bwakit: 0.7.12 -> 0.7.15-1
 - cutadapt: 1.14 -> 1.18-py27_0
 - cramtools: 3.0.b47 -> 3.0.b127-2
-- expansionhunter: 2.5.5
+- expansionhunter: 3.0.0
 - delly: 0.7.7 ->0.8.1-h4037b6b_00
 - fastqc: 0.11.4 -> 0.11.8-0
 - freebayes: 1.1.0 -> 1.2.0-py27h82df9c4_3
@@ -90,7 +90,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - rtg-tools: 3.8.4-0 -> 3.9.1-1
 - sambamba: 0.6.6 -> 0.6.8-h682856c_0
 - samtools: 1.6 -> 1.9-h8ee4bcc_1
-- stranger: 0.4
+- stranger: 0.5.1
 - svdb: 1.1.2 -> 1.3.0-py27h7eb728f_0
 - tiddit: 2.2.5 -> 2.5.0
 - vcf2cytosure: 0.3.0 -> 0.4.3

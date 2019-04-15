@@ -685,17 +685,19 @@ expansionhunter:
   data_type: SCALAR
   default: 1
   file_tag: _exphun
-  outfile_suffix: ".vcf.gz"
+  outfile_suffix: ".vcf"
   program_executables:
    - ExpansionHunter
    - stranger
   recipe_type: repeats_variant_callers
   type: recipe
-expansionhunter_repeat_specs_dir:
+expansionhunter_variant_catalog_file_path:
   associated_recipe:
    - expansionhunter
   data_type: SCALAR
-  exists_check: directory
+  default: grch37_expansionhunter_variant_catalog_-3.0.0-.json 
+  exists_check: file
+  reference: reference_dir
   type: path
   update_path: absolute_path
 manta:

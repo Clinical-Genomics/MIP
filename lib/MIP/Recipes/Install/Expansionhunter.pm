@@ -1,33 +1,34 @@
 package MIP::Recipes::Install::Expansionhunter;
 
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use Cwd;
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use Cwd;
-use File::Spec::Functions qw{ catdir catfile };
 
 ## Cpanm
 use Readonly;
+
+## MIPs lib/
+use MIP::Constants qw{ $NEWLINE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.0.0};
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_expansionhunter };
 }
-
-## Constants
-Readonly my $NEWLINE    => qq{\n};
 
 sub install_expansionhunter {
 
@@ -139,12 +140,13 @@ sub install_expansionhunter {
     ## Download
     say {$FILEHANDLE} q{## Download Expansion Hunter};
     my $url =
-q{https://github.com/Illumina/ExpansionHunter/releases/download/v2.5.5/ExpansionHunter-v}
+        q{https://github.com/Illumina/ExpansionHunter/releases/download/v}
+      . $expansionhunter_version
+      . q{/ExpansionHunter-v}
       . $expansionhunter_version
       . q{-linux_x86_64.tar.gz};
-    my $expansionhunter_download_path = catfile( 
-        $conda_prefix_path, q{share}, q{ExpansionHunter-v}
-        . $expansionhunter_version . q{-linux_x86_64.tar.gz} );
+    my $expansionhunter_download_path = catfile( $conda_prefix_path, q{share},
+        q{ExpansionHunter-v} . $expansionhunter_version . q{-linux_x86_64.tar.gz} );
     wget(
         {
             FILEHANDLE   => $FILEHANDLE,
@@ -172,12 +174,11 @@ q{https://github.com/Illumina/ExpansionHunter/releases/download/v2.5.5/Expansion
     say {$FILEHANDLE} q{## Create softlinks to binary};
     gnu_ln(
         {
-            link_path => catfile( $conda_prefix_path, q{bin} ),
-            target_path =>
-              catfile( $expansionhunter_dir, qw{ bin ExpansionHunter } ),
-            symbolic   => 1,
-            force      => 1,
-            FILEHANDLE => $FILEHANDLE,
+            link_path   => catfile( $conda_prefix_path,   q{bin} ),
+            target_path => catfile( $expansionhunter_dir, qw{ bin ExpansionHunter } ),
+            symbolic    => 1,
+            force       => 1,
+            FILEHANDLE  => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

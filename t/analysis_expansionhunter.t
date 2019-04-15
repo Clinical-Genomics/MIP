@@ -62,7 +62,7 @@ diag(   q{Test analysis_expansionhunter from Expansionhunter.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name = q{expansionhunter};
+my $recipe_name    = q{expansionhunter};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -75,7 +75,7 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{expansionhunter_repeat_specs_dir} = q{a_dir};
+$active_parameter{expansionhunter_variant_catalog_file_path} = q{a_variant_catalog_file};
 
 my %file_info = test_mip_hashes(
     {
