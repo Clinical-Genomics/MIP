@@ -685,7 +685,7 @@ expansionhunter:
   data_type: SCALAR
   default: 1
   file_tag: _exphun
-  outfile_suffix: ".vcf.gz"
+  outfile_suffix: ".vcf"
   program_executables:
    - ExpansionHunter
    - stranger
