@@ -30,7 +30,7 @@ use Readonly;
 ##MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Constants qw{ $NEWLINE $SPACE };
+use MIP::Constants qw{ $COLON $NEWLINE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Qc_data qw{ set_qc_data_recipe_info set_qc_data_case_recipe_version };
@@ -139,11 +139,12 @@ my %regexp = load_yaml( { yaml_file => $regexp_file, } );
 $log->info( q{Loaded: } . $regexp_file );
 
 ## Set qccollect version to qc_data hash
-set_qc_data_case_recipe_version(
+set_qc_data_recipe_info(
     {
+        key          => q{version},
         qc_data_href => \%qc_data,
         recipe_name  => q{qccollect},
-        version      => $VERSION,
+        value        => $VERSION,
     }
 );
 
@@ -183,7 +184,7 @@ SAMPLE_ID:
 foreach my $sample_id ( keys %{ $sample_info{sample} } ) {
 
     ## Defines recipes, metrics and thresholds to evaluate
-    define_evaluate_metric(
+    _define_evaluate_metric(
         {
             sample_id        => $sample_id,
             sample_info_href => \%sample_info,
@@ -774,9 +775,7 @@ sub add_to_qc_data {
                 }
                 if (
                     defined $qc_data_href->{recipe}{relation_check}{sample_relation_check}
-
-                    and defined $qc_data_href->{recipe}{pedigree_check}{sample_order}
-                  )
+                    and defined $qc_data_href->{recipe}{pedigree_check}{sample_order} )
                 {
 
                     relation_check(
@@ -835,79 +834,6 @@ sub add_to_qc_data {
                 }
             }
         }
-    }
-    return;
-}
-
-sub define_evaluate_metric {
-
-## Function  : Sets recipes, metrics and thresholds to be evaluated
-## Returns   :
-## Arguments : $sample_id        => Sample id
-##           : $sample_info_href => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
-
-    ## Constants
-    Readonly my $PERCENTAGE_MAPPED_READS     => 95;
-    Readonly my $PCT_TARGET_BASES_10X        => 0.95;
-    Readonly my $PCT_PF_READS_ALIGNED        => 0.95;
-    Readonly my $PCT_ADAPTER                 => 0.0005;
-    Readonly my $FRACTION_DUPLICATES         => 0.2;
-    Readonly my $FRACTION_OF_ERRORS          => 0.06;
-    Readonly my $FRACTION_OF_COMMON_VARIANTS => 0.55;
-
-    $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} =
-      $PERCENTAGE_MAPPED_READS;
-    $evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_10X}{lt} =
-      $PCT_TARGET_BASES_10X;
-    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} =
-      $PCT_PF_READS_ALIGNED;
-    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_ADAPTER}{gt} =
-      $PCT_ADAPTER;
-    $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} =
-      $FRACTION_DUPLICATES;
-    $evaluate_metric{variant_integrity_ar_mendel}{fraction_of_errors}{gt} =
-      $FRACTION_OF_ERRORS;
-    $evaluate_metric{variant_integrity_ar_father}{fraction_of_common_variants}{lt} =
-      $FRACTION_OF_COMMON_VARIANTS;
-
-    ## Get sample id expected_coverage
-    my $expected_coverage = get_pedigree_sample_id_attributes(
-        {
-            attribute        => q{expected_coverage},
-            sample_id        => $sample_id,
-            sample_info_href => $sample_info_href,
-        }
-    );
-    if ($expected_coverage) {
-
-        $evaluate_metric{$sample_id}{collecthsmetrics}{MEAN_TARGET_COVERAGE}{lt} =
-          $expected_coverage;
     }
     return;
 }
@@ -1089,49 +1015,51 @@ sub evaluate_sample_qc_parameters {
 
 sub check_metric {
 
-## Function : Check and add result of check if below threshold
+## Function : Check and add result of check
 ## Returns  :
-## Arguments: $qc_data_href          => Qc data hash {REF}
-##          : $reference_metric_href => Metrics to evaluate
-##          : $recipe                => The recipe to examine
-##          : $metric                => Metric to evaluate
+## Arguments: $metric                => Metric to evaluate
+##          : $qc_data_href          => Qc data hash {REF}
 ##          : $qc_metric_value       => Qc metric value
+##          : $recipe                => The recipe to examine
+##          : $reference_metric_href => Metrics to evaluate
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $qc_data_href;
-    my $reference_metric_href;
-    my $recipe;
     my $metric;
+    my $qc_data_href;
     my $qc_metric_value;
+    my $recipe;
+    my $reference_metric_href;
 
     my $tmpl = {
+        metric => { defined => 1, required => 1, store => \$metric, strict_type => 1, },
         qc_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$qc_data_href
-        },
-        reference_metric_href => {
-            required    => 1,
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$qc_data_href,
             strict_type => 1,
-            store       => \$reference_metric_href
         },
-        recipe => { required => 1, defined => 1, strict_type => 1, store => \$recipe },
-        metric => { required => 1, defined => 1, strict_type => 1, store => \$metric },
         qc_metric_value => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$qc_metric_value,
             strict_type => 1,
-            store       => \$qc_metric_value
+        },
+        recipe => { defined => 1, required => 1, store => \$recipe, strict_type => 1, },
+        reference_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_metric_href,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Qc_data qw{ add_qc_data_evaluation_info };
 
     my $status = q{FAILED:};
 
@@ -1140,8 +1068,15 @@ sub check_metric {
         ## Determine status - if lower than add to hash. otherwise PASS and do not include
         if ( $qc_metric_value < $reference_metric_href->{lt} ) {
 
-            $status .= $recipe . q{_} . $metric . q{:} . $qc_metric_value;
-            push @{ $qc_data_href->{evaluation}{$recipe} }, $status;
+            ## Add to status string and then to hash
+            $status .= $recipe . $UNDERSCORE . $metric . $COLON . $qc_metric_value;
+            add_qc_data_evaluation_info(
+                {
+                    qc_data_href => \%qc_data,
+                    recipe_name  => $recipe,
+                    value        => $status,
+                }
+            );
         }
     }
 
@@ -1150,8 +1085,14 @@ sub check_metric {
         ## Determine status - if greater than add to hash. otherwise PASS and do not include
         if ( $qc_metric_value > $reference_metric_href->{gt} ) {
 
-            $status .= $recipe . q{_} . $metric . q{:} . $qc_metric_value;
-            push @{ $qc_data_href->{evaluation}{$recipe} }, $status;
+            $status .= $recipe . $UNDERSCORE . $metric . $COLON . $qc_metric_value;
+            add_qc_data_evaluation_info(
+                {
+                    qc_data_href => \%qc_data,
+                    recipe_name  => $recipe,
+                    value        => $status,
+                }
+            );
         }
     }
     return;
@@ -1604,4 +1545,77 @@ q?perl -nae 'if($_=~/^##SVDB_version=(\S+)/) { print $1; last; } else { if($_=~/
     );
     $log->info( q{Wrote regexp YAML file to: } . $print_regexp_outfile );
     exit;
+}
+
+sub _define_evaluate_metric {
+
+## Function  : Sets recipes, metrics and thresholds to be evaluated
+## Returns   :
+## Arguments : $sample_id        => Sample id
+##           : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+
+    ## Constants
+    Readonly my $PERCENTAGE_MAPPED_READS     => 95;
+    Readonly my $PCT_TARGET_BASES_10X        => 0.95;
+    Readonly my $PCT_PF_READS_ALIGNED        => 0.95;
+    Readonly my $PCT_ADAPTER                 => 0.0005;
+    Readonly my $FRACTION_DUPLICATES         => 0.2;
+    Readonly my $FRACTION_OF_ERRORS          => 0.06;
+    Readonly my $FRACTION_OF_COMMON_VARIANTS => 0.55;
+
+    $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} =
+      $PERCENTAGE_MAPPED_READS;
+    $evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_10X}{lt} =
+      $PCT_TARGET_BASES_10X;
+    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} =
+      $PCT_PF_READS_ALIGNED;
+    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_ADAPTER}{gt} =
+      $PCT_ADAPTER;
+    $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} =
+      $FRACTION_DUPLICATES;
+    $evaluate_metric{variant_integrity_ar_mendel}{fraction_of_errors}{gt} =
+      $FRACTION_OF_ERRORS;
+    $evaluate_metric{variant_integrity_ar_father}{fraction_of_common_variants}{lt} =
+      $FRACTION_OF_COMMON_VARIANTS;
+
+    ## Get sample id expected_coverage
+    my $expected_coverage = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{expected_coverage},
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+    if ($expected_coverage) {
+
+        $evaluate_metric{$sample_id}{collecthsmetrics}{MEAN_TARGET_COVERAGE}{lt} =
+          $expected_coverage;
+    }
+    return;
 }
