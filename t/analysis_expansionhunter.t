@@ -76,6 +76,7 @@ $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
 $active_parameter{expansionhunter_repeat_specs_dir} = q{a_dir};
+$active_parameter{expansionhunter_variant_catalog_file_path} = q{a_variant_catalog_file};
 
 my %file_info = test_mip_hashes(
     {
