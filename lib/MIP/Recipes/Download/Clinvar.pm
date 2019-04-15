@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_clinvar };
@@ -305,7 +305,7 @@ sub _build_clnvid_head_file {
 
     ## Print header line for Clinvar variation ID
     print {$FILEHANDLE}
-q? print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} '?;
+q? print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description="ClinVar Variation ID">} '?;
 
     ## Write to files
     say {$FILEHANDLE} q{ > } . $header_file_path . $NEWLINE;
