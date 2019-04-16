@@ -118,17 +118,17 @@ my $log = initiate_logger(
 ## Given matching snpsift annotation and outinfo keys
 my %active_parameter = (
     snpsift_annotation_files => {
-        q{GRCh37_clinvar_reformat_-2017-10-29-.vcf.gz} =>
+        q{grch37_clinvar_reformat_-2017-10-29-.vcf.gz} =>
           q{CLNSIG,CLNVID,CLNREVSTAT},
-        q{GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz} => q{AF,AF_POPMAX},
-        q{GRCh37_anon-swegen_str_nsphs_-1000samples-.vcf.gz} =>
+        q{grch37_gnomad.genomes_-r2.0.1-.vcf.gz} => q{AF,AF_POPMAX},
+        q{grch37_anon-swegen_str_nsphs_-1000samples-.vcf.gz} =>
           q{AF,AC_Hom,AC_Het,AC_Hemi},
-        q{GRCh37_loqusdb_-2017-05-22-.vcf.gz}            => q{Obs,Hom},
-        q{GRCh37_genbank_haplogroup_-2015-08-01-.vcf.gz} => q{MTAF},
+        q{grch37_loqusdb_-2017-05-22-.vcf.gz}            => q{Obs,Hom},
+        q{grch37_genbank_haplogroup_-2015-08-01-.vcf.gz} => q{MTAF},
     },
     snpsift_annotation_outinfo_key => {
-        q{GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz}             => q{GNOMAD},
-        q{GRCh37_anon-swegen_str_nsphs_-1000samples-.vcf.gz} => q{SWEGEN},
+        q{grch37_gnomad.genomes_-r2.0.1-.vcf.gz}             => q{GNOMAD},
+        q{grch37_anon-swegen_str_nsphs_-1000samples-.vcf.gz} => q{SWEGEN},
     },
 );
 

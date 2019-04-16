@@ -92,7 +92,7 @@ my %file_info = test_mip_hashes(
     }
 );
 
-$file_info{human_genome_reference_source}  = q{GRCh};
+$file_info{human_genome_reference_source}  = q{grch};
 $file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION;
 
 my %infile_lane_prefix;

@@ -80,10 +80,10 @@ my %required_argument = (
     },
     known_sites_ref => {
         inputs_ref => [
-            qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
+            qw{ grch37_1000g_indels_-phase1-.vcf grch37_mills_and_1000g_indels_-gold_standard-.vcf }
         ],
         expected_output =>
-q{--known-sites GRCh37_1000g_indels_-phase1-.vcf --known-sites GRCh37_mills_and_1000g_indels_-gold_standard-.vcf},
+q{--known-sites grch37_1000g_indels_-phase1-.vcf --known-sites grch37_mills_and_1000g_indels_-gold_standard-.vcf},
     },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
@@ -103,10 +103,10 @@ my %specific_argument = (
     },
     known_sites_ref => {
         inputs_ref => [
-            qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
+            qw{ grch37_1000g_indels_-phase1-.vcf grch37_mills_and_1000g_indels_-gold_standard-.vcf }
         ],
         expected_output =>
-q{--known-sites GRCh37_1000g_indels_-phase1-.vcf --known-sites GRCh37_mills_and_1000g_indels_-gold_standard-.vcf},
+q{--known-sites grch37_1000g_indels_-phase1-.vcf --known-sites grch37_mills_and_1000g_indels_-gold_standard-.vcf},
     },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),

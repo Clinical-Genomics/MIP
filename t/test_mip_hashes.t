@@ -87,7 +87,7 @@ my %file_info = test_mip_hashes(
 ## Then dynamic parameters should be set
 is(
     $file_info{human_genome_reference},
-    q{GRCh37_homo_sapiens_-d5-.fasta},
+    q{grch37_homo_sapiens_-d5-.fasta},
     q{Set human genome reference}
 );
 

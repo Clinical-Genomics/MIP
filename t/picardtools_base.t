@@ -113,9 +113,9 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     referencefile_path => {
-        input => catdir(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+        input => catdir(qw{ references grch37_homo_sapiens_-d5-.fasta }),
         expected_output => q{R=}
-          . catdir(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+          . catdir(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
 );
 
@@ -125,9 +125,9 @@ my %specific_argument = (
         expected_output => q{CREATE_INDEX=true},
     },
     referencefile_path => {
-        input => catdir(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+        input => catdir(qw{ references grch37_homo_sapiens_-d5-.fasta }),
         expected_output => q{R=}
-          . catdir(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+          . catdir(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
 );
 

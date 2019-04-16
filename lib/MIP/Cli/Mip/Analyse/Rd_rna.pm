@@ -370,7 +370,7 @@ q{Default: ReadGroupCovariate, ContextCovariate, CycleCovariate, QualityScoreCov
             cmd_aliases => [qw{ gbrkst }],
             cmd_flag    => q{gatk_baserecal_ks},
             cmd_tags    => [
-q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
+q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mills_and_1000g_indels_-gold_standard-.vcf}
             ],
             documentation => q{GATK BaseReCalibration known SNV and INDEL sites},
             is            => q{rw},
@@ -580,7 +580,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
         q{gatk_haplotypecaller_snp_known_set} => (
             cmd_aliases   => [qw{ ghckse }],
             cmd_flag      => q{gatk_haplotype_snp_ks},
-            cmd_tags      => [q{Default: GRCh37_dbsnp_-138-.vcf}],
+            cmd_tags      => [q{Default: grch37_dbsnp_-138-.vcf}],
             documentation => q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
             is            => q{rw},
             isa           => Str,
@@ -711,7 +711,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
         q{gatk_haplotypecaller_snp_known_set} => (
             cmd_aliases   => [qw{ ghckse }],
             cmd_flag      => q{gatk_haplotype_snp_ks},
-            cmd_tags      => [q{Default: GRCh37_dbsnp_-138-.vcf}],
+            cmd_tags      => [q{Default: grch37_dbsnp_-138-.vcf}],
             documentation => q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
             is            => q{rw},
             isa           => Str,

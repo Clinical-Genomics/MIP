@@ -112,7 +112,7 @@ human_genome_reference:
    - tiddit
    - vt_ar
   data_type: SCALAR
-  default: GRCh37_homo_sapiens_-d5-.fasta
+  default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
   reference: reference_dir
   type: path
@@ -474,9 +474,9 @@ gatk_baserecalibration_known_sites:
   element_separator: ,
   data_type: ARRAY
   default:
-   - GRCh37_dbsnp_-138-.vcf
-   - GRCh37_1000g_indels_-phase1-.vcf
-   - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+   - grch37_dbsnp_-138-.vcf
+   - grch37_1000g_indels_-phase1-.vcf
+   - grch37_mills_and_1000g_indels_-gold_standard-.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1177,7 +1177,7 @@ gatk_haplotypecaller_snp_known_set:
   associated_recipe:
    - gatk_haplotypecaller
   data_type: SCALAR
-  default: GRCh37_dbsnp_-138-.vcf
+  default: grch37_dbsnp_-138-.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1262,7 +1262,7 @@ gatk_calculate_genotype_call_set:
    - gatk_haplotypecaller
    - gatk_variantrecalibration
   data_type: SCALAR
-  default: GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz
+  default: grch37_gnomad.genomes_-r2.0.1-.vcf.gz
   exists_check: file
   reference: reference_dir
   type: path
@@ -1308,8 +1308,8 @@ gatk_variantrecalibration_resource_indel:
    - gatk_variantrecalibration
   data_type: HASH
   default:
-     GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
-     GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,known=false,training=true,truth=true,prior=12.0"
+     grch37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
+     grch37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,known=false,training=true,truth=true,prior=12.0"
   exists_check: file
   reference: reference_dir
   type: path
@@ -1318,10 +1318,10 @@ gatk_variantrecalibration_resource_snv:
    - gatk_variantrecalibration
   data_type: HASH
   default:
-     GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
-     GRCh37_hapmap_-3.3-.vcf: "hapmap,known=false,training=true,truth=true,prior=15.0"
-     GRCh37_1000g_omni_-2.5-.vcf: "omni,known=false,training=true,truth=truth,prior=12.0"
-     GRCh37_1000g_snps_high_confidence_-phase1-.vcf: "1000G,known=false,training=true,truth=false,prior=10.0"
+     grch37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
+     grch37_hapmap_-3.3-.vcf: "hapmap,known=false,training=true,truth=true,prior=15.0"
+     grch37_1000g_omni_-2.5-.vcf: "omni,known=false,training=true,truth=truth,prior=12.0"
+     grch37_1000g_snps_high_confidence_-phase1-.vcf: "1000G,known=false,training=true,truth=false,prior=10.0"
   exists_check: file
   reference: reference_dir
   type: path
@@ -1409,7 +1409,7 @@ rhocall_frequency_file:
   associated_recipe:
    - rhocall_ar
   data_type: SCALAR
-  default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz
+  default: grch37_anon_swegen_snp_-2016-10-19-.tab.gz
   exists_check: file
   reference: reference_dir
   type: path
@@ -1507,7 +1507,7 @@ cadd_vcf_header_file:
   associated_recipe:
    - cadd_ar
   data_type: SCALAR
-  default: GRCh37_cadd_to_vcf_header_-1.0-.txt
+  default: grch37_cadd_to_vcf_header_-1.0-.txt
   exists_check: file
   reference: reference_dir
   type: path
@@ -1536,7 +1536,7 @@ gatk_varianteval_dbsnp:
    - gatk_variantevalall
    - gatk_variantevalexome
   data_type: SCALAR
-  default: GRCh37_dbsnp_-138_esa_129-.vcf
+  default: grch37_dbsnp_-138_esa_129-.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1545,7 +1545,7 @@ gatk_varianteval_gold:
    - gatk_variantevalall
    - gatk_variantevalexome
   data_type: SCALAR
-  default: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+  default: grch37_mills_and_1000g_indels_-gold_standard-.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1719,10 +1719,10 @@ snpsift_annotation_files:
    - snpeff
   data_type: HASH
   default:
-     GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: AF
-     GRCh37_exac_reheader_-r0.3.1-.vcf.gz: AF
-     GRCh37_anon-swegen_snp_-1000samples-.vcf.gz: AF
-     GRCh37_anon-swegen_indel_-1000samples-.vcf.gz: AF
+     grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: AF
+     grch37_exac_reheader_-r0.3.1-.vcf.gz: AF
+     grch37_anon-swegen_snp_-1000samples-.vcf.gz: AF
+     grch37_anon-swegen_indel_-1000samples-.vcf.gz: AF
   exists_check: file
   reference: reference_dir
   type: path
@@ -1731,10 +1731,10 @@ snpsift_annotation_outinfo_key:
    - snpeff
   data_type: HASH
   default:
-     GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: 1000G
-     GRCh37_exac_reheader_-r0.3.1-.vcf.gz: EXAC
-     GRCh37_anon-swegen_snp_-1000samples-.vcf.gz: SWEREF
-     GRCh37_anon-swegen_indel_-1000samples-.vcf.gz: SWEREF
+     grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: 1000G
+     grch37_exac_reheader_-r0.3.1-.vcf.gz: EXAC
+     grch37_anon-swegen_snp_-1000samples-.vcf.gz: SWEREF
+     grch37_anon-swegen_indel_-1000samples-.vcf.gz: SWEREF
   exists_check: file
   reference: reference_dir
   type: path
@@ -1754,7 +1754,7 @@ snpsift_dbnsfp_file:
   associated_recipe:
    - snpeff
   data_type: SCALAR
-  default: GRCh37_dbnsfp_-v3.5a-.txt.gz
+  default: grch37_dbnsfp_-v3.5a-.txt.gz
   exists_check: file
   reference: reference_dir
   type: path
@@ -1838,7 +1838,7 @@ nist_high_confidence_call_set:
   associated_recipe:
    - rtg_vcfeval
    - evaluation
-  default: GRCh37_nist_hg001_-na12878_v2.19-.vcf
+  default: grch37_nist_hg001_-na12878_v2.19-.vcf
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -1849,7 +1849,7 @@ nist_call_set_vcf:
    - evaluation
   default:
    2.19:
-    NA12878: GRCh37_nist_hg001_-na12878_v2.19-.vcf
+    NA12878: grch37_nist_hg001_-na12878_v2.19-.vcf
    3.3.2:
     NA24385: GRCh37_nist_hg002_-na24385_v3.3.2-.vcf
     NA12878: GRCh37_nist_hg001_-na12878_v3.3.2-.vcf
@@ -1861,7 +1861,7 @@ nist_call_set_bed:
    - evaluation
   default: 
    2.19: 
-    NA12878: GRCh37_nist_hg001_-na12878_v2.19-.bed
+    NA12878: grch37_nist_hg001_-na12878_v2.19-.bed
    3.3.2:
     NA24385: GRCh37_nist_hg002_-na24385_v3.3.2-.bed
     NA12878: GRCh37_nist_hg001_-na12878_v3.3.2-.bed

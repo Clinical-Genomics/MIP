@@ -12,7 +12,7 @@ email_types:
   - BEGIN
   - FAIL
 exome_target_bed:
-  GRCh37_agilent_sureselect_targets_cre_-v1-.bed: 'ADM1059A2,ADM1059A1'
+  grch37_agilent_sureselect_targets_cre_-v1-.bed: 'ADM1059A2,ADM1059A1'
 case_id: 643594-miptest
 human_genome_reference: human_genome.fasta
 gatk_logging_level: INFO

@@ -69,14 +69,14 @@ my %active_parameter = (
     nist_call_set_vcf => {
         q{3.3.2} => {
             NA12878 => catdir(
-                $Bin, qw{ data references GRCh37_nist_hg001_-na12878_v3.3.2-.vcf }
+                $Bin, qw{ data references grch37_nist_hg001_-na12878_v3.3.2-.vcf }
             ),
         },
     },
     nist_call_set_bed => {
         q{3.3.2} => {
             NA12878 => catdir(
-                $Bin, qw{ data references GRCh37_nist_hg001_-na12878_v3.3.2-.bed }
+                $Bin, qw{ data references grch37_nist_hg001_-na12878_v3.3.2-.bed }
             ),
         },
     },

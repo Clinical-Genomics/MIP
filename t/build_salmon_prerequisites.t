@@ -92,7 +92,7 @@ my %sample_info;
 
 ## Special case
 $active_parameter{salmon_quant_reference_genome} = q{human_genome.fastq};
-$active_parameter{transcript_annotation}         = q{GRCH37_transcripts.gtf};
+$active_parameter{transcript_annotation}         = q{grch37_transcripts.gtf};
 
 my $is_ok = build_salmon_quant_prerequisites(
     {

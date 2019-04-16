@@ -74,13 +74,13 @@ my $test_reference_dir = catfile( $Bin, qw{ data references } );
 ### Prepare temporary file for testing
 my $fqf_vcfanno_config =
   catfile( $test_reference_dir,
-    qw{ GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml  } );
+    qw{ grch37_frequency_vcfanno_filter_config_-v1.0-.toml  } );
 
 # For the actual test
 my $test_fqf_vcfanno_config = catfile( $test_reference_dir,
-    qw{ GRCh37_frequency_vcfanno_filter_config_test_check_toml_-v1.0-.toml  } );
+    qw{ grch37_frequency_vcfanno_filter_config_test_check_toml_-v1.0-.toml  } );
 
-my $file_path = catfile( $test_reference_dir, q{GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz} );
+my $file_path = catfile( $test_reference_dir, q{grch37_gnomad.genomes_-r2.0.1-.vcf.gz} );
 
 ## Replace line starting with "file=" with dynamic file path
 my $parse_path =
@@ -111,7 +111,7 @@ rmtree($test_fqf_vcfanno_config);
 
 ## Given a toml config file, when mandatory features are absent
 my $faulty_fqf_vcfanno_config_file = catfile( $Bin,
-    qw{ data references GRCh37_frequency_vcfanno_filter_config_bad_data_-v1.0-.toml } );
+    qw{ data references grch37_frequency_vcfanno_filter_config_bad_data_-v1.0-.toml } );
 
 trap {
     check_vcfanno_toml(

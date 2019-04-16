@@ -83,7 +83,7 @@ my %vep_custom_ann = (
         key                      => q{genomic_superdups_frac_match},
         file_type                => q{bed},
         path                     => catfile(
-            $Bin, qw{ data references GRCh37_genomics_super_dups_-20181009.bed.gz }
+            $Bin, qw{ data references grch37_genomics_super_dups_-20181009.bed.gz }
         ),
     },
 );

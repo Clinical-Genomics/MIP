@@ -66,32 +66,32 @@ outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
 outscript_dir: cluster_constant_path!/case_id!/analysis_constant_path!/scripts
 sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 ## References
-fqf_vcfanno_config: GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml
-gatk_genotypegvcfs_ref_gvcf: GRCh37_merged_reference_infiles_-2014-.gvcf
+fqf_vcfanno_config: grch37_frequency_vcfanno_filter_config_-v1.0-.toml
+gatk_genotypegvcfs_ref_gvcf: grch37_merged_reference_infiles_-2014-.gvcf
 genmod_annotate_cadd_files:
-  - GRCh37_cadd_whole_genome_snvs_ge10_-v1.3-.tsv.gz
-  - GRCh37_cadd_1000g_phase3_-v1.3-.tsv.gz
-  - GRCh37_cadd_exac_r0.3_-v1.3-.tsv.gz
-genmod_annotate_spidex_file: GRCh37_spidex_public_noncommercial_-v1_0-.tab.gz
-genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv
-human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
+  - grch37_cadd_whole_genome_snvs_ge10_-v1.3-.tsv.gz
+  - grch37_cadd_1000g_phase3_-v1.3-.tsv.gz
+  - grch37_cadd_exac_r0.3_-v1.3-.tsv.gz
+genmod_annotate_spidex_file: grch37_spidex_public_noncommercial_-v1_0-.tab.gz
+genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
+human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 rank_model_file: rank_model_cmms_-v1.19-.ini
-sambamba_depth_bed: GRCh37_scout_exons_-2017-01-.bed
+sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
 snpsift_annotation_files:
-  GRCh37_clinvar_-2017-05-01-.vcf.gz: CLNSIG,CLNACC,CLNREVSTAT
-  GRCh37_exac_reheader_-r0.3.1-.vcf.gz: AF,AF_Adj
-  GRCh37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: AF,AC_Hom,AC_Het,AC_Hemi
-  GRCh37_loqusdb_-2016-09-26-.vcf.gz: Obs,Hom
-  GRCh37_genbank_haplogroup_-2015-08-01-.vcf.gz: MTAF
-sv_genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv
+  grch37_clinvar_-2017-05-01-.vcf.gz: CLNSIG,CLNACC,CLNREVSTAT
+  grch37_exac_reheader_-r0.3.1-.vcf.gz: AF,AF_Adj
+  grch37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: AF,AC_Hom,AC_Het,AC_Hemi
+  grch37_loqusdb_-2016-09-26-.vcf.gz: Obs,Hom
+  grch37_genbank_haplogroup_-2015-08-01-.vcf.gz: MTAF
+sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 sv_rank_model_file: svrank_model_cmms_-v1.1-.ini
 sv_svdb_query_db_files:
-  GRCh37_svdb_query_decipher_-v1.0.0-.vcf: decipher
-  GRCh37_svdb_query_clingen_cgh_benign_-v1.0.0-.vcf: clingen_cgh_benign
-  GRCh37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf: clingen_cgh_pathogenic
-  GRCh37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi
+  grch37_svdb_query_decipher_-v1.0.0-.vcf: decipher
+  grch37_svdb_query_clingen_cgh_benign_-v1.0.0-.vcf: clingen_cgh_benign
+  grch37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf: clingen_cgh_pathogenic
+  grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi
 sv_vcfannotation_header_lines_file: vcfanno_headerLines_-v1.0-.txt
-sv_vcfanno_config: GRCh37_vcfanno_config_-v1.0-.toml
+sv_vcfanno_config: grch37_vcfanno_config_-v1.0-.toml
 sv_vcfanno_lua: vcfanno_custom_-v1.0-.lua
 qccollect_regexp_file: qc_regexp_-v1.15-.yaml
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
@@ -114,8 +114,8 @@ picardtools_path: cluster_constant_path!
 snpeff_ann: 1
 snpeff_path: cluster_constant_path!
 snpsift_annotation_outinfo_key:
-  GRCh37_exac_reheader_-r0.3.1-.vcf.gz: EXAC
-  GRCh37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: SWEGEN
+  grch37_exac_reheader_-r0.3.1-.vcf.gz: EXAC
+  grch37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: SWEGEN
 snpsift_dbnsfp_annotations:
   - GERP++_RS
   - GERP++_NR

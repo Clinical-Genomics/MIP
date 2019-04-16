@@ -98,8 +98,8 @@ my %specific_argument = (
           q{--annotation BaseQualityRankSumTest --annotation ChromosomeCounts},
     },
     dbsnp_path => {
-        input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
-        expected_output => q{--dbsnp } . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+        input           => catfile(qw{ dir grch37_dbsnp_-138-.vcf }),
+        expected_output => q{--dbsnp } . catfile(qw{ dir grch37_dbsnp_-138-.vcf }),
     },
     dont_use_soft_clipped_bases => {
         input           => 1,
@@ -127,9 +127,9 @@ my %specific_argument = (
         expected_output => q{--pcr-indel-model NONE},
     },
     population_callset => {
-        input           => catfile(qw{ dir GRCh37_gnomad.genomes_-r2.0.1-.vcf }),
+        input           => catfile(qw{ dir grch37_gnomad.genomes_-r2.0.1-.vcf }),
         expected_output => q{--population-callset }
-          . catfile(qw{ dir GRCh37_gnomad.genomes_-r2.0.1-.vcf }),
+          . catfile(qw{ dir grch37_gnomad.genomes_-r2.0.1-.vcf }),
     },
     sample_ploidy => {
         input           => $SAMPLE_PLOIDY,

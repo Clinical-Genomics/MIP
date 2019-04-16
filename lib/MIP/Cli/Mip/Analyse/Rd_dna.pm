@@ -252,7 +252,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     option(
         q{human_genome_reference} => (
             cmd_aliases   => [qw{ hgr }],
-            cmd_tags      => [q{Default: GRCh37_homo_sapiens_-d5-.fasta}],
+            cmd_tags      => [q{Default: grch37_homo_sapiens_-d5-.fasta}],
             documentation => q{Human genome reference},
             is            => q{rw},
             isa           => Str,
@@ -538,7 +538,7 @@ q{Default: ReadGroupCovariate, ContextCovariate, CycleCovariate, QualityScoreCov
             cmd_aliases => [qw{ gbrkst }],
             cmd_flag    => q{gatk_baserecal_ks},
             cmd_tags    => [
-q{Default: GRCh37_dbsnp_-138-.vcf, GRCh37_1000g_indels_-phase1-.vcf, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}
+q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mills_and_1000g_indels_-gold_standard-.vcf}
             ],
             documentation => q{GATK BaseReCalibration known SNV and INDEL sites},
             is            => q{rw},
@@ -1349,7 +1349,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
         q{gatk_haplotypecaller_snp_known_set} => (
             cmd_aliases   => [qw{ ghckse }],
             cmd_flag      => q{gatk_haplotype_snp_ks},
-            cmd_tags      => [q{Default: GRCh37_dbsnp_-138-.vcf}],
+            cmd_tags      => [q{Default: grch37_dbsnp_-138-.vcf}],
             documentation => q{GATK HaplotypeCaller dbSNP set for annotating ID columns},
             is            => q{rw},
             isa           => Str,
@@ -1497,7 +1497,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             cmd_aliases => [qw{ gvrrei }],
             cmd_flag    => q{gatk_varrecal_res_indel},
             cmd_tags    => [
-q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=false,truth=false,prior=2.0", GRCh37_mills_and_1000g_indels_-gold_standard-.vcf="mills,VCF,known=true,training=true,truth=true,prior=12.0"}
+q{file.vcf=settings; Default: grch37_dbsnp_-138-.vcf="dbsnp,known=true,training=false,truth=false,prior=2.0", grch37_mills_and_1000g_indels_-gold_standard-.vcf="mills,VCF,known=true,training=true,truth=true,prior=12.0"}
             ],
             documentation =>
               q{Resource to use with GATK VariantRecalibrator in INDEL|BOTH},
@@ -1511,7 +1511,7 @@ q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=
             cmd_aliases => [qw{ gvrres }],
             cmd_flag    => q{gatk_varrecal_res_snv},
             cmd_tags    => [
-q{file.vcf=settings; Default: GRCh37_dbsnp_-138-.vcf="dbsnp,known=true,training=false,truth=false,prior=2.0", GRCh37_hapmap_-3.3-.vcf="hapmap,VCF,known=false,training=true,truth=true,prior=15.0", GRCh37_1000g_omni_-2.5-.vcf="omni,VCF,known=false,training=true,truth=false,prior=12.0", GRCh37_1000g_snps_high_confidence_-phase1-.vcf="1000G,known=false,training=true,truth=false,prior=10.0"}
+q{file.vcf=settings; Default: grch37_dbsnp_-138-.vcf="dbsnp,known=true,training=false,truth=false,prior=2.0", grch37_hapmap_-3.3-.vcf="hapmap,VCF,known=false,training=true,truth=true,prior=15.0", grch37_1000g_omni_-2.5-.vcf="omni,VCF,known=false,training=true,truth=false,prior=12.0", grch37_1000g_snps_high_confidence_-phase1-.vcf="1000G,known=false,training=true,truth=false,prior=10.0"}
             ],
             documentation =>
               q{Resource to use with GATK VariantRecalibrator in SNV|BOTH mode},
@@ -1577,7 +1577,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
         q{gatk_calculate_genotype_call_set} => (
             cmd_aliases   => [qw{ gcgcs }],
             cmd_flag      => q{gatk_calc_gtype_cs},
-            cmd_tags      => [q{Defaults: GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz}],
+            cmd_tags      => [q{Defaults: grch37_gnomad.genomes_-r2.0.1-.vcf.gz}],
             documentation => q{Callset to use in calculating genotype priors},
             is            => q{rw},
             isa           => Str,
@@ -1650,7 +1650,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
     option(
         q{gatk_varianteval_dbsnp} => (
             cmd_aliases   => [qw{ gveedbs }],
-            cmd_tags      => [q{Default: dbsnp_GRCh37_138_esa_129.vcf}],
+            cmd_tags      => [q{Default: dbsnp_grch37_138_esa_129.vcf}],
             documentation => q{DbSNP file used in GATK varianteval},
             is            => q{rw},
             isa           => Str,
@@ -1660,7 +1660,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
     option(
         q{gatk_varianteval_gold} => (
             cmd_aliases => [qw{ gveedbg }],
-            cmd_tags => [q{Default: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}],
+            cmd_tags => [q{Default: grch37_mills_and_1000g_indels_-gold_standard-.vcf}],
             documentation => q{Gold indel file used in GATK varianteval},
             is            => q{rw},
             isa           => Str,
@@ -1693,7 +1693,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     option(
         q{rhocall_frequency_file} => (
             cmd_aliases => [qw{ rhcf }],
-            cmd_tags    => [q{Default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
+            cmd_tags    => [q{Default: grch37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
             documentation => q{Frequency file for bcftools roh calculation},
             is            => q{rw},
             isa           => Str,
@@ -1986,7 +1986,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
         q{snpsift_annotation_files} => (
             cmd_aliases => [qw{ snesaf }],
             cmd_tags    => [
-q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF, GRCh37_exac_reheader_-r0.3.1-.vcf.gz=AF, GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=AF, GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=AF}
+q{Default: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF, grch37_exac_reheader_-r0.3.1-.vcf.gz=AF, grch37_anon-swegen_snp_-1000samples-.vcf.gz=AF, grch37_anon-swegen_indel_-1000samples-.vcf.gz=AF}
             ],
             documentation => q{Annotation files to use with snpsift},
             is            => q{rw},
@@ -1999,7 +1999,7 @@ q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF, GRCh37_exac_reheade
             cmd_aliases => [qw{ snesaoi }],
             cmd_flag    => q{snpsift_ann_oik},
             cmd_tags    => [
-q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G, GRCh37_exac_reheader_-r0.3.1-.vcf.gz=EXAC, GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF, GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF}
+q{Default: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G, grch37_exac_reheader_-r0.3.1-.vcf.gz=EXAC, grch37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF, grch37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF}
             ],
             documentation => q{Snpsift output INFO key},
             is            => q{rw},
@@ -2023,7 +2023,7 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
     option(
         q{snpsift_dbnsfp_file} => (
             cmd_aliases   => [qw{ snesdbnsfp }],
-            cmd_tags      => [q{Default: GRCh37_dbnsfp_-v2.9-.txt.gz}],
+            cmd_tags      => [q{Default: grch37_dbnsfp_-v2.9-.txt.gz}],
             documentation => q{DbNSFP File},
             is            => q{rw},
             isa           => Str,

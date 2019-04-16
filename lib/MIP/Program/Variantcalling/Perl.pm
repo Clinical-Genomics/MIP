@@ -76,7 +76,7 @@ sub replace_iupac {
     # Execute perl
     my $regexp = q{perl -nae} . $SPACE;
 
-    ## Substitute IUPAC code with N to not break vcf specifications (GRCh38)
+    ## Substitute IUPAC code with N to not break vcf specifications (grch38)
     if ($xargs) {
 
   # Print comment lines as they are but add escape char at the beginning of the expression

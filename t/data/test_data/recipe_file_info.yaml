@@ -75,11 +75,11 @@ exome_target_bed:
 fusion_filter_reference_genome:
   - _fusion_filter_genome_dir
 human_genome_compressed: not_compressed
-human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
+human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 human_genome_reference_file_endings:
   - .dict
   - .fai
-human_genome_reference_name_prefix: GRCh37_homo_sapiens_-d5-
+human_genome_reference_name_prefix: grch37_homo_sapiens_-d5-
 rtg_vcfeval_reference_genome:
   - _sdf_dir
 salmon_quant_reference_genome:

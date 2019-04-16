@@ -119,11 +119,11 @@ my $log = initiate_logger(
 
 my %active_parameter = (
     gatk_baserecalibration_known_sites =>
-      catfile( $Bin, qw{ data references GRCh37_dbsnp_-138-.vcf} ),
+      catfile( $Bin, qw{ data references grch37_dbsnp_-138-.vcf} ),
     human_genome_reference_file_endings =>
       catfile( $Bin, qw{Should_not_exist_file} ),
     snpsift_annotation_files =>
-      catfile( $Bin, qw{data references GRCh37_clinvar_-2017-01-04-.vcf.gz} ),
+      catfile( $Bin, qw{data references grch37_clinvar_-2017-01-04-.vcf.gz} ),
 );
 
 my %parameter = load_yaml(

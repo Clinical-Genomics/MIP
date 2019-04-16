@@ -178,8 +178,8 @@ reference_feature:
         file_index_check: 1000G_phase1.snps.high_confidence.b37.vcf.idx.gz.md5
         outfile: grch37_1000g_snps_high_confidence_-phase1-.vcf.gz
         outfile_check: grch37_1000g_snps_high_confidence_-phase1-.vcf.gz.md5
-        outfile_index: GRCh37_1000G_snps_high_confidence_-phase1-.vcf.idx.gz
-        outfile_index_check: GRCh37_1000G_snps_high_confidence_-phase1-.vcf.idx.gz.md5
+        outfile_index: grch37_1000G_snps_high_confidence_-phase1-.vcf.idx.gz
+        outfile_index_check: grch37_1000G_snps_high_confidence_-phase1-.vcf.idx.gz.md5
         outfile_decompress: gzip
         outfile_index_decompress: gzip
         outfile_check_method: md5sum

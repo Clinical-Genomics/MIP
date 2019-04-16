@@ -100,7 +100,7 @@ diag(   q{Test update_exome_target_bed from Parameters.pm v}
 ## Test hashes
 my %file_info = (
     human_genome_reference_version => q{37},
-    human_genome_reference_source  => q{GRCh},
+    human_genome_reference_source  => q{grch},
 );
 
 my %active_parameter = (
@@ -125,13 +125,13 @@ foreach my $capture_file ( keys %{ $active_parameter{exome_target_bed} } ) {
 
     if ( $capture_file ne q{test_capture.bed} ) {
 
-        like( $capture_file, qr/GRCh/xsm, q{Updated genome source} );
+        like( $capture_file, qr/grch/xsm, q{Updated genome source} );
 
         like( $capture_file, qr/37/xsm, q{Updated genome version} );
     }
     else {
 
-        unlike( $capture_file, qr/GRCh/xsm, q{Did not updated genome source} );
+        unlike( $capture_file, qr/grch/xsm, q{Did not updated genome source} );
 
         unlike( $capture_file, qr/37/xsm, q{Did not updated genome version} );
     }
