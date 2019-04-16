@@ -27,7 +27,7 @@ reference_genome_versions:
    - mip
   data_type: ARRAY
   default:
-   - GRCh37
+   - grch37
    - hg38
   element_separator: ,
   type: recipe_argument

@@ -129,8 +129,8 @@ my %required_argument = (
         expected_output => q{test_infile.fastq},
     },
     idxbase => {
-        input           => q{GRCh37_homo_sapiens_-d5-.fasta},
-        expected_output => q{GRCh37_homo_sapiens_-d5-.fasta},
+        input           => q{grch37_homo_sapiens_-d5-.fasta},
+        expected_output => q{grch37_homo_sapiens_-d5-.fasta},
     },
     outfiles_prefix_path => {
         input           => q{test_outfile.bam},

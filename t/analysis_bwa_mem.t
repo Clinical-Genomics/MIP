@@ -83,7 +83,7 @@ $active_parameter{platform}                       = q{ILLUMINA};
 $active_parameter{bwa_sambamba_sort_memory_limit} = q{28G};
 $active_parameter{bwa_mem_cram}                   = 1;
 $active_parameter{bwa_mem_bamstats}               = 1;
-$active_parameter{human_genome_reference}         = q{GRCh37_homo_sapiens_-d5-.fasta};
+$active_parameter{human_genome_reference}         = q{grch37_homo_sapiens_-d5-.fasta};
 
 my %file_info = test_mip_hashes(
     {

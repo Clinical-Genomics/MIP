@@ -120,7 +120,7 @@ my %parameter;
 
 my %active_parameter = (
     human_genome_reference =>
-      catfile( $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.fasta } ),
+      catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta } ),
     reference_dir => catfile( $Bin, qw{ data references } ),
 );
 ## File info hash

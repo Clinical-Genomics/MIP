@@ -439,7 +439,7 @@ sub set_cache {
 
 sub set_human_genome_reference_features {
 
-## Function : Detect version and source of the human_genome_reference: Source (hg19 or GRCh) as well as compression status.
+## Function : Detect version and source of the human_genome_reference: Source (hg19 or grch) as well as compression status.
 ##            Used to change capture kit genome reference version later
 ## Returns  :
 ##          : $file_info_href         => File info hash {REF}
@@ -490,7 +490,7 @@ sub set_human_genome_reference_features {
     ## Different regexes for the two sources.
     ## i.e. Don't allow subversion of Refseq genome
     my %genome_source = (
-        GRCh => qr/GRCh(\d+[.]\d+ | \d+)/xsm,
+        grch => qr/grch(\d+[.]\d+ | \d+)/xsm,
         hg   => qr/hg(\d+)/xsm,
     );
 
@@ -513,7 +513,7 @@ sub set_human_genome_reference_features {
         $log->fatal(
             q{MIP cannot detect what version of human_genome_reference you have supplied.}
               . $SPACE
-              . q{Please supply the reference on this format: [sourceversion]_[species] e.g. 'GRCh37_homo_sapiens' or 'hg19_homo_sapiens'}
+              . q{Please supply the reference on this format: [sourceversion]_[species] e.g. 'grch37_homo_sapiens' or 'hg19_homo_sapiens'}
               . $NEWLINE );
         exit 1;
     }

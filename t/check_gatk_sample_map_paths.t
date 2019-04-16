@@ -68,7 +68,7 @@ my $log      = test_log( {} );
 my $test_dir = File::Temp->newdir();
 
 ## Given a sample file with paths that exists
-#my $gatk_genotypegvcfs_ref_gvcf = catfile($Bin, qw{ data references GRCh37_gatk_merged_reference_samples.txt });
+#my $gatk_genotypegvcfs_ref_gvcf = catfile($Bin, qw{ data references grch37_gatk_merged_reference_samples.txt });
 my $gatk_genotypegvcfs_ref_gvcf = catfile( $test_dir, q{sample_map_file.txt} );
 
 ## Create anonymous filehandle
@@ -81,7 +81,7 @@ open $FILEHANDLE, q{>}, $gatk_genotypegvcfs_ref_gvcf
 say {$FILEHANDLE} q{100-1-2A-REF}
   . $TAB
   . catfile( $Bin,
-    qw{ data references GRCh37_merged_reference_infiles_-2014-.g.100-1-2A-REF.vcf } );
+    qw{ data references grch37_merged_reference_infiles_-2014-.g.100-1-2A-REF.vcf } );
 close $FILEHANDLE;
 
 my $is_ok = check_gatk_sample_map_paths(

@@ -39,9 +39,9 @@ my $config_file = catfile( dirname($Bin), qw{ templates mip_rd_dna_config.yaml }
 my $mip_path    = catfile( dirname($Bin), q{mip} );
 my $test_reference_path = catdir( $cluster_constant_path, q{references} );
 my $toml_template_path  = catfile( $test_reference_path,
-    q{GRCh37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
+    q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
 my $toml_config_path =
-  catfile( $test_reference_path, q{GRCh37_frequency_vcfanno_filter_config-v1.0-.toml} );
+  catfile( $test_reference_path, q{grch37_frequency_vcfanno_filter_config-v1.0-.toml} );
 
 ### User Options
 GetOptions(
@@ -98,7 +98,7 @@ my $cmds_ref = [
     q{--sv_vcfanno_config},
     catfile(
         $cluster_constant_path,
-        qw{ references GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz }
+        qw{ references grch37_all_sv_-phase3_v2.2013-05-02-.vcf.gz }
     ),
     q{--ifd},
     catfile(

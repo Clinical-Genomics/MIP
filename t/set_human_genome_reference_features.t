@@ -74,7 +74,7 @@ my %parameter;
 my %file_info;
 
 ## Test Ensemble genome
-my $human_genome_reference = q{GRCh37_homo_sapiens_-d5-.fasta};
+my $human_genome_reference = q{grch37_homo_sapiens_-d5-.fasta};
 set_human_genome_reference_features(
     {
         file_info_href         => \%file_info,
@@ -84,11 +84,11 @@ set_human_genome_reference_features(
     }
 );
 
-is( $file_info{human_genome_reference_version}, $GRCH_VERSION, q{GRCh version test} );
-is( $file_info{human_genome_reference_source},  q{GRCh},       q{GRCh source test} );
+is( $file_info{human_genome_reference_version}, $GRCH_VERSION, q{grch version test} );
+is( $file_info{human_genome_reference_source},  q{grch},       q{grch source test} );
 is( $file_info{human_genome_reference_name_prefix},
-    q{GRCh37_homo_sapiens_-d5-}, q{GRCh prefix test} );
-is( $file_info{human_genome_compressed}, 0, q{GRCh compressed test} );
+    q{grch37_homo_sapiens_-d5-}, q{grch prefix test} );
+is( $file_info{human_genome_compressed}, 0, q{grch compressed test} );
 is( $parameter{human_genome_reference_file_endings}{build_file},
     undef, q{Did not set build file for compression } );
 
@@ -113,7 +113,7 @@ is( $parameter{human_genome_reference_file_endings}{build_file},
 ## Given a human reference, when no version
 # Clear for new test
 %file_info = ();
-my $human_genome_reference_no_version = q{GRCh_homo_sapiens_-d5-.fasta};
+my $human_genome_reference_no_version = q{grch_homo_sapiens_-d5-.fasta};
 trap {
     set_human_genome_reference_features(
         {

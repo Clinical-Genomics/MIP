@@ -92,7 +92,7 @@ my $parameter_name = q{exome_target_bed};
 my %active_parameter = (
     not_correct_key => {
         catfile( $Bin,
-            qw{ data references GRCh37_agilent_sureselect_targets_cre_-v1-.bed }
+            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed }
         ) => q{sample1},
     },
 );
@@ -114,7 +114,7 @@ is( $parameter{$parameter_name}{build_file},
 %active_parameter = (
     exome_target_bed => {
         catfile( $Bin,
-            qw{ data references GRCh37_agilent_sureselect_targets_cre_-v1-.bed }
+            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed }
         ) => q{sample1},
     },
 );
@@ -137,7 +137,7 @@ is( $parameter{$parameter_name}{build_file},
 %active_parameter = (
     exome_target_bed => {
         catfile( $Bin,
-            qw{ data references GRCh37_agilent_sureselect_targets_cre_-v1-.bed }
+            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed }
         ) => q{sample1},
     },
     picardtools_collecthsmetrics => 1,
@@ -176,7 +176,7 @@ q{Set build file switch for hash parameter reference with mixed existence to 1}
 ## Given scalar entries with active parameter, files exists, and active associated programs
 $active_parameter{bwa_build_reference} = 1;
 $active_parameter{human_genome_reference} =
-  catfile( $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.fasta } );
+  catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta } );
 $active_parameter{bwa_mem} = 1;
 
 check_parameter_metafiles(

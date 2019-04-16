@@ -112,8 +112,8 @@ my %specific_argument = (
         expected_output => q{1:1000000-2000000 2:1000-5000},
     },
     referencefile_path => {
-        input           => q{GRCh37_homo_sapiens.fasta},
-        expected_output => q{--reference GRCh37_homo_sapiens.fasta},
+        input           => q{grch37_homo_sapiens.fasta},
+        expected_output => q{--reference grch37_homo_sapiens.fasta},
     },
     stderrfile_path => {
         input           => q{stderrfile.test},

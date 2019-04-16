@@ -11,7 +11,7 @@ human_genome_reference:
     - gatk_variantfiltration
     - star_aln
   data_type: SCALAR
-  default: GRCh37_homo_sapiens_-d5-.fasta
+  default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
   reference: reference_dir
   type: path
@@ -38,7 +38,7 @@ transcript_annotation:
     - stringtie_ar
     - gffcompare_ar
   data_type: SCALAR
-  default: GRCh37_gencode_annotation_reformat_-v29-.gtf
+  default: grch37_gencode_annotation_reformat_-v29-.gtf
   exists_check: file
   reference: reference_dir
   type: path
@@ -355,7 +355,7 @@ star_fusion_genome_lib_dir:
   associated_recipe:
     - star_fusion
   data_type: SCALAR
-  default: GRCh37_v19_CTAT_lib_Feb092018
+  default: grch37_v19_CTAT_lib_Feb092018
   exists_check: directory
   reference: reference_dir
   type: path
@@ -489,9 +489,9 @@ gatk_baserecalibration_known_sites:
   element_separator: ,
   data_type: ARRAY
   default:
-    - GRCh37_1000g_indels_-phase1-.vcf
-    - GRCh37_dbsnp_-138-.vcf
-    - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+    - grch37_1000g_indels_-phase1-.vcf
+    - grch37_dbsnp_-138-.vcf
+    - grch37_mills_and_1000g_indels_-gold_standard-.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -538,7 +538,7 @@ rseqc_transcripts_file:
     - genebody_coverage
     - rseqc
   data_type: SCALAR
-  default: GRCh37_gencode_-v28-.bed
+  default: grch37_gencode_-v28-.bed
   exists_check: file
   reference: reference_dir
   type: path
@@ -628,7 +628,7 @@ gatk_haplotypecaller_snp_known_set:
   associated_recipe:
     - gatk_haplotypecaller
   data_type: SCALAR
-  default: GRCh37_dbsnp_-138-.vcf
+  default: grch37_dbsnp_-138-.vcf
   exists_check: file
   reference: reference_dir
   type: path

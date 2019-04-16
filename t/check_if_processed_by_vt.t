@@ -74,7 +74,7 @@ is( $return, undef, q{No reference file to check} );
 
 ## Given a reference file path, when needing vt processing
 my $reference_file_path_no_vt =
-  catfile( $Bin, qw{ data references GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz } );
+  catfile( $Bin, qw{ data references grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz } );
 
 ## Check if vt has processed references using regexp
 my @checked_references = check_if_processed_by_vt(
@@ -89,7 +89,7 @@ is( 1, scalar @checked_references, q{Detected VT processing is needed} );
 
 ## Given a reference file path, when not needing vt processing
 my $reference_file_path_vt =
-  catfile( $Bin, qw{ data references GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz } );
+  catfile( $Bin, qw{ data references grch37_gnomad.genomes_-r2.0.1-.vcf.gz } );
 
 ## Check if vt has processed references using regexp
 @checked_references = check_if_processed_by_vt(

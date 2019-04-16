@@ -90,8 +90,8 @@ my %required_argument = (
 
 my %specific_argument = (
     dbsnp_path => {
-        input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
-        expected_output => q{--dbsnp } . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+        input           => catfile(qw{ dir grch37_dbsnp_-138-.vcf }),
+        expected_output => q{--dbsnp } . catfile(qw{ dir grch37_dbsnp_-138-.vcf }),
     },
     include_nonvariant_sites => {
         input           => 1,

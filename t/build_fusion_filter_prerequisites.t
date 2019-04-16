@@ -92,7 +92,7 @@ my %sample_info;
 
 ## Special case
 $active_parameter{fusion_filter_reference_genome} = q{human_genome.fastq};
-$active_parameter{transcript_annotation}          = q{GRCH37_transcripts.gtf};
+$active_parameter{transcript_annotation}          = q{grch37_transcripts.gtf};
 
 my $is_ok = build_fusion_filter_prerequisites(
     {

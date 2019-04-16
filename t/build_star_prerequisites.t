@@ -90,7 +90,7 @@ my %parameter = test_mip_hashes(
 my %sample_info;
 
 # Special case
-$active_parameter{transcript_annotation} = q{GRCH37_transcripts.gtf};
+$active_parameter{transcript_annotation} = q{grch37_transcripts.gtf};
 
 my $is_ok = build_star_prerequisites(
     {

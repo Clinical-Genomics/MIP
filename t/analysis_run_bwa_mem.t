@@ -83,7 +83,7 @@ $active_parameter{platform}                       = q{ILLUMINA};
 $active_parameter{bwa_sambamba_sort_memory_limit} = q{28G};
 $active_parameter{bwa_mem_cram}                   = 1;
 $active_parameter{bwa_mem_bamstats}               = 1;
-$active_parameter{human_genome_reference}         = q{GRCh37_homo_sapiens_-d5-.fasta};
+$active_parameter{human_genome_reference}         = q{grch37_homo_sapiens_-d5-.fasta};
 
 my %file_info = test_mip_hashes(
     {
@@ -127,7 +127,7 @@ push @{ $file_info{ADM1059A1}{mip_infiles} },
   q{7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_2.fastq};
 
 ## Will test the run-bwamem
-$file_info{human_genome_reference_source}  = q{GRCh};
+$file_info{human_genome_reference_source}  = q{grch};
 $file_info{human_genome_reference_version} = $GENOME_BUILD_VERSION_38;
 
 my $is_ok = analysis_run_bwa_mem(

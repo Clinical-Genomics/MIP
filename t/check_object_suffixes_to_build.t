@@ -74,7 +74,7 @@ my %parameter = load_yaml(
 my %active_parameter = (
     exome_target_bed => {
         catfile( $Bin,
-            qw{ data references GRCh37_agilent_sureselect_targets_cre_-v1-.bed }
+            qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed }
         ) => q{sample1},
     },
 );

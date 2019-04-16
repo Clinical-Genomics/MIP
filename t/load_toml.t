@@ -66,7 +66,7 @@ my %hash_to_return = load_toml(
     {
         toml_file_path => catfile(
             $Bin,
-            qw{ data references GRCh37_frequency_vcfanno_filter_config_-v1.0-.toml }
+            qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml }
         ),
     }
 );

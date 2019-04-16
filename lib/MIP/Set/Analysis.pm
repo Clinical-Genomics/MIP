@@ -105,7 +105,7 @@ sub set_recipe_on_analysis_type {
 
 sub set_recipe_bwa_mem {
 
-## Function : Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or GRCh)
+## Function : Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)
 ## Returns  :
 ## Arguments: $analysis_recipe_href           => Analysis recipe hash {REF}
 ##          : $human_genome_reference_source  => Human genome reference source
@@ -147,9 +147,9 @@ sub set_recipe_bwa_mem {
     Readonly my $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS => 37;
     Readonly my $GENOME_BUILD_VERSION_HG_PRIOR_ALTS   => 19;
 
-    if ( $human_genome_reference_source eq q{GRCh} ) {
+    if ( $human_genome_reference_source eq q{grch} ) {
 
-        # Human genome version > GRCh37
+        # Human genome version > grch37
         if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS ) {
 
             # Use bwa run mem recipe
@@ -157,7 +157,7 @@ sub set_recipe_bwa_mem {
             return;
         }
 
-        # Human genome version <= GRCh37
+        # Human genome version <= grch37
         # Use bwa mem recipe
         $analysis_recipe_href->{bwa_mem} = \&analysis_bwa_mem;
         return;

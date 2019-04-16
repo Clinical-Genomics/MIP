@@ -318,7 +318,7 @@ sub pipeline_analyse_rd_dna {
         }
     );
 
-    ## Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or GRCh)
+    ## Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)
     set_recipe_bwa_mem(
         {
             analysis_recipe_href => \%analysis_recipe,
