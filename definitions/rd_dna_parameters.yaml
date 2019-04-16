@@ -1851,7 +1851,7 @@ nist_call_set_vcf:
    2.19:
     NA12878: GRCh37_nist_hg001_-na12878_v2.19-.vcf
    3.3.2:
-    NA24385: GRCh37_nist_hg001_-na24385_v3.3.2-.vcf
+    NA24385: GRCh37_nist_hg002_-na24385_v3.3.2-.vcf
     NA12878: GRCh37_nist_hg001_-na12878_v3.3.2-.vcf
   data_type: HASH
   type: recipe_argument
@@ -1863,7 +1863,7 @@ nist_call_set_bed:
    2.19: 
     NA12878: GRCh37_nist_hg001_-na12878_v2.19-.bed
    3.3.2:
-    NA24385: GRCh37_nist_hg001_-na24385_v3.3.2-.bed
+    NA24385: GRCh37_nist_hg002_-na24385_v3.3.2-.bed
     NA12878: GRCh37_nist_hg001_-na12878_v3.3.2-.bed
   data_type: HASH
   type: recipe_argument
