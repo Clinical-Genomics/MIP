@@ -241,7 +241,7 @@ reference_dir: ~
 
 # Reference genomes to download
 reference_genome_versions:
-  - GRCh37
+  - grch37
   - hg38
 
 ## Sbath options

@@ -85,9 +85,9 @@ my %required_argument = (
         expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
     },
     referencefile_path => {
-        input           => catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+        input           => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
         expected_output => q{R=}
-          . catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+          . catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
 );
 

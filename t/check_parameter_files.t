@@ -73,12 +73,12 @@ my %active_parameter = (
 
     # To test array parameter
     gatk_baserecalibration_known_sites =>
-      [ catfile( $Bin, qw{ data references GRCh37_dbsnp_-138-.vcf} ), ],
+      [ catfile( $Bin, qw{ data references grch37_dbsnp_-138-.vcf} ), ],
     gatk_genotypegvcfs_ref_gvcf => q{test_file},
 
     # To test scalar parameter
     human_genome_reference =>
-      catfile( $Bin, qw{data references GRCh37_homo_sapiens_-d5-.fasta} ),
+      catfile( $Bin, qw{data references grch37_homo_sapiens_-d5-.fasta} ),
     mip                    => 1,
     gatk_baserecalibration => 1,
     gatk_genotypegvcfs     => 1,
@@ -88,7 +88,7 @@ my %active_parameter = (
     # To test hash parameter
     snpsift_annotation_files => {
         catfile( $Bin,
-            qw{data references GRCh37_anon-swegen_snp_-1000samples-.vcf.gz} ) => q{AF},
+            qw{data references grch37_anon-swegen_snp_-1000samples-.vcf.gz} ) => q{AF},
     },
     sv_vcfparser_select_file => q{test_file},
 );

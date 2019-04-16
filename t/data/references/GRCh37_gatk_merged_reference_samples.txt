@@ -1,2 +1,0 @@
-100-1-2A-REF	data/references/GRCh37_merged_reference_infiles_-2014-.g.100-1-2A-REF.vcf
-100-1-4A-REF	data/references/GRCh37_merged_reference_infiles_-2014-.g.100-1-4A-REF.vcf

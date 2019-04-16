@@ -77,7 +77,7 @@ sub set_contigs {
           chr18 chr19 chr20 chr21 chr22 chrY
           chrM };
     }
-    elsif ( $human_genome_reference =~ / GRCh\d+ /xsm ) {
+    elsif ( $human_genome_reference =~ / grch\d+ /xsm ) {
         ## Ensembl - no prefix and MT
 
         # Contigs for filtering of bam file

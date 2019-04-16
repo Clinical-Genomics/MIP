@@ -139,9 +139,9 @@ my %required_argument = (
         expected_output => q{OUTPUT=} . catfile(qw{ dir outfile.vcf }),
     },
     referencefile_path => {
-        input => catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+        input => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
         expected_output => q{REFERENCE_SEQUENCE=}
-          . catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+          . catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
 );
 

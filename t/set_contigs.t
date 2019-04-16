@@ -118,18 +118,18 @@ my @ensembl_contigs = qw{
 
 ## Tests
 
-# GRCh
+# grch
 set_contigs(
     {
         file_info_href         => \%file_info,
-        human_genome_reference => q{GRCh37_homo_sapiens_-d5-.fasta},
+        human_genome_reference => q{grch37_homo_sapiens_-d5-.fasta},
     }
 );
 
-is( $file_info{contigs}[-1], q{MT}, q{Set GRCh reference contigs} );
+is( $file_info{contigs}[-1], q{MT}, q{Set grch reference contigs} );
 
 is( $file_info{contigs_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
-    q{X}, q{Set GRCh reference size ordered contigs} );
+    q{X}, q{Set grch reference size ordered contigs} );
 
 # Hg38
 set_contigs(

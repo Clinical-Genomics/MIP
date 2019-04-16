@@ -161,7 +161,13 @@ sub analysis_cadd {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
 
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
+        my $human_genome_reference_source = $file_info_href->{human_genome_reference_source};
+
+    if($human_genome_reference_source eq q{grch}) {
+
+      $human_genome_reference_source = q{GRCh};
+    }
+    my $assembly_version = $human_genome_reference_source
       . $file_info_href->{human_genome_reference_version};
     my $cadd_columns_name = join $COMMA, @{ $active_parameter_href->{cadd_column_names} };
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };

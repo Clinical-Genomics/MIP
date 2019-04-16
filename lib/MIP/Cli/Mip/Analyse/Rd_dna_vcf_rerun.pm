@@ -172,7 +172,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     option(
         q{human_genome_reference} => (
             cmd_aliases   => [qw{ hgr }],
-            cmd_tags      => [q{Default: GRCh37_homo_sapiens_-d5-.fasta}],
+            cmd_tags      => [q{Default: grch37_homo_sapiens_-d5-.fasta}],
             documentation => q{Human genome reference},
             is            => q{rw},
             isa           => Str,
@@ -585,7 +585,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     option(
         q{rhocall_frequency_file} => (
             cmd_aliases => [qw{ rhcf }],
-            cmd_tags    => [q{Default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
+            cmd_tags    => [q{Default: grch37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
             documentation => q{Frequency file for bcftools roh calculation},
             is            => q{rw},
             isa           => Str,
@@ -878,7 +878,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
         q{snpsift_annotation_files} => (
             cmd_aliases => [qw{ snesaf }],
             cmd_tags    => [
-q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF, GRCh37_exac_reheader_-r0.3.1-.vcf.gz=AF, GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=AF, GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=AF}
+q{Default: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF, grch37_exac_reheader_-r0.3.1-.vcf.gz=AF, grch37_anon-swegen_snp_-1000samples-.vcf.gz=AF, grch37_anon-swegen_indel_-1000samples-.vcf.gz=AF}
             ],
             documentation => q{Annotation files to use with snpsift},
             is            => q{rw},
@@ -891,7 +891,7 @@ q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF, GRCh37_exac_reheade
             cmd_aliases => [qw{ snesaoi }],
             cmd_flag    => q{snpsift_ann_oik},
             cmd_tags    => [
-q{Default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G, GRCh37_exac_reheader_-r0.3.1-.vcf.gz=EXAC, GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF, GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF}
+q{Default: grch37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G, grch37_exac_reheader_-r0.3.1-.vcf.gz=EXAC, grch37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF, grch37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF}
             ],
             documentation => q{Snpsift output INFO key},
             is            => q{rw},
@@ -915,7 +915,7 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
     option(
         q{snpsift_dbnsfp_file} => (
             cmd_aliases   => [qw{ snesdbnsfp }],
-            cmd_tags      => [q{Default: GRCh37_dbnsfp_-v2.9-.txt.gz}],
+            cmd_tags      => [q{Default: grch37_dbnsfp_-v2.9-.txt.gz}],
             documentation => q{DbNSFP File},
             is            => q{rw},
             isa           => Str,

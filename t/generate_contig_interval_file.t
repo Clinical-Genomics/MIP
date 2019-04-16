@@ -74,7 +74,7 @@ open $FILEHANDLE, q{>}, \$file_content
 
 ## Given
 my @contigs               = qw{ 1 2 };
-my $exome_target_bed_file = q{GRCh37_agilent_sureselect_targets_-v5-.bed};
+my $exome_target_bed_file = q{grch37_agilent_sureselect_targets_-v5-.bed};
 my $reference_dir         = catfile( $Bin, qw{ data reference } );
 my $outdirectory          = catfile(qw{ a outdir });
 

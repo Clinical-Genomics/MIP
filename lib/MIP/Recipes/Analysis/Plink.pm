@@ -434,7 +434,7 @@ sub analysis_plink {
         my $genome_build;
 
         ## Set correct build prefix
-        if ( $human_genome_reference_source eq q{GRCh} ) {
+        if ( $human_genome_reference_source eq q{grch} ) {
 
             $genome_build = q{b} . $human_genome_reference_version;
         }

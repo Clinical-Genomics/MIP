@@ -71,7 +71,7 @@ my %active_parameter = (
 );
 
 my %file_info = (
-    human_genome_reference_source  => q{GRCh},
+    human_genome_reference_source  => q{grch},
     human_genome_reference_version => $GENOME_BUILD_VERSION,
 );
 my %sample_info;

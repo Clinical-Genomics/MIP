@@ -110,11 +110,11 @@ my %active_parameter = (
     },
     array => [
         catfile(
-            $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.fasta.gz }
+            $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta.gz }
         )
     ],
     scalar =>
-      catfile( $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.fasta.gz } ),
+      catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta.gz } ),
 );
 
 ## Expected id for hash key after update_to_absolute_path
@@ -134,7 +134,7 @@ foreach my $key ( keys %{ $active_parameter{hash} } ) {
 }
 
 my $expected_value =
-  catfile( $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.fasta.gz } );
+  catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta.gz } );
 is( $active_parameter{array}[0], $expected_value, q{Set array absolute path} );
 
 is( $active_parameter{scalar}, $expected_value, q{Set scalar absolute path} );

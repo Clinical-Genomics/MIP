@@ -96,8 +96,8 @@ $expected_analysis_recipe{bwa_mem} = \&analysis_run_bwa_mem;
 is_deeply( \%analysis_recipe, \%expected_analysis_recipe,
     q{Set run-bwa mem recipe for } . $reference_source . $GENOME_BUILD_VERSION_20 );
 
-## Given GRCh genome source when genome build version 37
-$reference_source = q{GRCh};
+## Given grch genome source when genome build version 37
+$reference_source = q{grch};
 set_recipe_bwa_mem(
     {
         analysis_recipe_href           => \%analysis_recipe,
@@ -111,8 +111,8 @@ $expected_analysis_recipe{bwa_mem} = \&analysis_bwa_mem;
 is_deeply( \%analysis_recipe, \%expected_analysis_recipe,
     q{Set bwa mem recipe for } . $reference_source . $GENOME_BUILD_VERSION_37 );
 
-## Given GRCh genome source when genome build version 38
-$reference_source = q{GRCh};
+## Given grch genome source when genome build version 38
+$reference_source = q{grch};
 set_recipe_bwa_mem(
     {
         analysis_recipe_href           => \%analysis_recipe,

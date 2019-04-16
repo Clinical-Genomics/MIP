@@ -93,16 +93,16 @@ my %required_argument = (
 
 my %specific_argument = (
     dbsnp_file_path => {
-        input           => catfile(qw{ dir GRCh37_dbsnp_-138_esa_129-.vcf}),
+        input           => catfile(qw{ dir grch37_dbsnp_-138_esa_129-.vcf}),
         expected_output => q{--dbsnp}
           . $SPACE
-          . catfile(qw{ dir GRCh37_dbsnp_-138_esa_129-.vcf}),
+          . catfile(qw{ dir grch37_dbsnp_-138_esa_129-.vcf}),
     },
     indel_gold_standard_file_path => {
-        input => catfile(qw{ dir GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}),
+        input => catfile(qw{ dir grch37_mills_and_1000g_indels_-gold_standard-.vcf}),
         expected_output => q{--gold-standard}
           . $SPACE
-          . catfile(qw{ dir GRCh37_mills_and_1000g_indels_-gold_standard-.vcf}),
+          . catfile(qw{ dir grch37_mills_and_1000g_indels_-gold_standard-.vcf}),
     },
     infile_paths_ref => {
         inputs_ref      => [qw{ var_1.vcf var_2.vcf var_3.vcf }],
