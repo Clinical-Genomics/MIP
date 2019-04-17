@@ -213,6 +213,7 @@ sub install_svdb {
         {
             editable   => $DOT,
             FILEHANDLE => $FILEHANDLE,
+	 python_module => 1,
             quiet      => $quiet,
             verbose    => $verbose,
         }
