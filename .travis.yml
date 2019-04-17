@@ -7,11 +7,11 @@ sudo: required
 before_install:
 ## Install SSL
   - sudo apt-get update
-  - sudo apt-get install libssl1.0.0 libssl-dev libcrypto++9 libcrypto++-dev
-  - cd /lib/x86_64-linux-gnu
-  - sudo ln -s libssl.so.1.0.0 libssl.so.10
-  - sudo ln -s libcrypto.so.1.0.0 libcrypto.so.10
-  - cd -
+#  - sudo apt-get install libssl1.0.0 libssl-dev libcrypto++9 libcrypto++-dev
+#  - cd /lib/x86_64-linux-gnu
+#  - sudo ln -s libssl.so.1.0.0 libssl.so.10
+#  - sudo ln -s libcrypto.so.1.0.0 libcrypto.so.10
+#  - cd -
 
 ## Install conda
   - wget https://repo.anaconda.com/miniconda/Miniconda2-4.5.12-Linux-x86_64.sh -O miniconda.sh;
