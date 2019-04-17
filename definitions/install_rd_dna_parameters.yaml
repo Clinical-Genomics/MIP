@@ -20,7 +20,7 @@ emip:
     cmake: 3.3.1
     cramtools: 3.0.b127=2
     cutadapt: 1.18=py27_0
-    cython: 0.29.7=py27he1b5a44_0 #0.29.1=py27hfc679d8_0
+    cython: 0.29.1=py27hfc679d8_0
     cyvcf2: 0.10.0=py27h355e19c_0
     gatk: 3.8=5
     gatk4: 4.1.0.0=0
