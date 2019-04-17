@@ -7,7 +7,7 @@ sudo: required
 before_install:
 ## Install SSL
   - sudo apt-get update
-  - sudo apt-get install gcc libssl1.0.0 libssl-dev libcrypto++9 libcrypto++-dev libpthread-stubs0-dev
+  - sudo apt-get install libssl1.0.0 libssl-dev libcrypto++9 libcrypto++-dev
   - cd /lib/x86_64-linux-gnu
   - sudo ln -s libssl.so.1.0.0 libssl.so.10
   - sudo ln -s libcrypto.so.1.0.0 libcrypto.so.10
@@ -45,9 +45,9 @@ install:
 script:
 ## Test MIP rd_dna
   - conda activate mip_travis
-  - cd /lib/x86_64-linux-gnu
-  - sudo ln -s "$ROOTSYS"/lib/*so .
-  - cd -
+#  - cd /lib/x86_64-linux-gnu
+#  - sudo ln -s "$ROOTSYS"/lib/*so .
+#  - cd -
 ## Set-up test coverage for test directory "t"
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -j 9 t
 ### Download
