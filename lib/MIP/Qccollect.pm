@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $NEWLINE $SPACE $TAB };
+use MIP::Constants qw{ $COLON $NEWLINE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -27,7 +27,92 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ chanjo_gender_check get_case_pairwise_comparison get_parent_ids plink_gender_check relation_check };
+      qw{ check_qc_metric chanjo_gender_check define_evaluate_metric get_case_pairwise_comparison get_parent_ids plink_gender_check relation_check };
+}
+
+sub check_qc_metric {
+
+## Function : Check and add result of check to qc data hash
+## Returns  :
+## Arguments: $metric                => Metric to evaluate
+##          : $qc_data_href          => Qc data hash {REF}
+##          : $qc_metric_value       => Qc metric value
+##          : $recipe                => The recipe to examine
+##          : $reference_metric_href => Metrics to evaluate
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $metric;
+    my $qc_data_href;
+    my $qc_metric_value;
+    my $recipe;
+    my $reference_metric_href;
+
+    my $tmpl = {
+        metric => { defined => 1, required => 1, store => \$metric, strict_type => 1, },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        qc_metric_value => {
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_metric_value,
+            strict_type => 1,
+        },
+        recipe => { defined => 1, required => 1, store => \$recipe, strict_type => 1, },
+        reference_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_metric_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Qc_data qw{ add_qc_data_evaluation_info };
+
+    my $status = q{FAILED:};
+
+    if ( exists $reference_metric_href->{lt} ) {
+
+        ## Determine status - if lower than add to hash. otherwise PASS and do not include
+        if ( $qc_metric_value < $reference_metric_href->{lt} ) {
+
+            ## Add to status string and then to hash
+            $status .= $recipe . $UNDERSCORE . $metric . $COLON . $qc_metric_value;
+            add_qc_data_evaluation_info(
+                {
+                    qc_data_href => $qc_data_href,
+                    recipe_name  => $recipe,
+                    value        => $status,
+                }
+            );
+        }
+    }
+
+    if ( exists $reference_metric_href->{gt} ) {
+
+        ## Determine status - if greater than add to hash. otherwise PASS and do not include
+        if ( $qc_metric_value > $reference_metric_href->{gt} ) {
+
+            $status .= $recipe . $UNDERSCORE . $metric . $COLON . $qc_metric_value;
+            add_qc_data_evaluation_info(
+                {
+                    qc_data_href => $qc_data_href,
+                    recipe_name  => $recipe,
+                    value        => $status,
+                }
+            );
+        }
+    }
+    return;
 }
 
 sub chanjo_gender_check {
@@ -147,6 +232,77 @@ sub chanjo_gender_check {
         }
     );
     return;
+}
+
+sub define_evaluate_metric {
+
+## Function  : Sets recipes, metrics and thresholds to be evaluated
+## Returns   :
+## Arguments : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_pedigree_sample_id_attributes };
+
+    ## Constants
+    Readonly my $FRACTION_DUPLICATES         => 0.2;
+    Readonly my $FRACTION_OF_COMMON_VARIANTS => 0.55;
+    Readonly my $FRACTION_OF_ERRORS          => 0.06;
+    Readonly my $PCT_ADAPTER                 => 0.0005;
+    Readonly my $PCT_PF_READS_ALIGNED        => 0.95;
+    Readonly my $PCT_TARGET_BASES_10X        => 0.95;
+    Readonly my $PERCENTAGE_MAPPED_READS     => 95;
+
+    my %evaluate_metric;
+
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+
+        $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} =
+          $PERCENTAGE_MAPPED_READS;
+        $evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_10X}{lt} =
+          $PCT_TARGET_BASES_10X;
+        $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} =
+          $PCT_PF_READS_ALIGNED;
+        $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_ADAPTER}{gt} =
+          $PCT_ADAPTER;
+        $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} =
+          $FRACTION_DUPLICATES;
+        $evaluate_metric{variant_integrity_ar_mendel}{fraction_of_errors}{gt} =
+          $FRACTION_OF_ERRORS;
+        $evaluate_metric{variant_integrity_ar_father}{fraction_of_common_variants}{lt} =
+          $FRACTION_OF_COMMON_VARIANTS;
+
+        ## Get sample id expected_coverage
+        my $expected_coverage = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{expected_coverage},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+        if ($expected_coverage) {
+
+            $evaluate_metric{$sample_id}{collecthsmetrics}{MEAN_TARGET_COVERAGE}{lt} =
+              $expected_coverage;
+        }
+    }
+    return %evaluate_metric;
 }
 
 sub get_case_pairwise_comparison {
