@@ -33,6 +33,13 @@ before_install:
   - cpanm --notest Devel::Cover::Report::Coveralls
 
 install:
+  - conda create -n test_svdb python=2.7 pip
+  - conda activate test_svdb 
+  - wget --no-verbose https://github.com/J35P312/SVDB/archive/2.0.0.zip -O SVDB-2.0.0.zip
+  - unzip -o SVDB-2.0.0.zip
+  - cd SVDB-2.0.0
+  - python -m pip install --editable . 
+  - svdb --query --help
 ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
 ## Generate rare disease installation script
