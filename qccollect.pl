@@ -181,12 +181,12 @@ case_qc(
     }
 );
 
-    ## Defines recipes, metrics and thresholds to evaluate
-  my %evaluate_metric  = define_evaluate_metric(
-        {
-            sample_info_href => \%sample_info,
-        }
-    );
+## Defines recipes, metrics and thresholds to evaluate
+my %evaluate_metric = define_evaluate_metric(
+    {
+        sample_info_href => \%sample_info,
+    }
+);
 
 if ( not $skip_evaluation ) {
 
@@ -341,10 +341,10 @@ sub case_qc {
         ## Set package executable version from recipe to metrics hash
         set_qc_data_recipe_info(
             {
-              key          => q{version},
+                key          => q{version},
                 qc_data_href => $qc_data_href,
                 recipe_name  => $recipe,
-                version      => $attribute{version},
+                value        => $attribute{version},
             }
         );
 
@@ -866,6 +866,8 @@ sub evaluate_family_qc_parameters {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Qccollect qw{ check_qc_metric };
 
   RECIPE:
     for my $recipe ( keys %{$evaluate_metric_href} ) {

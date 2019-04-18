@@ -310,14 +310,14 @@ sub set_qc_data_recipe_info {
             strict_type => 1,
         },
         value => {
-            defined     => 1,
-            required    => 1,
             store       => \$value,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $value );
 
     ## Set recipe key value pair for arbitrary info on sample and infile level
     if ( $sample_id and $infile ) {
