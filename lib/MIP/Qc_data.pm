@@ -26,11 +26,57 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ add_qc_data_recipe_info
+    our @EXPORT_OK = qw{
+      add_qc_data_evaluation_info
+      add_qc_data_recipe_info
       get_qc_data_case_recipe_attributes
       get_qc_data_sample_recipe_attributes
       set_qc_data_recipe_info
-      set_qc_data_case_recipe_version };
+    };
+}
+
+sub add_qc_data_evaluation_info {
+
+## Function : Add recipe evaluation info in qc_data hash
+## Returns  :
+## Arguments: $qc_data_href => Qc_data hash {REF}
+##          : $recipe_name  => Recipe to set attributes for
+##          : $value        => Value to store
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $qc_data_href;
+    my $recipe_name;
+    my $value;
+
+    my $tmpl = {
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        value => {
+            defined     => 1,
+            required    => 1,
+            store       => \$value,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add recipe key value pair for arbitrary info on case level
+    push @{ $qc_data_href->{evaluation}{$recipe_name} }, $value;
+    return;
 }
 
 sub add_qc_data_recipe_info {
@@ -264,14 +310,14 @@ sub set_qc_data_recipe_info {
             strict_type => 1,
         },
         value => {
-            defined     => 1,
-            required    => 1,
             store       => \$value,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $value );
 
     ## Set recipe key value pair for arbitrary info on sample and infile level
     if ( $sample_id and $infile ) {
@@ -295,47 +341,4 @@ sub set_qc_data_recipe_info {
     return;
 }
 
-sub set_qc_data_case_recipe_version {
-
-## Function : Set case recipe version in qc_data hash
-## Returns  :
-## Arguments: $qc_data_href => Qc_data hash {REF}
-##          : $recipe_name  => Recipe to set attributes in
-##          : $version      => Version of program executable
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $qc_data_href;
-    my $recipe_name;
-    my $version;
-
-    my $tmpl = {
-        qc_data_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$qc_data_href,
-            strict_type => 1,
-        },
-        recipe_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$recipe_name,
-            strict_type => 1,
-        },
-        version => {
-            store       => \$version,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return if ( not defined $version );
-
-    ## Set recipe version
-    $qc_data_href->{recipe}{$recipe_name}{version} = $version;
-    return;
-}
 1;
