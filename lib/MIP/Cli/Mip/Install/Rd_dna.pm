@@ -119,6 +119,7 @@ sub _build_usage {
                 epeddy        => Optional [Str],
                 q{eperl_5.26} => Optional [Str],
                 epy3          => Optional [Str],
+                esvdb         => Optional [Str],
                 etiddit       => Optional [Str],
                 evep          => Optional [Str],
             ],
@@ -142,12 +143,17 @@ sub _build_usage {
         q{installations} => (
             cmd_aliases => [qw{ install }],
             cmd_flag    => q{installations},
-            cmd_tags =>
-              [q{Default: emip ecnvnator edelly epeddy eperl_5.26 epy3 etiddit evep}],
+            cmd_tags    => [
+q{Default: emip ecnvnator edelly epeddy eperl_5.26 epy3 esvdb etiddit evep}
+            ],
             documentation => q{Environments to install},
             is            => q{rw},
             isa           => ArrayRef [
-                enum( [qw{ emip ecnvnator edelly epeddy eperl_5.26 epy3 etiddit evep }] ),
+                enum(
+                    [
+                        qw{ emip ecnvnator edelly epeddy eperl_5.26 epy3 esvdb etiddit evep }
+                    ]
+                ),
             ],
             required => 0,
         ),

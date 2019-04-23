@@ -218,7 +218,7 @@ recipe_memory:
     samtools_subsample_mt: 2
     split_fastq_file: 2
     sv_annotate: 7
-    sv_reformat: 13
+    sv_reformat: 24
     sv_varianteffectpredictor: 8
     tiddit: 8
     vcf2cytosure_ar: 4
@@ -748,7 +748,6 @@ sv_combinevariantcallsets:
   outfile_suffix: ".vcf"
   program_executables:
    - bcftools
-   - svdb
    - vt
   type: recipe
 sv_combinevariantcallsets_bcf_file:

@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -153,7 +153,7 @@ sub analysis_sv_annotate {
     use MIP::Program::Variantcalling::Svdb qw{ svdb_query };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Script::Setup_script qw{ setup_script write_source_environment_command };
 
     ### PREPROCESSING:
 
@@ -260,7 +260,7 @@ sub analysis_sv_annotate {
         my $outfile_tracker = 0;
 
       QUERIES:
-        while ( my ( $query_db_file, $query_db_tag ) =
+        while ( my ( $query_db_file, $query_db_tag_info ) =
             each %{ $active_parameter_href->{sv_svdb_query_db_files} } )
         {
 
@@ -276,15 +276,25 @@ sub analysis_sv_annotate {
                 ## Increment now that infile has been set
                 $outfile_tracker++;
             }
+            ## Get parameters
+# Split query_db_tag to decide svdb input query fields
+# FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY
+            my (
+                $query_db_tag,     $out_frequency_tag, $out_allele_count_tag,
+                $in_frequency_tag, $in_allele_count_tag
+            ) = split /[|]/sxm, $query_db_tag_info;
+
             svdb_query(
                 {
-                    bnd_distance    => 25_000,
-                    dbfile_path     => $query_db_file,
-                    FILEHANDLE      => $FILEHANDLE,
-                    frequency_tag   => $query_db_tag . q{AF},
-                    hit_tag         => $query_db_tag,
-                    infile_path     => $svdb_infile_path,
-                    stdoutfile_path => $outfile_path_prefix
+                    bnd_distance         => 25_000,
+                    dbfile_path          => $query_db_file,
+                    FILEHANDLE           => $FILEHANDLE,
+                    infile_path          => $svdb_infile_path,
+                    in_frequency_tag     => $in_frequency_tag,
+                    in_allele_count_tag  => $in_allele_count_tag,
+                    out_frequency_tag    => $query_db_tag . $out_frequency_tag,
+                    out_allele_count_tag => $query_db_tag . $out_allele_count_tag,
+                    stdoutfile_path      => $outfile_path_prefix
                       . $alt_file_tag
                       . $outfile_suffix
                       . $DOT
@@ -310,6 +320,20 @@ sub analysis_sv_annotate {
         );
         say {$FILEHANDLE} $NEWLINE;
     }
+
+    my @program_source_commands = get_package_source_env_cmds(
+        {
+            active_parameter_href => $active_parameter_href,
+            package_name          => q{picard},
+        }
+    );
+
+    write_source_environment_command(
+        {
+            FILEHANDLE                      => $FILEHANDLE,
+            source_environment_commands_ref => \@program_source_commands,
+        }
+    );
 
     ## Alternative file tag
     my $outfile_alt_file_tag = $alt_file_tag . $UNDERSCORE . q{sorted};

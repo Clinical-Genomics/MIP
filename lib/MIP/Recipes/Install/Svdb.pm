@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_svdb };
@@ -171,8 +171,7 @@ sub install_svdb {
 
     ## Download
     say {$FILEHANDLE} q{## Download SVDB};
-    my $url =
-      q{https://github.com/J35P312/SVDB/archive/SVDB-} . $svdb_version . $DOT . q{zip};
+    my $url = q{https://github.com/J35P312/SVDB/archive/} . $svdb_version . $DOT . q{zip};
     my $svdb_zip_path = catfile( q{SVDB-} . $svdb_version . $DOT . q{zip} );
     wget(
         {
@@ -202,7 +201,7 @@ sub install_svdb {
     say {$FILEHANDLE} q{## Move to SVDB directory};
     gnu_cd(
         {
-            directory_path => q{SVDB-SVDB-} . $svdb_version,
+            directory_path => q{SVDB-} . $svdb_version,
             FILEHANDLE     => $FILEHANDLE,
         }
     );
@@ -214,6 +213,7 @@ sub install_svdb {
         {
             editable   => $DOT,
             FILEHANDLE => $FILEHANDLE,
+	 python_module => 1,
             quiet      => $quiet,
             verbose    => $verbose,
         }

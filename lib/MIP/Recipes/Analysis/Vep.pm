@@ -1550,6 +1550,15 @@ sub _get_assembly_name {
             $assembly_version = q{GRCh} . $version_number;
         }
     }
+    if ( $assembly_version =~ /grch(\d+)/xsm ) {
+
+        my $version_number = $1;
+
+        if ( $version_number > $VEP_CACHE_GENOME_BUILD_NAME_SWITCH ) {
+
+            $assembly_version = q{GRCh} . $version_number;
+        }
+    }
     return $assembly_version;
 }
 

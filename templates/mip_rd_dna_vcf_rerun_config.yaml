@@ -22,6 +22,11 @@ load_env:
    method: conda
    rankvariant:
    sv_rankvariant:
+  mip_travis_svdb:
+    method: conda
+    installation: esvdb
+    svdb:
+    sv_annotate:
   mip_travis_vep:
    method: conda
    installation: evep
