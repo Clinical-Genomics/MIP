@@ -723,6 +723,7 @@ tiddit:
   coverage_file_suffix: ".tab"
   program_executables:
    - TIDDIT.py
+   - svdb
   recipe_type: structural_variant_callers
   type: recipe
 tiddit_bin_size:
@@ -748,7 +749,6 @@ sv_combinevariantcallsets:
   outfile_suffix: ".vcf"
   program_executables:
    - bcftools
-   - svdb
    - vt
   type: recipe
 sv_combinevariantcallsets_bcf_file:

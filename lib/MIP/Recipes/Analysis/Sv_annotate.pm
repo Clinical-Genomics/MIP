@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -153,7 +153,7 @@ sub analysis_sv_annotate {
     use MIP::Program::Variantcalling::Svdb qw{ svdb_query };
     use MIP::Program::Variantcalling::Vcfanno qw{ vcfanno };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Script::Setup_script qw{ setup_script write_source_environment_command };
 
     ### PREPROCESSING:
 
@@ -320,6 +320,20 @@ sub analysis_sv_annotate {
         );
         say {$FILEHANDLE} $NEWLINE;
     }
+
+    my @program_source_commands = get_package_source_env_cmds(
+        {
+            active_parameter_href => $active_parameter_href,
+            package_name          => q{picard},
+        }
+    );
+
+    write_source_environment_command(
+        {
+            FILEHANDLE                      => $FILEHANDLE,
+            source_environment_commands_ref => \@program_source_commands,
+        }
+    );
 
     ## Alternative file tag
     my $outfile_alt_file_tag = $alt_file_tag . $UNDERSCORE . q{sorted};
