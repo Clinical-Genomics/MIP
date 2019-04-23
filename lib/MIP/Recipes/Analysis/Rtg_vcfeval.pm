@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -139,8 +139,9 @@ sub analysis_rtg_vcfeval {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Get::File qw{ get_exom_target_bed_file get_io_files };
+    use MIP::Get::Parameter
+      qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bedtools qw{ bedtools_intersectbed };
@@ -180,9 +181,25 @@ sub analysis_rtg_vcfeval {
             recipe_name    => $recipe_name,
         }
     );
-    my $nist_id         = $active_parameter_href->{nist_id}{$sample_id};
-    my @nist_versions   = @{ $active_parameter_href->{nist_versions} };
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my $nist_id                 = $active_parameter_href->{nist_id}{$sample_id};
+    my @nist_versions           = @{ $active_parameter_href->{nist_versions} };
+    my $recipe_mode             = $active_parameter_href->{$recipe_name};
+    my $sample_id_analysis_type = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{analysis_type},
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+
+    my $exome_target_bed_file = get_exom_target_bed_file(
+        {
+            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
+            log                   => $log,
+            sample_id             => $sample_id,
+        }
+    );
+
     my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
@@ -256,21 +273,27 @@ sub analysis_rtg_vcfeval {
         my $nist_bed_file_path =
           $active_parameter_href->{nist_call_set_bed}{$nist_version}{$nist_id};
 
+        ## Set WGS input file path
         my $bcftools_infile_path = $nist_vcf_file_path;
 
         ## For WES - intersect reference according to capture kit
-        if ( $consensus_analysis_type eq q{wes} ) {
+        if ( $sample_id_analysis_type eq q{wes} ) {
 
+            my $bedtools_outfile_path =
+              catfile( $outdir_path_prefix, q{nist} . $UNDERSCORE . q{intersect.vcf} );
             bedtools_intersectbed(
                 {
+                    FILEHANDLE         => $FILEHANDLE,
                     infile_path        => $nist_vcf_file_path,
-                    intersectfile_path => $active_parameter_href->{exome_target_bed},
+                    intersectfile_path => $exome_target_bed_file,
+                    stdoutfile_path    => $bedtools_outfile_path,
                     with_header        => 1,
                 }
             );
+            say {$FILEHANDLE} $NEWLINE;
 
-            ## Expect input stream from intersect
-            $bcftools_infile_path = $DASH;
+            ## Expect input file from intersect
+            $bcftools_infile_path = $bedtools_outfile_path;
         }
 
         say {$FILEHANDLE} q{## Adding sample name to baseline calls};
