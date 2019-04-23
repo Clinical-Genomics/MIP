@@ -723,7 +723,6 @@ tiddit:
   coverage_file_suffix: ".tab"
   program_executables:
    - TIDDIT.py
-   - svdb
   recipe_type: structural_variant_callers
   type: recipe
 tiddit_bin_size:

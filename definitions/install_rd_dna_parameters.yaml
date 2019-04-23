@@ -147,6 +147,24 @@ epy3:
     sambamba:
       version: 0.6.1
 
+esvdb:
+  conda:
+    bcftools: 1.9=h4da6232_0
+    gcc:
+    openssl: 1.0.2p
+    pip:
+    python: 2.7
+  pip:
+  shell:
+    svdb:
+      conda_dependency:
+        cython:
+        numpy:
+        pip:
+        python: 2.7
+        scipy:
+      version: 2.0.0
+
 ## Tiddit env spec
 etiddit:
   conda:
@@ -217,6 +235,7 @@ environment_name:
   epeddy:
   eperl_5.26:
   epy3:
+  esvdb:
   etiddit:
   evep:
 
@@ -229,6 +248,7 @@ installations:
   - eperl_5.26
   - epy3
   - evep
+  - esvdb
   - etiddit
 
 # Optional name of log file

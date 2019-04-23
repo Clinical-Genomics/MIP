@@ -138,13 +138,14 @@ sub analysis_tiddit {
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Get::Parameter
+      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Tiddit qw{ tiddit_sv };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Script::Setup_script qw{ setup_script write_source_environment_command };
 
     ### PREPROCESSING:
 
@@ -286,12 +287,27 @@ sub analysis_tiddit {
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
     }
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Get parameters
     ## Tiddit sample outfiles needs to be lexiographically sorted for svdb merge
     my @svdb_infile_paths =
       map { $tiddit_sample_file_info{$_}{out} . $outfile_suffix }
       @{ $active_parameter_href->{sample_ids} };
+
+    my @program_source_commands = get_package_source_env_cmds(
+        {
+            active_parameter_href => $active_parameter_href,
+            package_name          => q{svdb},
+        }
+    );
+
+    write_source_environment_command(
+        {
+            FILEHANDLE                      => $FILEHANDLE,
+            source_environment_commands_ref => \@program_source_commands,
+        }
+    );
 
     svdb_merge(
         {
