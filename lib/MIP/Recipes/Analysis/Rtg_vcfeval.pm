@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DASH $DOT $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -143,6 +143,7 @@ sub analysis_rtg_vcfeval {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Program::Bedtools qw{ bedtools_intersectbed };
     use MIP::Program::Qc::Rtg qw{ rtg_vcfeval };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_rename_vcf_samples bcftools_view_and_index_vcf };
@@ -255,13 +256,30 @@ sub analysis_rtg_vcfeval {
         my $nist_bed_file_path =
           $active_parameter_href->{nist_call_set_bed}{$nist_version}{$nist_id};
 
+        my $bcftools_infile_path = $nist_vcf_file_path;
+
+        ## For WES - intersect reference according to capture kit
+        if ( $consensus_analysis_type eq q{wes} ) {
+
+            bedtools_intersectbed(
+                {
+                    infile_path        => $nist_vcf_file_path,
+                    intersectfile_path => $active_parameter_href->{exome_target_bed},
+                    with_header        => 1,
+                }
+            );
+
+            ## Expect input stream from intersect
+            $bcftools_infile_path = $DASH;
+        }
+
         say {$FILEHANDLE} q{## Adding sample name to baseline calls};
         bcftools_rename_vcf_samples(
             {
                 FILEHANDLE          => $FILEHANDLE,
                 index               => 1,
                 index_type          => q{tbi},
-                infile              => $nist_vcf_file_path,
+                infile              => $bcftools_infile_path,
                 outfile_path_prefix => $nist_file_path . $UNDERSCORE . q{refrm},
                 output_type         => q{z},
                 temp_directory      => $outdir_path_prefix,

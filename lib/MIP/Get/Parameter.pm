@@ -385,7 +385,7 @@ sub get_gatk_intervals {
 
 ## Function : Generate and return interval hash
 ## Returns  : %gatk_intervals
-## Argumetns: $analysis_type         => Analysis type
+## Arguments: $analysis_type         => Analysis type
 ##          : $contigs_ref           => Contigs to split in file
 ##          : $exome_target_bed_href => Exome target bed files lnked to sample ids
 ##          : $file_ending           => File ending to add {Optional}
