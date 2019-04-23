@@ -850,7 +850,7 @@ vcf2cytosure_exclude_filter:
   associated_recipe:
    - vcf2cytosure_ar
   data_type: SCALAR
-  default: "'clingen_ngiAF > 0.1 || swegenAF > 0.05 || clinical_genomics_mipAF > 0.1"
+  default: "'clingen_ngiAF > 0.1 || swegenAF > 0.05 || clinical_genomics_mipAF > 0.05 || decipherAF > 0.1'"
   type: recipe_argument
 vcf2cytosure_freq:
   associated_recipe:
