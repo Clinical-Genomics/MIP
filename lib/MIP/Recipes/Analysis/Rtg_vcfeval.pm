@@ -273,18 +273,15 @@ sub analysis_rtg_vcfeval {
         my $nist_bed_file_path =
           $active_parameter_href->{nist_call_set_bed}{$nist_version}{$nist_id};
 
-        ## Set WGS input file path
-        my $bcftools_infile_path = $nist_vcf_file_path;
-
         ## For WES - intersect reference according to capture kit
         if ( $sample_id_analysis_type eq q{wes} ) {
 
             my $bedtools_outfile_path =
-              catfile( $outdir_path_prefix, q{nist} . $UNDERSCORE . q{intersect.vcf} );
+              catfile( $outdir_path_prefix, q{nist} . $UNDERSCORE . q{intersect.bed} );
             bedtools_intersectbed(
                 {
                     FILEHANDLE         => $FILEHANDLE,
-                    infile_path        => $nist_vcf_file_path,
+                    infile_path        => $nist_bed_file_path,
                     intersectfile_path => $exome_target_bed_file,
                     stdoutfile_path    => $bedtools_outfile_path,
                     with_header        => 1,
@@ -293,7 +290,7 @@ sub analysis_rtg_vcfeval {
             say {$FILEHANDLE} $NEWLINE;
 
             ## Expect input file from intersect
-            $bcftools_infile_path = $bedtools_outfile_path;
+            $nist_bed_file_path = $bedtools_outfile_path;
         }
 
         say {$FILEHANDLE} q{## Adding sample name to baseline calls};
@@ -302,7 +299,7 @@ sub analysis_rtg_vcfeval {
                 FILEHANDLE          => $FILEHANDLE,
                 index               => 1,
                 index_type          => q{tbi},
-                infile              => $bcftools_infile_path,
+                infile              => $nist_vcf_file_path,
                 outfile_path_prefix => $nist_file_path . $UNDERSCORE . q{refrm},
                 output_type         => q{z},
                 temp_directory      => $outdir_path_prefix,
