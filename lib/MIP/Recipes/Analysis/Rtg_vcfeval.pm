@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -139,10 +139,12 @@ sub analysis_rtg_vcfeval {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Get::File qw{ get_exom_target_bed_file get_io_files };
+    use MIP::Get::Parameter
+      qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Program::Bedtools qw{ bedtools_intersectbed };
     use MIP::Program::Qc::Rtg qw{ rtg_vcfeval };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_rename_vcf_samples bcftools_view_and_index_vcf };
@@ -179,9 +181,25 @@ sub analysis_rtg_vcfeval {
             recipe_name    => $recipe_name,
         }
     );
-    my $nist_id         = $active_parameter_href->{nist_id}{$sample_id};
-    my @nist_versions   = @{ $active_parameter_href->{nist_versions} };
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my $nist_id                 = $active_parameter_href->{nist_id}{$sample_id};
+    my @nist_versions           = @{ $active_parameter_href->{nist_versions} };
+    my $recipe_mode             = $active_parameter_href->{$recipe_name};
+    my $sample_id_analysis_type = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{analysis_type},
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+
+    my $exome_target_bed_file = get_exom_target_bed_file(
+        {
+            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
+            log                   => $log,
+            sample_id             => $sample_id,
+        }
+    );
+
     my %recipe_resource = get_recipe_resources(
         {
             active_parameter_href => $active_parameter_href,
@@ -254,6 +272,26 @@ sub analysis_rtg_vcfeval {
           $active_parameter_href->{nist_call_set_vcf}{$nist_version}{$nist_id};
         my $nist_bed_file_path =
           $active_parameter_href->{nist_call_set_bed}{$nist_version}{$nist_id};
+
+        ## For WES - intersect reference according to capture kit
+        if ( $sample_id_analysis_type eq q{wes} ) {
+
+            my $bedtools_outfile_path =
+              catfile( $outdir_path_prefix, q{nist} . $UNDERSCORE . q{intersect.bed} );
+            bedtools_intersectbed(
+                {
+                    FILEHANDLE         => $FILEHANDLE,
+                    infile_path        => $nist_bed_file_path,
+                    intersectfile_path => $exome_target_bed_file,
+                    stdoutfile_path    => $bedtools_outfile_path,
+                    with_header        => 1,
+                }
+            );
+            say {$FILEHANDLE} $NEWLINE;
+
+            ## Expect input file from intersect
+            $nist_bed_file_path = $bedtools_outfile_path;
+        }
 
         say {$FILEHANDLE} q{## Adding sample name to baseline calls};
         bcftools_rename_vcf_samples(
