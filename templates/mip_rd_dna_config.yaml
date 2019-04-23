@@ -49,6 +49,11 @@ load_env:
     cnvnator_ar: 
     installation: ecnvnator
     method: conda
+  mip_travis_svdb:
+    method: conda
+    installation: esvdb
+    svdb:
+    sv_annotate:
   mip_travis_tiddit:
     method: conda
     installation: etiddit
