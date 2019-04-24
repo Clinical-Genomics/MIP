@@ -42,6 +42,7 @@ infiles=( "$@" )
 ## Otherwise, get infiles from git
 if [ ${#infiles[@]} -lt 1 ] ; then
     infiles=$(git diff --cached --name-only)
+    git add -A
 fi
 
 ## Get current dir
@@ -77,8 +78,7 @@ do
     echo "[PERL CRITIC]"
     perlcritic \-${critic_severity} \-p ${mip_dir}/.perlcriticrc_mip $infile
 
-	git add $infile 
 done
 
-git add $infiles
-git commit
+#git add $infiles
+#git commit

@@ -31,7 +31,7 @@ BEGIN {
       add_qc_data_recipe_info
       get_qc_data_case_recipe_attributes
       get_qc_data_sample_recipe_attributes
-      set_qc_data_recipe_info
+        set_qc_data_recipe_info
     };
 }
 
