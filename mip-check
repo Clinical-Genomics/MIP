@@ -81,4 +81,4 @@ do
 done
 
 #git add $infiles
-#git commit
+git commit -a
