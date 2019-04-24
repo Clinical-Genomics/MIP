@@ -79,4 +79,4 @@ do
 
 done
 
-git add $infiles
+git add -A
