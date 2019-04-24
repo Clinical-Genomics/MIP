@@ -42,7 +42,6 @@ infiles=( "$@" )
 ## Otherwise, get infiles from git
 if [ ${#infiles[@]} -lt 1 ] ; then
     infiles=$(git diff --cached --name-only)
-    git add -A
 fi
 
 ## Get current dir
@@ -80,5 +79,3 @@ do
 
 done
 
-#git add $infiles
-git commit -a
