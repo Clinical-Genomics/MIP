@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -31,7 +31,7 @@ BEGIN {
       add_qc_data_recipe_info
       get_qc_data_case_recipe_attributes
       get_qc_data_sample_recipe_attributes
-      set_qc_data_recipe_info
+        set_qc_data_recipe_info
     };
 }
 
