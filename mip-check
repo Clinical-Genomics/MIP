@@ -80,3 +80,5 @@ do
 	git add $infile 
 done
 
+git add --refresh
+git add $infiles
