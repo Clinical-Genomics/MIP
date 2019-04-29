@@ -27,7 +27,7 @@ use autodie qw{ open close :all };
 use Modern::Perl qw{ 2017 };
 use Readonly;
 
-##MIPs lib/
+## MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants qw{ $COLON $NEWLINE $SPACE $UNDERSCORE };
@@ -135,7 +135,7 @@ if ( not $regexp_file ) {
 my %sample_info = load_yaml( { yaml_file => $sample_info_file, } );
 $log->info( q{Loaded: } . $sample_info_file );
 
-## Loads a YAML file into an arbitrary hash and returns it
+## Loads a reg exp file into an arbitrary hash
 my %regexp = load_yaml( { yaml_file => $regexp_file, } );
 $log->info( q{Loaded: } . $regexp_file );
 
@@ -206,7 +206,7 @@ if ( not $skip_evaluation ) {
     );
 }
 
-## Writes a YAML hash to file
+## Writes a qc data hash to file
 write_yaml(
     {
         yaml_file_path => $outfile,
@@ -318,7 +318,6 @@ sub case_qc {
     use MIP::Qc_data qw{ set_qc_data_recipe_info };
     use MIP::Sample_info qw{ get_sample_info_case_recipe_attributes };
 
-    ## For every recipe
   RECIPE:
     for my $recipe ( keys %{ $sample_info_href->{recipe} } ) {
 
@@ -348,7 +347,9 @@ sub case_qc {
             }
         );
 
-        ## Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
+        ## Parses the RegExpHash structure to identify if the info is
+        ## 1) Paragraf section(s) (both header and data line(s)
+        ## 2) Seperate data line
         parse_regexp_hash_and_collect(
             {
                 outdirectory        => $outdirectory,
@@ -482,7 +483,8 @@ sub sample_qc {
                 }
 
                 ## Parses the RegExpHash structure to identify if the info is
-                ## 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
+                ## 1) Paragraf section(s) (both header and data line(s)
+                ## 2) Seperate data line
                 parse_regexp_hash_and_collect(
                     {
                         outdirectory        => $outdirectory,
@@ -620,7 +622,7 @@ FUNCTION
           SEPARATOR:
             foreach my $separator (@separators) {
 
-                ## Collect paragraf header
+                ## Collect paragraf header by splitting return from system call
                 @{ $qc_header_href->{$recipe}{$regexp_key} } =
                   split( /$separator/, `$regexp $outdirectory/$outfile` );
 
