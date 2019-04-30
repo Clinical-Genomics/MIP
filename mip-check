@@ -68,7 +68,7 @@ do
 	fi
 
     ## Run perltidy
-    if [[ "$(perltidy --maximum-line-length=90 --iterations=2 -b -bext='/' $infile -gt 0 ]]; then
+    if [[ "$(perltidy --maximum-line-length=90 --iterations=2 -b -bext='/' $infile)" -gt 0 ]]; then
 	echo >&2 "There was an error when running perltidy on $infile; please see the error file for more info"
            exit 1
     fi
