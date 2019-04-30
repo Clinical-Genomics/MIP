@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -279,10 +279,11 @@ sub analysis_sv_annotate {
             ## Get parameters
 # Split query_db_tag to decide svdb input query fields
 # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY
-            my (
-                $query_db_tag,     $out_frequency_tag, $out_allele_count_tag,
-                $in_frequency_tag, $in_allele_count_tag
-            ) = split /[|]/sxm, $query_db_tag_info;
+            my ( $query_db_tag, $out_frequency_tag_suffix, $out_allele_count_tag_suffix,
+                $in_frequency_tag, $in_allele_count_tag )
+              = split /[|]/sxm, $query_db_tag_info;
+            my $out_frequency_tag    = $out_frequency_tag_suffix    ||= $EMPTY_STR;
+            my $out_allele_count_tag = $out_allele_count_tag_suffix ||= $EMPTY_STR;
 
             svdb_query(
                 {
