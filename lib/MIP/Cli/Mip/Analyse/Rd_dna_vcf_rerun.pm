@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.11;
+our $VERSION = 1.12;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -246,15 +246,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             documentation => q{Annotate and filter structural variant calls},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{sv_bcftools_view_filter} => (
-            cmd_aliases   => [qw{ svcbtv }],
-            documentation => q{Include structural variants with PASS in FILTER column},
-            is            => q{rw},
-            isa           => Bool,
         )
     );
 

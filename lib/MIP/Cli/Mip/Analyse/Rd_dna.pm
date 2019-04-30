@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.23;
+our $VERSION = 1.24;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -857,15 +857,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Annotate and filter structural variant calls},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{sv_bcftools_view_filter} => (
-            cmd_aliases   => [qw{ svcbtv }],
-            documentation => q{Include structural variants with PASS in FILTER column},
-            is            => q{rw},
-            isa           => Bool,
         )
     );
 
