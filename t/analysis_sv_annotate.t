@@ -77,6 +77,9 @@ $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
 $active_parameter{sv_vcfanno}        = 1;
 $active_parameter{sv_vcfanno_config} = q{a_vcfanno_config};
+$active_parameter{sv_frequency_filter} = 1;
+$active_parameter{fqf_bcftools_filter_threshold} = 0.40;
+$active_parameter{fqf_vcfanno_config} = catfile($Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml });
 
 my %file_info = test_mip_hashes(
     {

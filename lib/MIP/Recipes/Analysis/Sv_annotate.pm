@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -140,6 +140,7 @@ sub analysis_sv_annotate {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Toml qw{ load_toml };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
       qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
@@ -245,6 +246,9 @@ sub analysis_sv_annotate {
     ## Alternative file tag
     my $alt_file_tag = $EMPTY_STR;
 
+    ## Store annotations to use in sv filtering
+    my @svdb_query_annotations;
+
     if ( $active_parameter_href->{sv_svdb_query} ) {
 
         ## Set for first infile
@@ -278,12 +282,18 @@ sub analysis_sv_annotate {
             }
             ## Get parameters
 # Split query_db_tag to decide svdb input query fields
-# FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY
+# FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
             my ( $query_db_tag, $out_frequency_tag_suffix, $out_allele_count_tag_suffix,
-                $in_frequency_tag, $in_allele_count_tag )
+                $in_frequency_tag, $in_allele_count_tag, $is_frequency )
               = split /[|]/sxm, $query_db_tag_info;
             my $out_frequency_tag    = $out_frequency_tag_suffix    ||= $EMPTY_STR;
             my $out_allele_count_tag = $out_allele_count_tag_suffix ||= $EMPTY_STR;
+
+	    ## Add annotations to filter downstream
+	    if($is_frequency and $out_frequency_tag) {
+
+	      push @svdb_query_annotations, $query_db_tag . $out_frequency_tag
+	    }
 
             svdb_query(
                 {
@@ -354,19 +364,30 @@ sub analysis_sv_annotate {
 
     $alt_file_tag = $outfile_alt_file_tag;
 
-    ## Remove FILTER ne PASS
-    if ( $active_parameter_href->{sv_bcftools_view_filter} ) {
+    ## Remove FILTER ne PASS and on frequency
+    if ( $active_parameter_href->{sv_frequency_filter} ) {
 
-        say {$FILEHANDLE} q{## Remove FILTER ne PASS};
+      ## Build the exclude filter command
+        my $exclude_filter = _build_bcftools_filter(
+            {
+                annotations_ref => \@svdb_query_annotations,
+                fqf_bcftools_filter_threshold =>
+                  $active_parameter_href->{fqf_bcftools_filter_threshold},
+            }
+        );
+
+        say {$FILEHANDLE} q{## Remove FILTER ne PASS and frequency over threshold};
         bcftools_view(
             {
                 apply_filters_ref => [qw{ PASS }],
+	     exclude                => $exclude_filter,
                 FILEHANDLE        => $FILEHANDLE,
                 infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
                 outfile_path => $outfile_path_prefix
                   . $alt_file_tag
                   . $UNDERSCORE . q{filt}
                   . $outfile_suffix,
+	     output_type  => q{v},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -392,10 +413,19 @@ sub analysis_sv_annotate {
         ## Update file tag
         $alt_file_tag .= $UNDERSCORE . q{bcftools_filter};
 
+	my %vcfanno_config = load_toml( { toml_file_path => $active_parameter_href->{fqf_vcfanno_config}, } );
+## Store vcf anno annotations
+my @vcf_anno_annotations;
+
+ANNOTATION:
+foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+
+push @vcf_anno_annotations, @{ $annotation_href->{names} };
+}
         ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
-                vcfanno_file_toml => $active_parameter_href->{fqf_vcfanno_config},
+                annotations_ref => \@vcf_anno_annotations,
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
             }
@@ -403,12 +433,12 @@ sub analysis_sv_annotate {
 
         bcftools_filter(
             {
+                exclude                => $exclude_filter,
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $DASH,
                 outfile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
                 output_type  => q{v},
                 stderrfile_path_append => $stderrfile_path,
-                exclude                => $exclude_filter,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -526,13 +556,13 @@ sub _build_bcftools_filter {
 ## Function : Build the exclude filter command
 ## Returns  :
 ## Arguments: $fqf_bcftools_filter_threshold => Exclude variants with frequency above filter threshold
-##          : $vcfanno_file_toml             => Toml config file
+##          : $annotations_ref               => Annotations to use in filtering
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $fqf_bcftools_filter_threshold;
-    my $vcfanno_file_toml;
+    my $annotations_ref;
 
     my $tmpl = {
         fqf_bcftools_filter_threshold => {
@@ -541,33 +571,26 @@ sub _build_bcftools_filter {
             store       => \$fqf_bcftools_filter_threshold,
             strict_type => 1,
         },
-        vcfanno_file_toml => {
+        annotations_ref => {
+			default => [],
             defined     => 1,
             required    => 1,
-            store       => \$vcfanno_file_toml,
+            store       => \$annotations_ref,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Toml qw{ load_toml };
-
-    my %vcfanno_config = load_toml( { toml_file_path => $vcfanno_file_toml, } );
-
     my $exclude_filter;
     my $threshold = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;
-
-  ANNOTATION:
-    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
         $exclude_filter =
             $DOUBLE_QUOTE
           . q{INFO/}
-          . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{ $annotation_href->{names} } )
+          . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{ $annotations_ref } )
           . $threshold
           . $DOUBLE_QUOTE;
-    }
     return $exclude_filter;
 }
 
