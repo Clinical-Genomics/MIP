@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -699,6 +699,7 @@ sub analysis_vcfparser_sv_wes {
             infile_path => $infile_path,
             parse_vep   => $active_parameter_href->{sv_varianteffectpredictor},
             per_gene    => $active_parameter_href->{sv_vcfparser_per_gene},
+	 pli_values_file_path => $active_parameter_href->{vep_plugin_pli_value_file_path},
             range_feature_annotation_columns_ref =>
               \@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns}
               },
@@ -1059,6 +1060,7 @@ sub analysis_vcfparser_sv_wgs {
                 padding     => $padding,
                 parse_vep   => $active_parameter_href->{sv_varianteffectpredictor},
                 per_gene    => $active_parameter_href->{sv_vcfparser_per_gene},
+	     pli_values_file_path => $active_parameter_href->{vep_plugin_pli_value_file_path},
                 range_feature_annotation_columns_ref => \@{
                     $active_parameter_href
                       ->{sv_vcfparser_range_feature_annotation_columns}

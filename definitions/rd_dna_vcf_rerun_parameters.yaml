@@ -241,6 +241,7 @@ sv_vep_plugins:
   element_separator: ,
   data_type: ARRAY
   default:
+   - ExACpLI
    - LoFtool
   type: recipe_argument
 sv_vcfparser:
