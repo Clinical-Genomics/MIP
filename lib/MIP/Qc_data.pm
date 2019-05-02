@@ -29,6 +29,7 @@ BEGIN {
     our @EXPORT_OK = qw{
       add_qc_data_evaluation_info
       add_qc_data_recipe_info
+      add_qc_data_regexp_return
       get_qc_data_case_recipe_attributes
       get_qc_data_sample_recipe_attributes
       set_qc_data_recipe_info
@@ -149,6 +150,74 @@ sub add_qc_data_recipe_info {
 
     ## Add recipe key value pair for arbitrary info on case level
     push @{ $qc_data_href->{recipe}{$recipe_name}{$key} }, $value;
+    return;
+}
+
+sub add_qc_data_regexp_return {
+
+## Function  : Use reg exp to collect data via system call and split potential return
+##             by seperator
+## Returns   : 1 or undef
+## Arguments : $data_file_path => Path to data file from which to collect
+##           : $qc_href        => Save header(s) or data from each outfile {REF}
+##           : $recipe_name    => The recipe to examine
+##           : $regexp         => Regular expression to collect data
+##           : $regexp_key     => Regexp key to store data in
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $data_file_path;
+    my $qc_href;
+    my $recipe_name;
+    my $regexp;
+    my $regexp_key;
+
+    my $tmpl = {
+        data_file_path => { store => \$data_file_path, strict_type => 1, },
+        qc_href        => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        regexp => {
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp,
+            strict_type => 1,
+        },
+        regexp_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp_key,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Covers both whitespace and tab. Add other separators if required
+    my @separators = ( qw{ \s+ ! }, q{,} );
+
+    ## Loop through possible separators to seperate any eventual header elements
+  SEPARATOR:
+    foreach my $separator (@separators) {
+
+        ## Collect data or headers by splitting return from system call
+        @{ $qc_href->{$recipe_name}{$regexp_key} } =
+          split /$separator/sxm, `$regexp $data_file_path`;
+
+        return 1
+          if ( defined $qc_href->{$recipe_name}{$regexp_key} );
+    }
     return;
 }
 

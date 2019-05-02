@@ -532,7 +532,8 @@ sub sample_qc {
 
 sub parse_regexp_hash_and_collect {
 
-## Function  : Parses the regexp hash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
+## Function  : Parses the regexp hash structure to identify if the info is
+##             1) Paragraf section(s) (both header and data line(s) 2) Seperate data line.
 ## Returns   :
 ## Arguments : $outdirectory        => Recipes outdirectory
 ##           : $outfile             => Recipes outfile containing parameter to evaluate
@@ -586,6 +587,7 @@ sub parse_regexp_hash_and_collect {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Qcc_regexp qw{ get_qcc_regexp_recipe_attribute };
+    use MIP::QC_data qw{ add_qc_data_regexp_return };
 
     ## Holds the current regexp
     my $regexp;
@@ -618,32 +620,30 @@ FUNCTION
         ## Detect if the regexp key is a paragraf header and not paragraf
         if ( $regexp_key =~ /^header|header$/i ) {
 
-            ## Loop through possible separators to seperate any eventual header elements
-          SEPARATOR:
-            foreach my $separator (@separators) {
+            ## Add qc data from data file using regexp
+            my $is_added = add_qc_data_regexp_return(
+                {
+                    data_file_path => catfile( $outdirectory, $outfile ),
+                    qc_href        => $qc_header_href,
+                    recipe_name    => $recipe,
+                    regexp         => $regexp,
+                    regexp_key     => $regexp_key,
+                }
+            );
+            next REG_EXP;
+        }
 
-                ## Collect paragraf header by splitting return from system call
-                @{ $qc_header_href->{$recipe}{$regexp_key} } =
-                  split( /$separator/, `$regexp $outdirectory/$outfile` );
-
-                last SEPARATOR
-                  if ( defined $qc_header_href->{$recipe}{$regexp_key} );
+        ### For info contained in Entry --> Value i.e. same line.
+        ## Loop through possible separators
+        add_qc_data_regexp_return(
+            {
+                data_file_path => catfile( $outdirectory, $outfile ),
+                qc_href        => $qc_recipe_data_href,
+                recipe_name    => $recipe,
+                regexp         => $regexp,
+                regexp_key     => $regexp_key,
             }
-        }
-
-### For info contained in Entry --> Value i.e. same line.
-## Loop through possible separators
-      SEPARATOR:
-        foreach my $separator (@separators) {
-
-            ## Collect data. Use regexp_key as element header
-            @{ $qc_recipe_data_href->{$recipe}{$regexp_key} } =
-              split( /$separator/, `$regexp $outdirectory/$outfile` );
-
-            ## Then split should have been successful
-            last SEPARATOR
-              if ( defined $qc_recipe_data_href->{$recipe}{$regexp_key}[1] );
-        }
+        );
     }
     return;
 }
