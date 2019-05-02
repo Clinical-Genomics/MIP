@@ -587,7 +587,7 @@ sub parse_regexp_hash_and_collect {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Qcc_regexp qw{ get_qcc_regexp_recipe_attribute };
-    use MIP::QC_data qw{ add_qc_data_regexp_return };
+    use MIP::Qc_data qw{ add_qc_data_regexp_return };
 
     ## Holds the current regexp
     my $regexp;
