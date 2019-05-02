@@ -22,9 +22,10 @@ use IO::File;
 ## Third party module(s)
 use Set::IntervalTree;
 
-##MIPs lib/
+## MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
+use MIP::Constants qw{ $NEWLINE };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
@@ -55,6 +56,7 @@ BEGIN {
            -sof/--select_outfile (vcf)
            -pad/--padding (Default: "5000" nucleotides)
            -peg/--per_gene Output most severe consequence transcript (Supply flag to enable)
+           -pli/--pli_values_file Pli value file path
            -wst/--write_software_tag (Default: "1")
            -l/--log_file Log file (Default: "vcfparser.log")
            -h/--help Display this help message
@@ -62,8 +64,7 @@ BEGIN {
         };
 }
 
-my ( $infile, $select_feature_file, $select_feature_matching_column,
-    $range_feature_file, $select_outfile );
+my ( $infile, $pli_values_file_path, $range_feature_file, $select_feature_file, $select_feature_matching_column, $select_outfile, );
 
 ##Scalar parameters with defaults
 my ( $write_software_tag, $padding, $log_file ) =
@@ -73,10 +74,9 @@ my ( $write_software_tag, $padding, $log_file ) =
 my ( $parse_vep, $per_gene );
 
 my ( @range_feature_annotation_columns, @select_feature_annotation_columns );
-my ( %consequence_severity, %range_data, %select_data, %snpeff_cmd, %tree,
-    %meta_data );
+my ( %consequence_severity, %meta_data, %range_data, %select_data, %snpeff_cmd, %tree, %pli_score );
 
-my $vcfparser_version = q{1.2.13};
+my $vcfparser_version = q{1.2.14};
 
 ## Enables cmd "vcfparser.pl" to print usage help
 if ( !@ARGV ) {
@@ -109,6 +109,7 @@ GetOptions(
     'wst|write_software_tag:n' => \$write_software_tag,
     'pad|padding:n'            => \$padding,
     'peg|per_gene'             => \$per_gene,
+	   'pli|pli_values_file:s' => \$pli_values_file_path,
     'l|log_file:s'             => \$log_file,
     'h|help'    => sub { say STDOUT $USAGE; exit; },    #Display help text
     'v|version' => sub {
@@ -171,6 +172,62 @@ if ( ( !$select_outfile ) && ($select_feature_file) ) {
   split( /,/, join( ',', @select_feature_annotation_columns ) )
   ;    #Enables comma separated annotation columns on cmd
 
+if($pli_values_file_path) {
+
+$log->info(q{Loading pli value file: } . $pli_values_file_path);
+load_pli_file({infile_path => $pli_values_file_path,
+pli_score_href => \%pli_score,
+});
+$log->info(q{Loading pli value file: Done});
+}
+
+sub load_pli_file {
+
+## Function : Load plI file values
+## Returns  :
+## Arguments: $infile_path    => Infile path
+##          : $pli_score_href => Pli scores hash
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_path;
+    my $pli_score_href;
+
+    my $tmpl = {
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+		pli_score_href  => {
+		    default => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$pli_score_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or die q{Could not parse arguments!};
+
+    my $FILEHANDLE = IO::Handle->new();
+
+    open $FILEHANDLE, q{<}, $infile_path
+      or $log->logdie( q{Cannot open } . $infile_path . q{:} . $!, $NEWLINE );
+
+    while (<$FILEHANDLE>) {
+
+        chomp $_;
+	my ($hgnc_symbol, $pli_score) = split;
+	next if ($pli_score eq q{pLI});
+	$pli_score_href->{$hgnc_symbol} = sprintf("%.2f", $pli_score);
+      }
+    close $FILEHANDLE;
+return;
+}
+
 ###
 #MAIN
 ###
@@ -212,21 +269,22 @@ define_consequence_severity();
 
 read_infile_vcf(
     {
-        meta_data_href            => \%meta_data,
-        snpeff_cmd_href           => \%snpeff_cmd,
-        range_data_href           => \%range_data,
-        select_data_href          => \%select_data,
         consequence_severity_href => \%consequence_severity,
-        tree_href                 => \%tree,
+        meta_data_href            => \%meta_data,
+        parse_vep           => $parse_vep,
+        per_gene            => $per_gene,
+     pli_score_href => \%pli_score,
+        range_data_href           => \%range_data,
         range_feature_annotation_columns_ref =>
           \@range_feature_annotation_columns,
+        select_data_href          => \%select_data,
         select_feature_annotation_columns_ref =>
           \@select_feature_annotation_columns,
-        select_outfile_path => $select_outfile,
-        vcfparser_version   => $vcfparser_version,
         select_feature_file => $select_feature_file,
-        per_gene            => $per_gene,
-        parse_vep           => $parse_vep,
+        select_outfile_path => $select_outfile,
+        snpeff_cmd_href           => \%snpeff_cmd,
+        tree_href                 => \%tree,
+        vcfparser_version   => $vcfparser_version,
         write_software_tag  => $write_software_tag,
     }
 );
@@ -493,7 +551,7 @@ sub read_feature_file {
 
     my @headers;    #Save headers from rangeFile
 
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+    my $FILEHANDLE = IO::Handle->new();
     open( $FILEHANDLE, "<", $infile_path )
       or $log->logdie( "Cannot open " . $infile_path . ":" . $!, "\n" );
 
@@ -591,6 +649,7 @@ sub read_infile_vcf {
 ##         : $parse_vep                             => Parse VEP output
 ##         : $write_software_tag                    => Write software tag to vcf header switch
 ##         : $per_gene                              => Only collect most severe transcript per gene
+##          : $pli_score_href                       => Pli score hash
 
     my ($arg_href) = @_;
 
@@ -611,6 +670,7 @@ sub read_infile_vcf {
     my $select_outfile_path;
     my $vcfparser_version;
     my $per_gene;
+    my $pli_score_href;
 
     my $tmpl = {
         meta_data_href => {
@@ -687,6 +747,13 @@ sub read_infile_vcf {
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
             store       => \$per_gene
+        },
+		pli_score_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$pli_score_href,
+            strict_type => 1,
         },
         parse_vep => {
             default     => 0,
@@ -808,6 +875,12 @@ sub read_infile_vcf {
                                 $meta_data_href->{info}{most_severe_consequence}
                             },
 '##INFO=<ID=most_severe_consequence,Number=.,Type=String,Description="Most severe genomic consequence.">'
+                        );
+push(
+                            @{
+                                $meta_data_href->{info}{most_severe_pli}
+                            },
+'##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe genomic consequence.">'
                         );
                     }
                 }
@@ -989,13 +1062,14 @@ sub read_infile_vcf {
 
                 parse_vep_csq(
                     {
-                        record_href => \%record,
-                        vep_format_field_column_href =>
-                          \%vep_format_field_column,
-                        select_data_href          => $select_data_href,
                         consequence_href          => \%consequence,
                         consequence_severity_href => $consequence_severity_href,
                         per_gene                  => $per_gene,
+		     pli_score_href => $pli_score_href,
+                        record_href => \%record,
+                        select_data_href          => $select_data_href,
+                        vep_format_field_column_href =>
+                          \%vep_format_field_column,
                     }
                 );
             }
@@ -1204,75 +1278,84 @@ sub read_infile_vcf {
 
 sub parse_vep_csq {
 
-##parse_vep_csq
-
-##Function :
-##Returns  : ""
-##Arguments: $record_href, $vep_format_field_column_href, select_data_href, consequence_href, consequence_severity_href, $per_gene
-##         : $record_href                  => VCF record {REF}
-##         : $vep_format_field_column_href => VEP format columns {REF}
-##         : $select_data_href             => Select file data {REF}
-##         : $consequence_href             => Variant consequence {REF}
-##         : $consequence_severity_href    => Consequence severity for SO-terms {REF}
-##         : $per_gene                     => Only collect most severe transcript per gene
+## Function : Parse VEP CSQ field
+## Returns  :
+## Arguments: $consequence_href             => Variant consequence {REF}
+##          : $consequence_severity_href    => Consequence severity for SO-terms {REF}
+##          : $per_gene                     => Only collect most severe transcript per gene
+##          : $pli_score_href               => Pli score hash
+##          : $record_href                  => VCF record {REF}
+##          : $select_data_href             => Select file data {REF}
+##          : $vep_format_field_column_href => VEP format columns {REF}
 
     my ($arg_href) = @_;
 
     ## Default(s)
 
     ## Flatten argument(s)
-    my $record_href;
-    my $vep_format_field_column_href;
-    my $select_data_href;
     my $consequence_href;
     my $consequence_severity_href;
     my $per_gene;
+    my $pli_score_href;
+    my $record_href;
+    my $select_data_href;
+    my $vep_format_field_column_href;
 
     my $tmpl = {
-        record_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$record_href
-        },
-        vep_format_field_column_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$vep_format_field_column_href
-        },
-        select_data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$select_data_href
-        },
         consequence_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$consequence_href,
             strict_type => 1,
-            store       => \$consequence_href
         },
         consequence_severity_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$consequence_severity_href,
             strict_type => 1,
-            store       => \$consequence_severity_href
         },
         per_gene => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$per_gene,
             strict_type => 1,
-            store       => \$per_gene
+        },
+		pli_score_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$pli_score_href,
+            strict_type => 1,
+        },
+        record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$record_href,
+            strict_type => 1,
+        },
+        select_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$select_data_href,
+            strict_type => 1,
+        },
+        vep_format_field_column_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_format_field_column_href,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+
+    ## Convert between hgnc_id and hgnc_symbol
+    my %hgnc_map;
 
     if ( $record_href->{INFO_key_value}{CSQ} ) {
 
@@ -1284,15 +1367,23 @@ sub parse_vep_csq {
 
             my @transcript_effects = split( /\|/, $transcript );   #Split in "|"
 
-            my $hgnc_id_column_ref = \$vep_format_field_column_href->{HGNC_ID}
-              ;    #Alias hgnc_id column number
+	    ## Alias hgnc_id column number
+            my $hgnc_id_column_ref = \$vep_format_field_column_href->{HGNC_ID};
 
+	    ## Alias hgnc_symbol column number
+	    my $hgnc_symbol_column_ref = \$vep_format_field_column_href->{SYMBOL};
+
+	    ## If gene
             if ( ( defined( $transcript_effects[$$hgnc_id_column_ref] ) )
                 && $transcript_effects[$$hgnc_id_column_ref] ne "" )
-            {      #If gene
+            {
 
+	       ## Alias HGNC ID
                 my $hgnc_id_ref =
-                  \$transcript_effects[$$hgnc_id_column_ref]; #Alias HGNC Symbol
+                  \$transcript_effects[$$hgnc_id_column_ref];
+
+		## Add symbol to hgnc map
+		$hgnc_map{$$hgnc_id_ref} = $transcript_effects[$$hgnc_symbol_column_ref];
                 my $transcript_id_ref =
                   \$transcript_effects[ $vep_format_field_column_href->{Feature}
                   ];    #Alias transcript_id
@@ -1300,10 +1391,12 @@ sub parse_vep_csq {
                   \$transcript_effects[ $vep_format_field_column_href->{Allele}
                   ];    #Alias allele
 
+		# Split consequence
                 my @consequences = split( /\&/,
                     $transcript_effects[ $vep_format_field_column_href
-                      ->{Consequence} ] );    #Split consequence
+                      ->{Consequence} ] );
 
+	      CONSEQUENCE:
                 foreach my $consequence_term (@consequences) {
 
                     check_terms(
@@ -1327,11 +1420,12 @@ sub parse_vep_csq {
                         {score} )
                     {
 
+		          ## Collect most severe consequence
                         if ( $consequence_severity_href->{$consequence_term}
                             {rank} <
                             $consequence_href->{$$hgnc_id_ref}{$$allele_ref}
                             {score} )
-                        {    #Collect most severe consequence
+                        {
 
                             add_to_consequence_hash(
                                 {
@@ -1410,17 +1504,35 @@ sub parse_vep_csq {
                   ;           #Add all transcripts to range transcripts
             }
         }
-        my @most_severe_select_consequences;
         my @most_severe_range_consequences;
+        my @most_severe_select_consequences;
+	my $most_severe_range_pli = 0;
+	my $most_severe_select_pli = 0;
 
-      GENES:
-        for my $gene ( keys %$consequence_href ) {
+      GENE:
+        for my $gene ( keys %{$consequence_href} ) {
 
-          ALLELS:
+          ALLEL:
             for my $allele ( keys %{ $consequence_href->{$gene} } )
-            {                 #All alleles
+            {
 
-                if ( $select_data_href->{$gene} ) { #Exists in selected Features
+
+	      ## Get hgnc_symbol
+	      my $hgnc_symbol = $hgnc_map{$gene};
+
+	      ## For pli value and if current pli is more than stored
+	      if(exists $pli_score_href->{$hgnc_symbol} and
+		$most_severe_range_pli < $pli_score_href->{$hgnc_symbol} ) {
+
+		if ( $select_data_href->{$gene} ) {
+
+		$most_severe_select_pli = $pli_score_href->{$hgnc_symbol};
+}
+		$most_severe_range_pli = $pli_score_href->{$hgnc_symbol};
+	      }
+
+	       ## Exists in selected features
+                if ( $select_data_href->{$gene} ) {
 
                     push( @most_severe_select_consequences,
                         $consequence_href->{$gene}{$allele}
@@ -1462,12 +1574,20 @@ sub parse_vep_csq {
         }
 
         ## Mainly for SV BNDs without consequence and within a gene
-        if (    not keys %$consequence_href
+        if (    not keys %{$consequence_href}
             and not exists $record_href->{range_transcripts} )
         {
-            push( @{ $record_href->{range_transcripts} }, @transcripts )
-              ;    #Add all transcripts to range transcripts
+	      ## Add all transcripts to range transcripts
+            push( @{ $record_href->{range_transcripts} }, @transcripts );
         }
+	if ($most_severe_select_pli) {
+
+            $record_href->{INFO_addition_select_feature}
+              {most_severe_pli} = $most_severe_select_pli;
+        }
+        if ($most_severe_range_pli) {
+
+            $record_href->{INFO_addition_range_feature}{most_severe_pli} = $most_severe_range_pli;        }
     }
 }
 
