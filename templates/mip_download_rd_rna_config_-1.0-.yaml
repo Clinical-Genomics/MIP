@@ -19,15 +19,21 @@ reference:
     - gold_standard_dbsnp
     - 146
   gencode_annotation:
-    - v29
+    - v30
+    - v30_basic
 reference_feature:
   gencode_annotation:
     grch37:
-      v29:
-        file: gencode.v29lift37.annotation.gtf.gz
-        outfile: grch37_gencode_annotation_-v29-.gtf.gz
+      v30:
+        file: gencode.v30lift37.annotation.gtf.gz
+        outfile: grch37_gencode_annotation_-v30-.gtf.gz
         outfile_decompress: gzip
-        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_30/GRCh37_mapping/
+      v30_basic:
+        file: gencode.v30lift37.basic.annotation.gtf.gz
+        outfile: grch37_gencode_annotation_basic_-v30-.gtf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_30/GRCh37_mapping/
   ctat_resource_lib:
     grch37:
       v19_ctat_lib_feb092018:

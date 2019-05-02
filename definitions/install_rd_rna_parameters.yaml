@@ -76,6 +76,7 @@ eperl5.26:
     blast: 2.7.1=h4422958_6
     fastqc: 0.11.8=1
     fusion-filter: 0.5.0
+    htslib: 1.9
     openssl: 1.0.2p
     perl-common-sense:
     perl-json-xs:

@@ -87,12 +87,12 @@ sub star_aln {
 
     my $tmpl = {
         align_intron_max => {
-            default     => 100_000,
+            default     => 100000,
             store       => \$align_intron_max,
             strict_type => 1,
         },
         align_mates_gap_max => {
-            default     => 100_000,
+            default     => 100000,
             store       => \$align_mates_gap_max,
             strict_type => 1,
         },
@@ -107,12 +107,6 @@ sub star_aln {
             strict_type => 1,
         },
         chim_out_type => {
-            allow => [
-                undef,
-                qw{ Junctions SeparateSAMold WithinBAM },
-                q{WithinBAM HardClip},
-                q{WithinBAM SoftClip}
-            ],
             store       => \$chim_out_type,
             strict_type => 1,
         },

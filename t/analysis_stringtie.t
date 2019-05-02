@@ -76,7 +76,7 @@ $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $sample_id = $active_parameter{sample_ids}[0];
 $active_parameter{library_type}          = q{a_library_type};
-$active_parameter{transcript_annotation} = q{annotation_file};
+$active_parameter{stringtie_transcript_annotation} = q{annotation_file};
 
 my %file_info = test_mip_hashes(
     {

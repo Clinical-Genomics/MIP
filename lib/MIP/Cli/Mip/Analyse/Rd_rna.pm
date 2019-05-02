@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.15;
+our $VERSION = 1.16;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -483,8 +483,8 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     option(
         q{pe_overlap_nbases_min} => (
             cmd_aliases   => [qw{ stn_ponm }],
-            cmd_tags      => [q{Default: 10}],
-            documentation => q{Min bases overlap to merge reads whne alingning },
+            cmd_tags      => [q{Default: 5}],
+            documentation => q{Min bases overlap to merge reads when alingning},
             is            => q{rw},
             isa           => Int,
         )
@@ -507,6 +507,16 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Detect fusion transcripts with star fusion},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{fusion_inspector} => (
+            cmd_aliases   => [qw{ fins }],
+            cmd_tags      => [q{Default: inspect}],
+            documentation => q{Run FusionInspector on fusions, Valid input: 0, inspect, validate},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -870,6 +880,16 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
             isa           => Str,
         )
     );
+    
+    option(
+        q{stringtie_transcript_annotation} => (
+            cmd_aliases   => [qw{ staf }],
+            cmd_tags      => [q{Transcripts file: Format: GTF}],
+            documentation => q{Transcript file for stringtie assembly},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
 
     option(
         q{library_type} => (
@@ -887,7 +907,7 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
         q{transcript_annotation} => (
             cmd_aliases   => [qw{ ttf }],
             cmd_tags      => [q{Transcripts file: Format: GTF}],
-            documentation => q{Transcript file for the rd_rna pipeline},
+            documentation => q{Transcript file for alignment processes},
             is            => q{rw},
             isa           => Str,
         )

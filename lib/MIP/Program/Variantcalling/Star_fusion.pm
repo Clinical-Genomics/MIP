@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_fusion };
@@ -42,6 +42,7 @@ sub star_fusion {
 ##          : $fastq_r1_path          => The path of the R1 fastq
 ##          : $fastq_r2_path          => The path of the R2 fastq
 ##          : $FILEHANDLE             => Filehandle to write to
+##          : $fusion_inspector       => Inspect/Validate fusions using FusionInspector
 ##          : $genome_lib_dir_path    => Path to the directory containing the genome library
 ##          : $output_directory_path  => output directory path
 ##          : $samples_file_path      => Sample file path
@@ -57,6 +58,7 @@ sub star_fusion {
     my $fastq_r1_path;
     my $fastq_r2_path;
     my $FILEHANDLE;
+    my $fusion_inspector;
     my $genome_lib_dir_path;
     my $output_directory_path;
     my $samples_file_path;
@@ -89,6 +91,11 @@ sub star_fusion {
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
+        },
+        fusion_inspector => {
+            allow => [ undef, 0, qw{ inspect validate }],
+            store => \$fusion_inspector,
+            strict_type => 1,
         },
         genome_lib_dir_path => {
             required    => 1,
@@ -154,6 +161,9 @@ q{Error: You must either specify the fastq file paths or a splice junction datab
 
     if ($examine_coding_effect) {
         push @commands, q{--examine_coding_effect};
+    }
+    if ($fusion_inspector) {
+        push @commands, q{--FusionInspector} . $SPACE . $fusion_inspector;
     }
 
     push @commands, q{--output_dir} . $SPACE . $output_directory_path;

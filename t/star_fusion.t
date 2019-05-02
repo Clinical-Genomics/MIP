@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname  };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
@@ -21,6 +21,8 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -32,10 +34,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -114,6 +112,10 @@ my %specific_argument = (
     examine_coding_effect => {
         input           => 1,
         expected_output => q{--examine_coding_effect},
+    },
+    fusion_inspector => {
+        input => q{validate},
+        expected_output => q{--FusionInspector} . $SPACE . q{validate},
     },
     genome_lib_dir_path => {
         input           => catfile(qw{ dir genome_lib_dir_path }),

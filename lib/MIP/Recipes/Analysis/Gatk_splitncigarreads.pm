@@ -249,7 +249,7 @@ sub analysis_gatk_splitncigarreads {
 
     ### SHELL
 
-    Readonly my $JAVA_MEMORY_ALLOCATION => 12;
+    Readonly my $JAVA_MEMORY_ALLOCATION => 16;
     my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
 
     # Constrain parallelization to match available memory
