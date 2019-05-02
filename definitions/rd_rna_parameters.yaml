@@ -35,8 +35,10 @@ transcript_annotation:
     - salmon_quant
     - star_aln
     - star_fusion
+    - stringtie_ar
+    - gffcompare_ar
   data_type: SCALAR
-  default: grch37_gencode_annotation_reformated_-v30-.gtf
+  default: grch37_gencode_annotation_reformat_-v29-.gtf
   exists_check: file
   reference: reference_dir
   type: path
@@ -130,7 +132,7 @@ recipe_memory:
     analysisrunstatus: 1
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
-    genebody_coverage: 10
+    genebody_coverage: 8
     multiqc_ar: 2
     picardtools_mergesamfiles: 3
     preseq_ar: 8
@@ -139,7 +141,7 @@ recipe_memory:
     star_aln: 3
     star_fusion: 3
     stringtie_ar: 2
-    varianteffectpredictor: 10
+    varianteffectpredictor: 8
   type: mip
 recipe_core_number:
   associated_recipe:
@@ -169,6 +171,7 @@ recipe_core_number:
     star_aln: 36
     star_fusion: 24
     stringtie_ar: 36
+    trim_galore_ar: 1
     varianteffectpredictor: 1
   type: mip
 picardtools_path:
@@ -314,7 +317,7 @@ pe_overlap_nbases_min:
   associated_recipe:
     - star_aln
   data_type: SCALAR
-  default: 5
+  default: 10
   type: recipe_argument
 star_aln_reference_genome:
   associated_recipe:
@@ -365,12 +368,6 @@ fusion_filter_reference_genome:
   mandatory: no
   reference: reference_dir
   type: path
-fusion_inspector:
-  associated_recipe: 
-    - star_fusion
-  data_type: SCALAR
-  default: inspect
-  type: recipe_argument
 ## Merge bam files
 picardtools_mergesamfiles:
   analysis_mode: sample
@@ -407,15 +404,6 @@ stringtie_minimum_coverage:
     data_type: SCALAR
     default: 5
     type: recipe_argument
-stringtie_transcript_annotation:
-  associated_recipe:
-    - stringtie_ar
-    - gffcompare_ar
-  data_type: SCALAR
-  default: grch37_gencode_annotation_reformated_-v30_basic-.gtf
-  exists_check: file
-  reference: reference_dir
-  type: path
 ## GffCompare
 gffcompare_ar:
   analysis_mode: sample

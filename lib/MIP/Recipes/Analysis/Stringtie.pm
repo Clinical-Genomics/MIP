@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_stringtie };
@@ -249,7 +249,7 @@ sub analysis_stringtie {
               . $outfile_suffix,
             FILEHANDLE                  => $FILEHANDLE,
             gene_abundance_outfile_path => $outfile_path_prefix . q{_gene_abound.txt},
-            gtf_reference_path => $active_parameter_href->{stringtie_transcript_annotation},
+            gtf_reference_path => $active_parameter_href->{transcript_annotation},
             infile_path        => $infile_path,
             junction_reads     => $active_parameter_href->{stringtie_junction_reads},
             library_type       => $active_parameter_href->{library_type},

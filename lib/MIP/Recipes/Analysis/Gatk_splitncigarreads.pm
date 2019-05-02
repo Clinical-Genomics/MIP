@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_splitncigarreads };
@@ -249,7 +249,7 @@ sub analysis_gatk_splitncigarreads {
 
     ### SHELL
 
-    Readonly my $JAVA_MEMORY_ALLOCATION => 16;
+    Readonly my $JAVA_MEMORY_ALLOCATION => 12;
     my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
 
     # Constrain parallelization to match available memory

@@ -483,8 +483,8 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     option(
         q{pe_overlap_nbases_min} => (
             cmd_aliases   => [qw{ stn_ponm }],
-            cmd_tags      => [q{Default: 5}],
-            documentation => q{Min bases overlap to merge reads when alingning},
+            cmd_tags      => [q{Default: 10}],
+            documentation => q{Min bases overlap to merge reads whne alingning },
             is            => q{rw},
             isa           => Int,
         )
@@ -507,16 +507,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Detect fusion transcripts with star fusion},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{fusion_inspector} => (
-            cmd_aliases   => [qw{ fins }],
-            cmd_tags      => [q{Default: inspect}],
-            documentation => q{Run FusionInspector on fusions, Valid input: 0, inspect, validate},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 
@@ -880,16 +870,6 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
             isa           => Str,
         )
     );
-    
-    option(
-        q{stringtie_transcript_annotation} => (
-            cmd_aliases   => [qw{ staf }],
-            cmd_tags      => [q{Transcripts file: Format: GTF}],
-            documentation => q{Transcript file for stringtie assembly},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
 
     option(
         q{library_type} => (
@@ -907,7 +887,7 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
         q{transcript_annotation} => (
             cmd_aliases   => [qw{ ttf }],
             cmd_tags      => [q{Transcripts file: Format: GTF}],
-            documentation => q{Transcript file for alignment processes},
+            documentation => q{Transcript file for the rd_rna pipeline},
             is            => q{rw},
             isa           => Str,
         )

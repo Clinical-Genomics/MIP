@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln };
@@ -284,7 +284,6 @@ sub analysis_star_aln {
                 genome_dir_path     => $referencefile_dir_path,
                 infile_paths_ref    => \@fastq_files,
                 outfile_name_prefix => $outfile_path_prefix . $DOT,
-                pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min}, 
                 thread_number       => $recipe_resource{core_number},
                 two_pass_mode       => $active_parameter_href->{two_pass_mode},
             },

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ star_aln star_genome_generate };
@@ -87,12 +87,12 @@ sub star_aln {
 
     my $tmpl = {
         align_intron_max => {
-            default     => 100000,
+            default     => 100_000,
             store       => \$align_intron_max,
             strict_type => 1,
         },
         align_mates_gap_max => {
-            default     => 100000,
+            default     => 100_000,
             store       => \$align_mates_gap_max,
             strict_type => 1,
         },
@@ -107,6 +107,12 @@ sub star_aln {
             strict_type => 1,
         },
         chim_out_type => {
+            allow => [
+                undef,
+                qw{ Junctions SeparateSAMold WithinBAM },
+                q{WithinBAM HardClip},
+                q{WithinBAM SoftClip}
+            ],
             store       => \$chim_out_type,
             strict_type => 1,
         },

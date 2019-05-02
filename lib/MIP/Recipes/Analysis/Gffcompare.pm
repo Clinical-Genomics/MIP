@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gffcompare };
@@ -250,7 +250,7 @@ sub analysis_gffcompare {
         {
             FILEHANDLE           => $FILEHANDLE,
             genome_sequence_path => $active_parameter_href->{human_genome_reference},
-            gtf_reference_path   => $active_parameter_href->{stringtie_transcript_annotation},
+            gtf_reference_path   => $active_parameter_href->{transcript_annotation},
             ignore_non_overlapping_ref => 1,
             infile_paths_ref           => \@infile_paths,
             outfile_path_prefix        => $outfile_path_prefix,
