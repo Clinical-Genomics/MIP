@@ -204,17 +204,17 @@ sub add_qc_data_regexp_return {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-	use MIP::Unix::System qw{ system_cmd_call };
+    use MIP::Unix::System qw{ system_cmd_call };
 
-      ## Get return from reg exp system call
-        my %chld_handler =
-          system_cmd_call( { command_string => qq{$regexp $data_file_path}, } );
+    ## Get return from reg exp system call
+    my %chld_handler =
+      system_cmd_call( { command_string => qq{$regexp $data_file_path}, } );
 
     ## Print stderr if returned
-        if ( @{ $chld_handler{error} } ) {
+    if ( @{ $chld_handler{error} } ) {
 
-            say {*STDERR} join $NEWLINE, @{ $chld_handler{error} };
-        }
+        say {*STDERR} join $NEWLINE, @{ $chld_handler{error} };
+    }
 
     ## Covers both whitespace and tab. Add other separators if required
     my @separators = ( qw{ \s+ ! }, q{,} );
@@ -223,11 +223,11 @@ sub add_qc_data_regexp_return {
   SEPARATOR:
     foreach my $separator (@separators) {
 
-      ## Add to qc_data
+        ## Add to qc_data
         @{ $qc_href->{$recipe_name}{$regexp_key} } = split /$separator/sxm,
           join $NEWLINE, @{ $chld_handler{output} };
 
-	## Return if seperation of data was successful
+        ## Return if seperation of data was successful
         return 1
           if ( defined $qc_href->{$recipe_name}{$regexp_key} );
     }
