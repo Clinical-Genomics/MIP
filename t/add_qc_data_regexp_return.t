@@ -58,7 +58,7 @@ diag(   q{Test add_qc_data_regexp_return from Qc_data.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given
+## Given a valid regexp when file exists
 my $data_file_path = catfile( dirname($Bin), q{mip} );
 my %qc_data;
 my $recipe_name = q{mip};
@@ -77,7 +77,7 @@ add_qc_data_regexp_return(
 
 my %expected_qc_data = ( $recipe_name => { $regexp_key => [ qw{Got version}, ], } );
 
-## Then
+## Then reg exp returned data should have been added to qc_data
 is_deeply( \%qc_data, \%expected_qc_data, q{Added regexp return from system call} );
 
 done_testing();

@@ -32,6 +32,7 @@ BEGIN {
       add_qc_data_regexp_return
       get_qc_data_case_recipe_attributes
       get_qc_data_sample_recipe_attributes
+      get_regexp_qc_data
       set_qc_data_recipe_info
     };
 }
@@ -204,17 +205,12 @@ sub add_qc_data_regexp_return {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Unix::System qw{ system_cmd_call };
-
-    ## Get return from reg exp system call
-    my %chld_handler =
-      system_cmd_call( { command_string => qq{$regexp $data_file_path}, } );
-
-    ## Print stderr if returned
-    if ( @{ $chld_handler{error} } ) {
-
-        say {*STDERR} join $NEWLINE, @{ $chld_handler{error} };
-    }
+    my @regexp_returns = get_regexp_qc_data(
+        {
+            data_file_path => $data_file_path,
+            regexp         => $regexp,
+        }
+    );
 
     ## Covers both whitespace and tab. Add other separators if required
     my @separators = ( qw{ \s+ ! }, q{,} );
@@ -225,9 +221,9 @@ sub add_qc_data_regexp_return {
 
         ## Add to qc_data
         @{ $qc_href->{$recipe_name}{$regexp_key} } = split /$separator/sxm,
-          join $NEWLINE, @{ $chld_handler{output} };
+          join $NEWLINE, @regexp_returns;
 
-        ## Return if seperation of data was successful
+        ## Return true if seperation of data was successful
         return 1
           if ( defined $qc_href->{$recipe_name}{$regexp_key} );
     }
@@ -342,6 +338,47 @@ sub get_qc_data_sample_recipe_attributes {
 
     ## Get recipe attribute hash
     return %{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe_name} };
+}
+
+sub get_regexp_qc_data {
+
+    ## Function  : Use reg exp to collect qc data via system call
+    ## Returns   : @{ $chld_handler{output} } or @{ $chld_handler{error} }
+    ## Arguments : $data_file_path => Path to data file from which to collect
+    ##           : $regexp         => Regular expression to collect data
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $data_file_path;
+    my $regexp;
+
+    my $tmpl = {
+        data_file_path => { store => \$data_file_path, strict_type => 1, },
+        regexp         => {
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Unix::System qw{ system_cmd_call };
+
+    ## Get return from reg exp system call
+    my %chld_handler =
+      system_cmd_call( { command_string => qq{$regexp $data_file_path}, } );
+
+    ## Print stderr if returned from regexp
+    if ( @{ $chld_handler{error} } ) {
+
+        ## Be verbose that something went wrong
+        say {*STDERR} join $NEWLINE, @{ $chld_handler{error} };
+        return @{ $chld_handler{error} };
+    }
+    return @{ $chld_handler{output} };
 }
 
 sub set_qc_data_recipe_info {
