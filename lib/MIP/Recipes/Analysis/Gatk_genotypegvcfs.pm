@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -244,6 +244,7 @@ sub analysis_gatk_genotypegvcfs {
         my @sample_vcf_path_lines;
         my $sample_name_map_path;
 
+      SAMPLE_ID:
         while ( my ( $sample_id_index, $sample_id ) =
             each @{ $active_parameter_href->{sample_ids} } )
         {
@@ -291,10 +292,12 @@ sub analysis_gatk_genotypegvcfs {
             );
 
         }
+        my $genomicsdb_file_path =
+          $outfile_path_prefix . $UNDERSCORE . q{DB} . $UNDERSCORE . $contig;
         gatk_genomicsdbimport(
             {
                 FILEHANDLE                => $FILEHANDLE,
-                genomicsdb_workspace_path => $outfile_path_prefix . $UNDERSCORE . q{DB},
+                genomicsdb_workspace_path => $genomicsdb_file_path,
                 intervals_ref             => [$contig],
                 infile_paths_ref          => \@genotype_infile_paths,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
@@ -317,8 +320,8 @@ sub analysis_gatk_genotypegvcfs {
                 FILEHANDLE => $FILEHANDLE,
                 include_nonvariant_sites =>
                   $active_parameter_href->{gatk_genotypegvcfs_all_sites},
-                infile_path   => q{gendb://} . $outfile_path_prefix . $UNDERSCORE . q{DB},
-                intervals_ref => [$contig],
+                infile_path          => q{gendb://} . $genomicsdb_file_path,
+                intervals_ref        => [$contig],
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 outfile_path         => $outfile_path{$contig},

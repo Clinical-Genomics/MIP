@@ -41,7 +41,7 @@ shift $((OPTIND - 1))
 infiles=( "$@" )
 ## Otherwise, get infiles from git
 if [ ${#infiles[@]} -lt 1 ] ; then
-    infiles=$(git status --short | perl -nae 'print $F[1] . q{ }')
+    infiles=$(git diff --name-only)
 fi
 
 ## Get current dir
@@ -68,10 +68,14 @@ do
 	fi
 
     ## Run perltidy
-    perltidy --maximum-line-length=90 --iterations=2 -b -bext='/' $infile
+    if [[ "$(perltidy --maximum-line-length=90 --iterations=2 -b -bext='/' $infile)" -gt 0 ]]; then
+	echo >&2 "There was an error when running perltidy on $infile; please see the error file for more info"
+           exit 1
+    fi
 
     ## Run perlcritic
     echo "[PERL CRITIC]"
     perlcritic \-${critic_severity} \-p ${mip_dir}/.perlcriticrc_mip $infile
 
 done
+
