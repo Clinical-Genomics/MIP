@@ -212,8 +212,18 @@ sub add_qc_data_regexp_return {
     foreach my $separator (@separators) {
 
         ## Collect data or headers by splitting return from system call
-        @{ $qc_href->{$recipe_name}{$regexp_key} } =
-          split /$separator/sxm, `$regexp $data_file_path`;
+        #        @{ $qc_href->{$recipe_name}{$regexp_key} } =
+        #          split /$separator/sxm, `$regexp $data_file_path`;
+
+        my %chld_handler =
+          system_cmd_call( { command_string => qq{$regexp $data_file_path}, } );
+        if ( @{ $chld_handler{output} } ) {
+
+            say {*STDERR} join $NEWLINE, @{ $chld_handler{output} };
+        }
+
+        @{ $qc_href->{$recipe_name}{$regexp_key} } = split /$separator/sxm,
+          @{ $chld_handler{output} };
 
         return 1
           if ( defined $qc_href->{$recipe_name}{$regexp_key} );
