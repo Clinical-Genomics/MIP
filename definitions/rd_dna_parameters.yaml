@@ -151,15 +151,15 @@ recipe_core_number:
     bcftools_mpileup: 16
     bwa_mem: 36
     chanjo_sexcheck: 1
-    cnvnator_ar: 16
+    cnvnator_ar: 13
     delly_call: 36
-    delly_reformat: 16
+    delly_reformat: 13
     endvariantannotationblock: 1
     evaluation: 1
     expansionhunter: 0
     fastqc_ar: 0
     freebayes_ar: 13
-    frequency_filter: 16
+    frequency_filter: 13
     gatk_baserecalibration: 13
     gatk_combinevariantcallsets: 1
     gatk_genotypegvcfs: 1
@@ -178,22 +178,22 @@ recipe_core_number:
     picardtools_mergesamfiles: 13
     plink: 1
     qccollect_ar: 1
-    rhocall_ar: 15
+    rhocall_ar: 13
     rtg_vcfeval: 36
     sacct: 1
     sambamba_depth: 1
     samtools_subsample_mt: 1
-    snpeff: 15
+    snpeff: 13
     split_fastq_file: 4
     sv_annotate: 1
     sv_combinevariantcallsets: 1
     sv_rankvariant: 16
     sv_reformat: 1
     sv_varianteffectpredictor: 0
-    sv_vcfparser: 16
+    sv_vcfparser: 13
     variant_integrity_ar: 1
     vcf2cytosure_ar: 0
-    vt_ar: 15
+    vt_ar: 13
   type: mip
 ## Memory per parallel process/core
 recipe_memory:
