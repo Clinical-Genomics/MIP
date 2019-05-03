@@ -589,6 +589,15 @@ sub parse_regexp_hash_and_collect {
     use MIP::Qcc_regexp qw{ get_qcc_regexp_recipe_attribute };
     use MIP::Qc_data qw{ add_qc_data_regexp_return };
 
+        <<"FUNCTION";
+        ## Detect if the outfile contains paragrafs/header info in the outfile
+        ## i.e. data is formated as a paragraf with header(s) and line(s).
+        ## "regexp_key" should either start with or end with "header". This
+        ## section extracts the header/data line(s) for the entire outdata file.
+        ## Necessary to assign correct data entry to header entry later
+        ## (headers and data are saved in seperate hashes).
+FUNCTION
+
     ## Holds the current regexp
     my $regexp;
 
@@ -599,16 +608,7 @@ sub parse_regexp_hash_and_collect {
   REG_EXP:
     for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
 
-        <<"FUNCTION";
-        ## Detect if the outfile contains paragrafs/header info in the outfile
-        ## i.e. data is formated as a paragraf with header(s) and line(s).
-        ## "regexp_key" should either start with or end with "header". This
-        ## section extracts the header line(s) for the entire outdata file.
-        ## Necessary to assign correct data entry to header entry later
-        ## (headers and data are saved in seperate hashes).
-FUNCTION
-
-## Regular expression used to collect paragraf header info
+      ## Regular expression used to collect paragraf header info
         $regexp = get_qcc_regexp_recipe_attribute(
             {
                 attribute       => $regexp_key,
