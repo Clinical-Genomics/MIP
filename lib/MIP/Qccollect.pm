@@ -23,11 +23,17 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ check_qc_metric chanjo_gender_check define_evaluate_metric get_case_pairwise_comparison get_parent_ids plink_gender_check relation_check };
+    our @EXPORT_OK = qw{ check_qc_metric
+      chanjo_gender_check
+      define_evaluate_metric
+      evaluate_case_qc_parameters
+      get_case_pairwise_comparison
+      get_parent_ids
+      plink_gender_check
+      relation_check };
 }
 
 sub check_qc_metric {
@@ -303,6 +309,64 @@ sub define_evaluate_metric {
         }
     }
     return %evaluate_metric;
+}
+
+sub evaluate_case_qc_parameters {
+
+## Function : Evaluate case qc metrics to detect metrics falling below threshold
+## Returns  :
+## Arguments: $evaluate_metric_href => Hash for metrics to evaluate
+##          : $qc_data_href         => QC data hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $evaluate_metric_href;
+    my $qc_data_href;
+
+    my $tmpl = {
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        evaluate_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$evaluate_metric_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Qccollect qw{ check_qc_metric };
+
+  RECIPE:
+    for my $recipe ( keys %{$evaluate_metric_href} ) {
+
+        next RECIPE if ( not exists $qc_data_href->{recipe}{$recipe} );
+
+      METRIC:
+        for my $metric ( keys %{ $evaluate_metric_href->{$recipe} } ) {
+
+            next METRIC if ( not exists $qc_data_href->{recipe}{$recipe}{$metric} );
+
+            check_qc_metric(
+                {
+                    metric                => $metric,
+                    qc_data_href          => $qc_data_href,
+                    qc_metric_value       => $qc_data_href->{recipe}{$recipe}{$metric},
+                    recipe                => $recipe,
+                    reference_metric_href => $evaluate_metric_href->{$recipe}{$metric},
+                }
+            );
+        }
+    }
+    return 1;
 }
 
 sub get_case_pairwise_comparison {

@@ -34,7 +34,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants qw{ $COLON $NEWLINE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
-use MIP::Qccollect qw{ define_evaluate_metric };
+use MIP::Qccollect qw{ define_evaluate_metric evaluate_case_qc_parameters };
 use MIP::Qc_data qw{ set_qc_data_recipe_info };
 use MIP::Script::Utils qw{ help };
 
@@ -49,12 +49,12 @@ BEGIN {
       parse_cpan_file { cpanfile_path => catfile( $Bin, qw{ definitions cpanfile } ), };
 
     ## Evaluate that all modules required are installed
-            check_perl_modules(
-                {
-                    modules_ref  => \@modules,
-                    program_name => $PROGRAM_NAME,
-                }
-            );
+    check_perl_modules(
+        {
+            modules_ref  => \@modules,
+            program_name => $PROGRAM_NAME,
+        }
+    );
 }
 
 my $VERSION = q{2.1.3};
@@ -830,64 +830,6 @@ sub add_to_qc_data {
                     }
                 }
             }
-        }
-    }
-    return;
-}
-
-sub evaluate_case_qc_parameters {
-
-## Function : Evaluate case qc metrics to detect metrics falling below threshold
-## Returns  :
-## Arguments: $evaluate_metric_href => Hash for metrics to evaluate
-##          : $qc_data_href         => QC data hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $evaluate_metric_href;
-    my $qc_data_href;
-
-    my $tmpl = {
-        qc_data_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$qc_data_href,
-            strict_type => 1,
-        },
-        evaluate_metric_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$evaluate_metric_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Qccollect qw{ check_qc_metric };
-
-  RECIPE:
-    for my $recipe ( keys %{$evaluate_metric_href} ) {
-
-        next RECIPE if ( not exists $qc_data_href->{recipe}{$recipe} );
-
-      METRIC:
-        for my $metric ( keys %{ $evaluate_metric_href->{$recipe} } ) {
-
-            next METRIC if ( not exists $qc_data_href->{recipe}{$recipe}{$metric} );
-
-            check_qc_metric(
-                {
-                    metric                => $metric,
-                    qc_data_href          => $qc_data_href,
-                    qc_metric_value       => $qc_data_href->{recipe}{$recipe}{$metric},
-                    recipe                => $recipe,
-                    reference_metric_href => $evaluate_metric_href->{$recipe}{$metric},
-                }
-            );
         }
     }
     return;
