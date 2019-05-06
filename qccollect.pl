@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
-#### Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format.
+#### Collects MPS QC from MIP. Loads information on files to examine and values
+#### to extract from in YAML format and outputs exracted metrics in YAML format.
 
 use 5.026;
 use Carp;
@@ -48,12 +49,12 @@ BEGIN {
       parse_cpan_file { cpanfile_path => catfile( $Bin, qw{ definitions cpanfile } ), };
 
     ## Evaluate that all modules required are installed
-    #        check_perl_modules(
-    #            {
-    #                modules_ref  => \@modules,
-    #                program_name => $PROGRAM_NAME,
-    #            }
-    #        );
+            check_perl_modules(
+                {
+                    modules_ref  => \@modules,
+                    program_name => $PROGRAM_NAME,
+                }
+            );
 }
 
 my $VERSION = q{2.1.3};
@@ -65,6 +66,7 @@ my ( $evaluate_plink_gender, $print_regexp, $regexp_file, $sample_info_file,
 my ( $log_file, $print_regexp_outfile, $outfile, ) =
   ( catfile( cwd(), q{qccollect.log} ), q{qc_regexp.yaml}, q{qcmetrics.yaml}, );
 
+## Save final output data
 my %qc_data;
 
 ## Save header(s) in each outfile
@@ -132,10 +134,12 @@ if ( not $regexp_file ) {
 ###########
 
 ## Loads a YAML file into an arbitrary hash and returns it
+$log->info( q{Loading: } . $sample_info_file );
 my %sample_info = load_yaml( { yaml_file => $sample_info_file, } );
 $log->info( q{Loaded: } . $sample_info_file );
 
 ## Loads a reg exp file into an arbitrary hash
+$log->info( q{Loading: } . $regexp_file );
 my %regexp = load_yaml( { yaml_file => $regexp_file, } );
 $log->info( q{Loaded: } . $regexp_file );
 
@@ -149,7 +153,7 @@ set_qc_data_recipe_info(
     }
 );
 
-## Set regexp file to qc_data hash
+## Set supplied regexp file to qc_data hash
 set_qc_data_recipe_info(
     {
         key          => q{regexp_file},
@@ -191,7 +195,7 @@ my %evaluate_metric = define_evaluate_metric(
 if ( not $skip_evaluation ) {
 
     ## Evaluate the metrics
-    evaluate_family_qc_parameters(
+    evaluate_case_qc_parameters(
         {
             evaluate_metric_href => \%evaluate_metric,
             qc_data_href         => \%qc_data,
@@ -598,18 +602,12 @@ sub parse_regexp_hash_and_collect {
         ## (headers and data are saved in seperate hashes).
 FUNCTION
 
-    ## Holds the current regexp
-    my $regexp;
-
-    ## Covers both whitespace and tab. Add other separators if required
-    my @separators = ( qw{ \s+ ! }, q{,} );
-
     ## Find the actual regular expression(s) for each recipe that is used
-  REG_EXP:
+  REG_EXP_KEY:
     for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
 
         ## Regular expression used to collect paragraf header info
-        $regexp = get_qcc_regexp_recipe_attribute(
+        my $regexp = get_qcc_regexp_recipe_attribute(
             {
                 attribute       => $regexp_key,
                 qcc_regexp_href => $regexp_href,
@@ -630,7 +628,7 @@ FUNCTION
                     regexp_key     => $regexp_key,
                 }
             );
-            next REG_EXP;
+            next REG_EXP_KEY;
         }
 
         ### For info contained in Entry --> Value i.e. same line.
@@ -837,9 +835,9 @@ sub add_to_qc_data {
     return;
 }
 
-sub evaluate_family_qc_parameters {
+sub evaluate_case_qc_parameters {
 
-## Function : Evaluate family qc metrics to detect metrics falling below threshold
+## Function : Evaluate case qc metrics to detect metrics falling below threshold
 ## Returns  :
 ## Arguments: $evaluate_metric_href => Hash for metrics to evaluate
 ##          : $qc_data_href         => QC data hash {REF}
