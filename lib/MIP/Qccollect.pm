@@ -26,13 +26,15 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_qc_metric
+    our @EXPORT_OK = qw{
+      check_qc_metric
       chanjo_gender_check
       define_evaluate_metric
       evaluate_case_qc_parameters
       get_case_pairwise_comparison
       get_parent_ids
       plink_gender_check
+      plink_relation_check
       relation_check };
 }
 
@@ -234,6 +236,68 @@ sub chanjo_gender_check {
             qc_data_href => $qc_data_href,
             recipe_name  => $recipe_name,
             sample_id    => $sample_id,
+            value        => $status,
+        }
+    );
+    return;
+}
+
+sub plink_relation_check {
+
+## Function : Evaluate plink relation check not equal PASS
+## Returns  :
+## Arguments: $qc_data_href => QC data hash {REF}
+##          : $recipe_name  => Plink recipe name for relation check
+##          : $sample_id    => Sample ID
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $qc_data_href;
+    my $recipe_name;
+    my $sample_id;
+
+    my $tmpl = {
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Qc_data qw{ add_qc_data_evaluation_info };
+
+    return if ( not exists $qc_data_href->{sample}{$sample_id}{$recipe_name} );
+
+    return if ( $qc_data_href->{sample}{$sample_id}{$recipe_name} eq q{PASS} );
+
+    ## Set FAIL status
+    my $status =
+        q{Status:}
+      . $recipe_name . q{:}
+      . $qc_data_href->{sample}{$sample_id}{$recipe_name};
+
+    ## Add to QC data at case level
+    add_qc_data_evaluation_info(
+        {
+            qc_data_href => $qc_data_href,
+            recipe_name  => $recipe_name,
             value        => $status,
         }
     );

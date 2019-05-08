@@ -881,21 +881,13 @@ sub evaluate_sample_qc_parameters {
             ## Special case
             if ( $infile =~ /relation_check/ ) {
 
-                if ( $qc_data_href->{sample}{$sample_id}{$infile} ne q{PASS} ) {
-
-                    my $status =
-                        q{Status:}
-                      . $infile . q{:}
-                      . $qc_data_href->{sample}{$sample_id}{$infile};
-                    ## Add to QC data at case level
-                    add_qc_data_evaluation_info(
-                        {
-                            qc_data_href => \%qc_data,
-                            recipe_name  => $infile,
-                            value        => $status,
-                        }
-                    );
-                }
+                plink_relation_check(
+                    {
+                        qc_data_href => \%qc_data,
+                        recipe_name  => $infile,
+                        sample_id    => $sample_id,
+                    }
+                );
                 next INFILE;
             }
 
@@ -913,6 +905,7 @@ sub evaluate_sample_qc_parameters {
                 for my $metric ( keys %{ $evaluate_metric_href->{$sample_id}{$recipe} } )
                 {
 
+                    ## If metrics exists in qc data recipe
                     if ( exists $qc_data_recipe_href->{$metric} ) {
 
                         check_qc_metric(
