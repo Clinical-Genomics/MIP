@@ -38,7 +38,7 @@ transcript_annotation:
     - stringtie_ar
     - gffcompare_ar
   data_type: SCALAR
-  default: grch37_gencode_annotation_reformat_-v30-.gtf
+  default: grch37_gencode_annotation_reformated_-v30-.gtf
   exists_check: file
   reference: reference_dir
   type: path
