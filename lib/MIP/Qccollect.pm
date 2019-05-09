@@ -618,12 +618,13 @@ sub parse_sample_recipe_qc_metric {
         my $qc_data_recipe_href =
           \%{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe} };
 
-## Parse sample recipe qc data and/or header to check metrics
+        ## Parse sample recipe qc data and/or header to check metrics
         parse_sample_qc_metric(
             {
                 evaluate_metric_href => $evaluate_metric_href,
-                qc_data_href         => \%qc_data,
+                qc_data_href         => $qc_data_href,
                 qc_data_recipe_href  => $qc_data_recipe_href,
+                recipe_name          => $recipe,
                 sample_id            => $sample_id,
             }
         );
@@ -733,7 +734,7 @@ sub parse_sample_qc_metric {
             next METRIC;
         }
     }
-    return;
+    return 1;
 }
 
 sub plink_gender_check {
