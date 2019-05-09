@@ -33,6 +33,7 @@ BEGIN {
       evaluate_case_qc_parameters
       get_case_pairwise_comparison
       get_parent_ids
+      parse_sample_recipe_qc_metric
       parse_sample_qc_metric
       plink_gender_check
       plink_relation_check
@@ -630,7 +631,7 @@ sub parse_sample_recipe_qc_metric {
         );
 
     }
-    return;
+    return 1;
 }
 
 sub parse_sample_qc_metric {
