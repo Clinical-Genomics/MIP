@@ -215,7 +215,7 @@ evep:
 
 # Specify environment names
 environment_name:
-  emip: MIP_rare
+  emip: MIP_rd_dna
   ecnvnator:
   edelly:
   epeddy:
