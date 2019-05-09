@@ -867,6 +867,8 @@ sub evaluate_sample_qc_parameters {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Qccollect qw{ parse_sample_qc_metric plink_relation_check };
+
   SAMPLE_LEVEL:
     for my $sample_id ( keys %{ $qc_data_href->{sample} } ) {
 
@@ -891,63 +893,15 @@ sub evaluate_sample_qc_parameters {
                 next INFILE;
             }
 
-          RECIPE:
-            for my $recipe ( keys %{ $qc_data_href->{sample}{$sample_id}{$infile} } ) {
-
-                next RECIPE
-                  if ( not exists $evaluate_metric_href->{$sample_id}{$recipe} );
-
-                ## Alias
-                my $qc_data_recipe_href =
-                  \%{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe} };
-
-              METRIC:
-                for my $metric ( keys %{ $evaluate_metric_href->{$sample_id}{$recipe} } )
+            parse_sample_recipe_qc_metric(
                 {
-
-                    ## If metrics exists in qc data recipe
-                    if ( exists $qc_data_recipe_href->{$metric} ) {
-
-                        check_qc_metric(
-                            {
-                                metric          => $metric,
-                                qc_data_href    => $qc_data_href,
-                                qc_metric_value => $qc_data_recipe_href->{$metric},
-                                recipe          => $recipe,
-                                reference_metric_href =>
-                                  $evaluate_metric_href->{$sample_id}{$recipe}{$metric},
-                            }
-                        );
-                        next METRIC;
-                    }
-
-                    next METRIC
-                      if ( not exists $qc_data_recipe_href->{header} );
-
-                  HEADER:
-                    for my $data_header ( keys %{ $qc_data_recipe_href->{header} } ) {
-
-                        next HEADER
-                          if (
-                            not
-                            exists $qc_data_recipe_href->{header}{$data_header}{$metric}
-                          );
-
-                        check_qc_metric(
-                            {
-                                metric       => $metric,
-                                qc_data_href => $qc_data_href,
-                                qc_metric_value =>
-                                  $qc_data_recipe_href->{header}{$data_header}{$metric},
-                                recipe => $recipe,
-                                reference_metric_href =>
-                                  $evaluate_metric_href->{$sample_id}{$recipe}{$metric},
-                            }
-                        );
-                        next METRIC;
-                    }
+                    evaluate_metric_href => $evaluate_metric_href,
+                    qc_data_href         => \%qc_data,
+                    infile               => $infile,
+                    sample_id            => $sample_id,
                 }
-            }
+            );
+
         }
     }
     return;

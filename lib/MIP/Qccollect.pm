@@ -33,6 +33,7 @@ BEGIN {
       evaluate_case_qc_parameters
       get_case_pairwise_comparison
       get_parent_ids
+      parse_sample_qc_metric
       plink_gender_check
       plink_relation_check
       relation_check };
@@ -557,6 +558,182 @@ sub get_parent_ids {
     }
     ## Return fake ids to allow sibling comparisons for pedigrees without parents
     return q{YYY_father}, q{XXX_mother};
+}
+
+sub parse_sample_recipe_qc_metric {
+
+## Function : Parse sample recipe qc data to check metrics
+## Returns  :
+## Arguments: $evaluate_metric_href => Hash for metrics to evaluate
+##          : $infile               => Infile name
+##          : $qc_data_href         => QC data hash {REF}
+##          : $sample_id            => Sample ID
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $evaluate_metric_href;
+    my $infile;
+    my $qc_data_href;
+    my $sample_id;
+
+    my $tmpl = {
+        evaluate_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$evaluate_metric_href,
+            strict_type => 1,
+        },
+        infile => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile,
+            strict_type => 1,
+        },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  RECIPE:
+    for my $recipe ( keys %{ $qc_data_href->{sample}{$sample_id}{$infile} } ) {
+
+        next RECIPE
+          if ( not exists $evaluate_metric_href->{$sample_id}{$recipe} );
+
+        ## Alias qc data for recipe
+        my $qc_data_recipe_href =
+          \%{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe} };
+
+## Parse sample recipe qc data and/or header to check metrics
+        parse_sample_qc_metric(
+            {
+                evaluate_metric_href => $evaluate_metric_href,
+                qc_data_href         => \%qc_data,
+                qc_data_recipe_href  => $qc_data_recipe_href,
+                sample_id            => $sample_id,
+            }
+        );
+
+    }
+    return;
+}
+
+sub parse_sample_qc_metric {
+
+## Function : Parse sample recipe qc data and/or header to check metrics
+## Returns  :
+## Arguments: $evaluate_metric_href => Hash for metrics to evaluate
+##          : $qc_data_href         => Qc data hash {REF}
+##          : $qc_data_recipe_href  => Recipe specific qc data
+##          : $recipe_name          => Recipe name
+##          : $sample_id            => Sample ID
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $evaluate_metric_href;
+    my $qc_data_href;
+    my $qc_data_recipe_href;
+    my $recipe_name;
+    my $sample_id;
+
+    my $tmpl = {
+        evaluate_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$evaluate_metric_href,
+            strict_type => 1,
+        },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        qc_data_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_recipe_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  METRIC:
+    for my $metric ( keys %{ $evaluate_metric_href->{$sample_id}{$recipe_name} } ) {
+
+        ## If metrics exists in qc data recipe
+        if ( exists $qc_data_recipe_href->{$metric} ) {
+
+            check_qc_metric(
+                {
+                    metric          => $metric,
+                    qc_data_href    => $qc_data_href,
+                    qc_metric_value => $qc_data_recipe_href->{$metric},
+                    recipe          => $recipe_name,
+                    reference_metric_href =>
+                      $evaluate_metric_href->{$sample_id}{$recipe_name}{$metric},
+                }
+            );
+            next METRIC;
+        }
+
+        ## No header data for metric
+        next METRIC
+          if ( not exists $qc_data_recipe_href->{header} );
+
+      HEADER:
+        for my $data_header ( keys %{ $qc_data_recipe_href->{header} } ) {
+
+            ## Metric does not exist in header
+            next HEADER
+              if ( not exists $qc_data_recipe_href->{header}{$data_header}{$metric} );
+
+            check_qc_metric(
+                {
+                    metric       => $metric,
+                    qc_data_href => $qc_data_href,
+                    qc_metric_value =>
+                      $qc_data_recipe_href->{header}{$data_header}{$metric},
+                    recipe => $recipe_name,
+                    reference_metric_href =>
+                      $evaluate_metric_href->{$sample_id}{$recipe_name}{$metric},
+                }
+            );
+            next METRIC;
+        }
+    }
+    return;
 }
 
 sub plink_gender_check {
