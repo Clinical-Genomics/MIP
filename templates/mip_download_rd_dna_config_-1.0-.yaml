@@ -45,6 +45,8 @@ reference:
     - na12878_v2.19_bed
     - na12878_v3.3.2_wgs
     - na12878_v3.3.2_bed
+    - na24143_v3.3.2_wgs
+    - na24143_v3.3.2_bed
     - na24385_v3.3.2_wgs
     - na24385_v3.3.2_bed
     - na24631_v3.3.2_wgs
@@ -345,6 +347,15 @@ reference_feature:
         file: HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel.bed
         outfile: grch37_nist_hg001_-na12878_v3.3.2-.bed
         url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh37/
+      na24143_v3.3.2_wgs:
+        file: HG004_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X_CHROM1-22_v.3.3.2_highconf.vcf.gz
+        outfile: grch37_nist_hg004_-na24143_v3.3.2-.vcf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG004_NA24143_mother/NISTv3.3.2/GRCh37/
+      na24143_v3.3.2_bed:
+        file: HG004_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X_CHROM1-22_v.3.3.2_highconf_noinconsistent.bed
+        outfile: grch37_nist_hg004_-na24143_v3.3.2-.bed
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG004_NA24143_mother/NISTv3.3.2/GRCh37/
       na24385_v3.3.2_wgs:
         file: HG002_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v.3.3.2_highconf_triophased.vcf.gz
         outfile: grch37_nist_hg002_-na24385_v3.3.2-.vcf.gz
