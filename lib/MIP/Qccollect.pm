@@ -31,6 +31,7 @@ BEGIN {
       chanjo_gender_check
       define_evaluate_metric
       evaluate_case_qc_parameters
+      evaluate_sample_qc_parameters
       get_case_pairwise_comparison
       get_parent_ids
       parse_sample_recipe_qc_metric
@@ -242,6 +243,76 @@ sub chanjo_gender_check {
         }
     );
     return;
+}
+
+sub evaluate_sample_qc_parameters {
+
+## Function : Evaluate sample qc metrics to detect metrics falling below threshold
+## Returns  :
+## Arguments: $evaluate_metric_href => Hash for metrics to evaluate
+##          : $qc_data_href         => QC data hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $evaluate_metric_href;
+    my $qc_data_href;
+
+    my $tmpl = {
+        evaluate_metric_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$evaluate_metric_href,
+            strict_type => 1,
+        },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Qccollect qw{ parse_sample_qc_metric plink_relation_check };
+
+  SAMPLE_LEVEL:
+    for my $sample_id ( keys %{ $qc_data_href->{sample} } ) {
+
+      INFILE:
+        for my $infile ( keys %{ $qc_data_href->{sample}{$sample_id} } ) {
+
+            ## Skip evaluation for these infiles reg exp matches
+            next INFILE if ( $infile =~ / Undetermined | evaluation /ixsm );
+
+            ## Need to check and possibly add status for plink relation check
+            if ( $infile =~ /relation_check/isxm ) {
+
+                plink_relation_check(
+                    {
+                        qc_data_href => $qc_data_href,
+                        recipe_name  => $infile,
+                        sample_id    => $sample_id,
+                    }
+                );
+                next INFILE;
+            }
+
+            parse_sample_recipe_qc_metric(
+                {
+                    evaluate_metric_href => $evaluate_metric_href,
+                    qc_data_href         => $qc_data_href,
+                    infile               => $infile,
+                    sample_id            => $sample_id,
+                }
+            );
+
+        }
+    }
+    return 1;
 }
 
 sub plink_relation_check {
