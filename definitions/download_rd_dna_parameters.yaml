@@ -119,6 +119,13 @@ mills_and_1000g_indels:
   data_type: SCALAR
   default: 1
   type: recipe
+gatk_mitochondrial_ref:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 recipe_core_number:
   associated_recipe:
    - mip
@@ -140,6 +147,7 @@ recipe_core_number:
     human_reference: 1
     hapmap: 1
     mills_and_1000g_indels: 1
+    gatk_mitochondrial_ref: 1
   type: mip
 recipe_time:
   associated_recipe:
@@ -162,6 +170,7 @@ recipe_time:
     hapmap: 1
     human_reference: 1
     mills_and_1000g_indels: 1
+    gatk_mitochondrial_ref: 1
   type: mip
 reference_feature:
   associated_recipe:
