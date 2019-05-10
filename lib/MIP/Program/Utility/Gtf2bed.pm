@@ -46,7 +46,8 @@ sub gtf2bed {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $infile_path, my $stderrfile_path;
+    my $infile_path;
+    my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
