@@ -37,6 +37,7 @@ use MIP::Recipes::Install::BootstrapAnn qw{ install_bootstrapann };
 use MIP::Recipes::Install::Cnvnator qw{ install_cnvnator };
 use MIP::Recipes::Install::Conda qw{ check_conda_installation install_conda_packages };
 use MIP::Recipes::Install::Expansionhunter qw{ install_expansionhunter };
+use MIP::Recipes::Install::Gtf2bed qw{ install_gtf2bed };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
@@ -58,7 +59,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.3.1};
+    our $VERSION = q{1.4.1};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -243,6 +244,7 @@ sub mip_install {
             bootstrapann    => \&install_bootstrapann,
             cnvnator        => \&install_cnvnator,
             expansionhunter => \&install_expansionhunter,
+            gtf2bed         => \&install_gtf2bed,
             mip_scripts     => \&install_mip_scripts,
             picard          => \&install_picard,
             plink2          => \&install_plink2,

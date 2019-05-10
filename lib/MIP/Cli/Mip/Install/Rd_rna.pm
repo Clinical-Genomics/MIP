@@ -27,7 +27,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -185,7 +185,7 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools blobfish bootstrapann fastqc fusion-filter gatk4
-                          gffcompare htslib mip_scripts multiqc picard preseq rseqc
+                          gffcompare gtf2bed htslib mip_scripts multiqc picard preseq rseqc
                           salmon sambamba samtools star star_fusion stringtie vep }
                     ]
                 ),

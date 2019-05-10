@@ -56,6 +56,9 @@ emip:
       version: Your current MIP version
     picard:
       version: 2.17.11
+    gtf2bed:
+      version: 1.04.807
+      url: https://github.com/ExpressionAnalysis/ea-utils/archive/1.04.807.zip
 
 ## Python 3 environment spec
 epy3:

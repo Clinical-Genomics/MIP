@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gencode_annotation };
@@ -122,6 +122,7 @@ sub download_gencode_annotation {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Program::Utility::Gtf2bed qw{ gtf2bed };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -208,6 +209,17 @@ sub download_gencode_annotation {
         {
             FILEHANDLE   => $FILEHANDLE,
             outfile_path => $reformated_outfile_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Reformat gtf to bed
+    my $bed_outfile_path = $reformated_outfile_path =~ s/gtf$/bed/rxms;
+    gtf2bed(
+        {
+            FILEHANDLE      => $FILEHANDLE,
+            infile_path     => $reformated_outfile_path,
+            stdoutfile_path => $bed_outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
