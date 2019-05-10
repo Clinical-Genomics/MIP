@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -148,7 +148,6 @@ sub analysis_expansionhunter {
     use MIP::Get::Parameter
       qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Variantcalling::Bcftools
