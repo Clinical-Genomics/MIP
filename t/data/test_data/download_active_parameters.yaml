@@ -47,37 +47,37 @@ reference:
   expansionhunter:
     - 3.0.0
   gatk_mitochondrial_ref:
-    - v0_m_fasta
-    - v0_m_dict
     - v0_m_amb
     - v0_m_ann
+    - v0_m_blacklist
+    - v0_m_blacklist_shifted
     - v0_m_bwt
+    - v0_m_control_shifted_interval_list
+    - v0_m_dict
+    - v0_m_fasta
+    - v0_m_non_control_interval_list
+    - v0_m_numt_interval
     - v0_m_pac
     - v0_m_sa
-    - v0_m_shifted_fasta
-    - v0_m_shifted_dict
+    - v0_m_shiftback
     - v0_m_shifted_amb
     - v0_m_shifted_ann
     - v0_m_shifted_bwt
+    - v0_m_shifted_dict
+    - v0_m_shifted_fasta
     - v0_m_shifted_pac
     - v0_m_shifted_sa
-    - v0_m_blacklist
-    - v0_m_blacklist_shifted
-    - v0_m_numt_interval
-    - v0_m_control_shifted_interval_list
-    - v0_m_non_control_interval_list
-    - v0_m_shiftback
   genomic_superdups:
     - '20181009'
   giab:
-    - na12878_v2.19_wgs
     - na12878_v2.19_bed
-    - na12878_v3.3.2_wgs
+    - na12878_v2.19_wgs
     - na12878_v3.3.2_bed
-    - na24385_v3.3.2_wgs
+    - na12878_v3.3.2_wgs
     - na24385_v3.3.2_bed
-    - na24631_v3.3.2_wgs
+    - na24385_v3.3.2_wgs
     - na24631_v3.3.2_bed
+    - na24631_v3.3.2_wgs
   gnomad:
     - r2.0.1
   hapmap:
@@ -303,17 +303,8 @@ reference_feature:
         outfile: grch37_expansionhunter_variant_catalog_-3.0.0-.json
         url_prefix: https://github.com/Clinical-Genomics/reference-files/blob/master/ExpansionHunter-v3.0.0/
   gatk_mitochondrial_ref:
+    grch37: {}
     hg38:
-      v0_m_fasta:
-        file: Homo_sapiens_assembly38.chrM.fasta
-        file_index: Homo_sapiens_assembly38.chrM.fasta.fai
-        outfile: hg38_homo_sapiens_-v0_m-.fasta
-        outfile_index: hg38_homo_sapiens_-v0_m-.fasta.fai
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_dict:
-        file: Homo_sapiens_assembly38.chrM.dict
-        outfile: hg38_homo_sapiens_-v0_m-.dict
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_amb:
         file: Homo_sapiens_assembly38.chrM.fasta.amb
         outfile: hg38_homo_sapiens_-v0_m-.fasta.amb
@@ -321,48 +312,6 @@ reference_feature:
       v0_m_ann:
         file: Homo_sapiens_assembly38.chrM.fasta.ann
         outfile: hg38_homo_sapiens_-v0_m-.fasta.ann
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_bwt:
-        file: Homo_sapiens_assembly38.chrM.fasta.bwt
-        outfile: hg38_homo_sapiens_-v0_m-.fasta.bwt
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_pac:
-        file: Homo_sapiens_assembly38.chrM.fasta.pac
-        outfile: hg38_homo_sapiens_-v0_m-.fasta.pac
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_sa:
-        file: Homo_sapiens_assembly38.chrM.fasta.sa
-        outfile: hg38_homo_sapiens_-v0_m-.fasta.sa
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_shifted_fasta:
-        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta
-        file_index: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.fai
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta
-        outfile_index: hg38_homo_sapiens_shifted_-v0_m-.fasta.fai
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_shifted_dict:
-        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.dict
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.dict
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_shifted_amb:
-        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.amb
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.amb
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_shifted_ann:
-        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.ann
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.ann
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_shifted_bwt:
-        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.bwt
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.bwt
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_shifted_pac:
-        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.pac
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.pac
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_shifted_sa:
-        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.sa
-        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.sa
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_blacklist:
         file: blacklist_sites.hg38.chrM.bed
@@ -376,21 +325,73 @@ reference_feature:
         outfile: hg38_homo_sapiens_blacklist_sites_shifted_-v0_m-.bed
         outfile_index: hg38_homo_sapiens_blacklist_sites_shifted_-v0_m-.bed.idx
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
-      v0_m_numt_interval_list:
-        file: chrMWithFinalNuMTs.hg38.interval_list
-        outfile: hg38_homo_sapiens_numt_-v0_m-.interval_list
+      v0_m_bwt:
+        file: Homo_sapiens_assembly38.chrM.fasta.bwt
+        outfile: hg38_homo_sapiens_-v0_m-.fasta.bwt
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_control_shifted_interval_list:
         file: control_region_shifted.chrM.interval_list
         outfile: hg38_homo_sapiens_control_shifted_-v0_m-.interval_list
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_dict:
+        file: Homo_sapiens_assembly38.chrM.dict
+        outfile: hg38_homo_sapiens_-v0_m-.dict
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_fasta:
+        file: Homo_sapiens_assembly38.chrM.fasta
+        file_index: Homo_sapiens_assembly38.chrM.fasta.fai
+        outfile: hg38_homo_sapiens_-v0_m-.fasta
+        outfile_index: hg38_homo_sapiens_-v0_m-.fasta.fai
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_non_control_interval_list:
         file: non_control_region.chrM.interval_list
         outfile: hg38_homo_sapiens_non_control_-v0_m-.interval_list
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_numt_interval_list:
+        file: chrMWithFinalNuMTs.hg38.interval_list
+        outfile: hg38_homo_sapiens_numt_-v0_m-.interval_list
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_pac:
+        file: Homo_sapiens_assembly38.chrM.fasta.pac
+        outfile: hg38_homo_sapiens_-v0_m-.fasta.pac
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_sa:
+        file: Homo_sapiens_assembly38.chrM.fasta.sa
+        outfile: hg38_homo_sapiens_-v0_m-.fasta.sa
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
       v0_m_shiftback:
         file: ShiftBack.chain
         outfile: hg38_homo_sapiens_shiftback_-v0_m-.chain
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_shifted_amb:
+        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.amb
+        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.amb
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_shifted_ann:
+        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.ann
+        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.ann
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_shifted_bwt:
+        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.bwt
+        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.bwt
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_shifted_dict:
+        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.dict
+        outfile: hg38_homo_sapiens_shifted_-v0_m-.dict
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_shifted_fasta:
+        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta
+        file_index: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.fai
+        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta
+        outfile_index: hg38_homo_sapiens_shifted_-v0_m-.fasta.fai
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_shifted_pac:
+        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.pac
+        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.pac
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+      v0_m_shifted_sa:
+        file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.sa
+        outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.sa
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
   genomic_superdups:
     grch37:
