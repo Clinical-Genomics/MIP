@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -61,7 +61,7 @@ diag(   q{Test analysis_bcftools_mpileup from Bcftools_mpileup.pm v}
 
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
-## Given build parameters
+## Given ananlysis recipe parameters
 my $recipe_name = q{bcftools_mpileup};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
@@ -124,5 +124,25 @@ my $is_ok = analysis_bcftools_mpileup(
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+
+## Given recipe parameters when not replacing iupac
+$active_parameter{replace_iupac}                    = 0;
+
+$is_ok = analysis_bcftools_mpileup(
+    {
+        active_parameter_href   => \%active_parameter,
+        case_id                 => $active_parameter{case_id},
+        file_info_href          => \%file_info,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        job_id_href             => \%job_id,
+        parameter_href          => \%parameter,
+        profile_base_command    => $slurm_mock_cmd,
+        recipe_name             => $recipe_name,
+        sample_info_href        => \%sample_info,
+    }
+);
+
+## Then return TRUE
+ok( $is_ok, q{ Executed analysis recipe when not replacing iupac} . $recipe_name );
 
 done_testing();
