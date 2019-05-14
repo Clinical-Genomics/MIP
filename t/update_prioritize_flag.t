@@ -1,98 +1,59 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
-use Getopt::Long;
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.00;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
+    my %perl_module = (
+        q{MIP::Update::Recipes} => [qw{ update_prioritize_flag }],
+        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
+    );
 
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
-
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Update::Programs});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Update::Programs qw{ update_prioritize_flag };
+use MIP::Update::Recipes qw{ update_prioritize_flag };
 
-diag(   q{Test update_prioritize_flag from Programs.pm v}
-      . $MIP::Update::Programs::VERSION
+diag(   q{Test update_prioritize_flag from Recipes.pm v}
+      . $MIP::Update::Recipes::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,13 +61,13 @@ diag(   q{Test update_prioritize_flag from Programs.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my @programs                = qw{ cnvnator delly_call delly_reformat tiddit };
+my @recipes                 = qw{ cnvnator_ar delly_call delly_reformat tiddit };
 my $prioritize_key          = q{manta,delly,cnvnator,tiddit};
 my $consensus_analysis_type = q{wes};
 
 $prioritize_key = update_prioritize_flag(
     {
-        programs_ref            => \@programs,
+        recipes_ref             => \@recipes,
         prioritize_key          => $prioritize_key,
         consensus_analysis_type => $consensus_analysis_type,
     }
@@ -115,36 +76,3 @@ $prioritize_key = update_prioritize_flag(
 is( $prioritize_key, q{manta}, q{Updated prioritize flag} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

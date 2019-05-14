@@ -1,89 +1,53 @@
 #!/usr/bin/env perl
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use open qw{ :encoding(UTF-8) :std };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
-use Getopt::Long;
-use Params::Check qw{ check allow last_error };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
-use autodie;
+use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.00;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+Readonly my $COMMA => q{,};
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Set::Parameter} => [qw{ set_default_config_dynamic_parameters }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+    );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Set::Parameter});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Set::Parameter qw{ set_default_config_dynamic_parameters };
@@ -97,14 +61,14 @@ diag(   q{Test set_default_config_dynamic_parameters from Set::Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my @config_dynamic_parameters = qw{ analysis_constant_path outaligner_dir };
+## Given no supplied dynamic parameter
+my @config_dynamic_parameters = qw{ analysis_constant_path };
 
-my %active_parameter = ( outaligner_dir => q{bwa} );
+my %active_parameter;
 
 my %parameter = (
     analysis_constant_path => {
-        default        => q{analysis},
-        outaligner_dir => q{test_outaligner},
+        default => q{analysis},
     }
 );
 
@@ -116,43 +80,21 @@ set_default_config_dynamic_parameters(
     }
 );
 
-is( $active_parameter{analysis_constant_path},
-    q{analysis}, q{Set dynamic config parameter} );
+## Then use default
+is( $active_parameter{analysis_constant_path}, q{analysis}, q{Set default parameter} );
 
-is( $active_parameter{outaligner_dir}, q{bwa},
-    q{Did not set config parameter} );
+## Given a by user supplied dynamic parameter
+$active_parameter{analysis_constant_path} = q{test_analysis};
+
+set_default_config_dynamic_parameters(
+    {
+        parameter_href        => \%parameter,
+        active_parameter_href => \%active_parameter,
+        parameter_names_ref   => \@config_dynamic_parameters,
+    }
+);
+
+is( $active_parameter{analysis_constant_path},
+    q{test_analysis}, q{Set dynamic config parameter} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

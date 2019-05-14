@@ -31,7 +31,7 @@ Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
-Readonly my $ASTERIX    => q{*};
+Readonly my $ASTERISK    => q{*};
 
 sub install_bedtools {
 
@@ -213,7 +213,7 @@ sub install_bedtools {
     gnu_ln(
         {
             link_path   => catfile( $conda_prefix_path, q{bin} ),
-            target_path => catfile( $bedtools_dir,      q{bin}, $ASTERIX ),
+            target_path => catfile( $bedtools_dir,      q{bin}, $ASTERISK ),
             symbolic   => 1,
             force      => 1,
             FILEHANDLE => $FILEHANDLE,

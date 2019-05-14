@@ -1,18 +1,19 @@
 package MIP::Recipes::Build::Rtg_prerequisites;
 
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,14 +22,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rtg_prerequisites };
 
 }
 
-##Constants
+## Constants
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -37,18 +38,19 @@ sub build_rtg_prerequisites {
 
 ## Function : Creates the Rtg prerequisites for the human genome
 ## Returns  :
-## Arguments: $active_parameter_href      => Active parameters for this analysis hash {REF}
-##          : $family_id                  => Family id
-##          : $file_info_href             => File info hash {REF}
-##          : $human_genome_reference     => Human genome reference
-##          : $infile_lane_prefix_href    => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                => Job id hash {REF}
-##          : $outaligner_dir             => Outaligner_dir used in the analysis
-##          : $parameter_href             => Parameter hash {REF}
-##          : $program_name               => Program name
-##          : $rtg_directory_suffixes_ref => The rtg reference associated directory suffixes {REF}
-##          : $sample_info_href           => Info on samples and family hash {REF}
-##          : $temp_directory             => Temporary directory
+## Arguments: $active_parameter_href        => Active parameters for this analysis hash {REF}
+##          : $case_id                      => Family id
+##          : $file_info_href               => File info hash {REF}
+##          : $human_genome_reference       => Human genome reference
+##          : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
+##          : $job_id_href                  => Job id hash {REF}
+##          : $log                          => Log object
+##          : $parameter_href               => Parameter hash {REF}
+##          : $recipe_name                  => Program name
+##          : $parameter_build_suffixes_ref => The rtg reference associated directory suffixes {REF}
+##          : $profile_base_command         => Submission profile base command
+##          : $sample_info_href             => Info on samples and case hash {REF}
+##          : $temp_directory               => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -57,15 +59,16 @@ sub build_rtg_prerequisites {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
+    my $log;
     my $parameter_href;
-    my $program_name;
-    my $rtg_directory_suffixes_ref;
+    my $recipe_name;
+    my $parameter_build_suffixes_ref;
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
+    my $case_id;
     my $human_genome_reference;
-    my $outaligner_dir;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -76,9 +79,9 @@ sub build_rtg_prerequisites {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -89,8 +92,7 @@ sub build_rtg_prerequisites {
             strict_type => 1,
         },
         human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
+            default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$human_genome_reference,
             strict_type => 1,
         },
@@ -108,10 +110,10 @@ sub build_rtg_prerequisites {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
         },
         parameter_href => {
             default     => {},
@@ -120,17 +122,22 @@ sub build_rtg_prerequisites {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$program_name,
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
             strict_type => 1,
         },
-        rtg_directory_suffixes_ref => {
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        parameter_build_suffixes_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$rtg_directory_suffixes_ref,
+            store       => \$parameter_build_suffixes_ref,
             strict_type => 1,
         },
         sample_info_href => {
@@ -150,8 +157,7 @@ sub build_rtg_prerequisites {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Shell qw{ check_exist_and_move_file };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Qc::Rtg qw{ rtg_format };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
@@ -161,15 +167,9 @@ sub build_rtg_prerequisites {
     Readonly my $MAX_RANDOM_NUMBER => 100_00;
     Readonly my $PROCESSING_TIME   => 3;
 
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
-
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain = $parameter_href->{$recipe_name}{chain};
+    my $recipe_mode  = $active_parameter_href->{$recipe_name};
 
     ## FILEHANDLES
     # Create anonymous filehandle
@@ -178,15 +178,16 @@ sub build_rtg_prerequisites {
     ## Generate a random integer between 0-10,000.
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
+            directory_id          => $case_id,
             job_id_href           => $job_id_href,
-            program_directory     => $outaligner_dir,
-            program_name          => $program_name,
+            log                   => $log,
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
             process_time          => $PROCESSING_TIME,
         }
     );
@@ -199,10 +200,12 @@ sub build_rtg_prerequisites {
             infile_lane_prefix_href => $infile_lane_prefix_href,
             job_id_href             => $job_id_href,
             log                     => $log,
-            parameter_href          => $parameter_href,
-            program_name            => $program_name,
-            random_integer          => $random_integer,
-            sample_info_href        => $sample_info_href,
+            parameter_build_suffixes_ref =>
+              \@{ $file_info_href->{human_genome_reference_file_endings} },
+            parameter_href   => $parameter_href,
+            recipe_name      => $recipe_name,
+            random_integer   => $random_integer,
+            sample_info_href => $sample_info_href,
         }
     );
 
@@ -211,7 +214,7 @@ sub build_rtg_prerequisites {
         $log->warn( q{Will try to create required }
               . $human_genome_reference
               . q{ sdf files before executing }
-              . $program_name );
+              . $recipe_name );
 
         say {$FILEHANDLE} q{## Building SDF dir files};
         ## Get parameters
@@ -230,7 +233,7 @@ sub build_rtg_prerequisites {
         say {$FILEHANDLE} $NEWLINE;
 
       PREREQ:
-        foreach my $suffix ( @{$rtg_directory_suffixes_ref} ) {
+        foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
 
             my $intended_file_path =
               $active_parameter_href->{rtg_vcfeval_reference_genome} . $suffix;
@@ -251,20 +254,23 @@ sub build_rtg_prerequisites {
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
-        slurm_submit_job_no_dependency_add_to_samples(
+        submit_recipe(
             {
-                job_id_href      => $job_id_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                sbatch_file_name => $file_path,
-                log              => $log,
+                base_command       => $profile_base_command,
+                dependency_method  => q{island_to_samples},
+                case_id            => $case_id,
+                job_id_href        => $job_id_href,
+                log                => $log,
+                job_id_chain       => $job_id_chain,
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

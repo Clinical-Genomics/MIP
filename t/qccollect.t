@@ -12,7 +12,7 @@ use Params::Check qw{ check allow last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
+use 5.026;
 
 ## CPANM
 use autodie;
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -99,7 +95,7 @@ diag(   q{Test qccollect from Qccollect.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{qccollect};
+my @function_base_commands = qw{ qccollect };
 
 my %base_argument = (
     stdoutfile_path => {
@@ -116,7 +112,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -124,17 +120,16 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input =>
-          catfile(qw{ outdata_dir family_id family_id_qc_sample_info.yaml }),
+        input           => catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
         expected_output => q{--sample_info_file}
           . $SPACE
-          . catfile(qw{ outdata_dir family_id family_id_qc_sample_info.yaml }),
+          . catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
     },
     outfile_path => {
-        input => catfile(qw{ outfamily_directory family_id _qc_metrics.yaml }),
+        input           => catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
         expected_output => q{--outfile}
           . $SPACE
-          . catfile(qw{ outfamily_directory family_id _qc_metrics.yaml }),
+          . catfile(qw{ outcase_directory case_id _qc_metrics.yaml }),
     },
     regexp_file_path => {
         input           => q{qc_regexp_-v1.13-.yaml},
@@ -144,10 +139,10 @@ my %required_argument = (
 
 my %specific_argument = (
     log_file_path => {
-        input => catfile(qw{ outfamily_directory family_id _qccollect.log }),
+        input           => catfile(qw{ outcase_directory case_id _qccollect.log }),
         expected_output => q{--log_file}
           . $SPACE
-          . catfile(qw{ outfamily_directory family_id _qccollect.log }),
+          . catfile(qw{ outcase_directory case_id _qccollect.log }),
     },
     skip_evaluation => {
         input           => 1,
@@ -165,11 +160,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

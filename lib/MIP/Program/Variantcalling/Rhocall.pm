@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Rhocall;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rhocall_aggregate rhocall_annotate };
@@ -58,30 +59,30 @@ sub rhocall_aggregate {
             store => \$FILEHANDLE,
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        outfile_path    => { store => \$outfile_path, strict_type => 1, },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{rhocall aggregate};
+    my @commands = qw{ rhocall aggregate };
 
     ## Options
     if ($outfile_path) {
@@ -94,16 +95,16 @@ sub rhocall_aggregate {
     push @commands,
       unix_standard_streams(
         {
+            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
-            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -139,35 +140,36 @@ sub rhocall_annotate {
     my $v14;
 
     my $tmpl = {
-        bedfile_path => { strict_type => 1, store => \$bedfile_path },
+        bedfile_path => { store => \$bedfile_path, strict_type => 1, },
         FILEHANDLE   => {
             store => \$FILEHANDLE,
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
             strict_type => 1,
-            store       => \$infile_path
+            store       => \$infile_path,
+            strict_type => 1,
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        rohfile_path    => { strict_type => 1, store => \$rohfile_path },
+        outfile_path    => { store => \$outfile_path, strict_type => 1, },
+        rohfile_path    => { store => \$rohfile_path, strict_type => 1, },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
         v14 => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$v14,
             strict_type => 1,
-            store       => \$v14
         },
 
     };
@@ -175,7 +177,7 @@ sub rhocall_annotate {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{rhocall annotate};
+    my @commands = qw{ rhocall annotate };
 
     ## Options
     if ($v14) {
@@ -203,16 +205,16 @@ sub rhocall_annotate {
     push @commands,
       unix_standard_streams(
         {
+            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
-            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }

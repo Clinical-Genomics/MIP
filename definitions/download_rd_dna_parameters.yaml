@@ -1,0 +1,179 @@
+---
+## Version: 1.0.0
+#Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
+1000g_all_sv:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_all_wgs:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_indels:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_omni:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_sites:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+1000g_snps:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+clinvar:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+dbnsfp:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+dbsnp:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+download_pipeline_type:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: rd_dna
+  type: mip
+expansionhunter:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+genomic_superdups:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+giab:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+gnomad:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+hapmap:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+human_reference:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+mills_and_1000g_indels:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+gatk_mitochondrial_ref:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+recipe_core_number:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  default:
+    1000g_all_sv: 1
+    1000g_all_wgs: 1
+    1000g_indels: 1
+    1000g_omni: 1
+    1000g_sites: 1
+    1000g_snps: 1
+    clinvar: 1
+    dbnsfp: 1
+    dbsnp: 1
+    expansionhunter: 1
+    genomic_superdups: 1
+    giab: 1
+    gnomad: 1
+    human_reference: 1
+    hapmap: 1
+    mills_and_1000g_indels: 1
+    gatk_mitochondrial_ref: 1
+  type: mip
+recipe_time:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  default:
+    1000g_all_sv: 1
+    1000g_all_wgs: 1
+    1000g_indels: 1
+    1000g_omni: 1
+    1000g_sites: 1
+    1000g_snps: 1
+    clinvar: 1
+    dbnsfp: 15
+    dbsnp: 1
+    expansionhunter: 1
+    genomic_superdups: 1
+    giab: 1
+    gnomad: 1
+    hapmap: 1
+    human_reference: 1
+    mills_and_1000g_indels: 1
+    gatk_mitochondrial_ref: 1
+  type: mip
+reference_feature:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  type: mip

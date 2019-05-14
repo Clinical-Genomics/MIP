@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Svdb;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -15,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,14 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ svdb_merge svdb_query };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub svdb_merge {
 
@@ -41,6 +40,7 @@ sub svdb_merge {
 ##          : $notag                  => Do not add the the VARID and set entries to the info field
 ##          : $outfile_path           => Outfile path
 ##          : $priority               => Priority order of structural variant calls
+##          : $same_order             => Across all input vcf files, the order of the sample columns are the same
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -53,40 +53,42 @@ sub svdb_merge {
     my $notag;
     my $outfile_path;
     my $priority;
+    my $same_order;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
     my $tmpl = {
-        FILEHANDLE       => { store => \$FILEHANDLE },
+        FILEHANDLE       => { store => \$FILEHANDLE, },
         infile_paths_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_paths_ref,
             strict_type => 1,
-            store       => \$infile_paths_ref
         },
-        notag           => { strict_type => 1, store => \$notag },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        priority        => { strict_type => 1, store => \$priority },
+        notag           => { store => \$notag,        strict_type => 1, },
+        outfile_path    => { store => \$outfile_path, strict_type => 1, },
+        priority        => { store => \$priority,     strict_type => 1, },
+        same_order      => { store => \$same_order,   strict_type => 1, },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## svdb
-    my @commands = q{svdb --merge};
+    my @commands = qw{ svdb --merge };
 
     ## Options
     if ($priority) {
@@ -98,6 +100,11 @@ sub svdb_merge {
 
         ## Do not tag variant with origin file
         push @commands, q{--notag};
+    }
+    if ($same_order) {
+
+        ## Same sample order across vcf files
+        push @commands, q{--same_order};
     }
 
     ## Infile
@@ -114,8 +121,8 @@ sub svdb_merge {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -126,15 +133,17 @@ sub svdb_merge {
 
 sub svdb_query {
 
-## Function : Perl wrapper for writing svdb query recipe to $FILEHANDLE or return commands array. Based on svdb 0.1.2.
+## Function : Perl wrapper for writing svdb query recipe to $FILEHANDLE or return commands array. Based on svdb 2.0.0.
 ## Returns  : @commands
 ## Arguments: $bnd_distance           => Maximum distance between two similar precise breakpoints
 ##          : $dbfile_path            => Svdb database file path
 ##          : $FILEHANDLE             => Filehandle to write to
-##          : $frequency_tag          => Tag used to describe the frequency of the variant
-##          : $hit_tag                => The tag used to describe the number of hits within the info field of the output vcf
+##          : $in_frequency_tag       => The frequency count tag, if used, this tag must be present in the INFO column of the input DB (usually AF or FRQ)
+##          : $in_allele_count_tag    => The allele count tag, if used, this tag must be present in the INFO column of the input DB (usually AC or OCC)
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
+##          : $out_allele_count_tag   => The allele count tag output name
+##          : $out_frequency_tag      => The frequency count tag output name
 ##          : $overlap                => Overlap required to merge two events
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -146,10 +155,12 @@ sub svdb_query {
     my $bnd_distance;
     my $dbfile_path;
     my $FILEHANDLE;
-    my $frequency_tag;
-    my $hit_tag;
+    my $in_frequency_tag;
+    my $in_allele_count_tag;
     my $infile_path;
     my $outfile_path;
+    my $out_allele_count_tag;
+    my $out_frequency_tag;
     my $overlap;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -167,17 +178,19 @@ sub svdb_query {
             strict_type => 1,
             store       => \$dbfile_path
         },
-        FILEHANDLE    => { store       => \$FILEHANDLE },
-        frequency_tag => { strict_type => 1, store => \$frequency_tag },
-        hit_tag       => { strict_type => 1, store => \$hit_tag },
+        FILEHANDLE          => { store       => \$FILEHANDLE },
+        in_frequency_tag    => { strict_type => 1, store => \$in_frequency_tag },
+        in_allele_count_tag => { strict_type => 1, store => \$in_allele_count_tag },
         infile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
-        overlap      => {
+        outfile_path         => { strict_type => 1, store => \$outfile_path },
+        out_allele_count_tag => { strict_type => 1, store => \$out_allele_count_tag },
+        out_frequency_tag    => { strict_type => 1, store => \$out_frequency_tag },
+        overlap              => {
             allow       => qr/ ^\d+ | d+[.]d+$ /sxm,
             strict_type => 1,
             store       => \$overlap
@@ -199,7 +212,7 @@ sub svdb_query {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## svdb
-    my @commands = q{svdb --query};
+    my @commands = qw{ svdb --query };
 
     ## Options
     if ($bnd_distance) {
@@ -210,13 +223,21 @@ sub svdb_query {
 
         push @commands, q{--overlap} . $SPACE . $overlap;
     }
-    if ($hit_tag) {
+    if ($in_allele_count_tag) {
 
-        push @commands, q{--hit_tag} . $SPACE . $hit_tag;
+        push @commands, q{--in_occ} . $SPACE . $in_allele_count_tag;
     }
-    if ($frequency_tag) {
+    if ($out_allele_count_tag) {
 
-        push @commands, q{--frequency_tag} . $SPACE . $frequency_tag;
+        push @commands, q{--out_occ} . $SPACE . $out_allele_count_tag;
+    }
+    if ($in_frequency_tag) {
+
+        push @commands, q{--in_frq} . $SPACE . $in_frequency_tag;
+    }
+    if ($out_frequency_tag) {
+
+        push @commands, q{--out_frq} . $SPACE . $out_frequency_tag;
     }
 
     push @commands, q{--db} . $SPACE . $dbfile_path;
@@ -235,8 +256,8 @@ sub svdb_query {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }

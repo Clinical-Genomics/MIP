@@ -5,7 +5,7 @@
 use Modern::Perl qw(2014);
 use warnings qw(FATAL utf8);
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.026;    #Require at least perl 5.18
 use utf8;
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
@@ -78,11 +78,11 @@ use MIP::Test::Commands qw(test_function);
 
 diag("Test gnu_echo $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
-## Constants 
+## Constants
 Readonly my $DOUBLE_QUOTE => q{"};
 
 ## Base arguments
-my $function_base_command = 'echo';
+my @function_base_commands = 'echo';
 
 my %base_argument = (
     stderrfile_path => {
@@ -95,7 +95,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -103,7 +103,9 @@ my %base_argument = (
 my %required_argument = (
     strings_ref => {
         inputs_ref      => [q{This is my test string}],
-        expected_output => $DOUBLE_QUOTE . q{This is my test string} . $DOUBLE_QUOTE,
+        expected_output => $DOUBLE_QUOTE
+          . q{This is my test string}
+          . $DOUBLE_QUOTE,
     },
 );
 
@@ -111,7 +113,9 @@ my %required_argument = (
 my %specific_argument = (
     strings_ref => {
         inputs_ref      => [q{This is my test string}],
-        expected_output => $DOUBLE_QUOTE . q{This is my test string} . $DOUBLE_QUOTE,
+        expected_output => $DOUBLE_QUOTE
+          . q{This is my test string}
+          . $DOUBLE_QUOTE,
     },
     outfile_path => {
         input           => 'outfile.test',
@@ -136,10 +140,10 @@ my @arguments = ( \%base_argument, \%specific_argument );
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
         }
     );
 }

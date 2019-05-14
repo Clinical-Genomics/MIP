@@ -5,7 +5,7 @@
 use Modern::Perl qw{2014};
 use warnings qw{FATAL utf8};
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.026;    #Require at least perl 5.18
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -43,8 +43,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -91,51 +90,44 @@ diag(
 );
 
 ## Base arguments
-my $family_id             = q{family1};
+my $case_id               = q{case1};
 my $sample_id             = q{sample2};
 my $path                  = q{MAIN};
-my $family_id_chain_key   = $family_id . $UNDERSCORE . $path;
+my $case_id_chain_key     = $case_id . $UNDERSCORE . $path;
 my $sample_id_chain_key   = $sample_id . $UNDERSCORE . $path;
 my $sbatch_script_tracker = 0;
-my $family_id_parallel_chain_key =
-    $family_id
-  . $UNDERSCORE
-  . q{parallel}
-  . $UNDERSCORE
-  . $path
-  . $sbatch_script_tracker;
+my $case_id_parallel_chain_key =
+  $case_id . $UNDERSCORE . q{parallel} . $UNDERSCORE . $path . $sbatch_script_tracker;
 
 my %job_id = (
-    $family_id_chain_key => {
-        $sample_id_chain_key          => [qw{job_id_1 job_id_2}],
-        q{sample2_MAIN}               => [qw{job_id_3}],
-        q{sample3_MAIN}               => [qw{job_id_4 job_id_5}],
-        $family_id_parallel_chain_key => [qw{job_id_10 job_id_11}],
-        $family_id_chain_key          => [qw{job_id_6}],
+    $case_id_chain_key => {
+        $sample_id_chain_key        => [qw{job_id_1 job_id_2}],
+        q{sample2_MAIN}             => [qw{job_id_3}],
+        q{sample3_MAIN}             => [qw{job_id_4 job_id_5}],
+        $case_id_parallel_chain_key => [qw{job_id_10 job_id_11}],
+        $case_id_chain_key          => [qw{job_id_6}],
     },
 );
 
 ### Parallel jobs
 
-my $no_job_id_string =
-  add_parallel_job_ids_to_job_id_dependency_string(
+my $no_job_id_string = add_parallel_job_ids_to_job_id_dependency_string(
     {
-        job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key . q{no_parallel},
+        job_id_href       => \%job_id,
+        case_id_chain_key => $case_id_chain_key . q{no_parallel},
     }
-  );
+);
 
 is( $no_job_id_string, undef, q{No parallel job_ids} );
 
 my $job_id_string = add_parallel_job_ids_to_job_id_dependency_string(
     {
-        job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
+        job_id_href       => \%job_id,
+        case_id_chain_key => $case_id_chain_key,
     }
 );
 
-is( $job_id_string, q{:job_id_10:job_id_11},
-    q{Added parallel job_ids to job id string} );
+is( $job_id_string, q{:job_id_10:job_id_11}, q{Added parallel job_ids to job id string} );
 
 done_testing();
 

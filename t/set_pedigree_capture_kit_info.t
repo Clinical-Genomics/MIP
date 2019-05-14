@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.2';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -103,15 +99,15 @@ my %parameter = (
     supported_capture_kit => {
         default => {
             q{agilent_sureselect.v4} =>
-q{genome_reference_source_version_agilent_sureselect_targets_-v4-.bed},
+              q{genome_reference_source_version_agilent_sureselect_targets_-v4-.bed},
             q{agilent_sureselect.v5} =>
-q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed},
+              q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed},
         },
     },
 );
 
 my %pedigree = (
-    family  => q{family_1},
+    case    => q{case_1},
     samples => [
         {
             analysis_type => q{wes},
@@ -120,7 +116,6 @@ my %pedigree = (
             mother        => 0,
             phenotype     => q{affected},
             sample_id     => q{sample_1},
-            sample_origin => q{normal},
             sex           => q{female},
         },
         {
@@ -130,7 +125,6 @@ my %pedigree = (
             mother        => 0,
             phenotype     => q{unaffected},
             sample_id     => q{sample_2},
-            sample_origin => q{tumor},
             sex           => q{male},
         },
         {
@@ -143,7 +137,7 @@ my %pedigree = (
             sex           => q{other},
         },
         {
-            analysis_type => q{cancer},
+            analysis_type => q{wgs},
             father        => q{sample_1},
             mother        => q{sample_2},
             phenotype     => q{unknown},
@@ -158,23 +152,21 @@ my %sample_info = (
         sample_1 => {
             analysis_type     => q{wes},
             expected_coverage => 30,
-            sample_origin     => q{normal},
             capture_kit       => q{agilent_sureselect.v5},
         },
         sample_2 => {
             analysis_type     => q{wes},
             expected_coverage => 30,
-            sample_origin     => q{normal},
             capture_kit       => q{agilent_sureselect.v4},
         },
         sample_3 => {
             analysis_type     => q{wes},
             expected_coverage => 30,
-            sample_origin     => q{normal},
             capture_kit       => q{agilent_sureselect.v5},
         },
     },
 );
+
 my %user_supply_switch = ( exome_target_bed => 0, );
 set_pedigree_capture_kit_info(
     {
@@ -188,8 +180,7 @@ set_pedigree_capture_kit_info(
 
 my $capture_kit_string = $active_parameter{exome_target_bed}
   {q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed}};
-is( $capture_kit_string, q{sample_1,sample_3},
-    q{Set sample_ids for capture kit 1} );
+is( $capture_kit_string, q{sample_1,sample_3}, q{Set sample_ids for capture kit 1} );
 
 $capture_kit_string = $active_parameter{exome_target_bed}
   {q{genome_reference_source_version_agilent_sureselect_targets_-v4-.bed}};
@@ -202,7 +193,6 @@ is( $capture_kit_string, q{sample_2}, q{Set sample_ids for capture kit 2} );
         sample_1 => {
             analysis_type     => q{wes},
             expected_coverage => 30,
-            sample_origin     => q{normal},
             capture_kit       => q{unknown_capture_kit},
         },
     },
@@ -217,8 +207,7 @@ set_pedigree_capture_kit_info(
         user_supply_switch_href => \%user_supply_switch,
     }
 );
-$capture_kit_string =
-  $active_parameter{exome_target_bed}{q{unknown_capture_kit}};
+$capture_kit_string = $active_parameter{exome_target_bed}{q{unknown_capture_kit}};
 is( $capture_kit_string, q{sample_1}, q(Unknown capture kit) );
 
 ## Test no capture kit
@@ -234,6 +223,7 @@ set_pedigree_capture_kit_info(
         user_supply_switch_href => \%user_supply_switch,
     }
 );
+
 is( $active_parameter{exome_target_bed},
     undef, q(No capture kit from cmd, config or pedigree) );
 

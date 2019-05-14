@@ -1,23 +1,21 @@
 package MIP::Program::Variantcalling::Vep;
 
 use Carp;
-use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use FindBin qw{ $Bin };
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
-use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use utf8;
+use charnames qw{ :full :short };
+use open qw{ :encoding(UTF-8) :std };
 use strict;
-use warnings;
+use utf8;
 use warnings qw{ FATAL utf8 };
+use warnings;
 
 ## CPANM
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -26,11 +24,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ variant_effect_predictor variant_effect_predictor_install };
+    our @EXPORT_OK = qw{ variant_effect_predictor variant_effect_predictor_install };
 }
 
 ## Constants
@@ -44,6 +41,7 @@ sub variant_effect_predictor {
 ## Arguments: $assembly                => Assembly version to use
 ##          : $buffer_size             => Sets the internal buffer size, corresponding to the number of variants that are read in to memory simultaneously
 ##          : $cache_directory         => VEP chache directory
+##          : $custom_annotations_ref  => Custom annotations {REF}
 ##          : $distance                => Modify the distance up and/or downstream between a variant and a transcript for which VEP will assign the upstream_gene_variant or downstream_gene_variant consequences
 ##          : $FILEHANDLE              => Filehandle to write to
 ##          : $infile_path             => Infile path to read from
@@ -61,16 +59,11 @@ sub variant_effect_predictor {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $distance;
-    my $fork;
-    my $infile_format;
-    my $outfile_format;
-
     ## Flatten argument(s)
     my $assembly;
     my $buffer_size;
     my $cache_directory;
+    my $custom_annotations_ref;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
@@ -82,6 +75,12 @@ sub variant_effect_predictor {
     my $stderrfile_path_append;
     my $stdoutfile_path;
     my $vep_features_ref;
+
+    ## Default(s)
+    my $distance;
+    my $fork;
+    my $infile_format;
+    my $outfile_format;
 
     my $tmpl = {
         assembly => {
@@ -95,6 +94,11 @@ sub variant_effect_predictor {
         },
         cache_directory => {
             store       => \$cache_directory,
+            strict_type => 1,
+        },
+        custom_annotations_ref => {
+            default     => [],
+            store       => \$custom_annotations_ref,
             strict_type => 1,
         },
         distance => {
@@ -218,8 +222,12 @@ sub variant_effect_predictor {
     }
     if ( @{$plugins_ref} ) {
 
-        push @commands, q{--plugin} . $SPACE . join q{ --plugin },
-          @{$plugins_ref};
+        push @commands, q{--plugin} . $SPACE . join q{ --plugin }, @{$plugins_ref};
+    }
+    if ( @{$custom_annotations_ref} ) {
+
+        push @commands, q{--custom} . $SPACE . join q{ --custom },
+          @{$custom_annotations_ref};
     }
     if ( @{$vep_features_ref} ) {
 
@@ -256,18 +264,21 @@ sub variant_effect_predictor {
 
 sub variant_effect_predictor_install {
 
-## Function : Perl wrapper for vep INSTALL script. Based on version 90.
+## Function : Perl wrapper for vep INSTALL script. Based on version 92.
 ## Returns  : @commands
-
 ## Arguments: $assembly               => Assembly name to use if more than one during --AUTO
 ##          : $auto                   => Run installer without user prompts. Use "a" (API + Faidx/htslib),"l" (Faidx/htslib only), "c" (cache), "f" (FASTA), "p" (plugins) to specify parts to install.
 ##          : $cache_directory        => Set destination directory for cache files
+##          : $cache_version          => Set cache version to download
 ##          : $FILEHANDLE             => Filehandle to write to
+##          : $no_update              => Don't update
+##          : $no_htslib              => Don't attempt to install Bio::DB::HTS/htslib
 ##          : $plugins_ref            => Vep plugins {REF}
 ##          : $species_ref            => Comma-separated list of species to install when using --AUTO {REF}
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $version                => Version to install
 
     my ($arg_href) = @_;
 
@@ -275,20 +286,35 @@ sub variant_effect_predictor_install {
     my $assembly;
     my $auto;
     my $cache_directory;
+    my $cache_version;
     my $FILEHANDLE;
+    my $no_htslib;
+    my $no_update;
     my $plugins_ref;
     my $species_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $version;
 
     my $tmpl = {
         assembly        => { store => \$assembly,        strict_type => 1, },
         auto            => { store => \$auto,            strict_type => 1, },
         cache_directory => { store => \$cache_directory, strict_type => 1, },
+        cache_version   => { store => \$cache_version,   strict_type => 1, },
         FILEHANDLE      => { store => \$FILEHANDLE, },
-        plugins_ref =>
-          { default => [], store => \$plugins_ref, strict_type => 1, },
+        no_update       => {
+            default     => 1,
+            allow       => [ undef, 0, 1 ],
+            store       => \$no_update,
+            strict_type => 1,
+        },
+        no_htslib => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$no_htslib,
+            strict_type => 1,
+        },
+        plugins_ref => { default => [], store => \$plugins_ref, strict_type => 1, },
         species_ref => {
             default     => [qw{ homo_sapiens }],
             store       => \$species_ref,
@@ -298,6 +324,7 @@ sub variant_effect_predictor_install {
         stderrfile_path_append =>
           { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        version         => { store => \$version,         strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -308,6 +335,22 @@ sub variant_effect_predictor_install {
     if ($auto) {
 
         push @commands, q{--AUTO} . $SPACE . $auto;
+    }
+    if ($version) {
+
+        push @commands, q{--VERSION} . $SPACE . $version;
+    }
+    if ($cache_version) {
+
+        push @commands, q{--CACHE_VERSION} . $SPACE . $cache_version;
+    }
+    if ($no_update) {
+
+        push @commands, q{--NO_UPDATE};
+    }
+    if ($no_htslib) {
+
+        push @commands, q{--NO_HTSLIB};
     }
     if ( @{$plugins_ref} ) {
 

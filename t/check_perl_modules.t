@@ -12,12 +12,13 @@ use Params::Check qw{ check allow last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
+use 5.026;
 
 ## CPANM
 use autodie;
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -97,7 +98,7 @@ diag(   q{Test check_perl_modules from Modules.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my @modules = (qw{ warnings });
+my @modules = qw{ warnings };
 
 my $return = check_perl_modules(
     {
@@ -106,7 +107,23 @@ my $return = check_perl_modules(
     }
 );
 
-is( $return, undef, q{Required perl module} );
+ok( $return, q{Required perl module} );
+
+## Given faulty module
+@modules = qw{ not_a_perl_module };
+
+my @returns = trap {
+    check_perl_modules(
+        {
+            modules_ref  => \@modules,
+            program_name => $PROGRAM_NAME,
+        }
+      )
+};
+
+## Then exit and throw FATAL log message
+like( $trap->stderr, qr/FATAL/xms,
+    q{Could not find module - croaked and exited} );
 
 done_testing();
 

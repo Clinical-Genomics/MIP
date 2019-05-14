@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -97,15 +97,15 @@ diag(   q{Test get_capture_kit from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Test defined switch but no user info - default capture kit
-my $capture_kit = q{agilent_sureselect.v5};
+## Test defined switch but no user info - default ie. "latest" capture kit
+my $capture_kit = q{latest};
 
 my %parameter = (
     supported_capture_kit => {
-        default => {
-            q{agilent_sureselect.v5} =>
-q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed}
-        },
+        q{agilent_sureselect.v5} =>
+q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed},
+        latest =>
+q{genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed},
     },
 );
 
@@ -120,8 +120,8 @@ my $exome_target_bed_file = get_capture_kit(
 );
 is(
     $exome_target_bed_file,
-    q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed},
-    q{Got default capture kit}
+    q{genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed},
+    q{Got latest default capture kit}
 );
 
 ## Test defined switch but no user info - no default capture kit
@@ -150,7 +150,7 @@ $exome_target_bed_file = get_capture_kit(
 is(
     $exome_target_bed_file,
     q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed},
-    q{Got default capture kit with undef user switch}
+    q{Got capture kit with undef user switch}
 );
 
 ## ## Test undefined switch but no user info - no default capture kit
@@ -175,7 +175,7 @@ $exome_target_bed_file = get_capture_kit(
         user_supplied_parameter_switch => $user_supply_switch{exome_target_bed},
     }
 );
-is( $exome_target_bed_file, undef, q{Dit not get any capture kit} );
+is( $exome_target_bed_file, undef, q{Did not get any capture kit} );
 
 done_testing();
 

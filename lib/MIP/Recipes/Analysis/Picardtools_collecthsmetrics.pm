@@ -1,9 +1,10 @@
 package MIP::Recipes::Analysis::Picardtools_collecthsmetrics;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -15,13 +16,16 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_collecthsmetrics };
@@ -29,26 +33,22 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
+Readonly my $JAVA_MEMORY_ALLOCATION => 4;
 
 sub analysis_picardtools_collecthsmetrics {
 
 ## Function : Calculates coverage on exonic part of BAM files.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $sample_id               => Sample id
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
@@ -57,197 +57,182 @@ sub analysis_picardtools_collecthsmetrics {
     my $active_parameter_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
     my $parameter_href;
-    my $program_name;
-    my $outsample_directory;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
-    my $outaligner_dir;
+    my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
             defined     => 1,
             default     => {},
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
-            store       => \$family_id
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$file_info_href
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$insample_directory,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir
-        },
-        outsample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$outsample_directory,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$program_name
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$sample_id
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File
-      qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
-    use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Get::File qw{ get_exom_target_bed_file get_io_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Language::Java qw{ java_core };
+    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_collecthsmetrics };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_dead_end };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
-    ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
-
-    ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
         {
-            active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            stream         => q{in},
         }
     );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
+
+    my $job_id_chain = get_recipe_attributes(
+        {
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+        }
+    );
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
+
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                recipe_name            => $recipe_name,
+            }
+        )
+    );
+
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_path        = $io{out}{file_path};
+
+    ## Alias exome_target_bed endings
+    my $interval_list_ending        = $file_info_href->{exome_target_bed}[0];
+    my $padded_interval_list_ending = $file_info_href->{exome_target_bed}[1];
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ($recipe_file_path) = setup_script(
         {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
-    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
-
-    ## Alias exome_target_bed endings
-    my $infile_list_ending        = $file_info_href->{exome_target_bed}[0];
-    my $padded_infile_list_ending = $file_info_href->{exome_target_bed}[1];
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            directory_id          => $sample_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            process_time          => $time,
-            program_directory => catfile( $outaligner_dir, q{coveragereport} ),
-            program_name      => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $recipe_resource{core_number},
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX
-            ),
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
+    ### SHELL:
     ## Collecthsmetrics
     say {$FILEHANDLE} q{## Calculate capture metrics on alignment};
 
@@ -263,45 +248,30 @@ sub analysis_picardtools_collecthsmetrics {
     picardtools_collecthsmetrics(
         {
             bait_interval_file_paths_ref =>
-              [ $exome_target_bed_file . $padded_infile_list_ending ],
+              [ $exome_target_bed_file . $padded_interval_list_ending ],
             FILEHANDLE  => $FILEHANDLE,
-            infile_path => $file_path_prefix . $infile_suffix,
-            java_jar    => catfile(
-                $active_parameter_href->{picardtools_path},
-                q{picard.jar}
-            ),
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            memory_allocation => q{Xmx4g},
-            outfile_path      => $outfile_path_prefix,
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
+            infile_path => $infile_path,
+            java_jar =>
+              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            outfile_path         => $outfile_path_prefix,
+            referencefile_path   => $active_parameter_href->{human_genome_reference},
             target_interval_file_paths_ref =>
-              [ $exome_target_bed_file . $infile_list_ending ],
+              [ $exome_target_bed_file . $interval_list_ending ],
             temp_directory => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path_prefix,
-            outfile_path => $outsample_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-    if ( $mip_program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        set_recipe_outfile_in_sample_info(
             {
-                infile => $merged_infile_prefix,
-                path   => catfile( $outsample_directory, $outfile_prefix ),
-                program_name     => q{collecthsmetrics},
+                infile           => $outfile_name_prefix,
+                path             => $outfile_path,
+                recipe_name      => q{collecthsmetrics},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
@@ -309,20 +279,23 @@ sub analysis_picardtools_collecthsmetrics {
     }
     close $FILEHANDLE;
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
-        slurm_submit_job_sample_id_dependency_dead_end(
+        submit_recipe(
             {
-                family_id               => $family_id,
+                base_command            => $profile_base_command,
+                case_id                 => $case_id,
+                dependency_method       => q{sample_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
+                job_id_chain            => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path,
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 1;

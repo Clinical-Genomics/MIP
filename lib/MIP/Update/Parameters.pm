@@ -1,5 +1,6 @@
 package MIP::Update::Parameters;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -18,11 +19,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
+      qw{ update_dynamic_config_parameters update_exome_target_bed update_reference_parameters update_vcfparser_outfile_counter };
 }
 
 ## Constants
@@ -43,17 +44,17 @@ sub update_dynamic_config_parameters {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         parameter_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_name,
             strict_type => 1,
-            store       => \$parameter_name
         },
     };
 
@@ -61,15 +62,67 @@ sub update_dynamic_config_parameters {
 
     return if ( not defined $active_parameter_href->{$parameter_name} );
 
-    my @dynamic_parameters =
-      qw{ cluster_constant_path analysis_constant_path family_id outaligner_dir };
+    my @caches = qw{ cluster_constant_path analysis_constant_path case_id };
 
   DYNAMIC_PARAMETER:
-    foreach my $dynamic_parameter (@dynamic_parameters) {
+    foreach my $cache (@caches) {
 
         ## Replace dynamic config parameters with actual value that is now set from cmd or config
         $active_parameter_href->{$parameter_name} =~
-s/$dynamic_parameter!/$active_parameter_href->{$dynamic_parameter}/smgi;
+          s/$cache!/$active_parameter_href->{$cache}/smgi;
+    }
+    return;
+}
+
+sub update_exome_target_bed {
+
+## Function : Update exome_target_bed files with human genome reference source and version
+## Returns  :
+## Arguments: $exome_target_bed_file_href     => Exome target bed
+##          : $human_genome_reference_source  => Human genome reference source
+##          : $human_genome_reference_version => Human genome reference version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $exome_target_bed_file_href;
+    my $human_genome_reference_source;
+    my $human_genome_reference_version;
+
+    my $tmpl = {
+        exome_target_bed_file_href =>
+          { required => 1, store => \$exome_target_bed_file_href, },
+        human_genome_reference_source => {
+            defined     => 1,
+            required    => 1,
+            store       => \$human_genome_reference_source,
+            strict_type => 1,
+        },
+        human_genome_reference_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$human_genome_reference_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  EXOME_FILE:
+    foreach my $exome_target_bed_file ( keys %{$exome_target_bed_file_href} ) {
+
+        my $original_file_name = $exome_target_bed_file;
+
+        ## Replace with actual version
+        if ( $exome_target_bed_file =~
+            s/genome_reference_source/$human_genome_reference_source/xsm
+            && $exome_target_bed_file =~ s/_version/$human_genome_reference_version/xsm )
+        {
+
+            ## The delete operator returns the value being deleted i.e. updating hash key while preserving original info
+            $exome_target_bed_file_href->{$exome_target_bed_file} =
+              delete $exome_target_bed_file_href->{$original_file_name};
+        }
     }
     return;
 }
@@ -79,36 +132,36 @@ sub update_reference_parameters {
 ## Function : Update reference parameters with mip_reference directory path
 ## Returns  :
 ## Arguments: $active_parameter_href   => Holds all set parameter for analysis
-##          : $associated_programs_ref => The parameters program(s) {REF}
+##          : $associated_recipes_ref  => The parameters recipe(s) {REF}
 ##          : $parameter_name          => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $associated_programs_ref;
+    my $associated_recipes_ref;
     my $parameter_name;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        associated_programs_ref => {
-            required    => 1,
             defined     => 1,
-            default     => [],
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$associated_programs_ref
+        },
+        associated_recipes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$associated_recipes_ref,
+            strict_type => 1,
         },
         parameter_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$parameter_name,
+            strict_type => 1,
         },
     };
 
@@ -116,14 +169,14 @@ sub update_reference_parameters {
 
     use MIP::Set::Parameter qw{ set_parameter_reference_dir_path };
 
-    ## Check all programs that use parameter
-  ASSOCIATED_PROGRAM:
-    foreach my $associated_program ( @{$associated_programs_ref} ) {
+    ## Check all recipes that use parameter
+  ASSOCIATED_RECIPE:
+    foreach my $associated_recipe ( @{$associated_recipes_ref} ) {
 
-        my $program_name = $active_parameter_href->{$associated_program};
+        my $recipe_name = $active_parameter_href->{$associated_recipe};
 
-        ## Only check active programs parameters
-        next ASSOCIATED_PROGRAM if ( not $program_name );
+        ## Only check active recipes parameters
+        next ASSOCIATED_RECIPE if ( not $recipe_name );
 
         ## Update path for supplied reference(s) associated with
         ## parameter that should reside in the mip reference directory to full path
@@ -133,6 +186,7 @@ sub update_reference_parameters {
                 parameter_name        => $parameter_name,
             }
         );
+
         ## Only need to perform update once per parameter
         return;
     }
@@ -143,7 +197,7 @@ sub update_vcfparser_outfile_counter {
 
 ## Function : Determine the number of outfile after vcfparser
 ## Returns  :
-## Arguments: $active_parameter_href   => Holds all set parameter for analysis
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
 
     my ($arg_href) = @_;
 
@@ -152,11 +206,11 @@ sub update_vcfparser_outfile_counter {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
     };
 
@@ -164,19 +218,19 @@ sub update_vcfparser_outfile_counter {
 
     ## Create link
     my %vcfparser_select_file = (
-        psv_vcfparser =>
-          { sv_vcfparser_select_file => q{sv_vcfparser_outfile_count} },
-        pvcfparser => { vcfparser_select_file => q{vcfparser_outfile_count} },
+        sv_vcfparser => { sv_vcfparser_select_file => q{sv_vcfparser_outfile_count} },
+        vcfparser_ar => { vcfparser_select_file    => q{vcfparser_outfile_count} },
     );
-## Determine if to expect select outfile for vcfparser and sv_vcfparser
-  PROGRAM:
-    foreach my $program ( keys %vcfparser_select_file ) {
 
-        next PROGRAM if ( not $active_parameter_href->{$program} );
+## Determine if to expect select outfile for vcfparser and sv_vcfparser
+  RECIPE:
+    foreach my $recipe ( keys %vcfparser_select_file ) {
+
+        next RECIPE if ( not $active_parameter_href->{$recipe} );
 
       FILES:
         while ( my ( $parameter_name, $parameter_name_counter ) =
-            each %{ $vcfparser_select_file{$program} } )
+            each %{ $vcfparser_select_file{$recipe} } )
         {
 
             $active_parameter_href->{$parameter_name_counter} =
@@ -192,8 +246,8 @@ sub update_vcfparser_outfile_counter {
 
 sub _set_vcfparser_file_counter {
 
-## Function : Set the expected number of outputfile after vcfparser
-## Returns  :
+## Function : Return the expected number of outputfile(s) after vcfparser
+## Returns  : 1 | 2
 ## Arguments: $parameter_name => Vcfparser select file
 
     my ($arg_href) = @_;
@@ -202,23 +256,17 @@ sub _set_vcfparser_file_counter {
     my $parameter_name;
 
     my $tmpl =
-      { parameter_name =>
-          { required => 1, strict_type => 1, store => \$parameter_name }, };
+      { parameter_name => { required => 1, store => \$parameter_name, strict_type => 1, },
+      };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-## To track if vcfparser was used with a vcfparser_select_file (=2) or not (=1)
-    if ( not defined $parameter_name ) {
+    ## To track if vcfparser was used with a vcfparser_select_file (=2) or not (=1)
+    # No select file was given
+    return 1 if ( not defined $parameter_name );
 
-        ## No select file was given
-        return 1;
-    }
-    else {
-
-        ## To track if vcfparser was used with a vcfparser_select_file (=2) or not (=1)
-        return 2;
-    }
-    return;
+    ## Select file was given
+    return 2;
 }
 
 1;

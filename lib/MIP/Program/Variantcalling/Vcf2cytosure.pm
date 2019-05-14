@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Vcf2cytosure;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -15,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,18 +25,15 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ vcf2cytosure_convert };
 }
 
-## Constants
-Readonly my $SPACE => q{ };
-
 sub vcf2cytosure_convert {
 
-## Function : Perl wrapper for Vcf2cytosure 0.4.3
+## Function : Perl wrapper for Vcf2cytosure 0.4.3.
 ## Returns  : @commands
 ## Arguments: $coverage_file          => Path to coverage file
 ##          : $FILEHANDLE             => Filehandle to write to
@@ -43,7 +42,7 @@ sub vcf2cytosure_convert {
 ##          : $maxbnd                 => Maximum BND size
 ##          : $no_filter              => Disable any filtering
 ##          : $outfile_path           => Outfile path to write to
-##          : $sex                    => Sample sex
+##          : $sex                    => Sex of sample
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -104,6 +103,11 @@ sub vcf2cytosure_convert {
         },
         outfile_path => {
             store       => \$outfile_path,
+            strict_type => 1,
+        },
+        sex => {
+            allow       => [ undef, qw{ female male } ],
+            store       => \$sex,
             strict_type => 1,
         },
         sex => {
@@ -178,6 +182,10 @@ sub vcf2cytosure_convert {
         push @commands, q{--no-filter};
     }
 
+    if ($sex) {
+
+        push @commands, q{--sex} . $SPACE . $sex;
+    }
     if ($outfile_path) {
 
         push @commands, q{--out} . $SPACE . $outfile_path;

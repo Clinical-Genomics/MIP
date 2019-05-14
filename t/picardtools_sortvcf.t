@@ -3,7 +3,7 @@
 use Modern::Perl qw{ 2014 };
 use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;
+use 5.026;
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -104,7 +104,7 @@ Readonly my $MIN_GQ    => 20;
 Readonly my $MIN_DEPTH => 10;
 
 ## Base arguments
-my $function_base_command = q{SortVcf};
+my @function_base_commands = qw{ SortVcf };
 
 my %base_argument = (
     stderrfile_path => {
@@ -113,7 +113,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -139,9 +139,9 @@ my %required_argument = (
         expected_output => q{OUTPUT=} . catfile(qw{ dir outfile.vcf }),
     },
     referencefile_path => {
-        input => catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+        input => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
         expected_output => q{REFERENCE_SEQUENCE=}
-          . catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+          . catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
 );
 
@@ -176,11 +176,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

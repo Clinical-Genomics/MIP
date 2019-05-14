@@ -1,9 +1,10 @@
 package MIP::Recipes::Analysis::Peddy;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile splitpath };
+use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -15,41 +16,35 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_peddy };
 
 }
 
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
-
 sub analysis_peddy {
 
-## Function : Compares familial-relationships and sexes.
+## Function : Compares case-relationships and sexes.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $call_type               => Variant call type
-##          : $family_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
@@ -57,225 +52,214 @@ sub analysis_peddy {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outfamily_directory;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
-    my $call_type;
-    my $family_id;
-    my $outaligner_dir;
+    my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id,
+        },
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infamily_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$infamily_directory,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
-        outfamily_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$outfamily_directory,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$program_name,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Pedigree qw{ create_fam_file };
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file };
-    use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_view_and_index_vcf };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Peddy qw{ peddy };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
-    use MIP::QC::Record qw{ add_program_metafile_to_sample_info };
+    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    ### PREPROCESSING:
 
-    ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
         {
-            active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            id             => $case_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            stream         => q{in},
         }
     );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_path        = $io{in}{file_path};
+
+    my $job_id_chain = get_recipe_attributes(
+        {
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+        }
+    );
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
+
+    my %peddy_outfile = (
+        peddy     => q{ped},
+        ped_check => q{csv},
+        sex_check => q{csv},
+    );
+    my @peddy_outfiles =
+      map { $_ . $DOT . $peddy_outfile{$_} } keys %peddy_outfile;
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id         => $job_id_chain,
+                id               => $case_id,
+                file_info_href   => $file_info_href,
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref    => \@peddy_outfiles,
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                recipe_name      => $recipe_name,
+            }
+        )
+    );
+
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    my $program_directory =
-      catfile( $outaligner_dir, q{casecheck}, $program_name );
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            call_type                       => $call_type,
-            core_number                     => $core_number,
-            directory_id                    => $family_id,
+            core_number                     => $recipe_resource{core_number},
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
-            process_time                    => $time,
-            program_directory               => $program_directory,
-            program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 
     # Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $program_info_file ) =
-      splitpath($program_info_path);
+    my ( $volume, $directory, $recipe_info_file ) = splitpath($recipe_info_path);
 
     # To enable submission to &sample_info_qc later
-    my $stderr_file = $program_info_file . $DOT . q{stderr.txt};
+    my $stderr_file_path =
+      catfile( $directory, $recipe_info_file . $DOT . q{stderr.txt} );
 
-    #To enable submission to &sample_info_qc later
-    my $stdout_file = $program_info_file . $DOT . q{stdout.txt};
+    ### SHELL:
 
-    my $outfamily_file_directory =
-      catfile( $active_parameter_href->{outdata_dir}, $family_id );
-
-    ## Files
-    my $infile_tag =
-      $file_info_href->{$family_id}{pgatk_combinevariantcallsets}{file_tag};
-    my $infile_prefix = $family_id . $infile_tag . $call_type;
-
-    ## Paths
-    my $file_path_prefix    = catfile( $temp_directory,      $infile_prefix );
-    my $outfile_path_prefix = catfile( $outfamily_directory, $family_id );
-
-    ### Assign suffix
-    ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain =>
-              $parameter_href->{pgatk_combinevariantcallsets}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-
-    my $suffix = $DOT . q{vcf.gz};
-
-    my $family_file =
-      catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
+    my $case_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
             active_parameter_href => $active_parameter_href,
-            fam_file_path         => $family_file,
+            fam_file_path         => $case_file_path,
             FILEHANDLE            => $FILEHANDLE,
+            log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
         }
     );
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-
-    my $infile_path = catfile( $infamily_directory,
-        $infile_prefix . $infile_suffix . $ASTERISK );
-
-    migrate_file(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $infile_path,
-            outfile_path => $temp_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    ## Set suffix for infile reformat
+    my $suffix = $DOT . q{vcf.gz};
 
     ## Reformat variant calling file and index
     bcftools_view_and_index_vcf(
         {
             FILEHANDLE          => $FILEHANDLE,
-            infile_path         => $file_path_prefix . $infile_suffix,
+            infile_path         => $infile_path,
             index               => 1,
             index_type          => q{tbi},
-            outfile_path_prefix => $file_path_prefix,
+            outfile_path_prefix => $outfile_path_prefix,
             output_type         => q{z},
         }
     );
@@ -283,64 +267,58 @@ sub analysis_peddy {
     ## Peddy
     peddy(
         {
-            family_file_path    => $family_file,
+            case_file_path      => $case_file_path,
             FILEHANDLE          => $FILEHANDLE,
-            infile_path         => $file_path_prefix . $suffix,
+            infile_path         => $outfile_path_prefix . $suffix,
             outfile_prefix_path => $outfile_path_prefix,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    if ( $mip_program_mode == 1 ) {
+    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-        my %peddy_output = (
-            peddy     => q{ped},
-            ped_check => q{csv},
-            sex_check => q{csv},
-        );
+    if ( $recipe_mode == 1 ) {
 
       PEDDY_OUTPUT_FILES:
-        while ( my ( $file_key, $temp_suffix ) = each %peddy_output ) {
-
-            my $outfile_suffix = $DOT . $file_key . $DOT . $temp_suffix;
+        while ( my ( $outfile_tag, $outfile_path ) = each %outfile_path ) {
 
             ## Collect QC metadata info for later use
-            add_program_metafile_to_sample_info(
+            set_recipe_metafile_in_sample_info(
                 {
-                    metafile_tag     => $file_key,
-                    path             => $outfile_path_prefix . $outfile_suffix,
-                    program_name     => $program_name,
+                    metafile_tag     => $outfile_tag,
+                    path             => $outfile_path,
+                    recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
             );
         }
 
         ## Collect QC metadata info for later use
-        add_program_metafile_to_sample_info(
+        set_recipe_metafile_in_sample_info(
             {
                 metafile_tag     => q{stderr},
-                path             => catfile( $directory, $stderr_file ),
-                program_name     => $program_name,
+                path             => $stderr_file_path,
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
 
-        slurm_submit_job_sample_id_dependency_family_dead_end(
+        submit_recipe(
             {
-                family_id               => $family_id,
+                base_command            => $profile_base_command,
+                case_id                 => $case_id,
+                dependency_method       => q{case_to_island},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-
-    return;
+    return 1;
 }
 
 1;

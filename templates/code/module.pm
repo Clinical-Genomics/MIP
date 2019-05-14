@@ -1,5 +1,6 @@
 package MIP::PATH::TO::MODULE;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -14,6 +15,9 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $SPACE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
@@ -24,9 +28,6 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ space separated subroutines };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub name_of_subroutine {
 

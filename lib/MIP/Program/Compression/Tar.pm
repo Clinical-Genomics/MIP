@@ -1,5 +1,6 @@
 package MIP::Program::Compression::Tar;
 
+use 5.026;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -20,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ tar };
@@ -32,64 +33,62 @@ Readonly my $SPACE => q{ };
 sub tar {
 
 ## Function : Perl wrapper for writing tar command recipe to $FILEHANDLE or return commands array. Based on tar 1.23.
-## Returns  : "@commands"
-
+## Returns  : @commands
 ##Arguments : $extract                => Extract files from an archive
+##          : $FILEHANDLE             => Filehandle to write to
 ##          : $filter_gzip            => Filter the archive through gzip
 ##          : $file_path              => Use archive file or device ARCHIVE
 ##          : $outdir_path            => Extract to other than current directory
-##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $extract;
+    my $FILEHANDLE;
     my $filter_gzip;
     my $file_path;
     my $outdirectory_path;
-    my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
+    my $stdoutfile_path;
 
     my $tmpl = {
         extract => {
             allow       => [ 0, 1 ],
+            store       => \$extract,
             strict_type => 1,
-            store       => \$extract
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
         },
         filter_gzip => {
             allow       => [ 0, 1 ],
+            store       => \$filter_gzip,
             strict_type => 1,
-            store       => \$filter_gzip
         },
         file_path => {
+            store       => \$file_path,
             strict_type => 1,
-            store       => \$file_path
         },
         outdirectory_path => {
+            store       => \$outdirectory_path,
             strict_type => 1,
-            store       => \$outdirectory_path
         },
         stdoutfile_path => {
+            store       => \$stdoutfile_path,
             strict_type => 1,
-            store       => \$stdoutfile_path
         },
         stderrfile_path => {
+            store       => \$stderrfile_path,
             strict_type => 1,
-            store       => \$stderrfile_path
         },
         stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
             strict_type => 1,
-            store       => \$stderrfile_path_append
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE
-        },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -110,23 +109,24 @@ sub tar {
         push @commands, q{--file=} . $file_path;
     }
     if ($outdirectory_path) {
+
         push @commands, q{--directory=} . $outdirectory_path;
     }
 
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 

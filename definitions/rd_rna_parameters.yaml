@@ -1,0 +1,780 @@
+---
+## Version: 2.1.2
+## HumanGenomeReference
+human_genome_reference:
+  associated_recipe:
+    - mip
+    - gatk_asereadcounter
+    - gatk_baserecalibration
+    - gatk_haplotypecaller
+    - gatk_splitncigarreads
+    - gatk_variantfiltration
+    - star_aln
+  data_type: SCALAR
+  default: grch37_homo_sapiens_-d5-.fasta
+  exists_check: file
+  reference: reference_dir
+  type: path
+human_genome_reference_file_endings:
+  associated_recipe:
+    - gatk_asereadcounter
+    - gatk_baserecalibration
+    - gatk_haplotypecaller
+    - gatk_splitncigarreads
+    - gatk_variantfiltration
+    - star_aln
+  build_file: 1
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  reference: reference_dir
+  type: path
+transcript_annotation:
+  associated_recipe:
+    - blobfish
+    - salmon_quant
+    - star_aln
+    - star_fusion
+    - stringtie_ar
+    - gffcompare_ar
+  data_type: SCALAR
+  default: grch37_gencode_annotation_reformated_-v30-.gtf
+  exists_check: file
+  reference: reference_dir
+  type: path
+library_type:
+  associated_recipe:
+    - stringtie_ar
+    - genebody_coverage
+  data_type: SCALAR
+  default: reverse_stranded
+  type: recipe_argument
+## GATK FTP Bundle Download version. Needed for all recipes that download the human genome reference
+gatk_bundle_download_version:
+  associated_recipe:
+    - gatk_asereadcounter
+    - gatk_baserecalibration
+    - gatk_haplotypecaller
+  data_type: SCALAR
+  default: 2.8
+  type: recipe_argument
+gatk_logging_level:
+  associated_recipe:
+    - gatk_asereadcounter
+    - gatk_baserecalibration
+    - gatk_haplotypecaller
+    - gatk_splitncigarreads
+    - gatk_variantfiltration
+  data_type: SCALAR
+  default: INFO
+  type: recipe_argument
+gatk_use_new_qual_calculator:
+  associated_recipe:
+    - gatk_haplotypecaller
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
+infile_dirs:
+  associated_recipe:
+    - mip
+  exists_check: directory
+  data_type: HASH
+  type: path
+  update_path: absolute_path
+## java large pages - affects all modules using java
+java_use_large_pages:
+  associated_recipe:
+    - gatk_asereadcounter
+    - gatk_baserecalibration
+    - gatk_haplotypecaller
+    - gatk_variantfiltration
+    - star_aln
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
+#### Bash
+recipe_time:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    analysisrunstatus: 1
+    bcftools_merge: 1
+    blobfish: 1
+    bootstrapann: 2
+    fastqc_ar: 1
+    gatk_asereadcounter: 2
+    gatk_baserecalibration: 5
+    gatk_haplotypecaller: 2
+    gatk_splitncigarreads: 8
+    gatk_variantfiltration: 1
+    genebody_coverage: 3
+    gffcompare_ar: 1
+    gzip_fastq: 2
+    markduplicates: 2
+    multiqc_ar: 1
+    picardtools_mergesamfiles: 2
+    preseq_ar: 2
+    rseqc: 3
+    sacct: 1
+    salmon_quant: 5
+    star_aln: 6
+    star_fusion: 8
+    stringtie_ar: 2
+    trim_galore_ar: 8
+    varianteffectpredictor: 2
+  type: mip
+recipe_memory:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    analysisrunstatus: 1
+    gatk_asereadcounter: 25
+    gatk_variantfiltration: 8
+    genebody_coverage: 8
+    multiqc_ar: 2
+    picardtools_mergesamfiles: 3
+    preseq_ar: 8
+    rseqc: 25
+    salmon_quant: 2
+    star_aln: 3
+    star_fusion: 3
+    stringtie_ar: 2
+    varianteffectpredictor: 8
+  type: mip
+recipe_core_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  default:
+    analysisrunstatus: 1
+    bcftools_merge: 1
+    blobfish: 1
+    bootstrapann: 1
+    fastqc_ar: 0
+    gatk_asereadcounter: 1
+    gatk_baserecalibration: 16
+    gatk_haplotypecaller: 16
+    gatk_splitncigarreads: 12
+    gatk_variantfiltration: 1
+    genebody_coverage: 1
+    gffcompare_ar: 1
+    gzip_fastq: 0
+    multiqc_ar: 1
+    markduplicates: 16
+    picardtools_mergesamfiles: 16
+    preseq_ar: 1
+    rseqc: 1
+    sacct: 1
+    salmon_quant: 20
+    star_aln: 36
+    star_fusion: 24
+    stringtie_ar: 36
+    trim_galore_ar: 1
+    varianteffectpredictor: 1
+  type: mip
+picardtools_path:
+  associated_recipe:
+    - markduplicates
+    - picardtools_mergesamfiles
+    - star_aln
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
+is_from_sample:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+time_point:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+### Programs
+## Gzip
+gzip_fastq:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  program_executables:
+    - gzip
+  type: recipe
+## FastQC
+fastqc_ar:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  program_executables:
+    - fastqc
+  type: recipe
+## Trim galore
+trim_galore_ar:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _trim
+  outfile_suffix: ".fq.qz"
+  program_executables:
+    - trim_galore
+  type: recipe
+## Salmon
+salmon_quant:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: quant
+  outfile_suffix: ".sf"
+  program_executables:
+    - salmon
+  type: recipe
+salmon_quant_reference_genome:
+  associated_recipe:
+    - salmon_quant
+  build_file: 1
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  reference: reference_dir
+  type: path
+## Blobfish
+blobfish:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  program_executables:
+    - BlobFish.py
+  type: recipe
+## Star Aln
+star_aln:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _star_sorted
+  outfile_suffix: ".bam"
+  program_executables:
+    - STAR
+  recipe_type: aligners
+  type: recipe
+align_intron_max:
+  associated_recipe:
+    - star_aln
+  data_type: SCALAR
+  default: 100000
+  type: recipe_argument
+align_mates_gap_max:
+  associated_recipe:
+    - star_aln
+  data_type: SCALAR
+  default: 100000
+  type: recipe_argument
+align_sjdb_overhang_min:
+  associated_recipe:
+    - star_aln
+  data_type: SCALAR
+  default: 10
+  type: recipe_argument
+chim_junction_overhang_min:
+  associated_recipe:
+    - star_aln
+  data_type: SCALAR
+  default: 12
+  type: recipe_argument
+chim_segment_min:
+  associated_recipe:
+    - star_aln
+  data_type: SCALAR
+  default: 12
+  type: recipe_argument
+chim_out_type:
+  associated_recipe:
+    - star_aln
+  data_type: SCALAR
+  default: WithinBAM
+  type: recipe_argument
+pe_overlap_nbases_min:
+  associated_recipe:
+    - star_aln
+  data_type: SCALAR
+  default: 10
+  type: recipe_argument
+star_aln_reference_genome:
+  associated_recipe:
+    - star_aln
+    - genebody_coverage
+  build_file: 1
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  reference: reference_dir
+  type: path
+two_pass_mode:
+  associated_recipe:
+    - star_aln
+  data_type: SCALAR
+  default: Basic
+  type: recipe_argument
+## Star Fusion
+star_fusion:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _fusion
+  outfile_suffix: ".tsv"
+  program_executables:
+    - gtf_file_to_feature_seqs.pl
+    - prep_genome_lib.pl
+    - samtools
+    - STAR
+    - STAR-Fusion
+  type: recipe
+star_fusion_genome_lib_dir:
+  associated_recipe:
+    - star_fusion
+  data_type: SCALAR
+  default: grch37_v19_CTAT_lib_Feb092018
+  exists_check: directory
+  reference: reference_dir
+  type: path
+fusion_filter_reference_genome:
+  associated_recipe:
+    - star_fusion
+  build_file: 1
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  reference: reference_dir
+  type: path
+## Merge bam files
+picardtools_mergesamfiles:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _merged
+  outfile_suffix: ".bam"
+  program_executables:
+    - sambamba
+  type: recipe
+## StringTie
+stringtie_ar:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _strg
+  outfile_suffix: ".gtf"
+  program_executables:
+    - stringtie
+  type: recipe
+stringtie_junction_reads:
+    associated_recipe:
+      - stringtie_ar
+    data_type: SCALAR
+    default: 2
+    type: recipe_argument
+stringtie_minimum_coverage:
+    associated_recipe:
+      - stringtie_ar
+    data_type: SCALAR
+    default: 5
+    type: recipe_argument
+## GffCompare
+gffcompare_ar:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _gffcmp
+  outfile_suffix: ".gtf"
+  program_executables:
+    - gffcompare
+  type: recipe
+## Mark duplicates
+markduplicates:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _md
+  outfile_suffix: ".bam"
+  program_executables:
+    - picard
+    - sambamba
+  type: recipe
+markduplicates_picardtools_markduplicates:
+  associated_recipe:
+    - markduplicates
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
+markduplicates_sambamba_markdup:
+  associated_recipe:
+    - markduplicates
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
+markduplicates_sambamba_markdup_hash_table_size:
+  associated_recipe:
+    - markduplicates
+  data_type: SCALAR
+  default: 262144
+  type: recipe_argument
+markduplicates_sambamba_markdup_io_buffer_size:
+  associated_recipe:
+    - markduplicates
+  data_type: SCALAR
+  default: 2048
+  type: recipe_argument
+markduplicates_sambamba_markdup_overflow_list_size:
+  associated_recipe:
+    - markduplicates
+  data_type: SCALAR
+  default: 200000
+  type: recipe_argument
+## GATK SplitNCigarReads
+gatk_splitncigarreads:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _splitncigar
+  outfile_suffix: ".bam"
+  program_executables:
+    - gatk
+  type: recipe
+## GATK BAM Calibration
+gatk_baserecalibration:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _brecal
+  outfile_suffix: ".bam"
+  program_executables:
+    - gatk
+  type: recipe
+gatk_baserecalibration_known_sites:
+  associated_recipe:
+    - gatk_baserecalibration
+  element_separator: ,
+  data_type: ARRAY
+  default:
+    - grch37_1000g_indels_-phase1-.vcf
+    - grch37_dbsnp_-138-.vcf
+    - grch37_mills_and_1000g_indels_-gold_standard-.vcf
+  exists_check: file
+  reference: reference_dir
+  type: path
+gatk_baserecalibration_read_filters:
+  associated_recipe:
+    - gatk_baserecalibration
+  element_separator: ,
+  data_type: ARRAY
+  default:
+    - OverclippedReadFilter
+  type: recipe_argument
+gatk_baserecalibration_static_quantized_quals:
+  associated_recipe:
+    - gatk_baserecalibration
+  element_separator: ,
+  data_type: ARRAY
+  mandatory: no
+  default:
+    - 10
+    - 20
+    - 30
+    - 40
+  type: recipe_argument
+## RSeQC
+rseqc:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _rseq
+  program_executables:
+    - bam_stat.py
+    - infer_experiment.py
+    - inner_distance.py
+    - junction_annotation.py
+    - junction_saturation.py
+    - read_distribution.py
+    - read_duplication.py
+  outfile_suffix: ".txt"
+  type: recipe
+rseqc_transcripts_file:
+  associated_recipe:
+    - genebody_coverage
+    - rseqc
+  data_type: SCALAR
+  default: grch37_gencode_-v28-.bed
+  exists_check: file
+  reference: reference_dir
+  type: path
+genebody_coverage:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _genecov
+  program_executables:
+    - bam2wig.py
+    - wigToBigWig
+    - geneBody_coverage2.py
+  outfile_suffix: ".txt"
+  type: recipe
+## Preseq
+preseq_ar:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _preseq
+  program_executables:
+    - preseq
+  outfile_suffix: ".txt"
+  type: recipe
+## GATK Genotype
+gatk_haplotypecaller:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _haptc
+  outfile_suffix: ".vcf"
+  program_executables:
+    - gatk
+  type: recipe
+gatk_haplotypecaller_annotation:
+  associated_recipe:
+    - gatk_haplotypecaller
+  element_separator: ,
+  data_type: ARRAY
+  default:
+    - BaseQualityRankSumTest
+    - ChromosomeCounts
+    - Coverage
+    - DepthPerAlleleBySample
+    - FisherStrand
+    - MappingQualityRankSumTest
+    - QualByDepth
+    - RMSMappingQuality
+    - ReadPosRankSumTest
+    - StrandOddsRatio
+  type: recipe_argument
+# BaseQualityRankSumTest;  #Rank Sum Test of REF versus ALT base quality scores
+# ChromosomeCounts;  #Counts and frequency of alleles in called genotypes
+# Coverage;  #Total depth of coverage per sample and over all samples
+# DepthPerAlleleBySample;  #Depth of coverage of each allele per sample
+# FisherStrand;  #Strand bias estimated using Fisher's Exact Test
+# MappingQualityRankSumTest;  #Rank Sum Test for mapping qualities of REF versus ALT reads
+# QualByDepth;  #Variant confidence normalized by unfiltered depth of variant samples
+# RMSMappingQuality;  #Root Mean Square of the mapping quality of reads across all samples
+# ReadPosRankSumTest;  #Rank Sum Test for relative positioning of REF versus ALT alleles within reads
+# StrandOddsRatio ;  #Strand bias estimated by the Symmetric Odds Ratio test
+gatk_haplotypecaller_emit_ref_confidence:
+  associated_recipe:
+    - gatk_haplotypecaller
+  data_type: SCALAR
+  default: "NONE"
+  type: recipe_argument
+gatk_haplotypecaller_no_soft_clipped_bases:
+  associated_recipe:
+    - gatk_haplotypecaller
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
+gatk_haplotypecaller_pcr_indel_model:
+  associated_recipe:
+    - gatk_haplotypecaller
+  data_type: SCALAR
+  default: "CONSERVATIVE"
+  type: recipe_argument
+gatk_haplotypecaller_snp_known_set:
+  associated_recipe:
+    - gatk_haplotypecaller
+  data_type: SCALAR
+  default: grch37_dbsnp_-138-.vcf
+  exists_check: file
+  reference: reference_dir
+  type: path
+## GATK ASE
+gatk_asereadcounter:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _ase
+  outfile_suffix: ".csv"
+  program_executables:
+    - gatk
+  type: recipe
+## GATK VariantFiltration
+gatk_variantfiltration:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _filtered
+  outfile_suffix: ".vcf"
+  program_executables:
+    - gatk
+  type: recipe
+gatk_variantfiltration_cluster_size:
+  associated_recipe:
+    - gatk_variantfiltration
+  data_type: SCALAR
+  default: 3
+  type: recipe_argument
+gatk_variantfiltration_filter:
+  associated_recipe:
+    - gatk_variantfiltration
+  data_type: HASH
+  default:
+    FS: "FS > 30.0"
+    QD: "QD < 2.0"
+  type: recipe_argument
+gatk_variantfiltration_cluster_window_size:
+  associated_recipe:
+    - gatk_variantfiltration
+  data_type: SCALAR
+  default: 35
+  type: recipe_argument
+## BootstrapAnn
+bootstrapann:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _bootstr
+  outfile_suffix: ".vcf"
+  program_executables:
+    - BootstrapAnn.py
+  type: recipe
+## Bcftools merge
+bcftools_merge:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _comb
+  outfile_suffix: ".vcf"
+  program_executables:
+    - bcftools
+  type: recipe
+## VEP
+varianteffectpredictor:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _vep
+  outfile_suffix: ".vcf"
+  program_executables:
+    - vep
+  type: recipe
+vep_custom_annotation:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: HASH
+  mandatory: no
+  type: path
+vep_directory_cache:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
+vep_directory_path:
+  associated_recipe:
+    - varianteffectpredictor
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
+vep_features:
+  associated_recipe:
+    - varianteffectpredictor
+  element_separator: ,
+  data_type: ARRAY
+  default:
+    - appris
+    - biotype
+    - cache
+    - canonical
+    - ccds
+    - domains
+    - exclude_predicted
+    - force_overwrite
+    - hgvs
+    - humdiv
+    - no_progress
+    - no_stats
+    - numbers
+    - merged
+    - "polyphen p"
+    - protein
+    - offline
+    - regulatory
+    - "sift p"
+    - symbol
+    - tsl
+    - uniprot
+  type: recipe_argument
+## MultiQC
+multiqc_ar:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  program_executables:
+    - multiqc
+  type: recipe
+multiqc_per_sample:
+  associated_recipe:
+    - multiqc_ar
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument

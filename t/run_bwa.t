@@ -3,7 +3,7 @@
 use Modern::Perl qw{2014};
 use warnings qw{FATAL utf8};
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.026;    #Require at least perl 5.18
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -93,7 +93,7 @@ diag(
 );
 
 ## Base arguments
-my $function_base_command = q{run-bwamem};
+my @function_base_commands = qw{ run-bwamem };
 
 ## Read group header line
 my @read_group_headers = (
@@ -114,7 +114,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -122,15 +122,15 @@ my %base_argument = (
 my %required_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     infile_path => {
         input           => q{test_infile.fastq},
         expected_output => q{test_infile.fastq},
     },
     idxbase => {
-        input           => q{GRCh37_homo_sapiens_-d5-.fasta},
-        expected_output => q{GRCh37_homo_sapiens_-d5-.fasta},
+        input           => q{grch37_homo_sapiens_-d5-.fasta},
+        expected_output => q{grch37_homo_sapiens_-d5-.fasta},
     },
     outfiles_prefix_path => {
         input           => q{test_outfile.bam},
@@ -183,11 +183,11 @@ my @arguments = ( \%required_argument, \%specific_argument );
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

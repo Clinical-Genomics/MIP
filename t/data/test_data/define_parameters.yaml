@@ -2,25 +2,25 @@
 ## Version: 2.0.0
 ###Enable/activate MIP
 mip:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   default: 1
   type: mip
 # This is the root path on the cluster
 cluster_constant_path:
-  associated_program:
+  associated_recipe:
    - mip
   data_type: SCALAR
   type: path
-family_id:
-  associated_program:
+case_id:
+  associated_recipe:
    - mip
   data_type: SCALAR
   type: mip
 ### Project specific
 email_types:
-  associated_program:
+  associated_recipe:
    - mip
   element_separator: ","
   data_type: ARRAY
@@ -28,39 +28,50 @@ email_types:
   default:
    - FAIL
   type: mip
-pbamcalibrationblock:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  reduce_io: 1
-  type: program
-pbwa_mem:
-  associated_program:
+bwa_mem:
+  associated_recipe:
    - mip
   chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _sorted
   outfile_suffix: ".bam"
-  outdir_name: bwa
-  program_name_path:
+  program_executables:
    - bwa
    - samtools
    - sambamba
-  program_type: aligners
+  recipe_type: aligners
   file_endings:
    - .bam
   remove_redundant_file: yes
   remove_redundant_file_setting: single
-  type: program
+  type: recipe
 bwa_mem_rapid_db:
-  associated_program:
-   - pbwa_mem
+  associated_recipe:
+   - bwa_mem
   build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path
+load_env:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+supported_capture_kit:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  default:
+    nimblegen_seqcapezexome.v2: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v2-.bed
+    nimblegen_seqcapezexome.v3: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v3-.bed
+    agilent_sureselect.v2: genome_reference_source_version_agilent_sureselect_targets_-v2-.bed
+    agilent_sureselect.v3: genome_reference_source_version_agilent_sureselect_targets_-v3-.bed
+    agilent_sureselect.v4: genome_reference_source_version_agilent_sureselect_targets_-v4-.bed
+    agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
+    agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
+    agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
+    latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
+  type: mip

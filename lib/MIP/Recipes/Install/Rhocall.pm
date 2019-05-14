@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_rhocall };
@@ -100,8 +100,7 @@ sub install_rhocall {
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Package_manager::Pip qw{ pip_install };
     use MIP::Program::Compression::Zip qw{ unzip };
     use MIP::Program::Download::Wget qw{ wget };
@@ -112,8 +111,7 @@ sub install_rhocall {
 
     ## Set rhocall default install path
     if ( not $rhocall_path ) {
-        $rhocall_path =
-          catdir( $conda_prefix_path, q{rhocall-} . $rhocall_version );
+        $rhocall_path = catdir( $conda_prefix_path, q{rhocall-} . $rhocall_version );
     }
 
     ## Retrieve logger object
@@ -151,14 +149,14 @@ sub install_rhocall {
 
     if ($conda_environment) {
         ## Activate conda environment
-        say $FILEHANDLE q{## Activate conda environment};
-        conda_source_activate(
+        say {$FILEHANDLE} q{## Activate conda environment};
+        conda_activate(
             {
                 env_name   => $conda_environment,
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     ## Creating install directory
@@ -174,9 +172,7 @@ sub install_rhocall {
     ## Download
     say {$FILEHANDLE} q{## Download rhocall};
     my $url =
-        q{https://github.com/dnil/rhocall/archive/}
-      . $rhocall_version
-      . $DOT . q{zip};
+      q{https://github.com/dnil/rhocall/archive/} . $rhocall_version . $DOT . q{zip};
     my $rhocall_zip_path =
       catfile( $rhocall_path, q{rhocall-} . $rhocall_version . $DOT . q{zip} );
     wget(
@@ -206,8 +202,7 @@ sub install_rhocall {
 
     ## Move to rhocall directory
     say {$FILEHANDLE} q{## Move to rhocall directory};
-    my $rhocall_install_path =
-      catdir( $rhocall_path, q{rhocall-} . $rhocall_version );
+    my $rhocall_install_path = catdir( $rhocall_path, q{rhocall-} . $rhocall_version );
     gnu_cd(
         {
             directory_path => $rhocall_install_path,
@@ -236,9 +231,10 @@ sub install_rhocall {
     print {$FILEHANDLE} $NEWLINE;
     pip_install(
         {
-            editable   => $DOT,
-            FILEHANDLE => $FILEHANDLE,
-            quiet      => $quiet,
+            editable      => $DOT,
+            FILEHANDLE    => $FILEHANDLE,
+            python_module => 1,
+            quiet         => $quiet,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -255,13 +251,13 @@ sub install_rhocall {
 
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {
-        say $FILEHANDLE q{## Deactivate conda environment};
-        conda_source_deactivate(
+        say {$FILEHANDLE} q{## Deactivate conda environment};
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     print {$FILEHANDLE} $NEWLINE;

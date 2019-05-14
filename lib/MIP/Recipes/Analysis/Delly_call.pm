@@ -1,10 +1,9 @@
 package MIP::Recipes::Analysis::Delly_call;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
-use List::MoreUtils qw { any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -16,42 +15,37 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_delly_call };
 
 }
 
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
-
 sub analysis_delly_call {
 
-## Function : Call structural variants using delly
+## Function : Call structural variants using delly version 0.8.1
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $family_id               => Family id
+##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_id               => Sample id
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
@@ -61,392 +55,227 @@ sub analysis_delly_call {
     my $active_parameter_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_id;
     my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
-    my $outaligner_dir;
+    my $case_id;
+    my $profile_base_command;
     my $reference_dir;
     my $temp_directory;
     my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
-        },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id,
+        },
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
             defined     => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$insample_directory,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
-        outsample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$outsample_directory,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$program_name,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
         },
         reference_dir => {
             default     => $arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
             store       => \$reference_dir,
+            strict_type => 1,
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$sample_id,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List qw{ delete_contig_elements };
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Variantcalling::Delly qw{ delly_call };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
+
+    ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
         {
-            active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            stream         => q{in},
+            temp_directory => $temp_directory,
         }
     );
-    my $program_outdirectory_name =
-      $parameter_href->{$mip_program_name}{outdir_name};
-    my $program_directory =
-      catfile( $outaligner_dir, $program_outdirectory_name );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_path        = $infile_path_prefix . $infile_suffix;
+
+    my $job_id_chain = get_recipe_attributes(
+        {
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            attribute      => q{chain},
+        }
+    );
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
+
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id               => $job_id_chain,
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                recipe_name            => $recipe_name,
+                temp_directory         => $temp_directory,
+            }
+        )
+    );
+
+    my $outfile_path = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandles
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             directory_id                    => $sample_id,
-            core_number                     => $core_number,
+            core_number                     => $recipe_resource{core_number},
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
-            program_directory               => $program_directory,
-            program_name                    => $program_name,
-            process_time                    => $time,
-            source_environment_commands_ref => [$source_environment_cmd],
+            log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
+            process_time                    => $recipe_resource{time},
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
 
-    # Used downstream
-    $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
-      $outsample_directory;
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
-    );
-
-    ## Tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
-
-    ## Files
-    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Paths
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ## Assign suffix
-    # Get infile_suffix from baserecalibration jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
-
-    my $outfile_suffix = set_file_suffix(
-        {
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-
-    ### Update contigs
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-# Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
-    my @contigs = delete_contig_elements(
-        {
-            elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [qw{ MT M Y }],
-        }
-    );
-
-    # If element is part of array
-    if ( any { $_ eq q{TRA} } @{ $active_parameter_href->{delly_types} } ) {
-
-        ## Required for processing complete file (TRA)
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => catfile(
-                    $insample_directory,
-                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK
-                ),
-                outfile_path => $active_parameter_href->{temp_directory}
-            }
-        );
-    }
-
-    if ( any { /DEL|DUP|INS|INV/ } @{ $active_parameter_href->{delly_types} } )
-    {
-        # If element is part of array
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        ($xargs_file_counter) = xargs_migrate_contig_files(
-            {
-                contigs_ref => \@contigs,
-                core_number => ( $core_number - 1 )
-                ,    # Compensate for cp of entire BAM (INS, TRA), see above
-                FILEHANDLE        => $FILEHANDLE,
-                file_ending       => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-                file_path         => $file_path,
-                indirectory       => $insample_directory,
-                infile            => $infile_prefix,
-                program_info_path => $program_info_path,
-                temp_directory    => $temp_directory,
-                XARGSFILEHANDLE   => $XARGSFILEHANDLE,
-                xargs_file_counter => $xargs_file_counter,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
-    }
-
+    ### SHELL:
     ## Delly
-    say {$FILEHANDLE} q{## delly};
+    say {$FILEHANDLE} q{## Delly call};
 
-    my $xargs_file_path_prefix;
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+    delly_call(
         {
-            core_number        => $core_number,
-            file_path          => $file_path,
+            exclude_file_path  => $active_parameter_href->{delly_exclude_file},
             FILEHANDLE         => $FILEHANDLE,
-            program_info_path  => $program_info_path,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            xargs_file_counter => $xargs_file_counter,
+            small_indel        => 0,
+            infile_path        => $infile_path,
+            outfile_path       => $outfile_path,
+            referencefile_path => $active_parameter_href->{human_genome_reference},
+            stderrfile_path    => $recipe_file_path . $DOT . q{stderr.txt},
+            stdoutfile_path    => $recipe_file_path . $DOT . q{stdout.txt},
         }
     );
-
-    foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
-
-        if ( $sv_type ne q{TRA} ) {
-
-            ## Process per contig
-            foreach my $contig (@contigs) {
-
-                delly_call(
-                    {
-                        exclude_file_path =>
-                          $active_parameter_href->{delly_exclude_file},
-                        FILEHANDLE  => $XARGSFILEHANDLE,
-                        infile_path => $file_path_prefix
-                          . $UNDERSCORE
-                          . $contig
-                          . $infile_suffix,
-                        outfile_path => $outfile_path_prefix
-                          . $UNDERSCORE
-                          . $contig
-                          . $UNDERSCORE
-                          . $sv_type
-                          . $outfile_suffix,
-                        referencefile_path =>
-                          $active_parameter_href->{human_genome_reference},
-                        stderrfile_path => $xargs_file_path_prefix
-                          . $DOT
-                          . $contig
-                          . $DOT
-                          . $sv_type
-                          . $DOT
-                          . q{stderr.txt},
-                        stdoutfile_path => $xargs_file_path_prefix
-                          . $DOT
-                          . $contig
-                          . $DOT
-                          . $sv_type
-                          . $DOT
-                          . q{stdout.txt},
-                        sv_type => $sv_type,
-                    }
-                );
-                say {$XARGSFILEHANDLE} $NEWLINE;
-            }
-        }
-        else {
-
-            delly_call(
-                {
-                    exclude_file_path =>
-                      $active_parameter_href->{delly_exclude_file},
-                    FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $file_path_prefix . $infile_suffix,
-                    outfile_path => $outfile_path_prefix
-                      . $UNDERSCORE
-                      . $sv_type
-                      . $outfile_suffix,
-                    referencefile_path =>
-                      $active_parameter_href->{human_genome_reference},
-                    stdoutfile_path => $xargs_file_path_prefix
-                      . $DOT
-                      . $sv_type
-                      . $DOT
-                      . q{stdout.txt},
-                    stderrfile_path => $xargs_file_path_prefix
-                      . $DOT
-                      . $sv_type
-                      . $DOT
-                      . q{stderr.txt},
-                    sv_type => $sv_type,
-                }
-            );
-            say {$XARGSFILEHANDLE} $NEWLINE;
-        }
-    }
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $outfile_path_prefix
-              . $ASTERISK
-              . $outfile_suffix
-              . $ASTERISK,
-            outfile_path => $outsample_directory,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
+    say {$FILEHANDLE} $NEWLINE;
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
-      or $log->logcroak(q{Could not close $XARGSFILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        submit_recipe(
             {
-                family_id               => $family_id,
+                base_command            => $profile_base_command,
+                dependency_method       => q{sample_to_sample},
+                case_id                 => $case_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
+                recipe_file_path        => $recipe_file_path,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

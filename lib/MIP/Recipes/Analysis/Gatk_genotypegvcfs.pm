@@ -1,9 +1,10 @@
 package MIP::Recipes::Analysis::Gatk_genotypegvcfs;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -15,13 +16,16 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE $TAB $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -29,28 +33,23 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
+Readonly my $INCLUDE_NONVARIANT_SITES_TIME => 50;
+Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
 
 sub analysis_gatk_genotypegvcfs {
 
 ## Function : GATK GenoTypeGVCFs.
 ## Returns  :
-## Arguments: $active_parameter_href    => Active parameters for this analysis hash {REF}
-##          : $call_type                => Call type
-##          : $family_id                => Family id
-##          : $file_info_href           => File info hash {REF}
-##          : $infile_lane_prefix_href  => Infile(s) without the ".ending"
-##          : $job_id_href              => Job id hash {REF}
-##          : $outaligner_dir           => Outaligner_dir used in the analysis
-##          : $outfamily_directory      => Outfamily directory
-##          : $outfamily_file_directory => Outfamily file directory
-##          : $parameter_href           => Parameter hash {REF}
-##          : $program_name             => Program name
-##          : $sample_info_href         => Info on samples and family hash {REF}
-##          : $temp_directory           => Temporary directory
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $case_id                 => Family id
+##          : $file_info_href          => File info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending"
+##          : $job_id_href             => Job id hash {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
+##          : $sample_info_href        => Info on samples and case hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -59,16 +58,13 @@ sub analysis_gatk_genotypegvcfs {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $outfamily_directory;
-    my $outfamily_file_directory;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
     my $sample_info_href;
 
     ## Default(s)
-    my $call_type;
-    my $family_id;
-    my $outaligner_dir;
+    my $case_id;
+    my $profile_base_command;
     my $temp_directory;
 
     my $tmpl = {
@@ -79,11 +75,9 @@ sub analysis_gatk_genotypegvcfs {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -107,23 +101,6 @@ sub analysis_gatk_genotypegvcfs {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outfamily_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfamily_directory,
-            strict_type => 1,
-        },
-        outfamily_file_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfamily_file_directory,
-            strict_type => 1,
-        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -131,10 +108,15 @@ sub analysis_gatk_genotypegvcfs {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         sample_info_href => {
@@ -153,89 +135,81 @@ sub analysis_gatk_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file };
-    use MIP::Language::Java qw{ java_core };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_step_in_parallel_to_family };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_genotypegvcfs };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
-    use MIP::Set::File qw{ set_file_suffix };
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Gnu::Coreutils qw{ gnu_cat gnu_echo };
+    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Variantcalling::Gatk
+      qw{ gatk_genomicsdbimport  gatk_genotypegvcfs };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
+    ### PREPROCESSING:
+
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
-    ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
-
-    ## Alias
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-
-    ## Gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    ## Unpack parameters
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+    my $job_id_chain            = get_recipe_attributes(
         {
-            active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
         }
     );
+    my $recipe_mode          = $active_parameter_href->{$recipe_name};
+    my $recipe_files_tracker = 0;
 
-    ## Constants
-    Readonly my $INCLUDE_NONVARIANT_SITES_TIME => 50;
+    ## Gatk genotype is most safely processed in single thread mode, but we need some java heap allocation
+    my %recipe_resource = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
+    my $core_number = $recipe_resource{core_number};
+    my $time        = $recipe_resource{time};
 
-    # If all sites should be included
+    ## If all sites should be included
     if ( $active_parameter_href->{gatk_genotypegvcfs_all_sites} == 1 ) {
 
         # Including all sites requires longer processing time
         $time = $INCLUDE_NONVARIANT_SITES_TIME;
     }
 
-    my $sbatch_script_tracker = 0;
+    ## Set and get the io files per chain, id and stream
+    my %io = parse_io_outfiles(
+        {
+            chain_id         => $job_id_chain,
+            id               => $case_id,
+            file_info_href   => $file_info_href,
+            file_name_prefix => $case_id,
+            iterators_ref    => $file_info_href->{contigs_size_ordered},
+            outdata_dir      => $active_parameter_href->{outdata_dir},
+            parameter_href   => $parameter_href,
+            recipe_name      => $recipe_name,
+        }
+    );
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    # Used downstream
-    $parameter_href->{$mip_program_name}{$family_id}{indirectory} =
-      $outfamily_directory;
-
-    ## Tags
-    my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            program_name   => q{pgatk_haplotypecaller},
-            suffix_key     => q{outfile_suffix},
-        }
-    );
-
-    ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
-        {
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
-            job_id_chain   => $job_id_chain,
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-        }
-    );
-
     ## Create .fam file to be used in variant calling analyses
-    my $fam_file_path =
-      catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
+    my $fam_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
     create_fam_file(
         {
             active_parameter_href => $active_parameter_href,
+            execution_mode        => q{system},
             fam_file_path         => $fam_file_path,
             FILEHANDLE            => $FILEHANDLE,
+            log                   => $log,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
         }
@@ -244,157 +218,219 @@ sub analysis_gatk_genotypegvcfs {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs} } ) {
 
-        ## Assign file_tags
-        my $outfile_prefix =
-          $family_id . $outfile_tag . $call_type . $UNDERSCORE . $contig;
-        my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_path) = setup_script(
+        ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+        my ($recipe_file_path) = setup_script(
             {
-                active_parameter_href => $active_parameter_href,
-                call_type             => $call_type,
-                core_number           => $core_number,
-                directory_id          => $family_id,
-                FILEHANDLE            => $FILEHANDLE,
-                job_id_href           => $job_id_href,
-                process_time          => $time,
-                program_directory     => catfile( $outaligner_dir, q{gatk} ),
-                program_name          => $program_name,
-                sleep                 => 1,
-                source_environment_commands_ref => [$source_environment_cmd],
+                active_parameter_href           => $active_parameter_href,
+                core_number                     => $core_number,
+                directory_id                    => $case_id,
+                FILEHANDLE                      => $FILEHANDLE,
+                job_id_href                     => $job_id_href,
+                log                             => $log,
+                memory_allocation               => $recipe_resource{memory},
+                process_time                    => $time,
+                recipe_directory                => $recipe_name,
+                recipe_name                     => $recipe_name,
+                sleep                           => 1,
+                source_environment_commands_ref => $recipe_resource{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );
 
-        ## Collect infiles for all sample_ids to enable migration to temporary directory
-        my @file_paths;
+        ## Collect infiles for all sample_ids (WGS)
+        my @genotype_infile_paths;
 
-        ## Add merged infile name after merging all BAM files per sample_id
-      SAMPLE:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+        ## Collect infiles for all samples_ids (WES)
+        my @sample_vcf_path_lines;
+        my $sample_name_map_path;
 
-            ## Add merged infile name prefix after merging all BAM files per sample_id
-            my $merged_infile_prefix = get_merged_infile_prefix(
+      SAMPLE_ID:
+        while ( my ( $sample_id_index, $sample_id ) =
+            each @{ $active_parameter_href->{sample_ids} } )
+        {
+
+            ## Get the io infiles per chain and id
+            my %sample_io = get_io_files(
                 {
+                    id             => $sample_id,
                     file_info_href => $file_info_href,
-                    sample_id      => $sample_id,
+                    parameter_href => $parameter_href,
+                    recipe_name    => $recipe_name,
+                    stream         => q{in},
                 }
             );
+            if ( $consensus_analysis_type eq q{wes} ) {
 
-            ## Assign directories
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $outaligner_dir, q{gatk} );
+                push @sample_vcf_path_lines,
+                  $sample_id . $TAB . $sample_io{in}{file_path} . $NEWLINE;
+            }
+            else {
 
-            ## Assign file_tags
-            my $infile_tag =
-              $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
-            my $infile_prefix =
-              $merged_infile_prefix . $infile_tag . $UNDERSCORE . $contig;
-
-            ## Collect for downstream use
-            push
-              @file_paths,
-              catfile( $temp_directory, $infile_prefix . $infile_suffix );
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-
-            $insample_directory = catfile( $insample_directory,
-                $infile_prefix . $infile_suffix . $ASTERISK );
-
-            migrate_file(
-                {
-                    FILEHANDLE   => $FILEHANDLE,
-                    infile_path  => $insample_directory,
-                    outfile_path => $temp_directory,
-                }
-            );
-            say {$FILEHANDLE} q{wait} . $NEWLINE;
-
+                push @genotype_infile_paths, $sample_io{in}{file_path};
+            }
         }
 
-        ## GATK GenoTypeGVCFs
-        say {$FILEHANDLE} q{## GATK GenoTypeGVCFs};
+        ## GATK GenomicsDBImport
+        say {$FILEHANDLE} q{## GATK GenomicsDBImport};
 
-        ## Get parameters
-        ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-        my %commands = gatk_pedigree_flag(
-            {
-                fam_file_path => catfile(
-                    $outfamily_file_directory, $family_id . $DOT . q{fam}
-                ),
-                program_name => $program_name,
-            }
-        );
-        ## Files for genotypegvcfs
+        ## Files to import into GenomicsDB
         if ( $consensus_analysis_type eq q{wes} ) {
 
-            push @file_paths,
-              $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf};
-        }
+            $sample_name_map_path =
+              catfile( $outdir_path_prefix, q{analysis_sample_map.txt} );
+            my $echo_outfile_path =
+              catfile( $outdir_path_prefix, q{dynamic_sample_map.txt} );
+            _merge_sample_name_map_files(
+                {
+                    echo_outfile_path => $echo_outfile_path,
+                    FILEHANDLE        => $FILEHANDLE,
+                    gatk_genotypegvcfs_ref_gvcf =>
+                      $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
+                    outfile_path => $sample_name_map_path,
+                    strings_ref  => \@sample_vcf_path_lines,
+                }
+            );
 
-        gatk_genotypegvcfs(
+        }
+        my $genomicsdb_file_path =
+          $outfile_path_prefix . $UNDERSCORE . q{DB} . $UNDERSCORE . $contig;
+        gatk_genomicsdbimport(
             {
-                dbsnp_file_path =>
-                  $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
-                FILEHANDLE       => $FILEHANDLE,
-                intervals_ref    => [$contig],
-                infile_paths_ref => \@file_paths,
-                include_nonvariant_sites =>
-                  $active_parameter_href->{gatk_genotypegvcfs_all_sites},
-                java_jar => catfile(
-                    $active_parameter_href->{gatk_path},
-                    q{GenomeAnalysisTK.jar}
-                ),
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                memory_allocation => q{Xmx24g},
-                outfile_path      => $outfile_path_prefix . $outfile_suffix,
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                temp_directory => $temp_directory,
+                FILEHANDLE                => $FILEHANDLE,
+                genomicsdb_workspace_path => $genomicsdb_file_path,
+                intervals_ref             => [$contig],
+                infile_paths_ref          => \@genotype_infile_paths,
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                referencefile_path   => $active_parameter_href->{human_genome_reference},
+                sample_name_map_path => $sample_name_map_path,
+                temp_directory       => $temp_directory,
+                verbosity            => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
+        ## GATK GenoTypeGVCFs
+        say {$FILEHANDLE} q{## GATK GenoTypeGVCFs};
+
+        gatk_genotypegvcfs(
             {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $outfile_path_prefix
-                  . $outfile_suffix
-                  . $ASTERISK,
-                outfile_path => $outfamily_directory,
+                dbsnp_path =>
+                  $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
+                FILEHANDLE => $FILEHANDLE,
+                include_nonvariant_sites =>
+                  $active_parameter_href->{gatk_genotypegvcfs_all_sites},
+                infile_path          => q{gendb://} . $genomicsdb_file_path,
+                intervals_ref        => [$contig],
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                outfile_path         => $outfile_path{$contig},
+                pedigree             => $fam_file_path,
+                referencefile_path   => $active_parameter_href->{human_genome_reference},
+                temp_directory       => $temp_directory,
+                verbosity            => $active_parameter_href->{gatk_logging_level},
+                use_new_qual_calculator =>
+                  $active_parameter_href->{gatk_use_new_qual_calculator},
             }
         );
-        say {$FILEHANDLE} q{wait} . $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
 
         close $FILEHANDLE;
 
-        if ( $mip_program_mode == 1 ) {
+        if ( $recipe_mode == 1 ) {
 
-            slurm_submit_job_sample_id_dependency_step_in_parallel_to_family(
+            submit_recipe(
                 {
-                    family_id               => $family_id,
+                    base_command            => $profile_base_command,
+                    case_id                 => $case_id,
+                    dependency_method       => q{sample_to_case_parallel},
                     infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_chain            => $job_id_chain,
                     job_id_href             => $job_id_href,
                     log                     => $log,
-                    path                    => $job_id_chain,
-                    sample_ids_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    sbatch_file_name      => $file_path,
-                    sbatch_script_tracker => $sbatch_script_tracker,
+                    recipe_file_path        => $recipe_file_path,
+                    recipe_files_tracker    => $recipe_files_tracker,
+                    sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                    submission_profile => $active_parameter_href->{submission_profile},
                 }
             );
         }
-        $sbatch_script_tracker++;    # Tracks nr of sbatch scripts
+        $recipe_files_tracker++;    # Tracks nr of recipe scripts
     }
+    return 1;
+}
+
+sub _merge_sample_name_map_files {
+
+## Function : Merge sample_name_map files
+## Returns  :
+## Arguments: $FILEHANDLE                  => Filehandle to write to
+##          : $echo_outfile_path           => Echo outfile path for dynamic samples
+##          : $gatk_genotypegvcfs_ref_gvcf => Merged reference sample name map file path
+##          : $outfile_path                => Outfile path
+##          : $strings_ref                 => Strings to echo {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $echo_outfile_path;
+    my $gatk_genotypegvcfs_ref_gvcf;
+    my $outfile_path;
+    my $strings_ref;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        echo_outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$echo_outfile_path,
+            strict_type => 1,
+        },
+        gatk_genotypegvcfs_ref_gvcf => {
+            defined     => 1,
+            required    => 1,
+            store       => \$gatk_genotypegvcfs_ref_gvcf,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        strings_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$strings_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    gnu_echo(
+        {
+            enable_interpretation => 1,
+            FILEHANDLE            => $FILEHANDLE,
+            no_trailing_newline   => 1,
+            outfile_path          => $echo_outfile_path,
+            strings_ref           => $strings_ref,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    gnu_cat(
+        {
+            FILEHANDLE       => $FILEHANDLE,
+            infile_paths_ref => [ $echo_outfile_path, $gatk_genotypegvcfs_ref_gvcf ],
+            stdoutfile_path  => $outfile_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
     return;
 }
 

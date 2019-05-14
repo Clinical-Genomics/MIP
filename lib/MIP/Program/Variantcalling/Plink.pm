@@ -37,7 +37,7 @@ sub plink_variant_pruning {
 
 ## Function : Perl wrapper for writing Plink recipe to prune variants and create unique IDs. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
-## Arguments: $const_fid           => Assign family id to all samples in file
+## Arguments: $const_fid           => Assign case id to all samples in file
 ##          : $FILEHANDLE          => Filehandle to write to
 ##          : $indep               => Produce a pruned subset of markers that are in approximate linkage equilibrium with each other
 ##          : $indep_step_size     => Indep step size (variant ct)
@@ -297,7 +297,7 @@ sub plink_fix_fam_ped_map_freq {
 
 sub plink_calculate_inbreeding {
 
-## Function : Perl wrapper for writing Plink recipe to calculate inbreeding coefficients per family. Based on Plink 1.90p 64-bit (25 Mar 2016).
+## Function : Perl wrapper for writing Plink recipe to calculate inbreeding coefficients per case. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
 ## Arguments: $binary_fileset_prefix   => Specify .bed + .bim + .fam prefix
 ##          : $extract_file            => Exclude all variants not named in the file
@@ -407,7 +407,7 @@ sub plink_calculate_inbreeding {
 
 sub plink_create_mibs {
 
-## Function : Perl wrapper for writing Plink recipe to create .mibs per family. Based on Plink 1.90p 64-bit (25 Mar 2016).
+## Function : Perl wrapper for writing Plink recipe to create .mibs per case. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
 ## Arguments: $cluster         => Perform IBS clustering
 ##          : $FILEHANDLE      => Filehandle to write to
@@ -431,11 +431,9 @@ sub plink_create_mibs {
     my $matrix;
 
     my $tmpl = {
-        ped_file_path =>
-          { required => 1, store => \$ped_file_path, strict_type => 1, },
-        map_file_path =>
-          { required => 1, store => \$map_file_path, strict_type => 1, },
-        cluster => {
+        ped_file_path => { required => 1, store => \$ped_file_path, strict_type => 1, },
+        map_file_path => { required => 1, store => \$map_file_path, strict_type => 1, },
+        cluster       => {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$cluster,
@@ -447,8 +445,7 @@ sub plink_create_mibs {
             store       => \$matrix,
             strict_type => 1,
         },
-        outfile_prefix =>
-          { required => 1, store => \$outfile_prefix, strict_type => 1, },
+        outfile_prefix => { required => 1, store => \$outfile_prefix, strict_type => 1, },
         FILEHANDLE      => { store => \$FILEHANDLE, },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
     };
@@ -534,9 +531,8 @@ sub plink_check_sex_chroms {
             store       => \$no_fail,
             strict_type => 1,
         },
-        outfile_prefix =>
-          { required => 1, store => \$outfile_prefix, strict_type => 1, },
-        regions_ref => {
+        outfile_prefix => { required => 1, store => \$outfile_prefix, strict_type => 1, },
+        regions_ref    => {
             default     => [],
             required    => 1,
             store       => \$regions_ref,
@@ -619,12 +615,10 @@ sub plink_sex_check {
         },
         extract_file => { store => \$extract_file, strict_type => 1, },
         FILEHANDLE   => { store => \$FILEHANDLE, },
-        outfile_prefix =>
-          { required => 1, store => \$outfile_prefix, strict_type => 1, },
-        read_freqfile_path =>
-          { store => \$read_freqfile_path, strict_type => 1, },
-        sex_check_min_f => { store => \$sex_check_min_f, strict_type => 1, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        outfile_prefix => { required => 1, store => \$outfile_prefix, strict_type => 1, },
+        read_freqfile_path => { store => \$read_freqfile_path, strict_type => 1, },
+        sex_check_min_f    => { store => \$sex_check_min_f,    strict_type => 1, },
+        stderrfile_path    => { store => \$stderrfile_path,    strict_type => 1, },
 
     };
 

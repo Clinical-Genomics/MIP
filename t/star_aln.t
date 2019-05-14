@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -21,73 +21,35 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Commands qw{ test_function };
+use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.01;
 
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Program::Alignment::Star} => [qw{ star_aln }],
+        q{MIP::Test::Fixtures}           => [qw{ test_standard_cli }],
+    );
 
-  PERL_MODULE:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-## Modules
-    my @modules = (q{MIP::Program::Alignment::Star});
-
-  MODULE:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Alignment::Star qw{ star_aln };
-use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test star_aln from Star.pm v}
       . $MIP::Program::Alignment::Star::VERSION
@@ -106,9 +68,10 @@ Readonly my $CHIM_JUNCTION_OVERHANG_MIN => 12;
 Readonly my $CHIM_SEGMENT_MIN           => 12;
 Readonly my $CHIM_SEGMENT_READ_GAP_MAX  => 3;
 Readonly my $LIMIT_BAM_SORT_RAM         => 315_321_372_30;
+Readonly my $PE_OVERLAP_NBASES_MIN      => 10;
 Readonly my $THREAD_NUMBER              => 16;
 
-my $function_base_command = q{STAR};
+my @function_base_commands = qw{ STAR };
 
 my %base_argument = (
     stdoutfile_path => {
@@ -125,20 +88,17 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
 my %required_argument = (
     genome_dir_path => {
         input           => catfile(qw{ dir genome_dir_path }),
-        expected_output => q{--genomeDir}
-          . $SPACE
-          . catfile(qw{ dir genome_dir_path }),
+        expected_output => q{--genomeDir} . $SPACE . catfile(qw{ dir genome_dir_path }),
     },
     infile_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ dir r1.fq.gz }), catfile(qw{ dir r2.fq.gz }) ],
+        inputs_ref      => [ catfile(qw{ dir r1.fq.gz }), catfile(qw{ dir r2.fq.gz }) ],
         expected_output => q{--readFilesIn}
           . $SPACE
           . catfile(qw{ dir r1.fq.gz })
@@ -147,9 +107,7 @@ my %required_argument = (
     },
     outfile_name_prefix => {
         input           => catfile(qw{ dir test }),
-        expected_output => q{--outFileNamePrefix}
-          . $SPACE
-          . catfile(qw{ dir test }),
+        expected_output => q{--outFileNamePrefix} . $SPACE . catfile(qw{ dir test }),
     },
     out_sam_type => {
         input           => q{BAM SortedByCoordinate},
@@ -157,9 +115,7 @@ my %required_argument = (
     },
     read_files_command => {
         input           => q{gzip} . $SPACE . q{-c},
-        expected_output => q{--readFilesCommand}
-          . $SPACE . q{gzip}
-          . $SPACE . q{-c},
+        expected_output => q{--readFilesCommand} . $SPACE . q{gzip} . $SPACE . q{-c},
     },
 );
 
@@ -170,21 +126,21 @@ my %specific_argument = (
     },
     align_mates_gap_max => {
         input           => $ALIGN_MATES_GAP_MAX,
-        expected_output => q{--alignMatesGapMax}
-          . $SPACE
-          . $ALIGN_MATES_GAP_MAX,
+        expected_output => q{--alignMatesGapMax} . $SPACE . $ALIGN_MATES_GAP_MAX,
     },
     align_sjdb_overhang_min => {
         input           => $ALIGN_SJDB_OVERHANG_MIN,
-        expected_output => q{--alignSJDBoverhangMin}
-          . $SPACE
-          . $ALIGN_SJDB_OVERHANG_MIN,
+        expected_output => q{--alignSJDBoverhangMin} . $SPACE . $ALIGN_SJDB_OVERHANG_MIN,
     },
     chim_junction_overhang_min => {
         input           => $CHIM_JUNCTION_OVERHANG_MIN,
         expected_output => q{--chimJunctionOverhangMin}
           . $SPACE
           . $CHIM_JUNCTION_OVERHANG_MIN,
+    },
+    chim_out_type => {
+        input           => q{WithinBAM},
+        expected_output => q{--chimOutType} . $SPACE . q{WithinBAM},
     },
     chim_segment_min => {
         input           => $CHIM_SEGMENT_MIN,
@@ -197,8 +153,7 @@ my %specific_argument = (
           . $CHIM_SEGMENT_READ_GAP_MAX,
     },
     infile_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ dir r1.fq.gz }), catfile(qw{ dir r2.fq.gz }) ],
+        inputs_ref      => [ catfile(qw{ dir r1.fq.gz }), catfile(qw{ dir r2.fq.gz }) ],
         expected_output => q{--readFilesIn}
           . $SPACE
           . catfile(qw{ dir r1.fq.gz })
@@ -211,9 +166,7 @@ my %specific_argument = (
     },
     outfile_name_prefix => {
         input           => catfile(qw{ dir test }),
-        expected_output => q{--outFileNamePrefix}
-          . $SPACE
-          . catfile(qw{ dir test }),
+        expected_output => q{--outFileNamePrefix} . $SPACE . catfile(qw{ dir test }),
     },
     out_sam_strand_field => {
         input           => q{intronMotif},
@@ -223,15 +176,17 @@ my %specific_argument = (
         input           => q{BAM SortedByCoordinate},
         expected_output => q{--outSAMtype} . $SPACE . q{BAM SortedByCoordinate},
     },
+    pe_overlap_nbases_min => {
+        input           => $PE_OVERLAP_NBASES_MIN,
+        expected_output => q{--peOverlapNbasesMin} . $SPACE . $PE_OVERLAP_NBASES_MIN,
+    },
     quant_mode => {
         input           => q{GeneCounts},
         expected_output => q{--quantMode} . $SPACE . q{GeneCounts},
     },
     read_files_command => {
         input           => q{gunzip} . $SPACE . q{-c},
-        expected_output => q{--readFilesCommand}
-          . $SPACE . q{gunzip}
-          . $SPACE . q{-c},
+        expected_output => q{--readFilesCommand} . $SPACE . q{gunzip} . $SPACE . q{-c},
     },
     thread_number => {
         input           => $THREAD_NUMBER,
@@ -252,46 +207,13 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

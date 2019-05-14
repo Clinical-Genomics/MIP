@@ -18,26 +18,24 @@ file_tag:
   key_data_type: SCALAR
 infile_suffix:
   key_data_type: SCALAR
+analysis_mode:
+  key_data_type: SCALAR
+  values:
+    - sample
+    - case
 outfile_suffix:
   key_data_type: SCALAR
-program_name_path:
+program_executables:
   key_data_type: ARRAY
 element_separator:
   key_data_type: SCALAR
-reduce_io:
-  key_data_type: SCALAR
-  values:
-    - 1
-program_type:
+recipe_type:
   key_data_type: SCALAR
   values:
     - aligners
-    - variant_callers
+    - repeats_variant_callers
     - structural_variant_callers
-outdir_name:
-  key_data_type: SCALAR
-file_endings:
-  key_data_type: ARRAY
+    - variant_callers
 reference:
   key_data_type: SCALAR
   values:

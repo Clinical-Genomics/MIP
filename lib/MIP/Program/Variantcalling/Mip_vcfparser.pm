@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_vcfparser };
@@ -42,6 +42,7 @@ sub mip_vcfparser {
 ##          : $padding                               => Pad each gene with X number of nucleotides
 ##          : $parse_vep                             => Parse VEP transcript specific entries
 ##          : $per_gene                              => Output most severe consequence transcript
+##          : $pli_values_file_path                  => Pli value file path
 ##          : $range_feature_annotation_columns_ref  => Range file annotation columns
 ##          : $range_feature_file_path               => Path to range feature file
 ##          : $select_feature_annotation_columns_ref => Range file annotation columns
@@ -57,6 +58,7 @@ sub mip_vcfparser {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_path;
+my $pli_values_file_path;
     my $range_feature_annotation_columns_ref;
     my $range_feature_file_path;
     my $select_feature_annotation_columns_ref;
@@ -83,7 +85,7 @@ sub mip_vcfparser {
             store       => \$infile_path,
         },
         padding => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm, ],
             strict_type => 1,
             store       => \$padding,
         },
@@ -98,6 +100,10 @@ sub mip_vcfparser {
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
             store       => \$per_gene,
+        },
+pli_values_file_path => {
+            strict_type => 1,
+            store       => \$pli_values_file_path,
         },
         range_feature_annotation_columns_ref => {
             default     => [],
@@ -115,7 +121,7 @@ sub mip_vcfparser {
         select_feature_file_path =>
           { strict_type => 1, store => \$select_feature_file_path, },
         select_feature_matching_column => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm, ],
             strict_type => 1,
             store       => \$select_feature_matching_column,
         },
@@ -153,15 +159,18 @@ sub mip_vcfparser {
         push @commands, q{--per_gene};
     }
 
-    if ( $padding ) {
+    if ( defined $padding ) {
 
         push @commands, q{--padding} . $SPACE . $padding;
+    }
+    if( defined $pli_values_file_path) {
+
+      push @commands, q{--pli_values_file} . $SPACE . $pli_values_file_path;
     }
 
     if ($range_feature_file_path) {
 
-        push @commands,
-          q{--range_feature_file} . $SPACE . $range_feature_file_path;
+        push @commands, q{--range_feature_file} . $SPACE . $range_feature_file_path;
     }
 
     # Limit output to regions
@@ -174,16 +183,13 @@ sub mip_vcfparser {
 
     if ($select_feature_file_path) {
 
-        push @commands,
-          q{--select_feature_file} . $SPACE . $select_feature_file_path;
+        push @commands, q{--select_feature_file} . $SPACE . $select_feature_file_path;
     }
 
     if ($select_feature_matching_column) {
 
         push @commands,
-            q{--select_feature_matching_column}
-          . $SPACE
-          . $select_feature_matching_column;
+          q{--select_feature_matching_column} . $SPACE . $select_feature_matching_column;
     }
 
     # Limit output to regions

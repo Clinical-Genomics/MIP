@@ -1,0 +1,197 @@
+---
+## Version: 1.0.0
+analysis_constant_path:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: analysis
+  type: path
+analysis_type:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  type: mip
+cluster_constant_path:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+config_file_analysis:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: path
+  update_path: absolute_path
+dry_run_all:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+email:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+email_types:
+  associated_recipe:
+   - mip
+  element_separator: ","
+  data_type: ARRAY
+  mandatory: no
+  default:
+   - FAIL
+  type: mip
+exclude_contigs:
+  associated_recipe:
+   - mip
+  element_separator: ,
+  data_type: ARRAY
+  mandatory: no
+  type: mip
+case_id:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: mip
+## java large pages - affects all modules using java
+java_use_large_pages:
+  associated_recipe:
+   - varianteffectpredictor
+   - snpeff
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
+node_ram_memory:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 192
+  type: mip
+outdata_dir:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+outscript_dir:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+pedigree_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+platform:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: ILLUMINA
+  type: mip
+print_recipe:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+print_recipe_mode:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 2
+  type: mip
+load_env:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+sample_ids:
+  associated_recipe:
+   - mip
+  element_separator: ,
+  data_type: ARRAY
+  type: mip
+sample_info_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+slurm_quality_of_service:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: normal
+  type: mip
+start_with_recipe:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+submission_profile:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: slurm
+  type: mip
+supported_capture_kit:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  default:
+    nimblegen_seqcapezexome.v2: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v2-.bed
+    nimblegen_seqcapezexome.v3: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v3-.bed
+    agilent_sureselect.v2: genome_reference_source_version_agilent_sureselect_targets_-v2-.bed
+    agilent_sureselect.v3: genome_reference_source_version_agilent_sureselect_targets_-v3-.bed
+    agilent_sureselect.v4: genome_reference_source_version_agilent_sureselect_targets_-v4-.bed
+    agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
+    agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
+    agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
+    twist_wes.v1: genome_reference_source_version_twist_target_-1-.bed 
+    latest: genome_reference_source_version_twist_target_-1-.bed
+  type: mip
+### Programs
+## AnalysisRunStatus
+analysisrunstatus:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  type: recipe
+## Sacct
+sacct:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  type: recipe
+sacct_format_fields:
+  associated_recipe:
+   - sacct
+  data_type: ARRAY
+  default:
+   - jobid
+   - "jobname%50"
+   - account
+   - partition
+   - alloccpus
+   - TotalCPU
+   - elapsed
+   - start
+   - end
+   - state
+   - exitcode
+  element_separator: ,
+  type: recipe_argument

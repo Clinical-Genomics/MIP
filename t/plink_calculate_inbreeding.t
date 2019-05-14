@@ -12,7 +12,7 @@ use Params::Check qw{ check allow last_error };
 use Test::More;
 use warnings qw{ FATAL utf8 };
 use utf8;
-use 5.018;
+use 5.026;
 
 ## CPANM
 use autodie;
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -89,8 +85,7 @@ BEGIN {
 use MIP::Program::Variantcalling::Plink qw{ plink_calculate_inbreeding };
 use MIP::Test::Commands qw{ test_function };
 
-diag(
-q{Test plink_calculate_inbreeding from Plink.pm v}
+diag(   q{Test plink_calculate_inbreeding from Plink.pm v}
       . $MIP::Program::Variantcalling::Plink::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -100,7 +95,7 @@ q{Test plink_calculate_inbreeding from Plink.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{plink2};
+my @function_base_commands = qw{ plink2 };
 
 my %base_argument = (
     stderrfile_path => {
@@ -109,7 +104,7 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -117,22 +112,22 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory family_id _data }),
+        input           => catfile(qw{ temp_directory case_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory family_id _data }),
+          . catfile(qw{ temp_directory case_id _data }),
     },
     binary_fileset_prefix => {
-        input           => catfile(qw{ temp_directory family_id _data }),
+        input           => catfile(qw{ temp_directory case_id _data }),
         expected_output => q{--bfile}
           . $SPACE
-          . catfile(qw{ temp_directory family_id _data }),
+          . catfile(qw{ temp_directory case_id _data }),
     },
     extract_file => {
-        input => catfile(qw{ temp_directory family_id _data.prune.in }),
+        input           => catfile(qw{ temp_directory case_id _data.prune.in }),
         expected_output => q{--extract}
           . $SPACE
-          . catfile(qw{ temp_directory family_id _data.prune.in }),
+          . catfile(qw{ temp_directory case_id _data.prune.in }),
     },
 );
 
@@ -161,11 +156,11 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
+            do_test_base_command       => 1,
         }
     );
 }

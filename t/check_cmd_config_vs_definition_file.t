@@ -12,12 +12,13 @@ use Params::Check qw{ check allow last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
+use 5.026;
 
 ## CPANM
 use autodie;
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -27,7 +28,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -47,11 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -98,28 +95,44 @@ diag(   q{Test check_cmd_config_vs_definition_file from Check::Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Given no unique andn hence illegal keys
 my %parameter = load_yaml(
     {
-        yaml_file =>
-          catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
+        yaml_file => catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
     }
 );
 
 my %active_parameter = (
-    pbwa_mem                => 1,
+    bwa_mem                 => 1,
     vcfparser_outfile_count => 1,
-    family_id               => q{family_1},    #Add mandatory key default
-    family_1                => 1,
+    case_id                 => q{case_1},    #Add mandatory key default
+    case_1                  => 1,
 );
 
-my $error_msg = check_cmd_config_vs_definition_file(
+my $return = check_cmd_config_vs_definition_file(
     {
         active_parameter_href => \%active_parameter,
         parameter_href        => \%parameter,
     }
 );
 
-is( $error_msg, undef, q{No unique parameters} );
+## Then return undef
+is( $return, undef, q{No unique parameters} );
+
+## Given illegal key
+$active_parameter{illegal_key} = q{you shall not pass};
+
+trap {
+    check_cmd_config_vs_definition_file(
+        {
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
+        }
+      )
+};
+
+## Then fatal message should be thrown
+like( $trap->stderr, qr/illegal\s+key/xms, q{Throw fatal message if illegal key} );
 
 done_testing();
 

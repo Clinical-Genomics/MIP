@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Peddy;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ peddy };
@@ -35,7 +36,7 @@ sub peddy {
 
 ## Function : Perl wrapper for writing peddy recipe to already open $FILEHANDLE or return commands array. Based on peddy 0.2.9.
 ## Returns  : @commands
-## Arguments: $family_file_path       => Family file path
+## Arguments: $case_file_path         => Family file path
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $outfile_prefix_path    => Outfile path
@@ -48,7 +49,7 @@ sub peddy {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $family_file_path;
+    my $case_file_path;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_prefix_path;
@@ -88,10 +89,10 @@ sub peddy {
             store       => \$outfile_prefix_path,
             strict_type => 1,
         },
-        family_file_path => {
+        case_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$family_file_path,
+            store       => \$case_file_path,
             strict_type => 1,
         },
         processor_number => {
@@ -111,7 +112,7 @@ sub peddy {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{python -m peddy};
+    my @commands = qw{ python -m peddy };
 
     ## Options
     if ($processor_number) {
@@ -136,17 +137,17 @@ sub peddy {
         push @commands, $infile_path;
     }
 
-    if ($family_file_path) {
+    if ($case_file_path) {
 
-        push @commands, $family_file_path;
+        push @commands, $case_file_path;
     }
 
     push @commands,
       unix_standard_streams(
         {
+            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
-            stdoutfile_path        => $stdoutfile_path,
         }
       );
 

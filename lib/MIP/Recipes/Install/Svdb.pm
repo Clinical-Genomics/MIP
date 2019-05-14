@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_svdb };
@@ -36,61 +36,62 @@ sub install_svdb {
 
 ## Function : Install SVDB
 ## Returns  : ""
-## Arguments: $program_parameters_href => Hash with SVDB specific parameters {REF}
+## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $conda_environment       => Conda environment
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $noupdate                => Do not update
+##          : $program_parameters_href => Hash with SVDB specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
-##          : $FILEHANDLE              => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $svdb_parameters_href;
-    my $conda_prefix_path;
     my $conda_environment;
+    my $conda_prefix_path;
+    my $FILEHANDLE;
     my $noupdate;
     my $quiet;
+    my $svdb_parameters_href;
     my $verbose;
-    my $FILEHANDLE;
 
     my $tmpl = {
-        program_parameters_href => {
-            required    => 1,
-            default     => {},
+        conda_environment => {
+            store       => \$conda_environment,
             strict_type => 1,
-            store       => \$svdb_parameters_href
         },
         conda_prefix_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$conda_prefix_path,
             strict_type => 1,
-            store       => \$conda_prefix_path
         },
-        conda_environment => {
-            strict_type => 1,
-            store       => \$conda_environment
+        FILEHANDLE => {
+            defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
         },
         noupdate => {
+            store       => \$noupdate,
             strict_type => 1,
-            store       => \$noupdate
+        },
+        program_parameters_href => {
+            default     => {},
+            required    => 1,
+            store       => \$svdb_parameters_href,
+            strict_type => 1,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
+            store       => \$quiet,
             strict_type => 1,
-            store       => \$quiet
         },
         verbose => {
             allow       => [ undef, 0, 1 ],
+            store       => \$verbose,
             strict_type => 1,
-            store       => \$verbose
         },
-        FILEHANDLE => {
-            required => 1,
-            defined  => 1,
-            store    => \$FILEHANDLE
-        },
+
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -99,8 +100,7 @@ sub install_svdb {
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
     use MIP::Package_manager::Pip qw{ check_pip_package pip_install };
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Compression::Zip qw{ unzip };
@@ -125,20 +125,18 @@ sub install_svdb {
     ## Check if svdb has been installed via pip
     my $svdb_status = check_pip_package(
         {
-            package           => q{svdb},
-            version           => $svdb_version,
             conda_environment => $conda_environment,
             conda_prefix_path => $conda_prefix_path,
+            package           => q{svdb},
+            version           => $svdb_version,
         }
     );
 
     # Check if installation exists and is executable
     if ( -x catfile( $conda_prefix_path, qw{ bin SVDB } ) || $svdb_status ) {
-        $log->info(
-            q{SVDB is already installed in the specified conda environment.});
+        $log->info(q{SVDB is already installed in the specified conda environment.});
         if ($noupdate) {
-            say {$FILEHANDLE}
-              q{## SVDB is already installed, skippping reinstallation};
+            say {$FILEHANDLE} q{## SVDB is already installed, skippping reinstallation};
             say {$FILEHANDLE} $NEWLINE;
             return;
         }
@@ -151,14 +149,14 @@ sub install_svdb {
     ## Only activate conda environment if supplied by user
     if ($conda_environment) {
         ## Activate conda environment
-        say $FILEHANDLE q{## Activate conda environment};
-        conda_source_activate(
+        say {$FILEHANDLE} q{## Activate conda environment};
+        conda_activate(
             {
-                FILEHANDLE => $FILEHANDLE,
                 env_name   => $conda_environment,
+                FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     ## Move to miniconda environment
@@ -173,18 +171,15 @@ sub install_svdb {
 
     ## Download
     say {$FILEHANDLE} q{## Download SVDB};
-    my $url =
-        q{https://github.com/J35P312/SVDB/archive/SVDB-}
-      . $svdb_version
-      . $DOT . q{zip};
+    my $url = q{https://github.com/J35P312/SVDB/archive/} . $svdb_version . $DOT . q{zip};
     my $svdb_zip_path = catfile( q{SVDB-} . $svdb_version . $DOT . q{zip} );
     wget(
         {
-            url          => $url,
             FILEHANDLE   => $FILEHANDLE,
-            quiet        => $quiet,
-            verbose      => $verbose,
             outfile_path => $svdb_zip_path,
+            quiet        => $quiet,
+            url          => $url,
+            verbose      => $verbose,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -193,11 +188,11 @@ sub install_svdb {
     say {$FILEHANDLE} q{## Extract};
     unzip(
         {
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
             infile_path => $svdb_zip_path,
             quiet       => $quiet,
             verbose     => $verbose,
-            force       => 1,
-            FILEHANDLE  => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -206,7 +201,7 @@ sub install_svdb {
     say {$FILEHANDLE} q{## Move to SVDB directory};
     gnu_cd(
         {
-            directory_path => q{SVDB-SVDB-} . $svdb_version,
+            directory_path => q{SVDB-} . $svdb_version,
             FILEHANDLE     => $FILEHANDLE,
         }
     );
@@ -217,9 +212,10 @@ sub install_svdb {
     pip_install(
         {
             editable   => $DOT,
+            FILEHANDLE => $FILEHANDLE,
+	    python_module => 1,
             quiet      => $quiet,
             verbose    => $verbose,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -238,22 +234,22 @@ sub install_svdb {
     say {$FILEHANDLE} q{## Removing downloaded zip file};
     gnu_rm(
         {
-            infile_path => catfile( $conda_prefix_path, $svdb_zip_path ),
-            force       => 1,
             FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => catfile( $conda_prefix_path, $svdb_zip_path ),
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Deactivate conda environment if environment exists
     if ($conda_environment) {
-        say $FILEHANDLE q{## Deactivate conda environment};
-        conda_source_deactivate(
+        say {$FILEHANDLE} q{## Deactivate conda environment};
+        conda_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     print {$FILEHANDLE} $NEWLINE;

@@ -1,9 +1,10 @@
 package MIP::Recipes::Analysis::Sv_reformat;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -15,44 +16,41 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+# MIPs lib/
+use MIP::Constants qw{ $DOT $EMPTY_STR $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_sv_reformat };
+    our @EXPORT_OK = qw{ analysis_reformat_sv };
 
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $EMPTY_STR  => q{};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
+Readonly my $JAVA_MEMORY_ALLOCATION => 20;
 
-sub analysis_sv_reformat {
+sub analysis_reformat_sv {
 
-## Function : Concatenate and sort contig files. Optionally remove variants from genelist
-## Returns  : |$xargs_file_counter
+## Function : Concatenate and sort contig files. Optionally remove variants from genelist.
+## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $call_type               => Variant call type
-##          : $family_id               => Family id
+##          : $case_id                 => Family id
 ##          : $FILEHANDLE              => Sbatch filehandle to write to
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
-##          : $program_name            => Program name
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
 ##          : $reference_dir           => MIP reference directory
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
-##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
@@ -63,15 +61,13 @@ sub analysis_sv_reformat {
     my $job_id_href;
     my $sample_info_href;
     my $parameter_href;
-    my $program_name;
+    my $recipe_name;
 
     ## Default(s)
-    my $call_type;
-    my $family_id;
-    my $outaligner_dir;
+    my $case_id;
+    my $profile_base_command;
     my $reference_dir;
     my $temp_directory;
-    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
@@ -81,11 +77,9 @@ sub analysis_sv_reformat {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{SV}, store => \$call_type, strict_type => 1, },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            store       => \$family_id,
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
             strict_type => 1,
         },
         file_info_href => {
@@ -109,16 +103,6 @@ sub analysis_sv_reformat {
             store       => \$job_id_href,
             strict_type => 1,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            store       => \$outaligner_dir,
-            strict_type => 1,
-        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -126,10 +110,15 @@ sub analysis_sv_reformat {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        program_name => {
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
+        recipe_name => {
             defined     => 1,
             required    => 1,
-            store       => \$program_name,
+            store       => \$recipe_name,
             strict_type => 1,
         },
         reference_dir => {
@@ -149,469 +138,264 @@ sub analysis_sv_reformat {
             store       => \$temp_directory,
             strict_type => 1,
         },
-        xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
-            default     => 0,
-            store       => \$xargs_file_counter,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
-    use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Analysis qw{ get_vcf_parser_analysis_suffix };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-    use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
-    use MIP::QC::Record
-      qw{ add_most_complete_vcf add_program_metafile_to_sample_info };
+    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
+    use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
+    use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ## Constant
-    Readonly my $VCFPARSER_OUTFILE_COUNT =>
-      $active_parameter_href->{vcfparser_outfile_count} - 1;
+    ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    ## Set MIP program name
-    my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     ## Unpack parameters
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+    my %io = get_io_files(
         {
-            active_parameter_href => $active_parameter_href,
-            mip_program_name      => $mip_program_name,
+            id             => $case_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            stream         => q{in},
         }
     );
 
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my @infile_paths       = @{ $io{in}{file_paths} };
+
+    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
+    my $job_id_chain            = get_recipe_attributes(
+        {
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+        }
+    );
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
+
+    my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
+        {
+            vcfparser_outfile_count =>
+              $active_parameter_href->{sv_vcfparser_outfile_count},
+        }
+    );
+
+    ## Set and get the io files per chain, id and stream
+    my @set_outfile_name_prefixes =
+      map { $infile_name_prefix . $_ } @vcfparser_analysis_types;
+
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
+            {
+                chain_id         => $job_id_chain,
+                id               => $case_id,
+                file_info_href   => $file_info_href,
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref    => \@vcfparser_analysis_types,
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                recipe_name      => $recipe_name,
+            }
+        )
+    );
+
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my @outfile_paths       = @{ $io{out}{file_paths} };
+    my @outfile_suffixes    = @{ $io{out}{file_suffixes} };
+
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $FILEHANDLE = IO::Handle->new();
 
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $family_id,
+            core_number                     => $recipe_resource{core_number},
+            directory_id                    => $case_id,
             FILEHANDLE                      => $FILEHANDLE,
             job_id_href                     => $job_id_href,
-            process_time                    => $time,
-            program_directory               => catfile($outaligner_dir),
-            program_name                    => $program_name,
-            source_environment_commands_ref => [$source_environment_cmd],
+            log                             => $log,
+            memory_allocation               => $recipe_resource{memory},
+            process_time                    => $recipe_resource{time},
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
             temp_directory                  => $temp_directory,
         }
     );
 
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-    my $outfamily_file_directory =
-      catfile( $active_parameter_href->{outdata_dir}, $family_id );
+    ### SHELL:
 
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$family_id}{psv_rankvariant}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+    ## Sort vcf
+  INFILE:
+    while ( my ( $infile_index, $infile_path ) = each @infile_paths ) {
 
-    ## Files
-    my $infile_prefix  = $family_id . $infile_tag . $call_type;
-    my $outfile_prefix = $family_id . $outfile_tag . $call_type;
+        ## Prepare for downstream compression and logging
+        my $bcftools_suffix = $EMPTY_STR;
+        my $metafile_tag    = q{research};
+        if ( $infile_index == 1 ) {
 
-    ## Paths
-    my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix =
-      catfile( $temp_directory, $family_id . $outfile_tag . $call_type );
-    my $final_path_prefix = catfile( $outfamily_directory, $outfile_prefix );
-
-    ## Assign suffix
-    my $file_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            jobid_chain    => $job_id_chain,
-        }
-    );
-
-    my $vcfparser_analysis_type = $EMPTY_STR;
-
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = delete_contig_elements(
-        {
-            elements_ref       => \@{ $file_info_href->{contigs_sv} },
-            remove_contigs_ref => [qw{ MT M }],
-        }
-    );
-
-    my @contigs_size_ordered = delete_contig_elements(
-        {
-            elements_ref => \@{ $file_info_href->{contigs_sv_size_ordered} },
-            remove_contigs_ref => [qw{ MT M }],
-        }
-    );
-
-    ## Determined by vcfparser output
-    for my $vcfparser_outfile_counter ( 0 .. $VCFPARSER_OUTFILE_COUNT ) {
-
-        if ( $vcfparser_outfile_counter == 1 ) {
-
-            ## SelectFile variants
-            $vcfparser_analysis_type = $DOT . q{selected};
-
-            @contigs = delete_contig_elements(
-                {
-                    elements_ref =>
-                      \@{ $file_info_href->{select_file_contigs} },
-                    remove_contigs_ref => [qw{ Y MT M }],
-                }
-            );
-
-            ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs_size_ordered = delete_contig_elements(
-                {
-                    elements_ref =>
-                      \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [qw{ Y MT M }],
-                }
-            );
+            $bcftools_suffix = $DOT . q{selected};
+            $metafile_tag    = q{clinical};
         }
 
-        ## Transfer contig files
-        if (   $consensus_analysis_type eq q{wgs}
-            || $consensus_analysis_type eq q{mixed} )
-        {
+        ## Get parameters for sort
+        my $sequence_dict_file = catfile( $reference_dir,
+            $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} );
 
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            $xargs_file_counter = xargs_migrate_contig_files(
-                {
-                    contigs_ref => \@contigs_size_ordered,
-                    core_number => $core_number,
-                    FILEHANDLE  => $FILEHANDLE,
-                    file_ending => $vcfparser_analysis_type
-                      . $file_suffix
-                      . $ASTERIX,
-                    file_path         => $file_path,
-                    indirectory       => $infamily_directory,
-                    infile            => $infile_prefix,
-                    program_info_path => $program_info_path,
-                    temp_directory  => $active_parameter_href->{temp_directory},
-                    XARGSFILEHANDLE => $XARGSFILEHANDLE,
-                    xargs_file_counter => $xargs_file_counter,
-                }
-            );
-        }
-        else {
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => catfile(
-                        $infamily_directory,
-                        $infile_prefix
-                          . $vcfparser_analysis_type
-                          . $file_suffix
-                    ),
-                    outfile_path => $temp_directory,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
-        }
-
-        my $concatenate_ending = $EMPTY_STR;
-        if (   $consensus_analysis_type eq q{wgs}
-            || $consensus_analysis_type eq q{mixed} )
-        {
-
-            $concatenate_ending = $UNDERSCORE . q{cat};
-
-            ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
-            gatk_concatenate_variants(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    elements_ref          => \@contigs,
-                    FILEHANDLE            => $FILEHANDLE,
-                    infile_postfix => $vcfparser_analysis_type . $file_suffix,
-                    infile_prefix  => $file_path_prefix . $UNDERSCORE,
-                    outfile_path_prefix => $file_path_prefix
-                      . $vcfparser_analysis_type
-                      . $concatenate_ending,
-                    outfile_suffix => $file_suffix,
-                }
-            );
-        }
-
-        ## Writes sbatch code to supplied filehandle to sort variants in vcf format
-        sort_vcf(
+        ## Sort variants in vcf format
+        picardtools_sortvcf(
             {
-                active_parameter_href => $active_parameter_href,
-                FILEHANDLE            => $FILEHANDLE,
-                sequence_dict_file    => catfile(
-                    $reference_dir,
-                    $file_info_href->{human_genome_reference_name_prefix}
-                      . $DOT . q{dict}
-                ),
-                infile_paths_ref => [
-                        $file_path_prefix
-                      . $vcfparser_analysis_type
-                      . $concatenate_ending
-                      . $file_suffix
-                ],
-                outfile => $outfile_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix,
+                FILEHANDLE       => $FILEHANDLE,
+                infile_paths_ref => [$infile_path],
+                java_jar =>
+                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                outfile_path         => $outfile_paths[$infile_index],
+                referencefile_path   => $active_parameter_href->{human_genome_reference},
+                sequence_dictionary  => $sequence_dict_file,
+                temp_directory       => $active_parameter_href->{temp_directory},
             }
         );
-
-        print {$FILEHANDLE} $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
 
         ## Remove variants in hgnc_id list from vcf
         if ( $active_parameter_href->{sv_reformat_remove_genes_file} ) {
 
+            my $filter_metafile_tag = q{sv_reformat_remove_genes_file_research};
+
+            ## Update metafile_tag depending on select or research
+            if ( $infile_index == 1 ) {
+
+                $filter_metafile_tag = q{sv_reformat_remove_genes_file_clinical};
+            }
+
+            my $filter_file_path = catfile( $reference_dir,
+                $active_parameter_href->{sv_reformat_remove_genes_file} );
+            my $filter_outfile_path =
+                $outfile_path_prefix
+              . $UNDERSCORE
+              . q{filtered}
+              . $outfile_suffixes[$infile_index];
             ## Removes contig_names from contigs array if no male or other found
             gnu_grep(
                 {
                     FILEHANDLE       => $FILEHANDLE,
-                    filter_file_path => catfile(
-                        $reference_dir,
-                        $active_parameter_href->{sv_reformat_remove_genes_file}
-                    ),
-                    infile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix,
-                    invert_match => 1,
-                    outfile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $UNDERSCORE
-                      . q{filtered}
-                      . $file_suffix,
+                    filter_file_path => $filter_file_path,
+                    infile_path      => $outfile_paths[$infile_index],
+                    invert_match     => 1,
+                    stdoutfile_path  => $filter_outfile_path,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
 
-            ## Save filtered file
-            my $sv_reformat_remove_genes_path =
-                $final_path_prefix
-              . $vcfparser_analysis_type
-              . $UNDERSCORE
-              . q{filtered}
-              . $file_suffix;
-
-            if ( $vcfparser_outfile_counter == 1 ) {
+            if ( $recipe_mode == 1 ) {
 
                 ## Save filtered file
-                add_program_metafile_to_sample_info(
+                set_recipe_metafile_in_sample_info(
                     {
-                        program_name => $program_name,
-                        metafile_tag =>
-                          q{sv_reformat_remove_genes_file_clinical},
-                        path             => $sv_reformat_remove_genes_path,
+                        recipe_name      => $recipe_name,
+                        metafile_tag     => $filter_metafile_tag,
+                        path             => $filter_outfile_path,
                         sample_info_href => $sample_info_href,
                     }
                 );
             }
-            else {
-
-                ## Save filtered file
-                add_program_metafile_to_sample_info(
-                    {
-                        program_name => $program_name,
-                        metafile_tag =>
-                          q{sv_reformat_remove_genes_file_research},
-                        path             => $sv_reformat_remove_genes_path,
-                        sample_info_href => $sample_info_href,
-                    }
-                );
-            }
-
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $UNDERSCORE
-                      . q{filtered}
-                      . $file_suffix,
-                    outfile_path => $outfamily_directory,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
         }
 
-        if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
-
-            ## Compress or decompress original file or stream to outfile (if supplied)
-            htslib_bgzip(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix,
-                    stdoutfile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix
-                      . $DOT . q{gz},
-                    write_to_stdout => 1,
-                }
-            );
-            say {$FILEHANDLE} $NEWLINE;
-
-            ## Index file using tabix
-            htslib_tabix(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    force       => 1,
-                    infile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix
-                      . $DOT . q{gz},
-                    preset => substr $file_suffix,
-                    1,
-                }
-            );
-            say {$FILEHANDLE} $NEWLINE;
-        }
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
+        say {$FILEHANDLE} q{## Compress};
+        ## Reformat variant calling file and index
+        bcftools_view_and_index_vcf(
             {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $outfile_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix
-                  . $ASTERIX,
-                outfile_path => $outfamily_directory,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-        ## Adds the most complete vcf file to sample_info
-        add_most_complete_vcf(
-            {
-                active_parameter_href => $active_parameter_href,
-                path                  => $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix,
-                program_name     => $program_name,
-                sample_info_href => $sample_info_href,
-                vcf_file_key     => q{sv}
-                  . $UNDERSCORE
-                  . substr( $file_suffix, 1 )
-                  . $UNDERSCORE . q{file},
-                vcfparser_outfile_counter => $vcfparser_outfile_counter,
+                FILEHANDLE          => $FILEHANDLE,
+                infile_path         => $outfile_paths[$infile_index],
+                outfile_path_prefix => $outfile_path_prefix . $bcftools_suffix,
+                output_type         => q{z},
             }
         );
 
-        if ( $mip_program_mode == 1 ) {
+        if ( $recipe_mode == 1 ) {
 
-            if ( $vcfparser_outfile_counter == 1 ) {
-
-                # Save clinical candidate list path
-                my $clinical_candidate_path =
-                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
-                add_program_metafile_to_sample_info(
-                    {
-                        metafile_tag     => q{clinical},
-                        path             => $clinical_candidate_path,
-                        program_name     => $program_name,
-                        sample_info_href => $sample_info_href,
-                    }
-                );
-
-                if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
-
-                    my $sv_rankvariant_binary_file_path =
-                        $final_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix
-                      . $DOT . q{gz};
-                    add_most_complete_vcf(
-                        {
-                            active_parameter_href => $active_parameter_href,
-                            path         => $sv_rankvariant_binary_file_path,
-                            program_name => $program_name,
-                            sample_info_href => $sample_info_href,
-                            vcf_file_key     => q{sv_vcf_binary_file},
-                            vcfparser_outfile_counter =>
-                              $vcfparser_outfile_counter,
-                        }
-                    );
+            set_most_complete_vcf(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    path                  => $outfile_paths[$infile_index],
+                    recipe_name           => $recipe_name,
+                    sample_info_href      => $sample_info_href,
+                    vcf_file_key          => q{sv}
+                      . $UNDERSCORE
+                      . substr( $outfile_suffixes[0], 1 )
+                      . $UNDERSCORE . q{file},
+                    vcfparser_outfile_counter => $infile_index,
                 }
-            }
-            else {
-
-                # Save research candidate list path
-                my $research_candidate_path =
-                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
-                add_program_metafile_to_sample_info(
-                    {
-                        sample_info_href => $sample_info_href,
-                        program_name     => $program_name,
-                        metafile_tag     => q{research},
-                        path             => $research_candidate_path,
-                    }
-                );
-
-                if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
-
-                    my $sv_rankvariant_binary_file_path =
-                        $final_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix
-                      . $DOT . q{gz};
-                    add_most_complete_vcf(
-                        {
-                            active_parameter_href => $active_parameter_href,
-                            path         => $sv_rankvariant_binary_file_path,
-                            program_name => $program_name,
-                            sample_info_href => $sample_info_href,
-                            vcf_file_key     => q{sv_vcf_binary_file},
-                            vcfparser_outfile_counter =>
-                              $vcfparser_outfile_counter,
-                        }
-                    );
+            );
+            set_most_complete_vcf(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    path                  => $outfile_paths[$infile_index] . $DOT . q{gz},
+                    recipe_name           => $recipe_name,
+                    sample_info_href      => $sample_info_href,
+                    vcf_file_key          => q{sv}
+                      . $UNDERSCORE
+                      . substr( $outfile_suffixes[0], 1 )
+                      . $UNDERSCORE
+                      . q{binary_file},
+                    vcfparser_outfile_counter => $infile_index,
                 }
-            }
+            );
+
+            # Save clinical candidate list path
+            set_recipe_metafile_in_sample_info(
+                {
+                    metafile_tag     => $metafile_tag,
+                    path             => $outfile_paths[$infile_index] . $DOT . q{gz},
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                }
+            );
         }
     }
+    say {$FILEHANDLE} $NEWLINE;
+
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
-    if ( $mip_program_mode == 1 ) {
+    if ( $recipe_mode == 1 ) {
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        submit_recipe(
             {
-                family_id               => $family_id,
+                base_command            => $profile_base_command,
+                case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                path                    => $job_id_chain,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                sbatch_file_name => $file_path,
+                recipe_file_path        => $recipe_file_path,
+                sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile      => $active_parameter_href->{submission_profile},
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;

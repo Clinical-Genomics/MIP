@@ -1,5 +1,6 @@
 package MIP::Program::Qc::Rtg;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -23,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rtg_format rtg_vcfeval };
@@ -34,11 +35,11 @@ Readonly my $SPACE => q{ };
 
 sub rtg_format {
 
-## Function : Perl wrapper for rtg tools 3.8.4.
+## Function : Perl wrapper for rtg tools 3.9.1.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : $reference_genome_path  => Human reference genome file path
 ##          : $input_format           => Format of input
+##          : $reference_genome_path  => Human reference genome file path
 ##          : $sdf_output_directory   => Directory name of output SDF
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -49,21 +50,15 @@ sub rtg_format {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $reference_genome_path;
-    my $input_format;
     my $sdf_output_directory;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
     ## Default(s)
+    my $input_format;
 
     my $tmpl = {
-        reference_genome_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$reference_genome_path,
-            strict_type => 1,
-        },
         input_format => {
             allow       => [qw{ fasta fastq fastq-interleaved sam-se sam-pe }],
             default     => q{fasta},
@@ -72,6 +67,12 @@ sub rtg_format {
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
+        },
+        reference_genome_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_genome_path,
+            strict_type => 1,
         },
         sdf_output_directory => {
             defined     => 1,
@@ -96,7 +97,7 @@ sub rtg_format {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{rtg format};
+    my @commands = qw{ rtg format };
 
     push @commands, q{--format=} . $input_format;
 
@@ -115,8 +116,8 @@ sub rtg_format {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -126,24 +127,28 @@ sub rtg_format {
 
 sub rtg_vcfeval {
 
-## Function : Perl wrapper for rtg tools 3.8.4.
+## Function : Perl wrapper for rtg tools 3.9.1.
 ## Returns  : @commands
-## Arguments: $baselinefile_path      => VCF file containing baseline variants
+## Arguments: $all_record             => Use all records regardless of FILTER status
+##          : $bed_regionsfile_path   => If set, only read VCF records that overlap the ranges contained in the specified BED file
+##          : $baselinefile_path      => VCF file containing baseline variants
 ##          : $callfile_path          => VCF file containing called variants
 ##          : $eval_region_file_path  => Evaluate within regions contained in the supplied BED file, allowing transborder matches
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $outputdirectory_path   => Directory for output
 ##          : $output_mode            => Output reporting mode
 ##          : $sample_id              => Sample ID
+##          : $sdf_template_file_path => SDF (SDF=Rtg specif format) of the reference genome the variants are called against
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $sdf_template_file_path => SDF (SDF=Rtg specif format) of the reference genome the variants are called against
+##          : $thread_number          => Number of threads
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $baselinefile_path;
+    my $bed_regionsfile_path;
     my $callfile_path;
     my $eval_region_file_path;
     my $FILEHANDLE;
@@ -153,11 +158,23 @@ sub rtg_vcfeval {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $thread_number;
 
     ## Default(s)
+    my $all_record;
     my $output_mode;
 
     my $tmpl = {
+        all_record => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$all_record,
+            strict_type => 1,
+        },
+        bed_regionsfile_path => {
+            store       => \$bed_regionsfile_path,
+            strict_type => 1,
+        },
         baselinefile_path => {
             defined     => 1,
             required    => 1,
@@ -213,15 +230,33 @@ sub rtg_vcfeval {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        thread_number => {
+            store       => \$thread_number,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{rtg vcfeval};
+    my @commands = qw{ rtg vcfeval };
+
+    if ($all_record) {
+
+        push @commands, q{--all-records};
+    }
+
+    if ($thread_number) {
+
+        push @commands, q{--threads=} . $thread_number;
+    }
 
     push @commands, q{--baseline=} . $baselinefile_path;
 
+    if ($bed_regionsfile_path) {
+
+        push @commands, q{--bed-regions=} . $bed_regionsfile_path;
+    }
     push @commands, q{--calls=} . $callfile_path;
 
     push @commands, q{--evaluation-regions=} . $eval_region_file_path;
@@ -248,8 +283,8 @@ sub rtg_vcfeval {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }

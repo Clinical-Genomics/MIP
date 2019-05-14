@@ -5,7 +5,7 @@
 use Modern::Perl qw{2014};
 use warnings qw{FATAL utf8};
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.026;    #Require at least perl 5.18
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -93,12 +93,12 @@ diag(
 );
 
 ## Base arguments
-my $function_base_command = q{sambamba};
+my @function_base_commands = qw{ sambamba };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
 );
 
@@ -106,7 +106,7 @@ my %base_argument = (
 my %required_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     infile_path => {
         input           => q{infile.test},
@@ -160,10 +160,10 @@ foreach my $argument_href (@arguments) {
 
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
+            argument_href              => $argument_href,
+            required_argument_href     => \%required_argument,
+            module_function_cref       => $module_function_cref,
+            function_base_commands_ref => \@function_base_commands,
         }
     );
 }

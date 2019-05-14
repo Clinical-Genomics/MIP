@@ -1,4 +1,4 @@
-associated_program:
+associated_recipe:
   key_data_type: ARRAY
 data_type:
   key_data_type: SCALAR
@@ -11,5 +11,5 @@ type:
   values:
     - mip
     - path
-    - program
-    - program_argument
+    - recipe
+    - recipe_argument

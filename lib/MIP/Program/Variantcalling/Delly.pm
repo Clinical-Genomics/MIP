@@ -1,5 +1,6 @@
 package MIP::Program::Variantcalling::Delly;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -14,6 +15,7 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -22,23 +24,23 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ delly_call delly_filter delly_merge };
 }
 
-## Constants
-Readonly my $SPACE => q{ };
-
 sub delly_call {
 
-## Function : Perl wrapper for writing Delly call recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.6.
+## Function : Perl wrapper for writing Delly call recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.8.
 ## Returns  : @commands
 ## Arguments: $exclude_file_path      => File with regions to exclude
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $genotypefile_path      => Input VCF/BCF file for re-genotyping
 ##          : $infile_path            => Infile path
+##          : $mad_cutoff             => Insert size cutoff, median+s*MAD (deletions only)
+##          : $mapping_qual           => Minimum paired-end mapping quality
+##          : $small_indel            => Small indel calling
 ##          : $outfile_path           => Outfile path
 ##          : $referencefile_path     => Reference sequence file
 ##          : $stderrfile_path        => Stderrfile path
@@ -53,6 +55,9 @@ sub delly_call {
     my $FILEHANDLE;
     my $genotypefile_path;
     my $infile_path;
+    my $mad_cutoff;
+    my $mapping_qual;
+    my $small_indel;
     my $outfile_path;
     my $referencefile_path;
     my $stderrfile_path;
@@ -60,57 +65,84 @@ sub delly_call {
     my $stdoutfile_path;
     my $sv_type;
 
+    ## Constants
+    Readonly my $MIN_MAP_QUAL       => q{20};
+    Readonly my $INSERT_SIZE_CUTOFF => q{15};
+
     my $tmpl = {
-        exclude_file_path =>
-          { strict_type => 1, store => \$exclude_file_path, },
-        FILEHANDLE => {
+        exclude_file_path => { store => \$exclude_file_path, strict_type => 1, },
+        FILEHANDLE        => {
             store => \$FILEHANDLE,
         },
-        genotypefile_path =>
-          { strict_type => 1, store => \$genotypefile_path, },
-        infile_path => {
-            required    => 1,
+        genotypefile_path => { store => \$genotypefile_path, strict_type => 1, },
+        infile_path       => {
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infile_path,
-        },
-        outfile_path       => { strict_type => 1, store => \$outfile_path, },
-        referencefile_path => {
-            required    => 1,
-            defined     => 1,
             strict_type => 1,
+        },
+        mad_cutoff => {
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
+            default     => $INSERT_SIZE_CUTOFF,
+            store       => \$mad_cutoff,
+            strict_type => 1,
+        },
+        mapping_qual => {
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
+            default     => $MIN_MAP_QUAL,
+            store       => \$mapping_qual,
+            strict_type => 1,
+        },
+        small_indel => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$small_indel,
+            strict_type => 1,
+        },
+        outfile_path       => { store => \$outfile_path, strict_type => 1, },
+        referencefile_path => {
+            defined     => 1,
+            required    => 1,
             store       => \$referencefile_path,
+            strict_type => 1,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
         sv_type => {
-            required    => 1,
-            defined     => 1,
-            allow       => [qw{ DEL DUP INV INS TRA }],
-            strict_type => 1,
+            allow       => [qw{ DEL DUP INV INS BND }],
             store       => \$sv_type,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{delly call};
+    my @commands = qw{ delly call };
 
     ## Options
     if ($sv_type) {
 
         push @commands, q{--type} . $SPACE . $sv_type;
+    }
+
+    push @commands, q{--map-qual} . $SPACE . $mapping_qual;
+
+    push @commands, q{--mad-cutoff} . $SPACE . $mad_cutoff;
+
+    if ($small_indel) {
+
+        push @commands, q{--i};
     }
 
     if ($exclude_file_path) {
@@ -142,16 +174,16 @@ sub delly_call {
     push @commands,
       unix_standard_streams(
         {
+            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
-            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -161,7 +193,7 @@ sub delly_call {
 
 sub delly_merge {
 
-## Function : Perl wrapper for writing Delly merge recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.6.
+## Function : Perl wrapper for writing Delly merge recipe to $FILEHANDLE or return commands array. Based on Delly 0.7.8.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $infile_paths_ref       => Infile paths {REF}
@@ -198,12 +230,12 @@ sub delly_merge {
             store       => \$infile_paths_ref,
         },
         max_size => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
             strict_type => 1,
             store       => \$max_size,
         },
         min_size => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
             strict_type => 1,
             store       => \$min_size,
         },
@@ -221,9 +253,7 @@ sub delly_merge {
             store       => \$stdoutfile_path,
         },
         sv_type => {
-            required    => 1,
-            defined     => 1,
-            allow       => [qw{ DEL DUP INV INS TRA }],
+            allow       => [qw{ DEL DUP INV INS BND }],
             strict_type => 1,
             store       => \$sv_type,
         },
@@ -232,7 +262,7 @@ sub delly_merge {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{delly merge};
+    my @commands = qw{ delly merge };
 
     ## Options
     if ($sv_type) {
@@ -262,16 +292,16 @@ sub delly_merge {
     push @commands,
       unix_standard_streams(
         {
+            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
-            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -326,12 +356,12 @@ sub delly_filter {
             store       => \$infile_path,
         },
         max_size => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
             strict_type => 1,
             store       => \$max_size,
         },
         min_size => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr{ \A\d+\z }sxm ],
             strict_type => 1,
             store       => \$min_size,
         },
@@ -351,7 +381,7 @@ sub delly_filter {
         sv_type => {
             required    => 1,
             defined     => 1,
-            allow       => [qw{ DEL DUP INV INS TRA }],
+            allow       => [qw{ DEL DUP INV INS BND }],
             strict_type => 1,
             store       => \$sv_type,
         },
@@ -360,7 +390,7 @@ sub delly_filter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{delly filter};
+    my @commands = qw{ delly filter };
 
     ## Options
     if ($sv_type) {
@@ -395,16 +425,16 @@ sub delly_filter {
     push @commands,
       unix_standard_streams(
         {
+            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
-            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.018;
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -99,12 +99,12 @@ diag(   q{Test testsomatic.R from Vardict.pm}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{testsomatic.R};
+my @function_base_commands = qw{ testsomatic.R };
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
+        expected_output => \@function_base_commands,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -130,10 +130,10 @@ ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            do_test_base_command   => 1,
-            function_base_command  => $function_base_command,
-            module_function_cref   => $module_function_cref,
+            argument_href              => $argument_href,
+            do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
         }
     );
 }
