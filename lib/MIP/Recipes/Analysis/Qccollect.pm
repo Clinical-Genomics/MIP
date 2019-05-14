@@ -172,7 +172,6 @@ sub analysis_qccollect {
 
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_path        = $io{out}{file_path};
->>>>>>> release/v7.0.2
 
     ## Filehandles
     # Create anonymous filehandle
