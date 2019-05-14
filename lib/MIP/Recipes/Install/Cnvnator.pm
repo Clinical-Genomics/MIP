@@ -277,19 +277,6 @@ sub install_cnvnator {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Modify Makefile according to https://github.com/abyzovlab/CNVnator/issues/15#issuecomment-370376682
-    say {$FILEHANDLE} q{## Modify CNVnator makefile};
-    my $sed_script = q{'s/-std=c++11/-std=c++11 -lpthread/g'};
-    gnu_sed(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            script       => $sed_script,
-            infile_path  => q{Makefile},
-            inplace_edit => 1,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
     ## Get make command
     my @make_commands = gnu_make( {} );
     ## Add no parallel support argument to make command

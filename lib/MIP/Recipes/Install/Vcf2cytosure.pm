@@ -123,7 +123,6 @@ sub install_vcf2cytosure {
         }
     );
 
-    my $program_name = q{vcf2cytosure};
     ## Store original working directory
     my $pwd = cwd();
 
