@@ -213,6 +213,7 @@ recipe_memory:
     markduplicates: 10
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
+    plink: 10
     rhocall_ar: 2
     sambamba_depth: 10
     samtools_subsample_mt: 2
@@ -221,7 +222,7 @@ recipe_memory:
     sv_reformat: 24
     sv_varianteffectpredictor: 8
     tiddit: 8
-    vcf2cytosure_ar: 4
+    vcf2cytosure_ar: 6
     varianteffectpredictor: 4
   type: mip
 recipe_time:

@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.0.4]
+- Increased recipe memory for plink and vcf2cytosure
+
 ## [7.0.3]
 - Added removal of genomicsDB dir from potential previous analysis as it causes gatk genotyping to crash
 
