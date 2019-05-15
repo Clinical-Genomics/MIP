@@ -58,7 +58,7 @@ BEGIN {
 ## Constants
 ## Set MIP version
 ## Constants
-Readonly our $MIP_VERSION => q{v7.0.3};
+Readonly our $MIP_VERSION => q{v7.0.4};
 
 ## Log
 Readonly our $LOG => q{MIP_ANALYSE};
