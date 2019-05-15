@@ -2,7 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [7.0.0]
+## [7.0.3]
+- Added removal of genomicsDB dir from potential previous analysis as it causes gatk genotyping to crash
+
+## [7.0.2]
 - New framework structure with sub commands - for analysis, install and download
 - New pipelines: rd_dna (previous MIP), rd_dna_vcf_rerun (light rerun from rd_dna data) and rd_rna
 - Install now has sbatch features

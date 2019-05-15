@@ -8,6 +8,7 @@ use File::Basename qw{ basename };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
+use POSIX;
 use strict;
 use utf8;
 use warnings;

@@ -102,8 +102,13 @@ sub vcf2cytosure_convert {
             strict_type => 1,
         },
         outfile_path => {
-            strict_type => 1,
             store       => \$outfile_path,
+            strict_type => 1,
+        },
+        sex => {
+            allow       => [ undef, qw{ female male } ],
+            store       => \$sex,
+            strict_type => 1,
         },
         sex => {
             allow       => [ undef, qw{ female male } ],
@@ -184,6 +189,10 @@ sub vcf2cytosure_convert {
     if ($outfile_path) {
 
         push @commands, q{--out} . $SPACE . $outfile_path;
+    }
+
+    if ($sex) {
+        push @commands, q{--sex} . $SPACE . $sex;
     }
 
     # Coverage file

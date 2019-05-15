@@ -1,7 +1,7 @@
 # MIP - Mutation Identification Pipeline
 
-[![Build Status](https://travis-ci.org/Clinical-Genomics/MIP.svg?branch=develop)](https://travis-ci.org/Clinical-Genomics/MIP)
-[![Coverage Status](https://coveralls.io/repos/github/Clinical-Genomics/MIP/badge.svg?branch=develop)](https://coveralls.io/github/Clinical-Genomics/MIP?branch=develop)
+[![Build Status](https://travis-ci.org/Clinical-Genomics/MIP.svg?branch=master)](https://travis-ci.org/Clinical-Genomics/MIP)
+[![Coverage Status](https://coveralls.io/repos/github/Clinical-Genomics/MIP/badge.svg?branch=master)](https://coveralls.io/github/Clinical-Genomics/MIP?branch=master)
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/Clinical-Genomics/MIP/master/LICENSE)
 [![GitHub Releases](https://img.shields.io/github/release/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/releases)
 [![GitHub Issues](https://img.shields.io/github/issues/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/issues)

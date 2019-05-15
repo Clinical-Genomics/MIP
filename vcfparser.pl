@@ -1283,7 +1283,7 @@ sub parse_vep_csq {
             strict_type => 1,
         },
     };
-
+    
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Convert between hgnc_id and hgnc_symbol

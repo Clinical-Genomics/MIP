@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -138,7 +138,7 @@ sub analysis_gatk_genotypegvcfs {
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_cat gnu_echo };
+    use MIP::Gnu::Coreutils qw{ gnu_cat gnu_echo gnu_rm };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk
@@ -270,6 +270,22 @@ sub analysis_gatk_genotypegvcfs {
             }
         }
 
+        my $genomicsdb_file_path =
+          $outfile_path_prefix . $UNDERSCORE . q{DB} . $UNDERSCORE . $contig;
+
+        ## Remove potential GenomicsDB from previous analysis as this causes
+        ## GenomicsDBImport to crash
+        say {$FILEHANDLE} q{## Remove potential GenomicsDB from previous analysis};
+        gnu_rm(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                force       => 1,
+                infile_path => $genomicsdb_file_path,
+                recursive   => 1,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+
         ## GATK GenomicsDBImport
         say {$FILEHANDLE} q{## GATK GenomicsDBImport};
 
@@ -292,8 +308,7 @@ sub analysis_gatk_genotypegvcfs {
             );
 
         }
-        my $genomicsdb_file_path =
-          $outfile_path_prefix . $UNDERSCORE . q{DB} . $UNDERSCORE . $contig;
+
         gatk_genomicsdbimport(
             {
                 FILEHANDLE                => $FILEHANDLE,

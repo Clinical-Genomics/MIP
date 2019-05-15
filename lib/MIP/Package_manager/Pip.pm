@@ -133,6 +133,7 @@ sub pip_install {
     my $editable;
     my $FILEHANDLE;
     my $packages_ref;
+    my $no_cache_dir;
     my $python_module;
     my $quiet;
     my $requirement;
@@ -183,6 +184,12 @@ sub pip_install {
             allow => [ undef, 0, 1 ],
             store => \$verbose,
         },
+        no_cache_dir => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$no_cache_dir,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -198,6 +205,10 @@ sub pip_install {
 
     ## Push base command
     push @commands, qw{ pip install };
+
+    if ($no_cache_dir) {
+        push @commands, q{--no-cache-dir};
+    }
 
     if ($quiet) {
 
