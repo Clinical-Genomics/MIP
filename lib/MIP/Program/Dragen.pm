@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $EQUALS $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -36,6 +36,7 @@ sub dragen_build_hash_table {
 ## Function : Perl wrapper for a dragen builing a dragen hash table. Dragen version 3.3.5.
 ## Returns  : @commands
 ## Arguments: $build_hash_table           => Build hash table
+##          : $enable_cnv                 => Enable cnv hash table creation
 ##          : $FILEHANDLE                 => Filehandle to write to
 ##          : $ht_alt_liftover_file_path  => Path to lift over file
 ##          : $ht_decoys_file_path        => Path to decoys file
@@ -51,6 +52,7 @@ sub dragen_build_hash_table {
 
     ## Flatten argument(s)
     my $build_hash_table;
+    my $enable_cnv;
     my $FILEHANDLE;
     my $ht_alt_liftover_file_path;
     my $ht_decoys_file_path;
@@ -69,6 +71,12 @@ sub dragen_build_hash_table {
             allow       => [ undef, 0, 1 ],
             default     => 1,
             store       => \$build_hash_table,
+            strict_type => 1,
+        },
+		enable_cnv => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$enable_cnv,
             strict_type => 1,
         },
         FILEHANDLE => {
@@ -122,7 +130,7 @@ sub dragen_build_hash_table {
 
     return if ( not $build_hash_table );
 
-    push @commands, q{--build-hash-table} . $SPACE . q{true};
+    push @commands, q{--build-hash-table} . $EQUALS . q{true};
 
     push @commands, q{--ht-num-threads} . $SPACE . $thread_number;
 
@@ -138,6 +146,11 @@ sub dragen_build_hash_table {
     if ($ht_decoys_file_path) {
 
         push @commands, q{--ht-decoys} . $SPACE . $ht_decoys_file_path;
+    }
+
+    if($enable_cnv) {
+
+      push @commands, q{--enable-cnv} . $EQUALS . q{true};
     }
     push @commands, q{--output-directory} . $SPACE . $outdirectory_path;
 
