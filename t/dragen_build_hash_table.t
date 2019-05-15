@@ -106,7 +106,7 @@ my %specific_argument = (
         input           => 1,
         expected_output => q{--build-hash-table=true},
     },
-enable_cnv => {
+    enable_cnv => {
         input           => 1,
         expected_output => q{--enable-cnv=true},
     },

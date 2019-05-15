@@ -73,7 +73,7 @@ sub dragen_build_hash_table {
             store       => \$build_hash_table,
             strict_type => 1,
         },
-		enable_cnv => {
+        enable_cnv => {
             allow       => [ undef, 0, 1 ],
             default     => 1,
             store       => \$enable_cnv,
@@ -148,9 +148,9 @@ sub dragen_build_hash_table {
         push @commands, q{--ht-decoys} . $SPACE . $ht_decoys_file_path;
     }
 
-    if($enable_cnv) {
+    if ($enable_cnv) {
 
-      push @commands, q{--enable-cnv} . $EQUALS . q{true};
+        push @commands, q{--enable-cnv} . $EQUALS . q{true};
     }
     push @commands, q{--output-directory} . $SPACE . $outdirectory_path;
 
