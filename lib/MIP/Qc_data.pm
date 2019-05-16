@@ -225,7 +225,7 @@ sub add_qc_data_regexp_return {
 
         ## Return true if seperation of data was successful
         return 1
-          if ( defined $qc_href->{$recipe_name}{$regexp_key} );
+          if ( @{ $qc_href->{$recipe_name}{$regexp_key} } );
     }
     return;
 }
