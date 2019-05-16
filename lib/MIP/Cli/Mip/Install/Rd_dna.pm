@@ -3,7 +3,6 @@ package MIP::Cli::Mip::Install::Rd_dna;
 use 5.026;
 use Carp;
 use Cwd qw{ abs_path };
-use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use List::Util qw{ any };
@@ -28,7 +27,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions};
 
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -133,9 +132,7 @@ sub _build_usage {
             documentation => q{File with configuration parameters in YAML format},
             is            => q{rw},
             isa           => Str,
-            default       => catfile(
-                dirname($Bin), qw{ MIP definitions install_rd_dna_parameters.yaml }
-            ),
+            default => catfile( $Bin, qw{ definitions install_rd_dna_parameters.yaml } ),
         )
     );
 
