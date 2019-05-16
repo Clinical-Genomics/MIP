@@ -80,4 +80,20 @@ my %expected_qc_data = ( $recipe_name => { $regexp_key => [ qw{Got version}, ], 
 ## Then reg exp returned data should have been added to qc_data
 is_deeply( \%qc_data, \%expected_qc_data, q{Added regexp return from system call} );
 
+## Given a regexp when faulty return
+my $faulty_regexp = q{perl -nae 'if ($_ =~ /\bnot our\s\$VERSION\b/xms) {}'};
+
+my $return = add_qc_data_regexp_return(
+    {
+        data_file_path => $data_file_path,
+        qc_href        => \%qc_data,
+        recipe_name    => $recipe_name,
+        regexp         => $faulty_regexp,
+        regexp_key     => $regexp_key,
+    }
+);
+
+## Then
+is( $return, undef, q{Could not find a separator} );
+
 done_testing();

@@ -74,4 +74,17 @@ my $got_attribute = get_qcc_regexp_recipe_attribute(
 ## Then return attribute for recipe
 is( $got_attribute, q{a_version}, q{Got recipe attribute} );
 
+## Given a recipe when called without attribute
+my %attribute = get_qcc_regexp_recipe_attribute(
+    {
+        qcc_regexp_href => \%qcc_regexp_href,
+        recipe_name     => $recipe_name,
+    }
+);
+
+my %expected_attribute = ( version => q{a_version} );
+
+## Then return attribute hash for recipe
+is_deeply( \%attribute, \%expected_attribute, q{Got recipe attribute hash} );
+
 done_testing();
