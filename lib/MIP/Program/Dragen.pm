@@ -51,8 +51,6 @@ sub dragen_build_hash_table {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $build_hash_table;
-    my $enable_cnv;
     my $FILEHANDLE;
     my $ht_alt_liftover_file_path;
     my $ht_decoys_file_path;
@@ -62,9 +60,11 @@ sub dragen_build_hash_table {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
-    my $thread_number;
 
     ## Default(s)
+    my $build_hash_table;
+    my $enable_cnv;
+    my $thread_number;
 
     my $tmpl = {
         build_hash_table => {
