@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.0.5]
+- Updated stranger to version 0.5.4 to avoid repeat id warnings
+
+**Tools**
+- stranger: 0.5.1 -> 0.5.4
+
 ## [7.0.4]
 - Increased recipe memory for plink and vcf2cytosure
 
