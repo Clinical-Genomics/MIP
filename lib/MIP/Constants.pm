@@ -39,6 +39,7 @@ BEGIN {
       $DOT
       $DOUBLE_QUOTE
       $EMPTY_STR
+      $EQUALS
       $ESCAPE
       $FORWARD_SLASH
       $LOG
@@ -78,6 +79,7 @@ Readonly our $DOT            => q{.};
 Readonly our $DOUBLE_QUOTE   => q{"};
 Readonly our $EMPTY_STR      => q{};
 Readonly our $ESCAPE         => q{\\};
+Readonly our $EQUALS         => q{=};
 Readonly our $FORWARD_SLASH  => q{/};
 Readonly our $NEWLINE        => qq{\n};
 Readonly our $OPEN_BRACE     => q{\{};
