@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -439,7 +439,7 @@ sub analysis_expansionhunter {
             {
                 sample_info_href => $sample_info_href,
                 recipe_name      => q{expansionhunter},
-                path             => $outfile_path,
+                path             => $outfile_path . $DOT . q{gz},
             }
         );
 
