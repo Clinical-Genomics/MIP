@@ -63,7 +63,7 @@ sub build_execution_profile_using;      # imperative_verb adjective noun partici
 These naming rules particularly the two that put participles or prepositions at the ends of names create identifiers that read far more naturally, often eliminating the need for any additional comments.
 
 Recommended imperative verbs usage:
-```
+
 *add_*: Is use to add to an already existing variable, data container or part of a data container
 
 *get_*: Is used to fetch a scalar, array, hash or object from a data container  (e.g. array or hash)
@@ -71,4 +71,3 @@ Recommended imperative verbs usage:
 *parse_*: Is used to decode data containers using iteration and/or conditions and usually calls other subroutines internally.
 
 *set_*: Is used to replace a variable, data container (e.g. array or hash) or part of a data container
-```
