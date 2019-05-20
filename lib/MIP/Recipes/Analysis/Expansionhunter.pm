@@ -15,6 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use MIP::Constants qw{ $AMPERSAND $ASTERISK $DOT $NEWLINE $UNDERSCORE };
 use Readonly;
 
 BEGIN {
@@ -23,19 +24,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
 
 }
-
-## Constants
-Readonly my $ASTERISK   => q{*};
-Readonly my $AMPERSAND  => q{&};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub analysis_expansionhunter {
 
@@ -146,7 +140,7 @@ sub analysis_expansionhunter {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter
-      qw{ get_package_source_env_cmds get_recipe_attributes get_recipe_resources };
+      qw{ get_package_source_env_cmds get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
@@ -316,15 +310,28 @@ sub analysis_expansionhunter {
             }
         );
 
+        # Get parameter
+        my $sample_id_sex = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{sex},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## Special case for unknown sex
+        if ( $sample_id_sex eq q{unknown} ) {
+
+            $sample_id_sex = undef;
+        }
         my $sample_outfile_path_prefix = $outfile_path_prefix . $UNDERSCORE . $sample_id;
-        my $sample_sex                 = $sample_info_href->{sample}{$sample_id}{sex};
         expansionhunter(
             {
                 FILEHANDLE            => $FILEHANDLE,
                 infile_path           => $exphun_sample_file_info{$sample_id}{in},
                 outfile_path_prefix   => $sample_outfile_path_prefix,
                 reference_genome_path => $human_genome_reference,
-                sex                   => $sample_sex,
+                sex                   => $sample_id_sex,
                 stderrfile_path       => $outfile_path_prefix
                   . $UNDERSCORE
                   . $sample_id

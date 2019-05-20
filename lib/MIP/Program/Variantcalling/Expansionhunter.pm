@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ expansionhunter };
@@ -97,8 +97,7 @@ sub expansionhunter {
             strict_type => 1,
         },
         sex => {
-            allow       => [qw{ female male }],
-            defined     => 1,
+            allow       => [ undef, qw{ female male } ],
             store       => \$sex,
             strict_type => 1,
         },
