@@ -104,11 +104,11 @@ my %required_argument = (
 my %specific_argument = (
     build_hash_table => {
         input           => 1,
-        expected_output => q{--build-hash-table=true},
+        expected_output => q{--build-hash-table} . $SPACE . q{true},
     },
     enable_cnv => {
         input           => 1,
-        expected_output => q{--enable-cnv=true},
+        expected_output => q{--enable-cnv} . $SPACE . q{true},
     },
     ht_alt_liftover_file_path => {
         input           => catfile(qw{a reference_liftover_file.fasta}),
