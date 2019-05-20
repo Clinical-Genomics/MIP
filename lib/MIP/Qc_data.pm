@@ -30,6 +30,7 @@ BEGIN {
       add_qc_data_evaluation_info
       add_qc_data_recipe_info
       add_qc_data_regexp_return
+      add_to_qc_data
       get_qc_data_case_recipe_attributes
       get_qc_data_sample_recipe_attributes
       get_regexp_qc_data
@@ -226,6 +227,117 @@ sub add_qc_data_regexp_return {
         ## Return true if seperation of data was successful
         return 1
           if ( @{ $qc_href->{$recipe_name}{$regexp_key} } );
+    }
+    return;
+}
+
+sub add_to_qc_data {
+
+## Function  : Parse qc_recipe_data for data metric(s) and add metric(s) to qc_data hash to enable write to yaml format
+## Returns   :
+## Arguments : $attribute           => Attribute to collect for
+##           : $infile              => Infile to recipe
+##           : $qc_data_href        => Qc data hash {REF}
+##           : $qc_header_href      => Save header(s) in each outfile {REF}
+##           : $qc_recipe_data_href => Hash to save data in each outfile {REF}
+##           : $recipe              => Recipe to examine
+##           : $sample_id           => Sample ID
+##           : $sample_info_href    => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $infile;
+    my $qc_data_href;
+    my $qc_header_href;
+    my $qc_recipe_data_href;
+    my $recipe;
+    my $sample_id;
+    my $sample_info_href;
+
+    my $tmpl = {
+        attribute => {
+            defined     => 1,
+            required    => 1,
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        infile       => { store => \$infile, strict_type => 1, },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        qc_header_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_header_href,
+            strict_type => 1,
+        },
+        qc_recipe_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_recipe_data_href,
+            strict_type => 1,
+        },
+        recipe => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe,
+            strict_type => 1,
+        },
+        sample_id        => { store => \$sample_id, strict_type => 1, },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    use MIP::Qc_data qw{ add_qc_data_recipe_info set_qc_data_recipe_info };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Enable seperation of writing array or key-->value in qc_data
+    if ( scalar @{ $qc_recipe_data_href->{$recipe}{$attribute} } == 1 ) {
+
+        my $data_metric = $qc_recipe_data_href->{$recipe}{$attribute}[0];
+
+        set_qc_data_recipe_info(
+            {
+                key          => $attribute,
+                infile       => $infile,
+                qc_data_href => $qc_data_href,
+                recipe_name  => $recipe,
+                sample_id    => $sample_id,
+                value        => $data_metric,
+            }
+        );
+    }
+    elsif ( not exists $qc_header_href->{$recipe} ) {
+        ## Write array to qc_data for metrics without header
+
+      DATA_METRIC:
+        foreach my $data_metric ( @{ $qc_recipe_data_href->{$recipe}{$attribute} } ) {
+
+            add_qc_data_recipe_info(
+                {
+                    key          => $attribute,
+                    infile       => $infile,
+                    qc_data_href => $qc_data_href,
+                    recipe_name  => $recipe,
+                    sample_id    => $sample_id,
+                    value        => $data_metric,
+                }
+            );
+        }
     }
     return;
 }

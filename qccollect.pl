@@ -319,7 +319,7 @@ sub case_qc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Qccollect qw{ plink_gender_check };
+    use MIP::Qccollect qw{ plink_gender_check relation_check };
     use MIP::Qc_data qw{ set_qc_data_recipe_info };
     use MIP::Sample_info qw{ get_sample_info_case_recipe_attributes };
 
@@ -366,16 +366,15 @@ sub case_qc {
             }
         );
 
-        ## Add extracted information to qc_data
-        add_to_qc_data(
+        ## Parse qc_recipe_data and extract information to qc_data
+        parse_qc_recipe_data(
             {
-                evaluate_plink_gender => $evaluate_plink_gender,
-                qc_data_href          => $qc_data_href,
-                qc_header_href        => $qc_header_href,
-                qc_recipe_data_href   => $qc_recipe_data_href,
-                recipe                => $recipe,
-                regexp_href           => $regexp_href,
-                sample_info_href      => $sample_info_href,
+                qc_data_href        => $qc_data_href,
+                qc_header_href      => $qc_header_href,
+                qc_recipe_data_href => $qc_recipe_data_href,
+                recipe              => $recipe,
+                regexp_href         => $regexp_href,
+                sample_info_href    => $sample_info_href,
             }
         );
 
@@ -392,6 +391,22 @@ sub case_qc {
                 }
             );
         }
+    }
+
+    if (    defined $qc_data_href->{recipe}{relation_check}{sample_relation_check}
+        and defined $qc_data_href->{recipe}{pedigree_check}{sample_order} )
+    {
+
+        relation_check(
+            {
+                qc_data_href => $qc_data_href,
+                relationship_values_ref =>
+                  \@{ $qc_data_href->{recipe}{relation_check}{sample_relation_check} },
+                sample_info_href => $sample_info_href,
+                sample_orders_ref =>
+                  \@{ $qc_data_href->{recipe}{pedigree_check}{sample_order} },
+            }
+        );
     }
     return;
 }
@@ -501,8 +516,8 @@ sub sample_qc {
                     }
                 );
 
-                ## Add extracted information to qc_data
-                add_to_qc_data(
+                ## Parse qc_recipe_data and extract information to qc_data
+                parse_qc_recipe_data(
                     {
                         infile              => $infile,
                         qc_data_href        => $qc_data_href,
@@ -647,24 +662,22 @@ FUNCTION
     return;
 }
 
-sub add_to_qc_data {
+sub parse_qc_recipe_data {
 
-## Function  : Add to qc_data hash to enable write to yaml format
+## Function  : Parse qc_recipe_data and add to qc_data hash to enable write to yaml format
 ## Returns   :
-## Arguments : $evaluate_plink_gender => Evaluate plink gender
-##           : $infile                => Infile to recipe
-##           : $qc_data_href          => Qc data hash {REF}
-##           : $qc_header_href        => Save header(s) in each outfile {REF}
-##           : $qc_recipe_data_href   => Hash to save data in each outfile {REF}
-##           : $recipe                => Recipe to examine
-##           : $regexp_href           => RegExp hash {REF}
-##           : $sample_id             => SampleID
-##           : $sample_info_href      => Info on samples and case hash {REF}
+## Arguments : $infile              => Infile to recipe
+##           : $qc_data_href        => Qc data hash {REF}
+##           : $qc_header_href      => Save header(s) in each outfile {REF}
+##           : $qc_recipe_data_href => Hash to save data in each outfile {REF}
+##           : $recipe              => Recipe to examine
+##           : $regexp_href         => RegExp hash {REF}
+##           : $sample_id           => SampleID
+##           : $sample_info_href    => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $evaluate_plink_gender;
     my $infile;
     my $qc_data_href;
     my $qc_header_href;
@@ -675,11 +688,6 @@ sub add_to_qc_data {
     my $sample_info_href;
 
     my $tmpl = {
-        evaluate_plink_gender => {
-            allow       => [ undef, 0, 1 ],
-            store       => \$evaluate_plink_gender,
-            strict_type => 1,
-        },
         infile => { store => \$infile, strict_type => 1, },
         recipe => {
             defined     => 1,
@@ -727,8 +735,7 @@ sub add_to_qc_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Qccollect qw{ relation_check };
-    use MIP::Qc_data qw{ add_qc_data_recipe_info set_qc_data_recipe_info };
+    use MIP::Qc_data qw{ add_to_qc_data };
 
   REG_EXP_ATTRIBUTE:
     for my $attribute ( keys %{ $regexp_href->{$recipe} } ) {
@@ -736,60 +743,19 @@ sub add_to_qc_data {
         ## For info contained in entry --> Value i.e. same line without header
         if ( $attribute !~ /^header|header$/i ) {
 
-            ## Enable seperation of writing array or key-->value in qc_data
-            if ( scalar @{ $qc_recipe_data_href->{$recipe}{$attribute} } == 1 ) {
-
-                my $data_metric = $qc_recipe_data_href->{$recipe}{$attribute}[0];
-
-                set_qc_data_recipe_info(
-                    {
-                        key          => $attribute,
-                        infile       => $infile,
-                        qc_data_href => \%qc_data,
-                        recipe_name  => $recipe,
-                        sample_id    => $sample_id,
-                        value        => $data_metric,
-                    }
-                );
-            }
-            elsif ( not exists $qc_header_href->{$recipe} ) {
-                ## Write array to qc_data for metrics without header
-
-              DATA_METRIC:
-                foreach
-                  my $data_metric ( @{ $qc_recipe_data_href->{$recipe}{$attribute} } )
+            add_to_qc_data(
                 {
-
-                    add_qc_data_recipe_info(
-                        {
-                            key          => $attribute,
-                            infile       => $infile,
-                            qc_data_href => $qc_data_href,
-                            recipe_name  => $recipe,
-                            sample_id    => $sample_id,
-                            value        => $data_metric,
-                        }
-                    );
+                    attribute           => $attribute,
+                    infile              => $infile,
+                    qc_data_href        => $qc_data_href,
+                    qc_header_href      => $qc_header_href,
+                    qc_recipe_data_href => $qc_recipe_data_href,
+                    recipe              => $recipe,
+                    sample_id           => $sample_id,
+                    sample_info_href    => $sample_info_href,
                 }
-                if (
-                    defined $qc_data_href->{recipe}{relation_check}{sample_relation_check}
-                    and defined $qc_data_href->{recipe}{pedigree_check}{sample_order} )
-                {
+            );
 
-                    relation_check(
-                        {
-                            qc_data_href            => $qc_data_href,
-                            relationship_values_ref => \@{
-                                $qc_data_href->{recipe}{relation_check}
-                                  {sample_relation_check}
-                            },
-                            sample_info_href => $sample_info_href,
-                            sample_orders_ref =>
-                              \@{ $qc_data_href->{recipe}{pedigree_check}{sample_order} },
-                        }
-                    );
-                }
-            }
         }
         else {
             ## Paragraf data i.e. header and subsequent data lines - can be multiple per file
