@@ -21,8 +21,13 @@ reference:
     - phase3_v4_20130502
   1000g_snps:
     - phase1
+  cadd_bravo_topmed:
+    - v1.5
+  cadd_gnomad_genomes:
+    - v1.4
   cadd_whole_genome_snvs:
     - v1.4
+    - v1.5
   clinvar:
     - 20181028
     - 20190305
@@ -189,6 +194,22 @@ reference_feature:
         outfile_index: hg38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
         outfile_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+  cadd_bravo_topmed:
+    hg38:
+      v1.5:
+        file: ALL.TOPMed_freeze5_hg38_dbSNP.tsv.gz
+        file_index: ALL.TOPMed_freeze5_hg38_dbSNP.tsv.gz.tbi
+        outfile: hg38_cadd_bravo_topmed_freeze5_-v1.5-.tsv.gz
+        outfile_index: hg38_cadd_bravo_topmed_freeze5_-v1.5-.tsv.gz.tbi
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
+  cadd_gnomad_genomes:
+    grch37:
+      v1.4:
+        file: gnomad.genomes.r2.0.1.sites.tsv.gz
+        file_index: gnomad.genomes.r2.0.1.sites.tsv.gz.tbi
+        outfile: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz
+        outfile_index: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz.tbi
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
   cadd_whole_genome_snvs:
     grch37:
       v1.4:
@@ -197,6 +218,13 @@ reference_feature:
         outfile: grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz
         outfile_index: grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz.tbi
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+    hg38:
+      v1.5:
+        file: whole_genome_SNVs.tsv.gz
+        file_index: whole_genome_SNVs.tsv.gz.tbi
+        outfile: hg38_cadd_whole_genome_snvs_-v1.5-.tsv.gz
+        outfile_index: hg38_cadd_whole_genome_snvs_-v1.5-.tsv.gz.tbi
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
   clinvar:
     grch37:
       20181028:

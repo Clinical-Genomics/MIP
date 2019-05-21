@@ -43,6 +43,20 @@
   data_type: SCALAR
   default: 1
   type: recipe
+cadd_bravo_topmed:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+cadd_gnomad_genomes:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 cadd_whole_genome_snvs:
   analysis_mode: case
   associated_recipe:
@@ -144,6 +158,8 @@ recipe_core_number:
     1000g_omni: 1
     1000g_sites: 1
     1000g_snps: 1
+    cadd_bravo_topmed: 1
+    cadd_gnomad_genomes: 1
     cadd_whole_genome_snvs: 1
     clinvar: 1
     dbnsfp: 1
@@ -168,6 +184,8 @@ recipe_time:
     1000g_omni: 1
     1000g_sites: 1
     1000g_snps: 1
+    cadd_bravo_topmed: 5
+    cadd_gnomad_genomes: 5
     cadd_whole_genome_snvs: 15
     clinvar: 1
     dbnsfp: 15
