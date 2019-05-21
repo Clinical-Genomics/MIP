@@ -170,18 +170,17 @@ etiddit:
     numpy: 1.15.4=py27_blas_openblashb06ca3d_0
     openssl: 1.0.2p
     pip:
-    pysam: 0.15.2=py27h1671916_1
     python: 2.7
     scipy: 1.2.0=py27_blas_openblashb06ca3d_200
   pip:
   shell:
     tiddit:
       conda_dependency:
-        cmake:
+        cmake: 3.13.2=h011004d_0
         gcc:
-        numpy:
+        numpy: 1.15.4=py27_blas_openblashb06ca3d_0
         python: 2.7
-      version: 2.5.0
+      version: 2.7.1
     vcf2cytosure:
       version: 0.4.3
 
