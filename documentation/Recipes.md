@@ -3,11 +3,12 @@ Recipes are a list of ordered commands and subroutines that has a defined input 
 
 ## MIP currently has 4 recipe types:
 1. Install
-2. Build
-3. Analysis
-4. Pipeline - (Executes build and analysis recipes)
+2. Download
+3. Build
+4. Analysis
+5. Pipeline - (Executes build and analysis recipes)
 
-Recipes templates for `analysis` and `install` can be found [here](https://github.com/Clinical-Genomics/MIP/blob/develop/templates/code):
+Recipes templates for `install`, `download` and `analysis` can be found [here](https://github.com/Clinical-Genomics/MIP/blob/develop/templates/code):
 
 The recipe parameter is also know as the analysis recipe switch. It turns on and off the recipe module.
 
