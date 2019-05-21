@@ -83,10 +83,10 @@ human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 rank_model_file: rank_model_cmms_-v1.19-.ini
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
 snpsift_annotation_files:
-  grch37_clinvar_-2017-05-01-.vcf.gz: CLNSIG,CLNACC,CLNREVSTAT
+  grch37_clinvar_reformated_-20190305-.vcf.gz: CLNSIG,CLNACC,CLNREVSTAT
   grch37_exac_reheader_-r0.3.1-.vcf.gz: AF,AF_Adj
   grch37_anon-swegen_str_nsphs_-1000samples-.vcf.gz: AF,AC_Hom,AC_Het,AC_Hemi
-  grch37_loqusdb_-2016-09-26-.vcf.gz: Obs,Hom
+  grch37_loqusdb_snv_indel_-2018-12-18-.vcf.gz: Obs,Hom
   grch37_genbank_haplogroup_-2015-08-01-.vcf.gz: MTAF
 sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 sv_rank_model_file: svrank_model_cmms_-v1.1-.ini
