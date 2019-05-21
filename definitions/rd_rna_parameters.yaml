@@ -491,7 +491,7 @@ gatk_baserecalibration_known_sites:
   default:
     - grch37_1000g_indels_-phase1-.vcf
     - grch37_dbsnp_-138-.vcf
-    - grch37_mills_and_1000g_indels_-gold_standard-.vcf
+    - grch37_mills_and_1000g_-gold_standard_indels-.vcf
   exists_check: file
   reference: reference_dir
   type: path
