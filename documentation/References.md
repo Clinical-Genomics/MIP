@@ -1,6 +1,6 @@
 # References
 
-MIP can download many program prerequisites automatically via the mip download application ``mip download [PIPELINE]``. Each pipeline has a yaml file where available references are specified ([rd_dna](https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_download_rd_dna_config_-1.0-.yaml), [rd_rna]((https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_download_rd_rna_config_-1.0-.yaml)) and the API is described [here](https://github.com/Clinical-Genomics/MIP/blob/develop/documentation/API/Download_references.md).
+MIP can download many program prerequisites automatically via the mip download application ``mip download [PIPELINE]``. Each pipeline has a yaml file where available references are specified ([rd_dna](https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_download_rd_dna_config_-1.0-.yaml), [rd_rna]((https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_download_rd_rna_config_-1.0-.yaml)) and the API is described [here](https://github.com/Clinical-Genomics/MIP/blob/develop/documentation/API/download_references.md).
 
 To download the references using MIP, run:
 ```

@@ -33,5 +33,11 @@ To add a build recipe switch follow these steps:
  - Add the parameter at the corresponding CLI command level YAML file in the `definition` folder in the MIP directory. Set the keys `build_file` to `1`, `mandatory` to `no` and connect it to one or more recipes using key `associated_recipe`.
  - Add the parameter to the file_info hash in the corresponding CLI perl module in `lib/MIP/Cli` in MIPs lib directory (add input parameters used in the build recipe to the CLI if required).
  - If custom defaults are required like setting the human genome reference per default depending on the `human_genome_reference` option. Add the build parameter in `lib/MIP/MAIN/Analyse.pm` for the call to sub `set_custom_default_to_active_parameter`. Add the build parameter to the `set_to_active_parameter` hash in `MIP/Set/Parameter` for sub `set_custom_default_to_active_parameter` and add the `_set_human_genome` code reference.
- - Add the build_recipe coderef to the build_recipe hash in the corresponding pipeline in `MIP/Recipes/Build/[PIPELINE]` perl module.
+ - Add the build_recipe coderef to the build_recipe hash in the corresponding pipeline in `lib/MIP/Recipes/Build/[PIPELINE]` perl module.
  - Fill your build_recipe with content.
+
+To add a download recipe switch follow these steps:
+ - Add the reference and version tags to the reference hash in `template/mip_download_[Pipeline]_-[Version]-.yaml`. In the same file define what do download and how by adding the reference, genome_build, reference tags and then keys according to the [download API](https://github.com/Clinical-Genomics/MIP/blob/master/documentation/API/download_references.md).
+ - Add the same reference info to the test fixture `t/data/test_data/download_active_parameters.yaml` for your download_[recipe_tag].t script. 
+ - Add the download_recipe coderef to the `download_recipe` hash in the corresponding pipeline `lib/MIP/Recipes/Pipeline/[Pipeline]` perl module.
+ - Fill your download_recipe with content.
