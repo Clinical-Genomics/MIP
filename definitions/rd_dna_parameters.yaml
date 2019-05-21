@@ -477,7 +477,7 @@ gatk_baserecalibration_known_sites:
   default:
    - grch37_dbsnp_-138-.vcf
    - grch37_1000g_indels_-phase1-.vcf
-   - grch37_mills_and_1000g_indels_-gold_standard-.vcf
+   - grch37_mills_and_1000g_-gold_standard_indels-.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1309,7 +1309,7 @@ gatk_variantrecalibration_resource_indel:
   data_type: HASH
   default:
      grch37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
-     grch37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,known=false,training=true,truth=true,prior=12.0"
+     grch37_mills_and_1000g_-gold_standard_indels-.vcf: "mills,known=false,training=true,truth=true,prior=12.0"
   exists_check: file
   reference: reference_dir
   type: path
@@ -1545,7 +1545,7 @@ gatk_varianteval_gold:
    - gatk_variantevalall
    - gatk_variantevalexome
   data_type: SCALAR
-  default: grch37_mills_and_1000g_indels_-gold_standard-.vcf
+  default: grch37_mills_and_1000g_-gold_standard_indels-.vcf
   exists_check: file
   reference: reference_dir
   type: path
