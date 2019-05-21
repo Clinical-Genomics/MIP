@@ -41,7 +41,7 @@ shift $((OPTIND - 1))
 infiles=( "$@" )
 ## Otherwise, get infiles from git
 if [ ${#infiles[@]} -lt 1 ] ; then
-    infiles=$(git diff --name-only)
+    infiles=$(git status --short | perl -nae 'print $F[1] . q{ }')
 fi
 
 ## Get current dir

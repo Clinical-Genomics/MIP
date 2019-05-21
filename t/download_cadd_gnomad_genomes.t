@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Download::Human_reference} => [qw{ download_human_reference }],
+        q{MIP::Recipes::Download::Cadd_gnomad_genomes} =>
+          [qw{ download_cadd_gnomad_genomes }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
+use MIP::Recipes::Download::Cadd_gnomad_genomes qw{ download_cadd_gnomad_genomes };
 
-diag(   q{Test download_human_reference from Human_reference.pm v}
-      . $MIP::Recipes::Download::Human_reference::VERSION
+diag(   q{Test download_cadd_gnomad_genomes from Cadd_gnomad_genomes.pm v}
+      . $MIP::Recipes::Download::Cadd_gnomad_genomes::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,12 +62,12 @@ diag(   q{Test download_human_reference from Human_reference.pm v}
 
 my $test_dir  = File::Temp->newdir();
 my $file_path = catfile( $test_dir, q{recipe_script.sh} );
-my $log       = test_log( { log_name => q{MIP_DOWNLOAD}, no_screen => 1, } );
+my $log       = test_log( { log_name => uc q{mip_download}, no_screen => 1, } );
 
-## Given analysis parameters
+## Given download parameters for recipe
 my $genome_version    = q{grch37};
-my $recipe_name       = q{human_reference};
-my $reference_version = q{decoy_5};
+my $recipe_name       = q{cadd_gnomad_genomes};
+my $reference_version = q{v1.4};
 my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -76,21 +77,22 @@ my %active_parameter = test_mip_hashes(
 );
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{project_id}                       = q{test};
+$active_parameter{reference_dir}                    = catfile($test_dir);
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-$active_parameter{reference_dir}                    = catfile($test_dir);
 my $reference_href =
   $active_parameter{reference_feature}{$recipe_name}{$genome_version}{$reference_version};
 
 my %job_id;
 
-my $is_ok = download_human_reference(
+my $is_ok = download_cadd_gnomad_genomes(
     {
         active_parameter_href => \%active_parameter,
+        genome_version        => $genome_version,
         job_id_href           => \%job_id,
         profile_base_command  => $slurm_mock_cmd,
-        reference_href        => $reference_href,
         recipe_name           => $recipe_name,
+        reference_href        => $reference_href,
         reference_version     => $reference_version,
         temp_directory        => catfile($test_dir),
     }
