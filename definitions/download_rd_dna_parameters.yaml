@@ -98,6 +98,13 @@ expansionhunter:
   data_type: SCALAR
   default: 1
   type: recipe
+genbank_haplogroup:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 genomic_superdups:
   analysis_mode: case
   associated_recipe:
@@ -147,6 +154,13 @@ gatk_mitochondrial_ref:
   data_type: SCALAR
   default: 1
   type: recipe
+rank_model:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 recipe_core_number:
   associated_recipe:
    - mip
@@ -165,6 +179,7 @@ recipe_core_number:
     dbnsfp: 1
     dbsnp: 1
     expansionhunter: 1
+    genbank_haplogroup: 1
     genomic_superdups: 1
     giab: 1
     gnomad: 1
@@ -172,6 +187,8 @@ recipe_core_number:
     hapmap: 1
     mills_and_1000g_indels: 1
     gatk_mitochondrial_ref: 1
+    rank_model: 1
+    svrank_model: 1
   type: mip
 recipe_time:
   associated_recipe:
@@ -191,6 +208,7 @@ recipe_time:
     dbnsfp: 15
     dbsnp: 1
     expansionhunter: 1
+    genbank_haplogroup: 1
     genomic_superdups: 1
     giab: 1
     gnomad: 1
@@ -198,9 +216,18 @@ recipe_time:
     human_reference: 1
     mills_and_1000g_indels: 1
     gatk_mitochondrial_ref: 1
+    rank_model: 1
+    svrank_model: 1
   type: mip
 reference_feature:
   associated_recipe:
    - mip
   data_type: HASH
   type: mip
+svrank_model:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
