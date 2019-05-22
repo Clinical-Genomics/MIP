@@ -42,6 +42,9 @@ reference:
     - '138'
     - gold_standard_dbsnp
     - '146'
+  delly_exclude:
+    - 20150227
+    - 20150915
   expansionhunter:
     - 3.0.0
   gatk_mitochondrial_ref:
@@ -318,6 +321,17 @@ reference_feature:
         outfile_decompress: gzip
         outfile_index: hg38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
+  delly_exclude:
+    grch37:
+      20150227: #latest commit for file on master branch
+        file: human.hg19.excl.tsv
+        outfile: hg19_human_excl_-20150227-.tsv
+        url_prefix: https://raw.githubusercontent.com/dellytools/delly/master/excludeTemplates/
+    hg38:
+      20150915: #latest commit for file on master branch
+        file: human.hg38.excl.tsv
+        outfile: hg38_human_excl_-20150915-.tsv
+        url_prefix: https://raw.githubusercontent.com/dellytools/delly/master/excludeTemplates/
   expansionhunter:
     grch37:
       3.0.0:
