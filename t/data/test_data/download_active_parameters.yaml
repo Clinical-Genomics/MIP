@@ -65,6 +65,8 @@ reference:
     - v0_m_shifted_fasta
     - v0_m_shifted_pac
     - v0_m_shifted_sa
+  genbank_haplogroup:
+    - 20150801
   genomic_superdups:
     - '20181009'
   giab:
@@ -87,6 +89,10 @@ reference:
     - gold_standard_indels
   gencode_annotation:
     - v29 
+  rank_model:
+    - v1.25
+  svrank_model:
+    - v1.8
 reference_feature:
   1000g_all_sv:
     grch37:
@@ -415,6 +421,15 @@ reference_feature:
         file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.sa
         outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.sa
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+  genbank_haplogroup:
+    grch37:
+      20150801:
+        file: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
+        file_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
+        outfile: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
+        outfile_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/frequency/ 
   genomic_superdups:
     grch37:
       '20181009':
@@ -550,6 +565,24 @@ reference_feature:
         outfile: grch37_gencode_annotation_-v29-.gtf.gz
         outfile_decompress: gzip
         url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/
+  rank_model:
+    grch37:
+      v1.25:
+        file: rank_model_-v1.25-.ini
+        file_check: rank_model_-v1.25-.ini.md5
+        outfile: rank_model_cmms_-v1.25-.ini
+        outfile_check: rank_model_cmms_-v1.25-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/ 
+  svrank_model:
+    grch37:
+      v1.8:
+        file: svrank_model_-v1.8-.ini
+        file_check: svrank_model_-v1.8-.ini.md5
+        outfile: svrank_model_cmms_-v1.8-.ini
+        outfile_check: svrank_model_cmms_-v1.8-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
 reference_genome_versions:
   - grch37
   - hg38
