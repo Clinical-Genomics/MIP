@@ -74,7 +74,6 @@ recipe_memory:
     # Per process 
     cadd_ar: 3
     endvariantannotationblock: 8
-    plink: 10
     rhocall_ar: 2
     snpeff: 8
     sv_reformat: 24
