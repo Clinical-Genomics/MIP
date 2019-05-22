@@ -2,11 +2,15 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [7.0.8]
+## [7.1.0]
 - Updated TIDDIT to enable faster processing
 
 **Tools**
 - TIDDIT: 2.5.0 -> 2.7.1
+
+## [7.0.8]
+
+- Increased memory allocation for vep (snv/indel) again
 
 ## [7.0.7]
 - Increased memory allocation for vep (snv/indel)

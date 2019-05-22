@@ -223,7 +223,7 @@ recipe_memory:
     sv_varianteffectpredictor: 8
     tiddit: 8
     vcf2cytosure_ar: 6
-    varianteffectpredictor: 6
+    varianteffectpredictor: 7
   type: mip
 recipe_time:
   associated_recipe:
