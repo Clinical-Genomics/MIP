@@ -8,8 +8,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **Tools**
 - TIDDIT: 2.5.0 -> 2.7.1
 
-## [7.0.8]
+## [7.0.9]
+- Removed plink memory allocation from rd_dna_vcf_rerun
 
+## [7.0.8]
 - Increased memory allocation for vep (snv/indel) again
 
 ## [7.0.7]
