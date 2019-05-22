@@ -735,7 +735,7 @@ sub parse_qc_recipe_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Qc_data qw{ add_to_qc_data };
+    use MIP::Qc_data qw{ add_to_qc_data set_header_metrics_to_qc_data };
 
   REG_EXP_ATTRIBUTE:
     for my $attribute ( keys %{ $regexp_href->{$recipe} } ) {
@@ -758,7 +758,8 @@ sub parse_qc_recipe_data {
 
         }
         else {
-            ## Paragraf data i.e. header and subsequent data lines - can be multiple per file
+            ## Table data i.e. header and subsequent data line(s).
+            ## Can be multiple tables per file
 
           PARAGRAPH_HEADER_KEY:
             for my $regexp_header_key ( keys %{ $qc_header_href->{$recipe} } ) {
@@ -766,7 +767,7 @@ sub parse_qc_recipe_data {
               PARAGRAPH_KEY:
                 for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
 
-                    ## Detect if the regexp id for headers and not data.
+                    ## Detect if the regexp id is for data and not header
                     if ( $regexp_key !~ /^header|header$/i ) {
 
                         ## For all collected headers for this paragraph
@@ -780,19 +781,19 @@ sub parse_qc_recipe_data {
                               $qc_recipe_data_href->{$recipe}{$regexp_key}
                               [$qc_header_index];
 
-                            if ( $sample_id and $infile ) {
-
-                                ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
-                                $qc_data_href->{sample}{$sample_id}{$infile}
-                                  {$recipe}{$regexp_header_key}{$regexp_key}{$qc_header}
-                                  = $data_metric;
-                            }
-                            else {
-
-                                ## Add to qc_data using header element[X] --> data[X] to correctly position elements in qc_data hash
-                                $qc_data_href->{$recipe}{$regexp_header_key}{$regexp_key}
-                                  {$qc_header} = $data_metric;
-                            }
+                            ## Set table metric data to qc_data hash
+                            set_header_metrics_to_qc_data(
+                                {
+                                    infile            => $infile,
+                                    key               => $qc_header,
+                                    qc_data_href      => $qc_data_href,
+                                    regexp_header_key => $regexp_header_key,
+                                    regexp_key        => $regexp_key,
+                                    recipe_name       => $recipe,
+                                    sample_id         => $sample_id,
+                                    value             => $data_metric,
+                                }
+                            );
                         }
                     }
                 }
