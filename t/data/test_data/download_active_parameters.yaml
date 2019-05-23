@@ -26,6 +26,8 @@ reference:
     - v1.5
   cadd_gnomad_genomes:
     - v1.4
+  cadd_to_vcf_header:
+    - 1.0
   cadd_whole_genome_snvs:
     - v1.4
   clinvar:
@@ -65,6 +67,8 @@ reference:
     - v0_m_shifted_fasta
     - v0_m_shifted_pac
     - v0_m_shifted_sa
+  gencode_annotation:
+    - v29
   genomic_superdups:
     - '20181009'
   giab:
@@ -85,8 +89,10 @@ reference:
     - decoy_hla
   mills_and_1000g_indels:
     - gold_standard_indels
-  gencode_annotation:
-    - v29 
+  reduced_penetrance:
+    - 2017
+  scout_exons:
+    - 201701 
 reference_feature:
   1000g_all_sv:
     grch37:
@@ -197,6 +203,15 @@ reference_feature:
         outfile: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz
         outfile_index: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz.tbi
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+  cadd_to_vcf_header:
+    grch37:
+      1.0:
+        file: grch37_cadd_to_vcf_header_-1.0-.txt
+        file_check: grch37_cadd_to_vcf_header_-1.0-.txt.md5
+        outfile: grch37_cadd_to_vcf_header_-1.0-.txt
+        outfile_check: grch37_cadd_to_vcf_header_-1.0-.txt.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
   cadd_whole_genome_snvs:
     grch37:
       v1.4:
@@ -415,6 +430,13 @@ reference_feature:
         file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.sa
         outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.sa
         url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+  gencode_annotation:
+    grch37:
+      v29:
+        file: gencode.v29lift37.annotation.gtf.gz
+        outfile: grch37_gencode_annotation_-v29-.gtf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/
   genomic_superdups:
     grch37:
       '20181009':
@@ -543,13 +565,22 @@ reference_feature:
         outfile_decompress: gzip
         outfile_index: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
-  gencode_annotation:
+  reduced_penetrance:
     grch37:
-      v29:
-        file: gencode.v29lift37.annotation.gtf.gz
-        outfile: grch37_gencode_annotation_-v29-.gtf.gz
-        outfile_decompress: gzip
-        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/
+      2017:
+        file: grch37_cust003-cmms-red-pen_-2017-.tsv
+        file_check: grch37_cust003-cmms-red-pen_-2017-.tsv.md5
+        outfile: grch37_cust003-cmms-red-pen_-2017-.tsv
+        outfile_check: grch37_cust003-cmms-red-pen_-2017-.tsv.md5
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/gene_panel/
+  scout_exons:
+    grch37:
+      201701:
+        file: grch37_scout_exons_-2017-01-.bed
+        file_check: grch37_scout_exons_-2017-01-.bed.md5
+        outfile: grch37_scout_exons_-2017-01-.bed
+        outfile_check: grch37_scout_exons_-2017-01-.bed.md5
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/gene_panel/
 reference_genome_versions:
   - grch37
   - hg38
