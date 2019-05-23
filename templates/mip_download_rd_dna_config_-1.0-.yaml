@@ -1,8 +1,7 @@
 bash_set_errexit: 1
 bash_set_pipefail: 1
 load_env:
-   D_mip7.0_190322_hs: 
-#  MIP_rd_dna:
+   MIP_rd_dna:
     method: conda
     mip:
 project_id: development
@@ -26,6 +25,8 @@ reference:
     - v1.5
   cadd_gnomad_genomes:
     - v1.4
+  cadd_to_vcf_header:
+    - 1.0
   cadd_whole_genome_snvs:
     - v1.4
     - v1.5
@@ -89,6 +90,10 @@ reference:
     - gold_standard_indels
   rank_model:
     - v1.25
+  reduced_penetrance:
+    - 2017
+  scout_exons:
+    - 201701
   svrank_model:
     - v1.8
 reference_feature:
@@ -220,6 +225,15 @@ reference_feature:
         outfile: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz
         outfile_index: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz.tbi
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+  cadd_to_vcf_header:
+    grch37:
+      1.0:
+        file: grch37_cadd_to_vcf_header_-1.0-.txt
+        file_check: grch37_cadd_to_vcf_header_-1.0-.txt.md5
+        outfile: grch37_cadd_to_vcf_header_-1.0-.txt
+        outfile_check: grch37_cadd_to_vcf_header_-1.0-.txt.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
   cadd_whole_genome_snvs:
     grch37:
       v1.4:
@@ -562,6 +576,22 @@ reference_feature:
         outfile_check: rank_model_cmms_-v1.25-.ini.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
+  reduced_penetrance:
+    grch37:
+      2017:
+        file: grch37_cust003-cmms-red-pen_-2017-.tsv
+        file_check: grch37_cust003-cmms-red-pen_-2017-.tsv.md5
+        outfile: grch37_cust003-cmms-red-pen_-2017-.tsv
+        outfile_check: grch37_cust003-cmms-red-pen_-2017-.tsv.md5
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/gene_panel/
+  scout_exons:
+    grch37:
+      201701:
+        file: grch37_scout_exons_-2017-01-.bed
+        file_check: grch37_scout_exons_-2017-01-.bed.md5
+        outfile: grch37_scout_exons_-2017-01-.bed
+        outfile_check: grch37_scout_exons_-2017-01-.bed.md5
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/gene_panel/
   svrank_model:
     grch37:
       v1.8:

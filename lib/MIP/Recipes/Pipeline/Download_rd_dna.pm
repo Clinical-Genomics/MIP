@@ -87,6 +87,7 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::1000g_snps qw{ download_1000g_snps };
     use MIP::Recipes::Download::Cadd_bravo_topmed qw{ download_cadd_bravo_topmed };
     use MIP::Recipes::Download::Cadd_gnomad_genomes qw{ download_cadd_gnomad_genomes };
+    use MIP::Recipes::Download::Cadd_to_vcf_header qw{ download_cadd_to_vcf_header };
     use MIP::Recipes::Download::Cadd_whole_genome_snvs
       qw{ download_cadd_whole_genome_snvs };
     use MIP::Recipes::Download::Clinvar qw{ download_clinvar };
@@ -106,6 +107,8 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Mills_and_1000g_indels
       qw{ download_mills_and_1000g_indels };
     use MIP::Recipes::Download::Rank_model qw{ download_rank_model };
+    use MIP::Recipes::Download::Reduced_penetrance qw{ download_reduced_penetrance };
+    use MIP::Recipes::Download::Scout_exons qw{ download_scout_exons };
     use MIP::Recipes::Download::Svrank_model qw{ download_svrank_model };
 
     ## Retrieve logger object now that log_file has been set
@@ -122,6 +125,7 @@ sub pipeline_download_rd_dna {
         q{1000g_snps}          => \&download_1000g_snps,
         cadd_bravo_topmed      => \&download_cadd_bravo_topmed,
         cadd_gnomad_genomes    => \&download_cadd_gnomad_genomes,
+        cadd_to_vcf_header     => \&download_cadd_to_vcf_header,
         cadd_whole_genome_snvs => \&download_cadd_whole_genome_snvs,
         clinvar                => \&download_clinvar,
         dbnsfp                 => \&download_dbnsfp,
@@ -137,6 +141,8 @@ sub pipeline_download_rd_dna {
         human_reference        => \&download_human_reference,
         mills_and_1000g_indels => \&download_mills_and_1000g_indels,
         rank_model             => \&download_rank_model,
+        reduced_penetrance     => \&download_reduced_penetrance,
+        scout_exons            => \&download_scout_exons,
         svrank_model           => \&download_svrank_model,
     );
 
