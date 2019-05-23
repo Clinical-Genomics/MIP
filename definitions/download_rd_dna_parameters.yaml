@@ -57,6 +57,13 @@ cadd_gnomad_genomes:
   data_type: SCALAR
   default: 1
   type: recipe
+cadd_to_vcf_header:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 cadd_whole_genome_snvs:
   analysis_mode: case
   associated_recipe:
@@ -160,6 +167,7 @@ recipe_core_number:
     1000g_snps: 1
     cadd_bravo_topmed: 1
     cadd_gnomad_genomes: 1
+    cadd_to_vcf_header: 1
     cadd_whole_genome_snvs: 1
     clinvar: 1
     dbnsfp: 1
@@ -172,6 +180,8 @@ recipe_core_number:
     hapmap: 1
     mills_and_1000g_indels: 1
     gatk_mitochondrial_ref: 1
+    reduced_penetrance: 1
+    scout_exons: 1
   type: mip
 recipe_time:
   associated_recipe:
@@ -186,6 +196,7 @@ recipe_time:
     1000g_snps: 1
     cadd_bravo_topmed: 5
     cadd_gnomad_genomes: 5
+    cadd_to_vcf_header: 1
     cadd_whole_genome_snvs: 15
     clinvar: 1
     dbnsfp: 15
@@ -198,9 +209,25 @@ recipe_time:
     human_reference: 1
     mills_and_1000g_indels: 1
     gatk_mitochondrial_ref: 1
+    reduced_penetrance: 1
+    scout_exons: 1
   type: mip
+reduced_penetrance:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 reference_feature:
   associated_recipe:
    - mip
   data_type: HASH
   type: mip
+scout_exons:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
