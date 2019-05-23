@@ -471,10 +471,7 @@ sub parse_toml_config_parameters {
     use MIP::Check::Path qw{ check_vcfanno_toml };
 
     ## Check that the supplied vcfanno toml config has mandatory keys and file exists for annotation array
-    my %toml_config_parameter = (
-        frequency_filter => q{fqf_vcfanno_config},
-        sv_vcfanno       => q{sv_vcfanno_config},
-    );
+    my %toml_config_parameter = ( frequency_filter => q{fqf_vcfanno_config}, );
   CONFIG_FILE:
     while ( my ( $recipe_name, $parameter_name ) = each %toml_config_parameter ) {
 

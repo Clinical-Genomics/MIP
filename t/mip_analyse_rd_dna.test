@@ -95,11 +95,6 @@ my $cmds_ref = [
     $conda_path,
     q{--ccp},
     $cluster_constant_path,
-    q{--sv_vcfanno_config},
-    catfile(
-        $cluster_constant_path,
-        qw{ references grch37_all_sv_-phase3_v2.2013-05-02-.vcf.gz }
-    ),
     q{--ifd},
     catfile(
         $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A1 fastq=ADM1059A1 }
