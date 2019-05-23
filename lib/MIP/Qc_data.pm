@@ -565,8 +565,6 @@ sub set_header_metrics_to_qc_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return if ( not defined $value );
-
     ## Set recipe key value pair for paragraph header data on sample, infile
     ## and recipe level
     if ( $sample_id and $infile ) {

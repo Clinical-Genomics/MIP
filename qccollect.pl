@@ -768,12 +768,12 @@ sub parse_qc_recipe_data {
                 for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
 
                     ## Detect if the regexp id is for data and not header
-                    if ( $regexp_key !~ /^header|header$/i ) {
+                    next PARAGRAPH_KEY if ( $regexp_key =~ /^header|header$/isxm );
 
                         ## For all collected headers for this paragraph
                       HEADER_VALUE:
                         while ( my ( $qc_header_index, $qc_header ) =
-                            each( @{ $qc_header_href->{$recipe}{$regexp_header_key} } ) )
+                            each @{ $qc_header_href->{$recipe}{$regexp_header_key} } )
                         {
 
                             ## Data metric
@@ -795,7 +795,6 @@ sub parse_qc_recipe_data {
                                 }
                             );
                         }
-                    }
                 }
             }
         }
