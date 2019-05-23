@@ -44,6 +44,9 @@ reference:
     - '138'
     - gold_standard_dbsnp
     - '146'
+  delly_exclude:
+    - 20150227
+    - 20150915
   expansionhunter:
     - 3.0.0
   gatk_mitochondrial_ref:
@@ -67,6 +70,8 @@ reference:
     - v0_m_shifted_fasta
     - v0_m_shifted_pac
     - v0_m_shifted_sa
+  genbank_haplogroup:
+    - 20150801
   gencode_annotation:
     - v29
   genomic_superdups:
@@ -89,10 +94,14 @@ reference:
     - decoy_hla
   mills_and_1000g_indels:
     - gold_standard_indels
+  rank_model:
+    - v1.25
   reduced_penetrance:
     - 2017
   scout_exons:
     - 201701 
+  svrank_model:
+    - v1.8
 reference_feature:
   1000g_all_sv:
     grch37:
@@ -333,6 +342,17 @@ reference_feature:
         outfile_decompress: gzip
         outfile_index: hg38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
+  delly_exclude:
+    grch37:
+      20150227: #latest commit for file on master branch
+        file: human.hg19.excl.tsv
+        outfile: hg19_human_excl_-20150227-.tsv
+        url_prefix: https://raw.githubusercontent.com/dellytools/delly/master/excludeTemplates/
+    hg38:
+      20150915: #latest commit for file on master branch
+        file: human.hg38.excl.tsv
+        outfile: hg38_human_excl_-20150915-.tsv
+        url_prefix: https://raw.githubusercontent.com/dellytools/delly/master/excludeTemplates/
   expansionhunter:
     grch37:
       3.0.0:
@@ -429,14 +449,23 @@ reference_feature:
       v0_m_shifted_sa:
         file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.sa
         outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.sa
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/se_29/GRCh37_mapping/
+  genbank_haplogroup:
+    grch37:
+      20150801:
+        file: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
+        file_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
+        outfile: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
+        outfile_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/frequency/ 
   gencode_annotation:
     grch37:
       v29:
         file: gencode.v29lift37.annotation.gtf.gz
         outfile: grch37_gencode_annotation_-v29-.gtf.gz
         outfile_decompress: gzip
-        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/relea
   genomic_superdups:
     grch37:
       '20181009':
@@ -565,6 +594,15 @@ reference_feature:
         outfile_decompress: gzip
         outfile_index: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+  rank_model:
+    grch37:
+      v1.25:
+        file: rank_model_-v1.25-.ini
+        file_check: rank_model_-v1.25-.ini.md5
+        outfile: rank_model_cmms_-v1.25-.ini
+        outfile_check: rank_model_cmms_-v1.25-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/ 
   reduced_penetrance:
     grch37:
       2017:
@@ -581,6 +619,15 @@ reference_feature:
         outfile: grch37_scout_exons_-2017-01-.bed
         outfile_check: grch37_scout_exons_-2017-01-.bed.md5
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/gene_panel/
+  svrank_model:
+    grch37:
+      v1.8:
+        file: svrank_model_-v1.8-.ini
+        file_check: svrank_model_-v1.8-.ini.md5
+        outfile: svrank_model_cmms_-v1.8-.ini
+        outfile_check: svrank_model_cmms_-v1.8-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
 reference_genome_versions:
   - grch37
   - hg38

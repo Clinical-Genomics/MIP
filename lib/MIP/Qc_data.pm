@@ -34,6 +34,7 @@ BEGIN {
       get_qc_data_case_recipe_attributes
       get_qc_data_sample_recipe_attributes
       get_regexp_qc_data
+      set_header_metrics_to_qc_data
       set_qc_data_recipe_info
     };
 }
@@ -491,6 +492,91 @@ sub get_regexp_qc_data {
         return @{ $chld_handler{error} };
     }
     return @{ $chld_handler{output} };
+}
+
+sub set_header_metrics_to_qc_data {
+
+## Function : Set table metric data to qc_data hash
+## Returns  :
+## Arguments: $infile            => Infile key
+##          : $key               => Metafile tag
+##          : $qc_data_href      => Qc_data hash {REF}
+##          : $regexp_header_key => Regexp header key
+##          : $regexp_key        => Regexp key
+##          : $recipe_name       => Recipe to set attributes for
+##          : $sample_id         => Sample ID
+##          : $value             => Value to store
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile;
+    my $key;
+    my $qc_data_href;
+    my $regexp_header_key;
+    my $regexp_key;
+    my $recipe_name;
+    my $sample_id;
+    my $value;
+
+    my $tmpl = {
+        infile => {
+            store       => \$infile,
+            strict_type => 1,
+        },
+        key => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$key,
+        },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+        regexp_header_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp_header_key,
+            strict_type => 1,
+        },
+        regexp_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp_key,
+            strict_type => 1,
+        },
+        recipe_name => {
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        value => {
+            store       => \$value,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set recipe key value pair for paragraph header data on sample, infile
+    ## and recipe level
+    if ( $sample_id and $infile ) {
+
+        $qc_data_href->{sample}{$sample_id}{$infile}{$recipe_name}{$regexp_header_key}
+          {$regexp_key}{$key} = $value;
+        return;
+    }
+
+    $qc_data_href->{$recipe_name}{$regexp_header_key}{$regexp_key}{$key} = $value;
+
+    return;
 }
 
 sub set_qc_data_recipe_info {

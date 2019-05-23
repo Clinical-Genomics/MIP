@@ -65,6 +65,7 @@ my %qc_data;
 my $recipe_name = q{japan};
 my $sample_id   = q{sample_1};
 my $value       = q{konnichi wa};
+
 set_qc_data_recipe_info(
     {
         key          => $key,
