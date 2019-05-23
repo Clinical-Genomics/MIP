@@ -289,11 +289,11 @@ sub analysis_sv_annotate {
             my $out_frequency_tag    = $out_frequency_tag_suffix    ||= $EMPTY_STR;
             my $out_allele_count_tag = $out_allele_count_tag_suffix ||= $EMPTY_STR;
 
-	    ## Add annotations to filter downstream
-	    if($is_frequency and $out_frequency_tag) {
+            ## Add annotations to filter downstream
+            if ( $is_frequency and $out_frequency_tag ) {
 
-	      push @svdb_query_annotations, $query_db_tag . $out_frequency_tag
-	    }
+                push @svdb_query_annotations, $query_db_tag . $out_frequency_tag;
+            }
 
             svdb_query(
                 {
@@ -367,7 +367,7 @@ sub analysis_sv_annotate {
     ## Remove FILTER ne PASS and on frequency
     if ( $active_parameter_href->{sv_frequency_filter} ) {
 
-      ## Build the exclude filter command
+        ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
                 annotations_ref => \@svdb_query_annotations,
@@ -380,14 +380,14 @@ sub analysis_sv_annotate {
         bcftools_view(
             {
                 apply_filters_ref => [qw{ PASS }],
-	     exclude                => $exclude_filter,
+                exclude           => $exclude_filter,
                 FILEHANDLE        => $FILEHANDLE,
                 infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
                 outfile_path => $outfile_path_prefix
                   . $alt_file_tag
                   . $UNDERSCORE . q{filt}
                   . $outfile_suffix,
-	     output_type  => q{v},
+                output_type => q{v},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -413,15 +413,16 @@ sub analysis_sv_annotate {
         ## Update file tag
         $alt_file_tag .= $UNDERSCORE . q{bcftools_filter};
 
-	my %vcfanno_config = load_toml( { toml_file_path => $active_parameter_href->{fqf_vcfanno_config}, } );
+        my %vcfanno_config = load_toml(
+            { toml_file_path => $active_parameter_href->{fqf_vcfanno_config}, } );
 ## Store vcf anno annotations
-my @vcf_anno_annotations;
+        my @vcf_anno_annotations;
 
-ANNOTATION:
-foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+      ANNOTATION:
+        foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
-push @vcf_anno_annotations, @{ $annotation_href->{names} };
-}
+            push @vcf_anno_annotations, @{ $annotation_href->{names} };
+        }
         ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
@@ -433,7 +434,7 @@ push @vcf_anno_annotations, @{ $annotation_href->{names} };
 
         bcftools_filter(
             {
-                exclude                => $exclude_filter,
+                exclude      => $exclude_filter,
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $DASH,
                 outfile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
@@ -442,66 +443,6 @@ push @vcf_anno_annotations, @{ $annotation_href->{names} };
             }
         );
         say {$FILEHANDLE} $NEWLINE;
-    }
-
-    ## Annotate 1000G structural variants
-    if ( $active_parameter_href->{sv_vcfanno} ) {
-
-        say {$FILEHANDLE} q{## Annotate 1000G structural variants};
-        vcfanno(
-            {
-                ends         => 1,
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
-                luafile_path => $active_parameter_href->{sv_vcfanno_lua},
-                toml_configfile_path => $active_parameter_href->{sv_vcfanno_config},
-            }
-        );
-        print {$FILEHANDLE} $PIPE . $SPACE;
-
-        ## Remove "[" and "]" from INFO as it breaks vcf format
-        print {$FILEHANDLE}
-q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", @F), "\n"}' ?;
-
-        ## Update file tag
-        $alt_file_tag .= $UNDERSCORE . q{vcfanno};
-
-        say {$FILEHANDLE} q{>}
-          . $SPACE
-          . $outfile_path_prefix
-          . $alt_file_tag
-          . $outfile_suffix, $NEWLINE;
-
-        if ( $recipe_mode == 1 ) {
-
-            set_recipe_outfile_in_sample_info(
-                {
-                    path             => catfile( $directory, $stderr_file ),
-                    recipe_name      => q{sv_annotate},
-                    sample_info_href => $sample_info_href,
-                }
-            );
-        }
-
-        say {$FILEHANDLE} q{## Add header for 1000G annotation of structural variants};
-        bcftools_annotate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                headerfile_path =>
-                  $active_parameter_href->{sv_vcfannotation_header_lines_file},
-                infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
-                outfile_path => $outfile_path_prefix
-                  . $alt_file_tag
-                  . $UNDERSCORE
-                  . q{bcftools_annotate}
-                  . $outfile_suffix,
-                output_type => q{v},
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Update file tag
-        $alt_file_tag .= $UNDERSCORE . q{bcftools_annotate};
     }
 
     ## Then we have something to rename
@@ -572,7 +513,7 @@ sub _build_bcftools_filter {
             strict_type => 1,
         },
         annotations_ref => {
-			default => [],
+            default     => [],
             defined     => 1,
             required    => 1,
             store       => \$annotations_ref,
@@ -585,12 +526,12 @@ sub _build_bcftools_filter {
     my $exclude_filter;
     my $threshold = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;
 
-        $exclude_filter =
-            $DOUBLE_QUOTE
-          . q{INFO/}
-          . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{ $annotations_ref } )
-          . $threshold
-          . $DOUBLE_QUOTE;
+    $exclude_filter =
+        $DOUBLE_QUOTE
+      . q{INFO/}
+      . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{$annotations_ref} )
+      . $threshold
+      . $DOUBLE_QUOTE;
     return $exclude_filter;
 }
 
