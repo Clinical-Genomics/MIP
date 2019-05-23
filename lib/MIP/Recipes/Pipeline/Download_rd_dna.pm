@@ -110,6 +110,7 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Reduced_penetrance qw{ download_reduced_penetrance };
     use MIP::Recipes::Download::Scout_exons qw{ download_scout_exons };
     use MIP::Recipes::Download::Svrank_model qw{ download_svrank_model };
+    use MIP::Recipes::Download::Sv_vcfanno_config qw{ download_sv_vcfanno_config };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
@@ -144,6 +145,7 @@ sub pipeline_download_rd_dna {
         reduced_penetrance     => \&download_reduced_penetrance,
         scout_exons            => \&download_scout_exons,
         svrank_model           => \&download_svrank_model,
+        sv_vcfanno_config      => \&download_sv_vcfanno_config,
     );
 
     # Storing job_ids from SLURM, however currently all are independent
