@@ -13,6 +13,6 @@ For a full list of download options, run:
 $ mip download [PIPELINE] --help
 ```
 ## Updating a reference
-Open the download config corresponding to your pipeline and update or add a new version_tag in the reference hash. Update the same version tag together with any metadata changes in the reference_feature hash, see the API for details. Run the same mip command as above to download your updated reference.
+Open the download config corresponding to your pipeline and update or add a new `version_tag` in the reference hash. Update the same version tag together with any metadata changes in the reference_feature hash, see the API for details. Run the same mip command as above to download your updated reference.
 
 To include the changes in the analysis - add your reference to your mip config.yaml file where appropriate.

@@ -62,7 +62,7 @@ MIP is currently unable to install the CADD binary for dynamic calculation of in
 - [Stranger] (version: 0.4)
 - [SnpEff] (version: 4.3.1)
 - [Svdb] (version: 1.3.0)
-- [Tiddit] (version: 2.3.1)
+- [Tiddit] (version: 2.7.1)
 - [Variant_integrity] (version: 0.0.4)
 - [Vcf2cytosure] (version: 0.4.3)
 - [Vcfanno] (version: 0.3.1)
@@ -80,7 +80,7 @@ MIP will build references and meta files (if required) prior to starting an anal
 ### **Automatic Build:**
 
 Human Genome Reference Meta Files:
- 1. The sequence dictionnary (".dict")
+ 1. The sequence dictionary (".dict")
  2. The ".fasta.fai" file
 
 BWA:
@@ -90,7 +90,7 @@ Star:
  1. Star index files of the human genome
 
 #### *Note*
-If you do not supply these parameters (Bwa/Star) MIP will create these from scratch using the supplied human reference genom as template.
+If you do not supply these parameters (Bwa/Star) MIP will create these from scratch using the supplied human reference genome as template.
 
 Capture target files:
  1. The "infile_list" and .pad100.infile_list files used in ``picardtools_collecthsmetrics``.
@@ -98,6 +98,46 @@ Capture target files:
 
 #### *Note*
 If you do not supply these parameters MIP will create these from scratch using the supplied "latest" supported capture kit ".bed" file and the supplied human reference genome as template.
+
+### Private References
+Some references are not available for download because they require a license or contain data that are not consented for sharing. These references have to be manually applied for and added to the analysis where appropriate:
+
+#### SweFreq — The Swedish Frequency resource for genomics
+This dataset contains whole-genome variant frequencies for 1000 Swedish individuals generated within the SweGen project. One can request data access and download files from: https://swefreq.nbis.se/
+
+Corresponding MIP references:
+ - grch37_anon-swegen_str_nsphs_-1000samples-.vcf.gz (Autozygosity calculation;Rhocall)
+ - grch37_anon_swegen_snp_-2016-10-19-.tab.gz (Frequency annotation;Snpeff)
+ - grch37_anon-swegen_indel_-1000samples-.vcf.gz (Frequency annotation;Snpeff)
+ - grch37_swegen_concat_sort_-20170830-.vcf (Structural variant frequency annotation; Svdb)
+
+#### Spidex - Splicing prediction
+SPIDEX is a computational model that uses the Percentage of Spliced-In (PSI) metric to evaluate whether a certain splicing isoform is more enriched under the presence/absence of a given variant. Unfortunately, the Deepgenomics company that used to provide spidex scores seem to have shut down. The files can be downloaded via Annovar, which however also requires a license.
+
+Corresponding MIP references:
+ - grch37_spidex_public_noncommercial_-v1_0-.tab.gz (Splicing annotation; Genmod)
+
+#### Local frequency Databases
+We use several local frequency databases, that we unfortunately are not allowed to share, but can be built using locusdb or Svdb: https://github.com/moonso/loqusdb.
+
+Corresponding MIP references:
+ - grch37_loqusdb_snv_indel_-2018-12-18-.vcf.gz (SNV/INDELS; Snpeff)
+ - grch37_mip_sv_svdb_export_-2018-10-09-.vcf (SV; Svdb)
+ - grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf (SV;Svdb)
+ - grch37_svdb_query_decipher_-v1.0.0-.vcf (local array SVs frequency annotation; Svdb)
+
+#### Local clincial significance databases
+ Variants annotated as benign or pathogenic from array data.
+
+ Corresponding MIP references:
+ - grch37_svdb_query_clingen_cgh_benign_-v1.0.0-.vcf
+ - grch37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf
+
+#### GATK exome dataset
+GATK needs more data in the variant calling for exomes than a single sample or trio. MIP adds in other previously sequenced samples in the variant calling as a supplementary dataset.
+
+Corresponding MIP references:
+ - grch37_gatk_merged_reference_samples.txt
 
 [Bcftools]: http://www.htslib.org/
 [BedTools]: http://bedtools.readthedocs.org/en/latest/
