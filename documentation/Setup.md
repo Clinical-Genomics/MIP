@@ -112,7 +112,7 @@ Corresponding MIP references:
  - grch37_swegen_concat_sort_-20170830-.vcf (Structural variant frequency annotation; Svdb)
 
 #### Spidex - Splicing prediction
-SPIDEX is a computational model that uses the Percentage of Spliced-In (PSI) metric to evaluate whether a certain splicing isoform is more enriched under the presence/absence of a given variant. Unfortunately, the Deepgenomics the company that used to provide spidex scores seem to have shut down. The files can be downloaded via Annovar, which however also requires a license.
+SPIDEX is a computational model that uses the Percentage of Spliced-In (PSI) metric to evaluate whether a certain splicing isoform is more enriched under the presence/absence of a given variant. Unfortunately, the Deepgenomics company that used to provide spidex scores seem to have shut down. The files can be downloaded via Annovar, which however also requires a license.
 
 Corresponding MIP references:
  - grch37_spidex_public_noncommercial_-v1_0-.tab.gz (Splicing annotation; Genmod)
