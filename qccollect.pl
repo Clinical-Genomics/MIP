@@ -770,31 +770,30 @@ sub parse_qc_recipe_data {
                     ## Detect if the regexp id is for data and not header
                     next PARAGRAPH_KEY if ( $regexp_key =~ /^header|header$/isxm );
 
-                        ## For all collected headers for this paragraph
-                      HEADER_VALUE:
-                        while ( my ( $qc_header_index, $qc_header ) =
-                            each @{ $qc_header_href->{$recipe}{$regexp_header_key} } )
-                        {
+                    ## For all collected headers for this paragraph
+                  HEADER_VALUE:
+                    while ( my ( $qc_header_index, $qc_header ) =
+                        each @{ $qc_header_href->{$recipe}{$regexp_header_key} } )
+                    {
 
-                            ## Data metric
-                            my $data_metric =
-                              $qc_recipe_data_href->{$recipe}{$regexp_key}
-                              [$qc_header_index];
+                        ## Data metric
+                        my $data_metric =
+                          $qc_recipe_data_href->{$recipe}{$regexp_key}[$qc_header_index];
 
-                            ## Set table metric data to qc_data hash
-                            set_header_metrics_to_qc_data(
-                                {
-                                    infile            => $infile,
-                                    key               => $qc_header,
-                                    qc_data_href      => $qc_data_href,
-                                    regexp_header_key => $regexp_header_key,
-                                    regexp_key        => $regexp_key,
-                                    recipe_name       => $recipe,
-                                    sample_id         => $sample_id,
-                                    value             => $data_metric,
-                                }
-                            );
-                        }
+                        ## Set table metric data to qc_data hash
+                        set_header_metrics_to_qc_data(
+                            {
+                                infile            => $infile,
+                                key               => $qc_header,
+                                qc_data_href      => $qc_data_href,
+                                regexp_header_key => $regexp_header_key,
+                                regexp_key        => $regexp_key,
+                                recipe_name       => $recipe,
+                                sample_id         => $sample_id,
+                                value             => $data_metric,
+                            }
+                        );
+                    }
                 }
             }
         }
