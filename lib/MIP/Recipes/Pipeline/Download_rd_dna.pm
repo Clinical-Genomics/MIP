@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -96,6 +96,7 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Expansionhunter qw{ download_expansionhunter };
     use MIP::Recipes::Download::Gatk_mitochondrial_ref
       qw{ download_gatk_mitochondrial_ref };
+    use MIP::Recipes::Download::Genbank_haplogroup qw{ download_genbank_haplogroup };
     use MIP::Recipes::Download::Genomic_superdups qw{ download_genomic_superdups };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipes::Download::Giab qw{ download_giab };
@@ -104,6 +105,8 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
     use MIP::Recipes::Download::Mills_and_1000g_indels
       qw{ download_mills_and_1000g_indels };
+    use MIP::Recipes::Download::Rank_model qw{ download_rank_model };
+    use MIP::Recipes::Download::Svrank_model qw{ download_svrank_model };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
@@ -126,12 +129,15 @@ sub pipeline_download_rd_dna {
         delly_exclude          => \&download_delly_exclude,
         expansionhunter        => \&download_expansionhunter,
         gatk_mitochondrial_ref => \&download_gatk_mitochondrial_ref,
+        genbank_haplogroup     => \&download_genbank_haplogroup,
         genomic_superdups      => \&download_genomic_superdups,
         giab                   => \&download_giab,
         gnomad                 => \&download_gnomad,
         hapmap                 => \&download_hapmap,
         human_reference        => \&download_human_reference,
         mills_and_1000g_indels => \&download_mills_and_1000g_indels,
+        rank_model             => \&download_rank_model,
+        svrank_model           => \&download_svrank_model,
     );
 
     # Storing job_ids from SLURM, however currently all are independent
