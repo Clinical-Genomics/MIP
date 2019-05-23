@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $EMPTY_STR $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $DOUBLE_QUOTE $EMPTY_STR $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -274,8 +274,10 @@ sub _set_reference_dir_path {
     $set_reference_path_regexp .=
         q? if($filename) {say STDOUT q{?
       . q{file=}
+      . $DOUBLE_QUOTE
       . $reference_dir_path
-      . q?} . $filename}?;
+      . q?} . $filename . q{?
+      . $DOUBLE_QUOTE . q?}}?;
 
     ## Else print other lines as is
     $set_reference_path_regexp .= q? else {print STDOUT $_} ' ?;
