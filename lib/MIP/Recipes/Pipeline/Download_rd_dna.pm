@@ -92,6 +92,7 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Clinvar qw{ download_clinvar };
     use MIP::Recipes::Download::Dbnsfp qw{ download_dbnsfp };
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
+    use MIP::Recipes::Download::Delly_exclude qw{ download_delly_exclude };
     use MIP::Recipes::Download::Expansionhunter qw{ download_expansionhunter };
     use MIP::Recipes::Download::Gatk_mitochondrial_ref
       qw{ download_gatk_mitochondrial_ref };
@@ -125,6 +126,7 @@ sub pipeline_download_rd_dna {
         clinvar                => \&download_clinvar,
         dbnsfp                 => \&download_dbnsfp,
         dbsnp                  => \&download_dbsnp,
+        delly_exclude          => \&download_delly_exclude,
         expansionhunter        => \&download_expansionhunter,
         gatk_mitochondrial_ref => \&download_gatk_mitochondrial_ref,
         genbank_haplogroup     => \&download_genbank_haplogroup,

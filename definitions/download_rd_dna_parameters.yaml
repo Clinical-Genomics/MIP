@@ -85,6 +85,13 @@ dbsnp:
   data_type: SCALAR
   default: 1
   type: recipe
+delly_exclude:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 download_pipeline_type:
   associated_recipe:
    - mip
@@ -178,6 +185,7 @@ recipe_core_number:
     clinvar: 1
     dbnsfp: 1
     dbsnp: 1
+    delly_exclude: 1
     expansionhunter: 1
     genbank_haplogroup: 1
     genomic_superdups: 1
@@ -207,6 +215,7 @@ recipe_time:
     clinvar: 1
     dbnsfp: 15
     dbsnp: 1
+    delly_exclude: 1
     expansionhunter: 1
     genbank_haplogroup: 1
     genomic_superdups: 1
