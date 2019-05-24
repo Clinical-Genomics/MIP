@@ -23,13 +23,13 @@ $ mip analyse rd_dna_vcf_rerun [case_id] --config_file [mip_config_rd_dna_vcf_re
 $ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --markduplicates 0
 ```
 
-### Skipping a already processed recipe i.e expect that the ouput has already been generated
+### Skipping a already processed recipe i.e expect that the output has already been generated
 
 ```Bash
 $ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --markduplicates 2
 ```
 
-### Simulate standard analysis
+### Simulate an analysis
 
 ```Bash
 $ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --dra
@@ -37,9 +37,9 @@ $ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --dra
 
 ``-dra`` means "dry run all" i.e simulation mode. If enabled MIP will execute everything except the final sbatch submission to SLURM and updates to qc_sample_info.yaml.
 
-When not supplying the ``--dra`` flag MIP will launch sbatch submission to slurm.
+When not supplying the ``--dra`` flag MIP will launch sbatch submission to SLURM.
 
-One can use ``--dra`` to generate sbatch scripts which then can be submitted manually by the user individually or sequentially using ``sbatch --dependency=[type]:[jobid]``. Note that this will not update qc_sampleInfo.yaml as this is done at MIP run time.
+One can use ``--dra`` to generate sbatch scripts which then can be submitted manually by the user individually or sequentially using ``sbatch --dependency=[type]:[jobid]``. Note that this will not update qc_sample_info.yaml as this is done at MIP run time.
 
 ### Rerun analysis using exactly the same parameters as last analysis run for case "0"
 
@@ -63,7 +63,7 @@ $ mip analyse rd_dna --config_file 0/analysis/0_config.yaml --bwa_mem 1 --peddy_
 ```Bash
 $ mip analyse rd_dna --config_file 0/analysis/0_config.yaml --start_with_recipe gatk_variantrecalibration
 ```
-This will swith the mode for all downstream dependencies to run and all recipes upstream of the recipe to simulation mode.
+This will switch the mode for all downstream dependencies to run and all recipes upstream of the recipe to simulation mode.
 
 ### Generate all supported standard recipes
 
@@ -71,16 +71,16 @@ This will swith the mode for all downstream dependencies to run and all recipes 
 $ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --pr
 ```
 
-This will print a string with recipes in mode 2 (expect ouput) in chronological order (as far as possible, some things are processed in parallel):
+This will print a string with recipes in mode 2 (expect output) in chronological order (as far as possible, as some things are processed in parallel):
 
 ```Bash
 $ mip --split_fastq_file 2 --gzip_fastq 2 --fastqc_ar 2 --bwa_mem 2 --picardtools_mergesamfiles 2 --markduplicates 2 --gatk_baserecalibration 2 --chanjo_sexcheck 2 --sambamba_depth 2 --picardtools_collectmultiplemetrics 2 --picardtools_collecthsmetrics 2 --cnvnator_ar 2 --delly_call 2 --delly_reformat 2 --manta 2 --tiddit 2 --sv_combinevariantcallsets 2 --sv_varianteffectpredictor 2 --sv_vcfparser 2 --sv_rankvariant 2 --sv_reformat 2 --bcftools_mpileup 2 --freebayes_ar 2 --gatk_haplotypecaller 2 --gatk_genotypegvcfs 2 --gatk_variantrecalibration 2 --gatk_combinevariantcallsets 2 --prepareforvariantannotationblock 2 --rhocall_ar 2 --vt_ar 2 --frequency_filter 2 --gatk_variantevalall 2 --gatk_variantevalexome 2 --varianteffectpredictor 2 --vcfparser 2 --snpeff 2 --peddy_ar 2 --plink 2 --variant_integrity_ar 2 --evaluation 2 --rankvariant 2 --endvariantannotationblock 2 --qccollect_ar 2 --multiqc_ar 2 --analysisrunstatus 2 --sacct 2
 ```
 
-Thus you will always have the actual recipe names that are supported facilitating starting from any step in the analysis for instance updating qc_sampleInfo.yaml and rerunning recipe in bamcalibrationblock skipping markduplicates:
+Thus you will always have the actual recipe names that are supported facilitating starting from any step in the analysis for instance updating qc_sample_info.yaml and rerunning some recipes, but skipping markduplicates:
 
 ```Bash
-$ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --split_fastq_file 2 --gzip_fastq 2 --fastqc_ar 2 --bwa_mem 2 --picardtools_mergesamfiles 2 --markduplicates 0 --gatk_baserecalibration 2 --chanjo_sexcheck 2 --sambamba_depth 2 --picardtools_collectmultiplemetrics 2 --picardtools_collecthsmetrics 2 --cnvnator_ar 2 --delly_call 2 --delly_reformat 2 --manta 2 --tiddit 2 --sv_combinevariantcallsets 2 --sv_varianteffectpredictor 2 --sv_vcfparser 2 --sv_rankvariant 2 --sv_reformat 2 --bcftools_mpileup 2 --freebayes_ar 2 --gatk_haplotypecaller 2 --gatk_genotypegvcfs 2 --gatk_variantrecalibration 2 --gatk_combinevariantcallsets 2 --prepareforvariantannotationblock 2 --rhocall_ar 2 --vt_ar 2 --frequency_filter 2 --gatk_variantevalall 2 --gatk_variantevalexome 2 --varianteffectpredictor 2 --vcfparser 2 --snpeff 2 --peddy_ar 2 --plink 2 --variant_integrity_ar 2 --evaluation 2 --rankvariant 2 --endvariantannotationblock 2 --qccollect_ar 2 --multiqc 2 --analysisrunstatus 2 --sacct 2
+$ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --split_fastq_file 2 --gzip_fastq 2 --fastqc_ar 2 --bwa_mem 2 --picardtools_mergesamfiles 2 --markduplicates 0 --gatk_baserecalibration 1 --chanjo_sexcheck 2 --sambamba_depth 2 --picardtools_collectmultiplemetrics 2 --picardtools_collecthsmetrics 2 --cnvnator_ar 2 --delly_call 2 --delly_reformat 2 --manta 2 --tiddit 2 --sv_combinevariantcallsets 2 --sv_varianteffectpredictor 2 --sv_vcfparser 2 --sv_rankvariant 2 --sv_reformat 2 --bcftools_mpileup 2 --freebayes_ar 2 --gatk_haplotypecaller 2 --gatk_genotypegvcfs 2 --gatk_variantrecalibration 2 --gatk_combinevariantcallsets 2 --prepareforvariantannotationblock 2 --rhocall_ar 2 --vt_ar 2 --frequency_filter 2 --gatk_variantevalall 2 --gatk_variantevalexome 2 --varianteffectpredictor 2 --vcfparser 2 --snpeff 2 --peddy_ar 2 --plink 2 --variant_integrity_ar 2 --evaluation 2 --rankvariant 2 --endvariantannotationblock 2 --qccollect_ar 2 --multiqc 2 --analysisrunstatus 2 --sacct 2
 ```
 
 You can of course start or skip any number of recipes as long as it is sane to do so (MIP will not check this but just execute)
