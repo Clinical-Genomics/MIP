@@ -207,6 +207,7 @@ recipe_core_number:
     reduced_penetrance: 1
     scout_exons: 1
     svrank_model: 1
+    sv_vcfanno_config: 1
   type: mip
 recipe_time:
   associated_recipe:
@@ -240,6 +241,7 @@ recipe_time:
     reduced_penetrance: 1
     scout_exons: 1
     svrank_model: 1
+    sv_vcfanno_config: 1
   type: mip
 reduced_penetrance:
   analysis_mode: case
@@ -261,6 +263,13 @@ scout_exons:
   default: 1
   type: recipe
 svrank_model:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+sv_vcfanno_config:
   analysis_mode: case
   associated_recipe:
    - mip
