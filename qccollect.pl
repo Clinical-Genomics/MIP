@@ -735,7 +735,8 @@ sub parse_qc_recipe_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Qc_data qw{ add_to_qc_data set_header_metrics_to_qc_data };
+    use MIP::Qc_data
+      qw{ add_to_qc_data parse_qc_recipe_table_data set_header_metrics_to_qc_data };
 
   REG_EXP_ATTRIBUTE:
     for my $attribute ( keys %{ $regexp_href->{$recipe} } ) {
