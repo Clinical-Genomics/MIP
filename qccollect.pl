@@ -688,13 +688,7 @@ sub parse_qc_recipe_data {
     my $sample_info_href;
 
     my $tmpl = {
-        infile => { store => \$infile, strict_type => 1, },
-        recipe => {
-            defined     => 1,
-            required    => 1,
-            store       => \$recipe,
-            strict_type => 1,
-        },
+        infile       => { store => \$infile, strict_type => 1, },
         qc_data_href => {
             default     => {},
             defined     => 1,
@@ -714,6 +708,12 @@ sub parse_qc_recipe_data {
             defined     => 1,
             required    => 1,
             store       => \$qc_recipe_data_href,
+            strict_type => 1,
+        },
+        recipe => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe,
             strict_type => 1,
         },
         regexp_href => {
@@ -761,41 +761,17 @@ sub parse_qc_recipe_data {
             ## Table data i.e. header and subsequent data line(s).
             ## Can be multiple tables per file
 
-          PARAGRAPH_HEADER_KEY:
-            for my $regexp_header_key ( keys %{ $qc_header_href->{$recipe} } ) {
-
-              PARAGRAPH_KEY:
-                for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
-
-                    ## Detect if the regexp id is for data and not header
-                    next PARAGRAPH_KEY if ( $regexp_key =~ /^header|header$/isxm );
-
-                    ## For all collected headers for this paragraph
-                  HEADER_VALUE:
-                    while ( my ( $qc_header_index, $qc_header ) =
-                        each @{ $qc_header_href->{$recipe}{$regexp_header_key} } )
-                    {
-
-                        ## Data metric
-                        my $data_metric =
-                          $qc_recipe_data_href->{$recipe}{$regexp_key}[$qc_header_index];
-
-                        ## Set table metric data to qc_data hash
-                        set_header_metrics_to_qc_data(
-                            {
-                                infile            => $infile,
-                                key               => $qc_header,
-                                qc_data_href      => $qc_data_href,
-                                regexp_header_key => $regexp_header_key,
-                                regexp_key        => $regexp_key,
-                                recipe_name       => $recipe,
-                                sample_id         => $sample_id,
-                                value             => $data_metric,
-                            }
-                        );
-                    }
+            parse_qc_recipe_table_data(
+                {
+                    infile              => $infile,
+                    qc_data_href        => $qc_data_href,
+                    qc_header_href      => $qc_header_href,
+                    qc_recipe_data_href => $qc_recipe_data_href,
+                    regexp_href         => $regexp_href,
+                    recipe              => $recipe,
+                    sample_id           => $sample_id,
                 }
-            }
+            );
         }
     }
     return;
