@@ -125,6 +125,7 @@ sub analysis_dragen_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -188,6 +189,8 @@ sub analysis_dragen_dna {
         }
     );
 
+    my $outdir_path         = $io{out}{dir_path};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
     my @outfile_paths       = @{ $io{out}{file_paths} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_suffix};
@@ -217,10 +220,46 @@ sub analysis_dragen_dna {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
-###############################
-###RECIPE TOOL COMMANDS HERE###
-###############################
+    my $case_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
 
+    ## Create .fam file to be used in variant calling analyses
+    create_fam_file(
+        {
+            active_parameter_href => $active_parameter_href,
+            fam_file_path         => $case_file_path,
+            FILEHANDLE            => $FILEHANDLE,
+            log                   => $log,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    dragen_dna_analysis(
+        {
+            alignment_output_format       => q{BAM},
+            cnv_enable_self_normalization => 1,
+            dbsnp_file_path               => $active_parameter_href->{dragen_dbsnp},
+            dragen_hash_ref_dir_path =>
+              $active_parameter_href->{dragen_hash_ref_dir_path},
+            enable_bam_indexing      => 1,
+            enable_cnv               => 1,
+            enable_combinegvcfs      => 1,
+            enable_duplicate_marking => 1,
+            enable_joint_genotyping  => 1,
+            enable_map_align         => 1,
+            enable_multi_sample_gvcf => 1,
+            enable_sort              => 1,
+            enable_variant_caller    => 1,
+            fastq_list_all_samples   => $active_parameter_href->{fastq_list_all_samples},
+            fastq_list_file_path => $active_parameter_href->{ dragen_fastq_list_file_path,
+                force              => 1,
+                pedigree_file_path => $case_file_path,
+                outdirectory_path  => $outdir_path,
+                outfile_prefix     => outfile_name_prefix,
+
+            }
+        }
+    );
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
