@@ -13,17 +13,21 @@ Recipes are a list of ordered commands and subroutines that has a defined input 
 2. Download
 3. Build
 4. Analysis
-5. Pipeline - (Executes build and analysis recipes)
+5. Pipeline
 
 They are all located in `lib/MIP/Recipes/[PROCESS]`
+
 ### Install Recipes
-Used in `Install.pm` to handle installation of programs and references.
+Used in `lib/MIP/Main/Install.pm` to handle installation of programs and references.
+
+### Download Recipes
+Used in `lib/MIP/Main/Download.pm`to download and prepare references. 
 
 ### Build Recipes
-Used in `Analyse/[Pipeline].pm` to build metadatafiles for references.
+Used in `lib/MIP/Main/Analyse.pm` to build meta datafiles for references.
 
 ### Analysis Recipes
-Used in `Analyse/[Pipeline].pm` to perform operation with a defined input and output for a process with specific upstream and/or downstream dependencies, e.g. qc of fastqc files or alignment and sorting of reads.
+Used in `lib/MIP/Main/Analyse.pm` to perform operation with a defined input and output for a process with specific upstream and/or downstream dependencies, e.g. qc of fastqc files or alignment and sorting of reads.
 
 ### Pipeline
-Used in `Analyse/[Pipeline].pm` to tie together several analysis recipes into entire pipelines.
+Used in `lib/MIP/Recipes/[Pipeline].pm` to tie together several analysis recipes into entire pipelines.
