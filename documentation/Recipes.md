@@ -1,12 +1,12 @@
 # Recipes
 Recipes are a list of ordered commands and subroutines that has a defined input and output. Many recipes can be shared across pipelines as they will inherit the input and set the output dynamically. For instance, pipeline `rd_dna` and `rd_dna_vcf_rerun` share many recipes. However, this is not always applicable depending on the pipeline run requirements (parallelization etc.).
 
-## MIP currently has 4 recipe types:
+## MIP currently has five recipe types:
 1. Install
 2. Download
 3. Build
 4. Analysis
-5. Pipeline - (Executes build and analysis recipes)
+5. Pipeline
 
 Recipes templates for `install`, `download` and `analysis` can be found [here](https://github.com/Clinical-Genomics/MIP/blob/develop/templates/code):
 

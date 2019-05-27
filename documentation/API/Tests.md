@@ -20,7 +20,7 @@ Are tested by test scripts and using sbatch traps upon execution. MIP thus relie
 **Template**: [recipe_analysis_case.t] [recipe_analysis_sample.t]
 
 ## Analysis
-Are tested by running ``mip_[PROCESS]_[PIPELINE].test both locally and with continous integration using TRAVIS.
+Are tested by running `mip_[PROCESS]_[PIPELINE].test` both locally and with continous integration using TRAVIS.
 MIP will check that all files that are supposed to be produced by an analysis exist and have a file size larger than zero. Furthermore, several key qc parameters are evaluated and existence off certain vcf key value pairs are checked using Test::Harness and the mip_analysis.t script. All this is done in the analysis recipe analysisrunstatus.
 
 ## Templates
