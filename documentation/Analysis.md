@@ -41,27 +41,27 @@ When not supplying the ``--dra`` flag MIP will launch sbatch submission to SLURM
 
 One can use ``--dra`` to generate sbatch scripts which then can be submitted manually by the user individually or sequentially using ``sbatch --dependency=[type]:[jobid]``. Note that this will not update qc_sample_info.yaml as this is done at MIP run time.
 
-### Rerun analysis using exactly the same parameters as last analysis run for case "0"
+### Rerun analysis using exactly the same parameters as last analysis run for [case_id]
 
 ```Bash
-$ mip analyse rd_dna --config_file 0/analysis/0_config.yaml
+$ mip analyse rd_dna [case_id] --config_file [case_id]/analysis/[case_id]_config.yaml
 ```
 
 ### Rerun analysis using exactly the same parameters as last analysis run, but in simulation mode
 
 ```Bash
-$ mip analyse rd_dna --config_file 0/analysis/0_config.yaml --dra
+$ mip analyse rd_dna [case_id]--config_file [case_id]/analysis/[case_id]_config.yaml --dra
 ```
 
 ### Turn on individual or consecutive recipes
 After performing a dry run all recipes are set to simulation mode in the config. If you want run one or several recipes set them to "1" in the config or supply them on the command line.
 ```Bash
-$ mip analyse rd_dna --config_file 0/analysis/0_config.yaml --bwa_mem 1 --peddy_ar 1
+$ mip analyse rd_dna [case_id] --config_file [case_id]/analysis/[case_id]_config.yaml --bwa_mem 1 --peddy_ar 1
 ```
 
 ### Run all downstream dependencies starting from a recipe
 ```Bash
-$ mip analyse rd_dna --config_file 0/analysis/0_config.yaml --start_with_recipe gatk_variantrecalibration
+$ mip analyse rd_dna [case_id] --config_file [case_id]/analysis/[case_id]_config.yaml --start_with_recipe gatk_variantrecalibration
 ```
 This will switch the mode for all downstream dependencies to run and all recipes upstream of the recipe to simulation mode.
 
