@@ -15,7 +15,7 @@ disable_env_check: 0
 # MIP main environment spec
 emip:
   conda:
-    bcftools: 1.9=h4da6232_0
+    bcftools: 1.9=ha228f0b_4
     bedtools: 2.27.1=he941832_2
     cmake: 3.3.1
     cramtools: 3.0.b127=2
@@ -30,7 +30,6 @@ emip:
     ldc: 1.11.0=hb2c9046_0
     manta: 1.5.0=py27_0 
     numpy:
-    openssl: 1.0.2p
     picard: 2.18.14=0
     pip:
     plink2: 1.90b3.35
@@ -38,7 +37,7 @@ emip:
     R: 3.3.1 #GATK 3.8.5 req
     rtg-tools: 3.9.1=1
     sambamba: 0.6.8=h682856c_0
-    samtools: 1.9=h8ee4bcc_1
+    samtools: 1.9=h8571acd_11
     snpeff: 4.3.1t=1
     snpsift: 4.3.1t=1
     vcfanno: 0.3.1=0
@@ -73,7 +72,6 @@ ecnvnator:
   conda:
     bcftools: 1.6
     gcc: 4.8.5
-    openssl: 1.0.2p
     pip:
     python: 2.7
     samtools: 1.6
@@ -88,9 +86,8 @@ ecnvnator:
 # Delly environment spec
 edelly:
   conda:
-    bcftools: 1.9=h4da6232_0
+    bcftools: 1.9=ha228f0b_4
     delly: 0.8.1=h4037b6b_0
-    openssl: 1.0.2p
     picard: 2.18.14=0
     pip:
     python: 2.7
@@ -100,16 +97,15 @@ edelly:
 # Perl environment spec
 eperl_5.26:
   conda:
-    bcftools: 1.9=h4da6232_0
+    bcftools: 1.9=ha228f0b_4
     bwa: 0.7.17=ha92aebf_3
     bwakit: 0.7.15=1
     fastqc: 0.11.8=0
     freebayes: 1.2.0=py27h82df9c4_3
     gatk4: 4.1.0.0=0
     ldc: 1.11.0=hb2c9046_0
-    openssl: 1.0.2p
     sambamba: 0.6.8=h682856c_0
-    samtools: 1.9=h8ee4bcc_1
+    samtools: 1.9=h8571acd_11
     pip:
     python: 2.7
   pip:
@@ -118,8 +114,7 @@ eperl_5.26:
 # Peddy environment spec
 epeddy:
   conda:
-    bcftools: 1.9=h4da6232_0
-    openssl: 1.0.2p
+    bcftools: 1.9=ha228f0b_4
     peddy: 0.4.2=py_0
     pip:
     python: 2.7
@@ -129,8 +124,7 @@ epeddy:
 # Python 3 environment spec
 epy3:
   conda:
-    bcftools: 1.9=h4da6232_0
-    openssl: 1.0.2p
+    bcftools: 1.9=ha228f0b_4
     ldc: 1.11.0=hb2c9046_0
     pip:
     sambamba: 0.6.8=h682856c_0
@@ -162,13 +156,12 @@ esvdb:
 ## Tiddit env spec
 etiddit:
   conda:
-    bcftools: 1.9=h4da6232_0
+    bcftools: 1.9=ha228f0b_4
     cmake: 3.13.2=h011004d_0
     cython: 0.29.1=py27hfc679d8_0
     cyvcf2: 0.10.0=py27h355e19c_0
     gcc:
     numpy: 1.15.4=py27_blas_openblashb06ca3d_0
-    openssl: 1.0.2p
     pip:
     python: 2.7
     scipy: 1.2.0=py27_blas_openblashb06ca3d_200
@@ -187,10 +180,8 @@ etiddit:
 # VEP environment spec
 evep:
   conda:
-    bcftools: 1.9=h4da6232_0
-    openssl: 1.0.2p
+    bcftools: 1.9=ha228f0b_4
     htslib: 1.9=hc238db4_4
-    openssl: 1.0.2p
     pip:
     python: 2.7
   pip:

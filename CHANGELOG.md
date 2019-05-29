@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 **Tools**
 - TIDDIT: 2.5.0 -> 2.7.1
+- bcftools: 1.9-h4da6232_0 -> 1.9=ha228f0b_4
+- samtools: 1.9-h8ee4bcc_1 -> 1.9=h8571acd_11 
 
 ## [7.0.9]
 - Removed plink memory allocation from rd_dna_vcf_rerun
