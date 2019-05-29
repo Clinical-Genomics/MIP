@@ -15,7 +15,7 @@ disable_env_check: 0
 # MIP main environment spec
 emip:
   conda:
-    bcftools: 1.9=h4da6232_0
+    bcftools: 1.9=ha228f0b_4
     bioconductor-deseq2: 1.18.1=r3.4.1_1
     bioconductor-tximport: 1.8.0=r341_0
     gatk4: 4.1.0.0=0
@@ -32,7 +32,7 @@ emip:
     r-readr:
     salmon: 0.12.0=h86b0361_1
     sambamba: 0.6.8=h682856c_1
-    samtools: 1.9=h8ee4bcc_1
+    samtools: 1.9=h8571acd_11
     scipy:
     stringtie: 1.3.4=py27_0
   shell:
@@ -92,7 +92,7 @@ eperl5.26:
 # VEP environment spec
 evep:
   conda:
-    bcftools: 1.9=h4da6232_0
+    bcftools: 1.9=ha228f0b_4
     htslib: 1.9=hc238db4_4
     openssl: 1.0.2p
     pip:
