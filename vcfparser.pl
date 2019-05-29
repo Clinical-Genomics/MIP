@@ -1,35 +1,36 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie qw{ open close :all };
-use v5.18;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
-use English qw{ -no_match_vars };
-
+use charnames qw{ :full :short };
 use Cwd;
-use FindBin qw{ $Bin };
+use English qw{ -no_match_vars };
 use File::Basename qw{ basename };
 use File::Spec::Functions qw{ catdir catfile devnull };
+use FindBin qw{ $Bin };
 use Getopt::Long;
-use Params::Check qw{ check allow last_error };
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use IO::File;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
+use utf8;
+use warnings qw{ FATAL utf8 };
 
-## Third party module(s)
+$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+
+## CPANM
+use autodie qw{ open close :all };
+use Modern::Perl qw{ 2017 };
+use Readonly;
 use Set::IntervalTree;
 
 ## MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Constants qw{ $NEWLINE };
+use MIP::Constants qw{ %ANALYSIS $COMMA $NEWLINE $SPACE };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
-our $USAGE;
+our $USAGE = build_usage( {} );
 
 BEGIN {
 
@@ -45,44 +46,30 @@ BEGIN {
             program_name => $PROGRAM_NAME,
         }
     );
-
-    $USAGE = basename($0) . qq{ infile.vcf [OPTIONS] > outfile.vcf
-           -pvep/--parse_vep Parse VEP transcript specific entries (Supply flag to enable)
-           -rf/--range_feature_file (tsv)
-           -rf_ac/--range_feature_annotation_columns
-           -sf/--select_feature_file (tsv)
-           -sf_mc/--select_feature_matching_column
-           -sf_ac/--select_feature_annotation_columns
-           -sof/--select_outfile (vcf)
-           -pad/--padding (Default: "5000" nucleotides)
-           -peg/--per_gene Output most severe consequence transcript (Supply flag to enable)
-           -pli/--pli_values_file Pli value file path
-           -wst/--write_software_tag (Default: "1")
-           -l/--log_file Log file (Default: "vcfparser.log")
-           -h/--help Display this help message
-           -v/--version Display version
-        };
 }
+
+## Constants
+Readonly my $ANNOTATION_DISTANCE => $ANALYSIS{ANNOTATION_DISTANCE};
 
 my ( $infile, $pli_values_file_path, $range_feature_file, $select_feature_file,
     $select_feature_matching_column,
     $select_outfile, );
 
-##Scalar parameters with defaults
+## Scalar parameters with defaults
 my ( $write_software_tag, $padding, $log_file ) =
-  ( 1, 5000, catfile( cwd(), q{vcfparser.log} ) );
+  ( 1, $ANNOTATION_DISTANCE, catfile( cwd(), q{vcfparser.log} ) );
 
-##Boolean
+## Boolean
 my ( $parse_vep, $per_gene );
 
 my ( @range_feature_annotation_columns, @select_feature_annotation_columns );
 my ( %consequence_severity, %meta_data, %range_data, %select_data, %snpeff_cmd, %tree,
     %pli_score );
 
-my $vcfparser_version = q{1.2.14};
+my $VERSION = q{1.2.15};
 
 ## Enables cmd "vcfparser.pl" to print usage help
-if ( !@ARGV ) {
+if ( not @ARGV ) {
 
     help(
         {
@@ -91,33 +78,35 @@ if ( !@ARGV ) {
         }
     );
 }
-elsif ( ( defined($ARGV) ) && ( $ARGV[0] !~ /^-/ ) )
-{    #Collect potential infile - otherwise read from STDIN
+elsif ( defined $ARGV and $ARGV[0] !~ /^-/sxm ) {
+    ## Collect potential infile - otherwise read from STDIN
 
     $infile = $ARGV[0];
 }
 
-###User Options
+### User Options
 GetOptions(
-    'pvep|parse_vep'          => \$parse_vep,
-    'rf|range_feature_file:s' => \$range_feature_file,
-    'rf_ac|range_feature_annotation_columns:s' =>
+    q{pvep|parse_vep}          => \$parse_vep,
+    q{rf|range_feature_file:s} => \$range_feature_file,
+    q{rf_ac|range_feature_annotation_columns:s} =>
       \@range_feature_annotation_columns,    #Comma separated list
-    'sf|select_feature_file:s'               => \$select_feature_file,
-    'sf_mc|select_feature_matching_column:n' => \$select_feature_matching_column,
-    'sf_ac|select_feature_annotation_columns:s' =>
+    q{sf|select_feature_file:s}               => \$select_feature_file,
+    q{sf_mc|select_feature_matching_column:n} => \$select_feature_matching_column,
+    q{sf_ac|select_feature_annotation_columns:s} =>
       \@select_feature_annotation_columns,    #Comma separated list
-    'sof|select_outfile:s'     => \$select_outfile,
-    'wst|write_software_tag:n' => \$write_software_tag,
-    'pad|padding:n'            => \$padding,
-    'peg|per_gene'             => \$per_gene,
-    'pli|pli_values_file:s'    => \$pli_values_file_path,
-    'l|log_file:s'             => \$log_file,
-    'h|help'                   => sub { say STDOUT $USAGE; exit; },    #Display help text
-    'v|version'                => sub {
-        say STDOUT "\n" . basename($0) . " " . $vcfparser_version, "\n";
+    q{sof|select_outfile:s}     => \$select_outfile,
+    q{wst|write_software_tag:n} => \$write_software_tag,
+    q{pad|padding:n}            => \$padding,
+    q{peg|per_gene}             => \$per_gene,
+    q{pli|pli_values_file:s}    => \$pli_values_file_path,
+    q{l|log_file:s}             => \$log_file,
+    ## Display help text
+    q{h|help} => sub { say {*STDOUT} $USAGE; exit; },
+    ## Display version number
+    q{v|version} => sub {
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
-    },    #Display version number
+    },
   )
   or help(
     {
@@ -135,45 +124,45 @@ my $log = initiate_logger(
 );
 
 ## Basic flag option check
-if ( ( !@range_feature_annotation_columns ) && ($range_feature_file) ) {
+if ( not @range_feature_annotation_columns and $range_feature_file ) {
 
     $log->info($USAGE);
     $log->fatal(
-        "Need to specify which feature column(s) to use with range feature file: "
+        q{Need to specify which feature column(s) to use with range feature file: }
           . $range_feature_file
-          . " when annotating variants by using flag -rf_ac",
-        "\n"
+          . q{ when annotating variants by using flag -rf_ac},
+        $NEWLINE
     );
     exit 1;
 }
-if ( ( !$select_feature_matching_column ) && ($select_feature_file) ) {
+if ( not $select_feature_matching_column and $select_feature_file ) {
 
     $log->info($USAGE);
     $log->fatal(
-        "Need to specify which feature column to use with select feature file: "
+        q{Need to specify which feature column to use with select feature file: }
           . $select_feature_file
-          . " when selecting variants by using flag -sf_mc",
-        "\n"
+          . q{ when selecting variants by using flag -sf_mc},
+        $NEWLINE
     );
     exit 1;
 }
-if ( ( !$select_outfile ) && ($select_feature_file) ) {
+if ( not $select_outfile and $select_feature_file ) {
 
     $log->info($USAGE);
     $log->fatal(
-"Need to specify which a select outfile to use when selecting variants by using flag -sof",
-        "\n"
+q{Need to specify which a select outfile to use when selecting variants by using flag -sof},
+        $NEWLINE
     );
     exit 1;
 }
 
 ## Enables comma separated annotation columns on cmd
 @range_feature_annotation_columns =
-  split( /,/, join( ',', @range_feature_annotation_columns ) );
+  split $COMMA, join $COMMA, @range_feature_annotation_columns;
 
 ## Enables comma separated annotation columns on cmd
 @select_feature_annotation_columns =
-  split( /,/, join( ',', @select_feature_annotation_columns ) );
+  split $COMMA, join $COMMA, @select_feature_annotation_columns;
 
 if ($pli_values_file_path) {
 
@@ -187,9 +176,9 @@ if ($pli_values_file_path) {
     $log->info(q{Loading pli value file: Done});
 }
 
-###
-#MAIN
-###
+############
+####MAIN####
+############
 
 define_select_data();
 
@@ -241,14 +230,54 @@ read_infile_vcf(
         select_outfile_path                   => $select_outfile,
         snpeff_cmd_href                       => \%snpeff_cmd,
         tree_href                             => \%tree,
-        vcfparser_version                     => $vcfparser_version,
+        vcfparser_version                     => $VERSION,
         write_software_tag                    => $write_software_tag,
     }
 );
 
-###
-#Sub Routines
-###
+####################
+####Sub routines####
+####################
+
+sub build_usage {
+
+## Function : Build the USAGE instructions
+## Returns  :
+## Arguments: $program_name => Name of the script
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $program_name;
+
+    my $tmpl = {
+        program_name => {
+            default     => basename($PROGRAM_NAME),
+            store       => \$program_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return <<"END_USAGE";
+ $program_name [options] infile.vcf [OPTIONS] > outfile.vcf
+   -pvep/--parse_vep Parse VEP transcript specific entries (Supply flag to enable)
+   -rf/--range_feature_file (tsv)
+   -rf_ac/--range_feature_annotation_columns
+   -sf/--select_feature_file (tsv)
+   -sf_mc/--select_feature_matching_column
+   -sf_ac/--select_feature_annotation_columns
+   -sof/--select_outfile (vcf)
+   -pad/--padding (Default: "5000" nucleotides)
+   -peg/--per_gene Output most severe consequence transcript (Supply flag to enable)
+   -pli/--pli_values_file Pli value file path
+   -wst/--write_software_tag (Default: "1")
+   -l/--log_file Log file (Default: "vcfparser.log")
+   -h/--help Display this help message
+   -v/--version Display version
+END_USAGE
+}
 
 sub define_select_data {
 
@@ -1283,7 +1312,7 @@ sub parse_vep_csq {
             strict_type => 1,
         },
     };
-    
+
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Convert between hgnc_id and hgnc_symbol
