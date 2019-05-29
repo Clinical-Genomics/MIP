@@ -26,7 +26,7 @@ use Set::IntervalTree;
 ## MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Constants qw{ %ANALYSIS $COMMA $NEWLINE $SPACE };
+use MIP::Constants qw{ %ANALYSIS $COLON $COMMA $NEWLINE $SPACE };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
@@ -63,8 +63,7 @@ my ( $write_software_tag, $padding, $log_file ) =
 my ( $parse_vep, $per_gene );
 
 my ( @range_feature_annotation_columns, @select_feature_annotation_columns );
-my ( %consequence_severity, %meta_data, %range_data, %select_data, %snpeff_cmd, %tree,
-    %pli_score );
+my ( %meta_data, %range_data, %tree, %pli_score );
 
 my $VERSION = q{1.2.15};
 
@@ -180,18 +179,19 @@ if ($pli_values_file_path) {
 ####MAIN####
 ############
 
-define_select_data();
+my %select_data = define_select_data();
 
 if ($range_feature_file) {
 
     read_feature_file(
         {
-            tree_href           => \%tree,
-            feature_data_href   => \%range_data,
             feature_columns_ref => \@range_feature_annotation_columns,
-            range_file_key      => "range_feature",
+            feature_data_href   => \%range_data,
+            log                 => $log,
             infile_path         => $range_feature_file,
             padding_ref         => \$padding,
+            range_file_key      => q{range_feature},
+            tree_href           => \%tree,
         }
     );
 }
@@ -200,20 +200,21 @@ if ($select_feature_file) {
 
     read_feature_file(
         {
-            tree_href                      => \%tree,
-            feature_data_href              => \%select_data,
             feature_columns_ref            => \@select_feature_annotation_columns,
-            range_file_key                 => "select_feature",
+            feature_data_href              => \%select_data,
+            log                            => $log,
             infile_path                    => $select_feature_file,
             padding_ref                    => \$padding,
+            range_file_key                 => q{select_feature},
             select_feature_matching_column => $select_feature_matching_column,
+            tree_href                      => \%tree,
         }
     );
 }
 
-define_snpeff_annotations();
+my %snpeff_cmd = define_snpeff_annotations();
 
-define_consequence_severity();
+my %consequence_severity = define_consequence_severity();
 
 read_infile_vcf(
     {
@@ -281,11 +282,11 @@ END_USAGE
 
 sub define_select_data {
 
-##define_select_data
+## Function : Defines arbitrary INFO fields based on headers in select file
+## Returns  : %select_data
+## Arguments: None
 
-##Function : Defines arbitrary INFO fields based on headers in selectFile
-##Returns  : ""
-##Arguments: None
+    my %select_data;
 
     $select_data{select_file}{HGNC_symbol}{info} =
       q?##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="The HGNC gene symbol">?;
@@ -309,15 +310,16 @@ q?##INFO=<ID=Gene_description,Number=.,Type=String,Description="The HGNC gene de
 q?##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene(s) inheritance model">?;
     $select_data{select_file}{No_hgnc_symbol}{info} =
 q?##INFO=<ID=No_hgnc_symbol,Number=.,Type=String,Description="Clinically relevant genetic regions lacking a HGNC_symbol or Ensembl gene ">?;
+    return %select_data;
 }
 
 sub define_snpeff_annotations {
 
-##define_snpeff_annotations
+## Function : Defines the snpeff annotations that can be parsed and modified
+## Returns  : %snpeff_cmd
+## Arguments: None
 
-##Function : Defines the snpEff annotations that can be parsed and modified
-##Returns  : ""
-##Arguments: None
+    my %snpeff_cmd;
 
     $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{File} =
       q?SnpSift dbnsfp?;
@@ -333,108 +335,110 @@ q?##INFO=<ID=phastCons100way_vertebrate_prediction_term,Number=A,Type=String,Des
     $snpeff_cmd{snpeff}{phyloP100way_vertebrate_prediction_term}{info} =
 q?##INFO=<ID=phyloP100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhyloP conservation prediction term">?;
 
-    $snpeff_cmd{snpeff}{'GERP++_RS_prediction_term'}{File} = q?SnpSift dbnsfp?;
-    $snpeff_cmd{snpeff}{'GERP++_RS_prediction_term'}{vcf_key} =
-      q?dbNSFP_GERP___RS?;
-    $snpeff_cmd{snpeff}{'GERP++_RS_prediction_term'}{info} =
+    $snpeff_cmd{snpeff}{q{GERP++_RS_prediction_term}}{File} = q{SnpSift dbnsfp};
+    $snpeff_cmd{snpeff}{q{GERP++_RS_prediction_term}}{vcf_key} =
+      q{dbNSFP_GERP___RS};
+    $snpeff_cmd{snpeff}{q{GERP++_RS_prediction_term}}{info} =
 q?##INFO=<ID=GERP++_RS_prediction_term,Number=A,Type=String,Description="GERP RS conservation prediction term">?;
-
+    return %snpeff_cmd;
 }
 
 sub define_consequence_severity {
 
-##define_consequence_severity
+## Function : Defines the precedence of consequences for SO-terms
+## Returns  : %consequence_severity
+## Arguments: None
 
-##Function : Defines the precedence of consequences for SO-terms
-##Returns  : ""
-##Arguments: None
+    my %consequence_severity;
 
     $consequence_severity{transcript_ablation}{rank}                       = 1;
-    $consequence_severity{transcript_ablation}{genetic_region_annotation}  = "exonic";
+    $consequence_severity{transcript_ablation}{genetic_region_annotation}  = q{exonic};
     $consequence_severity{splice_donor_variant}{rank}                      = 2;
-    $consequence_severity{splice_donor_variant}{genetic_region_annotation} = "splicing";
+    $consequence_severity{splice_donor_variant}{genetic_region_annotation} = q{splicing};
     $consequence_severity{splice_acceptor_variant}{rank}                   = 2;
     $consequence_severity{splice_acceptor_variant}{genetic_region_annotation} =
-      "splicing";
-    $consequence_severity{stop_gained}{rank}                                   = 3;
-    $consequence_severity{stop_gained}{genetic_region_annotation}              = "exonic";
-    $consequence_severity{frameshift_variant}{rank}                            = 4;
-    $consequence_severity{frameshift_variant}{genetic_region_annotation}       = "exonic";
-    $consequence_severity{stop_lost}{rank}                                     = 5;
-    $consequence_severity{stop_lost}{genetic_region_annotation}                = "exonic";
-    $consequence_severity{start_lost}{rank}                                    = 5;
-    $consequence_severity{start_lost}{genetic_region_annotation}               = "exonic";
-    $consequence_severity{initiator_codon_variant}{rank}                       = 6;
-    $consequence_severity{initiator_codon_variant}{genetic_region_annotation}  = "exonic";
-    $consequence_severity{inframe_insertion}{rank}                             = 6;
-    $consequence_severity{inframe_insertion}{genetic_region_annotation}        = "exonic";
-    $consequence_severity{inframe_deletion}{rank}                              = 6;
-    $consequence_severity{inframe_deletion}{genetic_region_annotation}         = "exonic";
-    $consequence_severity{missense_variant}{rank}                              = 6;
-    $consequence_severity{missense_variant}{genetic_region_annotation}         = "exonic";
-    $consequence_severity{protein_altering_variant}{rank}                      = 6;
-    $consequence_severity{protein_altering_variant}{genetic_region_annotation} = "exonic";
-    $consequence_severity{transcript_amplification}{rank}                      = 7;
-    $consequence_severity{transcript_amplification}{genetic_region_annotation} = "exonic";
-    $consequence_severity{splice_region_variant}{rank}                         = 8;
-    $consequence_severity{splice_region_variant}{genetic_region_annotation} = "splicing";
+      q{splicing};
+    $consequence_severity{stop_gained}{rank}                                  = 3;
+    $consequence_severity{stop_gained}{genetic_region_annotation}             = q{exonic};
+    $consequence_severity{frameshift_variant}{rank}                           = 4;
+    $consequence_severity{frameshift_variant}{genetic_region_annotation}      = q{exonic};
+    $consequence_severity{stop_lost}{rank}                                    = 5;
+    $consequence_severity{stop_lost}{genetic_region_annotation}               = q{exonic};
+    $consequence_severity{start_lost}{rank}                                   = 5;
+    $consequence_severity{start_lost}{genetic_region_annotation}              = q{exonic};
+    $consequence_severity{initiator_codon_variant}{rank}                      = 6;
+    $consequence_severity{initiator_codon_variant}{genetic_region_annotation} = q{exonic};
+    $consequence_severity{inframe_insertion}{rank}                            = 6;
+    $consequence_severity{inframe_insertion}{genetic_region_annotation}       = q{exonic};
+    $consequence_severity{inframe_deletion}{rank}                             = 6;
+    $consequence_severity{inframe_deletion}{genetic_region_annotation}        = q{exonic};
+    $consequence_severity{missense_variant}{rank}                             = 6;
+    $consequence_severity{missense_variant}{genetic_region_annotation}        = q{exonic};
+    $consequence_severity{protein_altering_variant}{rank}                     = 6;
+    $consequence_severity{protein_altering_variant}{genetic_region_annotation} =
+      q{exonic};
+    $consequence_severity{transcript_amplification}{rank} = 7;
+    $consequence_severity{transcript_amplification}{genetic_region_annotation} =
+      q{exonic};
+    $consequence_severity{splice_region_variant}{rank}                      = 8;
+    $consequence_severity{splice_region_variant}{genetic_region_annotation} = q{splicing};
     $consequence_severity{incomplete_terminal_codon_variant}{rank}          = 9;
     $consequence_severity{incomplete_terminal_codon_variant}{genetic_region_annotation} =
-      "exonic";
+      q{exonic};
     $consequence_severity{synonymous_variant}{rank}                           = 10;
-    $consequence_severity{synonymous_variant}{genetic_region_annotation}      = "exonic";
+    $consequence_severity{synonymous_variant}{genetic_region_annotation}      = q{exonic};
     $consequence_severity{stop_retained_variant}{rank}                        = 10;
-    $consequence_severity{stop_retained_variant}{genetic_region_annotation}   = "exonic";
+    $consequence_severity{stop_retained_variant}{genetic_region_annotation}   = q{exonic};
     $consequence_severity{start_retained_variant}{rank}                       = 10;
-    $consequence_severity{start_retained_variant}{genetic_region_annotation}  = "exonic";
+    $consequence_severity{start_retained_variant}{genetic_region_annotation}  = q{exonic};
     $consequence_severity{coding_sequence_variant}{rank}                      = 11;
-    $consequence_severity{coding_sequence_variant}{genetic_region_annotation} = "exonic";
+    $consequence_severity{coding_sequence_variant}{genetic_region_annotation} = q{exonic};
     $consequence_severity{mature_miRNA_variant}{rank}                         = 12;
     $consequence_severity{mature_miRNA_variant}{genetic_region_annotation} =
-      "ncRNA_exonic";
-    $consequence_severity{'5_prime_UTR_variant'}{rank}                      = 13;
-    $consequence_severity{'5_prime_UTR_variant'}{genetic_region_annotation} = "5UTR";
-    $consequence_severity{'3_prime_UTR_variant'}{rank}                      = 14;
-    $consequence_severity{'3_prime_UTR_variant'}{genetic_region_annotation} = "3UTR";
-    $consequence_severity{non_coding_transcript_exon_variant}{rank}         = 15;
+      q{ncRNA_exonic};
+    $consequence_severity{q{5_prime_UTR_variant}}{rank}                      = 13;
+    $consequence_severity{q{5_prime_UTR_variant}}{genetic_region_annotation} = q{5UTR};
+    $consequence_severity{q{3_prime_UTR_variant}}{rank}                      = 14;
+    $consequence_severity{q{3_prime_UTR_variant}}{genetic_region_annotation} = q{3UTR};
+    $consequence_severity{non_coding_transcript_exon_variant}{rank}          = 15;
     $consequence_severity{non_coding_transcript_exon_variant}{genetic_region_annotation}
-      = "ncRNA_exonic";
+      = q{ncRNA_exonic};
     $consequence_severity{non_coding_transcript_variant}{rank} = 15;
     $consequence_severity{non_coding_transcript_variant}{genetic_region_annotation} =
-      "ncRNA";
-    $consequence_severity{intron_variant}{rank}                              = 16;
-    $consequence_severity{intron_variant}{genetic_region_annotation}         = "intronic";
-    $consequence_severity{NMD_transcript_variant}{rank}                      = 17;
-    $consequence_severity{NMD_transcript_variant}{genetic_region_annotation} = "ncRNA";
+      q{ncRNA};
+    $consequence_severity{intron_variant}{rank}                      = 16;
+    $consequence_severity{intron_variant}{genetic_region_annotation} = q{intronic};
+    $consequence_severity{NMD_transcript_variant}{rank}              = 17;
+    $consequence_severity{NMD_transcript_variant}{genetic_region_annotation} = q{ncRNA};
     $consequence_severity{upstream_gene_variant}{rank}                       = 18;
-    $consequence_severity{upstream_gene_variant}{genetic_region_annotation}  = "upstream";
-    $consequence_severity{downstream_gene_variant}{rank}                     = 19;
+    $consequence_severity{upstream_gene_variant}{genetic_region_annotation} = q{upstream};
+    $consequence_severity{downstream_gene_variant}{rank}                    = 19;
     $consequence_severity{downstream_gene_variant}{genetic_region_annotation} =
-      "downstream";
+      q{downstream};
     $consequence_severity{TFBS_ablation}{rank}                                = 20;
-    $consequence_severity{TFBS_ablation}{genetic_region_annotation}           = "TFBS";
+    $consequence_severity{TFBS_ablation}{genetic_region_annotation}           = q{TFBS};
     $consequence_severity{TFBS_amplification}{rank}                           = 21;
-    $consequence_severity{TFBS_amplification}{genetic_region_annotation}      = "TFBS";
+    $consequence_severity{TFBS_amplification}{genetic_region_annotation}      = q{TFBS};
     $consequence_severity{TF_binding_site_variant}{rank}                      = 22;
-    $consequence_severity{TF_binding_site_variant}{genetic_region_annotation} = "TFBS";
+    $consequence_severity{TF_binding_site_variant}{genetic_region_annotation} = q{TFBS};
     $consequence_severity{regulatory_region_variant}{rank}                    = 22;
     $consequence_severity{regulatory_region_variant}{genetic_region_annotation} =
-      "regulatory_region";
+      q{regulatory_region};
     $consequence_severity{regulatory_region_ablation}{rank} = 23;
     $consequence_severity{regulatory_region_ablation}{genetic_region_annotation} =
-      "regulatory_region";
+      q{regulatory_region};
     $consequence_severity{regulatory_region_amplification}{rank} = 24;
     $consequence_severity{regulatory_region_amplification}{genetic_region_annotation} =
-      "regulatory_region";
+      q{regulatory_region};
     $consequence_severity{feature_elongation}{rank} = 25;
     $consequence_severity{feature_elongation}{genetic_region_annotation} =
-      "genomic_feature";
+      q{genomic_feature};
     $consequence_severity{feature_truncation}{rank} = 26;
     $consequence_severity{feature_truncation}{genetic_region_annotation} =
-      "genomic_feature";
+      q{genomic_feature};
     $consequence_severity{intergenic_variant}{rank}                      = 27;
-    $consequence_severity{intergenic_variant}{genetic_region_annotation} = "intergenic";
-
+    $consequence_severity{intergenic_variant}{genetic_region_annotation} = q{intergenic};
+    return %consequence_severity;
 }
 
 sub load_pli_file {
@@ -471,7 +475,7 @@ sub load_pli_file {
     my $FILEHANDLE = IO::Handle->new();
 
     open $FILEHANDLE, q{<}, $infile_path
-      or $log->logdie( q{Cannot open } . $infile_path . q{:} . $!, $NEWLINE );
+      or $log->logdie( q{Cannot open } . $infile_path . $COLON . $!, $NEWLINE );
 
     while (<$FILEHANDLE>) {
 
@@ -486,108 +490,115 @@ sub load_pli_file {
 
 sub read_feature_file {
 
-##read_feature_file
-
-##Function : Reads a file containg features to be annotated using range queries e.g. EnsemblGeneID. Adds to Metadata hash and creates Interval tree for feature.
-##Returns  : ""
-##Arguments: $tree_href, $feature_data_href, $feature_columns_ref, $range_file_key, $infile_path, $padding_ref, $select_feature_matching_column
-##         : $tree_href                      => Interval tree hash {REF}
-##         : $feature_data_href              => Range file hash {REF}
-##         : $feature_columns_ref            => Range columns to include {REF}
-##         : $range_file_key                 => Range file key used to seperate range file(s) i.e., select and range
-##         : $infile_path                    => Infile path
-##         : $padding_ref                    => Padding distance {REF}
-##         : $select_feature_matching_column => Column in the select file to match with vcf key annotation {Optional}
+## Function : Reads a file containg features to be annotated using range queries e.g. EnsemblGeneID. Adds to Metadata hash and creates Interval tree for feature.
+## Returns  :
+## Arguments: $feature_data_href              => Range file hash {REF}
+##          : $feature_columns_ref            => Range columns to include {REF}
+##          : $log                            => Log object
+##          : $infile_path                    => Infile path
+##          : $padding_ref                    => Padding distance {REF}
+##          : $range_file_key                 => Range file key used to seperate range file(s) i.e., select and range
+##          : $select_feature_matching_column => Column in the select file to match with vcf key annotation {Optional}
+##          : $tree_href                      => Interval tree hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $tree_href;
-    my $feature_data_href;
     my $feature_columns_ref;
-    my $range_file_key;
+    my $feature_data_href;
+    my $log;
     my $infile_path;
     my $padding_ref;
+    my $range_file_key;
     my $select_feature_matching_column;
+    my $tree_href;
 
     my $tmpl = {
-        tree_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$tree_href
-        },
         feature_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_data_href,
             strict_type => 1,
-            store       => \$feature_data_href
         },
         feature_columns_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
-            store       => \$feature_columns_ref
-        },
-        range_file_key => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$feature_columns_ref,
             strict_type => 1,
-            store       => \$range_file_key
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
         },
         padding_ref => {
-            required    => 1,
-            defined     => 1,
             default     => \$$,
+            defined     => 1,
+            required    => 1,
+            store       => \$padding_ref,
             strict_type => 1,
-            store       => \$padding_ref
+        },
+        range_file_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$range_file_key,
+            strict_type => 1,
         },
         select_feature_matching_column =>
-          { strict_type => 1, store => \$select_feature_matching_column },
+          { store => \$select_feature_matching_column, strict_type => 1, },
+        tree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$tree_href,
+            strict_type => 1,
+        },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger("Vcfparser");
-
-    my @headers;    #Save headers from rangeFile
+    ## Save headers from range file
+    my @headers;
 
     my $FILEHANDLE = IO::Handle->new();
-    open( $FILEHANDLE, "<", $infile_path )
-      or $log->logdie( "Cannot open " . $infile_path . ":" . $!, "\n" );
 
+    open $FILEHANDLE, q{<}, $infile_path
+      or $log->logdie( q{Cannot open } . $infile_path . $COLON . $!, $NEWLINE );
+
+  LINE:
     while (<$FILEHANDLE>) {
 
-        chomp $_;    #Remove newline
+        ## Remove newline
+        chomp;
 
-        if (m/^\s+$/) {    # Avoid blank lines
+        ## Unpack line
+        my $line = $_;
 
-            next;
-        }
-        if ( $_ =~ /^##/ ) {    #MetaData - Avoid
+        ## Skip blank lines
+        next LINE if ( $line =~ /^\s+$/sxm );
 
-            next;
-        }
-        if ( $_ =~ /^#/ ) {     #Header/Comment
+        ## Skip meta data lines
+        next LINE if ( $line =~ /\A [#]{2}/sxm );
 
-            @headers = split( /\t/, $_ );
+        ## Header/comment
+        if ( $line =~ /\A [#]{1}/sxm ) {
+
+            @headers = split /\t/, $line;
 
             for (
                 my $extract_columns_counter = 0 ;
                 $extract_columns_counter < scalar(@$feature_columns_ref) ;
                 $extract_columns_counter++
               )
-            {                   #Defines what scalar to store
+            {    #Defines what scalar to store
 
                 my $header_ref =
                   \$headers[ $$feature_columns_ref[$extract_columns_counter] ];    #Alias
@@ -633,7 +644,7 @@ sub read_feature_file {
         }
     }
     close($FILEHANDLE);
-    $log->info( "Finished reading " . $range_file_key . " file: " . $infile_path );
+    $log->info(qq{Finished reading $range_file_key file: $infile_path});
 }
 
 sub read_infile_vcf {
