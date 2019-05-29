@@ -1,8 +1,8 @@
 # MIP - Mutation Identification Pipeline
 
-[![Build Status](https://travis-ci.org/Clinical-Genomics/MIP.svg?branch=master)](https://travis-ci.org/Clinical-Genomics/MIP)
-[![Coverage Status](https://coveralls.io/repos/github/Clinical-Genomics/MIP/badge.svg?branch=master)](https://coveralls.io/github/Clinical-Genomics/MIP?branch=master)
-[![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/Clinical-Genomics/MIP/master/LICENSE)
+[![Build Status](https://travis-ci.org/Clinical-Genomics/MIP.svg?branch=develop)](https://travis-ci.org/Clinical-Genomics/MIP)
+[![Coverage Status](https://coveralls.io/repos/github/Clinical-Genomics/MIP/badge.svg?branch=develop)](https://coveralls.io/github/Clinical-Genomics/MIP?branch=develop)
+[![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/Clinical-Genomics/MIP/develop/LICENSE)
 [![GitHub Releases](https://img.shields.io/github/release/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/releases)
 [![GitHub Issues](https://img.shields.io/github/issues/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/issues)
 
@@ -253,11 +253,11 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 
 MIP will place any generated data files in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each recipe is written in the recipe/info directory.
 
-[Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_config.yaml
-[Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/aggregated_master.txt
+[Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_config.yaml
+[Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/aggregated_master.txt
 [Miniconda]: http://conda.pydata.org/miniconda.html
-[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
+[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/develop/templates/643594-miptest_pedigree.yaml
 [Perl]:https://www.perl.org/
-[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_cmms_-v1.23-.ini
-[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_cmms_-v1.5-.ini
-[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.19-.yaml
+[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/rank_model_cmms_-v1.23-.ini
+[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/svrank_model_cmms_-v1.5-.ini
+[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/qc_regexp_-v1.19-.yaml
