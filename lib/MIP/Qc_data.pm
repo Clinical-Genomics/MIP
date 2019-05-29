@@ -33,7 +33,9 @@ BEGIN {
       add_to_qc_data
       get_qc_data_case_recipe_attributes
       get_qc_data_sample_recipe_attributes
+      get_qc_recipe_data
       get_regexp_qc_data
+      parse_qc_recipe_table_data
       set_header_metrics_to_qc_data
       set_qc_data_recipe_info
     };
@@ -306,10 +308,19 @@ sub add_to_qc_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Enable seperation of writing array or key-->value in qc_data
-    if ( scalar @{ $qc_recipe_data_href->{$recipe}{$attribute} } == 1 ) {
+    ## Get corresponding data metrics for header array
+    my @data_metrics = get_qc_recipe_data(
+        {
+            attribute           => $attribute,
+            recipe_name         => $recipe,
+            qc_recipe_data_href => $qc_recipe_data_href,
+        }
+    );
 
-        my $data_metric = $qc_recipe_data_href->{$recipe}{$attribute}[0];
+    ## Enable seperation of writing array or key-->value in qc_data
+    if ( scalar @data_metrics == 1 ) {
+
+        my $data_metric = $data_metrics[0];
 
         set_qc_data_recipe_info(
             {
@@ -326,7 +337,7 @@ sub add_to_qc_data {
         ## Write array to qc_data for metrics without header
 
       DATA_METRIC:
-        foreach my $data_metric ( @{ $qc_recipe_data_href->{$recipe}{$attribute} } ) {
+        foreach my $data_metric (@data_metrics) {
 
             add_qc_data_recipe_info(
                 {
@@ -453,12 +464,71 @@ sub get_qc_data_sample_recipe_attributes {
     return %{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe_name} };
 }
 
+sub get_qc_recipe_data {
+
+## Function : Get sample recipe attributes from qc_data hash
+## Returns  : "$data_metric",  "$data_metrics" or "data_metrics_hash"
+## Arguments: $attribute           => Attribute key
+##          : $qc_recipe_data_href => Hash to save data in each outfile {REF}
+##          : $qc_header_index     => Qc header element index
+##          : $recipe_name         => Recipe to examine
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $qc_recipe_data_href;
+    my $qc_header_index;
+    my $recipe_name;
+
+    my $tmpl = {
+        attribute => {
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        qc_recipe_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_recipe_data_href,
+            strict_type => 1,
+        },
+        qc_header_index => {
+            store       => \$qc_header_index,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Get and return attribute value
+    if ( $attribute && defined $qc_header_index ) {
+
+        return $qc_recipe_data_href->{$recipe_name}{$attribute}[$qc_header_index];
+    }
+
+    ## Get and return data metrics array
+    if ($attribute) {
+
+        return @{ $qc_recipe_data_href->{$recipe_name}{$attribute} };
+    }
+
+    ## Get qc data recipe data metric hash
+    return %{ $qc_recipe_data_href->{$recipe_name} };
+}
+
 sub get_regexp_qc_data {
 
-    ## Function  : Use reg exp to collect qc data via system call
-    ## Returns   : @{ $chld_handler{output} } or @{ $chld_handler{error} }
-    ## Arguments : $data_file_path => Path to data file from which to collect
-    ##           : $regexp         => Regular expression to collect data
+## Function  : Use reg exp to collect qc data via system call
+## Returns   : @{ $chld_handler{output} } or @{ $chld_handler{error} }
+## Arguments : $data_file_path => Path to data file from which to collect
+##           : $regexp         => Regular expression to collect data
 
     my ($arg_href) = @_;
 
@@ -492,6 +562,115 @@ sub get_regexp_qc_data {
         return @{ $chld_handler{error} };
     }
     return @{ $chld_handler{output} };
+}
+
+sub parse_qc_recipe_table_data {
+
+## Function  : Parse qc_recipe_data in table form and set metrics to qc_data hash to enable write to yaml format
+## Returns   :
+## Arguments : $infile              => Infile to recipe
+##           : $qc_data_href        => Qc data hash {REF}
+##           : $qc_header_href      => Save header(s) in each outfile {REF}
+##           : $qc_recipe_data_href => Hash to save data in each outfile {REF}
+##           : $recipe              => Recipe to examine
+##           : $regexp_href         => RegExp hash {REF}
+##           : $sample_id           => SampleID
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile;
+    my $qc_data_href;
+    my $qc_header_href;
+    my $qc_recipe_data_href;
+    my $recipe;
+    my $regexp_href;
+    my $sample_id;
+
+    my $tmpl = {
+        infile       => { store => \$infile, strict_type => 1, },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        qc_header_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_header_href,
+            strict_type => 1,
+        },
+        qc_recipe_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_recipe_data_href,
+            strict_type => 1,
+        },
+        recipe => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe,
+            strict_type => 1,
+        },
+        regexp_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp_href,
+            strict_type => 1,
+        },
+        sample_id => { store => \$sample_id, strict_type => 1, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Qc_data qw{ get_qc_recipe_data };
+
+  TABLE_HEADER_KEY:
+    for my $regexp_header_key ( keys %{ $qc_header_href->{$recipe} } ) {
+
+      PARAGRAPH_KEY:
+        for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
+
+            ## Detect if the regexp id is for data and not header
+            next PARAGRAPH_KEY if ( $regexp_key =~ /^header|header$/isxm );
+
+            ## For all collected headers for this paragraph
+          HEADER_VALUE:
+            while ( my ( $qc_header_index, $qc_header ) =
+                each @{ $qc_header_href->{$recipe}{$regexp_header_key} } )
+            {
+                ## Get corresponding data metric for header element index
+                my $data_metric = get_qc_recipe_data(
+                    {
+                        attribute           => $regexp_key,
+                        recipe_name         => $recipe,
+                        qc_recipe_data_href => $qc_recipe_data_href,
+                        qc_header_index     => $qc_header_index,
+                    }
+                );
+
+                ## Set table metric data to qc_data hash
+                set_header_metrics_to_qc_data(
+                    {
+                        infile            => $infile,
+                        key               => $qc_header,
+                        qc_data_href      => $qc_data_href,
+                        regexp_header_key => $regexp_header_key,
+                        regexp_key        => $regexp_key,
+                        recipe_name       => $recipe,
+                        sample_id         => $sample_id,
+                        value             => $data_metric,
+                    }
+                );
+            }
+        }
+    }
+    return 1;
 }
 
 sub set_header_metrics_to_qc_data {
