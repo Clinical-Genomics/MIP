@@ -22,7 +22,6 @@ emip:
     gffcompare: 0.10.6=h2d50403_0
     htslib: 1.9=hc238db4_4
     numpy:
-    openssl: 1.0.2p
     picard: 2.18.23=0
     pigz:
     pip:
@@ -64,7 +63,6 @@ emip:
 epy3:
   conda:
     bedops: 2.4.35=h2d50403_1
-    openssl: 1.0.2p
     pip:
     python: 3.6
     ucsc-wigtobigwig: 366=hdd26221_0
@@ -79,7 +77,6 @@ eperl5.26:
     blast: 2.7.1=h4422958_6
     fastqc: 0.11.8=1
     fusion-filter: 0.5.0
-    openssl: 1.0.2p
     perl-common-sense:
     perl-json-xs:
     perl-db-file:
@@ -94,7 +91,6 @@ evep:
   conda:
     bcftools: 1.9=ha228f0b_4
     htslib: 1.9=hc238db4_4
-    openssl: 1.0.2p
     pip:
     python: 2.7
     tabix: 0.2.6
