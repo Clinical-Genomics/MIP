@@ -9,6 +9,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - TIDDIT: 2.5.0 -> 2.7.1
 - bcftools: 1.9-h4da6232_0 -> 1.9=ha228f0b_4
 - samtools: 1.9-h8ee4bcc_1 -> 1.9=h8571acd_11 
+- bioconductor-deseq2: 1.18.1=r3.4.1_1 -> 1.22.1=r351hf484d3e_0
+- bioconductor-tximport: 1.8.0=r341_0 -> 1.12.0=r351_0 
 
 ## [7.0.9]
 - Removed plink memory allocation from rd_dna_vcf_rerun
