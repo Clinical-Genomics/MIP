@@ -26,7 +26,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = 1.07;
+our $VERSION = 1.08;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -98,10 +98,10 @@ sub _build_usage {
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                emip         => Optional [Str],
-                epy3         => Optional [Str],
-                q{eperl5.26} => Optional [Str],
-                evep         => Optional [Str],
+                emip   => Optional [Str],
+                epy3   => Optional [Str],
+                eperl5 => Optional [Str],
+                evep   => Optional [Str],
             ],
             required => 0,
         ),
@@ -121,10 +121,10 @@ sub _build_usage {
         q{installations} => (
             cmd_aliases   => [qw{ install }],
             cmd_flag      => q{installations},
-            cmd_tags      => [q{Default: emip epy3 eperl5.26 evep}],
+            cmd_tags      => [q{Default: emip epy3 eperl5 evep}],
             documentation => q{Environments to install},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ emip epy3 eperl5.26 evep }] ), ],
+            isa           => ArrayRef [ enum( [qw{ emip epy3 eperl5 evep }] ), ],
             required      => 0,
         ),
     );
