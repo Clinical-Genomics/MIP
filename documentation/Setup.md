@@ -14,7 +14,7 @@ Where some types or formats are required for each element:
 The `case_id` and `sample_id(s)` needs to be unique and the sample id supplied should be equal to the {SAMPLE_ID} in the filename.
 Underscore cannot be part of any element in the file name as this is used as the separator for each element.
 
-However, MIP will accept filenames in other formats as long as the filename contains the sample id and the mandatory information can be collected from the fastq header.
+However, MIP will accept filenames in other formats as long as the filename contains the sample id and the mandatory information can be collected from the fastq header within the file.
 
 ## Meta-Data
 MIP requires pedigree information recorded in a pedigree.yaml file and a config file.
@@ -39,19 +39,19 @@ MIP is currently unable to install the CADD binary for dynamic calculation of in
 #### **Pipeline: Rare disease**
 - [Bcftools] (version: 1.9)
 - [BedTools] (version: 2.27.1)
-- [BWA] (version: 0.7.15-1)
+- [BWA] (version: 0.7.17)
 - [BWAKit] (version: 0.7.15)
 - [CADD] (version: 1.4)
 - [Chanjo] (version: 4.2.0)
 - [Cnvnator] (version: 0.3.3)
-- [Expansionhunter] (version 2.5.5)
-- [Delly] (version: 0.7.8)
+- [Expansionhunter] (version 3.0.0)
+- [Delly] (version: 0.8.1)
 - [FastQC] (version: 0.11.8)
 - [Freebayes] (version: 1.2.0)
-- [GATK] (version: 3.8 and 4.0.11)
+- [GATK] (version: 3.8 and 4.1.0)
 - [GENMOD] (version: 3.7.3)
 - [Htslib] (version: 1.9)
-- [Manta] (version: 1.4.0)
+- [Manta] (version: 1.5.0)
 - [MultiQC] (version: 1.6)
 - [Peddy] (version: 0.4.2)
 - [PicardTools] (version: 2.18.14)
@@ -59,7 +59,7 @@ MIP is currently unable to install the CADD binary for dynamic calculation of in
 - [rtg-tools] (version: 3.9.1)
 - [Sambamba] (version: 0.6.8)
 - [Samtools] (version: 1.9)
-- [Stranger] (version: 0.4)
+- [Stranger] (version: 0.5.4)
 - [SnpEff] (version: 4.3.1)
 - [Svdb] (version: 1.3.0)
 - [Tiddit] (version: 2.7.1)

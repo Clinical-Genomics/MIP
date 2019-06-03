@@ -1,7 +1,10 @@
 # MIP - Mutation Identification Pipeline
 
 [![Build Status](https://travis-ci.org/Clinical-Genomics/MIP.svg?branch=develop)](https://travis-ci.org/Clinical-Genomics/MIP)
-[![Coverage Status](https://coveralls.io/repos/github/Clinical-Genomics/MIP/badge.svg?branch=develop)](https://coveralls.io/github/Clinical-Genomics/MIP?branch=develop)  
+[![Coverage Status](https://coveralls.io/repos/github/Clinical-Genomics/MIP/badge.svg?branch=develop)](https://coveralls.io/github/Clinical-Genomics/MIP?branch=develop)
+[![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/Clinical-Genomics/MIP/develop/LICENSE)
+[![GitHub Releases](https://img.shields.io/github/release/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/releases)
+[![GitHub Issues](https://img.shields.io/github/issues/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/issues)
 
 MIP enables identification of potential disease causing variants from sequencing data.
 
@@ -22,11 +25,11 @@ MIP performs whole genome or target region analysis of sequenced single-end and/
 
 MIP performs QC, alignment, coverage analysis, variant discovery and annotation, sample checks as well as ranking the found variants according to disease potential with a minimum of manual intervention. MIP is compatible with Scout for visualization of identified variants.
 
-MIP rare disease DNA analyses single nucleotide variants (snvs), insertions and deletions (indels) and structural variants (SV).
+MIP rare disease DNA analyses single nucleotide variants (SNVs), insertions and deletions (INDELs) and structural variants (SVs).
 
 MIP rare disease RNA analyses mono allelic expression, fusion transcripts, transcript expression and alternative splicing.
 
-MIP rare disease DNA vcf rerun performs re-runs starting from bcfs.
+MIP rare disease DNA vcf rerun performs re-runs starting from BCFs or VCFs.
 
 MIP has been in use in the clinical production at the Clinical Genomics facility at Science for Life Laboratory since 2014.
 
@@ -36,7 +39,7 @@ MIP has been in use in the clinical production at the Clinical Genomics facility
 $ mip analyse rd_dna [case_id] --config_file [mip_config_dna.yaml] --pedigree_file [case_id_pedigree.yaml]
 ```
 
-### MIP analyse rare disease DNA vcf rerun
+### MIP analyse rare disease DNA VCF rerun
 ```Bash
 mip analyse rd_dna_vcf_rerun [case_id] --config_file [mip_config_dna_vcf_rerun.yaml] --vcf_rerun_file vcf.bcf  --sv_vcf_rerun_file sv_vcf.bcf --pedigree [case_id_pedigree_vcf_rerun.yaml]
 ```
@@ -47,28 +50,26 @@ $ mip analyse rd_rna [case_id] --config_file [mip_config_rna.yaml] --pedigree_fi
 ## Features
 
 * Installation
-  * Simple automated install of all programs using conda/SHELL via supplied install application
+  * Simple automated install of all programs using conda/pip/SHELL via supplied install application
   * Downloads and prepares references in the installation process
   * Handle conflicting tool dependencies
 * Autonomous
   * Checks that all dependencies are fulfilled before launching
   * Builds and prepares references and/or files missing before launching
-  * Decompose and normalise reference\(s\) and variant vcf\(s\)
+  * Decompose and normalise reference\(s\) and variant VCF\(s\)
   * Splits and merges files/contigs for samples and case when relevant
 * Automatic
   * A minimal amount of hands-on time
   * Tracks and executes all recipes without manual intervention
   * Creates internal queues at nodes to optimize processing
-  * Minimal IO between nodes and login node
 * Flexible:
-  * Design your own workflow by turning on/off relevant recipes
+  * Design your own workflow by turning on/off relevant recipes in predefined pipelines
   * Restart an analysis from anywhere in your workflow
-  * Process one, or multiple samples using the recipe\(s\) of your choice
+  * Process one, or multiple samples
   * Supply parameters on the command line, in a pedigree.yaml file or via config files
   * Simulate your analysis before performing it
-  * Redirect each recipe analysis process to a temporary directory \(@nodes or @login\)
   * Limit a run to a specific set of genomic intervals or chromosomes
-  * Use multiple variant callers for both snv, indels and SV
+  * Use multiple variant callers for both SNV, INDELs and SV
   * Use multiple annotation programs
   * Optionally split data into clinical variants and research variants
 * Fast
@@ -80,7 +81,7 @@ $ mip analyse rd_rna [case_id] --config_file [mip_config_rna.yaml] --pedigree_fi
   * Log sample meta-data and sequence meta-data
   * Log version numbers of softwares and databases
   * Checks sample integrity \(sex, contamination, duplications, ancestry, inbreeding and relationship\)
-  * Test data output existens and integrity using automated tests
+  * Test data output file creation and integrity using automated tests
 * Annotation
   * Gene annotation
     * Summarize over all transcript and output on gene level
@@ -112,6 +113,7 @@ We recommend perlbrew for installing and managing perl and cpanm libraries. Inst
 
 #### Automated Installation \(Linux x86\_64\)
 Below are instructions for installing MIP for analysis of rare diseases. Installation of the RNA pipeline follows a similar syntax.
+
 ##### 1.Clone the official git repository
 
 ```Bash
@@ -126,7 +128,7 @@ $ cpanm --installdeps .
 $ cd -
 ```  
 
-##### 3.Test conda and mip installation files (optional)
+##### 3.Test conda and mip installation files (optional, but recommended)
 
 ```Bash
 $ perl t/mip_install.test
@@ -164,7 +166,7 @@ A conda environment will be created where MIP with most of its dependencies will
 ###### *Note:*
   Some references are quite large and will take time to download. You might want to run this using screen or tmux. Alternatively, the installation script can be submitted as a sbatch job if the flag ``--sbatch_mode`` is used when generating the installation script.
 
-##### 6.Test your MIP installation (optional)
+##### 6.Test your MIP installation (optional, but recommended)
 
 Make sure to activate your MIP conda base environment before executing prove.
 
@@ -212,11 +214,11 @@ MIP is called from the command line and takes input from the command line \(prec
 Lists are supplied as repeated flag entries on the command line or in the config using the yaml format for arrays.  
 Only flags that will actually be used needs to be specified and MIP will check that all required parameters are set before submitting to SLURM.
 
-Recipe parameters can be set to "0" \(=off\), "1" \(=on\) and "2" \(=dry run mode\). Any recipe can be set to dry run mode and MIP will create sbatch scripts, but not submit them to SLURM. MIP can be restarted from any recipe using the ``--start_with_recipe`` flag.
+Recipe parameters can be set to "0" \(=off\), "1" \(=on\) and "2" \(=dry run mode\). Any recipe can be set to dry run mode and MIP will create the sbatch scripts, but not submit them to SLURM. MIP can be restarted from any recipe using the ``--start_with_recipe`` flag.
 
 MIP will overwrite data files when reanalyzing, but keeps all "versioned" sbatch scripts for traceability.
 
-You can always supply `perl mip [process] [pipeline] --help` to list all available parameters and defaults.
+You can always supply `mip [process] [pipeline] --help` to list all available parameters and defaults.
 
 Example usage:
 ```Bash
@@ -227,14 +229,15 @@ This will analyse case 3 using 3 individuals from that case and begin the analys
 
 #### Input
 
-All references and template files should be placed directly in the reference directory specified by `--reference_dir`.
+* Fastq file directories can be supplied with `--infile_dirs [PATH_TO_FASTQ_DIR=SAMPLE_ID]`
+* All references and template files should be placed directly in the reference directory specified by `--reference_dir`.
 
 ##### Meta-Data
 
 * [Configuration file] \(YAML-format\)
 * [Gene panel file]
 * [Pedigree file] \(YAML-format\)
-* [Rank model file] \(Ini-format; Snv/indel\)
+* [Rank model file] \(Ini-format; SNV/INDEL\)
 * [SV rank model file] \(Ini-format; SV\)
 * [Qc regexp file] \(YAML-format\)
 
@@ -248,13 +251,13 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 
 ##### Data
 
-MIP will place any generated datafiles in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each recipe is written in the recipe/info directory.
+MIP will place any generated data files in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each recipe is written in the recipe/info directory.
 
-[Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_config.yaml
-[Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/aggregated_master.txt
+[Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/mip_config.yaml
+[Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/aggregated_master.txt
 [Miniconda]: http://conda.pydata.org/miniconda.html
-[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
+[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/develop/templates/643594-miptest_pedigree.yaml
 [Perl]:https://www.perl.org/
-[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_cmms_-v1.23-.ini
-[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_cmms_-v1.5-.ini
-[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.19-.yaml
+[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/rank_model_cmms_-v1.23-.ini
+[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/svrank_model_cmms_-v1.5-.ini
+[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/develop/templates/qc_regexp_-v1.19-.yaml
