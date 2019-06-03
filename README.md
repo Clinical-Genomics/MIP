@@ -146,7 +146,7 @@ This will generate a bash script called "mip.sh" in your working directory.
   * MIP_rare_ecnvnator
   * MIP_rare_edelly
   * MIP_rare_epeddy
-  * MIP_rare_eperl_5.26
+  * MIP_rare_eperl5
   * MIP_rare_epy3
   * MIP_rare_etiddit
   * MIP_rare_evep

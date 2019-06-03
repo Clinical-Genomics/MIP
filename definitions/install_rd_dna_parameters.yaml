@@ -95,7 +95,7 @@ edelly:
   shell:
 
 # Perl environment spec
-eperl_5.26:
+eperl5:
   conda:
     bcftools: 1.9=ha228f0b_4
     bwa: 0.7.17=ha92aebf_3
@@ -209,7 +209,7 @@ environment_name:
   ecnvnator:
   edelly:
   epeddy:
-  eperl_5.26:
+  eperl5:
   epy3:
   esvdb:
   etiddit:
@@ -221,7 +221,7 @@ installations:
   - edelly
   - emip
   - epeddy
-  - eperl_5.26
+  - eperl5
   - epy3
   - evep
   - esvdb

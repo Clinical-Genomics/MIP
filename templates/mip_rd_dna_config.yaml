@@ -23,7 +23,7 @@ load_env:
     delly_reformat:
     installation: edelly
     method: conda
-  mip_travis_eperl_5.26:
+  mip_travis_eperl5:
     bwa_mem:
     fastqc_ar:
     freebayes_ar:
