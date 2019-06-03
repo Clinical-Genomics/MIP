@@ -320,7 +320,7 @@ sub case_qc {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Qccollect qw{ plink_gender_check relation_check };
-    use MIP::Qc_data qw{ set_qc_data_recipe_info };
+    use MIP::Qc_data qw{ parse_qc_recipe_data set_qc_data_recipe_info };
     use MIP::Sample_info qw{ get_sample_info_case_recipe_attributes };
 
   RECIPE:
@@ -471,6 +471,7 @@ sub sample_qc {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Qccollect qw{ chanjo_gender_check };
+    use MIP::Qc_data qw{ parse_qc_recipe_data };
     use MIP::Sample_info qw{ get_sample_info_sample_recipe_attributes };
 
   SAMPLE_ID:
@@ -658,122 +659,6 @@ FUNCTION
                 regexp_key     => $regexp_key,
             }
         );
-    }
-    return;
-}
-
-sub parse_qc_recipe_data {
-
-## Function  : Parse qc_recipe_data and add to qc_data hash to enable write to yaml format
-## Returns   :
-## Arguments : $infile              => Infile to recipe
-##           : $qc_data_href        => Qc data hash {REF}
-##           : $qc_header_href      => Save header(s) in each outfile {REF}
-##           : $qc_recipe_data_href => Hash to save data in each outfile {REF}
-##           : $recipe              => Recipe to examine
-##           : $regexp_href         => RegExp hash {REF}
-##           : $sample_id           => SampleID
-##           : $sample_info_href    => Info on samples and case hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile;
-    my $qc_data_href;
-    my $qc_header_href;
-    my $qc_recipe_data_href;
-    my $recipe;
-    my $regexp_href;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        infile       => { store => \$infile, strict_type => 1, },
-        qc_data_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$qc_data_href,
-            strict_type => 1,
-        },
-        qc_header_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$qc_header_href,
-            strict_type => 1,
-        },
-        qc_recipe_data_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$qc_recipe_data_href,
-            strict_type => 1,
-        },
-        recipe => {
-            defined     => 1,
-            required    => 1,
-            store       => \$recipe,
-            strict_type => 1,
-        },
-        regexp_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$regexp_href,
-            strict_type => 1,
-        },
-        sample_id        => { store => \$sample_id, strict_type => 1, },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Qc_data
-      qw{ add_to_qc_data parse_qc_recipe_table_data set_header_metrics_to_qc_data };
-
-  REG_EXP_ATTRIBUTE:
-    for my $attribute ( keys %{ $regexp_href->{$recipe} } ) {
-
-        ## For info contained in entry --> Value i.e. same line without header
-        if ( $attribute !~ /^header|header$/i ) {
-
-            add_to_qc_data(
-                {
-                    attribute           => $attribute,
-                    infile              => $infile,
-                    qc_data_href        => $qc_data_href,
-                    qc_header_href      => $qc_header_href,
-                    qc_recipe_data_href => $qc_recipe_data_href,
-                    recipe              => $recipe,
-                    sample_id           => $sample_id,
-                    sample_info_href    => $sample_info_href,
-                }
-            );
-
-        }
-        else {
-            ## Table data i.e. header and subsequent data line(s).
-            ## Can be multiple tables per file
-
-            parse_qc_recipe_table_data(
-                {
-                    infile              => $infile,
-                    qc_data_href        => $qc_data_href,
-                    qc_header_href      => $qc_header_href,
-                    qc_recipe_data_href => $qc_recipe_data_href,
-                    regexp_href         => $regexp_href,
-                    recipe              => $recipe,
-                    sample_id           => $sample_id,
-                }
-            );
-        }
     }
     return;
 }
