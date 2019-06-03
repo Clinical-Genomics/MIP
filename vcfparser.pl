@@ -26,7 +26,7 @@ use Set::IntervalTree;
 ## MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Constants qw{ %ANALYSIS $COLON $COMMA $NEWLINE $SPACE };
+use MIP::Constants qw{ %ANALYSIS $COLON $COMMA $NEWLINE $SPACE $TAB };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
@@ -477,11 +477,21 @@ sub load_pli_file {
     open $FILEHANDLE, q{<}, $infile_path
       or $log->logdie( q{Cannot open } . $infile_path . $COLON . $!, $NEWLINE );
 
+LINE:
     while (<$FILEHANDLE>) {
 
-        chomp $_;
-        my ( $hgnc_symbol, $pli_score ) = split;
+        chomp;
+
+        ## Unpack line
+        my $line = $_;
+
+        ## Get hgnc symbol and pli score
+        my ( $hgnc_symbol, $pli_score ) = split $TAB, $line;
+
+        ## Skip header
         next if ( $pli_score eq q{pLI} );
+
+        ## Set rounded pli score to hash
         $pli_score_href->{$hgnc_symbol} = sprintf( "%.2f", $pli_score );
     }
     close $FILEHANDLE;
