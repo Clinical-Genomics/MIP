@@ -320,7 +320,8 @@ sub case_qc {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Qccollect qw{ plink_gender_check relation_check };
-    use MIP::Qc_data qw{ parse_qc_recipe_data set_qc_data_recipe_info };
+    use MIP::Qc_data
+      qw{ parse_qc_recipe_data parse_regexp_hash_and_collect set_qc_data_recipe_info };
     use MIP::Sample_info qw{ get_sample_info_case_recipe_attributes };
 
   RECIPE:
@@ -471,7 +472,7 @@ sub sample_qc {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Qccollect qw{ chanjo_gender_check };
-    use MIP::Qc_data qw{ parse_qc_recipe_data };
+    use MIP::Qc_data qw{ parse_qc_recipe_data parse_regexp_hash_and_collect };
     use MIP::Sample_info qw{ get_sample_info_sample_recipe_attributes };
 
   SAMPLE_ID:
@@ -547,118 +548,6 @@ sub sample_qc {
                 }
             }
         }
-    }
-    return;
-}
-
-sub parse_regexp_hash_and_collect {
-
-## Function  : Parses the regexp hash structure to identify if the info is
-##             1) Paragraf section(s) (both header and data line(s) 2) Seperate data line.
-## Returns   :
-## Arguments : $outdirectory        => Recipes outdirectory
-##           : $outfile             => Recipes outfile containing parameter to evaluate
-##           : $qc_header_href      => Save header(s) in each outfile {REF}
-##           : $qc_recipe_data_href => Hash to save data in each outfile {REF}
-##           : $recipe              => The recipe to examine
-##           : $regexp_href         => Regexp hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $outdirectory;
-    my $outfile;
-    my $qc_header_href;
-    my $qc_recipe_data_href;
-    my $recipe;
-    my $regexp_href;
-
-    my $tmpl = {
-        outdirectory   => { store => \$outdirectory, strict_type => 1, },
-        outfile        => { store => \$outfile,      strict_type => 1, },
-        qc_header_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$qc_header_href,
-            strict_type => 1,
-        },
-        qc_recipe_data_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$qc_recipe_data_href,
-            strict_type => 1,
-        },
-        recipe => {
-            defined     => 1,
-            required    => 1,
-            store       => \$recipe,
-            strict_type => 1,
-        },
-        regexp_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$regexp_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Qcc_regexp qw{ get_qcc_regexp_recipe_attribute };
-    use MIP::Qc_data qw{ add_qc_data_regexp_return };
-
-    <<"FUNCTION";
-        ## Detect if the outfile contains paragrafs/header info in the outfile
-        ## i.e. data is formated as a paragraf with header(s) and line(s).
-        ## "regexp_key" should either start with or end with "header". This
-        ## section extracts the header/data line(s) for the entire outdata file.
-        ## Necessary to assign correct data entry to header entry later
-        ## (headers and data are saved in seperate hashes).
-FUNCTION
-
-    ## Find the actual regular expression(s) for each recipe that is used
-  REG_EXP_KEY:
-    for my $regexp_key ( keys %{ $regexp_href->{$recipe} } ) {
-
-        ## Regular expression used to collect paragraf header info
-        my $regexp = get_qcc_regexp_recipe_attribute(
-            {
-                attribute       => $regexp_key,
-                qcc_regexp_href => $regexp_href,
-                recipe_name     => $recipe,
-            }
-        );
-
-        ## Detect if the regexp key is a paragraf header and not paragraf
-        if ( $regexp_key =~ /^header|header$/i ) {
-
-            ## Add qc data from data file using regexp
-            my $is_added = add_qc_data_regexp_return(
-                {
-                    data_file_path => catfile( $outdirectory, $outfile ),
-                    qc_href        => $qc_header_href,
-                    recipe_name    => $recipe,
-                    regexp         => $regexp,
-                    regexp_key     => $regexp_key,
-                }
-            );
-            next REG_EXP_KEY;
-        }
-
-        ### For info contained in Entry --> Value i.e. same line.
-        ## Loop through possible separators
-        add_qc_data_regexp_return(
-            {
-                data_file_path => catfile( $outdirectory, $outfile ),
-                qc_href        => $qc_recipe_data_href,
-                recipe_name    => $recipe,
-                regexp         => $regexp,
-                regexp_key     => $regexp_key,
-            }
-        );
     }
     return;
 }
