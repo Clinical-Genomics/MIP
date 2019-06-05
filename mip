@@ -32,12 +32,12 @@ BEGIN {
       };
 
     ## Evaluate that all modules required are installed
-    check_perl_modules(
-        {
-            modules_ref  => \@modules,
-            program_name => $PROGRAM_NAME,
-        }
-    );
+#    check_perl_modules(
+#        {
+#            modules_ref  => \@modules,
+#            program_name => $PROGRAM_NAME,
+#        }
+#    );
 }
 
 ## Parse command line options
