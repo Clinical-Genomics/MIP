@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantevalexome };
@@ -141,7 +141,6 @@ sub analysis_gatk_variantevalexome {
 
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_touch };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
@@ -253,15 +252,6 @@ sub analysis_gatk_variantevalexome {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $view_outfile_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Special case: GATK 4.1.0 requires that the --output file for GATK VariantEval already exists. Clearly, a bug. To get around it we touch the output file before launching. Can be removed once the bug ins fixed.
-    gnu_touch(
-        {
-            file       => $outfile_path,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
