@@ -64,7 +64,6 @@ sub run {
     ## Write default regexp to YAML if demanded
     regexp_to_yaml(
         {
-            is_print_regexp      => $print_regexp,
             log                  => $log,
             print_regexp_outfile => $print_regexp_outfile,
         }
@@ -122,20 +121,10 @@ sub _build_usage {
     );
 
     option(
-        q{print_regexp} => (
-            cmd_aliases   => [qw{ preg }],
-            documentation => q{Print the default regexp YAML file},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{print_regexp_outfile} => (
-            cmd_aliases   => [qw{ rego }],
+            cmd_aliases   => [qw{ prego }],
             cmd_flag      => q{regexp_outfile},
             cmd_tags      => [q{YAML}],
-            default       => q{qc_regexp.yaml},
             documentation => q{Regexp YAML outfile},
             is            => q{rw},
             isa           => Str,
@@ -146,10 +135,10 @@ sub _build_usage {
         q{regexp_file} => (
             cmd_aliases   => [qw{ rxf }],
             cmd_tags      => [q{YAML}],
-            default       => q{qc_regexp.yaml},
             documentation => q{Regular expression file path},
             is            => q{rw},
             isa           => Str,
+            required      => 1,
         )
     );
 
