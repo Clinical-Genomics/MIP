@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Mip_vcfparser} => [qw{ analysis_vcfparser_sv_wes }],
+        q{MIP::Recipes::Analysis::Mip_vcfparser} => [qw{ analysis_mip_vcfparser_sv_wes }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_vcfparser_sv_wes };
+use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser_sv_wes };
 
-diag(   q{Test analysis_vcfparser_sv_wes from Mip_vcfparser.pm v}
+diag(   q{Test analysis_mip_vcfparser_sv_wes from Mip_vcfparser.pm v}
       . $MIP::Recipes::Analysis::Mip_vcfparser::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -62,7 +62,7 @@ diag(   q{Test analysis_vcfparser_sv_wes from Mip_vcfparser.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name = q{mip_vcfparser};
+my $recipe_name    = q{mip_vcfparser};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -106,7 +106,7 @@ $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 my %sample_info;
 
-my $is_ok = analysis_vcfparser_sv_wes(
+my $is_ok = analysis_mip_vcfparser_sv_wes(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,
