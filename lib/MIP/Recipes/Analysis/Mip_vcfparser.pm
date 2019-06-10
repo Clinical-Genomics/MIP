@@ -27,11 +27,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ analysis_mip_vcfparser analysis_vcfparser_sv_wes analysis_vcfparser_sv_wgs };
+      qw{ analysis_mip_vcfparser analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
 
 }
 
@@ -155,7 +155,7 @@ sub analysis_mip_vcfparser {
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
+    use MIP::Program::Mip qw{ vcfparser };
     use MIP::Sample_info qw{ set_gene_panel set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -349,7 +349,7 @@ sub analysis_mip_vcfparser {
             }
         }
 
-        mip_vcfparser(
+        vcfparser(
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
                 infile_path => $infile_path{$contig},
@@ -445,7 +445,7 @@ sub analysis_mip_vcfparser {
     return 1;
 }
 
-sub analysis_vcfparser_sv_wes {
+sub analysis_mip_vcfparser_sv_wes {
 
 ## Function : Vcfparser performs parsing of varianteffectpredictor annotated wes SV variants
 ## Returns  :
@@ -560,7 +560,7 @@ sub analysis_vcfparser_sv_wes {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-    use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
+    use MIP::Program::Mip qw{ vcfparser };
     use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
@@ -693,13 +693,14 @@ sub analysis_vcfparser_sv_wes {
         $select_outfile = $outfile_path_prefix . $outfile_suffixes[1];
     }
 
-    mip_vcfparser(
+    vcfparser(
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $infile_path,
             parse_vep   => $active_parameter_href->{sv_varianteffectpredictor},
             per_gene    => $active_parameter_href->{sv_vcfparser_per_gene},
-	 pli_values_file_path => $active_parameter_href->{vep_plugin_pli_value_file_path},
+            pli_values_file_path =>
+              $active_parameter_href->{vep_plugin_pli_value_file_path},
             range_feature_annotation_columns_ref =>
               \@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns}
               },
@@ -767,7 +768,7 @@ sub analysis_vcfparser_sv_wes {
     return 1;
 }
 
-sub analysis_vcfparser_sv_wgs {
+sub analysis_mip_vcfparser_sv_wgs {
 
 ## Function : Vcfparser performs parsing of varianteffectpredictor annotated ws SV variants
 ## Returns  :
@@ -883,7 +884,7 @@ sub analysis_vcfparser_sv_wgs {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-    use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
+    use MIP::Program::Mip qw{ vcfparser };
     use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
@@ -1053,14 +1054,15 @@ sub analysis_vcfparser_sv_wgs {
             }
         }
 
-        mip_vcfparser(
+        vcfparser(
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
                 infile_path => $infile_path{$contig},
                 padding     => $padding,
                 parse_vep   => $active_parameter_href->{sv_varianteffectpredictor},
                 per_gene    => $active_parameter_href->{sv_vcfparser_per_gene},
-	     pli_values_file_path => $active_parameter_href->{vep_plugin_pli_value_file_path},
+                pli_values_file_path =>
+                  $active_parameter_href->{vep_plugin_pli_value_file_path},
                 range_feature_annotation_columns_ref => \@{
                     $active_parameter_href
                       ->{sv_vcfparser_range_feature_annotation_columns}

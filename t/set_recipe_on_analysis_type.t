@@ -52,7 +52,7 @@ BEGIN {
 
 use MIP::Set::Analysis qw{ set_recipe_on_analysis_type };
 use MIP::Recipes::Analysis::Mip_vcfparser
-  qw{ analysis_vcfparser_sv_wes analysis_vcfparser_sv_wgs };
+  qw{ analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
 
 diag(   q{Test set_recipe_on_analysis_type from Analysis.pm v}
       . $MIP::Set::Analysis::VERSION
@@ -81,7 +81,7 @@ is_deeply( \%analysis_recipe, \%expected_recipe, q{Set no recipe when no program
 
 ## Given program name and wes
 $analysis_recipe{sv_vcfparser} = undef;
-my %expected_wes_recipe = ( sv_vcfparser => \&analysis_vcfparser_sv_wes, );
+my %expected_wes_recipe = ( sv_vcfparser => \&analysis_mip_vcfparser_sv_wes, );
 ## Update which recipe to use depending on consensus analysis type
 set_recipe_on_analysis_type(
     {
@@ -99,7 +99,7 @@ is(
 
 ## Given an existing wes recipes and wgs
 $consensus_analysis_type = q{wgs};
-my %expected_wgs_recipe = ( sv_vcfparser => \&analysis_vcfparser_sv_wgs, );
+my %expected_wgs_recipe = ( sv_vcfparser => \&analysis_mip_vcfparser_sv_wgs, );
 ## Update which recipe to use depending on consensus analysis type
 set_recipe_on_analysis_type(
     {
@@ -118,7 +118,7 @@ is(
 ## Given a mixed consensus analysis type
 $consensus_analysis_type = q{mixed};
 $analysis_recipe{sv_vcfparser} = undef;
-my %expected_default_recipe = ( sv_vcfparser => \&analysis_vcfparser_sv_wgs, );
+my %expected_default_recipe = ( sv_vcfparser => \&analysis_mip_vcfparser_sv_wgs, );
 
 ## Update which recipe to use depending on consensus analysis type
 set_recipe_on_analysis_type(
