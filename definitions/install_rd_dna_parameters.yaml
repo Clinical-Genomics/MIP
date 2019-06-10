@@ -70,11 +70,12 @@ emip:
 # CNVnator environment spec
 ecnvnator:
   conda:
-    bcftools: 1.6
+    bcftools: 1.6=1
     gcc: 4.8.5
+    openssl: 1.0.2p
     pip:
     python: 2.7
-    samtools: 1.6
+    samtools: 1.6=h4da6232_1
   pip:
   shell:
     cnvnator:
