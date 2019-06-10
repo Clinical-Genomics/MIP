@@ -155,7 +155,7 @@ sub analysis_mip_vcfparser {
     use MIP::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Mip qw{ vcfparser };
+    use MIP::Program::Mip qw{ mip_vcfparser };
     use MIP::Sample_info qw{ set_gene_panel set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -349,7 +349,7 @@ sub analysis_mip_vcfparser {
             }
         }
 
-        vcfparser(
+        mip_vcfparser(
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
                 infile_path => $infile_path{$contig},
@@ -560,7 +560,7 @@ sub analysis_mip_vcfparser_sv_wes {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-    use MIP::Program::Mip qw{ vcfparser };
+    use MIP::Program::Mip qw{ mip_vcfparser };
     use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
@@ -693,7 +693,7 @@ sub analysis_mip_vcfparser_sv_wes {
         $select_outfile = $outfile_path_prefix . $outfile_suffixes[1];
     }
 
-    vcfparser(
+    mip_vcfparser(
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $infile_path,
@@ -884,7 +884,7 @@ sub analysis_mip_vcfparser_sv_wgs {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-    use MIP::Program::Mip qw{ vcfparser };
+    use MIP::Program::Mip qw{ mip_vcfparser };
     use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script};
@@ -1054,7 +1054,7 @@ sub analysis_mip_vcfparser_sv_wgs {
             }
         }
 
-        vcfparser(
+        mip_vcfparser(
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
                 infile_path => $infile_path{$contig},

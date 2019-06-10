@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Qccollect} => [qw{ analysis_qccollect }],
+        q{MIP::Recipes::Analysis::Mip_qccollect} => [qw{ analysis_mip_qccollect }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Qccollect qw{ analysis_qccollect };
+use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
 
-diag(   q{Test analysis_qccollect from Qccollect.pm v}
+diag(   q{Test analysis_mip_qccollect from Mip_qccollect.pm v}
       . $MIP::Recipes::Analysis::Qccollect::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -103,7 +103,7 @@ $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 my %sample_info;
 
-my $is_ok = analysis_qccollect(
+my $is_ok = analysis_mip_qccollect(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,

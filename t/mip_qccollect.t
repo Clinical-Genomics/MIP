@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Mip}   => [qw{ qccollect }],
+        q{MIP::Program::Mip}   => [qw{ mip_qccollect }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Mip qw{ qccollect };
+use MIP::Program::Mip qw{ mip_qccollect };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test qccollect from Qccollect.pm v}
+diag(   q{Test mip_qccollect from Mip.pm v}
       . $MIP::Program::Mip::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -117,7 +117,7 @@ my %specific_argument = (
 );
 
 # Coderef - enables generalized use of generate call
-my $module_function_cref = \&qccollect;
+my $module_function_cref = \&mip_qccollect;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

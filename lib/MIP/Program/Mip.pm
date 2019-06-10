@@ -26,10 +26,10 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ qccollect vcfparser };
+    our @EXPORT_OK = qw{ mip_qccollect mip_vcfparser };
 }
 
-sub qccollect {
+sub mip_qccollect {
 
 ## Function : Perl wrapper for qcCollect. Collects metrics information from each analysis run.
 ## Returns  : @commands
@@ -162,7 +162,7 @@ sub qccollect {
     return @commands;
 }
 
-sub vcfparser {
+sub mip_vcfparser {
 
 ## Function : Perl wrapper for MIPs vcfparser to separate clinical variants from research
 ## Returns  : @commands
