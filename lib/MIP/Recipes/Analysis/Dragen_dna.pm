@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $DOT $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -125,13 +125,15 @@ sub analysis_dragen_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Dragen qw{ create_dragen_fastq_list_sample_id };
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Dragen qw{ dragen_dna_analysis };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info
+      qw{ get_read_group get_sequence_run_type get_sequence_run_type_is_interleaved set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -190,6 +192,7 @@ sub analysis_dragen_dna {
     );
 
     my $outdir_path         = $io{out}{dir_path};
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my @outfile_paths       = @{ $io{out}{file_paths} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
@@ -234,6 +237,78 @@ sub analysis_dragen_dna {
         }
     );
 
+    ## Get all sample fastq info for dragen as csv file
+    my @dragen_fastq_list_lines;
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        # Too avoid adjusting infile_index in submitting to jobs
+        my $paired_end_tracker = 0;
+
+        my @infile_paths = @{ $sample_path{$sample_id}{infile_paths} };
+
+        ## Perform per single-end or read pair
+      INFILE_PREFIX:
+        while ( my ( $infile_index, $infile_prefix ) =
+            each @{ $infile_lane_prefix_href->{$sample_id} } )
+        {
+
+            ## Read group header line
+            my %read_group = get_read_group(
+                {
+                    infile_prefix    => $infile_prefix,
+                    platform         => $active_parameter_href->{platform},
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+            ## Add read groups to line
+            my @read_groups = qw{ id sm lb lane };
+
+            push @dragen_fastq_list_lines, join $COMMA, @read_group{@read_groups};
+
+            # Collect paired-end or single-end sequence run type
+            my $sequence_run_type = get_sequence_run_type(
+                {
+                    infile_lane_prefix => $infile_prefix,
+                    sample_id          => $sample_id,
+                    sample_info_href   => $sample_info_href,
+                }
+            );
+
+            # Collect interleaved status for fastq file
+            my $is_interleaved_fastq = get_sequence_run_type_is_interleaved(
+                {
+                    infile_lane_prefix => $infile_prefix,
+                    sample_id          => $sample_id,
+                    sample_info_href   => $sample_info_href,
+                }
+            );
+
+            ## Infile(s)
+            my $fastq_file_path = $infile_paths[$paired_end_tracker];
+
+            ## Add file paths to line
+            push @dragen_fastq_list_lines, join $COMMA, $fastq_file_path;
+
+            my $second_fastq_file_path;
+
+            # If second read direction is present
+            if ( $sequence_run_type eq q{paired-end} ) {
+
+                # Increment to collect correct read 2
+                $paired_end_tracker     = $paired_end_tracker + 1;
+                $second_fastq_file_path = $infile_paths[$paired_end_tracker];
+
+                ## Add file paths to line
+                push @dragen_fastq_list_lines, join $COMMA, $second_fastq_file_path;
+            }
+        }
+    }
+
+    ## TO DO: ADD LINES HERE
+    create_dragen_fastq_list_sample_id( { FILEHANDLE => $FILEHANDLE, } );
+
     dragen_dna_analysis(
         {
             alignment_output_format       => q{BAM},
@@ -251,13 +326,12 @@ sub analysis_dragen_dna {
             enable_sort              => 1,
             enable_variant_caller    => 1,
             fastq_list_all_samples   => $active_parameter_href->{fastq_list_all_samples},
-            fastq_list_file_path => $active_parameter_href->{ dragen_fastq_list_file_path,
-                force              => 1,
-                pedigree_file_path => $case_file_path,
-                outdirectory_path  => $outdir_path,
-                outfile_prefix     => outfile_name_prefix,
+            fastq_list_file_path => $active_parameter_href->{dragen_fastq_list_file_path},
+            force                => 1,
+            pedigree_file_path   => $case_file_path,
+            outdirectory_path    => $outdir_path,
+            outfile_prefix       => $outfile_name_prefix,
 
-            }
         }
     );
     ## Close FILEHANDLES

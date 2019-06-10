@@ -76,6 +76,8 @@ $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id   = $active_parameter{case_id};
 my $sample_id = $active_parameter{sample_ids}[0];
+$active_parameter{dragen_hash_ref_dir_path} = q{a_hash_dir};
+$active_parameter{platform}                 = q{ILLUMINA};
 
 my %file_info = test_mip_hashes(
     {
@@ -93,7 +95,10 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
-my %infile_lane_prefix;
+
+my $infile_prefix      = q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1};
+my %infile_lane_prefix = ( $sample_id => [ $infile_prefix, ], );
+
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -104,7 +109,25 @@ my %parameter = test_mip_hashes(
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
-my %sample_info;
+my %sample_info = (
+    sample => {
+        $sample_id => {
+            file => {
+                ADM1059A1_161011_TestFilev2_GAGATTCC_lane1 => {
+                    sequence_run_type   => q{single-end},
+                    read_direction_file => {
+                        ADM1059A1_161011_TestFilev2_GAGATTCC_lane1_1 => {
+                            flowcell       => q{TestFilev2},
+                            lane           => q{1},
+                            sample_barcode => q{GAGATTC},
+                            platform       => q{ILLUMINA},
+                        },
+                    },
+                },
+            },
+        },
+    },
+);
 
 my $is_ok = analysis_dragen_dna(
     {

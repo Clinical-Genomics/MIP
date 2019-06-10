@@ -23,7 +23,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -95,11 +95,12 @@ my %read_group = get_read_group(
 
 ## Then return expected read group hash
 my %expected_read_group = (
-    id => q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1},
-    pu => q{TestFilev2.1.GAGATTC},
-    sm => q{ADM1059A1},
-    pl => q{ILLUMINA},
-    lb => q{ADM1059A1},
+    id   => q{ADM1059A1_161011_TestFilev2_GAGATTCC_lane1},
+    lane => 1,
+    lb   => q{ADM1059A1},
+    pl   => q{ILLUMINA},
+    pu   => q{TestFilev2.1.GAGATTC},
+    sm   => q{ADM1059A1},
 );
 is_deeply( \%read_group, \%expected_read_group, q{Get read group} );
 
