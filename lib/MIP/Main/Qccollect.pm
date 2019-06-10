@@ -7,6 +7,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
+use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use English qw{ -no_match_vars };
