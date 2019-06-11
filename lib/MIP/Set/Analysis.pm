@@ -64,23 +64,23 @@ sub set_recipe_on_analysis_type {
     use MIP::Recipes::Analysis::Gatk_variantrecalibration
       qw{ analysis_gatk_variantrecalibration_wes analysis_gatk_variantrecalibration_wgs };
     use MIP::Recipes::Analysis::Mip_vcfparser
-      qw{ analysis_vcfparser_sv_wes analysis_vcfparser_sv_wgs };
+      qw{ analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_sv_wes analysis_vep_sv_wgs };
 
     my %analysis_type_recipe = (
         vrn => {
             sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
-            sv_vcfparser              => \&analysis_vcfparser_sv_wgs,
+            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wgs,
         },
         wes => {
             gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wes,
             sv_varianteffectpredictor => \&analysis_vep_sv_wes,
-            sv_vcfparser              => \&analysis_vcfparser_sv_wes,
+            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wes,
         },
         wgs => {
             gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wgs,
             sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
-            sv_vcfparser              => \&analysis_vcfparser_sv_wgs,
+            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wgs,
         },
     );
 

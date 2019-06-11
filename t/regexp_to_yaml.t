@@ -26,7 +26,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -68,9 +68,8 @@ my $test_file_path = catfile( $test_dir, q{test.yaml} );
 ## Given a file path when not to print
 my $is_ok = regexp_to_yaml(
     {
-        is_print_regexp      => 0,
         log                  => $log,
-        print_regexp_outfile => $test_file_path,
+        print_regexp_outfile => undef,
     }
 );
 
@@ -81,7 +80,6 @@ ok( $is_ok, q{Return if not writing to file} );
 trap {
     regexp_to_yaml(
         {
-            is_print_regexp      => 1,
             log                  => $log,
             print_regexp_outfile => $test_file_path,
         }

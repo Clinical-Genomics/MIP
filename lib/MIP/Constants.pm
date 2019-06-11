@@ -44,6 +44,7 @@ BEGIN {
       $FORWARD_SLASH
       $LOG
       $MIP_VERSION
+      $MOOSEX_APP_SCEEN_WIDTH
       $NEWLINE
       $OPEN_BRACE
       $OPEN_BRACKET
@@ -61,6 +62,8 @@ BEGIN {
 ## Constants
 Readonly our $MIP_VERSION => q{v7.0.9};
 
+## Cli
+Readonly our $MOOSEX_APP_SCEEN_WIDTH => 160;
 ## Log
 Readonly our $LOG => q{MIP_ANALYSE};
 

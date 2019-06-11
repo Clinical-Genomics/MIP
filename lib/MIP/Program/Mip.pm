@@ -1,20 +1,20 @@
-package MIP::Program::Variantcalling::Mip_vcfparser;
+package MIP::Program::Mip;
 
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ allow check last_error };
+use Params::Check qw{ check allow last_error };
 use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,19 +23,139 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ mip_vcfparser };
+    our @EXPORT_OK = qw{ mip_qccollect mip_vcfparser };
 }
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+sub mip_qccollect {
+
+## Function : Perl wrapper for qcCollect. Collects metrics information from each analysis run.
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $log_file_path          => Log file path
+##          : $outfile_path           => Outfile path
+##          : $regexp_file_path       => Regular expression file
+##          : $skip_evaluation        => Skip evaluation step
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $log_file_path;
+    my $outfile_path;
+    my $regexp_file_path;
+    my $stdoutfile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+
+    ## Default(s)
+    my $skip_evaluation;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        log_file_path => { store => \$log_file_path, strict_type => 1, },
+        outfile_path  => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        regexp_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp_file_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+        skip_evaluation => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$skip_evaluation,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ mip qccollect};
+
+    ## Options
+    if ($log_file_path) {
+
+        push @commands, q{--log_file} . $SPACE . $log_file_path;
+    }
+
+    if ($regexp_file_path) {
+
+        push @commands, q{--regexp_file} . $SPACE . $regexp_file_path;
+    }
+
+    if ($skip_evaluation) {
+
+        push @commands, q{--skip_evaluation} . $SPACE . $skip_evaluation;
+    }
+
+    ## Infile
+    if ($infile_path) {
+
+        push @commands, q{--sample_info_file} . $SPACE . $infile_path;
+    }
+
+    ## Outfile
+    if ($outfile_path) {
+
+        push @commands, q{--outfile} . $SPACE . $outfile_path;
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
 
 sub mip_vcfparser {
 
-## Function : Perl wrapper for generic commands module.
+## Function : Perl wrapper for MIPs vcfparser to separate clinical variants from research
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE                            => Filehandle to write to
 ##          : $infile_path                           => Infile path
@@ -58,7 +178,7 @@ sub mip_vcfparser {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_path;
-my $pli_values_file_path;
+    my $pli_values_file_path;
     my $range_feature_annotation_columns_ref;
     my $range_feature_file_path;
     my $select_feature_annotation_columns_ref;
@@ -79,71 +199,70 @@ my $pli_values_file_path;
             store => \$FILEHANDLE,
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infile_path,
+            strict_type => 1,
         },
         padding => {
             allow       => [ undef, qr{ \A\d+\z }sxm, ],
-            strict_type => 1,
             store       => \$padding,
+            strict_type => 1,
         },
         parse_vep => {
-            default     => 0,
             allow       => [ undef, 0, 1, 2 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$parse_vep,
+            strict_type => 1,
         },
         per_gene => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$per_gene,
-        },
-pli_values_file_path => {
             strict_type => 1,
+        },
+        pli_values_file_path => {
             store       => \$pli_values_file_path,
+            strict_type => 1,
         },
         range_feature_annotation_columns_ref => {
             default     => [],
-            strict_type => 1,
             store       => \$range_feature_annotation_columns_ref,
+            strict_type => 1,
         },
         range_feature_file_path =>
-          { strict_type => 1, store => \$range_feature_file_path, },
-
+          { store => \$range_feature_file_path, strict_type => 1, },
         select_feature_annotation_columns_ref => {
             default     => [],
-            strict_type => 1,
             store       => \$select_feature_annotation_columns_ref,
+            strict_type => 1,
         },
         select_feature_file_path =>
-          { strict_type => 1, store => \$select_feature_file_path, },
+          { store => \$select_feature_file_path, strict_type => 1, },
         select_feature_matching_column => {
             allow       => [ undef, qr{ \A\d+\z }sxm, ],
-            strict_type => 1,
             store       => \$select_feature_matching_column,
-        },
-        select_outfile  => { strict_type => 1, store => \$select_outfile, },
-        stderrfile_path => {
             strict_type => 1,
+        },
+        select_outfile  => { store => \$select_outfile, strict_type => 1, },
+        stderrfile_path => {
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{vcfparser};
+    my @commands = qw{ vcfparser };
 
     ## Infile
     push @commands, $infile_path;
@@ -163,9 +282,9 @@ pli_values_file_path => {
 
         push @commands, q{--padding} . $SPACE . $padding;
     }
-    if( defined $pli_values_file_path) {
+    if ( defined $pli_values_file_path ) {
 
-      push @commands, q{--pli_values_file} . $SPACE . $pli_values_file_path;
+        push @commands, q{--pli_values_file} . $SPACE . $pli_values_file_path;
     }
 
     if ($range_feature_file_path) {
@@ -216,8 +335,8 @@ pli_values_file_path => {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }

@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Qccollect;
+package MIP::Recipes::Analysis::Mip_qccollect;
 
 use 5.026;
 use Carp;
@@ -28,10 +28,10 @@ BEGIN {
     our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_qccollect };
+    our @EXPORT_OK = qw{ analysis_mip_qccollect };
 }
 
-sub analysis_qccollect {
+sub analysis_mip_qccollect {
 
 ## Function : Collect qc metrics for this analysis run.
 ## Returns  :
@@ -133,7 +133,7 @@ sub analysis_qccollect {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Qc::Qccollect qw{ qccollect };
+    use MIP::Program::Mip qw{ mip_qccollect };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -198,7 +198,7 @@ sub analysis_qccollect {
 
     my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{qccollect.log};
 
-    qccollect(
+    mip_qccollect(
         {
             infile_path      => $infile_path,
             outfile_path     => $outfile_path,

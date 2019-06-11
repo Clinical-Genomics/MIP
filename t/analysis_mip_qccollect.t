@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Mip_vcfparser} => [qw{ analysis_vcfparser_sv_wes }],
+        q{MIP::Recipes::Analysis::Mip_qccollect} => [qw{ analysis_mip_qccollect }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_vcfparser_sv_wes };
+use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
 
-diag(   q{Test analysis_vcfparser_sv_wes from Mip_vcfparser.pm v}
-      . $MIP::Recipes::Analysis::Mip_vcfparser::VERSION
+diag(   q{Test analysis_mip_qccollect from Mip_qccollect.pm v}
+      . $MIP::Recipes::Analysis::Qccollect::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,7 +62,7 @@ diag(   q{Test analysis_vcfparser_sv_wes from Mip_vcfparser.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name = q{mip_vcfparser};
+my $recipe_name    = q{qccollect};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -75,12 +75,9 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-
-#$active_parameter{vcfparser_add_all_mt_var} = 1;
-$active_parameter{sv_vcfparser_outfile_count} = 2;
-@{ $active_parameter{sv_vcfparser_select_feature_annotation_columns} } = ( 1, 2 );
-$active_parameter{sv_vcfparser_select_file} =
-  catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
+$active_parameter{qccollect_regexp_file}     = q{qc_regexp_file.txt};
+$active_parameter{qccollect_sampleinfo_file} = q{sample_info.yaml};
+$active_parameter{qccollect_skip_evaluation} = 1;
 
 my %file_info = test_mip_hashes(
     {
@@ -106,7 +103,7 @@ $parameter{$recipe_name}{outfile_suffix} = q{.vcf};
 
 my %sample_info;
 
-my $is_ok = analysis_vcfparser_sv_wes(
+my $is_ok = analysis_mip_qccollect(
     {
         active_parameter_href   => \%active_parameter,
         case_id                 => $case_id,
