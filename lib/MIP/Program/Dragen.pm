@@ -47,6 +47,7 @@ sub dragen_dna_analysis {
 ##          : $enable_duplicate_marking      => Enable duplication marking in BAM
 ##          : $enable_combinegvcfs           => Enable generation of a single gVCF file that represents all the input gVCFfiles
 ##          : $enable_joint_genotyping       => Enable joint genotyping
+##          : $enable_map_align              => Enable mapping and alignment
 ##          : $enable_multi_sample_gvcf      => Enable multi sample gVCF generation
 ##          : $enable_sampling               => Enable automatic sampling of the insert-length distribution
 ##          : $enable_sort                   => Enable sorting of alignment file
@@ -104,6 +105,7 @@ sub dragen_dna_analysis {
     my $enable_duplicate_marking;
     my $enable_combinegvcfs;
     my $enable_joint_genotyping;
+    my $enable_map_align;
     my $enable_multi_sample_gvcf;
     my $enable_sampling;
     my $enable_sort;
@@ -179,6 +181,12 @@ sub dragen_dna_analysis {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$enable_joint_genotyping,
+            strict_type => 1,
+        },
+        enable_map_align => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$enable_map_align,
             strict_type => 1,
         },
         enable_multi_sample_gvcf => {
@@ -345,6 +353,10 @@ sub dragen_dna_analysis {
         push @commands, q{-b} . $SPACE . $bam_file_path;
     }
 
+    if ($enable_map_align) {
+
+        push @commands, q{--enable-map-align} . $SPACE . q{true};
+    }
     if ($enable_bam_indexing) {
 
         push @commands, q{--enable-bam-indexing} . $SPACE . q{true};

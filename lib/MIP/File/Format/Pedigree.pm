@@ -27,7 +27,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -46,7 +46,7 @@ sub create_fam_file {
 ##          : $execution_mode        => Either system (direct) or via sbatch
 ##          : $fam_file_path         => Case file path
 ##          : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
-##          : $include_header        => Wether to include header ("1") or not ("0")
+##          : $include_header        => Include header ("1") or not ("0")
 ##          : $log                   => Log object
 ##          : $parameter_href        => Hash with paremters from yaml file {REF}
 ##          : $sample_info_href      => Info on samples and case hash {REF}

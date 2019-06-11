@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -100,28 +100,23 @@ sub get_read_group {
       %{ $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
           {read_direction_file}{ $infile_prefix . q{_1} } };
 
-    ## RG hash
-    my %rg;
-
-    ## Add ID
-    $rg{id} = $infile_prefix;
-
-    ## Add platform unit
-    $rg{pu} =
+    my $platform_unit =
         $fastq_file{flowcell}
       . $DOT
       . $fastq_file{lane}
       . $DOT
       . $fastq_file{sample_barcode};
 
-    ## Add sample
-    $rg{sm} = $sample_id;
-
-    ## Add platform
-    $rg{pl} = $platform;
-
-    ## Add molecular library (Dummy value since the actual LB isn't available)
-    $rg{lb} = $sample_id;
+    ## RG hash
+    my %rg = (
+        id   => $infile_prefix,
+        lane => $fastq_file{lane},
+        lb   => $sample_id
+        ,    ## Add molecular library (Dummy value since the actual LB isn't available)
+        pl => $platform,
+        pu => $platform_unit,
+        sm => $sample_id,
+    );
 
     return %rg;
 }

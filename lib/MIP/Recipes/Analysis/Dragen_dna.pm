@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::RECIPE_NAME;
+package MIP::Recipes::Analysis::Dragen_dna;
 
 use 5.026;
 use Carp;
@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $DOT $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -29,13 +29,13 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_RECIPE_NAME };
+    our @EXPORT_OK = qw{ analysis_dragen_dna };
 
 }
 
-sub analysis_RECIPE_NAME {
+sub analysis_dragen_dna {
 
-## Function : DESCRIPTION OF RECIPE
+## Function : Rapid dragen dna end-to-end analysis
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -125,12 +125,15 @@ sub analysis_RECIPE_NAME {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Dragen qw{ create_dragen_fastq_list_sample_id };
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
+    use MIP::Program::Dragen qw{ dragen_dna_analysis };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info
+      qw{ get_read_group get_sequence_run_type get_sequence_run_type_is_interleaved set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -138,22 +141,29 @@ sub analysis_RECIPE_NAME {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Unpack parameters
-    ## Get the io infiles per chain and id
-    my %io = get_io_files(
-        {
-            id             => $case_id,
-            file_info_href => $file_info_href,
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            stream         => q{in},
-        }
-    );
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %infile_path        = %{ $io{in}{file_path_href} };
+    my %sample_path;
 
-    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain         = get_recipe_attributes(
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        ## Unpack parameters
+        ## Get the io infiles per chain and id
+        my %io = get_io_files(
+            {
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                parameter_href => $parameter_href,
+                recipe_name    => $recipe_name,
+                stream         => q{in},
+            }
+        );
+        @{ $sample_path{$sample_id}{infile_paths} } = @{ $io{in}{file_paths} };
+        @{ $sample_path{$sample_id}{infile_names} } = @{ $io{in}{file_names} };
+        @{ $sample_path{$sample_id}{infile_name_prefixes} } =
+          @{ $io{in}{file_name_prefixes} };
+    }
+
+    my $job_id_chain = get_recipe_attributes(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,
@@ -169,25 +179,23 @@ sub analysis_RECIPE_NAME {
     );
 
     ## Set and get the io files per chain, id and stream
-    %io = (
-        %io,
-        parse_io_outfiles(
-            {
-                chain_id         => $job_id_chain,
-                id               => $case_id,
-                file_info_href   => $file_info_href,
-                file_name_prefix => $infile_name_prefix,
-                iterators_ref    => \@contigs_size_ordered,
-                outdata_dir      => $active_parameter_href->{outdata_dir},
-                parameter_href   => $parameter_href,
-                recipe_name      => $recipe_name,
-            }
-        )
+    my %io = parse_io_outfiles(
+        {
+            chain_id               => $job_id_chain,
+            id                     => $case_id,
+            file_info_href         => $file_info_href,
+            file_name_prefixes_ref => [$case_id],
+            outdata_dir            => $active_parameter_href->{outdata_dir},
+            parameter_href         => $parameter_href,
+            recipe_name            => $recipe_name,
+        }
     );
 
+    my $outdir_path         = $io{out}{dir_path};
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
     my @outfile_paths       = @{ $io{out}{file_paths} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my %outfile_path        = %{ $io{out}{file_path_href} };
     my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
@@ -215,10 +223,122 @@ sub analysis_RECIPE_NAME {
 
     say {$FILEHANDLE} q{## } . $recipe_name;
 
-###############################
-###RECIPE TOOL COMMANDS HERE###
-###############################
+    my $case_file_path = catfile( $outdir_path_prefix, $case_id . $DOT . q{fam} );
 
+    ## Create .fam file to be used in variant calling analyses
+    create_fam_file(
+        {
+            active_parameter_href => $active_parameter_href,
+            fam_file_path         => $case_file_path,
+            FILEHANDLE            => $FILEHANDLE,
+            log                   => $log,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
+        }
+    );
+
+    ## Get all sample fastq info for dragen as csv file
+    my @dragen_fastq_list_lines;
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        # Too avoid adjusting infile_index in submitting to jobs
+        my $paired_end_tracker = 0;
+
+        my @infile_paths = @{ $sample_path{$sample_id}{infile_paths} };
+
+        ## Perform per single-end or read pair
+      INFILE_PREFIX:
+        while ( my ( $infile_index, $infile_prefix ) =
+            each @{ $infile_lane_prefix_href->{$sample_id} } )
+        {
+
+            ## Read group header line
+            my %read_group = get_read_group(
+                {
+                    infile_prefix    => $infile_prefix,
+                    platform         => $active_parameter_href->{platform},
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+            ## Add read groups to line
+            my @read_groups = qw{ id sm lb lane };
+
+            push @dragen_fastq_list_lines, join $COMMA, @read_group{@read_groups};
+
+            # Collect paired-end or single-end sequence run type
+            my $sequence_run_type = get_sequence_run_type(
+                {
+                    infile_lane_prefix => $infile_prefix,
+                    sample_id          => $sample_id,
+                    sample_info_href   => $sample_info_href,
+                }
+            );
+
+            # Collect interleaved status for fastq file
+            my $is_interleaved_fastq = get_sequence_run_type_is_interleaved(
+                {
+                    infile_lane_prefix => $infile_prefix,
+                    sample_id          => $sample_id,
+                    sample_info_href   => $sample_info_href,
+                }
+            );
+
+            ## Infile(s)
+            my $fastq_file_path = $infile_paths[$paired_end_tracker];
+
+            ## Add file paths to line
+            push @dragen_fastq_list_lines, join $COMMA, $fastq_file_path;
+
+            my $second_fastq_file_path;
+
+            # If second read direction is present
+            if ( $sequence_run_type eq q{paired-end} ) {
+
+                # Increment to collect correct read 2
+                $paired_end_tracker     = $paired_end_tracker + 1;
+                $second_fastq_file_path = $infile_paths[$paired_end_tracker];
+
+                ## Add file paths to line
+                push @dragen_fastq_list_lines, join $COMMA, $second_fastq_file_path;
+            }
+        }
+    }
+
+    create_dragen_fastq_list_sample_id(
+        {
+            fastq_list_lines_ref => \@dragen_fastq_list_lines,
+            fastq_list_file_path => $active_parameter_href->{dragen_fastq_list_file_path},
+            log                  => $log,
+        }
+    );
+
+    dragen_dna_analysis(
+        {
+            alignment_output_format       => q{BAM},
+            cnv_enable_self_normalization => 1,
+            dbsnp_file_path               => $active_parameter_href->{dragen_dbsnp},
+            dragen_hash_ref_dir_path =>
+              $active_parameter_href->{dragen_hash_ref_dir_path},
+            enable_bam_indexing      => 1,
+            enable_cnv               => 1,
+            enable_combinegvcfs      => 1,
+            enable_duplicate_marking => 1,
+            enable_joint_genotyping  => 1,
+            enable_map_align         => 1,
+            enable_multi_sample_gvcf => 1,
+            enable_sort              => 1,
+            enable_variant_caller    => 1,
+            fastq_list_all_samples   => $active_parameter_href->{fastq_list_all_samples},
+            fastq_list_file_path => $active_parameter_href->{dragen_fastq_list_file_path},
+            force                => 1,
+            pedigree_file_path   => $case_file_path,
+            outdirectory_path    => $outdir_path,
+            outfile_prefix       => $outfile_name_prefix,
+
+        }
+    );
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
@@ -248,7 +368,7 @@ sub analysis_RECIPE_NAME {
             }
         );
     }
-    return;
+    return 1;
 }
 
 1;
