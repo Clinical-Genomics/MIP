@@ -34,79 +34,70 @@ sub mip_qccollect {
 ## Function : Perl wrapper for qcCollect. Collects metrics information from each analysis run.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $log_file_path          => Log file path
+##          : $outfile_path           => Outfile path
+##          : $regexp_file_path       => Regular expression file
+##          : $skip_evaluation        => Skip evaluation step
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $infile_path            => Infile path
-##          : $outfile_path           => Outfile path
-##          : $regexp_file_path       => Regular expression file
-##          : $log_file_path          => Log file path
-##          : $skip_evaluation        => Skip evaluation step
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
+    my $infile_path;
+    my $log_file_path;
+    my $outfile_path;
+    my $regexp_file_path;
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $infile_path;
-    my $outfile_path;
-    my $regexp_file_path;
-    my $log_file_path;
 
     ## Default(s)
-    my $append_stderr_info;
     my $skip_evaluation;
 
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-        stdoutfile_path => {
-            strict_type => 1,
-            store       => \$stdoutfile_path,
-        },
-        stderrfile_path => {
-            strict_type => 1,
-            store       => \$stderrfile_path,
-        },
-        stderrfile_path_append => {
-            strict_type => 1,
-            store       => \$stderrfile_path_append,
-        },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        outfile_path => {
-            required    => 1,
+        log_file_path => { store => \$log_file_path, strict_type => 1, },
+        outfile_path  => {
             defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
             strict_type => 1,
-            store       => \$outfile_path
         },
         regexp_file_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$regexp_file_path,
             strict_type => 1,
-            store       => \$regexp_file_path
         },
-        stderrfile_path    => { strict_type => 1, store => \$stderrfile_path },
-        stdoutfile_path    => { strict_type => 1, store => \$stdoutfile_path },
-        log_file_path      => { strict_type => 1, store => \$log_file_path },
-        append_stderr_info => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        stderrfile_path => {
+            store       => \$stderrfile_path,
             strict_type => 1,
-            store       => \$append_stderr_info
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
         },
         skip_evaluation => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$skip_evaluation,
             strict_type => 1,
-            store       => \$skip_evaluation
         },
     };
 
@@ -146,17 +137,17 @@ sub mip_qccollect {
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -208,64 +199,63 @@ sub mip_vcfparser {
             store => \$FILEHANDLE,
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infile_path,
+            strict_type => 1,
         },
         padding => {
             allow       => [ undef, qr{ \A\d+\z }sxm, ],
-            strict_type => 1,
             store       => \$padding,
+            strict_type => 1,
         },
         parse_vep => {
-            default     => 0,
             allow       => [ undef, 0, 1, 2 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$parse_vep,
+            strict_type => 1,
         },
         per_gene => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$per_gene,
+            strict_type => 1,
         },
         pli_values_file_path => {
-            strict_type => 1,
             store       => \$pli_values_file_path,
+            strict_type => 1,
         },
         range_feature_annotation_columns_ref => {
             default     => [],
-            strict_type => 1,
             store       => \$range_feature_annotation_columns_ref,
+            strict_type => 1,
         },
         range_feature_file_path =>
-          { strict_type => 1, store => \$range_feature_file_path, },
-
+          { store => \$range_feature_file_path, strict_type => 1, },
         select_feature_annotation_columns_ref => {
             default     => [],
-            strict_type => 1,
             store       => \$select_feature_annotation_columns_ref,
+            strict_type => 1,
         },
         select_feature_file_path =>
-          { strict_type => 1, store => \$select_feature_file_path, },
+          { store => \$select_feature_file_path, strict_type => 1, },
         select_feature_matching_column => {
             allow       => [ undef, qr{ \A\d+\z }sxm, ],
-            strict_type => 1,
             store       => \$select_feature_matching_column,
-        },
-        select_outfile  => { strict_type => 1, store => \$select_outfile, },
-        stderrfile_path => {
             strict_type => 1,
+        },
+        select_outfile  => { store => \$select_outfile, strict_type => 1, },
+        stderrfile_path => {
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
     };
 
@@ -345,8 +335,8 @@ sub mip_vcfparser {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
