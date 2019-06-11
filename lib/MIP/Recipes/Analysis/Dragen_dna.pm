@@ -306,8 +306,13 @@ sub analysis_dragen_dna {
         }
     }
 
-    ## TO DO: ADD LINES HERE
-    create_dragen_fastq_list_sample_id( { FILEHANDLE => $FILEHANDLE, } );
+    create_dragen_fastq_list_sample_id(
+        {
+            fastq_list_lines_ref => \@dragen_fastq_list_lines,
+            fastq_list_file_path => $active_parameter_href->{dragen_fastq_list_file_path},
+            log                  => $log,
+        }
+    );
 
     dragen_dna_analysis(
         {

@@ -5,6 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
+use File::Path qw{ remove_tree };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
@@ -76,8 +77,9 @@ $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id   = $active_parameter{case_id};
 my $sample_id = $active_parameter{sample_ids}[0];
-$active_parameter{dragen_hash_ref_dir_path} = q{a_hash_dir};
-$active_parameter{platform}                 = q{ILLUMINA};
+$active_parameter{dragen_hash_ref_dir_path}    = q{a_hash_dir};
+$active_parameter{platform}                    = q{ILLUMINA};
+$active_parameter{dragen_fastq_list_file_path} = q{an_dragen_fastq_file_path};
 
 my %file_info = test_mip_hashes(
     {
@@ -145,5 +147,8 @@ my $is_ok = analysis_dragen_dna(
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+
+## Clean-up
+remove_tree( $active_parameter{dragen_fastq_list_file_path} );
 
 done_testing();
