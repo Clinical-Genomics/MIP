@@ -1,0 +1,113 @@
+#!/usr/bin/env perl
+
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2014 };
+use Readonly;
+
+## MIPs lib/
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Fixtures qw{ test_standard_cli };
+
+my $VERBOSE = 1;
+our $VERSION = 1.00;
+
+$VERBOSE = test_standard_cli(
+    {
+        verbose => $VERBOSE,
+        version => $VERSION,
+    }
+);
+
+BEGIN {
+
+    use MIP::Test::Fixtures qw{ test_import };
+
+### Check all internal dependency modules and imports
+## Modules with import
+    my %perl_module = (
+        q{MIP::Vcfparser} => [qw{ add_vcf_header_info define_select_data }],
+        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+    );
+
+    test_import( { perl_module_href => \%perl_module, } );
+}
+
+use MIP::Vcfparser qw{ add_vcf_header_info define_select_data };
+
+diag(   q{Test add_vcf_header_info from Vcfparser.pm v}
+      . $MIP::Vcfparser::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
+
+## Given a header key when not present in feature data
+my $header = q?##INFO=<ID=Disease_associated_transcript,Number=.,?;
+$header .= q?Type=String,Description="Known pathogenic transcript(s) for gene">?;
+
+my $extract_columns_counter = 0;
+my %feature_data = define_select_data();
+my $feature_file_key = q{select_file};
+my $infile_path = q{a_select_file_path};
+my $header_key = q{Not present in feature data};
+
+add_vcf_header_info(
+    {
+      header_ref          => \$header_key,
+        meta_data_href      => \%feature_data,
+        position_ref        => \$extract_columns_counter,
+        range_file_key      => $feature_file_key,
+        range_file_path_ref => \$infile_path,
+    }
+);
+
+my %expected_feature_data = (present => {$header_key => {info => q?##INFO=<ID=?
+. $header_key
+. q?,Number=.,Type=String,Description="String taken from ?
+. $infile_path . q?">?,
+  column_order => $extract_columns_counter,
+},
+},);
+
+## Then add INFO field using feature data header
+is_deeply(\%{$feature_data{present}}, \%{$expected_feature_data{present}}, q{Add arbitrary INFO field using input header});
+
+## Given a existing header key
+my $existing_header_key = q{Disease_associated_transcript};
+
+## Increment position
+$extract_columns_counter++;
+
+add_vcf_header_info(
+    {
+      header_ref          => \$existing_header_key,
+        meta_data_href      => \%feature_data,
+        position_ref        => \$extract_columns_counter,
+        range_file_key      => $feature_file_key,
+        range_file_path_ref => \$infile_path,
+    }
+);
+
+$expected_feature_data{present}{$existing_header_key}{info} = $header;
+$expected_feature_data{present}{$existing_header_key}{column_order} = $extract_columns_counter;
+
+is_deeply(\%{$feature_data{present}}, \%{$expected_feature_data{present}}, q{Add INFO field from predefined header});
+
+done_testing();

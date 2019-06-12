@@ -29,6 +29,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants qw{ %ANALYSIS $COLON $COMMA $NEWLINE $SPACE $TAB };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
+use MIP::Vcfparser qw{ define_select_data };
 
 our $USAGE = build_usage( {} );
 
@@ -280,39 +281,6 @@ sub build_usage {
 END_USAGE
 }
 
-sub define_select_data {
-
-## Function : Defines arbitrary INFO fields based on headers in select file
-## Returns  : %select_data
-## Arguments: None
-
-    my %select_data;
-
-    $select_data{select_file}{HGNC_symbol}{info} =
-      q?##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="The HGNC gene symbol">?;
-    $select_data{select_file}{Ensembl_gene_id}{info} =
-q?##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene identifier">?;
-    $select_data{select_file}{OMIM_morbid}{info} =
-q?##INFO=<ID=OMIM_morbid,Number=.,Type=String,Description="OMIM morbid ID associated with gene(s)">?;
-    $select_data{select_file}{Phenotypic_disease_model}{info} =
-q?##INFO=<ID=Phenotypic_disease_model,Number=.,Type=String,Description="Known disease gene(s) phenotype inheritance model">?;
-    $select_data{select_file}{Clinical_db_gene_annotation}{info} =
-q?##INFO=<ID=Clinical_db_gene_annotation,Number=.,Type=String,Description="Gene disease group association">?;
-    $select_data{select_file}{Reduced_penetrance}{info} =
-q?##INFO=<ID=Reduced_penetrance,Number=.,Type=String,Description="Pathogenic gene which can exhibit reduced penetrance">?;
-    $select_data{select_file}{Disease_associated_transcript}{info} =
-q?##INFO=<ID=Disease_associated_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene">?;
-    $select_data{select_file}{Ensembl_transcript_to_refseq_transcript}{info} =
-q?##INFO=<ID=Ensembl_transcript_to_refseq_transcript,Number=.,Type=String,Description="The link between ensembl transcript and refSeq transcript IDs">?;
-    $select_data{select_file}{Gene_description}{info} =
-q?##INFO=<ID=Gene_description,Number=.,Type=String,Description="The HGNC gene description">?;
-    $select_data{select_file}{Genetic_disease_model}{info} =
-q?##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene(s) inheritance model">?;
-    $select_data{select_file}{No_hgnc_symbol}{info} =
-q?##INFO=<ID=No_hgnc_symbol,Number=.,Type=String,Description="Clinically relevant genetic regions lacking a HGNC_symbol or Ensembl gene ">?;
-    return %select_data;
-}
-
 sub define_snpeff_annotations {
 
 ## Function : Defines the snpeff annotations that can be parsed and modified
@@ -504,8 +472,8 @@ sub read_feature_file {
 ## Returns  :
 ## Arguments: $feature_data_href              => Range file hash {REF}
 ##          : $feature_columns_ref            => Range columns to include {REF}
-##          : $log                            => Log object
 ##          : $infile_path                    => Infile path
+##          : $log                            => Log object
 ##          : $padding_ref                    => Padding distance {REF}
 ##          : $range_file_key                 => Range file key used to seperate range file(s) i.e., select and range
 ##          : $select_feature_matching_column => Column in the select file to match with vcf key annotation {Optional}
@@ -516,8 +484,8 @@ sub read_feature_file {
     ## Flatten argument(s)
     my $feature_columns_ref;
     my $feature_data_href;
-    my $log;
     my $infile_path;
+    my $log;
     my $padding_ref;
     my $range_file_key;
     my $select_feature_matching_column;
@@ -575,6 +543,8 @@ sub read_feature_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Vcfparser qw{ add_vcf_header_info };
+    
     ## Save headers from range file
     my @headers;
 
@@ -603,27 +573,29 @@ sub read_feature_file {
 
             @headers = split /\t/, $line;
 
+            ## Defines what scalar to store
             for (
                 my $extract_columns_counter = 0 ;
                 $extract_columns_counter < scalar(@$feature_columns_ref) ;
                 $extract_columns_counter++
               )
-            {    #Defines what scalar to store
+            {
 
+              ## Alias
                 my $header_ref =
-                  \$headers[ $$feature_columns_ref[$extract_columns_counter] ];    #Alias
+                  \$headers[ $$feature_columns_ref[$extract_columns_counter] ];
 
-                add_meta_data_info(
+                add_vcf_header_info(
                     {
+                      header_ref          => $header_ref,
                         meta_data_href      => $feature_data_href,
-                        range_file_key      => $range_file_key,
-                        header_ref          => $header_ref,
                         position_ref        => \$extract_columns_counter,
+                        range_file_key      => $range_file_key,
                         range_file_path_ref => \$infile_path,
                     }
                 );
             }
-            next;
+            next LINE;
         }
         if ( $_ =~ /^(\S+)/ ) {
 
@@ -2111,86 +2083,6 @@ sub convert_to_range {
     return $final_start_position, $final_stop_position;
 }
 
-sub add_meta_data_info {
-
-##add_meta_data_info
-
-##Function : Adds arbitrary INFO fields to hash based on supplied headers unless header is already defined.
-##Returns  : ""
-##Arguments: $meta_data_href, $range_file_key, $header_ref, $position_ref, $range_file_path_ref
-##         : $meta_data_href      => Hash to store meta_data in {REF}
-##         : $range_file_key      => Range file key
-##         : $header_ref          => Header from range file {REF}
-##         : $position_ref        => Column position in supplied range file {REF}
-##         : $range_file_path_ref => Range file path {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $meta_data_href;
-    my $range_file_key;
-    my $header_ref;
-    my $position_ref;
-    my $range_file_path_ref;
-
-    my $tmpl = {
-        meta_data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$meta_data_href
-        },
-        range_file_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$range_file_key
-        },
-        header_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$header_ref
-        },
-        position_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$position_ref
-        },
-        range_file_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$range_file_path_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    if ( defined( $meta_data_href->{$range_file_key}{$$header_ref} ) )
-    {    #Add INFO from predefined entries
-
-        $meta_data_href->{present}{$$header_ref}{info} =
-          $meta_data_href->{$range_file_key}{$$header_ref}{info};
-        $meta_data_href->{present}{$$header_ref}{column_order} =
-          $$position_ref;    #Column position in supplied range input file
-    }
-    else {                   #Add arbitrary INFO field using input header
-
-        $meta_data_href->{present}{$$header_ref}{info} =
-            q?##INFO=<ID=?
-          . $$header_ref
-          . q?,Number=.,Type=String,Description="String taken from ?
-          . $$range_file_path_ref . q?">?;
-        $meta_data_href->{present}{$$header_ref}{column_order} =
-          $$position_ref;    #Column position in supplied -sf_ac
-    }
-}
 
 sub feature_annotations {
 
