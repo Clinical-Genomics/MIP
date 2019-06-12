@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2017 };
 use Readonly;
 
 ## MIPs lib/
@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -86,6 +86,10 @@ my %base_argument = (
 
 ## Specific arguments
 my %specific_argument = (
+    filter_file_path => {
+        input           => q{test_file},
+        expected_output => q{--file=test_file},
+    },
     infile_path => {
         input           => q{infile.test},
         expected_output => q{infile.test},
@@ -94,13 +98,13 @@ my %specific_argument = (
         input           => 1,
         expected_output => q{--invert-match},
     },
-    filter_file_path => {
-        input           => q{test_file},
-        expected_output => q{--file=test_file},
-    },
     pattern => {
         input           => q{^chr},
         expected_output => q{^chr},
+    },
+    word_regexp => {
+        input           => 1,
+        expected_output => q{--word-regexp},
     },
 );
 

@@ -123,6 +123,7 @@ sub download_gnomad_pli_per_gene {
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_cat gnu_cut };
+    use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -205,18 +206,28 @@ sub download_gnomad_pli_per_gene {
 
     print {$FILEHANDLE} $SPACE . $PIPE . $SPACE;
 
-    ## Prepare args for gnu_cut
-    my $list_fields        = join $COMMA, ( $HGNC_SYMBOL_COL_NR, $PLI_COL_NR );
+    my $list_fields = join $COMMA, ( $HGNC_SYMBOL_COL_NR, $PLI_COL_NR );
+    gnu_cut(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $DASH,
+            list        => $list_fields,
+        }
+    );
+
+    print {$FILEHANDLE} $SPACE . $PIPE . $SPACE;
+
     my $reformated_outfile = join $UNDERSCORE,
       ( $recipe_name, $DASH, $reference_version . $DASH . q{.txt} );
     my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
 
-    gnu_cut(
+    gnu_grep(
         {
             FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $DASH,
-            list            => $list_fields,
+            invert_match    => 1,
+            pattern         => q{NA},
             stdoutfile_path => $reformated_outfile_path,
+            word_regexp     => 1,
         }
     );
 

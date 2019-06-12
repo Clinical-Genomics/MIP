@@ -43,6 +43,7 @@ sub gnu_grep {
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
 ##         : $stdoutfile_path        => Stdoutfile path
+##         : $word_regexp            => Select only those lines containing matches that form whole words
 
     my ($arg_href) = @_;
 
@@ -57,6 +58,7 @@ sub gnu_grep {
 
     ## Default(s)
     my $invert_match;
+    my $word_regexp;
 
     my $tmpl = {
         FILEHANDLE       => { store => \$FILEHANDLE, },
@@ -79,6 +81,12 @@ sub gnu_grep {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        word_regexp => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$word_regexp,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -91,6 +99,10 @@ sub gnu_grep {
     if ($invert_match) {
 
         push @commands, q{--invert-match};
+    }
+    if ($word_regexp) {
+
+        push @commands, q{--word-regexp};
     }
     if ($filter_file_path) {
 
