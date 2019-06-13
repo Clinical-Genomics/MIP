@@ -140,6 +140,13 @@ gnomad:
   data_type: SCALAR
   default: 1
   type: recipe
+gnomad_pli_per_gene:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 hapmap:
   analysis_mode: case
   associated_recipe:
@@ -199,6 +206,7 @@ recipe_core_number:
     genomic_superdups: 1
     giab: 1
     gnomad: 1
+    gnomad_pli_per_gene: 1
     human_reference: 1
     hapmap: 1
     mills_and_1000g_indels: 1
@@ -233,6 +241,7 @@ recipe_time:
     genomic_superdups: 1
     giab: 1
     gnomad: 1
+    gnomad_pli_per_gene: 1
     hapmap: 1
     human_reference: 1
     mills_and_1000g_indels: 1
