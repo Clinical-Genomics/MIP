@@ -16,6 +16,8 @@ CHAIN_ALL:
          - chanjo_sexcheck
       - CHAIN_STSUBSMT:
          - samtools_subsample_mt
+      - CHAIN_TCOV:
+         - tiddit_coverage
       - CHAIN_SBCOV:
          - sambamba_depth
       - CHAIN_PTMME:

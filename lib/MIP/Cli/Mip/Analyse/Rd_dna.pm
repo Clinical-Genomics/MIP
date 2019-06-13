@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.24;
+our $VERSION = 1.25;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -669,6 +669,16 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
+        q{tiddit_coverage} => (
+            cmd_aliases   => [qw{ tcv }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Generate coverage data from alignment},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{picardtools_collectmultiplemetrics} => (
             cmd_aliases   => [qw{ ptcmm }],
             cmd_flag      => q{ppt_col_mul_met},
@@ -791,7 +801,7 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
-        q{tiddit_bin_size} => (
+        q{tiddit_coverage_bin_size} => (
             cmd_aliases   => [qw{ tidbin }],
             cmd_tags      => [q{Default: 500}],
             documentation => q{Size of coverage bins in calculation},

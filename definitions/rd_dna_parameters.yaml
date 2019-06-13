@@ -190,6 +190,7 @@ recipe_core_number:
     sv_reformat: 1
     sv_varianteffectpredictor: 0
     sv_vcfparser: 13
+    tiddit_coverage: 1
     variant_integrity_ar: 1
     vcf2cytosure_ar: 0
     vt_ar: 13
@@ -277,6 +278,7 @@ recipe_time:
     sv_varianteffectpredictor: 10
     sv_vcfparser: 2
     tiddit: 20
+    tiddit_coverage: 5
     varianteffectpredictor: 10
     variant_integrity_ar: 1
     vcfparser_ar: 5
@@ -596,6 +598,17 @@ sambamba_depth_quality_control:
   data_type: SCALAR
   default: 1
   type: recipe_argument
+tiddit_coverage:
+  analysis_mode: sample
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _tcov
+  outfile_suffix: ".wig"
+  program_executables:
+   - TIDDIT.py
+  type: recipe
 picardtools_collectmultiplemetrics:
   analysis_mode: sample
   associated_recipe:
@@ -725,9 +738,10 @@ tiddit:
    - TIDDIT.py
   recipe_type: structural_variant_callers
   type: recipe
-tiddit_bin_size:
+tiddit_coverage_bin_size:
   associated_recipe:
    - tiddit
+   - tiddit_coverage
    - vcf2cytosure_ar
   data_type: SCALAR
   default: 500
