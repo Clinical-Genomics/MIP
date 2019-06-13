@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -227,6 +227,7 @@ sub analysis_rtg_vcfeval {
 
     my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -266,8 +267,12 @@ sub analysis_rtg_vcfeval {
           . q{ reference version: }
           . $nist_version;
 
-        my $nist_file_path =
-          catfile( $outdir_path_prefix, q{nist} . $UNDERSCORE . $nist_version );
+        my $nist_file_path_prefix = catfile(
+            $rtg_outdirectory_path,
+            join $UNDERSCORE,
+            q{nist} . $nist_version,
+            $sample_id, q{refrm}
+        );
         my $nist_vcf_file_path =
           $active_parameter_href->{nist_call_set_vcf}{$nist_version}{$nist_id};
         my $nist_bed_file_path =
@@ -300,9 +305,9 @@ sub analysis_rtg_vcfeval {
                 index               => 1,
                 index_type          => q{tbi},
                 infile              => $nist_vcf_file_path,
-                outfile_path_prefix => $nist_file_path . $UNDERSCORE . q{refrm},
+                outfile_path_prefix => $nist_file_path_prefix,
                 output_type         => q{z},
-                temp_directory      => $outdir_path_prefix,
+                temp_directory      => $rtg_outdirectory_path,
                 sample_ids_ref      => [$sample_id],
             }
         );
@@ -310,18 +315,19 @@ sub analysis_rtg_vcfeval {
         say {$FILEHANDLE} q{## Compressing and indexing sample calls};
         bcftools_view_and_index_vcf(
             {
-                FILEHANDLE          => $FILEHANDLE,
-                index               => 1,
-                index_type          => q{tbi},
-                infile_path         => $infile_path,
-                outfile_path_prefix => $outfile_path_prefix,
-                output_type         => q{z},
+                FILEHANDLE  => $FILEHANDLE,
+                index       => 1,
+                index_type  => q{tbi},
+                infile_path => $infile_path,
+                outfile_path_prefix =>
+                  catfile( $rtg_outdirectory_path, $outfile_name_prefix ),
+                output_type => q{z},
             }
         );
 
         say {$FILEHANDLE} q{## Remove potential old Rtg vcfeval outdir};
         my $nist_version_rtg_outdirectory_path =
-          catfile( $outdir_path_prefix, $sample_id, $nist_version );
+          catfile( $rtg_outdirectory_path, $nist_version );
         gnu_rm(
             {
                 FILEHANDLE  => $FILEHANDLE,
@@ -335,9 +341,11 @@ sub analysis_rtg_vcfeval {
         say {$FILEHANDLE} q{## Rtg vcfeval};
         rtg_vcfeval(
             {
-                baselinefile_path     => $nist_file_path . $UNDERSCORE . q{refrm.vcf.gz},
-                bed_regionsfile_path  => $nist_bed_file_path,
-                callfile_path         => $outfile_path_prefix . $DOT . q{vcf.gz},
+                baselinefile_path    => $nist_file_path_prefix . $DOT . q{vcf.gz},
+                bed_regionsfile_path => $nist_bed_file_path,
+                callfile_path        => catfile(
+                    $rtg_outdirectory_path, $outfile_name_prefix . $DOT . q{vcf.gz}
+                ),
                 eval_region_file_path => $nist_bed_file_path,
                 FILEHANDLE            => $FILEHANDLE,
                 outputdirectory_path  => $nist_version_rtg_outdirectory_path,
