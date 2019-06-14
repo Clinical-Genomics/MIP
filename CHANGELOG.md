@@ -17,6 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [7.0.10]
 - option: tiddit_bin_size -> tiddit_coverage_bin_size
 - Added generation of wig coverage data file using tiddit_coverage
+- Added set_recipe_resource options for setting core_number, time, memory on CLI per recipe(s)
 
 **New recipes**
 *Rd_dna*
