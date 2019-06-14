@@ -29,7 +29,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants qw{ %ANALYSIS $COLON $COMMA $NEWLINE $SPACE $TAB };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
-use MIP::Vcfparser qw{ define_select_data };
+use MIP::Vcfparser qw{ define_select_data_headers };
 
 our $USAGE = build_usage( {} );
 
@@ -180,7 +180,7 @@ if ($pli_values_file_path) {
 ####MAIN####
 ############
 
-my %select_data = define_select_data();
+my %select_data = define_select_data_headers();
 
 if ($range_feature_file) {
 
@@ -445,7 +445,7 @@ sub load_pli_file {
     open $FILEHANDLE, q{<}, $infile_path
       or $log->logdie( q{Cannot open } . $infile_path . $COLON . $!, $NEWLINE );
 
-LINE:
+  LINE:
     while (<$FILEHANDLE>) {
 
         chomp;
@@ -470,8 +470,8 @@ sub read_feature_file {
 
 ## Function : Reads a file containg features to be annotated using range queries e.g. EnsemblGeneID. Adds to Metadata hash and creates Interval tree for feature.
 ## Returns  :
-## Arguments: $feature_data_href              => Range file hash {REF}
-##          : $feature_columns_ref            => Range columns to include {REF}
+## Arguments: $feature_data_href              => Feature file hash {REF}
+##          : $feature_columns_ref            => Feature columns to include {REF}
 ##          : $infile_path                    => Infile path
 ##          : $log                            => Log object
 ##          : $padding_ref                    => Padding distance {REF}
@@ -543,8 +543,8 @@ sub read_feature_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Vcfparser qw{ add_vcf_header_info };
-    
+    use MIP::Vcfparser qw{ set_vcf_header_info };
+
     ## Save headers from range file
     my @headers;
 
@@ -581,17 +581,16 @@ sub read_feature_file {
               )
             {
 
-              ## Alias
-                my $header_ref =
-                  \$headers[ $$feature_columns_ref[$extract_columns_counter] ];
+                ## Alias
+                my $header = $headers[ $$feature_columns_ref[$extract_columns_counter] ];
 
-                add_vcf_header_info(
+                set_vcf_header_info(
                     {
-                      header_ref          => $header_ref,
-                        meta_data_href      => $feature_data_href,
-                        position_ref        => \$extract_columns_counter,
-                        range_file_key      => $range_file_key,
-                        range_file_path_ref => \$infile_path,
+                        feature_file_key  => $range_file_key,
+                        feature_file_path => $infile_path,
+                        header_key        => $header,
+                        meta_data_href    => $feature_data_href,
+                        position          => $extract_columns_counter,
                     }
                 );
             }
@@ -599,27 +598,29 @@ sub read_feature_file {
         }
         if ( $_ =~ /^(\S+)/ ) {
 
+            ## Loads range file line elements
             my @line_elements =
-              split( "\t", $_ );    #Loads range file line elements
+              split( "\t", $_ );
 
-            if ( defined($select_feature_matching_column) ) {
+            if ( defined $select_feature_matching_column ) {
 
-                $line_elements[$select_feature_matching_column] =~
-                  s/\s/_/g;         # Replace whitespace with "_"
+                # Replace whitespace with "_"
+                $line_elements[$select_feature_matching_column] =~ s/\s/_/g;
                 $select_data{ $line_elements[$select_feature_matching_column] } =
                   $line_elements[$select_feature_matching_column];
             }
 
             ## Create Interval Tree
-            if (@$feature_columns_ref) {    #Annotate vcf with features from range file
+            if ( @{$feature_columns_ref} ) {
 
+                ## Annotate vcf with features from feature file
                 feature_annotations(
                     {
-                        tree_href           => $tree_href,
                         feature_columns_ref => $feature_columns_ref,
                         line_elements_ref   => \@line_elements,
-                        range_file_key      => $range_file_key,
                         padding_ref         => $padding_ref,
+                        range_file_key      => $range_file_key,
+                        tree_href           => $tree_href,
                     }
                 );
             }
@@ -2082,7 +2083,6 @@ sub convert_to_range {
     }
     return $final_start_position, $final_stop_position;
 }
-
 
 sub feature_annotations {
 

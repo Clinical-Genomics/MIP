@@ -26,97 +26,94 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ add_vcf_header_info define_select_data };
+    our @EXPORT_OK = qw{ define_select_data_headers set_vcf_header_info };
 }
 
-sub add_vcf_header_info {
+sub set_vcf_header_info {
 
-## Function : Adds arbitrary INFO fields to hash based on supplied headers unless header is already defined.
+## Function : Adds arbitrary INFO fields to hash based on supplied header key
+##            unless header key is already defined
 ## Returns  :
-## Arguments: $header_ref          => Header from range file {REF}
-##          : $meta_data_href      => Hash to store meta_data in {REF}
-##          : $position_ref        => Column position in supplied range file {REF}
-##          : $range_file_key      => Range file key
-##          : $range_file_path_ref => Range file path {REF}
+## Arguments: $feature_file_key  => Feature file key
+##          : $feature_file_path => Feature file path
+##          : $header_key        => Header key from feature file
+##          : $meta_data_href    => Hash to store meta_data in {REF}
+##          : $position          => Column position in supplied range file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $header_ref;
+    my $feature_file_key;
+    my $feature_file_path;
+    my $header_key;
     my $meta_data_href;
-    my $position_ref;
-    my $range_file_key;
-    my $range_file_path_ref;
+    my $position;
 
     my $tmpl = {
-      header_ref => {
-          defined     => 1,
-          default     => \$$,
-          required    => 1,
-          store       => \$header_ref,
-          strict_type => 1,
-      },
+        feature_file_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_file_key,
+            strict_type => 1,
+        },
+        feature_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_file_path,
+            strict_type => 1,
+        },
+        header_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$header_key,
+            strict_type => 1,
+        },
         meta_data_href => {
-          default     => {},
+            default     => {},
             defined     => 1,
             required    => 1,
             store       => \$meta_data_href,
             strict_type => 1,
         },
-        position_ref => {
-          default     => \$$,
+        position => {
             defined     => 1,
             required    => 1,
-            store       => \$position_ref,
-            strict_type => 1,
-        },
-        range_file_key => {
-            defined     => 1,
-            required    => 1,
-            store       => \$range_file_key,
-            strict_type => 1,
-        },
-        range_file_path_ref => {
-            default     => \$$,
-            defined     => 1,
-            required    => 1,
-            store       => \$range_file_path_ref,
+            store       => \$position,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## For not previously defined header keys in feature files definition
+    my $arbitrary_info_field =
+        q?##INFO=<ID=?
+      . $header_key
+      . q?,Number=.,Type=String,Description="String taken from ?
+      . $feature_file_path . q?">?;
+
     ## Add INFO from predefined entries
-    if ( defined $meta_data_href->{$range_file_key}{$$header_ref} )
-    {
+    if ( defined $meta_data_href->{$feature_file_key}{$header_key} ) {
 
-        $meta_data_href->{present}{$$header_ref}{info} =
-          $meta_data_href->{$range_file_key}{$$header_ref}{info};
-
-        ## Column position in supplied range input file
-        $meta_data_href->{present}{$$header_ref}{column_order} =
-          $$position_ref;
+        $meta_data_href->{present}{$header_key}{info} =
+          $meta_data_href->{$feature_file_key}{$header_key}{info};
     }
     else {
-        ## Add arbitrary INFO field using input header
+        ## Add arbitrary INFO field using feature file header key
 
-        $meta_data_href->{present}{$$header_ref}{info} =
-            q?##INFO=<ID=?
-          . $$header_ref
-          . q?,Number=.,Type=String,Description="String taken from ?
-          . $$range_file_path_ref . q?">?;
-
-        ## Column position in supplied -sf_ac
-        $meta_data_href->{present}{$$header_ref}{column_order} =
-          $$position_ref;
+        $meta_data_href->{present}{$header_key}{info} = $arbitrary_info_field;
     }
+
+    ## Column position in supplied tsv feature file
+    $meta_data_href->{present}{$header_key}{column_order} =
+      $position;
+
     return;
 }
 
-sub define_select_data {
+sub define_select_data_headers {
 
-## Function : Defines arbitrary INFO fields based on headers in select file
+## Function : Defines arbitrary INFO fields headers based on information in select file
 ## Returns  : %select_data
 ## Arguments: None
 
