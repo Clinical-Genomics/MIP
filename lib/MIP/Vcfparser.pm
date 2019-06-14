@@ -87,10 +87,10 @@ sub set_vcf_header_info {
 
     ## For not previously defined header keys in feature files definition
     my $arbitrary_info_field =
-        q?##INFO=<ID=?
+        q{##INFO=<ID=}
       . $header_key
-      . q?,Number=.,Type=String,Description="String taken from ?
-      . $feature_file_path . q?">?;
+      . q{,Number=.,Type=String,Description="String taken from }
+      . $feature_file_path . q{">};
 
     ## Add INFO from predefined entries
     if ( defined $meta_data_href->{$feature_file_key}{$header_key} ) {
@@ -120,27 +120,27 @@ sub define_select_data_headers {
     my %select_data;
 
     $select_data{select_file}{HGNC_symbol}{info} =
-      q?##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="The HGNC gene symbol">?;
+      q{##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="The HGNC gene symbol">};
     $select_data{select_file}{Ensembl_gene_id}{info} =
-q?##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene identifier">?;
+q{##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene identifier">};
     $select_data{select_file}{OMIM_morbid}{info} =
-q?##INFO=<ID=OMIM_morbid,Number=.,Type=String,Description="OMIM morbid ID associated with gene(s)">?;
+q{##INFO=<ID=OMIM_morbid,Number=.,Type=String,Description="OMIM morbid ID associated with gene(s)">};
     $select_data{select_file}{Phenotypic_disease_model}{info} =
-q?##INFO=<ID=Phenotypic_disease_model,Number=.,Type=String,Description="Known disease gene(s) phenotype inheritance model">?;
+q{##INFO=<ID=Phenotypic_disease_model,Number=.,Type=String,Description="Known disease gene(s) phenotype inheritance model">};
     $select_data{select_file}{Clinical_db_gene_annotation}{info} =
-q?##INFO=<ID=Clinical_db_gene_annotation,Number=.,Type=String,Description="Gene disease group association">?;
+q{##INFO=<ID=Clinical_db_gene_annotation,Number=.,Type=String,Description="Gene disease group association">};
     $select_data{select_file}{Reduced_penetrance}{info} =
-q?##INFO=<ID=Reduced_penetrance,Number=.,Type=String,Description="Pathogenic gene which can exhibit reduced penetrance">?;
+q{##INFO=<ID=Reduced_penetrance,Number=.,Type=String,Description="Pathogenic gene which can exhibit reduced penetrance">};
     $select_data{select_file}{Disease_associated_transcript}{info} =
-q?##INFO=<ID=Disease_associated_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene">?;
+q{##INFO=<ID=Disease_associated_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene">};
     $select_data{select_file}{Ensembl_transcript_to_refseq_transcript}{info} =
-q?##INFO=<ID=Ensembl_transcript_to_refseq_transcript,Number=.,Type=String,Description="The link between ensembl transcript and refSeq transcript IDs">?;
+q{##INFO=<ID=Ensembl_transcript_to_refseq_transcript,Number=.,Type=String,Description="The link between ensembl transcript and refSeq transcript IDs">};
     $select_data{select_file}{Gene_description}{info} =
-q?##INFO=<ID=Gene_description,Number=.,Type=String,Description="The HGNC gene description">?;
+q{##INFO=<ID=Gene_description,Number=.,Type=String,Description="The HGNC gene description">};
     $select_data{select_file}{Genetic_disease_model}{info} =
-q?##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene(s) inheritance model">?;
+q{##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene(s) inheritance model">};
     $select_data{select_file}{No_hgnc_symbol}{info} =
-q?##INFO=<ID=No_hgnc_symbol,Number=.,Type=String,Description="Clinically relevant genetic regions lacking a HGNC_symbol or Ensembl gene ">?;
+q{##INFO=<ID=No_hgnc_symbol,Number=.,Type=String,Description="Clinically relevant genetic regions lacking a HGNC_symbol or Ensembl gene ">};
     return %select_data;
 }
 
