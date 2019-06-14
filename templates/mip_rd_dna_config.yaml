@@ -58,6 +58,7 @@ load_env:
     method: conda
     installation: etiddit
     tiddit:
+    tiddit_coverage:
     vcf2cytosure_ar:
 project_id: travis_test
 ## Input

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -202,6 +202,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets
       qw{ analysis_sv_combinevariantcallsets };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
+    use MIP::Recipes::Analysis::Tiddit_coverage qw{ analysis_tiddit_coverage };
     use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
@@ -293,11 +294,12 @@ sub pipeline_analyse_rd_dna {
         sv_varianteffectpredictor => undef,                   # Depends on analysis type
         sv_vcfparser              => undef,                   # Depends on analysis type
         tiddit                    => \&analysis_tiddit,
-        varianteffectpredictor    => \&analysis_vep,
-        variant_integrity_ar => \&analysis_variant_integrity,
-        vcfparser_ar         => \&analysis_mip_vcfparser,
-        vcf2cytosure_ar      => \&analysis_vcf2cytosure,
-        vt_ar                => \&analysis_vt,
+        tiddit_coverage        => \&analysis_tiddit_coverage,
+        varianteffectpredictor => \&analysis_vep,
+        variant_integrity_ar   => \&analysis_variant_integrity,
+        vcfparser_ar           => \&analysis_mip_vcfparser,
+        vcf2cytosure_ar        => \&analysis_vcf2cytosure,
+        vt_ar                  => \&analysis_vt,
     );
 
     ## Special case for rankvariants recipe

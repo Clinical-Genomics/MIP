@@ -14,6 +14,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - GATK: 4.1.0.0-0 -> 4.1.2.0-1
 - samtools: 1.9-h8ee4bcc_1 -> 1.9=h8571acd_11 
 
+## [7.0.10]
+- option: tiddit_bin_size -> tiddit_coverage_bin_size
+- Added generation of wig coverage data file using tiddit_coverage
+
+**New recipes**
+*Rd_dna*
+- tiddit_coverage
+
 ## [7.0.9]
 - Removed plink memory allocation from rd_dna_vcf_rerun
 
