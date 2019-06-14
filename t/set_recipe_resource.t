@@ -41,7 +41,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Set::Parameter} => [qw{ set_recipe_resource }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -60,44 +60,57 @@ diag(   q{Test set_recipe_resource from Parameter.pm v}
 
 ## Constants
 Readonly my $BWA_MEM_CORE_NR => 16;
-Readonly my $BWA_MEM_TIME => 5;
-Readonly my $MANTA_CORE_NR => 36;
+Readonly my $BWA_MEM_TIME    => 5;
+Readonly my $MANTA_CORE_NR   => 36;
 Readonly my $SET_BWA_CORE_NR => 36;
-Readonly my $SET_MANTA_TIME => 5;
+Readonly my $SET_MANTA_TIME  => 5;
 
-my %active_parameter = (recipe_core_number => {bwa_mem => $BWA_MEM_CORE_NR,
-fastqc => 2,
-manta => $MANTA_CORE_NR,
-},
-recipe_time => {bwa_mem => $BWA_MEM_TIME,
-fastqc => 1,
-manta => 1,
-},
-set_recipe_core_number => {bwa_mem => $SET_BWA_CORE_NR,
-fastqc => 1,
-},
-set_recipe_time => { manta => $SET_MANTA_TIME,
-},
+my %active_parameter = (
+    recipe_core_number => {
+        bwa_mem => $BWA_MEM_CORE_NR,
+        fastqc  => 2,
+        manta   => $MANTA_CORE_NR,
+    },
+    recipe_time => {
+        bwa_mem => $BWA_MEM_TIME,
+        fastqc  => 1,
+        manta   => 1,
+    },
+    set_recipe_core_number => {
+        bwa_mem => $SET_BWA_CORE_NR,
+        fastqc  => 1,
+    },
+    set_recipe_time => { manta => $SET_MANTA_TIME, },
 );
 
 ## Given
-set_recipe_resource({active_parameter_href => \%active_parameter,
-});
+set_recipe_resource( { active_parameter_href => \%active_parameter, } );
 
-my %expected_recipe_parameter = (recipe_core_number => {bwa_mem => $SET_BWA_CORE_NR,
-fastqc => 1,
-manta => $MANTA_CORE_NR,
-},
-recipe_time => { bwa_mem => $BWA_MEM_TIME,
-fastqc => 1,
-manta => $SET_MANTA_TIME,
-},);
+my %expected_recipe_parameter = (
+    recipe_core_number => {
+        bwa_mem => $SET_BWA_CORE_NR,
+        fastqc  => 1,
+        manta   => $MANTA_CORE_NR,
+    },
+    recipe_time => {
+        bwa_mem => $BWA_MEM_TIME,
+        fastqc  => 1,
+        manta   => $SET_MANTA_TIME,
+    },
+);
 
 ## Then the resource recipe_core_number for the recipes should have been set
-is_deeply(\%{$active_parameter{recipe_core_number}}, \%{$expected_recipe_parameter{recipe_core_number}}, q{Set recipes core numner parameters});
+is_deeply(
+    \%{ $active_parameter{recipe_core_number} },
+    \%{ $expected_recipe_parameter{recipe_core_number} },
+    q{Set recipes core numner parameters}
+);
 
 ## Then the resource recipe_time for the recipes should have been set
-is_deeply(\%{$active_parameter{recipe_time}}, \%{$expected_recipe_parameter{recipe_time}}, q{Set recipes time parameters});
-
+is_deeply(
+    \%{ $active_parameter{recipe_time} },
+    \%{ $expected_recipe_parameter{recipe_time} },
+    q{Set recipes time parameters}
+);
 
 done_testing();

@@ -1168,7 +1168,6 @@ sub set_recipe_resource {
     ## Flatten argument(s)
     my $active_parameter_href;
 
-
     my $tmpl = {
         active_parameter_href => {
             default     => {},
@@ -1181,20 +1180,23 @@ sub set_recipe_resource {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my %set_hash_key_map = (set_recipe_core_number => q{recipe_core_number},
-    set_recipe_time => q{recipe_time},
-    set_recipe_memory => q{recipe_memory},
-      );
+    my %set_hash_key_map = (
+        set_recipe_core_number => q{recipe_core_number},
+        set_recipe_time        => q{recipe_time},
+        set_recipe_memory      => q{recipe_memory},
+    );
 
-HASH_KEY:
-while ( my ($set_hash_key, $target_hash_key) = each %set_hash_key_map) {
+  HASH_KEY:
+    while ( my ( $set_hash_key, $target_hash_key ) = each %set_hash_key_map ) {
 
-  RECIPE:
-    while ( my ($recipe, $core_number) = each %{$active_parameter_href->{$set_hash_key}}) {
+      RECIPE:
+        while ( my ( $recipe, $core_number ) =
+            each %{ $active_parameter_href->{$set_hash_key} } )
+        {
 
-      $active_parameter_href->{$target_hash_key}{$recipe} = $core_number;
+            $active_parameter_href->{$target_hash_key}{$recipe} = $core_number;
+        }
     }
-  }
     return;
 }
 
