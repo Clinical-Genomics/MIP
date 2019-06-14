@@ -468,7 +468,8 @@ sub mip_analyse {
     );
 
 ## Parameters that have keys as MIP recipe names
-    my @parameter_keys_to_check = (qw{ recipe_time recipe_core_number recipe_memory });
+    my @parameter_keys_to_check = (qw{ recipe_time recipe_core_number recipe_memory
+      set_recipe_core_number set_recipe_memory set_recipe_time });
   PARAMETER_NAME:
     foreach my $parameter_name (@parameter_keys_to_check) {
 
@@ -482,6 +483,10 @@ sub mip_analyse {
             }
         );
     }
+
+## Set recipe resource allocation for specific recipe(s)
+set_recipe_resource({active_parameter_href => \%active_parameter,
+});
 
 ## Parameters with key(s) that have elements as MIP recipe names
     my @parameter_element_to_check = qw{ associated_recipe };

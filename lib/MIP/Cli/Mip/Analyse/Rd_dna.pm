@@ -259,7 +259,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         )
     );
 
-    option(
+    has(
         q{recipe_core_number} => (
             cmd_aliases   => [qw{ rcn }],
             cmd_tags      => [q{recipe_name=X(cores)}],
@@ -270,6 +270,16 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
+        q{set_recipe_core_number} => (
+            cmd_aliases   => [qw{ srcn }],
+            cmd_tags      => [q{recipe_name=X(cores)}],
+            documentation => q{Set the number of cores for specific recipe(s)},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    has(
         q{recipe_memory} => (
             cmd_aliases   => [qw{ rm }],
             cmd_tags      => [q{recipe_name=X(G)}],
@@ -280,6 +290,16 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
+        q{set_recipe_memory} => (
+            cmd_aliases   => [qw{ srm }],
+            cmd_tags      => [q{recipe_name=X(G)}],
+            documentation => q{Set the memory for specific recipe(s)},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    has(
         q{recipe_time} => (
             cmd_aliases   => [qw{ rot }],
             cmd_tags      => [q{recipe_name=time(hours)}],
@@ -289,6 +309,15 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         )
     );
 
+    option(
+        q{set_recipe_time} => (
+            cmd_aliases   => [qw{ srot }],
+            cmd_tags      => [q{recipe_name=time(hours)}],
+            documentation => q{Set the time allocation for specific recipe(s)},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
     option(
         q{infile_dirs} => (
             cmd_aliases   => [qw{ ifd }],
