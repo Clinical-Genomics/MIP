@@ -16,9 +16,12 @@ use Moose::Util::TypeConstraints;
 
 ## MIPs lib/
 use MIP::Cli::Mip;
-use MIP::Constants qw{ $MIP_VERSION };
+use MIP::Constants qw{ $MIP_VERSION $MOOSEX_APP_SCEEN_WIDTH};
 
 our $VERSION = $MIP_VERSION;
+
+## Set screen width for usage message
+$MooseX::App::Utils::SCREEN_WIDTH = $MOOSEX_APP_SCEEN_WIDTH;
 
 ## Enable strict mode
 app_strict 1;

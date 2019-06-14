@@ -84,6 +84,8 @@ reference:
     - na24631_v3.3.2_wgs
   gnomad:
     - r2.0.1
+  gnomad_pli_per_gene:
+    - r2.1.1
   hapmap:
     - 3.3
   mills_and_1000g_indels:
@@ -521,6 +523,13 @@ reference_feature:
         outfile: grch37_gnomad.genomes_-r2.0.1-.vcf.gz
         outfile_index: grch37_gnomad.genomes_-r2.0.1-.vcf.gz.tbi
         url_prefix: ftp://ftp.ensembl.org/pub/data_files/homo_sapiens/GRCh37/variation_genotype/
+  gnomad_pli_per_gene:
+    grch37:
+      r2.1.1:
+        file: gnomad.v2.1.1.lof_metrics.by_gene.txt.bgz
+        outfile: gnomad_lof_metrics_per_gene_-r2.1.1-.txt.gz
+        outfile_decompress: gzip
+        url_prefix: https://storage.googleapis.com/gnomad-public/release/2.1.1/constraint/
   hapmap:
     grch37:
       3.3:

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -186,7 +186,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
     use MIP::Recipes::Analysis::Prepareforvariantannotationblock
       qw{ analysis_prepareforvariantannotationblock };
-    use MIP::Recipes::Analysis::Qccollect qw{ analysis_qccollect };
+    use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
     use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
@@ -277,7 +277,7 @@ sub pipeline_analyse_rd_dna {
         picardtools_mergesamfiles        => \&analysis_picardtools_mergesamfiles,
         plink                            => \&analysis_plink,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
-        qccollect_ar                     => \&analysis_qccollect,
+        qccollect_ar                     => \&analysis_mip_qccollect,
         rankvariant    => undef,                         # Depends on sample features
         rhocall_ar     => \&analysis_rhocall_annotate,
         rtg_vcfeval    => \&analysis_rtg_vcfeval,

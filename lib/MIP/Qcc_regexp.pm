@@ -80,8 +80,7 @@ sub regexp_to_yaml {
 
 ## Function : Write default regexp to YAML
 ## Returns  :
-## Arguments: $is_print_regexp      => To print or not
-##          : $log                  => Log
+## Arguments: $log                  => Log
 ##          : $print_regexp_outfile => File to print regexp to
 
     my ($arg_href) = @_;
@@ -92,19 +91,12 @@ sub regexp_to_yaml {
     my $print_regexp_outfile;
 
     my $tmpl = {
-        is_print_regexp => {
-            allow       => [ undef, 0, 1 ],
-            default     => undef,
-            store       => \$is_print_regexp,
-            strict_type => 1,
-        },
         log => {
             defined  => 1,
             required => 1,
             store    => \$log,
         },
         print_regexp_outfile => {
-            defined     => 1,
             required    => 1,
             store       => \$print_regexp_outfile,
             strict_type => 1,
@@ -115,7 +107,7 @@ sub regexp_to_yaml {
 
     use MIP::File::Format::Yaml qw{ write_yaml };
 
-    return 1 if ( not $is_print_regexp );
+    return 1 if ( not defined $print_regexp_outfile );
 
     my %regexp;
 

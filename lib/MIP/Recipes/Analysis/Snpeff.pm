@@ -151,7 +151,7 @@ sub analysis_snpeff {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
+    use MIP::Program::Mip qw{ mip_vcfparser };
     use MIP::Program::Variantcalling::Snpeff qw{ snpeff_ann };
     use MIP::Program::Variantcalling::Snpsift qw{ snpsift_annotate snpsift_dbnsfp };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };

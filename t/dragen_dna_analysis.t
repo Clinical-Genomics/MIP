@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -87,7 +87,7 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-dragen_hash_ref_dir_path => {
+    dragen_hash_ref_dir_path => {
         input           => catdir(qw{a dragen_ref_hash_table_dir}),
         expected_output => q{--ref-dir}
           . $SPACE
@@ -99,42 +99,36 @@ dragen_hash_ref_dir_path => {
           . $SPACE
           . catdir(qw{ outdirectory path }),
     },
-outfile_prefix => {
+    outfile_prefix => {
         input           => q{sample_file_prefix},
-        expected_output => q{--output-file-prefix}
-          . $SPACE
-          . q{sample_file_prefix},
+        expected_output => q{--output-file-prefix} . $SPACE . q{sample_file_prefix},
     },
 );
 
 my %specific_argument = (
-			 alignment_output_format => {
+    alignment_output_format => {
         input           => q{BAM},
         expected_output => q{--output-format} . $SPACE . q{BAM},
     },
-			 alt_aware => {
+    alt_aware => {
         input           => 1,
         expected_output => q{--alt-aware} . $SPACE . q{true},
     },
-bam_file_path => {
+    bam_file_path => {
         input           => catfile(qw{ a sample.bam }),
-        expected_output => q{-b}
-          . $SPACE
-          . catfile(qw{ a sample.bam }),
+        expected_output => q{-b} . $SPACE . catfile(qw{ a sample.bam }),
     },
     cnv_enable_self_normalization => {
         input           => 1,
         expected_output => q{--cnv-enable-self-normalization} . $SPACE . q{true},
     },
-			 combine_samples_by_name  => {
+    combine_samples_by_name => {
         input           => 1,
         expected_output => q{--combine-samples-by-name} . $SPACE . q{true},
     },
-dbsnp_file_path => {
+    dbsnp_file_path => {
         input           => catfile(qw{ a dbsnp_file_path.vcf.gz }),
-        expected_output => q{--dbsnp}
-          . $SPACE
-          . catfile(qw{ a dbsnp_file_path.vcf.gz }),
+        expected_output => q{--dbsnp} . $SPACE . catfile(qw{ a dbsnp_file_path.vcf.gz }),
     },
     dragen_hash_ref_dir_path => {
         input           => catdir(qw{a dragen_ref_hash_table_dir}),
@@ -142,7 +136,7 @@ dbsnp_file_path => {
           . $SPACE
           . catdir(qw{a dragen_ref_hash_table_dir}),
     },
-enable_duplicate_marking => {
+    enable_duplicate_marking => {
         input           => 1,
         expected_output => q{--enable-bam-indexing} . $SPACE . q{true},
     },
@@ -150,61 +144,59 @@ enable_duplicate_marking => {
         input           => 1,
         expected_output => q{--enable-cnv} . $SPACE . q{true},
     },
-			 enable_duplicate_marking => {
+    enable_duplicate_marking => {
         input           => 1,
         expected_output => q{--enable-duplicate-marking} . $SPACE . q{true},
     },
-enable_combinegvcfs => {
+    enable_combinegvcfs => {
         input           => 1,
         expected_output => q{--enable-combinegvcfs} . $SPACE . q{true},
     },
-enable_joint_genotyping => {
+    enable_joint_genotyping => {
         input           => 1,
         expected_output => q{--enable-joint-genotyping} . $SPACE . q{true},
     },
-enable_multi_sample_gvcf => {
+    enable_map_align => {
+        input           => 1,
+        expected_output => q{--enable-map-align} . $SPACE . q{true},
+    },
+    enable_multi_sample_gvcf => {
         input           => 1,
         expected_output => q{--enable-multi-sample-gvcf} . $SPACE . q{true},
     },
-enable_sampling => {
+    enable_sampling => {
         input           => 1,
         expected_output => q{--enable-sampling} . $SPACE . q{true},
     },
-enable_sort => {
+    enable_sort => {
         input           => 1,
         expected_output => q{--enable-sort} . $SPACE . q{true},
     },
-			 enable_variant_caller => {
+    enable_variant_caller => {
         input           => 1,
         expected_output => q{--enable-variant-caller} . $SPACE . q{true},
     },
-			 fastq_infile_path => {
+    fastq_infile_path => {
         input           => catfile(qw{ a read_1.fastq.gz }),
-        expected_output => q{-1}
-          . $SPACE
-          . catfile(qw{ a read_1.fastq.gz }),
+        expected_output => q{-1} . $SPACE . catfile(qw{ a read_1.fastq.gz }),
     },
-fastq_list_all_samples => {
+    fastq_list_all_samples => {
         input           => 1,
         expected_output => q{--fastq-list-all-samples} . $SPACE . q{true},
     },
-fastq_list_file_path => {
+    fastq_list_file_path => {
         input           => catfile(qw{ a fastq_list.csv }),
-        expected_output => q{--fastq-list}
-          . $SPACE
-          . catfile(qw{ a fastq_list.csv }),
+        expected_output => q{--fastq-list} . $SPACE . catfile(qw{ a fastq_list.csv }),
     },
-			 fastq_list_sample_id => {
+    fastq_list_sample_id => {
         input           => q{sample-1},
-        expected_output => q{--fastq-list-sample-id}
-          . $SPACE
-          . q{sample-1},
+        expected_output => q{--fastq-list-sample-id} . $SPACE . q{sample-1},
     },
-			 force => {
+    force => {
         input           => 1,
         expected_output => q{--force},
     },
-			 is_fastq_interleaved => {
+    is_fastq_interleaved => {
         input           => 1,
         expected_output => q{--interleaved},
     },
@@ -214,43 +206,33 @@ fastq_list_file_path => {
           . $SPACE
           . catdir(qw{ outdirectory path }),
     },
-outfile_prefix => {
+    outfile_prefix => {
         input           => q{sample_file_prefix},
-        expected_output => q{--output-file-prefix}
-          . $SPACE
-          . q{sample_file_prefix},
+        expected_output => q{--output-file-prefix} . $SPACE . q{sample_file_prefix},
     },
-pedigree_file_path => {
+    pedigree_file_path => {
         input           => catfile(qw{ a family.ped }),
-        expected_output => q{--pedigree-file}
-          . $SPACE
-          . catfile(qw{ a family.ped }),
+        expected_output => q{--pedigree-file} . $SPACE . catfile(qw{ a family.ped }),
     },
-sample_gvcf_file_paths_ref => {
+    sample_gvcf_file_paths_ref => {
         inputs_ref      => [qw{ sample-1.gvcf sample-2.gvcf }],
         expected_output => q{-variant sample-1.gvcf -variant sample-2.gvcf},
-},
-sample_id => {
+    },
+    sample_id => {
         input           => q{sample-1},
-        expected_output => q{--vc-sample-name}
-          . $SPACE
-          . q{sample-1},
+        expected_output => q{--vc-sample-name} . $SPACE . q{sample-1},
     },
-second_fastq_infile_path => {
+    second_fastq_infile_path => {
         input           => catfile(qw{ a read_2.fastq.gz }),
-        expected_output => q{-2}
-          . $SPACE
-          . catfile(qw{ a read_2.fastq.gz }),
+        expected_output => q{-2} . $SPACE . catfile(qw{ a read_2.fastq.gz }),
     },
-vc_enable_gatk_acceleration => {
+    vc_enable_gatk_acceleration => {
         input           => 1,
         expected_output => q{--vc-enable-gatk-acceleration} . $SPACE . q{true},
     },
-vc_target_bed_file_path => {
+    vc_target_bed_file_path => {
         input           => catfile(qw{ a targets.bed }),
-        expected_output => q{--vc-target-bed}
-          . $SPACE
-          . catfile(qw{ a targets.bed }),
+        expected_output => q{--vc-target-bed} . $SPACE . catfile(qw{ a targets.bed }),
     },
 );
 
