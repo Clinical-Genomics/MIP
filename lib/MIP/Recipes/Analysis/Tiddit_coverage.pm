@@ -223,10 +223,7 @@ sub analysis_tiddit_coverage {
 
     ### SHELL:
 
-    ## tiddit --cov
     say {$FILEHANDLE} q{## Generating coverage data from alignment};
-
-    ## Get parameters
 
     tiddit_coverage(
         {
