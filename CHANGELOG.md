@@ -14,6 +14,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - GATK: 4.1.0.0-0 -> 4.1.2.0-1
 - samtools: 1.9-h8ee4bcc_1 -> 1.9=h8571acd_11 
 
+## [7.0.10]
+- Added set_recipe_resource options for setting core_number, time, memory on CLI per recipe(s)
+
 ## [7.0.9]
 - Removed plink memory allocation from rd_dna_vcf_rerun
 

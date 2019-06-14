@@ -57,7 +57,7 @@ use MIP::Parse::Parameter qw{ parse_start_with_recipe };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_cache set_human_genome_reference_features set_no_dry_run_parameters set_parameter_reference_dir_path };
+  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_cache set_human_genome_reference_features set_no_dry_run_parameters set_parameter_reference_dir_path set_recipe_resource };
 use MIP::Update::Parameters
   qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
@@ -468,8 +468,10 @@ sub mip_analyse {
     );
 
 ## Parameters that have keys as MIP recipe names
-    my @parameter_keys_to_check = (qw{ recipe_time recipe_core_number recipe_memory
-      set_recipe_core_number set_recipe_memory set_recipe_time });
+    my @parameter_keys_to_check = (
+        qw{ recipe_time recipe_core_number recipe_memory
+          set_recipe_core_number set_recipe_memory set_recipe_time }
+    );
   PARAMETER_NAME:
     foreach my $parameter_name (@parameter_keys_to_check) {
 
@@ -485,8 +487,7 @@ sub mip_analyse {
     }
 
 ## Set recipe resource allocation for specific recipe(s)
-set_recipe_resource({active_parameter_href => \%active_parameter,
-});
+    set_recipe_resource( { active_parameter_href => \%active_parameter, } );
 
 ## Parameters with key(s) that have elements as MIP recipe names
     my @parameter_element_to_check = qw{ associated_recipe };
