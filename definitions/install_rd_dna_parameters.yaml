@@ -28,7 +28,7 @@ emip:
     htslib: 1.9=hc238db4_4
     libstdcxx-ng: 8.2
     ldc: 1.11.0=hb2c9046_0
-    manta: 1.5.0=py27_0 
+    manta: 1.5.0=py27_0
     numpy:
     picard: 2.18.14=0
     pip:
@@ -204,17 +204,24 @@ evep:
         - homo_sapiens_merged
       version: 95
 
-# Specify environment names
+## Default base name
+environment_base_name: mip7_rd-dna
+
+# Specify default environment names
 environment_name:
-  emip: MIP_rd_dna
-  ecnvnator:
-  edelly:
-  epeddy:
-  eperl5:
-  epy3:
-  esvdb:
-  etiddit:
-  evep:
+  emip: mip7_rd-dna
+  ecnvnator: mip7_rd-dna_cnvnator
+  edelly: mip7_rd-dna_delly
+  epeddy: mip7_rd-dna_peddy
+  eperl5: mip7_rd-dna_perl5
+  epy3: mip7_rd-dna_py3
+  esvdb: mip7_rd-dna_svdb
+  etiddit: mip7_rd-dna_tiddit
+  evep: mip7_rd-dna_vep
+
+# Optional addons to env names
+environment_prefix:
+environment_suffix:
 
 # Environments to install
 installations:

@@ -112,12 +112,19 @@ evep:
         - homo_sapiens_merged
       version: 95
 
+## Default base name
+environment_base_name: mip7_rd-rna
+
 # Specify environment names
 environment_name:
-  emip: MIP_rd_rna
-  epy3: MIP_rd_rna_py3
-  eperl5: MIP_rd_rna_perl5
-  evep: MIP_rd_rna_vep
+  emip: mip7_rd-rna
+  epy3: mip7_rd-rna_py3
+  eperl5: mip7_rd-rna_perl5
+  evep: mip7_rd-rna_vep
+
+# Optional addons to env names
+environment_prefix:
+environment_suffix:
 
 # Environments and their recipes
 installations:

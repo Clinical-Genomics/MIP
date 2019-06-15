@@ -27,7 +27,7 @@ use MIP::Main::Install qw{ mip_install };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions};
 
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -107,8 +107,11 @@ sub _build_usage {
 
     option(
         q{environment_name} => (
-            cmd_aliases   => [qw{ envn }],
-            cmd_flag      => q{environment_name},
+            cmd_aliases => [qw{ envn }],
+            cmd_flag    => q{environment_name},
+            cmd_tags    => [
+q{Default: mip7_rd-dna mip7_rd-dna_cnvnator mip7_rd-dna_delly mip7_rd-dna_peddy mip7_rd-dna_perl5 mip7_rd-dna_py3 mip7_rd-dna_svdb mip7_rd-dna_tiddit mip7_rd-dna_vep}
+            ],
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [

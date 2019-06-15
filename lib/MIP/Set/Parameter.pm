@@ -49,9 +49,10 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $MINUS_ONE => -1;
-Readonly my $MINUS_TWO => -2;
-Readonly my $TWO       => 2;
+Readonly my $MINUS_ONE   => -1;
+Readonly my $MINUS_TWO   => -2;
+Readonly my $TWO         => 2;
+Readonly my $ONE_HUNDRED => 100;
 
 sub set_config_to_active_parameters {
 
@@ -907,6 +908,9 @@ sub set_conda_env_names_and_paths {
     ## Get array index for the emip environment
     my $emip_idx = first { $environments[$_] eq q{emip} } 0 .. $#environments;
 
+    ## A default name on which to build environment names if non specified
+    my $base_name = $parameter_href->{environment_base_name};
+
     ## Set up conda prefix path for MIP main environment
     if ( defined $emip_idx ) {
 
@@ -914,34 +918,64 @@ sub set_conda_env_names_and_paths {
             $parameter_href->{emip}{conda_prefix_path} =
               catdir( $parameter_href->{conda_dir_path},
                 q{envs}, $parameter_href->{environment_name}{emip} );
+
+            ## Save base part of mips main env
+            $base_name = $parameter_href->{environment_name}{emip};
         }
         else {
-            $log->warn(
-                q{No environment name has been specified for MIP's main environment.});
-            $log->warn(q{MIP will be installed in conda's base environment.});
-            $parameter_href->{emip}{conda_prefix_path} =
-              $parameter_href->{conda_dir_path};
-        }
 
-        ## Remove emip from environments array so that the emip conda path is not overwritten later
-        splice @environments, $emip_idx, 1;
+            $log->warn(
+q{No environment name has been specified for MIP's main environment. Using default}
+            );
+
+            ## Setting MIPs base environment name to default
+            $parameter_href->{environment_name}{emip} = $base_name;
+
+            $parameter_href->{emip}{conda_prefix_path} =
+              catdir( $parameter_href->{conda_dir_path},
+                q{envs}, $parameter_href->{environment_name}{emip} );
+        }
     }
 
-    ## Set up conda environment names and prefix paths for non mip environmnents
+    ## Get date and reformat to six digits
+    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) = localtime time;
+    my $date = sprintf '%02d%02d%02d', $year % $ONE_HUNDRED, $mon + 1, $mday;
+
+    ## Set up conda environment names and prefix paths for environmnents
     foreach my $environment (@environments) {
 
         ## Give the env a default name if not given
         if ( not $parameter_href->{environment_name}{$environment} ) {
 
-            ## Add the env name to mip base name if it is named
-            if ( $parameter_href->{environment_name}{emip} ) {
+            ## Strip the first charcter, i.e. 'e' from the environmemnt string
+            my $env_postfix = substr $environment, 1;
+            $parameter_href->{environment_name}{$environment} =
+              $base_name . $UNDERSCORE . $env_postfix;
+        }
 
-                $parameter_href->{environment_name}{$environment} =
-                  $parameter_href->{environment_name}{emip} . $UNDERSCORE . $environment;
-            }
-            else {
-                $parameter_href->{environment_name}{$environment} = $environment;
-            }
+        ## Prepend environemnt prefix
+        if ( $parameter_href->{environment_prefix} ) {
+
+            $parameter_href->{environment_name}{$environment} =
+                $parameter_href->{environment_prefix}
+              . $UNDERSCORE
+              . $parameter_href->{environment_name}{$environment};
+        }
+
+        ## Add environment date
+        if ( not $parameter_href->{no_environment_date} ) {
+
+            $parameter_href->{environment_name}{$environment} =
+              $parameter_href->{environment_name}{$environment} . $UNDERSCORE . $date;
+        }
+
+        ## Append environment suffix
+        if ( $parameter_href->{environment_suffix} ) {
+
+            $parameter_href->{environment_name}{$environment} =
+                $parameter_href->{environment_name}{$environment}
+              . $UNDERSCORE
+              . $parameter_href->{environment_suffix};
         }
 
         ## Add environment specific conda prefix path

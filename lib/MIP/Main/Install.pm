@@ -59,7 +59,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.4.1};
+    our $VERSION = q{1.4.2};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
