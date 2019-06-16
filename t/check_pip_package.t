@@ -75,8 +75,8 @@ my $is_not_ok_conda = check_pip_package(
 ## Then return undef
 like(
     $is_not_ok_conda,
-    qr/EnvironmentLocationNotFound/xsm,
-    q{Checked pip package in conda env}
+    qr/EnvironmentLocationNotFound/,
+    q{Checked for pip package in conda env}
 );
 
 ## Given a conda environment and pip package, when package exist
@@ -87,6 +87,6 @@ my $is_ok = check_pip_package(
 );
 
 ## Then return true
-ok( $is_ok, q{Checked pip package in base env} );
+ok( $is_ok, q{Checked for pip package in current environment} );
 
 done_testing();
