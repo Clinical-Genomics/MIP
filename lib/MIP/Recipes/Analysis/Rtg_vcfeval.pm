@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -142,7 +142,7 @@ sub analysis_rtg_vcfeval {
     use MIP::Get::File qw{ get_exom_target_bed_file get_io_files };
     use MIP::Get::Parameter
       qw{ get_pedigree_sample_id_attributes get_recipe_attributes get_recipe_resources };
-    use MIP::Gnu::Coreutils qw{ gnu_rm  };
+    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bedtools qw{ bedtools_intersectbed };
     use MIP::Program::Qc::Rtg qw{ rtg_vcfeval };
@@ -297,6 +297,17 @@ sub analysis_rtg_vcfeval {
             ## Expect input file from intersect
             $nist_bed_file_path = $bedtools_outfile_path;
         }
+
+        say {$FILEHANDLE} q{## Create sample specific directory};
+        gnu_mkdir(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                indirectory_path => $rtg_outdirectory_path,
+                parents          => 1,
+            }
+        );
+
+        say {$FILEHANDLE} $NEWLINE;
 
         say {$FILEHANDLE} q{## Adding sample name to baseline calls};
         bcftools_rename_vcf_samples(
