@@ -45,6 +45,7 @@ load_env:
   mip_travis_tiddit:
     method: conda
     tiddit:
+    tiddit_coverage:
     vcf2cytosure_ar:
   mip_travis_vep:
     method: conda
