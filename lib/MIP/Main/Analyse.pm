@@ -64,6 +64,7 @@ use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Recipes qw{ update_recipe_mode_with_dry_run_all };
 
 ## Recipes
+use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
 use MIP::Recipes::Pipeline::Analyse_rd_dna qw{ pipeline_analyse_rd_dna };
 use MIP::Recipes::Pipeline::Analyse_rd_rna qw{ pipeline_analyse_rd_rna };
 use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
@@ -75,7 +76,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -700,11 +701,12 @@ sub mip_analyse {
 
     ## Create dispatch table of pipelines
     my %pipeline = (
-        mixed => \&pipeline_analyse_rd_dna,
-        vrn   => \&pipeline_analyse_rd_dna_vcf_rerun,
-        wes   => \&pipeline_analyse_rd_dna,
-        wgs   => \&pipeline_analyse_rd_dna,
-        wts   => \&pipeline_analyse_rd_rna,
+        dragen_rd_dna => \&pipeline_analyse_dragen_rd_dna,
+        mixed         => \&pipeline_analyse_rd_dna,
+        vrn           => \&pipeline_analyse_rd_dna_vcf_rerun,
+        wes           => \&pipeline_analyse_rd_dna,
+        wgs           => \&pipeline_analyse_rd_dna,
+        wts           => \&pipeline_analyse_rd_rna,
     );
 
     $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
