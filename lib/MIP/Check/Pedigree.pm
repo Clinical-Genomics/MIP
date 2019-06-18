@@ -199,7 +199,7 @@ sub check_pedigree_sample_allowed_values {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my %allowed_values = (
-        analysis_type => [qw{ wes wgs vrn wts }],
+        analysis_type => [qw{ dragen_rd_dna vrn wes wgs wts }],
         phenotype     => [qw{ affected unaffected unknown }],
         sex           => [qw{ female male other unknown }],
     );

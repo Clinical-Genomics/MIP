@@ -126,6 +126,13 @@ sub parse_infiles {
             }
         );
 
+        if ( not defined $infile_directory ) {
+
+            $log->fatal( q{Could not detect any supplied '--infile_dirs' for sample: }
+                  . $sample_id );
+            exit 1;
+        }
+
         ## Get the file(s) from filesystem
         my @infiles = get_files(
             {

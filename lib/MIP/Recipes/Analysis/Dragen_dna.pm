@@ -139,7 +139,7 @@ sub analysis_dragen_dna {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger( uc q{mip_analyse} );
 
     my %sample_path;
 
@@ -332,6 +332,7 @@ sub analysis_dragen_dna {
             enable_variant_caller    => 1,
             fastq_list_all_samples   => $active_parameter_href->{fastq_list_all_samples},
             fastq_list_file_path => $active_parameter_href->{dragen_fastq_list_file_path},
+            FILEHANDLE           => $FILEHANDLE,
             force                => 1,
             pedigree_file_path   => $case_file_path,
             outdirectory_path    => $outdir_path,
