@@ -113,6 +113,7 @@ reference_feature:
         outfile_index: grch37_homo_sapiens_-d5-.fasta.fai.gz
         outfile_index_check: grch37_homo_sapiens_-d5-.fasta.fai.gz.md5
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+        user: gsapubftp-anonymous
         outfile_decompress: gzip
         outfile_index_decompress: gzip
         outfile_check_method: md5sum
@@ -156,6 +157,7 @@ reference_feature:
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+        user: gsapubftp-anonymous
   1000g_omni:
     grch37:
       2.5:
@@ -172,6 +174,7 @@ reference_feature:
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+        user: gsapubftp-anonymous
     hg38:
       2.5:
         file: 1000G_omni2.5.hg38.vcf.gz
@@ -180,6 +183,7 @@ reference_feature:
         outfile_index: hg38_1000g_omni_-2.5-.vcf.gz.tbi
         outfile_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+        user: gsapubftp-anonymous
   1000g_sites:
     grch37:
       phase3_v4_20130502:
@@ -189,6 +193,7 @@ reference_feature:
         outfile_index: grch37_1000g_sites_-phase3_v4_2013-05-02-.vcf.gz.tbi
         outfile_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+        user: gsapubftp-anonymous
   1000g_snps:
     grch37:
       phase1:
@@ -205,6 +210,7 @@ reference_feature:
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+        user: gsapubftp-anonymous
     hg38:
       phase1:
         file: 1000G_phase1.snps.high_confidence.hg38.vcf.gz
@@ -213,6 +219,7 @@ reference_feature:
         outfile_index: hg38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
         outfile_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+        user: gsapubftp-anonymous
   cadd_bravo_topmed:
     hg38:
       v1.5:
@@ -312,6 +319,7 @@ reference_feature:
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+        user: gsapubftp-anonymous
       138:
         file: dbsnp_138.b37.vcf.gz
         file_check: dbsnp_138.b37.vcf.gz.md5
@@ -326,21 +334,24 @@ reference_feature:
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+        user: gsapubftp-anonymous
     hg38:
       gold_standard_dbsnp:
         file: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz
         file_index: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz.tbi
         outfile: hg38_variant_-gold_standard_dbsnp-.vcf.gz
+        outfile_decompress: gzip
         outfile_index: hg38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
-        outfile_decompress: gzip
+        user: gsapubftp-anonymous
       146:
         file: dbsnp_146.hg38.vcf.gz
         file_index: dbsnp_146.hg38.vcf.gz.tbi
         outfile: hg38_dbsnp_-146-.vcf.gz
+        outfile_decompress: gzip
         outfile_index: hg38_dbsnp_-146-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
-        outfile_decompress: gzip
+        user: gsapubftp-anonymous
   delly_exclude:
     grch37:
       20150227: #latest commit for file on master branch
@@ -546,14 +557,16 @@ reference_feature:
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+        user: gsapubftp-anonymous
     hg38:
       3.3:
         file: hapmap_3.3.hg38.vcf.gz
         file_index: hapmap_3.3.hg38.vcf.gz.tbi
         outfile: hg38_hapmap_-3.3-.vcf.gz
+        outfile_decompress: gzip
         outfile_index: hg38_hapmap_-3.3-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
-        outfile_decompress: gzip
+        user: gsapubftp-anonymous
   mills_and_1000g_indels:
     grch37:
       gold_standard_indels:
@@ -570,6 +583,7 @@ reference_feature:
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+        user: gsapubftp-anonymous
     hg38:
       gold_standard_indels:
         file: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
@@ -578,6 +592,7 @@ reference_feature:
         outfile_index: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
         outfile_decompress: gzip
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+        user: gsapubftp-anonymous
   rank_model:
     grch37:
       v1.25:

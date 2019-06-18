@@ -20,12 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $COMMA $EQUALS $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -109,7 +109,7 @@ my %specific_argument = (
     },
     read_timeout => {
         input           => 1,
-        expected_output => q{--read-timeout=1},
+        expected_output => q{--read-timeout} . $EQUALS . q{1},
     },
     retry_connrefused => {
         input           => 1,
@@ -117,15 +117,19 @@ my %specific_argument = (
     },
     timeout => {
         input           => 1,
-        expected_output => q{--timeout=1},
+        expected_output => q{--timeout} . $EQUALS . q{1},
     },
     tries => {
         input           => 1,
-        expected_output => q{--tries=1},
+        expected_output => q{--tries} . $EQUALS . q{1},
     },
     url => {
         input           => q{https://www.gnu.org/software/wget},
         expected_output => q{https://www.gnu.org/software/wget},
+    },
+    user => {
+        input           => q{superman},
+        expected_output => q{--user} . $EQUALS . q{superman},
     },
     verbose => {
         input           => 1,
@@ -133,7 +137,7 @@ my %specific_argument = (
     },
     wait_retry => {
         input           => 1,
-        expected_output => q{--waitretry=1},
+        expected_output => q{--waitretry} . $EQUALS . q{1},
     },
 );
 
