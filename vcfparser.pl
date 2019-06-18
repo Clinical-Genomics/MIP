@@ -543,7 +543,7 @@ sub read_feature_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Vcfparser qw{ set_vcf_header_info };
+    use MIP::Vcfparser qw{ build_interval_tree set_vcf_header_info };
 
     ## Save headers from range file
     my @headers;
@@ -596,11 +596,11 @@ sub read_feature_file {
             }
             next LINE;
         }
-        if ( $_ =~ /^(\S+)/ ) {
+        if ( $line =~ /^(\S+)/ ) {
 
             ## Loads range file line elements
             my @line_elements =
-              split( "\t", $_ );
+              split /\t/, $_;
 
             if ( defined $select_feature_matching_column ) {
 
@@ -614,11 +614,11 @@ sub read_feature_file {
             if ( @{$feature_columns_ref} ) {
 
                 ## Annotate vcf with features from feature file
-                feature_annotations(
+                build_interval_tree(
                     {
                         feature_columns_ref => $feature_columns_ref,
                         line_elements_ref   => \@line_elements,
-                        padding_ref         => $padding_ref,
+                        padding             => $$padding_ref,
                         range_file_key      => $range_file_key,
                         tree_href           => $tree_href,
                     }
@@ -1974,7 +1974,7 @@ sub convert_to_range {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $chromosome         = $fields_ref->[0];
     my $start_position     = $fields_ref->[1];
@@ -2082,106 +2082,6 @@ sub convert_to_range {
         }
     }
     return $final_start_position, $final_stop_position;
-}
-
-sub feature_annotations {
-
-##feature_annotations
-
-##Function : Creates the interval tree(s) for range and select feature files. Adds corresponding INFO fields to metadata.
-##Returns  : ""
-##Arguments: $tree_href, $feature_columns_ref, $line_elements_ref, $range_file_key, $padding_ref
-##         : $tree_href           => Interval tree hash {REF}
-##         : $feature_columns_ref => Feature annotations columns {REF}
-##         : $line_elements_ref   => Feature file line {REF}
-##         : $range_file_key      => Range file key
-##         : $padding_ref         => The nucleotide distance to pad the range with {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s
-    my $tree_href;
-    my $feature_columns_ref;
-    my $line_elements_ref;
-    my $range_file_key;
-    my $padding_ref;
-
-    my $tmpl = {
-        tree_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$tree_href
-        },
-        feature_columns_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$feature_columns_ref
-        },
-        line_elements_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$line_elements_ref
-        },
-        range_file_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$range_file_key
-        },
-        padding_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$padding_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my $features;    #Features to collect (Format: ";" separated elements)
-
-    for (
-        my $extract_columns_counter = 0 ;
-        $extract_columns_counter < scalar(@$feature_columns_ref) ;
-        $extract_columns_counter++
-      )
-    {                #Defines what scalar to store
-
-        my $feature_column_ref =
-          \${$feature_columns_ref}[$extract_columns_counter];    #Alias
-
-        if ( defined( $line_elements_ref->[$$feature_column_ref] ) ) {
-
-            $line_elements_ref->[$$feature_column_ref] =~
-              tr/ /_/;    #Remove whitespace since this is not allowed in vcf INFO field
-
-            if ( !$extract_columns_counter ) {
-
-                $features .= $line_elements_ref->[$$feature_column_ref];
-            }
-            else {
-
-                $features .= ";" . $line_elements_ref->[$$feature_column_ref];
-            }
-        }
-    }
-    unless ( defined( $tree_href->{$range_file_key}{ $line_elements_ref->[0] } ) )
-    {    #Only create once per firstKey
-
-        $tree_href->{$range_file_key}{ $line_elements_ref->[0] } =
-          Set::IntervalTree->new();    #Create tree
-    }
-    my $padded_start = $line_elements_ref->[1] - $$padding_ref;
-    my $padded_stop  = $line_elements_ref->[2] + $$padding_ref;
-    $tree_href->{$range_file_key}{ $line_elements_ref->[0] }
-      ->insert( $features, $padded_start, $padded_stop );  #Store range and ";" sep string
 }
 
 sub tree_annotations {
