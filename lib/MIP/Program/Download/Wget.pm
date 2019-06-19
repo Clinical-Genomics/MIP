@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $EQUALS $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ wget };
@@ -35,7 +35,7 @@ sub wget {
 
 ## Function : Perl wrapper for writing wget recipe to $FILEHANDLE or return commands array. Based on GNU Wget 1.12, a non-interactive network retriever.
 ## Returns  : @commands
-## Arguments: $continue              => Resume getting a partially-downloaded file
+## Arguments: $continue               => Resume getting a partially-downloaded file
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $outfile_path           => Outfile path. Write documents to FILE
 ##          : $quiet                  => Quiet (no output)
@@ -45,8 +45,9 @@ sub wget {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $timeout                => Set all timeout values to SECONDS
-##          : tries                   => Set number of retries to NUMBER (0 unlimits)
+##          : $tries                  => Set number of retries to NUMBER (0 unlimits)
 ##          : $url                    => Url to use for download
+##          : $user                   => User name
 ##          : $verbose                => Verbosity
 ##          : $wait_retry             => wait 1..SECONDS between retries of a retrieval
 
@@ -62,6 +63,7 @@ sub wget {
     my $timeout;
     my $tries;
     my $url;
+    my $user;
     my $wait_retry;
 
     ## Default(s)
@@ -110,7 +112,11 @@ sub wget {
             store       => \$tries,
             strict_type => 1,
         },
-        url     => { defined => 1, required => 1, store => \$url, strict_type => 1, },
+        url  => { defined => 1, required => 1, store => \$url, strict_type => 1, },
+        user => {
+            store       => \$user,
+            strict_type => 1,
+        },
         verbose => {
             allow       => [ undef, 0, 1 ],
             default     => 1,
@@ -153,23 +159,28 @@ sub wget {
     }
     if ($wait_retry) {
 
-        push @commands, q{--waitretry=} . $wait_retry;
+        push @commands, q{--waitretry} . $EQUALS . $wait_retry;
     }
 
     if ($read_timeout) {
 
-        push @commands, q{--read-timeout=} . $read_timeout;
+        push @commands, q{--read-timeout} . $EQUALS . $read_timeout;
     }
 
     if ($timeout) {
 
-        push @commands, q{--timeout=} . $timeout;
+        push @commands, q{--timeout} . $EQUALS . $timeout;
     }
 
     if ($tries) {
 
-        push @commands, q{--tries=} . $tries;
+        push @commands, q{--tries} . $EQUALS . $tries;
     }
+    if ($user) {
+
+        push @commands, q{--user} . $EQUALS . $user;
+    }
+
     ## URL
     push @commands, $url;
 

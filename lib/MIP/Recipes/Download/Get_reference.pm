@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_reference };
@@ -115,6 +115,7 @@ sub get_reference {
         my $outfile      = $reference_href->{ q{out} . $key };
         my $outfile_path = catfile( $reference_dir, $outfile );
         my $url          = $reference_href->{url_prefix} . $file;
+        my $user         = $reference_href->{user};
 
         ## Download
         say {$FILEHANDLE} q{## Download } . $recipe_name . $NEWLINE;
@@ -131,6 +132,7 @@ sub get_reference {
                 wait_retry        => $WAIT_RETRY_SEC,
                 quiet             => $quiet,
                 url               => $url,
+                user              => $user,
                 verbose           => $verbose,
             }
         );
