@@ -71,13 +71,11 @@ my $is_not_ok_conda = check_pip_package(
         version           => $svdb_version,
     }
 );
-## Remove blank lines
-$is_not_ok_conda =~ s/\n//xmsg;
 
-## Then return undef
+## Then return EnvironmentLocationNotFound [hasta] or undef [travis]
 like(
     $is_not_ok_conda,
-    qr/EnvironmentLocationNotFound/xms,
+    qr/EnvironmentLocationNotFound|undef/xms,
     q{Checked pip package in conda env}
 );
 
