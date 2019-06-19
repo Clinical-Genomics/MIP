@@ -25,6 +25,7 @@ use autodie qw{open close :all};
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $NEWLINE $SPACE };
 use MIP::Script::Utils qw{ help };
+use MIP::Test::Writefile qw{ write_toml_config };
 
 our $USAGE = build_usage( {} );
 
@@ -36,6 +37,11 @@ my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda}
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data} );
 my $config_file = catfile( dirname($Bin), qw{ templates mip_dragen_rd_dna_config.yaml } );
 my $mip_path    = catfile( dirname($Bin), q{mip} );
+my $test_reference_path = catdir( $cluster_constant_path, q{references} );
+my $toml_template_path  = catfile( $test_reference_path,
+    q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
+my $toml_config_path =
+  catfile( $test_reference_path, q{grch37_frequency_vcfanno_filter_config-v1.0-.toml} );
 
 ### User Options
 GetOptions(
@@ -69,6 +75,14 @@ GetOptions(
 
 ok( can_run(q{mip}), q{Checking can run mip} );
 
+## Update path in toml config
+write_toml_config(
+    {
+        toml_config_path   => $toml_config_path,
+        toml_template_path => $toml_template_path,
+    }
+);
+
 ## Test execution of mip
 # Create array ref for cmd
 my $cmds_ref = [
@@ -83,7 +97,8 @@ my $cmds_ref = [
     $cluster_constant_path,
     q{--pedigree},
     catfile(
-        dirname($Bin), qw{ t data 643594-miptest 643594-miptest_vcf_rerun_pedigree.yaml }
+        dirname($Bin),
+        qw{ t data 643594-miptest 643594-miptest_dragen_rd_dna_pedigree.yaml }
     ),
     q{--ifd},
     catfile(
@@ -98,6 +113,8 @@ my $cmds_ref = [
         $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A3 fastq=ADM1059A3 }
     ),
     qw{ --dra --vb },
+    q{--fqf_vcfanno_config},
+    $toml_config_path,
 ];
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
@@ -110,6 +127,7 @@ ok( -f $qc_sample_info_file, q{Checking for 643594-miptest_qc_sample_info.yaml} 
 
 ## Clean-up
 remove_tree( catfile( $cluster_constant_path, qw{ 643594-miptest analysis } ) );
+unlink $toml_config_path;
 
 done_testing();
 
