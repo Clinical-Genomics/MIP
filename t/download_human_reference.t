@@ -74,6 +74,7 @@ my %active_parameter = test_mip_hashes(
         mip_hash_name => q{download_active_parameter},
     }
 );
+$active_parameter{$recipe_name}                     = 1;
 $active_parameter{project_id}                       = q{test};
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;

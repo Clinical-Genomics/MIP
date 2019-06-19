@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -85,12 +85,19 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::1000g_omni qw{ download_1000g_omni };
     use MIP::Recipes::Download::1000g_sites qw{ download_1000g_sites };
     use MIP::Recipes::Download::1000g_snps qw{ download_1000g_snps };
+    use MIP::Recipes::Download::Cadd_bravo_topmed qw{ download_cadd_bravo_topmed };
+    use MIP::Recipes::Download::Cadd_gnomad_genomes qw{ download_cadd_gnomad_genomes };
+    use MIP::Recipes::Download::Cadd_to_vcf_header qw{ download_cadd_to_vcf_header };
+    use MIP::Recipes::Download::Cadd_whole_genome_snvs
+      qw{ download_cadd_whole_genome_snvs };
     use MIP::Recipes::Download::Clinvar qw{ download_clinvar };
     use MIP::Recipes::Download::Dbnsfp qw{ download_dbnsfp };
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
+    use MIP::Recipes::Download::Delly_exclude qw{ download_delly_exclude };
     use MIP::Recipes::Download::Expansionhunter qw{ download_expansionhunter };
     use MIP::Recipes::Download::Gatk_mitochondrial_ref
       qw{ download_gatk_mitochondrial_ref };
+    use MIP::Recipes::Download::Genbank_haplogroup qw{ download_genbank_haplogroup };
     use MIP::Recipes::Download::Genomic_superdups qw{ download_genomic_superdups };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipes::Download::Giab qw{ download_giab };
@@ -99,6 +106,11 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
     use MIP::Recipes::Download::Mills_and_1000g_indels
       qw{ download_mills_and_1000g_indels };
+    use MIP::Recipes::Download::Rank_model qw{ download_rank_model };
+    use MIP::Recipes::Download::Reduced_penetrance qw{ download_reduced_penetrance };
+    use MIP::Recipes::Download::Scout_exons qw{ download_scout_exons };
+    use MIP::Recipes::Download::Svrank_model qw{ download_svrank_model };
+    use MIP::Recipes::Download::Sv_vcfanno_config qw{ download_sv_vcfanno_config };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
@@ -112,17 +124,28 @@ sub pipeline_download_rd_dna {
         q{1000g_omni}          => \&download_1000g_omni,
         q{1000g_sites}         => \&download_1000g_sites,
         q{1000g_snps}          => \&download_1000g_snps,
+        cadd_bravo_topmed      => \&download_cadd_bravo_topmed,
+        cadd_gnomad_genomes    => \&download_cadd_gnomad_genomes,
+        cadd_to_vcf_header     => \&download_cadd_to_vcf_header,
+        cadd_whole_genome_snvs => \&download_cadd_whole_genome_snvs,
         clinvar                => \&download_clinvar,
         dbnsfp                 => \&download_dbnsfp,
         dbsnp                  => \&download_dbsnp,
+        delly_exclude          => \&download_delly_exclude,
         expansionhunter        => \&download_expansionhunter,
         gatk_mitochondrial_ref => \&download_gatk_mitochondrial_ref,
+        genbank_haplogroup     => \&download_genbank_haplogroup,
         genomic_superdups      => \&download_genomic_superdups,
         giab                   => \&download_giab,
         gnomad                 => \&download_gnomad,
         hapmap                 => \&download_hapmap,
         human_reference        => \&download_human_reference,
         mills_and_1000g_indels => \&download_mills_and_1000g_indels,
+        rank_model             => \&download_rank_model,
+        reduced_penetrance     => \&download_reduced_penetrance,
+        scout_exons            => \&download_scout_exons,
+        svrank_model           => \&download_svrank_model,
+        sv_vcfanno_config      => \&download_sv_vcfanno_config,
     );
 
     # Storing job_ids from SLURM, however currently all are independent

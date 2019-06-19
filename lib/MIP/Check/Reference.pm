@@ -499,10 +499,7 @@ sub check_references_for_vt {
     my %seen;
 
     ## TOML parameters
-    my %toml = (
-        fqf_vcfanno_config => 1,
-        sv_vcfanno_config  => 1,
-    );
+    my %toml = ( fqf_vcfanno_config => 1, );
 
   PARAMETER_NAME:
     foreach my $parameter_name ( @{$vt_references_ref} ) {

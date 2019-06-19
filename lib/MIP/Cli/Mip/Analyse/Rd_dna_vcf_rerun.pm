@@ -161,7 +161,7 @@ sub _build_usage {
             cmd_aliases => [qw{ dnr }],
             cmd_flag    => q{dec_norm_ref},
             cmd_tags    => [
-q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, sv_vcfanno_config gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
+q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_variantrecalibration_resource_snv, gatk_variantrecalibration_resource_indel, frequency_genmod_filter_1000g, gatk_varianteval_gold, gatk_varianteval_dbsnp, snpsift_annotation_files}
             ],
             documentation => q{Set the references to be decomposed and normalized},
             is            => q{rw},
@@ -274,44 +274,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
             documentation => q{Database file(s) for annotation},
             is            => q{rw},
             isa           => HashRef,
-        )
-    );
-
-    option(
-        q{sv_vcfanno} => (
-            cmd_aliases   => [qw{ svcvan }],
-            documentation => q{Annotate structural variants},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{sv_vcfanno_config} => (
-            cmd_aliases   => [qw{ svcvac }],
-            documentation => q{VcfAnno toml config},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{sv_vcfannotation_header_lines_file} => (
-            cmd_aliases => [qw{ svcvah }],
-            cmd_flag    => q{sv_vcfanno_hlf},
-            documentation =>
-              q{Adjust for postscript by adding required header lines to vcf},
-            is  => q{rw},
-            isa => Str,
-        )
-    );
-
-    option(
-        q{sv_vcfanno_lua} => (
-            cmd_aliases   => [qw{ svcval }],
-            documentation => q{VcfAnno lua postscripting file},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 

@@ -27,7 +27,7 @@ requires qw{ JSON::XS 4.0 };                        # STAR-Fusion
 requires qw{ List::MoreUtils 0.413 };               # MIP
 requires qw{ List::Util 1.49 };                     # MIP
 requires qw{ Log::Log4perl 1.49 };                  # MIP
-requires qw{ Modern::Perl 1.20170117 };             # MIP
+requires qw{ Modern::Perl 1.20181021 };             # MIP
 requires qw{ Module::Build 0.4224 };                # VEP
 requires qw{ Module::CPANfile 1.1002 };             # MIP
 requires qw{ Moose::Util::TypeConstraints 2.2010 }; # MIP

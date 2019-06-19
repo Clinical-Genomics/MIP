@@ -1,22 +1,14 @@
 ---
-bash_set_errexit: '0'
-bash_set_nounset: '0'
-bash_set_pipefail: '0'
-human_reference: 1
+bash_set_errexit: 1
+bash_set_nounset: 1
+bash_set_pipefail: 1
 load_env:
-  D_mip7.0_190110_hs:
+   MIP_rd_dna:
     method: conda
     mip: ~
-max_cores_per_node: '16'
-mip: 1
+project_id: development
 node_ram_memory: '128'
 core_ram_memory: 5
-print_parameter_default: '0'
-project_id: development
-recipe_core_number:
-  human_reference: 1
-recipe_time:
-  human_reference: '1'
 reference:
   1000g_all_sv:
     - phase3_v8.20130502
@@ -30,6 +22,14 @@ reference:
     - phase3_v4_20130502
   1000g_snps:
     - phase1
+  cadd_bravo_topmed:
+    - v1.5
+  cadd_gnomad_genomes:
+    - v1.4
+  cadd_to_vcf_header:
+    - 1.0
+  cadd_whole_genome_snvs:
+    - v1.4
   clinvar:
     - '20180429'
     - '20181028'
@@ -44,6 +44,9 @@ reference:
     - '138'
     - gold_standard_dbsnp
     - '146'
+  delly_exclude:
+    - 20150227
+    - 20150915
   expansionhunter:
     - 3.0.0
   gatk_mitochondrial_ref:
@@ -67,6 +70,10 @@ reference:
     - v0_m_shifted_fasta
     - v0_m_shifted_pac
     - v0_m_shifted_sa
+  genbank_haplogroup:
+    - 20150801
+  gencode_annotation:
+    - v29
   genomic_superdups:
     - '20181009'
   giab:
@@ -87,8 +94,16 @@ reference:
     - decoy_hla
   mills_and_1000g_indels:
     - gold_standard_indels
-  gencode_annotation:
-    - v29 
+  rank_model:
+    - v1.25
+  reduced_penetrance:
+    - 2017
+  scout_exons:
+    - 201701 
+  svrank_model:
+    - v1.8
+  sv_vcfanno_config:
+    - v1.1
 reference_feature:
   1000g_all_sv:
     grch37:
@@ -183,6 +198,39 @@ reference_feature:
         outfile_decompress: gzip
         outfile_index: hg38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+  cadd_bravo_topmed:
+    hg38:
+      v1.5:
+        file: ALL.TOPMed_freeze5_hg38_dbSNP.tsv.gz
+        file_index: ALL.TOPMed_freeze5_hg38_dbSNP.tsv.gz.tbi
+        outfile: hg38_cadd_bravo_topmed_freeze5_-v1.5-.tsv.gz
+        outfile_index: hg38_cadd_bravo_topmed_freeze5_-v1.5-.tsv.gz.tbi
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
+  cadd_gnomad_genomes:
+    grch37:
+      v1.4:
+        file: gnomad.genomes.r2.0.1.sites.tsv.gz
+        file_index: gnomad.genomes.r2.0.1.sites.tsv.gz.tbi
+        outfile: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz
+        outfile_index: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz.tbi
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+  cadd_to_vcf_header:
+    grch37:
+      1.0:
+        file: grch37_cadd_to_vcf_header_-1.0-.txt
+        file_check: grch37_cadd_to_vcf_header_-1.0-.txt.md5
+        outfile: grch37_cadd_to_vcf_header_-1.0-.txt
+        outfile_check: grch37_cadd_to_vcf_header_-1.0-.txt.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
+  cadd_whole_genome_snvs:
+    grch37:
+      v1.4:
+        file: whole_genome_SNVs.tsv.gz
+        file_index: whole_genome_SNVs.tsv.gz.tbi
+        outfile: grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz
+        outfile_index: grch37_cadd_whole_genome_snvs_-v1.4-.tsv.gz.tbi
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
   clinvar:
     grch37:
       '20171029':
@@ -296,6 +344,17 @@ reference_feature:
         outfile_decompress: gzip
         outfile_index: hg38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
+  delly_exclude:
+    grch37:
+      20150227: #latest commit for file on master branch
+        file: human.hg19.excl.tsv
+        outfile: hg19_human_excl_-20150227-.tsv
+        url_prefix: https://raw.githubusercontent.com/dellytools/delly/master/excludeTemplates/
+    hg38:
+      20150915: #latest commit for file on master branch
+        file: human.hg38.excl.tsv
+        outfile: hg38_human_excl_-20150915-.tsv
+        url_prefix: https://raw.githubusercontent.com/dellytools/delly/master/excludeTemplates/
   expansionhunter:
     grch37:
       3.0.0:
@@ -392,7 +451,23 @@ reference_feature:
       v0_m_shifted_sa:
         file: Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.sa
         outfile: hg38_homo_sapiens_shifted_-v0_m-.fasta.sa
-        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/
+        url_prefix: https://storage.googleapis.com/broad-references/hg38/v0/chrM/se_29/GRCh37_mapping/
+  genbank_haplogroup:
+    grch37:
+      20150801:
+        file: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
+        file_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
+        outfile: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
+        outfile_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/frequency/ 
+  gencode_annotation:
+    grch37:
+      v29:
+        file: gencode.v29lift37.annotation.gtf.gz
+        outfile: grch37_gencode_annotation_-v29-.gtf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/relea
   genomic_superdups:
     grch37:
       '20181009':
@@ -521,13 +596,49 @@ reference_feature:
         outfile_decompress: gzip
         outfile_index: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
-  gencode_annotation:
+  rank_model:
     grch37:
-      v29:
-        file: gencode.v29lift37.annotation.gtf.gz
-        outfile: grch37_gencode_annotation_-v29-.gtf.gz
-        outfile_decompress: gzip
-        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/GRCh37_mapping/
+      v1.25:
+        file: rank_model_-v1.25-.ini
+        file_check: rank_model_-v1.25-.ini.md5
+        outfile: rank_model_cmms_-v1.25-.ini
+        outfile_check: rank_model_cmms_-v1.25-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/ 
+  reduced_penetrance:
+    grch37:
+      2017:
+        file: grch37_cust003-cmms-red-pen_-2017-.tsv
+        file_check: grch37_cust003-cmms-red-pen_-2017-.tsv.md5
+        outfile: grch37_cust003-cmms-red-pen_-2017-.tsv
+        outfile_check: grch37_cust003-cmms-red-pen_-2017-.tsv.md5
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/gene_panel/
+  scout_exons:
+    grch37:
+      201701:
+        file: grch37_scout_exons_-2017-01-.bed
+        file_check: grch37_scout_exons_-2017-01-.bed.md5
+        outfile: grch37_scout_exons_-2017-01-.bed
+        outfile_check: grch37_scout_exons_-2017-01-.bed.md5
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/gene_panel/
+  svrank_model:
+    grch37:
+      v1.8:
+        file: svrank_model_-v1.8-.ini
+        file_check: svrank_model_-v1.8-.ini.md5
+        outfile: svrank_model_cmms_-v1.8-.ini
+        outfile_check: svrank_model_cmms_-v1.8-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
+  sv_vcfanno_config:
+    grch37:
+      v1.1:
+        file: grch37_frequency_vcfanno_filter_config_-v1.1-.toml
+        file_check: grch37_frequency_vcfanno_filter_config_-v1.1-.toml.md5
+        outfile: grch37_frequency_vcfanno_filter_config_-v1.1-.toml
+        outfile_check: grch37_frequency_vcfanno_filter_config_-v1.1-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
 reference_genome_versions:
   - grch37
   - hg38

@@ -7,7 +7,6 @@ decompose_normalize_references:
   default:
    - fqf_vcfanno_config
    - snpsift_annotation_files
-   - sv_vcfanno_config
   element_separator: ,
   type: mip
 gatk_logging_level:
@@ -166,33 +165,6 @@ sv_svdb_query_db_files:
   associated_recipe:
    - sv_annotate
   data_type: HASH
-  exists_check: file
-  reference: reference_dir
-  type: path
-sv_vcfanno:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-sv_vcfannotation_header_lines_file:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  exists_check: file
-  reference: reference_dir
-  type: path
-sv_vcfanno_config:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  exists_check: file
-  reference: reference_dir
-  type: path
-sv_vcfanno_lua:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path

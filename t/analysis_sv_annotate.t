@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -59,6 +59,9 @@ diag(   q{Test analysis_sv_annotate from Sv_annotate.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Constants
+Readonly my $FREQ_CUTOFF => 0.40;
+
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
@@ -75,13 +78,15 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{sv_vcfanno}        = 1;
-$active_parameter{sv_vcfanno_config} = q{a_vcfanno_config};
-$active_parameter{sv_frequency_filter} = 1;
-$active_parameter{fqf_bcftools_filter_threshold} = 0.40;
-$active_parameter{fqf_vcfanno_config} = catfile($Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml });
+$active_parameter{sv_frequency_filter}           = 1;
+$active_parameter{fqf_bcftools_filter_threshold} = $FREQ_CUTOFF;
+$active_parameter{fqf_vcfanno_config}            = catfile( $Bin,
+    qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml } );
 $active_parameter{sv_svdb_query} = 1;
-$active_parameter{sv_svdb_query_db_files} = {a_file => q{a_file|out_frequency_tag|out_allele_coiunt_tag|in_frequency_tag|in_allele_coiunt_tag|1},};
+$active_parameter{sv_svdb_query_db_files} =
+  { a_file =>
+q{a_file|out_frequency_tag|out_allele_coiunt_tag|in_frequency_tag|in_allele_coiunt_tag|1},
+  };
 
 my %file_info = test_mip_hashes(
     {

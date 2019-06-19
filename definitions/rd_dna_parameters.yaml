@@ -9,7 +9,6 @@ decompose_normalize_references:
    - gatk_baserecalibration_known_sites
    - gatk_haplotypecaller_snp_known_set
    - gatk_variantrecalibration_resource_indel
-   - sv_vcfanno_config
    - gatk_varianteval_gold
    - gatk_varianteval_dbsnp
    - snpsift_annotation_files
@@ -477,7 +476,7 @@ gatk_baserecalibration_known_sites:
   default:
    - grch37_dbsnp_-138-.vcf
    - grch37_1000g_indels_-phase1-.vcf
-   - grch37_mills_and_1000g_indels_-gold_standard-.vcf
+   - grch37_mills_and_1000g_-gold_standard_indels-.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -663,7 +662,7 @@ delly_exclude_file:
    - delly_call
    - delly_reformat
   data_type: SCALAR
-  default: hg19_human_excl_-0.7.6-.tsv
+  default: hg19_human_excl_-20150227-.tsv
   exists_check: file
   reference: reference_dir
   type: path
@@ -803,33 +802,6 @@ sv_svdb_query_db_files:
   associated_recipe:
    - sv_annotate
   data_type: HASH
-  exists_check: file
-  reference: reference_dir
-  type: path
-sv_vcfanno:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-sv_vcfannotation_header_lines_file:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  exists_check: file
-  reference: reference_dir
-  type: path
-sv_vcfanno_config:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  exists_check: file
-  reference: reference_dir
-  type: path
-sv_vcfanno_lua:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path
@@ -1309,7 +1281,7 @@ gatk_variantrecalibration_resource_indel:
   data_type: HASH
   default:
      grch37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
-     grch37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,known=false,training=true,truth=true,prior=12.0"
+     grch37_mills_and_1000g_-gold_standard_indels-.vcf: "mills,known=false,training=true,truth=true,prior=12.0"
   exists_check: file
   reference: reference_dir
   type: path
@@ -1545,7 +1517,7 @@ gatk_varianteval_gold:
    - gatk_variantevalall
    - gatk_variantevalexome
   data_type: SCALAR
-  default: grch37_mills_and_1000g_indels_-gold_standard-.vcf
+  default: grch37_mills_and_1000g_-gold_standard_indels-.vcf
   exists_check: file
   reference: reference_dir
   type: path

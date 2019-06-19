@@ -39,10 +39,12 @@ BEGIN {
       $DOT
       $DOUBLE_QUOTE
       $EMPTY_STR
+      $EQUALS
       $ESCAPE
       $FORWARD_SLASH
       $LOG
       $MIP_VERSION
+      $MOOSEX_APP_SCEEN_WIDTH
       $NEWLINE
       $OPEN_BRACE
       $OPEN_BRACKET
@@ -58,8 +60,10 @@ BEGIN {
 ## Constants
 ## Set MIP version
 ## Constants
-Readonly our $MIP_VERSION => q{v7.0.9};
+Readonly our $MIP_VERSION => q{v7.1.0};
 
+## Cli
+Readonly our $MOOSEX_APP_SCEEN_WIDTH => 160;
 ## Log
 Readonly our $LOG => q{MIP_ANALYSE};
 
@@ -78,6 +82,7 @@ Readonly our $DOT            => q{.};
 Readonly our $DOUBLE_QUOTE   => q{"};
 Readonly our $EMPTY_STR      => q{};
 Readonly our $ESCAPE         => q{\\};
+Readonly our $EQUALS         => q{=};
 Readonly our $FORWARD_SLASH  => q{/};
 Readonly our $NEWLINE        => qq{\n};
 Readonly our $OPEN_BRACE     => q{\{};

@@ -15,7 +15,6 @@ before_install:
 
 ## Install conda
 ##  - wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
-#  - wget https://repo.anaconda.com/miniconda/Miniconda2-4.5.11-Linux-x86_64.sh -O miniconda.sh;
   - wget https://repo.anaconda.com/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
   - source $HOME/miniconda/etc/profile.d/conda.sh
@@ -36,11 +35,11 @@ install:
 ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
 ## Generate rare disease installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip epeddy eperl_5.26 epy3 esvdb etiddit --envn emip=mip_travis --snpg GRCh37.75 --skip gatk
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip epeddy eperl5 epy3 esvdb etiddit --envn emip=mip_travis --snpg GRCh37.75 --skip gatk --skip snpeff
 ## Install MIP rare disease
   - bash mip.sh
 ## Generate rna installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip epy3 eperl5.26
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip epy3 eperl5
 ## Install MIP rna
   - bash mip.sh
 
@@ -62,6 +61,8 @@ script:
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna.test
 ## Set-up test coverage for mip_analyse_vcf_rerun.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_dna_vcf_rerun.test
+## Set-up test coverage for mip qccollect
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip qccollect --log_file qc_metrics_qccollect.log --regexp_file t/data/references/qc_regexp_-v1.22-.yaml --sample_info_file t/data/test_data/643594-miptest_qc_sample_info_travis.yaml --evaluate_plink_gender --outfile qc_metrics.yaml
 ## Set-up test coverage for mip_analyse_rna.test
   - conda activate MIP_rd_rna
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_rna.test 

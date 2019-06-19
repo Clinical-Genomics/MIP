@@ -43,6 +43,7 @@ sub analysis_RECIPE_NAME {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Recipe name
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 
@@ -59,6 +60,7 @@ sub analysis_RECIPE_NAME {
 
     ## Default(s)
     my $case_id;
+    my $profile_base_command;
 
     my $tmpl = {
         active_parameter_href => {
@@ -101,6 +103,11 @@ sub analysis_RECIPE_NAME {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
         recipe_name => {
             defined     => 1,
             required    => 1,
@@ -121,8 +128,7 @@ sub analysis_RECIPE_NAME {
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate bcftools_view };
-    use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
+    use MIP::Program::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -149,9 +155,9 @@ sub analysis_RECIPE_NAME {
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
     my $job_id_chain         = get_recipe_attributes(
         {
+            attribute      => q{chain},
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
-            attribute      => q{chain},
         }
     );
     my $recipe_mode     = $active_parameter_href->{$recipe_name};
@@ -229,12 +235,13 @@ sub analysis_RECIPE_NAME {
 
         submit_recipe(
             {
-                dependency_method       => q{sample_to_case},
+                base_command            => $profile_base_command,
                 case_id                 => $case_id,
+                dependency_method       => q{sample_to_case},
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_chain            => $job_id_chain,
                 job_id_href             => $job_id_href,
                 log                     => $log,
-                job_id_chain            => $job_id_chain,
                 recipe_file_path        => $recipe_file_path,
                 sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile      => $active_parameter_href->{submission_profile},

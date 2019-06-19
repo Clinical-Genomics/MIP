@@ -41,7 +41,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Qccollect} => [qw{ define_evaluate_metric evaluate_case_qc_parameters }],
-        q{MIP::Test::Fixtures}   => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -59,9 +59,9 @@ diag(   q{Test evaluate_case_qc_parameters from Qccollect.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given
-my $metric_lt = q{percentage_mapped_reads};
-my %qc_data;
-my $recipe_lt = q{bamstats};
+my $metric_lt = q{fraction_of_common_variants};
+my $recipe_lt = q{variant_integrity_ar_father};
+my %qc_data   = ( recipe => { $recipe_lt => { $metric_lt => 0.05 }, }, );
 
 my %sample_info = test_mip_hashes(
     {
@@ -85,6 +85,6 @@ my $is_ok = evaluate_case_qc_parameters(
 );
 
 ## Then
-ok($is_ok, q{Evaluated case qc parameter});
+ok( $is_ok, q{Evaluated case qc parameter} );
 
 done_testing();

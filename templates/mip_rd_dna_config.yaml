@@ -23,7 +23,7 @@ load_env:
     delly_reformat:
     installation: edelly
     method: conda
-  mip_travis_eperl_5.26:
+  mip_travis_eperl5:
     bwa_mem:
     fastqc_ar:
     freebayes_ar:
@@ -95,9 +95,6 @@ sv_svdb_query_db_files:
   grch37_svdb_query_clingen_cgh_benign_-v1.0.0-.vcf: clingen_cgh_benign
   grch37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf: clingen_cgh_pathogenic
   grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi
-sv_vcfannotation_header_lines_file: vcfanno_headerLines_-v1.0-.txt
-sv_vcfanno_config: grch37_vcfanno_config_-v1.0-.toml
-sv_vcfanno_lua: vcfanno_custom_-v1.0-.lua
 qccollect_regexp_file: qc_regexp_-v1.15-.yaml
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 ### Analysis
@@ -133,7 +130,6 @@ sv_frequency_filter: 1
 sv_genmod_models_case_type: cmms
 sv_svdb_merge_prioritize: manta,delly,cnvnator,tiddit
 sv_svdb_query: 1
-sv_vcfanno: 1
 sv_vcfparser_per_gene: 1
 sv_vcfparser_select_file_matching_column: 3
 sv_vcfparser_vep_transcripts: 1
