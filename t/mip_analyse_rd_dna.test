@@ -23,14 +23,13 @@ use autodie qw{open close :all};
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-## MIPs lib/
 use MIP::Constants qw{ $NEWLINE $SPACE };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );

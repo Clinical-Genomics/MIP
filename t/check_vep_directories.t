@@ -112,7 +112,7 @@ my $log = initiate_logger(
 
 ## Given matching vep API and cache version
 my $vep_directory_path =
-  catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-vep } );
+  catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-vep-91 } );
 my $vep_directory_cache = catdir( $Bin,
     qw{ data modules miniconda envs test_env ensembl-tools-91 cache } );
 ## When comparing API and cache version
