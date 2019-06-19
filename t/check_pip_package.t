@@ -58,35 +58,85 @@ diag(   q{Test check_pip_package from Pip.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a conda environment and pip package, but not installed via conda
+Readonly my $TRAVIS_TESTS => 4;
+
 my $conda_environment = q{mip_travis_svdb};
-my $svdb_version      = 1.0;
+my $version           = q{2.0.0};
 my $conda_prefix_path = catfile( $Bin, qw{ data modules miniconda } );
 
-my $is_not_ok_conda = check_pip_package(
+## Only run on travis
+SKIP: {
+    skip q{No control of local environemnt names}, $TRAVIS_TESTS, if not $ENV{q{TRAVIS}};
+
+    ## Given a conda environment and pip package
+
+    my $found = check_pip_package(
+        {
+            conda_environment => $conda_environment,
+            conda_prefix_path => $conda_prefix_path,
+            package           => q{svdb},
+            version           => $version,
+        }
+    );
+    ## Then return 1
+    ok( $found, q{Found correct package and version in conda env} );
+
+    ## Given an existing package but the wrong version
+    my $not_found = check_pip_package(
+        {
+            conda_environment => $conda_environment,
+            conda_prefix_path => $conda_prefix_path,
+            package           => q{svdb},
+            version           => q{0.0.5},
+        }
+    );
+    ## Then return undef
+    is( $not_found, undef, q{Not found in env} );
+
+    ## Given a non existing package
+    $not_found = check_pip_package(
+        {
+            conda_environment => $conda_environment,
+            conda_prefix_path => $conda_prefix_path,
+            package           => q{testing_mip},
+            version           => $version,
+        }
+    );
+    ## Then return undef
+    is( $not_found, undef, q{No package found in env} );
+
+    ## Given a pip package without a conda env, when package exist
+    my $is_ok = check_pip_package(
+        {
+            package => q{rhocall},
+            version => q{0.1},
+        }
+    );
+    ## Then return true
+    ok( $is_ok, q{Checked for pip package in current environment} );
+}
+
+## Given a non existing conda environment
+my $not_a_conda_env = check_pip_package(
     {
-        conda_environment => $conda_environment,
+        conda_environment => q{testing_mip},
         conda_prefix_path => $conda_prefix_path,
         package           => q{svdb},
-        version           => $svdb_version,
+        version           => $version,
     }
 );
 
-## Then return EnvironmentLocationNotFound [hasta] or undef [travis]
-like(
-    $is_not_ok_conda,
-    qr/EnvironmentLocationNotFound|undef/xms,
-    q{Checked pip package in conda env}
-);
+## Then return undef
+is( $not_a_conda_env, undef, q{Not a conda env} );
 
-## Given a conda environment and pip package, when package exist
-my $is_ok = check_pip_package(
+## Given an non existing package in the current environment
+my $not_found = check_pip_package(
     {
-        package => q{pip},
+        package => q{non_existing_package},
     }
 );
 
-## Then return true
-ok( $is_ok, q{Checked for pip package in current environment} );
+## Then return undef
+is( $not_found, undef, q{Not found in current environment} );
 
 done_testing();

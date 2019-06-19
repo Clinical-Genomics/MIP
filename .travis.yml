@@ -49,7 +49,6 @@ script:
 #  - cd /lib/x86_64-linux-gnu
 #  - sudo ln -s "$ROOTSYS"/lib/*so .
 #  - cd -
-  - perl t/check_pip_package.t
 ## Set-up test coverage for test directory "t"
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",+ignore,"prove",-coverage,statement,branch,condition,path,subroutine prove -lrs -j 9 t
 ### Download
