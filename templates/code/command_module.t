@@ -88,6 +88,15 @@ my %required_argument = (
         inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
         expected_output => q{PROGRAM OUTPUT},
     },
+    HASH => {
+        input_href => {
+            key_1 => q{value_1},
+            key_2 => q{value_2},
+        },
+
+        # Always sorted to an alphabetical order according to ASCII table
+        expected_output => q{--hash_arg key_1=value_1 --hash_arg key_2=value_2},
+    },
     SCALAR => {
         input           => q{TEST_STRING},
         expected_output => q{PROGRAM_OUTPUT},
@@ -98,6 +107,15 @@ my %specific_argument = (
     ARRAY => {
         inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
         expected_output => q{PROGRAM OUTPUT},
+    },
+    HASH => {
+        input_href => {
+            key_1 => q{value_1},
+            key_2 => q{value_2},
+        },
+
+        # Always sorted to an alphabetical order according to ASCII table
+        expected_output => q{--hash_arg key_1=value_1 --hash_arg key_2=value_2},
     },
     SCALAR => {
         input           => q{TEST_STRING},

@@ -21,6 +21,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -45,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Variantcalling::Bcftools} => [qw{ bcftools_view }],
-        q{MIP::Test::Commands}                    => [qw{ test_function }],
+        q{MIP::Test::Commands}                    => [qw{ test_command test_function }],
         q{MIP::Test::Fixtures}                    => [qw{ test_standard_cli }],
     );
 
@@ -127,7 +124,7 @@ like( $trap->stderr, qr/Command\sline\sdoes\snot/xms, q{Throw error message} );
             fire  => q{hot},
         },
 
-        # Always sorted to in alphabetical order according to ASCII table
+        # Always sorted to an alphabetical order according to ASCII table
         expected_output => q{--hash_arg fire=hot --hash_arg water=wet},
     },
     scalar_arg => {
@@ -137,7 +134,7 @@ like( $trap->stderr, qr/Command\sline\sdoes\snot/xms, q{Throw error message} );
 );
 
 # Coderef - enables generalized use of generate call
-my $module_function_cref = \&test_command;
+$module_function_cref = \&test_command;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%required_argument, \%specific_argument );
