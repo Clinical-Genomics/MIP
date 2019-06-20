@@ -724,10 +724,10 @@ sub check_rd_dna_vcf_rerun {
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Get::File qw{ get_select_file_contigs };
+    use MIP::Sample_info qw{ set_in_sample_info };
+    use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ size_sort_select_file_contigs update_contigs_for_run };
     use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
-    use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
-    use MIP::Sample_info qw{ set_in_sample_info };
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
