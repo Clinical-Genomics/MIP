@@ -941,7 +941,7 @@ q{No environment name has been specified for MIP's main environment. Using defau
     my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) = localtime time;
     my $date = sprintf '%02d%02d%02d', $year % $ONE_HUNDRED, $mon + 1, $mday;
 
-    ## Set up conda environment names and prefix paths for environmnents
+    ## Set up conda environment names and prefix paths for environments
     foreach my $environment (@environments) {
 
         ## Give the env a default name if not given
