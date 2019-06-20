@@ -30,14 +30,13 @@ use MIP::Test::Writefile qw{ write_toml_config };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.00;
 
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data} );
-my $config_file =
-  catfile( dirname($Bin), qw{ templates mip_rd_dna_vcf_rerun_config.yaml } );
-my $mip_path            = catfile( dirname($Bin), q{mip} );
+my $config_file = catfile( dirname($Bin), qw{ templates mip_dragen_rd_dna_config.yaml } );
+my $mip_path    = catfile( dirname($Bin), q{mip} );
 my $test_reference_path = catdir( $cluster_constant_path, q{references} );
 my $toml_template_path  = catfile( $test_reference_path,
     q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
@@ -79,9 +78,8 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 ## Update path in toml config
 write_toml_config(
     {
-        test_reference_path => $test_reference_path,
-        toml_config_path    => $toml_config_path,
-        toml_template_path  => $toml_template_path,
+        toml_config_path   => $toml_config_path,
+        toml_template_path => $toml_template_path,
     }
 );
 
@@ -90,7 +88,7 @@ write_toml_config(
 my $cmds_ref = [
     q{perl},
     $mip_path,
-    qw{ analyse rd_dna_vcf_rerun 643594-miptest },
+    qw{ analyse dragen_rd_dna 643594-miptest },
     q{--config},
     $config_file,
     q{--conda_path},
@@ -99,17 +97,20 @@ my $cmds_ref = [
     $cluster_constant_path,
     q{--pedigree},
     catfile(
-        dirname($Bin), qw{ t data 643594-miptest 643594-miptest_vcf_rerun_pedigree.yaml }
+        dirname($Bin),
+        qw{ t data 643594-miptest 643594-miptest_dragen_rd_dna_pedigree.yaml }
     ),
-    q{--vcf_rerun_file},
+    q{--ifd},
     catfile(
-        $cluster_constant_path,
-        qw{ test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf }
+        $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A1 fastq=ADM1059A1 }
     ),
-    q{--sv_vcf_rerun_file},
+    q{--ifd},
     catfile(
-        $cluster_constant_path,
-        qw{ test_data 643594-miptest_sorted_md_brecal_comb_SV.vcf.gz }
+        $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A2 fastq=ADM1059A2 }
+    ),
+    q{--ifd},
+    catfile(
+        $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A3 fastq=ADM1059A3 }
     ),
     qw{ --dra --vb },
     q{--fqf_vcfanno_config},

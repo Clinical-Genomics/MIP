@@ -7,7 +7,6 @@ decompose_normalize_references:
   default:
    - fqf_vcfanno_config
    - snpsift_annotation_files
-   - sv_vcfanno_config
   element_separator: ,
   type: mip
 gatk_logging_level:
@@ -44,6 +43,21 @@ human_genome_reference_file_endings:
   mandatory: no
   reference: reference_dir
   type: path
+infile_dirs:
+  associated_recipe:
+   - mip
+  exists_check: directory
+  data_type: HASH
+  type: path
+  update_path: absolute_path
+picardtools_path:
+  associated_recipe:
+#   - dragen_dna
+   - prepareforvariantannotationblock
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
 ####Bash
 recipe_core_number:
   associated_recipe:
@@ -77,8 +91,8 @@ recipe_memory:
     snpeff: 8
     sv_reformat: 24
     sv_varianteffectpredictor: 7
-    varianteffectpredictor: 3
-    vcf2cytosure_ar: 2
+    varianteffectpredictor: 7
+    vcf2cytosure_ar: 6
   type: mip
 recipe_time:
   associated_recipe:
@@ -99,7 +113,6 @@ recipe_time:
     sv_rankvariant: 3
     sv_reformat: 1
     sv_varianteffectpredictor: 10
-    sv_vcf_rerun_reformat: 1
     sv_vcfparser: 2
     varianteffectpredictor: 10
     vcfparser_ar: 5
@@ -119,9 +132,24 @@ dragen_dna:
    - mip
   data_type: SCALAR
   default: 1
-  file_tag: _dragen
+  file_tag: _drg
   outfile_suffix: ".vcf"
+#  program_executables:
+ #  - dragen
   type: recipe
+dragen_fastq_list_file_path:
+  associated_recipe:
+   - dragen_dna
+  data_type: SCALAR
+  type: path
+dragen_hash_ref_dir_path:
+  associated_recipe:
+   - dragen_dna
+#  build_file: 1
+  data_type: SCALAR
+  exists_check: directory
+  reference: reference_dir
+  type: path
 sv_annotate:
   analysis_mode: case
   associated_recipe:
@@ -156,33 +184,6 @@ sv_svdb_query_db_files:
   associated_recipe:
    - sv_annotate
   data_type: HASH
-  exists_check: file
-  reference: reference_dir
-  type: path
-sv_vcfanno:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-sv_vcfannotation_header_lines_file:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  exists_check: file
-  reference: reference_dir
-  type: path
-sv_vcfanno_config:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
-  exists_check: file
-  reference: reference_dir
-  type: path
-sv_vcfanno_lua:
-  associated_recipe:
-   - sv_annotate
-  data_type: SCALAR
   exists_check: file
   reference: reference_dir
   type: path

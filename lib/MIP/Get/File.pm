@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -476,7 +476,7 @@ sub get_matching_values_key {
 ## Returns  : "key pointing to matched value"
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $parameter_name        => MIP parameter name
-##          : $query_value       => Value to query in the hash {REF}
+##          : $query_value           => Value to query in the hash {REF}
 
     my ($arg_href) = @_;
 
@@ -508,6 +508,8 @@ sub get_matching_values_key {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not exists $active_parameter_href->{$parameter_name} );
 
     ## Values are now keys and vice versa
     my %reversed = reverse %{ $active_parameter_href->{$parameter_name} };
