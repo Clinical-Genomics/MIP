@@ -21,11 +21,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $EQUALS $SPACE };
 use MIP::Test::Writefile qw{ test_write_to_file };
 
 ## Constants
 Readonly my $ERROR_MSG_INDENT => 3;
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -33,10 +33,10 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ test_function };
+    our @EXPORT_OK = qw{ test_command build_call test_function };
 }
 
 sub test_function {
@@ -114,9 +114,10 @@ sub test_function {
   ARGUMENT:
     foreach my $argument ( keys %{$argument_href} ) {
 
-        ### Parameter to test in this loop check if array ref or scalar
+        ### Parameter to test in this loop check if scalar, array ref or hash ref
         my $input_value;
         my $input_values_ref;
+        my $input_value_href;
 
         ## SCALAR
         if ( exists $argument_href->{$argument}{input} ) {
@@ -128,6 +129,11 @@ sub test_function {
 
             $input_values_ref = $argument_href->{$argument}{inputs_ref};
         }
+        ## HASH
+        elsif ( exists $argument_href->{$argument}{input_href} ) {
+
+            $input_value_href = $argument_href->{$argument}{input_href};
+        }
 
         ## Store commands from module function
         my @commands;
@@ -136,9 +142,11 @@ sub test_function {
         if ( %{$required_argument_href} ) {
 
             my @args;
+
+            ## ARRAY
             if ($input_values_ref) {
 
-                @args = _build_call(
+                @args = build_call(
                     {
                         argument               => $argument,
                         input_values_ref       => $input_values_ref,
@@ -146,9 +154,19 @@ sub test_function {
                     }
                 );
             }
+            elsif ($input_value_href) {
+                ## HASH
+                @args = build_call(
+                    {
+                        argument               => $argument,
+                        input_value_href       => $input_value_href,
+                        required_argument_href => $required_argument_href,
+                    }
+                );
+            }
             else {
 
-                @args = _build_call(
+                @args = build_call(
                     {
                         argument               => $argument,
                         input_value            => $input_value,
@@ -194,6 +212,12 @@ sub test_function {
 
                     @commands =
                       $module_function_cref->( { $argument => $input_values_ref, } );
+                }
+                elsif ($input_value_href) {
+                    ## Hash
+
+                    @commands =
+                      $module_function_cref->( { $argument => $input_value_href, } );
                 }
                 else {
 
@@ -249,13 +273,14 @@ sub test_function {
     return;
 }
 
-sub _build_call {
+sub build_call {
 
 ## Function : Build arguments to function
 ## Returns  : "@arguments"
 ## Arguments: $argument               => Argument key to test
 ##          : $input_value            => Argument value to test
 ##          : $input_values_ref       => Argument values to test
+##          : $input_value_href       => Argument hash values to test
 ##          : $required_argument_href => Required arguments
 
     my ($arg_href) = @_;
@@ -264,6 +289,7 @@ sub _build_call {
     my $argument;
     my $input_value;
     my $input_values_ref;
+    my $input_value_href;
     my $required_argument_href;
 
     my $tmpl = {
@@ -280,6 +306,11 @@ sub _build_call {
             store       => \$input_values_ref,
             strict_type => 1,
         },
+        input_value_href => {
+            default     => {},
+            store       => \$input_value_href,
+            strict_type => 1,
+        },
         required_argument_href => {
             default     => {},
             defined     => 1,
@@ -293,7 +324,7 @@ sub _build_call {
 
     ## Collect required keys and values to generate args
     my @keys;
-    my @possible_input_names = qw{ input inputs_ref };
+    my @possible_input_names = qw{ input inputs_ref input_value_href };
     my @values;
 
   REQUIRED_ARGUMENT:
@@ -306,8 +337,16 @@ sub _build_call {
       POSSIBLE_INPUT_NAMES:
         foreach my $input_name (@possible_input_names) {
 
-            ## SCALAR or ARRAY_ref
-            if ( exists $required_argument_href->{$required_argument}{$input_name} ) {
+            if (
+                ref $required_argument_href->{$required_argument}{$input_name} eq
+                q{HASH} )
+            {
+
+                push @values,
+                  values %{ $required_argument_href->{$required_argument}{$input_name} };
+            }
+            elsif ( exists $required_argument_href->{$required_argument}{$input_name} ) {
+                ## SCALAR or ARRAY_ref
 
                 push @values, $required_argument_href->{$required_argument}{$input_name};
             }
@@ -324,6 +363,11 @@ sub _build_call {
     elsif ( $argument && @{$input_values_ref} ) {
         push @keys,   $argument;
         push @values, $input_values_ref;
+    }
+    ## HASH
+    elsif ( $argument && %{$input_value_href} ) {
+        push @keys,   $argument;
+        push @values, $input_value_href;
     }
 
     ## Interleave arrays to build arguments for submission to function
@@ -401,6 +445,109 @@ sub _test_base_command {
         }
     }
     return;
+}
+
+sub test_command {
+
+## Function : Perl wrapper for generic commands module.
+## Returns  : @commands
+## Arguments: $array_args_ref         => Array input values
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $hash_arg_href          => Hash input key value pairs
+##          : $scalar_arg             => Scalar input value
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdinfile_path         => Stdinfile path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $array_args_ref;
+    my $FILEHANDLE;
+    my $hash_arg_href;
+    my $scalar_arg;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdinfile_path;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        array_args_ref => {
+            default     => [],
+            store       => \$array_args_ref,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        hash_arg_href => {
+            default     => {},
+            store       => \$hash_arg_href,
+            strict_type => 1,
+        },
+        scalar_arg => {
+            store       => \$scalar_arg,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdinfile_path  => { store => \$stdinfile_path, strict_type => 1, },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+    use MIP::Unix::Write_to_file qw{ unix_write_to_file };
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ test command };
+
+    if ( @{$array_args_ref} ) {
+        push @commands,
+          q{--array_args} . $SPACE . join $SPACE . q{--array_args} . $SPACE,
+          @{$array_args_ref};
+    }
+    if ( %{$hash_arg_href} ) {
+
+        ## Need to sort to be able to predict testing outcome later
+        push @commands,
+          q{--hash_arg} . $SPACE . join $SPACE . q{--hash_arg} . $SPACE,
+          map { $_ . $EQUALS . $hash_arg_href->{$_} } sort keys %{$hash_arg_href};
+    }
+    if ($scalar_arg) {
+        push @commands, q{--scalar_arg} . $SPACE . $scalar_arg;
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdinfile_path         => $stdinfile_path,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
 }
 
 1;
