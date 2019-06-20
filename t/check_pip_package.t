@@ -66,7 +66,7 @@ my $conda_prefix_path = catfile( $Bin, qw{ data modules miniconda } );
 
 ## Only run on travis
 SKIP: {
-    skip q{No control of local environemnt names}, $TRAVIS_TESTS, if not $ENV{q{TRAVIS}};
+    skip q{No control of local environment names}, $TRAVIS_TESTS, if not $ENV{q{TRAVIS}};
 
     ## Given a conda environment and pip package
 
