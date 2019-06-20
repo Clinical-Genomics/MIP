@@ -1,5 +1,5 @@
 ---
-## Version: 2.1.0
+## Version: 1.0
 decompose_normalize_references:
   associated_recipe:
    - mip
