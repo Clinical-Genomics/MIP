@@ -21,12 +21,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $EQUALS };
+use MIP::Constants qw{ $EQUALS $SPACE };
 use MIP::Test::Writefile qw{ test_write_to_file };
 
 ## Constants
 Readonly my $ERROR_MSG_INDENT => 3;
-Readonly my $SPACE            => q{ };
 
 BEGIN {
 
