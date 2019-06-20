@@ -953,16 +953,16 @@ sub check_rd_rna {
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Parse::Parameter qw{ parse_infiles };
     use MIP::Parse::File qw{ parse_fastq_infiles };
+    use MIP::Sample_info qw{ set_in_sample_info };
     use MIP::Set::Parameter qw{ set_parameter_to_broadcast };
     use MIP::Update::Contigs qw{ update_contigs_for_run };
-    use MIP::Sample_info qw{ set_in_sample_info };
 
     ## Checks parameter metafile exists and set build_file parameter
     check_parameter_metafiles(
         {
-            parameter_href        => $parameter_href,
             active_parameter_href => $active_parameter_href,
             file_info_href        => $file_info_href,
+            parameter_href        => $parameter_href,
         }
     );
 
