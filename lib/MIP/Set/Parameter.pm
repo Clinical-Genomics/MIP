@@ -947,7 +947,7 @@ q{No environment name has been specified for MIP's main environment. Using defau
         ## Give the env a default name if not given
         if ( not $parameter_href->{environment_name}{$environment} ) {
 
-            ## Strip the first charcter, i.e. 'e' from the environmemnt string
+            ## Strip the first character, i.e. 'e' from the environment string
             my $env_postfix = substr $environment, 1;
             $parameter_href->{environment_name}{$environment} =
               $base_name . $UNDERSCORE . $env_postfix;
