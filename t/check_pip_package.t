@@ -60,7 +60,7 @@ diag(   q{Test check_pip_package from Pip.pm v}
 
 Readonly my $TRAVIS_TESTS => 4;
 
-my $conda_environment = q{mip_travis_svdb};
+my $conda_environment = q{mip7_rd_dna_svdb};
 my $version           = q{2.0.0};
 my $conda_prefix_path = catfile( $Bin, qw{ data modules miniconda } );
 
