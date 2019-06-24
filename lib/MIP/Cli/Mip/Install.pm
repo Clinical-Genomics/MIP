@@ -116,10 +116,10 @@ sub _build_usage {
     );
 
     option(
-        q{no_environment_date} => (
-            cmd_aliases   => [qw{ ned }],
-            cmd_flag      => q{no_environment_date},
-            documentation => q{Do not add creation date to environment},
+        q{add_environment_date} => (
+            cmd_aliases   => [qw{ aed }],
+            cmd_flag      => q{add_environment_date},
+            documentation => q{Add creation date to environment},
             is            => q{rw},
             isa           => Bool,
             required      => 0,

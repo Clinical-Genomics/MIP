@@ -137,7 +137,6 @@ sub mip_install {
     ## Set environment names and environment specific conda paths
     set_conda_env_names_and_paths(
         {
-            log            => $log,
             parameter_href => \%parameter,
         }
     );

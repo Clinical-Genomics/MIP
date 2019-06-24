@@ -18,7 +18,7 @@ use List::Util qw{ any };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -29,9 +29,96 @@ BEGIN {
     our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ parse_download_reference_parameter parse_infiles parse_nist_parameters parse_prioritize_variant_callers parse_start_with_recipe parse_toml_config_parameters };
+    our @EXPORT_OK = qw{
+      parse_conda_env_name
+      parse_download_reference_parameter
+      parse_infiles
+      parse_nist_parameters
+      parse_prioritize_variant_callers
+      parse_start_with_recipe
+      parse_toml_config_parameters
+    };
 
+}
+
+sub parse_conda_env_name {
+
+## Function : Build conda environment names depending on input parameters
+## Returns  : $conda_environment_name
+## Arguments: $base_name     => Degfault base environment name
+##          : $date          => Date
+##          : $environment   => Installation environment
+##          : parameter_href => Parmeter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $base_name;
+    my $date;
+    my $environment;
+    my $parameter_href;
+
+    my $tmpl = {
+        base_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$base_name,
+            strict_type => 1,
+        },
+        date => {
+            defined     => 1,
+            required    => 1,
+            store       => \$date,
+            strict_type => 1,
+        },
+        environment => {
+            defined     => 1,
+            required    => 1,
+            store       => \$environment,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $environment_name = $parameter_href->{environment_name}{$environment};
+
+    ## Give the env a default name if not given
+    if ( not $environment_name ) {
+
+        ## Strip the first character, i.e. 'e' from the environment string
+        my $env_postfix = substr $environment, 1;
+        $environment_name = $base_name . $UNDERSCORE . $env_postfix;
+    }
+
+    ## Prepend environemnt prefix
+    if ( $parameter_href->{environment_prefix} ) {
+
+        $environment_name =
+          $parameter_href->{environment_prefix} . $UNDERSCORE . $environment_name;
+    }
+
+    ## Add environment date
+    if ( $parameter_href->{add_environment_date} ) {
+
+        $environment_name = $environment_name . $UNDERSCORE . $date;
+    }
+
+    ## Append environment suffix
+    if ( $parameter_href->{environment_suffix} ) {
+
+        $environment_name =
+          $environment_name . $UNDERSCORE . $parameter_href->{environment_suffix};
+    }
+
+    return $environment_name;
 }
 
 sub parse_download_reference_parameter {
