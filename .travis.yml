@@ -30,11 +30,11 @@ install:
 ## Test installation script and gather coverage information
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_install.test
 ## Generate rare disease installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip epeddy eperl5 epy3 esvdb etiddit --envn emip=mip_travis --snpg GRCh37.75 --skip gatk --skip snpeff
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_dna --bash_set_errexit --install emip epeddy eperl5 epy3 esvdb etiddit --envn emip=mip_travis epeddy=mip_travis_peddy eperl5=mip_travis_perl5 epy3=mip_travis_py3 esvdb=mip_travis_svdb etiddit=mip_travis_tiddit --skip gatk --skip snpeff
 ## Install MIP rare disease
   - bash mip.sh
 ## Generate rna installation script
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip epy3 eperl5
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl mip install rd_rna --bash_set_errexit --install emip epy3 eperl5 
 ## Install MIP rna
   - bash mip.sh
 
@@ -58,8 +58,8 @@ script:
 ## Set-up test coverage for mip_analyse_vcf_rerun.test
   - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_dragen_rd_dna.test
 ## Set-up test coverage for mip_analyse_rna.test
-  - conda activate MIP_rd_rna
-  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_rna.test 
+  - conda activate mip7_rd-rna
+  - PERL5OPT=-MDevel::Cover=-ignore,"^t/",-coverage,statement,branch,condition,path,subroutine perl t/mip_analyse_rd_rna.test
 ## Get some coverage statistics
   - cover
 

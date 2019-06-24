@@ -22,7 +22,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run }
   ;    # MooseX::App required sub. Called internally by MooseX::App
 
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -86,10 +86,40 @@ sub _build_usage {
     );
 
     option(
+        q{environment_prefix} => (
+            cmd_aliases => [qw{ ep }],
+            documentation =>
+              q{Prepend this to environment names. Separated by underscore},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{environment_suffix} => (
+            cmd_aliases   => [qw{ es }],
+            documentation => q{Append this to environment names. Separated by underscore},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{noupdate} => (
             cmd_aliases   => [qw{ nup }],
             cmd_flag      => q{noupdate},
             documentation => q{Do not update existing shell programs},
+            is            => q{rw},
+            isa           => Bool,
+            required      => 0,
+        ),
+    );
+
+    option(
+        q{add_environment_date} => (
+            cmd_aliases   => [qw{ aed }],
+            cmd_flag      => q{add_environment_date},
+            documentation => q{Add creation date to environment},
             is            => q{rw},
             isa           => Bool,
             required      => 0,

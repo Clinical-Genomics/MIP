@@ -26,7 +26,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = 1.08;
+our $VERSION = 1.09;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -93,8 +93,10 @@ sub _build_usage {
 
     option(
         q{environment_name} => (
-            cmd_aliases   => [qw{ envn }],
-            cmd_flag      => q{environment_name},
+            cmd_aliases => [qw{ envn }],
+            cmd_flag    => q{environment_name},
+            cmd_tags =>
+              [q{Default: mip7_rd-rna mip7_rd-rna_py3 mip7_rd-rna_perl5 mip7_rd-rna_vep}],
             documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [

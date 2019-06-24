@@ -49,9 +49,10 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $MINUS_ONE => -1;
-Readonly my $MINUS_TWO => -2;
-Readonly my $TWO       => 2;
+Readonly my $MINUS_ONE   => -1;
+Readonly my $MINUS_TWO   => -2;
+Readonly my $TWO         => 2;
+Readonly my $ONE_HUNDRED => 100;
 
 sub set_config_to_active_parameters {
 
@@ -874,21 +875,14 @@ sub set_conda_env_names_and_paths {
 
 ## Function : Set conda environmnet specific names and paths
 ## Returns  :
-## Arguments: $log            => Log
-##          : $parameter_href => The entire parameter hash {REF}
+## Arguments: $parameter_href => The entire parameter hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
-    my $log;
 
     my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -900,54 +894,34 @@ sub set_conda_env_names_and_paths {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use List::Util qw{ first };
+    use MIP::Parse::Parameter qw{ parse_conda_env_name };
 
-    my @environments = @{ $parameter_href->{installations} };
+    ## A default name on which to build environment names if non specified
+    my $base_name = $parameter_href->{environment_base_name};
 
-    ## Get array index for the emip environment
-    my $emip_idx = first { $environments[$_] eq q{emip} } 0 .. $#environments;
+    ## Get date and reformat to six digits
+    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) = localtime time;
+    my $date = sprintf '%02d%02d%02d', $year % $ONE_HUNDRED, $mon + 1, $mday;
 
-    ## Set up conda prefix path for MIP main environment
-    if ( defined $emip_idx ) {
+    ## Set up conda environment names and prefix paths for environments
+  ENVIRONMENT:
+    foreach my $environment ( @{ $parameter_href->{installations} } ) {
 
-        if ( $parameter_href->{environment_name}{emip} ) {
-            $parameter_href->{emip}{conda_prefix_path} =
-              catdir( $parameter_href->{conda_dir_path},
-                q{envs}, $parameter_href->{environment_name}{emip} );
-        }
-        else {
-            $log->warn(
-                q{No environment name has been specified for MIP's main environment.});
-            $log->warn(q{MIP will be installed in conda's base environment.});
-            $parameter_href->{emip}{conda_prefix_path} =
-              $parameter_href->{conda_dir_path};
-        }
-
-        ## Remove emip from environments array so that the emip conda path is not overwritten later
-        splice @environments, $emip_idx, 1;
-    }
-
-    ## Set up conda environment names and prefix paths for non mip environmnents
-    foreach my $environment (@environments) {
-
-        ## Give the env a default name if not given
-        if ( not $parameter_href->{environment_name}{$environment} ) {
-
-            ## Add the env name to mip base name if it is named
-            if ( $parameter_href->{environment_name}{emip} ) {
-
-                $parameter_href->{environment_name}{$environment} =
-                  $parameter_href->{environment_name}{emip} . $UNDERSCORE . $environment;
+        ## Construct conda environment name
+        my $environment_name = parse_conda_env_name(
+            {
+                base_name      => $base_name,
+                date           => $date,
+                environment    => $environment,
+                parameter_href => $parameter_href,
             }
-            else {
-                $parameter_href->{environment_name}{$environment} = $environment;
-            }
-        }
+        );
 
-        ## Add environment specific conda prefix path
+        ## Set names and paths
+        $parameter_href->{environment_name}{$environment} = $environment_name;
         $parameter_href->{$environment}{conda_prefix_path} =
-          catdir( $parameter_href->{conda_dir_path},
-            q{envs}, $parameter_href->{environment_name}{$environment} );
+          catdir( $parameter_href->{conda_dir_path}, q{envs}, $environment_name );
+
     }
     return;
 }

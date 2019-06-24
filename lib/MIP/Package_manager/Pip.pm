@@ -93,7 +93,7 @@ sub check_pip_package {
 
             # Test if the program already exists in that environment
             $command =
-qq{conda list -n $conda_environment | grep 'pip' | $check_pip_package_regexp};
+qq{conda list -n $conda_environment 2> /dev/null | grep '<pip>' | $check_pip_package_regexp};
             run(
                 command => $command,
                 buffer  => \$status
@@ -102,13 +102,12 @@ qq{conda list -n $conda_environment | grep 'pip' | $check_pip_package_regexp};
         return $status;
     }
 
-    # Test if the program is already installed in the root env
-    $command = qq{pip list --format columns | $check_pip_package_regexp};
+    # Test if the program is already installed in the active env
+    $command = qq{pip list --format columns 2> /dev/null | $check_pip_package_regexp};
     run(
         command => $command,
         buffer  => \$status
     );
-
     return $status;
 }
 
@@ -294,7 +293,7 @@ sub _build_package_check_regexp {
           . q?'if( ($_=~/? . $package . q?/) && ($_=~/? . $version . q?/) )?
 
           # Print 1 in case of match
-          . q?{print 1}'?;
+          . q?{print 1}' ?;
     }
     else {
 
