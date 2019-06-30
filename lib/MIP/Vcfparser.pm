@@ -17,7 +17,7 @@ use Readonly;
 use Set::IntervalTree;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SEMICOLON $SPACE };
+use MIP::Constants qw{ $SEMICOLON $SPACE $TAB };
 
 BEGIN {
     require Exporter;
@@ -28,7 +28,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ build_interval_tree define_select_data_headers set_vcf_header_info };
+      qw{ build_interval_tree define_select_data_headers parse_feature_file_header set_vcf_header_info };
 }
 
 sub build_interval_tree {
@@ -229,4 +229,83 @@ sub set_vcf_header_info {
     return;
 }
 
+sub parse_feature_file_header {
+
+## Function : Get feature file header
+## Returns  :
+## Arguments: $feature_columns_ref => Feature columns to include {REF}
+##          : $feature_data_href   => Feature file hash {REF}
+##          : $feature_file_key    => Feature file key used to distinguish feature file(s) i.e., select or range
+##          : $feature_file_path   => Feature file path
+##          : $header_line         => Header line
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $feature_columns_ref;
+    my $feature_data_href;
+    my $feature_file_key;
+    my $feature_file_path;
+    my $header_line;
+
+    my $tmpl = {
+        feature_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_data_href,
+            strict_type => 1,
+        },
+        feature_columns_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_columns_ref,
+            strict_type => 1,
+        },
+        feature_file_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_file_key,
+            strict_type => 1,
+        },
+        feature_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_file_path,
+            strict_type => 1,
+        },
+        header_line => {
+            defined     => 1,
+            required    => 1,
+            store       => \$header_line,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Vcfparser qw{ set_vcf_header_info };
+
+## Split headers into array elements
+    my @headers = split $TAB, $header_line;
+
+## Defines what headers to store from feature file
+    while ( my ( $feature_index, $feature_position ) = each @{$feature_columns_ref} ) {
+
+        ## Alias
+        my $header_key = $headers[$feature_position];
+
+        set_vcf_header_info(
+            {
+                feature_file_key  => $feature_file_key,
+                feature_file_path => $feature_file_path,
+                header_key        => $header_key,
+                meta_data_href    => $feature_data_href,
+                position          => $feature_index,
+            }
+        );
+    }
+    return 1;
+}
 1;
