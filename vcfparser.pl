@@ -543,7 +543,7 @@ sub read_feature_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Vcfparser qw{ build_interval_tree set_vcf_header_info };
+    use MIP::Vcfparser qw{ build_interval_tree  parse_feature_file_header set_vcf_header_info };
 
     ## Save headers from range file
     my @headers;
@@ -573,8 +573,8 @@ sub read_feature_file {
 
             parse_feature_file_header(
                 {
-                    feature_columns_ref => \@feature_columns,
-                    feature_data_href   => \%feature_data,
+                    feature_columns_ref => $feature_columns_ref,
+                    feature_data_href   => $feature_data_href,
                     feature_file_key    => $range_file_key,
                     feature_file_path   => $infile_path,
                     header_line         => $line,
