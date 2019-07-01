@@ -67,11 +67,9 @@ my @feature_columns   = ( $HGNC_ID_NR, $HGNC_SYMBOL_NR );
 my %feature_data      = define_select_data_headers();
 my $feature_file_key  = q{select_file};
 my $feature_file_path = q{a_select_file_path};
-my $header_key        = q{Not present in feature data};
 my @headers     = ( q{#chromosome}, qw{ gene_start gene_stop hgnc_id hgnc_symbol } );
 my $header_line = join $TAB, @headers;
 
-#say STDERR $header_line;
 my $is_ok = parse_feature_file_header(
     {
         feature_columns_ref => \@feature_columns,
