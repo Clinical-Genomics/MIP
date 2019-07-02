@@ -28,7 +28,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ build_interval_tree define_select_data_headers parse_feature_file_header set_vcf_header_info };
+      qw{ build_interval_tree define_select_data_headers parse_feature_file_data parse_feature_file_header set_vcf_header_info };
 }
 
 sub build_interval_tree {
@@ -152,7 +152,7 @@ sub set_vcf_header_info {
 ## Function : Adds arbitrary INFO fields to hash based on supplied header key
 ##            unless header key is already defined
 ## Returns  :
-## Arguments: $feature_file_key  => Feature file key
+## Arguments: $feature_file_type  => Feature file key
 ##          : $feature_file_path => Feature file path
 ##          : $header_key        => Header key from feature file
 ##          : $meta_data_href    => Hash to store meta_data in {REF}
@@ -161,17 +161,17 @@ sub set_vcf_header_info {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $feature_file_key;
+    my $feature_file_type;
     my $feature_file_path;
     my $header_key;
     my $meta_data_href;
     my $position;
 
     my $tmpl = {
-        feature_file_key => {
+        feature_file_type => {
             defined     => 1,
             required    => 1,
-            store       => \$feature_file_key,
+            store       => \$feature_file_type,
             strict_type => 1,
         },
         feature_file_path => {
@@ -211,10 +211,10 @@ sub set_vcf_header_info {
       . $feature_file_path . q{">};
 
     ## Add INFO from predefined entries
-    if ( defined $meta_data_href->{$feature_file_key}{$header_key} ) {
+    if ( defined $meta_data_href->{$feature_file_type}{$header_key} ) {
 
         $meta_data_href->{present}{$header_key}{info} =
-          $meta_data_href->{$feature_file_key}{$header_key}{info};
+          $meta_data_href->{$feature_file_type}{$header_key}{info};
     }
     else {
         ## Add arbitrary INFO field using feature file header key
@@ -229,13 +229,115 @@ sub set_vcf_header_info {
     return;
 }
 
+sub parse_feature_file_data {
+
+## Function : Parse feature file data and build interval tree from the data
+## Returns  :
+## Arguments: $data_line                      => Data line
+##          : $feature_columns_ref            => Feature columns to include {REF}
+##          : $feature_data_href              => Feature file hash {REF}
+##          : $feature_file_type               => Feature file key used to distinguish feature file(s) i.e., select or range
+##          : $padding                        => Padding distance
+##          : $select_feature_matching_column => Column in the select file to match with vcf key annotation {Optional}
+##          : $tree_href                      => Interval tree hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $data_line;
+    my $feature_columns_ref;
+    my $feature_data_href;
+    my $feature_file_type;
+    my $padding;
+    my $select_feature_matching_column;
+    my $tree_href;
+
+    my $tmpl = {
+        data_line => {
+            defined     => 1,
+            required    => 1,
+            store       => \$data_line,
+            strict_type => 1,
+        },
+        feature_columns_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_columns_ref,
+            strict_type => 1,
+        },
+        feature_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_data_href,
+            strict_type => 1,
+        },
+        feature_file_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_file_type,
+            strict_type => 1,
+        },
+        padding => {
+            defined     => 1,
+            required    => 1,
+            store       => \$padding,
+            strict_type => 1,
+        },
+        select_feature_matching_column =>
+          { store => \$select_feature_matching_column, strict_type => 1, },
+        tree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$tree_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Vcfparser qw{ build_interval_tree };
+
+    ## Split data into array elements
+    my @data_features = split $TAB, $data_line;
+
+    if ( defined $select_feature_matching_column ) {
+
+        my $data_feature = $data_features[$select_feature_matching_column];
+
+        # Replace whitespace with underscore
+        $data_feature =~ s/\s/_/gsxm;
+
+        ## Set matching column data feature to feature data
+        $feature_data_href->{$data_feature} = $data_feature;
+    }
+
+    ## Create Interval Tree
+    if ( @{$feature_columns_ref} ) {
+
+        ## Annotate vcf with features from feature file
+        build_interval_tree(
+            {
+                feature_columns_ref => $feature_columns_ref,
+                feature_file_type   => $feature_file_type,
+                line_elements_ref   => \@data_features,
+                padding             => $padding,
+                tree_href           => $tree_href,
+            }
+        );
+    }
+    return 1;
+}
+
 sub parse_feature_file_header {
 
 ## Function : Get feature file header
 ## Returns  :
 ## Arguments: $feature_columns_ref => Feature columns to include {REF}
 ##          : $feature_data_href   => Feature file hash {REF}
-##          : $feature_file_key    => Feature file key used to distinguish feature file(s) i.e., select or range
+##          : $feature_file_type    => Feature file key used to distinguish feature file(s) i.e., select or range
 ##          : $feature_file_path   => Feature file path
 ##          : $header_line         => Header line
 
@@ -244,7 +346,7 @@ sub parse_feature_file_header {
     ## Flatten argument(s)
     my $feature_columns_ref;
     my $feature_data_href;
-    my $feature_file_key;
+    my $feature_file_type;
     my $feature_file_path;
     my $header_line;
 
@@ -263,10 +365,10 @@ sub parse_feature_file_header {
             store       => \$feature_columns_ref,
             strict_type => 1,
         },
-        feature_file_key => {
+        feature_file_type => {
             defined     => 1,
             required    => 1,
-            store       => \$feature_file_key,
+            store       => \$feature_file_type,
             strict_type => 1,
         },
         feature_file_path => {
@@ -287,10 +389,10 @@ sub parse_feature_file_header {
 
     use MIP::Vcfparser qw{ set_vcf_header_info };
 
-## Split headers into array elements
+    ## Split headers into array elements
     my @headers = split $TAB, $header_line;
 
-## Defines what headers to store from feature file
+    ## Defines what headers to store from feature file
     while ( my ( $feature_index, $feature_position ) = each @{$feature_columns_ref} ) {
 
         ## Alias
@@ -298,7 +400,7 @@ sub parse_feature_file_header {
 
         set_vcf_header_info(
             {
-                feature_file_key  => $feature_file_key,
+                feature_file_type => $feature_file_type,
                 feature_file_path => $feature_file_path,
                 header_key        => $header_key,
                 meta_data_href    => $feature_data_href,

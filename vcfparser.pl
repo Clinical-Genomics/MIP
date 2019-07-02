@@ -543,7 +543,8 @@ sub read_feature_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Vcfparser qw{ build_interval_tree  parse_feature_file_header set_vcf_header_info };
+    use MIP::Vcfparser
+      qw{ build_interval_tree  parse_feature_file_header set_vcf_header_info };
 
     ## Save headers from range file
     my @headers;
@@ -575,41 +576,27 @@ sub read_feature_file {
                 {
                     feature_columns_ref => $feature_columns_ref,
                     feature_data_href   => $feature_data_href,
-                    feature_file_key    => $range_file_key,
+                    feature_file_type   => $range_file_key,
                     feature_file_path   => $infile_path,
                     header_line         => $line,
                 }
             );
             next LINE;
         }
+        ## Feature file data
         if ( $line =~ /^(\S+)/ ) {
 
-            ## Loads range file line elements
-            my @line_elements =
-              split /\t/, $_;
-
-            if ( defined $select_feature_matching_column ) {
-
-                # Replace whitespace with "_"
-                $line_elements[$select_feature_matching_column] =~ s/\s/_/g;
-                $select_data{ $line_elements[$select_feature_matching_column] } =
-                  $line_elements[$select_feature_matching_column];
-            }
-
-            ## Create Interval Tree
-            if ( @{$feature_columns_ref} ) {
-
-                ## Annotate vcf with features from feature file
-                build_interval_tree(
-                    {
-                        feature_columns_ref => $feature_columns_ref,
-                        line_elements_ref   => \@line_elements,
-                        padding             => $$padding_ref,
-                        range_file_key      => $range_file_key,
-                        tree_href           => $tree_href,
-                    }
-                );
-            }
+            parse_feature_file_data(
+                {
+                    data_line                      => $line,
+                    feature_columns_ref            => $feature_columns_ref,
+                    feature_data_href              => $feature_data_href,
+                    feature_file_type              => $range_file_key,
+                    padding                        => $padding,
+                    select_feature_matching_column => $select_feature_matching_column,
+                    tree_href                      => $tree_href,
+                }
+            );
         }
     }
     close($FILEHANDLE);

@@ -64,13 +64,13 @@ $header .= q?Type=String,Description="Known pathogenic transcript(s) for gene">?
 
 my $extract_columns_counter = 0;
 my %feature_data            = define_select_data_headers();
-my $feature_file_key        = q{select_file};
+my $feature_file_type       = q{select_file};
 my $feature_file_path       = q{a_select_file_path};
 my $header_key              = q{Not present in feature data};
 
 set_vcf_header_info(
     {
-        feature_file_key  => $feature_file_key,
+        feature_file_type => $feature_file_type,
         feature_file_path => $feature_file_path,
         header_key        => $header_key,
         meta_data_href    => \%feature_data,
@@ -105,7 +105,7 @@ $extract_columns_counter++;
 
 set_vcf_header_info(
     {
-        feature_file_key  => $feature_file_key,
+        feature_file_type => $feature_file_type,
         feature_file_path => $feature_file_path,
         header_key        => $existing_header_key,
         meta_data_href    => \%feature_data,
