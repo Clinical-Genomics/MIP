@@ -470,8 +470,8 @@ sub read_feature_file {
 
 ## Function : Reads a file containg features to be annotated using range queries e.g. EnsemblGeneID. Adds to Metadata hash and creates Interval tree for feature.
 ## Returns  :
-## Arguments: $feature_data_href              => Feature file hash {REF}
-##          : $feature_columns_ref            => Feature columns to include {REF}
+## Arguments: $feature_columns_ref            => Feature columns to include {REF}
+##          : $feature_data_href              => Feature file hash {REF}
 ##          : $infile_path                    => Infile path
 ##          : $log                            => Log object
 ##          : $padding_ref                    => Padding distance {REF}
@@ -543,7 +543,7 @@ sub read_feature_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Vcfparser qw{ build_interval_tree set_vcf_header_info };
+    use MIP::Vcfparser qw{ build_interval_tree  parse_feature_file_header set_vcf_header_info };
 
     ## Save headers from range file
     my @headers;
@@ -568,32 +568,18 @@ sub read_feature_file {
         ## Skip meta data lines
         next LINE if ( $line =~ /\A [#]{2}/sxm );
 
-        ## Header/comment
+        ## Feature file header
         if ( $line =~ /\A [#]{1}/sxm ) {
 
-            @headers = split /\t/, $line;
-
-            ## Defines what scalar to store
-            for (
-                my $extract_columns_counter = 0 ;
-                $extract_columns_counter < scalar(@$feature_columns_ref) ;
-                $extract_columns_counter++
-              )
-            {
-
-                ## Alias
-                my $header = $headers[ $$feature_columns_ref[$extract_columns_counter] ];
-
-                set_vcf_header_info(
-                    {
-                        feature_file_key  => $range_file_key,
-                        feature_file_path => $infile_path,
-                        header_key        => $header,
-                        meta_data_href    => $feature_data_href,
-                        position          => $extract_columns_counter,
-                    }
-                );
-            }
+            parse_feature_file_header(
+                {
+                    feature_columns_ref => $feature_columns_ref,
+                    feature_data_href   => $feature_data_href,
+                    feature_file_key    => $range_file_key,
+                    feature_file_path   => $infile_path,
+                    header_line         => $line,
+                }
+            );
             next LINE;
         }
         if ( $line =~ /^(\S+)/ ) {
