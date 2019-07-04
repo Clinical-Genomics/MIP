@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 ## Constants
 Readonly my $PADDING => 50;
@@ -97,6 +97,12 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    log_file_path => {
+        input           => catfile(qw{ a dir vcfparser_contig.log}),
+        expected_output => q{--log_file}
+          . $SPACE
+          . catfile(qw{ a dir vcfparser_contig.log}),
+    },
     padding => {
         input           => $PADDING,
         expected_output => q{--padding} . $SPACE . $PADDING,

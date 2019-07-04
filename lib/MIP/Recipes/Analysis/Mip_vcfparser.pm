@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -236,6 +236,7 @@ sub analysis_mip_vcfparser {
         )
     );
 
+    my $outdir_path   = $io{out}{dir_path};
     my %outfile_path  = %{ $io{out}{file_path_href} };
     my @outfile_paths = @{ $io{out}{file_paths} };
 
@@ -309,6 +310,8 @@ sub analysis_mip_vcfparser {
             $padding = $ANNOTATION_DISTANCE_MT;
         }
 
+        my $log_file_path =
+          catfile( $outdir_path, q{vcfparser} . $UNDERSCORE . $contig . q{.log} );
         my $vcfparser_xargs_file_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
         my @select_feature_annotation_columns;
         my $select_file;
@@ -351,10 +354,11 @@ sub analysis_mip_vcfparser {
 
         mip_vcfparser(
             {
-                FILEHANDLE  => $XARGSFILEHANDLE,
-                infile_path => $infile_path{$contig},
-                padding     => $padding,
-                parse_vep   => $active_parameter_href->{varianteffectpredictor},
+                FILEHANDLE    => $XARGSFILEHANDLE,
+                infile_path   => $infile_path{$contig},
+                log_file_path => $log_file_path,
+                padding       => $padding,
+                parse_vep     => $active_parameter_href->{varianteffectpredictor},
                 range_feature_annotation_columns_ref => \@{
                     $active_parameter_href->{vcfparser_range_feature_annotation_columns}
                 },
@@ -640,6 +644,7 @@ sub analysis_mip_vcfparser_sv_wes {
         )
     );
 
+    my $outdir_path         = $io{out}{dir_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my @outfile_suffixes    = @{ $io{out}{file_suffixes} };
 
@@ -666,6 +671,7 @@ sub analysis_mip_vcfparser_sv_wes {
     ## vcfparser
     say {$FILEHANDLE} q{## vcfparser};
 
+    my $log_file_path = catfile( $outdir_path, q{vcfparser.log} );
     my @select_feature_annotation_columns;
     my $select_file;
     my $select_file_matching_column;
@@ -695,10 +701,11 @@ sub analysis_mip_vcfparser_sv_wes {
 
     mip_vcfparser(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $infile_path,
-            parse_vep   => $active_parameter_href->{sv_varianteffectpredictor},
-            per_gene    => $active_parameter_href->{sv_vcfparser_per_gene},
+            FILEHANDLE    => $FILEHANDLE,
+            infile_path   => $infile_path,
+            log_file_path => $log_file_path,
+            parse_vep     => $active_parameter_href->{sv_varianteffectpredictor},
+            per_gene      => $active_parameter_href->{sv_vcfparser_per_gene},
             pli_values_file_path =>
               $active_parameter_href->{vep_plugin_pli_value_file_path},
             range_feature_annotation_columns_ref =>
@@ -955,6 +962,7 @@ sub analysis_mip_vcfparser_sv_wgs {
         )
     );
 
+    my $outdir_path         = $io{out}{dir_path};
     my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_suffix};
@@ -1010,6 +1018,8 @@ sub analysis_mip_vcfparser_sv_wgs {
             $padding = $ANNOTATION_DISTANCE_MT;
         }
 
+        my $log_file_path =
+          catfile( $outdir_path, q{vcfparser} . $UNDERSCORE . $contig . q{.log} );
         my $vcfparser_outfile_path =
           $outfile_path_prefix . $DOT . $contig . $outfile_suffix;
         my $vcfparser_xargs_file_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
@@ -1017,6 +1027,7 @@ sub analysis_mip_vcfparser_sv_wgs {
         my $select_file;
         my $select_file_matching_column;
         my $select_outfile;
+
         if ( $active_parameter_href->{sv_vcfparser_select_file} ) {
 
             if (
@@ -1056,11 +1067,12 @@ sub analysis_mip_vcfparser_sv_wgs {
 
         mip_vcfparser(
             {
-                FILEHANDLE  => $XARGSFILEHANDLE,
-                infile_path => $infile_path{$contig},
-                padding     => $padding,
-                parse_vep   => $active_parameter_href->{sv_varianteffectpredictor},
-                per_gene    => $active_parameter_href->{sv_vcfparser_per_gene},
+                FILEHANDLE    => $XARGSFILEHANDLE,
+                infile_path   => $infile_path{$contig},
+                log_file_path => $log_file_path,
+                padding       => $padding,
+                parse_vep     => $active_parameter_href->{sv_varianteffectpredictor},
+                per_gene      => $active_parameter_href->{sv_vcfparser_per_gene},
                 pli_values_file_path =>
                   $active_parameter_href->{vep_plugin_pli_value_file_path},
                 range_feature_annotation_columns_ref => \@{

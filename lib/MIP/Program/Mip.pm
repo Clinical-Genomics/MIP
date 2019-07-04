@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_qccollect mip_vcfparser };
@@ -159,6 +159,7 @@ sub mip_vcfparser {
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE                            => Filehandle to write to
 ##          : $infile_path                           => Infile path
+##          : $log_file_path                         => Log file path
 ##          : $padding                               => Pad each gene with X number of nucleotides
 ##          : $parse_vep                             => Parse VEP transcript specific entries
 ##          : $per_gene                              => Output most severe consequence transcript
@@ -178,6 +179,7 @@ sub mip_vcfparser {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_path;
+    my $log_file_path;
     my $pli_values_file_path;
     my $range_feature_annotation_columns_ref;
     my $range_feature_file_path;
@@ -202,6 +204,10 @@ sub mip_vcfparser {
             defined     => 1,
             required    => 1,
             store       => \$infile_path,
+            strict_type => 1,
+        },
+        log_file_path => {
+            store       => \$log_file_path,
             strict_type => 1,
         },
         padding => {
@@ -268,6 +274,11 @@ sub mip_vcfparser {
     push @commands, $infile_path;
 
     ## Options
+    if ($log_file_path) {
+
+        push @commands, q{--log_file} . $SPACE . $log_file_path;
+    }
+
     if ($parse_vep) {
 
         push @commands, q{--parse_vep};
