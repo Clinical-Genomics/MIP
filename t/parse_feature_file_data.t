@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE $TAB };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,17 +40,19 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Vcfparser} => [qw{ define_select_data_headers parse_feature_file_data }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::File::Format::Feature_file} => [qw{ parse_feature_file_data }],
+        q{MIP::Vcfparser}                  => [qw{ define_select_data_headers }],
+        q{MIP::Test::Fixtures}             => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Vcfparser qw{ define_select_data_headers parse_feature_file_data };
+use MIP::File::Format::Feature_file qw{ parse_feature_file_data };
+use MIP::Vcfparser qw{ define_select_data_headers };
 
-diag(   q{Test parse_feature_file_data from Vcfparser.pm v}
-      . $MIP::Vcfparser::VERSION
+diag(   q{Test parse_feature_file_data from Feature_file.pm v}
+      . $MIP::File::Format::Feature_file::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -67,24 +69,24 @@ Readonly my $MATCHING_COLUMN            => 3;
 Readonly my $MATCHING_COLUMN_WITH_SPACE => 4;
 
 ## Given feature data line
-my @data_features     = ( 1, $GENE_START, $GENE_STOP, $HGNC_ID_NR, q{a gene} );
-my $data_line         = join $TAB, @data_features;
-my @feature_columns   = ( $HGNC_ID_NR, $HGNC_SYMBOL_NR );
-my %feature_data      = define_select_data_headers();
-my $feature_file_type = q{select_file};
-my $padding           = 1;
-my $select_feature_matching_column = $MATCHING_COLUMN;
+my @data_features           = ( 1, $GENE_START, $GENE_STOP, $HGNC_ID_NR, q{a gene} );
+my $data_line               = join $TAB, @data_features;
+my @feature_columns         = ( $HGNC_ID_NR, $HGNC_SYMBOL_NR );
+my %feature_data            = define_select_data_headers();
+my $feature_file_type       = q{select_file};
+my $padding                 = 1;
+my $feature_matching_column = $MATCHING_COLUMN;
 my %tree;
 
 my $is_ok = parse_feature_file_data(
     {
-        data_line                      => $data_line,
-        feature_columns_ref            => \@feature_columns,
-        feature_data_href              => \%feature_data,
-        feature_file_type              => $feature_file_type,
-        padding                        => $padding,
-        select_feature_matching_column => $select_feature_matching_column,
-        tree_href                      => \%tree,
+        data_line               => $data_line,
+        feature_columns_ref     => \@feature_columns,
+        feature_data_href       => \%feature_data,
+        feature_file_type       => $feature_file_type,
+        feature_matching_column => $feature_matching_column,
+        padding                 => $padding,
+        tree_href               => \%tree,
     }
 );
 my %expected_feature_data = ( $HGNC_ID_NR => $HGNC_ID_NR );
@@ -95,16 +97,16 @@ is( $feature_data{$HGNC_ID_NR}, $expected_feature_data{$HGNC_ID_NR},
     q{Set feature data} );
 
 ## Given a data with whitespace
-$select_feature_matching_column = $MATCHING_COLUMN_WITH_SPACE;
+$feature_matching_column = $MATCHING_COLUMN_WITH_SPACE;
 parse_feature_file_data(
     {
-        data_line                      => $data_line,
-        feature_columns_ref            => \@feature_columns,
-        feature_data_href              => \%feature_data,
-        feature_file_type              => $feature_file_type,
-        padding                        => $padding,
-        select_feature_matching_column => $select_feature_matching_column,
-        tree_href                      => \%tree,
+        data_line               => $data_line,
+        feature_columns_ref     => \@feature_columns,
+        feature_data_href       => \%feature_data,
+        feature_file_type       => $feature_file_type,
+        feature_matching_column => $feature_matching_column,
+        padding                 => $padding,
+        tree_href               => \%tree,
     }
 );
 $expected_feature_data{a_gene} = q{a_gene};

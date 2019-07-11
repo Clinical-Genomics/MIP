@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -40,17 +40,19 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Vcfparser}      => [qw{ define_select_data_headers set_vcf_header_info }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::File::Format::Feature_file} => [qw{ set_vcf_header_info }],
+        q{MIP::Vcfparser}                  => [qw{ define_select_data_headers  }],
+        q{MIP::Test::Fixtures}             => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Vcfparser qw{ define_select_data_headers set_vcf_header_info };
+use MIP::File::Format::Feature_file qw{ set_vcf_header_info };
+use MIP::Vcfparser qw{ define_select_data_headers };
 
-diag(   q{Test set_vcf_header_info from Vcfparser.pm v}
-      . $MIP::Vcfparser::VERSION
+diag(   q{Test set_vcf_header_info from Feature_file.pm v}
+      . $MIP::File::Format::Feature_file::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
