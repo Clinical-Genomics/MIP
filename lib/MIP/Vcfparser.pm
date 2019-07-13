@@ -27,7 +27,11 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ build_interval_tree define_select_data_headers };
+    our @EXPORT_OK = qw{
+      build_interval_tree
+      define_select_data_headers
+      define_snpeff_annotations
+    };
 }
 
 sub build_interval_tree {
@@ -144,6 +148,35 @@ q{##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disea
     $select_data{select_file}{No_hgnc_symbol}{info} =
 q{##INFO=<ID=No_hgnc_symbol,Number=.,Type=String,Description="Clinically relevant genetic regions lacking a HGNC_symbol or Ensembl gene ">};
     return %select_data;
+}
+
+sub define_snpeff_annotations {
+
+## Function : Defines the snpeff annotations that can be parsed and modified from snpeff
+## Returns  : %snpeff_cmd
+## Arguments: None
+
+    my %snpeff_cmd;
+
+    $snpeff_cmd{snpeff}{q{GERP++_RS_prediction_term}}{File} = q{SnpSift dbnsfp};
+    $snpeff_cmd{snpeff}{q{GERP++_RS_prediction_term}}{vcf_key} =
+      q{dbNSFP_GERP___RS};
+    $snpeff_cmd{snpeff}{q{GERP++_RS_prediction_term}}{info} =
+q{##INFO=<ID=GERP++_RS_prediction_term,Number=A,Type=String,Description="GERP RS conservation prediction term">};
+    $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{File} =
+      q{SnpSift dbnsfp};
+    $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{vcf_key} =
+      q{dbNSFP_phastCons100way_vertebrate};
+    $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{info} =
+q{##INFO=<ID=phastCons100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhastCons conservation prediction term">};
+    $snpeff_cmd{snpeff}{phyloP100way_vertebrate_prediction_term}{File} =
+      q{SnpSift dbnsfp};
+    $snpeff_cmd{snpeff}{phyloP100way_vertebrate_prediction_term}{vcf_key} =
+      q{dbNSFP_phyloP100way_vertebrate};
+    $snpeff_cmd{snpeff}{phyloP100way_vertebrate_prediction_term}{info} =
+q{##INFO=<ID=phyloP100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhyloP conservation prediction term">};
+
+    return %snpeff_cmd;
 }
 
 1;
