@@ -82,6 +82,6 @@ my %expected_pli_score = ( ADK => $ADK_PLI );
 ok( $is_ok, q{Loaded plI file} );
 
 ## Then pli_score hash should be loaded with hgnc_symbol and corresponding pli score
-is_deeply( \%pli_score, \%expected_pli_score, q{Loaded pli data into hash} );
+is_deeply( \%pli_score, \%expected_pli_score, q{Loaded plI data into hash} );
 
 done_testing();

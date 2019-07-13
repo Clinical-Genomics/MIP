@@ -80,11 +80,11 @@ sub load_pli_file {
         ## Unpack line
         my $line = $_;
 
-        ## Skip header
-        next LINE if ( $line =~ /\A [#]{1}/sxm );
-
         ## Get hgnc symbol and pli score
         my ( $hgnc_symbol, $pli_score ) = split $TAB, $line;
+
+        ## Skip header
+        next LINE if ( $pli_score eq q{pLI} );
 
         ## Set rounded pli score to hash
         $pli_score_href->{$hgnc_symbol} = sprintf q{%.2f}, $pli_score;
