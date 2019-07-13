@@ -27,6 +27,7 @@ use Set::IntervalTree;
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants qw{ %ANALYSIS $COLON $COMMA $NEWLINE $SPACE $TAB };
+use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 use MIP::Vcfparser qw{ define_select_data_headers };
@@ -66,7 +67,7 @@ my ( $parse_vep, $per_gene );
 my ( @range_feature_annotation_columns, @select_feature_annotation_columns );
 my ( %meta_data, %range_data, %tree, %pli_score );
 
-my $VERSION = q{1.2.15};
+my $VERSION = q{1.2.16};
 
 ## Enables cmd "vcfparser.pl" to print usage help
 if ( not @ARGV ) {
@@ -189,9 +190,9 @@ if ($range_feature_file) {
             feature_columns_ref => \@range_feature_annotation_columns,
             feature_data_href   => \%range_data,
             log                 => $log,
-            infile_path         => $range_feature_file,
-            padding_ref         => \$padding,
-            range_file_key      => q{range_feature},
+            feature_file_path   => $range_feature_file,
+            padding             => $padding,
+            feature_file_type   => q{range_feature},
             tree_href           => \%tree,
         }
     );
@@ -201,14 +202,14 @@ if ($select_feature_file) {
 
     read_feature_file(
         {
-            feature_columns_ref            => \@select_feature_annotation_columns,
-            feature_data_href              => \%select_data,
-            log                            => $log,
-            infile_path                    => $select_feature_file,
-            padding_ref                    => \$padding,
-            range_file_key                 => q{select_feature},
-            select_feature_matching_column => $select_feature_matching_column,
-            tree_href                      => \%tree,
+            feature_columns_ref     => \@select_feature_annotation_columns,
+            feature_data_href       => \%select_data,
+            log                     => $log,
+            feature_file_path       => $select_feature_file,
+            padding                 => $padding,
+            feature_file_type       => q{select_feature},
+            feature_matching_column => $select_feature_matching_column,
+            tree_href               => \%tree,
         }
     );
 }
@@ -464,156 +465,6 @@ sub load_pli_file {
     }
     close $FILEHANDLE;
     return;
-}
-
-sub read_feature_file {
-
-## Function : Reads a file containg features to be annotated using range queries e.g. EnsemblGeneID. Adds to Metadata hash and creates Interval tree for feature.
-## Returns  :
-## Arguments: $feature_columns_ref            => Feature columns to include {REF}
-##          : $feature_data_href              => Feature file hash {REF}
-##          : $infile_path                    => Infile path
-##          : $log                            => Log object
-##          : $padding_ref                    => Padding distance {REF}
-##          : $range_file_key                 => Range file key used to seperate range file(s) i.e., select and range
-##          : $select_feature_matching_column => Column in the select file to match with vcf key annotation {Optional}
-##          : $tree_href                      => Interval tree hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $feature_columns_ref;
-    my $feature_data_href;
-    my $infile_path;
-    my $log;
-    my $padding_ref;
-    my $range_file_key;
-    my $select_feature_matching_column;
-    my $tree_href;
-
-    my $tmpl = {
-        feature_data_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$feature_data_href,
-            strict_type => 1,
-        },
-        feature_columns_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$feature_columns_ref,
-            strict_type => 1,
-        },
-        infile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_path,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        padding_ref => {
-            default     => \$$,
-            defined     => 1,
-            required    => 1,
-            store       => \$padding_ref,
-            strict_type => 1,
-        },
-        range_file_key => {
-            defined     => 1,
-            required    => 1,
-            store       => \$range_file_key,
-            strict_type => 1,
-        },
-        select_feature_matching_column =>
-          { store => \$select_feature_matching_column, strict_type => 1, },
-        tree_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$tree_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Vcfparser qw{ build_interval_tree  parse_feature_file_header set_vcf_header_info };
-
-    ## Save headers from range file
-    my @headers;
-
-    my $FILEHANDLE = IO::Handle->new();
-
-    open $FILEHANDLE, q{<}, $infile_path
-      or $log->logdie( q{Cannot open } . $infile_path . $COLON . $!, $NEWLINE );
-
-  LINE:
-    while (<$FILEHANDLE>) {
-
-        ## Remove newline
-        chomp;
-
-        ## Unpack line
-        my $line = $_;
-
-        ## Skip blank lines
-        next LINE if ( $line =~ /^\s+$/sxm );
-
-        ## Skip meta data lines
-        next LINE if ( $line =~ /\A [#]{2}/sxm );
-
-        ## Feature file header
-        if ( $line =~ /\A [#]{1}/sxm ) {
-
-            parse_feature_file_header(
-                {
-                    feature_columns_ref => $feature_columns_ref,
-                    feature_data_href   => $feature_data_href,
-                    feature_file_key    => $range_file_key,
-                    feature_file_path   => $infile_path,
-                    header_line         => $line,
-                }
-            );
-            next LINE;
-        }
-        if ( $line =~ /^(\S+)/ ) {
-
-            ## Loads range file line elements
-            my @line_elements =
-              split /\t/, $_;
-
-            if ( defined $select_feature_matching_column ) {
-
-                # Replace whitespace with "_"
-                $line_elements[$select_feature_matching_column] =~ s/\s/_/g;
-                $select_data{ $line_elements[$select_feature_matching_column] } =
-                  $line_elements[$select_feature_matching_column];
-            }
-
-            ## Create Interval Tree
-            if ( @{$feature_columns_ref} ) {
-
-                ## Annotate vcf with features from feature file
-                build_interval_tree(
-                    {
-                        feature_columns_ref => $feature_columns_ref,
-                        line_elements_ref   => \@line_elements,
-                        padding             => $$padding_ref,
-                        range_file_key      => $range_file_key,
-                        tree_href           => $tree_href,
-                    }
-                );
-            }
-        }
-    }
-    close($FILEHANDLE);
-    $log->info(qq{Finished reading $range_file_key file: $infile_path});
 }
 
 sub read_infile_vcf {
