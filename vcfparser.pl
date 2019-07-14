@@ -29,6 +29,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants
   qw{ %ANALYSIS $COLON $COMMA $NEWLINE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
+use MIP::File::Format::Pli qw{ load_pli_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 use MIP::Vcfparser qw{ define_select_data_headers define_snpeff_annotations };
@@ -173,6 +174,7 @@ if ($pli_values_file_path) {
     load_pli_file(
         {
             infile_path    => $pli_values_file_path,
+            log            => $log,
             pli_score_href => \%pli_score,
         }
     );
@@ -280,63 +282,6 @@ sub build_usage {
    -h/--help Display this help message
    -v/--version Display version
 END_USAGE
-}
-
-sub load_pli_file {
-
-## Function : Load plI file values
-## Returns  :
-## Arguments: $infile_path    => Infile path
-##          : $pli_score_href => Pli scores hash
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile_path;
-    my $pli_score_href;
-
-    my $tmpl = {
-        infile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_path,
-            strict_type => 1,
-        },
-        pli_score_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$pli_score_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die q{Could not parse arguments!};
-
-    my $FILEHANDLE = IO::Handle->new();
-
-    open $FILEHANDLE, q{<}, $infile_path
-      or $log->logdie( q{Cannot open } . $infile_path . $COLON . $!, $NEWLINE );
-
-  LINE:
-    while (<$FILEHANDLE>) {
-
-        chomp;
-
-        ## Unpack line
-        my $line = $_;
-
-        ## Get hgnc symbol and pli score
-        my ( $hgnc_symbol, $pli_score ) = split $TAB, $line;
-
-        ## Skip header
-        next if ( $pli_score eq q{pLI} );
-
-        ## Set rounded pli score to hash
-        $pli_score_href->{$hgnc_symbol} = sprintf( "%.2f", $pli_score );
-    }
-    close $FILEHANDLE;
-    return;
 }
 
 sub read_infile_vcf {
