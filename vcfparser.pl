@@ -26,7 +26,8 @@ use Set::IntervalTree;
 ## MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Constants qw{ %ANALYSIS $COLON $COMMA $NEWLINE $SPACE $TAB };
+use MIP::Constants
+  qw{ %ANALYSIS $COLON $COMMA $NEWLINE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::File::Format::Pli qw{ load_pli_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
@@ -53,6 +54,7 @@ BEGIN {
 
 ## Constants
 Readonly my $ANNOTATION_DISTANCE => $ANALYSIS{ANNOTATION_DISTANCE};
+my %consequence_severity = %SO_CONSEQUENCE_SEVERITY;
 
 my ( $infile, $pli_values_file_path, $range_feature_file, $select_feature_file,
     $select_feature_matching_column,
@@ -218,8 +220,6 @@ if ($select_feature_file) {
 
 my %snpeff_cmd = define_snpeff_annotations();
 
-my %consequence_severity = define_consequence_severity();
-
 read_infile_vcf(
     {
         consequence_severity_href             => \%consequence_severity,
@@ -282,104 +282,6 @@ sub build_usage {
    -h/--help Display this help message
    -v/--version Display version
 END_USAGE
-}
-
-sub define_consequence_severity {
-
-## Function : Defines the precedence of consequences for SO-terms
-## Returns  : %consequence_severity
-## Arguments: None
-
-    my %consequence_severity;
-
-    $consequence_severity{transcript_ablation}{rank}                       = 1;
-    $consequence_severity{transcript_ablation}{genetic_region_annotation}  = q{exonic};
-    $consequence_severity{splice_donor_variant}{rank}                      = 2;
-    $consequence_severity{splice_donor_variant}{genetic_region_annotation} = q{splicing};
-    $consequence_severity{splice_acceptor_variant}{rank}                   = 2;
-    $consequence_severity{splice_acceptor_variant}{genetic_region_annotation} =
-      q{splicing};
-    $consequence_severity{stop_gained}{rank}                                  = 3;
-    $consequence_severity{stop_gained}{genetic_region_annotation}             = q{exonic};
-    $consequence_severity{frameshift_variant}{rank}                           = 4;
-    $consequence_severity{frameshift_variant}{genetic_region_annotation}      = q{exonic};
-    $consequence_severity{stop_lost}{rank}                                    = 5;
-    $consequence_severity{stop_lost}{genetic_region_annotation}               = q{exonic};
-    $consequence_severity{start_lost}{rank}                                   = 5;
-    $consequence_severity{start_lost}{genetic_region_annotation}              = q{exonic};
-    $consequence_severity{initiator_codon_variant}{rank}                      = 6;
-    $consequence_severity{initiator_codon_variant}{genetic_region_annotation} = q{exonic};
-    $consequence_severity{inframe_insertion}{rank}                            = 6;
-    $consequence_severity{inframe_insertion}{genetic_region_annotation}       = q{exonic};
-    $consequence_severity{inframe_deletion}{rank}                             = 6;
-    $consequence_severity{inframe_deletion}{genetic_region_annotation}        = q{exonic};
-    $consequence_severity{missense_variant}{rank}                             = 6;
-    $consequence_severity{missense_variant}{genetic_region_annotation}        = q{exonic};
-    $consequence_severity{protein_altering_variant}{rank}                     = 6;
-    $consequence_severity{protein_altering_variant}{genetic_region_annotation} =
-      q{exonic};
-    $consequence_severity{transcript_amplification}{rank} = 7;
-    $consequence_severity{transcript_amplification}{genetic_region_annotation} =
-      q{exonic};
-    $consequence_severity{splice_region_variant}{rank}                      = 8;
-    $consequence_severity{splice_region_variant}{genetic_region_annotation} = q{splicing};
-    $consequence_severity{incomplete_terminal_codon_variant}{rank}          = 9;
-    $consequence_severity{incomplete_terminal_codon_variant}{genetic_region_annotation} =
-      q{exonic};
-    $consequence_severity{synonymous_variant}{rank}                           = 10;
-    $consequence_severity{synonymous_variant}{genetic_region_annotation}      = q{exonic};
-    $consequence_severity{stop_retained_variant}{rank}                        = 10;
-    $consequence_severity{stop_retained_variant}{genetic_region_annotation}   = q{exonic};
-    $consequence_severity{start_retained_variant}{rank}                       = 10;
-    $consequence_severity{start_retained_variant}{genetic_region_annotation}  = q{exonic};
-    $consequence_severity{coding_sequence_variant}{rank}                      = 11;
-    $consequence_severity{coding_sequence_variant}{genetic_region_annotation} = q{exonic};
-    $consequence_severity{mature_miRNA_variant}{rank}                         = 12;
-    $consequence_severity{mature_miRNA_variant}{genetic_region_annotation} =
-      q{ncRNA_exonic};
-    $consequence_severity{q{5_prime_UTR_variant}}{rank}                      = 13;
-    $consequence_severity{q{5_prime_UTR_variant}}{genetic_region_annotation} = q{5UTR};
-    $consequence_severity{q{3_prime_UTR_variant}}{rank}                      = 14;
-    $consequence_severity{q{3_prime_UTR_variant}}{genetic_region_annotation} = q{3UTR};
-    $consequence_severity{non_coding_transcript_exon_variant}{rank}          = 15;
-    $consequence_severity{non_coding_transcript_exon_variant}{genetic_region_annotation}
-      = q{ncRNA_exonic};
-    $consequence_severity{non_coding_transcript_variant}{rank} = 15;
-    $consequence_severity{non_coding_transcript_variant}{genetic_region_annotation} =
-      q{ncRNA};
-    $consequence_severity{intron_variant}{rank}                      = 16;
-    $consequence_severity{intron_variant}{genetic_region_annotation} = q{intronic};
-    $consequence_severity{NMD_transcript_variant}{rank}              = 17;
-    $consequence_severity{NMD_transcript_variant}{genetic_region_annotation} = q{ncRNA};
-    $consequence_severity{upstream_gene_variant}{rank}                       = 18;
-    $consequence_severity{upstream_gene_variant}{genetic_region_annotation} = q{upstream};
-    $consequence_severity{downstream_gene_variant}{rank}                    = 19;
-    $consequence_severity{downstream_gene_variant}{genetic_region_annotation} =
-      q{downstream};
-    $consequence_severity{TFBS_ablation}{rank}                                = 20;
-    $consequence_severity{TFBS_ablation}{genetic_region_annotation}           = q{TFBS};
-    $consequence_severity{TFBS_amplification}{rank}                           = 21;
-    $consequence_severity{TFBS_amplification}{genetic_region_annotation}      = q{TFBS};
-    $consequence_severity{TF_binding_site_variant}{rank}                      = 22;
-    $consequence_severity{TF_binding_site_variant}{genetic_region_annotation} = q{TFBS};
-    $consequence_severity{regulatory_region_variant}{rank}                    = 22;
-    $consequence_severity{regulatory_region_variant}{genetic_region_annotation} =
-      q{regulatory_region};
-    $consequence_severity{regulatory_region_ablation}{rank} = 23;
-    $consequence_severity{regulatory_region_ablation}{genetic_region_annotation} =
-      q{regulatory_region};
-    $consequence_severity{regulatory_region_amplification}{rank} = 24;
-    $consequence_severity{regulatory_region_amplification}{genetic_region_annotation} =
-      q{regulatory_region};
-    $consequence_severity{feature_elongation}{rank} = 25;
-    $consequence_severity{feature_elongation}{genetic_region_annotation} =
-      q{genomic_feature};
-    $consequence_severity{feature_truncation}{rank} = 26;
-    $consequence_severity{feature_truncation}{genetic_region_annotation} =
-      q{genomic_feature};
-    $consequence_severity{intergenic_variant}{rank}                      = 27;
-    $consequence_severity{intergenic_variant}{genetic_region_annotation} = q{intergenic};
-    return %consequence_severity;
 }
 
 sub read_infile_vcf {
