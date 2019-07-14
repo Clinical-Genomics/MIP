@@ -30,7 +30,7 @@ use MIP::Constants qw{ %ANALYSIS $COLON $COMMA $NEWLINE $SPACE $TAB };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
-use MIP::Vcfparser qw{ define_select_data_headers };
+use MIP::Vcfparser qw{ define_select_data_headers define_snpeff_annotations };
 
 our $USAGE = build_usage( {} );
 
@@ -280,36 +280,6 @@ sub build_usage {
    -h/--help Display this help message
    -v/--version Display version
 END_USAGE
-}
-
-sub define_snpeff_annotations {
-
-## Function : Defines the snpeff annotations that can be parsed and modified
-## Returns  : %snpeff_cmd
-## Arguments: None
-
-    my %snpeff_cmd;
-
-    $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{File} =
-      q?SnpSift dbnsfp?;
-    $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{vcf_key} =
-      q?dbNSFP_phastCons100way_vertebrate?;
-    $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{info} =
-q?##INFO=<ID=phastCons100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhastCons conservation prediction term">?;
-
-    $snpeff_cmd{snpeff}{phyloP100way_vertebrate_prediction_term}{File} =
-      q?SnpSift dbnsfp?;
-    $snpeff_cmd{snpeff}{phyloP100way_vertebrate_prediction_term}{vcf_key} =
-      q?dbNSFP_phyloP100way_vertebrate?;
-    $snpeff_cmd{snpeff}{phyloP100way_vertebrate_prediction_term}{info} =
-q?##INFO=<ID=phyloP100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhyloP conservation prediction term">?;
-
-    $snpeff_cmd{snpeff}{q{GERP++_RS_prediction_term}}{File} = q{SnpSift dbnsfp};
-    $snpeff_cmd{snpeff}{q{GERP++_RS_prediction_term}}{vcf_key} =
-      q{dbNSFP_GERP___RS};
-    $snpeff_cmd{snpeff}{q{GERP++_RS_prediction_term}}{info} =
-q?##INFO=<ID=GERP++_RS_prediction_term,Number=A,Type=String,Description="GERP RS conservation prediction term">?;
-    return %snpeff_cmd;
 }
 
 sub define_consequence_severity {
