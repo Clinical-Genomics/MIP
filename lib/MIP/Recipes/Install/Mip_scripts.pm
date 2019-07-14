@@ -118,11 +118,12 @@ sub install_mip_scripts {
     my $pwd = cwd();
 
     ## Define MIP scripts and yaml files
-    my @mip_scripts = qw{ mip vcfparser.pl qccollect.pl };
+    my @mip_scripts = qw{ mip vcfparser.pl };
 
     my %mip_sub_script = (
-        utility_scripts =>
-          [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
+        utility_scripts => [
+            qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl qccollect.pl }
+        ],
         t =>
           [qw{ mip_install.test mip_analyse_rd_dna.test mip_core.t mip_analysis.test }],
         templates => [

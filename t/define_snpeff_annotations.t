@@ -40,16 +40,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Vcfparser}      => [qw{ define_select_data_headers }],
+        q{MIP::Vcfparser}      => [qw{ define_snpeff_annotations }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Vcfparser qw{ define_select_data_headers };
+use MIP::Vcfparser qw{ define_snpeff_annotations };
 
-diag(   q{Test define_select_data_headers from Vcfparser.pm v}
+diag(   q{Test define_snpeff_annotations from Vcfparser.pm v}
       . $MIP::Vcfparser::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -58,16 +58,18 @@ diag(   q{Test define_select_data_headers from Vcfparser.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given select data headers
-my %select_data = define_select_data_headers();
+## Given snpeff annotations
+my %snpeff_cmd = define_snpeff_annotations();
 
-my $hgnc_symbol_info_header =
-  q{##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="The HGNC gene symbol">};
+my $phastcons100way_vertebrate_prediction_term_file = q{SnpSift dbnsfp};
 
-## Then keys should exist and header info should be set
-ok( keys %select_data, q{Returned hash keys} );
+## Then keys should exist and annotation info should be set
+ok( keys %snpeff_cmd, q{Returned hash keys} );
 
-is( $select_data{select_file}{HGNC_symbol}{info},
-    $hgnc_symbol_info_header, q{Got header info for header key} );
+is(
+    $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{File},
+    $phastcons100way_vertebrate_prediction_term_file,
+    q{Got file info for annotation key}
+);
 
 done_testing();
