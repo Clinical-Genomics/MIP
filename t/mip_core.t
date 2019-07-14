@@ -91,7 +91,7 @@ Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
 my $config_file = catfile( dirname($Bin), qw(templates mip_rd_dna_config.yaml) );
-my $VERBOSE = 1;
+my $VERBOSE     = 1;
 our $VERSION = 1.03;
 
 ###User Options
@@ -287,8 +287,7 @@ sub mip_scripts {
 ## Returns  :
 ## Arguments:
 
-    my @mip_scripts = qw{ qccollect.pl
-      vcfparser.pl };
+    my @mip_scripts = qw{ vcfparser.pl };
 
   SCRIPT:
     foreach my $script (@mip_scripts) {
@@ -297,8 +296,9 @@ sub mip_scripts {
     }
 
     my %mip_sub_scripts = (
-        utility_scripts =>
-          [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
+        utility_scripts => [
+            qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl qccollect.pl }
+        ],
         definitions => [
             qw{ analyse_parameters.yaml cpanfile download_rd_dna_parameters.yaml download_rd_rna_parameters.yaml install_rd_dna_parameters.yaml install_rd_rna_parameters.yaml mandatory_parameter_keys.yaml mip_parameters.yaml non_mandatory_parameter_keys.yaml rd_dna_initiation_map.yaml rd_dna_parameters.yaml rd_rna_parameters.yaml rd_rna_initiation_map.yaml rd_dna_vcf_rerun_initiation_map.yaml rd_dna_vcf_rerun_parameters.yaml }
         ],
