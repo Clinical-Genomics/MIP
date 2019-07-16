@@ -1,0 +1,108 @@
+package MIP::File::Format::Vcf;
+
+use 5.026;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Readonly;
+
+## MIPs lib/
+use MIP::Constants qw{ $SPACE };
+
+BEGIN {
+    require Exporter;
+    use base qw{ Exporter };
+
+    # Set the version for version checking
+    our $VERSION = 1.00;
+
+    # Functions and variables which can be optionally exported
+    our @EXPORT_OK = qw{ parse_vcf_header  };
+}
+
+sub parse_vcf_header {
+
+## Function : Adds header meta data to hash
+## Returns  :
+## Arguments: $meta_data_href   => Hash for header data {REF}
+##          : $meta_data_string => Meta data string from vcf header
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $meta_data_href;
+    my $meta_data_string;
+
+    my $tmpl = {
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        meta_data_string => {
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_string,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Define how to parse meta-data header
+    my %vcf_header_regexp = (
+        fileformat   => q{\A [#]{2}(fileformat)},
+        field_format => q{\A [#]{2}([^=]*)=<ID=([^,]*)},
+    );
+
+  SCHEMA:
+    while ( my ( $key, $regexp ) = each %vcf_header_regexp ) {
+
+        my ( $vcf_schema, $vcf_id ) = $meta_data_string =~ /$regexp/sxm;
+
+        my %add_to_meta_data = (
+            ALT => sub {
+                push @{ $meta_data_href->{$vcf_schema}{$vcf_id} }, $meta_data_string;
+            },
+            contig => sub {
+                push @{ $meta_data_href->{$vcf_schema}{$vcf_schema} }, $meta_data_string;
+            },
+            fileformat => sub {
+                push @{ $meta_data_href->{$vcf_schema}{$vcf_schema} }, $meta_data_string;
+            },
+            FILTER => sub {
+                push @{ $meta_data_href->{$vcf_schema}{$vcf_id} }, $meta_data_string;
+            },
+            FORMAT => sub {
+                push @{ $meta_data_href->{$vcf_schema}{$vcf_id} }, $meta_data_string;
+            },
+            INFO => sub {
+                push @{ $meta_data_href->{$vcf_schema}{$vcf_id} }, $meta_data_string;
+            },
+        );
+
+        if ( $vcf_schema and exists $add_to_meta_data{$vcf_schema} ) {
+
+            $add_to_meta_data{$vcf_schema}->();
+            return;
+        }
+    }
+
+    ## All other meta-data headers
+    push @{ $meta_data_href->{other}{other} }, $meta_data_string;
+
+    return 1;
+}
+
+1;

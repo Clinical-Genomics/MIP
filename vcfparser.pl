@@ -452,7 +452,7 @@ sub read_infile_vcf {
         }
         if ( $_ =~ /^##(\S+)=/ ) {         # MetaData
 
-            parse_meta_data(
+            parse_vcf_header(
                 {
                     meta_data_href   => $meta_data_href,
                     meta_data_string => $_,
@@ -2117,63 +2117,6 @@ sub FindLCAF {
         }
     }
     return $temp_maf;
-}
-
-sub parse_meta_data {
-
-##parse_meta_data
-
-##Function : Writes metadata to filehandle specified by order in meta_data_sections.
-##Returns  : ""
-##Arguments: $meta_data_href, $meta_data_string
-##         : $meta_data_href   => Hash for meta_data {REF}
-##         : $meta_data_string => The meta_data string from vcf header
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $meta_data_href;
-    my $meta_data_string;
-
-    my $tmpl = {
-        meta_data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$meta_data_href
-        },
-        meta_data_string => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$meta_data_string
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    if ( $meta_data_string =~ /^##fileformat/ )
-    {    #Catch fileformat as it has to be at the top of header
-
-        push( @{ $meta_data_href->{fileformat}{fileformat} }, $meta_data_string )
-          ;    #Save metadata string
-    }
-    elsif ( $meta_data_string =~ /^##contig/ ) {    #catch contigs to not sort them later
-
-        push( @{ $meta_data_href->{contig}{contig} }, $meta_data_string )
-          ;                                         #Save metadata string
-    }
-    elsif ( $meta_data_string =~ /^##(\w+)=(\S+)/ )
-    {    #FILTER, FORMAT, INFO etc and more custom records
-
-        push( @{ $meta_data_href->{$1}{$2} }, $meta_data_string );   #Save metadata string
-    }
-    else {                                                           #All oddities
-
-        push( @{ $meta_data_href->{other}{other} }, $meta_data_string )
-          ;                                                          #Save metadata string
-    }
 }
 
 sub write_meta_data {
