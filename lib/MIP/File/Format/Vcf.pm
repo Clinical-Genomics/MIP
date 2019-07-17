@@ -71,29 +71,27 @@ sub parse_vcf_header {
 
         my ( $vcf_schema, $vcf_id ) = $meta_data_string =~ /$regexp/sxm;
 
+        ## Alias method subs
+        my $add_by_schema_and_id_cref = sub {
+            push @{ $meta_data_href->{$vcf_schema}{$vcf_id} }, $meta_data_string;
+        };
+        my $add_by_schema_cref = sub {
+            push @{ $meta_data_href->{$vcf_schema}{$vcf_schema} }, $meta_data_string;
+        };
+
+        ## Create dispatch table
         my %add_to_meta_data = (
-            ALT => sub {
-                push @{ $meta_data_href->{$vcf_schema}{$vcf_id} }, $meta_data_string;
-            },
-            contig => sub {
-                push @{ $meta_data_href->{$vcf_schema}{$vcf_schema} }, $meta_data_string;
-            },
-            fileformat => sub {
-                push @{ $meta_data_href->{$vcf_schema}{$vcf_schema} }, $meta_data_string;
-            },
-            FILTER => sub {
-                push @{ $meta_data_href->{$vcf_schema}{$vcf_id} }, $meta_data_string;
-            },
-            FORMAT => sub {
-                push @{ $meta_data_href->{$vcf_schema}{$vcf_id} }, $meta_data_string;
-            },
-            INFO => sub {
-                push @{ $meta_data_href->{$vcf_schema}{$vcf_id} }, $meta_data_string;
-            },
+            ALT        => $add_by_schema_and_id_cref,
+            contig     => $add_by_schema_cref,
+            fileformat => $add_by_schema_cref,
+            FILTER     => $add_by_schema_and_id_cref,
+            FORMAT     => $add_by_schema_and_id_cref,
+            INFO       => $add_by_schema_and_id_cref,
         );
 
         if ( $vcf_schema and exists $add_to_meta_data{$vcf_schema} ) {
 
+            ## Add header line to hash
             $add_to_meta_data{$vcf_schema}->();
             return;
         }
