@@ -79,10 +79,10 @@ $feature_data{present}{$annotation}{info} = $header;
 
 add_feature_file_meta_data_to_vcf(
     {
-        meta_data_href                 => \%meta_data,
-        feature_annotation_columns_ref => \@feature_annotation_columns,
         data_href                      => \%feature_data,
+        feature_annotation_columns_ref => \@feature_annotation_columns,
         file_key                       => $feature_file_type,
+        meta_data_href                 => \%meta_data,
     }
 );
 
@@ -103,10 +103,10 @@ $meta_data{INFO}{$existing_annotation} = $header;
 
 add_feature_file_meta_data_to_vcf(
     {
-        meta_data_href                 => \%meta_data,
-        feature_annotation_columns_ref => \@feature_annotation_columns,
         data_href                      => \%feature_data,
+        feature_annotation_columns_ref => \@feature_annotation_columns,
         file_key                       => $feature_file_type,
+        meta_data_href                 => \%meta_data,
     }
 );
 

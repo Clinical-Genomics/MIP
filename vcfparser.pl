@@ -492,20 +492,20 @@ sub read_infile_vcf {
 
             add_feature_file_meta_data_to_vcf(
                 {
-                    meta_data_href => $meta_data_href,
+                    data_href => $range_data_href,
                     feature_annotation_columns_ref =>
                       $range_feature_annotation_columns_ref,
-                    data_href => $range_data_href,
-                    file_key  => "Range",
+                    file_key       => q{Range},
+                    meta_data_href => $meta_data_href,
                 }
             );
             add_feature_file_meta_data_to_vcf(
                 {
-                    meta_data_href => $meta_data_href,
+                    data_href => $select_data_href,
                     feature_annotation_columns_ref =>
                       $select_feature_annotation_columns_ref,
-                    data_href => $select_data_href,
-                    file_key  => "Select",
+                    file_key       => q{Select},
+                    meta_data_href => $meta_data_href,
                 }
             );
 
