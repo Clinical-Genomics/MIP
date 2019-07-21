@@ -32,7 +32,7 @@ use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::File::Format::Pli qw{ load_pli_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
-use MIP::Vcfparser qw{ define_select_data_headers define_snpeff_annotations };
+use MIP::Vcfparser qw{ define_select_data_headers };
 
 our $USAGE = build_usage( {} );
 
@@ -218,8 +218,6 @@ if ($select_feature_file) {
     );
 }
 
-my %snpeff_cmd = define_snpeff_annotations();
-
 read_infile_vcf(
     {
         consequence_severity_href             => \%consequence_severity,
@@ -233,7 +231,6 @@ read_infile_vcf(
         select_feature_annotation_columns_ref => \@select_feature_annotation_columns,
         select_feature_file                   => $select_feature_file,
         select_outfile_path                   => $select_outfile,
-        snpeff_cmd_href                       => \%snpeff_cmd,
         tree_href                             => \%tree,
         vcfparser_version                     => $VERSION,
         write_software_tag                    => $write_software_tag,
@@ -286,122 +283,69 @@ END_USAGE
 
 sub read_infile_vcf {
 
-##read_infile_vcf
-
-##Function : Reads infile in vcf format and adds and parses annotations
-##Returns  : ""
-##Arguments: $meta_data_href, $snpeff_cmd_href, $range_data_href, $select_data_href, $consequence_severity_href, $tree_href, $range_feature_annotation_columns_ref, $select_feature_annotation_columns_ref, $select_outfile_path, $vcfparser_version, $select_feature_file, $parse_vep, $write_software_tag, $per_gene_ref
-##         : $meta_data_href                        => Vcf meta data {REF}
-##         : $snpeff_cmd_href                       => SnpEff meta data {REF}
-##         : $range_data_href                       => Range file data {REF}
-##         : $select_data_href                      => Select file data {REF}
-##         : $consequence_severity_href             => Consequence severity for SO-terms {REF}
-##         : $tree_href                             => Interval tree hash {REF}
-##         : $range_feature_annotation_columns_ref  => Range feature columns {REF}
-##         : $select_feature_annotation_columns_ref => Select feature columns {REF}
-##         : $select_outfile_path                   => The select file path
-##         : $vcfparser_version                     => vcfParser version
-##         : $select_feature_file                   => The select feature file
-##         : $parse_vep                             => Parse VEP output
-##         : $write_software_tag                    => Write software tag to vcf header switch
-##         : $per_gene                              => Only collect most severe transcript per gene
-##         : $pli_score_href                       => Pli score hash
+## Function : Reads infile in vcf format, adds and parses annotations as well as split transcripts into select subset file
+## Returns  :
+## Arguments: $consequence_severity_href             => Consequence severity for SO-terms {REF}
+##          : $meta_data_href                        => Vcf meta data {REF}
+##          : $parse_vep                             => Parse VEP output
+##          : $per_gene                              => Only collect most severe transcript per gene
+##          : $pli_score_href                        => Pli score hash
+##          : $range_data_href                       => Range file data {REF}
+##          : $range_feature_annotation_columns_ref  => Range feature columns {REF}
+##          : $select_data_href                      => Select file data {REF}
+##          : $select_feature_annotation_columns_ref => Select feature columns {REF}
+##          : $select_feature_file                   => Select feature file
+##          : $select_outfile_path                   => Select file path
+##          : $tree_href                             => Interval tree hash {REF}
+##          : $vcfparser_version                     => Vcfparser version
+##          : $write_software_tag                    => Write software tag to vcf header switch
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $consequence_severity_href;
+    my $meta_data_href;
+    my $per_gene;
+    my $pli_score_href;
+    my $range_data_href;
+    my $range_feature_annotation_columns_ref;
+    my $select_data_href;
+    my $select_feature_annotation_columns_ref;
+    my $select_outfile_path;
+    my $tree_href;
+    my $vcfparser_version;
 
     ## Default(s)
     my $select_feature_file;
     my $parse_vep;
     my $write_software_tag;
 
-    ## Flatten argument(s)
-    my $meta_data_href;
-    my $snpeff_cmd_href;
-    my $range_data_href;
-    my $select_data_href;
-    my $consequence_severity_href;
-    my $tree_href;
-    my $range_feature_annotation_columns_ref;
-    my $select_feature_annotation_columns_ref;
-    my $select_outfile_path;
-    my $vcfparser_version;
-    my $per_gene;
-    my $pli_score_href;
-
     my $tmpl = {
-        meta_data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$meta_data_href
-        },
-        snpeff_cmd_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$snpeff_cmd_href
-        },
-        range_data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$range_data_href
-        },
-        select_data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$select_data_href
-        },
         consequence_severity_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$consequence_severity_href
-        },
-        tree_href => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$consequence_severity_href,
+            strict_type => 1,
+        },
+        meta_data_href => {
             default     => {},
-            strict_type => 1,
-            store       => \$tree_href
-        },
-        range_feature_annotation_columns_ref => {
-            required    => 1,
             defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$range_feature_annotation_columns_ref
-        },
-        select_feature_annotation_columns_ref => {
             required    => 1,
-            defined     => 1,
-            default     => [],
+            store       => \$meta_data_href,
             strict_type => 1,
-            store       => \$select_feature_annotation_columns_ref
         },
-        select_outfile_path => { strict_type => 1, store => \$select_outfile_path },
-        vcfparser_version   => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$vcfparser_version
-        },
-        select_feature_file => {
+        parse_vep => {
+            allow       => [ undef, 0, 1 ],
             default     => 0,
+            store       => \$parse_vep,
             strict_type => 1,
-            store       => \$select_feature_file
         },
         per_gene => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$per_gene,
             strict_type => 1,
-            store       => \$per_gene
         },
         pli_score_href => {
             default     => {},
@@ -410,54 +354,103 @@ sub read_infile_vcf {
             store       => \$pli_score_href,
             strict_type => 1,
         },
-        parse_vep => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
+        range_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$range_data_href,
             strict_type => 1,
-            store       => \$parse_vep
+        },
+        range_feature_annotation_columns_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$range_feature_annotation_columns_ref,
+            strict_type => 1,
+        },
+        select_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$select_data_href,
+            strict_type => 1,
+        },
+        select_feature_annotation_columns_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$select_feature_annotation_columns_ref,
+            strict_type => 1,
+        },
+        select_feature_file => {
+            default     => 0,
+            store       => \$select_feature_file,
+            strict_type => 1,
+        },
+        select_outfile_path => { store => \$select_outfile_path, strict_type => 1, },
+        tree_href           => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$tree_href,
+            strict_type => 1,
+        },
+        vcfparser_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfparser_version,
+            strict_type => 1,
         },
         write_software_tag => {
-            default     => 1,
             allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$write_software_tag,
             strict_type => 1,
-            store       => \$write_software_tag
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Vcf qw{ parse_vcf_header };
 
     ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger("Vcfparser");
+    my $log = Log::Log4perl->get_logger(q{Vcfparser});
 
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle for select file
+    ## Create anonymous filehandle for select file
+    my $FILEHANDLE = IO::Handle->new();
 
     my @vep_format_fields;
     my %vep_format_field_column;
     my %vcf_header;
 
-    my @vcf_format_columns;                #Catch #vcf header #CHROM line
+    #Catch vcf header "#CHROM" line
+    my @vcf_format_columns;
 
     if ($select_feature_file) {
 
-        open( $FILEHANDLE, ">", $select_outfile_path )
-          or $log->logdie( "Cannot open " . $select_outfile_path . ":" . $!, "\n" );
+        open( $FILEHANDLE, q{>}, $select_outfile_path )
+          or $log->logdie( q{Cannot open } . $select_outfile_path . $COLON . $OS_ERROR,
+            $NEWLINE );
     }
 
+  LINE:
     while (<>) {
 
-        chomp $_;                          # Remove newline
+        chomp;
 
-        if (m/^\s+$/) {                    # Avoid blank lines
-            next;
-        }
-        if ( $_ =~ /^##(\S+)=/ ) {         # MetaData
+        ## Unpack line
+        my $line = $_;
+
+        ## Skip blank lines
+        next LINE if ( $line =~ /^\s+$/sxm );
+
+        ## MetaData
+        if ( $line =~ /\A [#]{2}/sxm ) {
 
             parse_vcf_header(
                 {
                     meta_data_href   => $meta_data_href,
-                    meta_data_string => $_,
+                    meta_data_string => $line,
                 }
             );
 
@@ -465,51 +458,17 @@ sub read_infile_vcf {
 
                 $vcf_header{info}{$1} = $1;       #Save to hash
             }
-            if ( $_ =~ /SnpSiftCmd\=/ ) {         #Find SnpEff command meta line
-
-                for my $database ( keys %{ $snpeff_cmd_href->{snpeff} } ) {
-
-                    if ( $_ =~ /$snpeff_cmd_href->{snpeff}{$database}{File}/ )
-                    {    #SnpEff/Sift has been used to annotate input vcf
-
-                        unless ( defined( $vcf_header{info}{$database} ) )
-                        {    #Unless INFO header is already present add to meta_dataHeader
-
-                            $snpeff_cmd_href->{present}{database}{$database} =
-                              $database;  #Save which frequency db has been used for later
-                            push(
-                                @{ $meta_data_href->{info}{$database} },
-                                $snpeff_cmd_href->{snpeff}{$database}{info}
-                            );
-
-                            if (
-                                defined(
-                                    $snpeff_cmd_href->{snpeff}{$database}{fix_info}
-                                )
-                              )
-                            {    #If FIX_INFO flag is present add to meta_dataHeader
-
-                                push(
-                                    @{ $meta_data_href->{fix_info}{$database} },
-                                    $snpeff_cmd_href->{snpeff}{$database}{fix_info}
-                                );
-                            }
-                        }
-                    }
-                }
-                next;
-            }
-            if ( $_ =~ /INFO\=\<ID\=CSQ/ ) {    #Find VEP INFO Field
+            if ( $_ =~ /INFO\=\<ID\=CSQ/ ) {      #Find VEP INFO Field
 
                 if ( $_ =~ /Format:\s(\S+)"\>/ )
-                {                               #Locate Format within VEP INFO meta line
+                {                                 #Locate Format within VEP INFO meta line
 
                     @vep_format_fields = split( /\|/, $1 );
 
                     while ( my ( $field_index, $field ) = each(@vep_format_fields) ) {
 
                         $vep_format_field_column{$field} =
-                          $field_index;         #Save the order of VEP features
+                          $field_index;           #Save the order of VEP features
                     }
                 }
                 if ($parse_vep) {
@@ -625,53 +584,6 @@ sub read_infile_vcf {
 
                 $record{INFO_key_value}{ $key_value_pairs[0] } =
                   $key_value_pairs[1];
-            }
-
-            for my $database ( keys %{ $snpeff_cmd_href->{present}{database} } )
-            {    #Note that the vcf should only contain 1 database entry
-
-                my $vcf_key = $snpeff_cmd_href->{snpeff}{$database}{vcf_key};
-
-                if ( $record{INFO_key_value}{$vcf_key} ) {
-
-                    my @allele_scores =
-                      split( ",", $record{INFO_key_value}{$vcf_key} );    #Split on ","
-                    my $conservation_term;
-
-                    if ( $database eq "phastCons100way_vertebrate_prediction_term" ) {
-
-                        $conservation_term = find_conserved(
-                            {
-                                elements_ref => \@allele_scores,
-                                score_cutoff => 0.8,
-                            }
-                        );
-                    }
-                    if ( $database eq "phyloP100way_vertebrate_prediction_term" ) {
-
-                        $conservation_term = find_conserved(
-                            {
-                                elements_ref => \@allele_scores,
-                                score_cutoff => 2.5,
-                            }
-                        );
-                    }
-                    if ( $database eq "GERP++_RS_prediction_term" ) {
-
-                        $conservation_term = find_conserved(
-                            {
-                                elements_ref => \@allele_scores,
-                                score_cutoff => 2,
-                            }
-                        );
-                    }
-
-                    if ( defined($conservation_term) ) {
-
-                        ## Save database info
-                        $record{INFO_addition}{$database} = $conservation_term;
-                    }
-                }
             }
 
             ## Checks if an interval tree exists (per chr) and collects features from input array and adds annotations to line
@@ -2001,63 +1913,6 @@ sub find_af {
     return $temp_maf;
 }
 
-sub find_conserved {
-
-##find_conserved
-
-##Function : Adds the least common alternative allele frequency to each line
-##Returns  : "" or string prediction terms
-##Arguments: $elements_ref, $score_cutoff
-##         : $elements_ref => The INFO array {REF}
-##         : $score_cutoff => Cut-off for conserved or not
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $elements_ref;
-    my $score_cutoff;
-
-    my $tmpl = {
-        elements_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$elements_ref
-        },
-        score_cutoff => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$score_cutoff
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my @allel_values;
-
-    for my $allel_value (@$elements_ref) {
-
-        if ( $allel_value >= $score_cutoff ) {
-
-            push( @allel_values, "Conserved" );
-        }
-        else {
-
-            push( @allel_values, "NotConserved" );
-        }
-    }
-    if ( scalar(@allel_values) > 0 ) {
-
-        return join( ',', @allel_values );
-    }
-    else {
-
-        return;
-    }
-}
-
 sub FindLCAF {
 
 ##FindLCAF
@@ -2151,11 +2006,11 @@ sub write_meta_data {
         SELECTFILEHANDLE => { store    => \$SELECTFILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Determine order to print for standard records
     my @meta_data_sections =
-      ( "fileformat", "FILTER", "FORMAT", "INFO", "FIX_INFO", "contig", "Software" )
-      ;    #Determine order to print for standard records
+      qw{ fileformat ALT FILTER FORMAT INFO FIX_INFO contig Software };
     my @lines;
 
     for (

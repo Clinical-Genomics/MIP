@@ -99,7 +99,6 @@ sub parse_vcf_header {
 
     ## All other meta-data headers
     push @{ $meta_data_href->{other}{other} }, $meta_data_string;
-
     return 1;
 }
 
