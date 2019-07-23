@@ -411,7 +411,8 @@ sub read_infile_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Vcf qw{ add_feature_file_meta_data_to_vcf parse_vcf_header };
+    use MIP::File::Format::Vcf qw{ parse_vcf_header };
+    use MIP::Vcfparser qw{ add_feature_file_meta_data_to_vcf };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger(q{Vcfparser});
