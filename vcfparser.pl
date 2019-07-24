@@ -412,6 +412,7 @@ sub read_infile_vcf {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Vcf qw{ parse_vcf_header };
+    use MIP::Vcfparser qw{ add_feature_file_meta_data_to_vcf };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger(q{Vcfparser});
@@ -421,7 +422,6 @@ sub read_infile_vcf {
 
     my @vep_format_fields;
     my %vep_format_field_column;
-    my %vcf_header;
 
     #Catch vcf header "#CHROM" line
     my @vcf_format_columns;
@@ -454,21 +454,17 @@ sub read_infile_vcf {
                 }
             );
 
-            if ( $_ =~ /INFO\=\<ID\=(\w+)/ ) {    # Collect all INFO keys
-
-                $vcf_header{info}{$1} = $1;       #Save to hash
-            }
-            if ( $_ =~ /INFO\=\<ID\=CSQ/ ) {      #Find VEP INFO Field
+            if ( $_ =~ /INFO\=\<ID\=CSQ/ ) {    #Find VEP INFO Field
 
                 if ( $_ =~ /Format:\s(\S+)"\>/ )
-                {                                 #Locate Format within VEP INFO meta line
+                {                               #Locate Format within VEP INFO meta line
 
                     @vep_format_fields = split( /\|/, $1 );
 
                     while ( my ( $field_index, $field ) = each(@vep_format_fields) ) {
 
                         $vep_format_field_column{$field} =
-                          $field_index;           #Save the order of VEP features
+                          $field_index;         #Save the order of VEP features
                     }
                 }
                 if ($parse_vep) {
@@ -497,22 +493,20 @@ sub read_infile_vcf {
 
             add_feature_file_meta_data_to_vcf(
                 {
-                    meta_data_href  => $meta_data_href,
-                    vcf_header_href => \%vcf_header,
+                    data_href => $range_data_href,
                     feature_annotation_columns_ref =>
                       $range_feature_annotation_columns_ref,
-                    data_href => $range_data_href,
-                    file_key  => "Range",
+                    file_key       => q{Range},
+                    meta_data_href => $meta_data_href,
                 }
             );
             add_feature_file_meta_data_to_vcf(
                 {
-                    meta_data_href  => $meta_data_href,
-                    vcf_header_href => \%vcf_header,
+                    data_href => $select_data_href,
                     feature_annotation_columns_ref =>
                       $select_feature_annotation_columns_ref,
-                    data_href => $select_data_href,
-                    file_key  => "Select",
+                    file_key       => q{Select},
+                    meta_data_href => $meta_data_href,
                 }
             );
 
@@ -2164,83 +2158,6 @@ sub uniq_elements {
 
     return [ grep { !$seen{$_}++ } @$elements_ref ]
       ; #For each element in array, see if seen before and only return list distinct elements
-}
-
-sub add_feature_file_meta_data_to_vcf {
-
-##add_feature_file_meta_data_to_vcf
-
-##Function : Adds feature file meta data annotation headers to meta data hash.
-##Returns  : ""
-##Arguments: $meta_data_href, $vcf_header_href, $data_href, $feature_annotation_columns_ref, $file_key
-##         : $meta_data_href                 => Vcf meta data {REF}
-##         : $vcf_header_href                => Vcf header meta data
-##         : $data_href                      => Range file hash {REF}
-##         : $feature_annotation_columns_ref => Range columns to include {REF}
-##         : $file_key                       => Range file key used to seperate range file(s) i.e., select and range
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $meta_data_href;
-    my $vcf_header_href;
-    my $data_href;
-    my $feature_annotation_columns_ref;
-    my $file_key;
-
-    my $tmpl = {
-        meta_data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$meta_data_href
-        },
-        vcf_header_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$vcf_header_href
-        },
-        data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$data_href
-        },
-        feature_annotation_columns_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$feature_annotation_columns_ref
-        },
-        file_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_key
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    if (@$feature_annotation_columns_ref) {    #Feature file annotations
-
-        for my $annotation ( keys %{ $data_href->{present} } ) {
-
-            unless ( defined( $vcf_header_href->{info}{$annotation} ) )
-            {    #Unless INFO header is already present add to file
-
-                push(
-                    @{ $meta_data_href->{$file_key}{info}{$annotation} },
-                    ${$data_href}{present}{$annotation}{info}
-                );    #Save specific featureFile INFO
-            }
-        }
-    }
 }
 
 sub check_terms {

@@ -28,9 +28,76 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      add_feature_file_meta_data_to_vcf
       build_interval_tree
       define_select_data_headers
     };
+}
+
+sub add_feature_file_meta_data_to_vcf {
+
+## Function : Adds feature file meta data annotation headers to meta data hash.
+## Returns  :
+## Arguments: $data_href                      => Range file hash {REF}
+##          : $feature_annotation_columns_ref => Range columns to include {REF}
+##          : $file_key                       => Range file key used to seperate range file(s) i.e., select and range
+##          : $meta_data_href                 => Vcf meta data {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $data_href;
+    my $feature_annotation_columns_ref;
+    my $file_key;
+    my $meta_data_href;
+
+    my $tmpl = {
+        data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$data_href,
+            strict_type => 1,
+        },
+        feature_annotation_columns_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_annotation_columns_ref,
+            strict_type => 1,
+        },
+        file_key => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_key,
+            strict_type => 1,
+        },
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Feature file annotations
+    return if ( not @{$feature_annotation_columns_ref} );
+
+  ANNOTATION:
+    for my $annotation ( keys %{ $data_href->{present} } ) {
+
+        ## Skip if INFO header is already present in VCF file
+        next ANNOTATION if ( defined $meta_data_href->{INFO}{$annotation} );
+
+        ## Add specific feature INFO meta data header
+        push
+          @{ $meta_data_href->{$file_key}{info}{$annotation} },
+          $data_href->{present}{$annotation}{info};
+    }
+    return;
 }
 
 sub build_interval_tree {
