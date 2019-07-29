@@ -425,7 +425,7 @@ sub read_infile_vcf {
     ## Create anonymous filehandle for select file
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Map the VEP CSQ format header line 
+    ## Map the VEP CSQ format header line
     my %vep_format_field_column;
 
     ## Catch vcf header "#CHROM" line
@@ -462,8 +462,8 @@ sub read_infile_vcf {
             ## Parse VEP CSQ format field and adds the format field index
             parse_vep_csq_schema(
                 {
-                    meta_data_href          => \%meta_data_href,
-                    vep_format_field_column => \%vep_format_field_column,
+                    meta_data_href               => $meta_data_href,
+                    vep_format_field_column_href => \%vep_format_field_column,
                 }
             );
             next;
