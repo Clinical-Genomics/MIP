@@ -17,7 +17,7 @@ use Readonly;
 use Set::IntervalTree;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SEMICOLON $SPACE $TAB };
+use MIP::Constants qw{ $PIPE $SEMICOLON $SPACE $TAB };
 
 BEGIN {
     require Exporter;
@@ -31,6 +31,7 @@ BEGIN {
       add_feature_file_meta_data_to_vcf
       build_interval_tree
       define_select_data_headers
+      parse_vep_csq_schema
     };
 }
 
@@ -216,4 +217,73 @@ q{##INFO=<ID=No_hgnc_symbol,Number=.,Type=String,Description="Clinically relevan
     return %select_data;
 }
 
+sub parse_vep_csq_schema {
+
+## Function : Parse VEP CSQ format field and adds the format field index
+## Returns  :
+## Arguments: $meta_data_href               => Vcf meta data {REF}
+##          : $parse_vep                    => Parse VEP output
+##          : $vep_format_field_column_href => Vep format schema {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $meta_data_href;
+    my $parse_vep;
+    my $vep_format_field_column_href;
+
+    ## Default(s)
+
+    my $tmpl = {
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        parse_vep => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$parse_vep,
+            strict_type => 1,
+        },
+        vep_format_field_column_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_format_field_column_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Skip if CSQ line was not present in VCF header
+    return if ( not exists $meta_data_href->{INFO}{CSQ} );
+
+    ## Get "Format" of VEP feature fields within VEP CSQ header line
+    ( my $vep_format ) = $meta_data_href->{INFO}{CSQ}[0] =~ /Format:\s(\S+)"\>/sxm;
+
+    my @vep_format_fields = split /[$PIPE]/sxm, $vep_format;
+
+  FIELD:
+    while ( my ( $field_index, $field ) = each @vep_format_fields ) {
+
+        ## Set order of VEP features fields
+        $vep_format_field_column_href->{$field} = $field_index;
+    }
+
+    return if ( not $parse_vep );
+
+    if (    exists $vep_format_field_column_href->{HGNC_ID}
+        and exists $vep_format_field_column_href->{Consequence} )
+    {
+
+        push
+          @{ $meta_data_href->{info}{most_severe_consequence} },
+q{##INFO=<ID=most_severe_consequence,Number=.,Type=String,Description="Most severe genomic consequence.">};
+    }
+    return 1;
+}
 1;
