@@ -1,4 +1,5 @@
 ---
+dist: trusty
 language: perl
 perl:
   - "5.26.0"

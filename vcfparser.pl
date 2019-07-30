@@ -179,6 +179,11 @@ if ($pli_values_file_path) {
         }
     );
     $log->info(q{Loading pli value file: Done});
+
+    ## Add pli header line to VCF meta data HASH
+    push
+      @{ $meta_data{info}{most_severe_pli} },
+q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli score.">};
 }
 
 ############
@@ -412,7 +417,7 @@ sub read_infile_vcf {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Vcf qw{ parse_vcf_header };
-    use MIP::Vcfparser qw{ add_feature_file_meta_data_to_vcf };
+    use MIP::Vcfparser qw{ add_feature_file_meta_data_to_vcf parse_vep_csq_schema };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger(q{Vcfparser});
@@ -420,10 +425,10 @@ sub read_infile_vcf {
     ## Create anonymous filehandle for select file
     my $FILEHANDLE = IO::Handle->new();
 
-    my @vep_format_fields;
+    ## Map the VEP CSQ format header line
     my %vep_format_field_column;
 
-    #Catch vcf header "#CHROM" line
+    ## Catch vcf header "#CHROM" line
     my @vcf_format_columns;
 
     if ($select_feature_file) {
@@ -444,7 +449,7 @@ sub read_infile_vcf {
         ## Skip blank lines
         next LINE if ( $line =~ /^\s+$/sxm );
 
-        ## MetaData
+        ## Header meta data
         if ( $line =~ /\A [#]{2}/sxm ) {
 
             parse_vcf_header(
@@ -454,37 +459,13 @@ sub read_infile_vcf {
                 }
             );
 
-            if ( $_ =~ /INFO\=\<ID\=CSQ/ ) {    #Find VEP INFO Field
-
-                if ( $_ =~ /Format:\s(\S+)"\>/ )
-                {                               #Locate Format within VEP INFO meta line
-
-                    @vep_format_fields = split( /\|/, $1 );
-
-                    while ( my ( $field_index, $field ) = each(@vep_format_fields) ) {
-
-                        $vep_format_field_column{$field} =
-                          $field_index;         #Save the order of VEP features
-                    }
+            ## Parse VEP CSQ format field and adds the format field index
+            parse_vep_csq_schema(
+                {
+                    meta_data_href               => $meta_data_href,
+                    vep_format_field_column_href => \%vep_format_field_column,
                 }
-                if ($parse_vep) {
-
-                    if (   ( $vep_format_field_column{HGNC_ID} )
-                        && ( $vep_format_field_column{Consequence} ) )
-                    {
-
-                        push(
-                            @{ $meta_data_href->{info}{most_severe_consequence} },
-'##INFO=<ID=most_severe_consequence,Number=.,Type=String,Description="Most severe genomic consequence.">'
-                        );
-                        push(
-                            @{ $meta_data_href->{info}{most_severe_pli} },
-'##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe genomic consequence.">'
-                        );
-                    }
-                }
-                next;
-            }
+            );
             next;
         }
         if ( $_ =~ /^#CHROM/ ) {
