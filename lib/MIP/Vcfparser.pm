@@ -29,6 +29,7 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       add_feature_file_meta_data_to_vcf
+      add_program_to_meta_data_header
       build_interval_tree
       define_select_data_headers
       parse_vep_csq_schema
@@ -98,6 +99,63 @@ sub add_feature_file_meta_data_to_vcf {
           @{ $meta_data_href->{$file_key}{info}{$annotation} },
           $data_href->{present}{$annotation}{info};
     }
+    return;
+}
+
+sub add_program_to_meta_data_header {
+
+## Function : Adds the program version and run date to the vcf meta data header hash
+## Returns  :
+## Arguments: $add_software_tag  => Write software tag to vcf header switch
+##          : $meta_data_href    => Vcf meta data {REF}
+##          : $vcfparser_version => Vcfparser version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $add_software_tag;
+    my $meta_data_href;
+    my $vcfparser_version;
+
+    my $tmpl = {
+        add_software_tag => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$add_software_tag,
+            strict_type => 1,
+        },
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        vcfparser_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfparser_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use DateTime;
+    use File::Basename qw{ basename };
+
+    return if ( not $add_software_tag );
+
+    ## Get current time
+    my $now = DateTime->now->ymd;
+
+    ## Get script name
+    my $program_name = basename($PROGRAM_NAME);
+
+    ## Add to meta_data_href
+    push
+      @{ $meta_data_href->{software}{$program_name} },
+      qq{##Software=<ID=$program_name,Version=$vcfparser_version,Date=$now};
     return;
 }
 

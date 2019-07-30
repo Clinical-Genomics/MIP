@@ -417,7 +417,11 @@ sub read_infile_vcf {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Vcf qw{ parse_vcf_header };
-    use MIP::Vcfparser qw{ add_feature_file_meta_data_to_vcf parse_vep_csq_schema };
+    use MIP::Vcfparser qw{
+      add_feature_file_meta_data_to_vcf
+      add_program_to_meta_data_header
+      parse_vep_csq_schema
+    };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger(q{Vcfparser});
@@ -491,15 +495,14 @@ sub read_infile_vcf {
                 }
             );
 
-            if ($write_software_tag) {
+            add_program_to_meta_data_header(
+                {
+                    add_software_tag  => $write_software_tag,
+                    meta_data_href    => $meta_data_href,
+                    vcfparser_version => $vcfparser_version,
+                }
+            );
 
-                add_program_to_meta_data_header(
-                    {
-                        meta_data_href    => $meta_data_href,
-                        vcfparser_version => $vcfparser_version,
-                    }
-                );
-            }
             if ($select_feature_file) {    #SelectFile annotations
 
                 write_meta_data(
@@ -1800,49 +1803,6 @@ sub tree_annotations {
         }
     }
     return %noid_region;
-}
-
-sub add_program_to_meta_data_header {
-
-##add_program_to_meta_data_header
-
-##Function : Adds the program version and run date to the vcf meta-information section
-##Returns  : ""
-##Arguments: $meta_data_href, $vcfparser_version
-##         : $meta_data_href    => Vcf meta data {REF}
-##         : $vcfparser_version => vcfParser version
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $meta_data_href;
-    my $vcfparser_version;
-
-    my $tmpl = {
-        meta_data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$meta_data_href
-        },
-        vcfparser_version => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$vcfparser_version
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my ( $base, $script ) =
-      ( `date +%Y%m%d`, `basename $0` );    #Catches current date and script name
-    chomp( $base, $script );                #Remove \n;
-    push(
-        @{ $meta_data_href->{software}{$script} },
-        "##Software=<ID=" . $script . ",Version=" . $vcfparser_version . ",Date=" . $base
-    );
 }
 
 sub find_af {
