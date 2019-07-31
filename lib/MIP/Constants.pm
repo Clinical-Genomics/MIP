@@ -42,6 +42,7 @@ BEGIN {
       $EQUALS
       $ESCAPE
       $FORWARD_SLASH
+      %LOAD_ENV
       $LOG
       $MIP_VERSION
       $MOOSEX_APP_SCEEN_WIDTH
@@ -55,6 +56,7 @@ BEGIN {
       $SPACE
       $TAB
       $UNDERSCORE
+      set_analysis_constants
     };
 }
 
@@ -182,5 +184,36 @@ Readonly our $SINGLE_QUOTE   => q{'};
 Readonly our $SPACE          => q{ };
 Readonly our $TAB            => qq{\t};
 Readonly our $UNDERSCORE     => q{_};
+
+sub set_analysis_constants {
+
+## Function : Set analysis constants
+## Returns  :
+## Arguments: $active_parameter_href    => Analysis recipe hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Clone qw{ clone };
+
+    Readonly our %LOAD_ENV => clone( $active_parameter_href->{load_env} );
+
+    return;
+
+}
 
 1;

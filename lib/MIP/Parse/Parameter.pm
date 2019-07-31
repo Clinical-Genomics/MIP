@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -14,11 +14,9 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::Util qw{ any };
-use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE $UNDERSCORE };
+use MIP::Constants qw{ %LOAD_ENV $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -26,19 +24,92 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      parse_commands_for_singularity
       parse_conda_env_name
       parse_download_reference_parameter
       parse_infiles
       parse_nist_parameters
       parse_prioritize_variant_callers
+      parse_sing_exec_parameters
       parse_start_with_recipe
       parse_toml_config_parameters
     };
 
+}
+
+sub parse_commands_for_singularity {
+
+## Function : Parse command array from unix_write_to_file
+## Returns  :
+## Arguments: $commands_ref => Commands to write to file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $commands_ref;
+
+    my $tmpl = {
+        commands_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$commands_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Parse::File qw{ parse_sing_bind_paths };
+    use MIP::Program::Singularity qw{ singularity_exec };
+
+    # Return if empty command array
+    return if ( not @{$commands_ref} );
+
+    # Get possible executable to test
+    my $program_executable = $commands_ref->[0];
+
+    my $singularity_container;
+
+    ## Check if executable has a singularity container
+    foreach my $conda_env ( keys %LOAD_ENV ) {
+
+        if ( defined $LOAD_ENV{$conda_env}{$program_executable} ) {
+
+            $singularity_container = $LOAD_ENV{$conda_env}{$program_executable};
+        }
+    }
+
+    ## Return if no singularity image was found
+    return if ( not $singularity_container );
+
+    ## Identify paths
+    my @sing_exec_parameters = @{$commands_ref}[ 1 .. $#{$commands_ref} ];
+
+    my @bind_paths = parse_sing_exec_parameters(
+        {
+            sing_exec_parameters_ref => \@sing_exec_parameters,
+        }
+    );
+
+    ## Remove overlapping paths
+    @bind_paths = parse_sing_bind_paths( { dir_paths_ref => \@bind_paths, } );
+
+    ## Build complete command
+    #my @singularity_commands = singularity_exec(
+    @{$commands_ref} = singularity_exec(
+        {
+            bind_paths_ref                 => \@bind_paths,
+            singularity_container          => $singularity_container,
+            singularity_container_cmds_ref => $commands_ref,
+        }
+    );
+
+    return @{$commands_ref};
 }
 
 sub parse_conda_env_name {
@@ -449,6 +520,60 @@ sub parse_prioritize_variant_callers {
         }
     }
     return 1;
+}
+
+sub parse_sing_exec_parameters {
+
+## Function : Parse input parameters for singularity execute and identify paths
+## Returns  : @bind_paths
+## Arguments: $sing_exec_parameters_ref => Array with parameters given to singularity command {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sing_exec_parameters_ref;
+
+    my $tmpl = {
+        sing_exec_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sing_exec_parameters_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use File::Basename qw{ dirname };
+
+    ## Save existing paths
+    my @bind_paths;
+
+  SING_EXEC_PARAMETER:
+    foreach my $sing_exec_parameter ( @{$sing_exec_parameters_ref} ) {
+
+        ## Split string
+        my @command_splits = split /[:,=\s]+/xms, $sing_exec_parameter;
+
+      COMMAND_SPLIT:
+        foreach my $command_split (@command_splits) {
+            ## Do not add dot or root to bind paths. Singularity binds $PWD direcory by default and it seems unwise to bind the entire root directory
+            while ( $command_split !~ /^[.\/]$/xms ) {
+
+                #Check if path exists on system
+                if ( -e $command_split ) {
+
+                    ## Save and jump to next parameter
+                    push @bind_paths, $command_split;
+                    next SING_EXEC_PARAMETER;
+                }
+                ## Remove last part of path
+                $command_split = dirname $command_split;
+            }
+        }
+    }
+    return @bind_paths;
 }
 
 sub parse_start_with_recipe {
