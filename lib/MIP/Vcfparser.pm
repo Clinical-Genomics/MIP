@@ -146,8 +146,8 @@ sub add_program_to_meta_data_header {
 
     return if ( not $add_software_tag );
 
-    ## Get current time
-    my $now = DateTime->now->ymd;
+    ## Get current date
+    my $current_date = DateTime->now->ymd;
 
     ## Get script name
     my $program_name = basename($PROGRAM_NAME);
@@ -155,7 +155,7 @@ sub add_program_to_meta_data_header {
     ## Add to meta_data_href
     push
       @{ $meta_data_href->{software}{$program_name} },
-      qq{##Software=<ID=$program_name,Version=$vcfparser_version,Date=$now};
+      qq{##Software=<ID=$program_name,Version=$vcfparser_version,Date=$current_date};
     return;
 }
 

@@ -61,10 +61,11 @@ diag(   q{Test add_program_to_meta_data_header from Vcfparser.pm v}
 
 ## Given a vcfparser version and no addition of software tag
 my %meta_data;
-my $now               = DateTime->now->ymd;
+my $current_date      = DateTime->now->ymd;
 my $program_name      = basename($PROGRAM_NAME);
 my $vcfparser_version = 1.0;
-my $header_line = qq{##Software=<ID=$program_name,Version=$vcfparser_version,Date=$now};
+my $header_line =
+  qq{##Software=<ID=$program_name,Version=$vcfparser_version,Date=$current_date};
 
 add_program_to_meta_data_header(
     {
