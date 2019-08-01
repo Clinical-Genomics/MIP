@@ -56,6 +56,7 @@ BEGIN {
       $SPACE
       $TAB
       $UNDERSCORE
+      $WITH_SINGULARITY
       set_analysis_constants
     };
 }
@@ -210,6 +211,7 @@ sub set_analysis_constants {
 
     use Clone qw{ clone };
 
+    Readonly our $WITH_SINGULARITY => $active_parameter_href->{with_singularity};
     Readonly our %SINGULARITY_CONTAINER =>
       clone( $active_parameter_href->{singularity_container} );
 

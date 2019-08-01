@@ -1,6 +1,5 @@
 #!/usr/bin/env perl
 
-use diagnostics;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
@@ -61,15 +60,9 @@ diag(   q{Test parse_commands_for_singularity from Parse::Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 my %active_parameter = (
-    load_env => {
-        test => {
-            q{bwa_mem}   => undef,
-            method       => q{conda},
-            mip          => q{mip},
-            samtools     => undef,
-            tiddit       => undef,
-            q{TIDDIT.py} => q{TIDDIT.simg},
-        },
+    with_singularity      => 1,
+    singularity_container => {
+        q{TIDDIT.py} => q{TIDDIT.simg},
     },
 );
 

@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $SPACE };
+use MIP::Constants qw{ $NEWLINE $SPACE $WITH_SINGULARITY };
 
 BEGIN {
 
@@ -67,7 +67,9 @@ sub unix_write_to_file {
     use MIP::Parse::Parameter qw{ parse_commands_for_singularity };
 
     # Check if command is to be executed inside a singularity container
-    parse_commands_for_singularity( { commands_ref => $commands_ref, } );
+    if ($WITH_SINGULARITY) {
+        parse_commands_for_singularity( { commands_ref => $commands_ref, } );
+    }
 
     ### Write to file helper module
     if ( $FILEHANDLE && @{$commands_ref} ) {
