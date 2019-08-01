@@ -42,7 +42,7 @@ BEGIN {
       $EQUALS
       $ESCAPE
       $FORWARD_SLASH
-      %LOAD_ENV
+      %SINGULARITY_CONTAINER
       $LOG
       $MIP_VERSION
       $MOOSEX_APP_SCEEN_WIDTH
@@ -210,7 +210,8 @@ sub set_analysis_constants {
 
     use Clone qw{ clone };
 
-    Readonly our %LOAD_ENV => clone( $active_parameter_href->{load_env} );
+    Readonly our %SINGULARITY_CONTAINER =>
+      clone( $active_parameter_href->{singularity_container} );
 
     return;
 

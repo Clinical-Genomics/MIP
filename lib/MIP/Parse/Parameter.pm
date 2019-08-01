@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ %LOAD_ENV $SPACE $UNDERSCORE };
+use MIP::Constants qw{ %SINGULARITY_CONTAINER $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -73,15 +73,12 @@ sub parse_commands_for_singularity {
     # Get possible executable to test
     my $program_executable = $commands_ref->[0];
 
+    ## Check if executable has a singularity container
     my $singularity_container;
 
-    ## Check if executable has a singularity container
-    foreach my $conda_env ( keys %LOAD_ENV ) {
+    if ( defined $SINGULARITY_CONTAINER{$program_executable} ) {
 
-        if ( defined $LOAD_ENV{$conda_env}{$program_executable} ) {
-
-            $singularity_container = $LOAD_ENV{$conda_env}{$program_executable};
-        }
+        $singularity_container = $SINGULARITY_CONTAINER{$program_executable};
     }
 
     ## Return if no singularity image was found
@@ -100,7 +97,6 @@ sub parse_commands_for_singularity {
     @bind_paths = parse_sing_bind_paths( { dir_paths_ref => \@bind_paths, } );
 
     ## Build complete command
-    #my @singularity_commands = singularity_exec(
     @{$commands_ref} = singularity_exec(
         {
             bind_paths_ref                 => \@bind_paths,

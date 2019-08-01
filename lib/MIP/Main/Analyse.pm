@@ -554,13 +554,13 @@ sub mip_analyse {
     }
 
     ## Check programs in path, and executable
-    #check_executable_in_path(
-    #    {
-    #        active_parameter_href => \%active_parameter,
-    #        log                   => $log,
-    #        parameter_href        => \%parameter,
-    #    }
-    #);
+    check_executable_in_path(
+        {
+            active_parameter_href => \%active_parameter,
+            log                   => $log,
+            parameter_href        => \%parameter,
+        }
+    );
 
 ## Test that the case_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
     check_sample_ids(
