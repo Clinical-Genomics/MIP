@@ -33,6 +33,7 @@ BEGIN {
       build_interval_tree
       define_select_data_headers
       parse_vep_csq_schema
+      write_meta_data
     };
 }
 
@@ -344,4 +345,149 @@ q{##INFO=<ID=most_severe_consequence,Number=.,Type=String,Description="Most seve
     }
     return 1;
 }
+
+sub write_meta_data {
+
+## Function : Writes metadata to filehandle specified by order in meta_data_sections.
+## Returns  :
+## Arguments: $FILEHANDLE       => The filehandle to write to
+##          : $meta_data_href   => Hash for meta_data {REF}
+##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $meta_data_href;
+    my $SELECTFILEHANDLE;
+
+    my $tmpl = {
+        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        SELECTFILEHANDLE => { store => \$SELECTFILEHANDLE, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Determine order to print for standard records
+    my @meta_data_records =
+      qw{ fileformat ALT FILTER FORMAT INFO FIX_INFO contig Software };
+
+  RECORD:
+    foreach my $record (@meta_data_records) {
+
+        ## Meta data record exists
+        if ( $meta_data_href->{$record} ) {
+
+            ## Should not be sorted, but printed "as is"
+            if ( $record eq q{contig} ) {
+
+              CONTIG_LINE:
+                foreach my $contig_line ( @{ $meta_data_href->{$record}{$record} } ) {
+
+                    say {$FILEHANDLE} $contig_line;
+
+                    if ( defined $SELECTFILEHANDLE ) {
+
+                        say {$SELECTFILEHANDLE} $contig_line;
+                    }
+                }
+                ## Enable print of rest later
+                delete $meta_data_href->{$record};
+            }
+            else {
+
+                foreach my $line ( sort( keys %{ $meta_data_href->{$record} } ) ) {
+
+                    say {$FILEHANDLE} @{ $meta_data_href->{$record}{$line} };
+
+                    if ( defined $SELECTFILEHANDLE ) {
+
+                        say {$SELECTFILEHANDLE} @{ $meta_data_href->{$record}{$line} };
+                    }
+                }
+                if ( defined $SELECTFILEHANDLE ) {
+
+                    foreach
+                      my $line ( sort( keys %{ $meta_data_href->{select}{$record} } ) )
+                    {
+
+                        say {$SELECTFILEHANDLE}
+                          @{ $meta_data_href->{select}{$record}{$line} };
+                    }
+                }
+
+                ## Range
+                foreach my $line ( sort( keys %{ $meta_data_href->{range}{$record} } ) ) {
+
+                    say {$FILEHANDLE} @{ $meta_data_href->{range}{$record}{$line} };
+                }
+
+                ## Enable print of rest later
+                delete( $meta_data_href->{$record} );
+
+                if ( $meta_data_href->{select}{$record} ) {
+
+                    delete( $meta_data_href->{select}{$record} );
+                }
+                if ( $meta_data_href->{range}{$record} ) {
+
+                    delete( $meta_data_href->{range}{$record} );
+                }
+            }
+        }
+    }
+    ## Writing "the rest"
+    for my $keys ( keys %{$meta_data_href} ) {
+
+        for my $second_key ( keys %{ $meta_data_href->{$keys} } ) {
+
+            if ( ref $meta_data_href->{$keys}{$second_key} eq q{HASH} ) {
+
+                for my $line ( sort( keys %{ $meta_data_href->{$keys}{$second_key} } ) ) {
+
+                    say {$FILEHANDLE} @{ $meta_data_href->{$keys}{$second_key}{$line} };
+
+                    if ( defined $SELECTFILEHANDLE ) {
+
+                        say {$SELECTFILEHANDLE}
+                          @{ $meta_data_href->{$keys}{$second_key}{$line} };
+                    }
+                    delete $meta_data_href->{$keys}{$second_key}{$line};
+                }
+            }
+            elsif ( ref $meta_data_href->{$keys}{$second_key} eq q{ARRAY} ) {
+
+                foreach my $element ( @{ $meta_data_href->{$keys}{$second_key} } ) {
+
+                    say $element;
+
+                    if ( defined $SELECTFILEHANDLE ) {
+
+                        say {$SELECTFILEHANDLE} $element;
+                    }
+                }
+                delete $meta_data_href->{$keys}{$second_key};
+            }
+            else {
+
+                say {$FILEHANDLE} @{ $meta_data_href->{$keys}{$second_key} };
+
+                if ( defined $SELECTFILEHANDLE ) {
+
+                    say {$SELECTFILEHANDLE} @{ $meta_data_href->{$keys}{$second_key} };
+                }
+                delete $meta_data_href->{$keys}{$second_key};
+            }
+        }
+    }
+    return;
+}
+
 1;
