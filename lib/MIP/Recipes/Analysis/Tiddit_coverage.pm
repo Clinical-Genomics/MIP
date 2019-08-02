@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit_coverage };
@@ -230,7 +230,7 @@ sub analysis_tiddit_coverage {
             bin_size            => $active_parameter_href->{tiddit_coverage_bin_size},
             FILEHANDLE          => $FILEHANDLE,
             infile_path         => $infile_path,
-            outfile_path_prefix => $outfile_path,
+            outfile_path_prefix => $outfile_path_prefix,
             output_wig          => 1,
         }
     );
