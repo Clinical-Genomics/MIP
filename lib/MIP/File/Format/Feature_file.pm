@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -412,13 +412,13 @@ sub set_vcf_header_info {
     ## Add INFO from predefined entries
     if ( defined $meta_data_href->{$feature_file_type}{$header_key} ) {
 
-        $meta_data_href->{present}{$header_key}{info} =
-          $meta_data_href->{$feature_file_type}{$header_key}{info};
+        $meta_data_href->{present}{$header_key}{INFO} =
+          $meta_data_href->{$feature_file_type}{$header_key}{INFO};
     }
     else {
         ## Add arbitrary INFO field using feature file header key
 
-        $meta_data_href->{present}{$header_key}{info} = $arbitrary_info_field;
+        $meta_data_href->{present}{$header_key}{INFO} = $arbitrary_info_field;
     }
 
     ## Column position in supplied tsv feature file

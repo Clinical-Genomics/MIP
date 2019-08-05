@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $COLON $NEWLINE $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -63,14 +63,17 @@ my $vcf_path = catfile( $Bin, qw{ data test_data 643594-miptest_gent_vrecal.vcf 
 my %header_data;
 ## Set data under these key value pairs (i.e. $vcf_schema_key => vcf_id  or
 ## $vcf_schema_key => $vcf_schema_key)
-my %header_key = (
+my %vcf_schema_key = (
+    contig => q{contig},
+    other  => q{other},
+);
+
+my %vcf_schema_and_id_key = (
     ALT        => q{NON_REF},
-    contig     => q{contig},       # $vcf_schema_key => $vcf_schema_key
     fileformat => q{fileformat},
     FILTER     => q{PASS},         # $vcf_schema_key => vcf_id
     FORMAT     => q{AD},
     INFO       => q{AC},
-    other      => q{other},
 );
 
 open my $FILEHANDLE, q{<}, $vcf_path
@@ -97,22 +100,19 @@ while (<$FILEHANDLE>) {
 close $FILEHANDLE;
 my %expected_header_data = (
     ALT => {
-        NON_REF => [
-q{##ALT=<ID=NON_REF,Description="Represents any possible alternative allele at this location">}
-        ],
+        NON_REF =>
+q{##ALT=<ID=NON_REF,Description="Represents any possible alternative allele at this location">},
     },
     contig     => { contig     => [q{##contig=<ID=1,length=249250621>}], },
-    fileformat => { fileformat => [q{##fileformat=VCFv4.2}], },
-    FILTER => { q{PASS} => [q{##FILTER=<ID=PASS,Description="All filters passed">}], },
+    fileformat => { q{VCFv4.2} => q{##fileformat=VCFv4.2}, },
+    FILTER => { q{PASS} => q{##FILTER=<ID=PASS,Description="All filters passed">}, },
     FORMAT => {
-        q{AD} => [
-q{##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">}
-        ],
+        q{AD} =>
+q{##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">},
     },
     INFO => {
-        q{AC} => [
-q{##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">}
-        ],
+        q{AC} =>
+q{##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">},
     },
     other => { other => [q{##source=ApplyVQSR}], },
 );
@@ -120,12 +120,21 @@ q{##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, fo
 ## Then sub should return true
 ok( $is_ok, q{Parsed vcf header} );
 
-while ( my ( $vcf_schema_key, $vcf_id ) = each %header_key ) {
+while ( my ($vcf_schema) = each %vcf_schema_key ) {
 
     is(
-        $header_data{$vcf_schema_key}{$vcf_id}[0],
-        $expected_header_data{$vcf_schema_key}{$vcf_id}[0],
-        qq{Added header key and data $vcf_schema_key to hash}
+        $header_data{$vcf_schema}{$vcf_schema}[0],
+        $expected_header_data{$vcf_schema}{$vcf_schema}[0],
+        qq{Added header key and data $vcf_schema to hash}
+    );
+}
+
+while ( my ( $vcf_schema, $vcf_id ) = each %vcf_schema_and_id_key ) {
+
+    is(
+        $header_data{$vcf_schema}{$vcf_id},
+        $expected_header_data{$vcf_schema}{$vcf_id},
+        qq{Added header key and data $vcf_schema to hash}
     );
 }
 done_testing();

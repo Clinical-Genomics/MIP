@@ -181,8 +181,7 @@ if ($pli_values_file_path) {
     $log->info(q{Loading pli value file: Done});
 
     ## Add pli header line to VCF meta data HASH
-    push
-      @{ $meta_data{info}{most_severe_pli} },
+    $meta_data{INFO}{most_severe_pli} =
 q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli score.">};
 }
 
@@ -421,6 +420,7 @@ sub read_infile_vcf {
       add_feature_file_meta_data_to_vcf
       add_program_to_meta_data_header
       parse_vep_csq_schema
+      write_meta_data
     };
 
     ## Retrieve logger object now that log_file has been set
@@ -467,14 +467,16 @@ sub read_infile_vcf {
             parse_vep_csq_schema(
                 {
                     meta_data_href               => $meta_data_href,
+                    parse_vep                    => $parse_vep,
                     vep_format_field_column_href => \%vep_format_field_column,
                 }
             );
             next;
         }
-        if ( $_ =~ /^#CHROM/ ) {
+        if ( $line =~ /\A [#]{1}CHROM/sxm ) {
 
-            @vcf_format_columns = split( /\t/, $_ );    #Split vcf format line
+            ## Split vcf schema line
+            @vcf_format_columns = split $TAB, $line;
 
             add_feature_file_meta_data_to_vcf(
                 {
@@ -507,8 +509,8 @@ sub read_infile_vcf {
 
                 write_meta_data(
                     {
-                        meta_data_href   => $meta_data_href,
                         FILEHANDLE       => *STDOUT,
+                        meta_data_href   => $meta_data_href,
                         SELECTFILEHANDLE => $FILEHANDLE,
                     }
                 );
@@ -519,8 +521,8 @@ sub read_infile_vcf {
 
                 write_meta_data(
                     {
-                        meta_data_href => $meta_data_href,
                         FILEHANDLE     => *STDOUT,
+                        meta_data_href => $meta_data_href,
                     }
                 );
                 say STDOUT $_;             #Write #CHROM header line
@@ -1909,164 +1911,6 @@ sub FindLCAF {
         }
     }
     return $temp_maf;
-}
-
-sub write_meta_data {
-
-##write_meta_data
-
-##Function : Writes metadata to filehandle specified by order in meta_data_sections.
-##Returns  : ""
-##Arguments: $meta_data_href, $FILEHANDLE, $SELECTFILEHANDLE
-##         : $meta_data_href   => Hash for meta_data {REF}
-##         : $FILEHANDLE       => The filehandle to write to
-##         : $SELECTFILEHANDLE => The filehandle to write to {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $meta_data_href;
-    my $FILEHANDLE;
-    my $SELECTFILEHANDLE;
-
-    my $tmpl = {
-        meta_data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$meta_data_href
-        },
-        FILEHANDLE       => { required => 1, defined => 1, store => \$FILEHANDLE },
-        SELECTFILEHANDLE => { store    => \$SELECTFILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Determine order to print for standard records
-    my @meta_data_sections =
-      qw{ fileformat ALT FILTER FORMAT INFO FIX_INFO contig Software };
-    my @lines;
-
-    for (
-        my $line_counter = 0 ;
-        $line_counter < scalar(@meta_data_sections) ;
-        $line_counter++
-      )
-    {
-
-        my $meta_data_record_ref = \$meta_data_sections[$line_counter];    #Alias
-
-        if ( $meta_data_href->{$$meta_data_record_ref} ) {    #MetaDataRecordExists
-
-            if ( $$meta_data_record_ref eq "contig" )
-            {    #Should not be sorted, but printed "as is"
-
-                foreach my $line (
-                    @{ $meta_data_href->{$$meta_data_record_ref}{$$meta_data_record_ref} }
-                  )
-                {
-
-                    say $FILEHANDLE $line;
-
-                    if ( defined($SELECTFILEHANDLE) ) {
-
-                        say $SELECTFILEHANDLE $line;
-                    }
-                }
-                delete( $meta_data_href->{$$meta_data_record_ref} )
-                  ;    #Enable print of rest later
-            }
-            else {
-
-                foreach
-                  my $line ( sort( keys %{ $meta_data_href->{$$meta_data_record_ref} } ) )
-                {
-
-                    say $FILEHANDLE @{ $meta_data_href->{$$meta_data_record_ref}{$line} };
-
-                    if ( defined($SELECTFILEHANDLE) ) {
-
-                        say $SELECTFILEHANDLE @{ $meta_data_href->{$$meta_data_record_ref}
-                              {$line} };
-                    }
-                }
-                if ( defined($SELECTFILEHANDLE) ) {
-
-                    foreach my $line (
-                        sort(
-                            keys %{ $meta_data_href->{select}{$$meta_data_record_ref} } )
-                      )
-                    {
-
-                        say $SELECTFILEHANDLE @{ $meta_data_href->{select}
-                              {$$meta_data_record_ref}{$line} };
-                    }
-                }
-                foreach my $line (
-                    sort( keys %{ $meta_data_href->{range}{$$meta_data_record_ref} } ) )
-                {
-
-                    say $FILEHANDLE @{ $meta_data_href->{range}
-                          {$$meta_data_record_ref}{$line} };
-                }
-                delete( $meta_data_href->{$$meta_data_record_ref} )
-                  ;    #Enable print of rest later
-
-                if ( $meta_data_href->{select}{$$meta_data_record_ref} ) {
-
-                    delete( $meta_data_href->{select}{$$meta_data_record_ref} );
-                }
-                if ( $meta_data_href->{range}{$$meta_data_record_ref} ) {
-
-                    delete( $meta_data_href->{range}{$$meta_data_record_ref} );
-                }
-            }
-        }
-    }
-    for my $keys ( keys %$meta_data_href ) {
-
-        for my $second_key ( keys %{ $meta_data_href->{$keys} } ) {
-
-            if ( ref( $meta_data_href->{$keys}{$second_key} ) eq "HASH" ) {
-
-                for my $line ( sort( keys %{ $meta_data_href->{$keys}{$second_key} } ) ) {
-
-                    say $FILEHANDLE @{ $meta_data_href->{$keys}{$second_key}{$line} };
-
-                    if ( defined($SELECTFILEHANDLE) ) {
-
-                        say $SELECTFILEHANDLE @{ $meta_data_href->{$keys}
-                              {$second_key}{$line} };
-                    }
-                    delete $meta_data_href->{$keys}{$second_key}{$line};
-                }
-            }
-            elsif ( ref( $meta_data_href->{$keys}{$second_key} ) eq "ARRAY" ) {
-
-                foreach my $element ( @{ $meta_data_href->{$keys}{$second_key} } ) {
-
-                    say $element;
-
-                    if ( defined($SELECTFILEHANDLE) ) {
-
-                        say $SELECTFILEHANDLE $element;
-                    }
-                }
-                delete $meta_data_href->{$keys}{$second_key};
-            }
-            else {
-
-                say $FILEHANDLE @{ $meta_data_href->{$keys}{$second_key} };
-
-                if ( defined($SELECTFILEHANDLE) ) {
-
-                    say $SELECTFILEHANDLE @{ $meta_data_href->{$keys}{$second_key} };
-                }
-                delete $meta_data_href->{$keys}{$second_key};
-            }
-        }
-    }
 }
 
 sub uniq_elements {

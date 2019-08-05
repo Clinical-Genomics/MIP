@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -75,7 +75,7 @@ my $header =
   . q?,Number=.,Type=String,Description="String taken from ?
   . $feature_file_path . q?">?;
 my %meta_data;
-$feature_data{present}{$annotation}{info} = $header;
+$feature_data{present}{$annotation}{INFO} = $header;
 
 add_feature_file_meta_data_to_vcf(
     {
@@ -87,7 +87,7 @@ add_feature_file_meta_data_to_vcf(
 );
 
 my %expected_meta_data =
-  ( $feature_file_type => { info => { $annotation => [$header], }, }, );
+  ( $feature_file_type => { INFO => { $annotation => $header, }, }, );
 
 ## Then add INFO field using feature data header
 is_deeply(
@@ -98,7 +98,7 @@ is_deeply(
 
 ## Given a annotation when present in vcf header meta data
 my $existing_annotation = q{Disease_associated_transcript_2};
-$feature_data{present}{$existing_annotation}{info} = $header;
+$feature_data{present}{$existing_annotation}{INFO} = $header;
 $meta_data{INFO}{$existing_annotation} = $header;
 
 add_feature_file_meta_data_to_vcf(
@@ -110,7 +110,7 @@ add_feature_file_meta_data_to_vcf(
     }
 );
 
-is( $meta_data{$feature_file_type}{info}{$existing_annotation},
+is( $meta_data{$feature_file_type}{INFO}{$existing_annotation},
     undef, q{Did not add already present INFO field to meta data for vcf header} );
 
 done_testing();

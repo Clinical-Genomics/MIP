@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,7 +64,7 @@ Readonly my $HGNC_ID_CSQ_FIELD_INDEX => 22;
 ## Given a VEP CSQ line in meta data when parse_vep is true
 my $vep_csq_schema_header =
 q{##INFO=<ID=CSQ,Number=.,Type=String,Description="Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|DISTANCE|STRAND|FLAGS|SYMBOL_SOURCE|HGNC_ID|CANONICAL|TSL|APPRIS|CCDS|ENSP|SWISSPROT|TREMBL|UNIPARC|REFSEQ_MATCH|SOURCE|GIVEN_REF|USED_REF|BAM_EDIT|SIFT|PolyPhen|DOMAINS|HGVS_OFFSET|MOTIF_NAME|MOTIF_POS|HIGH_INF_POS|MOTIF_SCORE_CHANGE|ExACpLI|LoFtool|MES-NCSS_downstream_acceptor|MES-NCSS_downstream_donor|MES-NCSS_upstream_acceptor|MES-NCSS_upstream_donor|MES-SWA_acceptor_alt|MES-SWA_acceptor_diff|MES-SWA_acceptor_ref|MES-SWA_acceptor_ref_comp|MES-SWA_donor_alt|MES-SWA_donor_diff|MES-SWA_donor_ref|MES-SWA_donor_ref_comp|MaxEntScan_alt|MaxEntScan_diff|MaxEntScan_ref|genomic_superdups_frac_match">};
-my %meta_data = ( INFO => { CSQ => [ $vep_csq_schema_header, ], }, );
+my %meta_data = ( INFO => { CSQ => $vep_csq_schema_header, }, );
 my $most_severe_consequence_header =
 q{##INFO=<ID=most_severe_consequence,Number=.,Type=String,Description="Most severe genomic consequence.">};
 my %vep_format_field_column;
@@ -86,7 +86,7 @@ is( $vep_format_field_column{HGNC_ID},
 
 ## Then "most severe consequence" VCF header line should been added to meta data
 is(
-    $meta_data{info}{most_severe_consequence}[0],
+    $meta_data{INFO}{most_severe_consequence},
     $most_severe_consequence_header,
     q{Added moste severe consequence header}
 );

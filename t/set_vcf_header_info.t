@@ -83,7 +83,7 @@ set_vcf_header_info(
 my %expected_feature_data = (
     present => {
         $header_key => {
-            info => q?##INFO=<ID=?
+            INFO => q?##INFO=<ID=?
               . $header_key
               . q?,Number=.,Type=String,Description="String taken from ?
               . $feature_file_path . q?">?,
@@ -115,7 +115,7 @@ set_vcf_header_info(
     }
 );
 
-$expected_feature_data{present}{$existing_header_key}{info} = $header;
+$expected_feature_data{present}{$existing_header_key}{INFO} = $header;
 $expected_feature_data{present}{$existing_header_key}{column_order} =
   $extract_columns_counter;
 
