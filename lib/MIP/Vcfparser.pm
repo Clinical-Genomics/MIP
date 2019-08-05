@@ -377,116 +377,194 @@ sub write_meta_data {
 
     ## Determine order to print for standard records
     my @meta_data_records =
-      qw{ fileformat ALT FILTER FORMAT INFO FIX_INFO contig Software };
+      qw{ fileformat ALT FILTER FORMAT INFO FIX_INFO contig software other };
+
+    ## Dispatch table of how to write meta data
+    my %write_record = (
+        contig => \&_write_contig,         # Written "as is"
+        other  => \&_write_other,
+        vcf_id => \&_write_vcf_id_line,    # All standard record except contig
+    );
 
   RECORD:
     foreach my $record (@meta_data_records) {
 
         ## Meta data record exists
-        if ( $meta_data_href->{$record} ) {
+        next RECORD if ( not exists $meta_data_href->{$record} );
 
-            ## Should not be sorted, but printed "as is"
-            if ( $record eq q{contig} ) {
+        if ( exists $write_record{$record} ) {
 
-              CONTIG_LINE:
-                foreach my $contig_line ( @{ $meta_data_href->{$record}{$record} } ) {
-
-                    say {$FILEHANDLE} $contig_line;
-
-                    if ( defined $SELECTFILEHANDLE ) {
-
-                        say {$SELECTFILEHANDLE} $contig_line;
-                    }
+            $write_record{$record}->(
+                {
+                    FILEHANDLE       => *STDOUT,
+                    meta_data_href   => $meta_data_href,
+                    record           => $record,
+                    SELECTFILEHANDLE => $SELECTFILEHANDLE,
                 }
-                ## Enable print of rest later
-                delete $meta_data_href->{$record};
+            );
+            next RECORD;
+        }
+
+        $write_record{vcf_id}->(
+            {
+                FILEHANDLE       => *STDOUT,
+                meta_data_href   => $meta_data_href,
+                record           => $record,
+                SELECTFILEHANDLE => $SELECTFILEHANDLE,
             }
-            else {
+        );
+    }
+    return;
+}
 
-                foreach my $line ( sort( keys %{ $meta_data_href->{$record} } ) ) {
+sub _write_contig {
 
-                    say {$FILEHANDLE} @{ $meta_data_href->{$record}{$line} };
+## Function : Writes contig metadata to filehandle(s)
+## Returns  :
+## Arguments: $FILEHANDLE       => The filehandle to write to
+##          : $meta_data_href   => Hash for meta_data {REF}
+##          : $record           => VCF record
+##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
 
-                    if ( defined $SELECTFILEHANDLE ) {
+    my ($arg_href) = @_;
 
-                        say {$SELECTFILEHANDLE} @{ $meta_data_href->{$record}{$line} };
-                    }
-                }
-                if ( defined $SELECTFILEHANDLE ) {
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $meta_data_href;
+    my $record;
+    my $SELECTFILEHANDLE;
 
-                    foreach
-                      my $line ( sort( keys %{ $meta_data_href->{select}{$record} } ) )
-                    {
+    my $tmpl = {
+        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        record           => { defined => 1, required => 1, store => \$record, },
+        SELECTFILEHANDLE => { store   => \$SELECTFILEHANDLE, },
+    };
 
-                        say {$SELECTFILEHANDLE}
-                          @{ $meta_data_href->{select}{$record}{$line} };
-                    }
-                }
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-                ## Range
-                foreach my $line ( sort( keys %{ $meta_data_href->{range}{$record} } ) ) {
+  CONTIG_LINE:
+    foreach my $contig_line ( @{ $meta_data_href->{$record}{$record} } ) {
 
-                    say {$FILEHANDLE} @{ $meta_data_href->{range}{$record}{$line} };
-                }
+        say {$FILEHANDLE} $contig_line;
 
-                ## Enable print of rest later
-                delete( $meta_data_href->{$record} );
+        if ( defined $SELECTFILEHANDLE ) {
 
-                if ( $meta_data_href->{select}{$record} ) {
-
-                    delete( $meta_data_href->{select}{$record} );
-                }
-                if ( $meta_data_href->{range}{$record} ) {
-
-                    delete( $meta_data_href->{range}{$record} );
-                }
-            }
+            say {$SELECTFILEHANDLE} $contig_line;
         }
     }
-    ## Writing "the rest"
-    for my $keys ( keys %{$meta_data_href} ) {
+    return;
+}
 
-        for my $second_key ( keys %{ $meta_data_href->{$keys} } ) {
+sub _write_other {
 
-            if ( ref $meta_data_href->{$keys}{$second_key} eq q{HASH} ) {
+## Function : Writes custom metadata to filehandle(s)
+## Returns  :
+## Arguments: $FILEHANDLE       => The filehandle to write to
+##          : $meta_data_href   => Hash for meta_data {REF}
+##          : $record           => Record
+##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
 
-                for my $line ( sort( keys %{ $meta_data_href->{$keys}{$second_key} } ) ) {
+    my ($arg_href) = @_;
 
-                    say {$FILEHANDLE} @{ $meta_data_href->{$keys}{$second_key}{$line} };
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $meta_data_href;
+    my $record;
+    my $SELECTFILEHANDLE;
 
-                    if ( defined $SELECTFILEHANDLE ) {
+    my $tmpl = {
+        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        record           => { defined => 1, required => 1, store => \$record, },
+        SELECTFILEHANDLE => { store   => \$SELECTFILEHANDLE, },
+    };
 
-                        say {$SELECTFILEHANDLE}
-                          @{ $meta_data_href->{$keys}{$second_key}{$line} };
-                    }
-                    delete $meta_data_href->{$keys}{$second_key}{$line};
-                }
-            }
-            elsif ( ref $meta_data_href->{$keys}{$second_key} eq q{ARRAY} ) {
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-                foreach my $element ( @{ $meta_data_href->{$keys}{$second_key} } ) {
+  RECORD_LINE:
+    foreach my $record_line ( @{ $meta_data_href->{$record}{$record} } ) {
 
-                    say $element;
+        say {$FILEHANDLE} $record_line;
 
-                    if ( defined $SELECTFILEHANDLE ) {
+        if ( defined $SELECTFILEHANDLE ) {
 
-                        say {$SELECTFILEHANDLE} $element;
-                    }
-                }
-                delete $meta_data_href->{$keys}{$second_key};
-            }
-            else {
-
-                say {$FILEHANDLE} @{ $meta_data_href->{$keys}{$second_key} };
-
-                if ( defined $SELECTFILEHANDLE ) {
-
-                    say {$SELECTFILEHANDLE} @{ $meta_data_href->{$keys}{$second_key} };
-                }
-                delete $meta_data_href->{$keys}{$second_key};
-            }
+            say {$SELECTFILEHANDLE} $record_line;
         }
     }
+    return;
+}
+
+sub _write_vcf_id_line {
+
+## Function : Writes vcf id metadata to filehandle(s)
+## Returns  :
+## Arguments: $FILEHANDLE       => The filehandle to write to
+##          : $record           => Record
+##          : $meta_data_href   => Hash for meta_data {REF}
+##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $meta_data_href;
+    my $record;
+    my $SELECTFILEHANDLE;
+
+    my $tmpl = {
+        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        record           => { defined => 1, required => 1, store => \$record, },
+        SELECTFILEHANDLE => { store   => \$SELECTFILEHANDLE, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  VCF_ID:
+    foreach my $vcf_id ( sort keys %{ $meta_data_href->{$record} } ) {
+
+        say {$FILEHANDLE} @{ $meta_data_href->{$record}{$vcf_id} };
+
+        if ( defined $SELECTFILEHANDLE ) {
+
+            say {$SELECTFILEHANDLE} @{ $meta_data_href->{$record}{$vcf_id} };
+        }
+    }
+    if ( defined $SELECTFILEHANDLE ) {
+
+      VCF_ID:
+        foreach my $vcf_id ( sort keys %{ $meta_data_href->{select}{$record} } ) {
+
+            say {$SELECTFILEHANDLE} @{ $meta_data_href->{select}{$record}{$vcf_id} };
+        }
+    }
+
+    ## Range
+  VCF_ID:
+    foreach my $vcf_id ( sort keys %{ $meta_data_href->{range}{$record} } ) {
+
+        say {$FILEHANDLE} @{ $meta_data_href->{range}{$record}{$vcf_id} };
+    }
+
     return;
 }
 

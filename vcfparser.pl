@@ -182,7 +182,7 @@ if ($pli_values_file_path) {
 
     ## Add pli header line to VCF meta data HASH
     push
-      @{ $meta_data{info}{most_severe_pli} },
+      @{ $meta_data{INFO}{most_severe_pli} },
 q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli score.">};
 }
 
