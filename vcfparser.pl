@@ -181,8 +181,7 @@ if ($pli_values_file_path) {
     $log->info(q{Loading pli value file: Done});
 
     ## Add pli header line to VCF meta data HASH
-    push
-      @{ $meta_data{INFO}{most_severe_pli} },
+    $meta_data{INFO}{most_severe_pli} =
 q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli score.">};
 }
 
@@ -468,6 +467,7 @@ sub read_infile_vcf {
             parse_vep_csq_schema(
                 {
                     meta_data_href               => $meta_data_href,
+                    parse_vep                    => $parse_vep,
                     vep_format_field_column_href => \%vep_format_field_column,
                 }
             );

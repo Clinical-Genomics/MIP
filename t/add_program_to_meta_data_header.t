@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -87,6 +87,6 @@ add_program_to_meta_data_header(
 );
 
 ## Then software key should exists
-is( $meta_data{software}{$program_name}[0], $header_line, q{Added software tag to hash} );
+is( $meta_data{software}{$program_name}, $header_line, q{Added software tag to hash} );
 
 done_testing();

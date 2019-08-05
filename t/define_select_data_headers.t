@@ -67,7 +67,7 @@ my $hgnc_symbol_info_header =
 ## Then keys should exist and header info should be set
 ok( keys %select_data, q{Returned hash keys} );
 
-is( $select_data{select_file}{HGNC_symbol}{info},
+is( $select_data{select_file}{HGNC_symbol}{INFO},
     $hgnc_symbol_info_header, q{Got header info for header key} );
 
 done_testing();
