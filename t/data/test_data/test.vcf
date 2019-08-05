@@ -1,0 +1,14 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##contig=<ID=1,length=249250621>
+##contig=<ID=2,length=243199373>
+##FILTER=<ID=LowQual,Description="Low quality">
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads with MQ=255 or with bad mates are filtered)">
+##ALT=<ID=NON_REF,Description="Represents any possible alternative allele at this location">
+##source=HaplotypeCaller
+##bcftools_normVersion=1.9+htslib-1.9
+##Software=<ID=vcfparser.pl,Version=1.2.16,Date=2019-08-05
+#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  ACC5339A2       ACC5339A3       ACC5339A4

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -379,9 +379,10 @@ sub write_meta_data {
 
     ## Dispatch table of how to write meta data
     my %write_record = (
-        contig => \&_write_contig,         # Written "as is"
+        contig => \&_write_contig,       # Written "as is"
         other  => \&_write_vcf_schema,
-        vcf_id => \&_write_vcf_id_line,    # All standard vcf_schema except contig
+        vcf_id =>
+          \&_write_vcf_schema_id_line, # All standard vcf_schema with vcf_id except contig
     );
 
   VCF_SCHEMA:
@@ -394,7 +395,7 @@ sub write_meta_data {
 
             $write_record{$vcf_schema}->(
                 {
-                    FILEHANDLE       => *STDOUT,
+                    FILEHANDLE       => $FILEHANDLE,
                     meta_data_href   => $meta_data_href,
                     SELECTFILEHANDLE => $SELECTFILEHANDLE,
                     vcf_schema       => $vcf_schema,
@@ -405,7 +406,7 @@ sub write_meta_data {
 
         $write_record{vcf_id}->(
             {
-                FILEHANDLE       => *STDOUT,
+                FILEHANDLE       => $FILEHANDLE,
                 meta_data_href   => $meta_data_href,
                 SELECTFILEHANDLE => $SELECTFILEHANDLE,
                 vcf_schema       => $vcf_schema,
@@ -450,12 +451,45 @@ sub _write_contig {
   CONTIG_LINE:
     foreach my $contig_line ( @{ $meta_data_href->{$vcf_schema}{$vcf_schema} } ) {
 
-        say {$FILEHANDLE} $contig_line;
+        _write_to_file(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                meta_data_line   => $contig_line,
+                SELECTFILEHANDLE => $SELECTFILEHANDLE,
+            }
+        );
+    }
+    return;
+}
 
-        if ( defined $SELECTFILEHANDLE ) {
+sub _write_to_file {
 
-            say {$SELECTFILEHANDLE} $contig_line;
-        }
+## Function : Writes metadata line to filehandle(s)
+## Returns  :
+## Arguments: $FILEHANDLE       => The filehandle to write to
+##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+##          : $meta_data_line   => Meta data line
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $meta_data_line;
+    my $SELECTFILEHANDLE;
+
+    my $tmpl = {
+        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        meta_data_line => { defined => 1, required => 1, store => \$meta_data_line, },
+        SELECTFILEHANDLE => { store => \$SELECTFILEHANDLE, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    say {$FILEHANDLE} $meta_data_line;
+
+    if ( defined $SELECTFILEHANDLE ) {
+
+        say {$SELECTFILEHANDLE} $meta_data_line;
     }
     return;
 }
@@ -495,17 +529,18 @@ sub _write_vcf_schema {
   RECORD_LINE:
     foreach my $record_line ( @{ $meta_data_href->{$vcf_schema}{$vcf_schema} } ) {
 
-        say {$FILEHANDLE} $record_line;
-
-        if ( defined $SELECTFILEHANDLE ) {
-
-            say {$SELECTFILEHANDLE} $record_line;
-        }
+        _write_to_file(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                meta_data_line   => $record_line,
+                SELECTFILEHANDLE => $SELECTFILEHANDLE,
+            }
+        );
     }
     return;
 }
 
-sub _write_vcf_id_line {
+sub _write_vcf_schema_id_line {
 
 ## Function : Writes vcf id metadata to filehandle(s)
 ## Returns  :
@@ -540,29 +575,37 @@ sub _write_vcf_id_line {
   VCF_ID:
     foreach my $vcf_id ( sort keys %{ $meta_data_href->{$vcf_schema} } ) {
 
-        say {$FILEHANDLE} $meta_data_href->{$vcf_schema}{$vcf_id};
-
-        if ( defined $SELECTFILEHANDLE ) {
-
-            say {$SELECTFILEHANDLE} $meta_data_href->{$vcf_schema}{$vcf_id};
-        }
+        _write_to_file(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                meta_data_line   => $meta_data_href->{$vcf_schema}{$vcf_id},
+                SELECTFILEHANDLE => $SELECTFILEHANDLE,
+            }
+        );
     }
-    if ( defined $SELECTFILEHANDLE ) {
+
+    ## Map of feature file type and corresponding filehandle
+    my %feature_annotation = (
+        range  => $FILEHANDLE,
+        select => $SELECTFILEHANDLE,
+    );
+
+    ## Add select specific annotations
+  FEATURE_FILE_TYPE:
+    while ( my ( $feature_file_type, $ANNOTATION_FH ) = each %feature_annotation ) {
 
       VCF_ID:
-        foreach my $vcf_id ( sort keys %{ $meta_data_href->{select}{$vcf_schema} } ) {
+        foreach
+          my $vcf_id ( sort keys %{ $meta_data_href->{$feature_file_type}{$vcf_schema} } )
+        {
 
-            say {$SELECTFILEHANDLE} $meta_data_href->{select}{$vcf_schema}{$vcf_id};
+            if ( defined $ANNOTATION_FH ) {
+
+                say {$ANNOTATION_FH}
+                  $meta_data_href->{$feature_file_type}{$vcf_schema}{$vcf_id};
+            }
         }
     }
-
-    ## Range
-  VCF_ID:
-    foreach my $vcf_id ( sort keys %{ $meta_data_href->{range}{$vcf_schema} } ) {
-
-        say {$FILEHANDLE} $meta_data_href->{range}{$vcf_schema}{$vcf_id};
-    }
-
     return;
 }
 
