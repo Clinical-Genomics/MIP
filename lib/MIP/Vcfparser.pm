@@ -379,7 +379,7 @@ sub write_meta_data {
 
     ## Dispatch table of how to write meta data
     my %write_record = (
-        contig => \&_write_contig,       # Written "as is"
+        contig => \&_write_vcf_schema,       # Written "as is"
         other  => \&_write_vcf_schema,
         vcf_id =>
           \&_write_vcf_schema_id_line, # All standard vcf_schema with vcf_id except contig
@@ -410,52 +410,6 @@ sub write_meta_data {
                 meta_data_href   => $meta_data_href,
                 SELECTFILEHANDLE => $SELECTFILEHANDLE,
                 vcf_schema       => $vcf_schema,
-            }
-        );
-    }
-    return;
-}
-
-sub _write_contig {
-
-## Function : Writes contig metadata to filehandle(s)
-## Returns  :
-## Arguments: $FILEHANDLE       => The filehandle to write to
-##          : $meta_data_href   => Hash for meta_data {REF}
-##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
-##          : $vcf_schema       => VCF schema
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $meta_data_href;
-    my $SELECTFILEHANDLE;
-    my $vcf_schema;
-
-    my $tmpl = {
-        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
-        meta_data_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$meta_data_href,
-            strict_type => 1,
-        },
-        SELECTFILEHANDLE => { store   => \$SELECTFILEHANDLE, },
-        vcf_schema       => { defined => 1, required => 1, store => \$vcf_schema, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  CONTIG_LINE:
-    foreach my $contig_line ( @{ $meta_data_href->{$vcf_schema}{$vcf_schema} } ) {
-
-        _write_to_file(
-            {
-                FILEHANDLE       => $FILEHANDLE,
-                meta_data_line   => $contig_line,
-                SELECTFILEHANDLE => $SELECTFILEHANDLE,
             }
         );
     }
@@ -527,12 +481,12 @@ sub _write_vcf_schema {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
   RECORD_LINE:
-    foreach my $record_line ( @{ $meta_data_href->{$vcf_schema}{$vcf_schema} } ) {
+    foreach my $header_line ( @{ $meta_data_href->{$vcf_schema}{$vcf_schema} } ) {
 
         _write_to_file(
             {
                 FILEHANDLE       => $FILEHANDLE,
-                meta_data_line   => $record_line,
+                meta_data_line   => $header_line,
                 SELECTFILEHANDLE => $SELECTFILEHANDLE,
             }
         );
@@ -575,10 +529,12 @@ sub _write_vcf_schema_id_line {
   VCF_ID:
     foreach my $vcf_id ( sort keys %{ $meta_data_href->{$vcf_schema} } ) {
 
+      my $header_line = $meta_data_href->{$vcf_schema}{$vcf_id};
+
         _write_to_file(
             {
                 FILEHANDLE       => $FILEHANDLE,
-                meta_data_line   => $meta_data_href->{$vcf_schema}{$vcf_id},
+                meta_data_line   => $header_line,
                 SELECTFILEHANDLE => $SELECTFILEHANDLE,
             }
         );
@@ -599,10 +555,10 @@ sub _write_vcf_schema_id_line {
           my $vcf_id ( sort keys %{ $meta_data_href->{$feature_file_type}{$vcf_schema} } )
         {
 
+	  my $header_line = $meta_data_href->{$feature_file_type}{$vcf_schema}{$vcf_id};
             if ( defined $ANNOTATION_FH ) {
 
-                say {$ANNOTATION_FH}
-                  $meta_data_href->{$feature_file_type}{$vcf_schema}{$vcf_id};
+                say {$ANNOTATION_FH} $header_line;
             }
         }
     }
