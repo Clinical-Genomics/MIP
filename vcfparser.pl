@@ -419,6 +419,7 @@ sub read_infile_vcf {
     use MIP::Vcfparser qw{
       add_feature_file_meta_data_to_vcf
       add_program_to_meta_data_header
+      parse_vcf_format_line
       parse_vep_csq_schema
       write_meta_data
     };
@@ -427,19 +428,24 @@ sub read_infile_vcf {
     my $log = Log::Log4perl->get_logger(q{Vcfparser});
 
     ## Create anonymous filehandle for select file
-    my $FILEHANDLE = IO::Handle->new();
+    my $SELECT_FH = IO::Handle->new();
 
     ## Map the VEP CSQ format header line
     my %vep_format_field_column;
 
-    ## Catch vcf header "#CHROM" line
+    ## Store vcf header "#CHROM" line
     my @vcf_format_columns;
 
     if ($select_feature_file) {
 
-        open( $FILEHANDLE, q{>}, $select_outfile_path )
+        open $SELECT_FH, q{>},
+          $select_outfile_path
           or $log->logdie( q{Cannot open } . $select_outfile_path . $COLON . $OS_ERROR,
             $NEWLINE );
+    }
+    else {
+        ## If we do not have a select file undef the filehandle
+        $SELECT_FH = undef;
     }
 
   LINE:
@@ -475,9 +481,6 @@ sub read_infile_vcf {
         }
         if ( $line =~ /\A [#]{1}CHROM/sxm ) {
 
-            ## Split vcf schema line
-            @vcf_format_columns = split $TAB, $line;
-
             add_feature_file_meta_data_to_vcf(
                 {
                     data_href => $range_data_href,
@@ -505,29 +508,21 @@ sub read_infile_vcf {
                 }
             );
 
-            if ($select_feature_file) {    #SelectFile annotations
+            write_meta_data(
+                {
+                    FILEHANDLE       => *STDOUT,
+                    meta_data_href   => $meta_data_href,
+                    SELECTFILEHANDLE => $SELECT_FH,
+                }
+            );
 
-                write_meta_data(
-                    {
-                        FILEHANDLE       => *STDOUT,
-                        meta_data_href   => $meta_data_href,
-                        SELECTFILEHANDLE => $FILEHANDLE,
-                    }
-                );
-                say STDOUT $_;             #Write #CHROM header line
-                say $FILEHANDLE $_;        #Write #CHROM header line
-            }
-            else {
-
-                write_meta_data(
-                    {
-                        FILEHANDLE     => *STDOUT,
-                        meta_data_href => $meta_data_href,
-                    }
-                );
-                say STDOUT $_;             #Write #CHROM header line
-            }
-            next;
+            @vcf_format_columns = parse_vcf_format_line(
+                {
+                    FILEHANDLE       => *STDOUT,
+                    format_line      => $line,
+                    SELECTFILEHANDLE => $SELECT_FH,
+                }
+            ) next;
         }
         if ( $_ =~ /^(\S+)/ ) {
 
@@ -615,7 +610,7 @@ sub read_infile_vcf {
 
                     if ( $record{select_transcripts} ) {
 
-                        print $FILEHANDLE
+                        print $SELECT_FH
                           $record{ $vcf_format_columns[$line_elements_counter] } . "\t";
                     }
                     print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }
@@ -628,7 +623,7 @@ sub read_infile_vcf {
 
                         if ( $record{select_transcripts} ) {
 
-                            print $FILEHANDLE
+                            print $SELECT_FH
                               $record{ $vcf_format_columns[$line_elements_counter] };
                         }
                         print STDOUT $record{ $vcf_format_columns[$line_elements_counter]
@@ -653,7 +648,7 @@ sub read_infile_vcf {
                                         }
                                         if ( $record{select_transcripts} ) {
 
-                                            print $FILEHANDLE $key . "="
+                                            print $SELECT_FH $key . "="
                                               . join( ",",
                                                 @{ $record{select_transcripts} } );
                                         }
@@ -662,7 +657,7 @@ sub read_infile_vcf {
 
                                         if ( $record{select_transcripts} ) {
 
-                                            print $FILEHANDLE $key . "="
+                                            print $SELECT_FH $key . "="
                                               . $record{INFO_key_value}{$key};
                                         }
                                         print STDOUT $key . "="
@@ -673,7 +668,7 @@ sub read_infile_vcf {
 
                                     if ( $record{select_transcripts} ) {
 
-                                        print $FILEHANDLE $key;
+                                        print $SELECT_FH $key;
                                     }
                                     print STDOUT $key;
                                 }
@@ -693,7 +688,7 @@ sub read_infile_vcf {
                                         }
                                         if ( $record{select_transcripts} ) {
 
-                                            print $FILEHANDLE ";"
+                                            print $SELECT_FH ";"
                                               . $key . "="
                                               . join( ",",
                                                 @{ $record{select_transcripts} } );
@@ -703,7 +698,7 @@ sub read_infile_vcf {
 
                                         if ( $record{select_transcripts} ) {
 
-                                            print $FILEHANDLE ";" . $key . "="
+                                            print $SELECT_FH ";" . $key . "="
                                               . $record{INFO_key_value}{$key};
                                         }
                                         print STDOUT ";" . $key . "="
@@ -714,7 +709,7 @@ sub read_infile_vcf {
 
                                     if ( $record{select_transcripts} ) {
 
-                                        print $FILEHANDLE ";" . $key;
+                                        print $SELECT_FH ";" . $key;
                                     }
                                     print STDOUT ";" . $key;
                                 }
@@ -727,7 +722,7 @@ sub read_infile_vcf {
 
                         if ( $record{select_transcripts} ) {
 
-                            print $FILEHANDLE ";" . $key . "="
+                            print $SELECT_FH ";" . $key . "="
                               . $record{INFO_addition}{$key};
                         }
                         print STDOUT ";" . $key . "=" . $record{INFO_addition}{$key};
@@ -738,7 +733,7 @@ sub read_infile_vcf {
                           my $key ( keys %{ $record{INFO_addition_select_feature} } )
                         {
 
-                            print $FILEHANDLE ";" . $key . "="
+                            print $SELECT_FH ";" . $key . "="
                               . $record{INFO_addition_select_feature}{$key};
                         }
                     }
@@ -750,7 +745,7 @@ sub read_infile_vcf {
 
                     if ( $record{select_transcripts} ) {
 
-                        print $FILEHANDLE "\t";
+                        print $SELECT_FH "\t";
                     }
                     print STDOUT "\t";
                 }
@@ -758,7 +753,7 @@ sub read_infile_vcf {
 
                     if ( $record{select_transcripts} ) {
 
-                        print $FILEHANDLE
+                        print $SELECT_FH
                           $record{ $vcf_format_columns[$line_elements_counter] } . "\t";
                     }
                     print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }
@@ -767,14 +762,14 @@ sub read_infile_vcf {
             }
             if ( $record{select_transcripts} ) {
 
-                print $FILEHANDLE "\n";
+                print $SELECT_FH "\n";
             }
             print STDOUT "\n";
         }
     }
     if ($select_feature_file) {
 
-        close($FILEHANDLE);
+        close($SELECT_FH);
     }
     $log->info("Finished Processing VCF\n");
 }
