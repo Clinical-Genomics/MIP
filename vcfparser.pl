@@ -179,6 +179,10 @@ if ($pli_values_file_path) {
         }
     );
     $log->info(q{Loading pli value file: Done});
+
+    ## Add pli header line to VCF meta data HASH
+    $meta_data{INFO}{most_severe_pli} =
+q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli score.">};
 }
 
 ############
@@ -412,25 +416,36 @@ sub read_infile_vcf {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Vcf qw{ parse_vcf_header };
-    use MIP::Vcfparser qw{ add_feature_file_meta_data_to_vcf };
+    use MIP::Vcfparser qw{
+      add_feature_file_meta_data_to_vcf
+      add_program_to_meta_data_header
+      parse_vcf_format_line
+      parse_vep_csq_schema
+      write_meta_data
+    };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger(q{Vcfparser});
 
     ## Create anonymous filehandle for select file
-    my $FILEHANDLE = IO::Handle->new();
+    my $SELECT_FH = IO::Handle->new();
 
-    my @vep_format_fields;
+    ## Map the VEP CSQ format header line
     my %vep_format_field_column;
 
-    #Catch vcf header "#CHROM" line
+    ## Store vcf header "#CHROM" line
     my @vcf_format_columns;
 
     if ($select_feature_file) {
 
-        open( $FILEHANDLE, q{>}, $select_outfile_path )
+        open $SELECT_FH, q{>},
+          $select_outfile_path
           or $log->logdie( q{Cannot open } . $select_outfile_path . $COLON . $OS_ERROR,
             $NEWLINE );
+    }
+    else {
+        ## If we do not have a select file undef the filehandle
+        $SELECT_FH = undef;
     }
 
   LINE:
@@ -444,7 +459,7 @@ sub read_infile_vcf {
         ## Skip blank lines
         next LINE if ( $line =~ /^\s+$/sxm );
 
-        ## MetaData
+        ## Header meta data
         if ( $line =~ /\A [#]{2}/sxm ) {
 
             parse_vcf_header(
@@ -454,42 +469,17 @@ sub read_infile_vcf {
                 }
             );
 
-            if ( $_ =~ /INFO\=\<ID\=CSQ/ ) {    #Find VEP INFO Field
-
-                if ( $_ =~ /Format:\s(\S+)"\>/ )
-                {                               #Locate Format within VEP INFO meta line
-
-                    @vep_format_fields = split( /\|/, $1 );
-
-                    while ( my ( $field_index, $field ) = each(@vep_format_fields) ) {
-
-                        $vep_format_field_column{$field} =
-                          $field_index;         #Save the order of VEP features
-                    }
+            ## Parse VEP CSQ format field and adds the format field index
+            parse_vep_csq_schema(
+                {
+                    meta_data_href               => $meta_data_href,
+                    parse_vep                    => $parse_vep,
+                    vep_format_field_column_href => \%vep_format_field_column,
                 }
-                if ($parse_vep) {
-
-                    if (   ( $vep_format_field_column{HGNC_ID} )
-                        && ( $vep_format_field_column{Consequence} ) )
-                    {
-
-                        push(
-                            @{ $meta_data_href->{info}{most_severe_consequence} },
-'##INFO=<ID=most_severe_consequence,Number=.,Type=String,Description="Most severe genomic consequence.">'
-                        );
-                        push(
-                            @{ $meta_data_href->{info}{most_severe_pli} },
-'##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe genomic consequence.">'
-                        );
-                    }
-                }
-                next;
-            }
+            );
             next;
         }
-        if ( $_ =~ /^#CHROM/ ) {
-
-            @vcf_format_columns = split( /\t/, $_ );    #Split vcf format line
+        if ( $line =~ /\A [#]{1}CHROM/sxm ) {
 
             add_feature_file_meta_data_to_vcf(
                 {
@@ -510,37 +500,29 @@ sub read_infile_vcf {
                 }
             );
 
-            if ($write_software_tag) {
+            add_program_to_meta_data_header(
+                {
+                    add_software_tag  => $write_software_tag,
+                    meta_data_href    => $meta_data_href,
+                    vcfparser_version => $vcfparser_version,
+                }
+            );
 
-                add_program_to_meta_data_header(
-                    {
-                        meta_data_href    => $meta_data_href,
-                        vcfparser_version => $vcfparser_version,
-                    }
-                );
-            }
-            if ($select_feature_file) {    #SelectFile annotations
+            write_meta_data(
+                {
+                    FILEHANDLE       => *STDOUT,
+                    meta_data_href   => $meta_data_href,
+                    SELECTFILEHANDLE => $SELECT_FH,
+                }
+            );
 
-                write_meta_data(
-                    {
-                        meta_data_href   => $meta_data_href,
-                        FILEHANDLE       => *STDOUT,
-                        SELECTFILEHANDLE => $FILEHANDLE,
-                    }
-                );
-                say STDOUT $_;             #Write #CHROM header line
-                say $FILEHANDLE $_;        #Write #CHROM header line
-            }
-            else {
-
-                write_meta_data(
-                    {
-                        meta_data_href => $meta_data_href,
-                        FILEHANDLE     => *STDOUT,
-                    }
-                );
-                say STDOUT $_;             #Write #CHROM header line
-            }
+            @vcf_format_columns = parse_vcf_format_line(
+                {
+                    FILEHANDLE       => *STDOUT,
+                    format_line      => $line,
+                    SELECTFILEHANDLE => $SELECT_FH,
+                }
+            );
             next;
         }
         if ( $_ =~ /^(\S+)/ ) {
@@ -629,7 +611,7 @@ sub read_infile_vcf {
 
                     if ( $record{select_transcripts} ) {
 
-                        print $FILEHANDLE
+                        print $SELECT_FH
                           $record{ $vcf_format_columns[$line_elements_counter] } . "\t";
                     }
                     print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }
@@ -642,7 +624,7 @@ sub read_infile_vcf {
 
                         if ( $record{select_transcripts} ) {
 
-                            print $FILEHANDLE
+                            print $SELECT_FH
                               $record{ $vcf_format_columns[$line_elements_counter] };
                         }
                         print STDOUT $record{ $vcf_format_columns[$line_elements_counter]
@@ -667,7 +649,7 @@ sub read_infile_vcf {
                                         }
                                         if ( $record{select_transcripts} ) {
 
-                                            print $FILEHANDLE $key . "="
+                                            print $SELECT_FH $key . "="
                                               . join( ",",
                                                 @{ $record{select_transcripts} } );
                                         }
@@ -676,7 +658,7 @@ sub read_infile_vcf {
 
                                         if ( $record{select_transcripts} ) {
 
-                                            print $FILEHANDLE $key . "="
+                                            print $SELECT_FH $key . "="
                                               . $record{INFO_key_value}{$key};
                                         }
                                         print STDOUT $key . "="
@@ -687,7 +669,7 @@ sub read_infile_vcf {
 
                                     if ( $record{select_transcripts} ) {
 
-                                        print $FILEHANDLE $key;
+                                        print $SELECT_FH $key;
                                     }
                                     print STDOUT $key;
                                 }
@@ -707,7 +689,7 @@ sub read_infile_vcf {
                                         }
                                         if ( $record{select_transcripts} ) {
 
-                                            print $FILEHANDLE ";"
+                                            print $SELECT_FH ";"
                                               . $key . "="
                                               . join( ",",
                                                 @{ $record{select_transcripts} } );
@@ -717,7 +699,7 @@ sub read_infile_vcf {
 
                                         if ( $record{select_transcripts} ) {
 
-                                            print $FILEHANDLE ";" . $key . "="
+                                            print $SELECT_FH ";" . $key . "="
                                               . $record{INFO_key_value}{$key};
                                         }
                                         print STDOUT ";" . $key . "="
@@ -728,7 +710,7 @@ sub read_infile_vcf {
 
                                     if ( $record{select_transcripts} ) {
 
-                                        print $FILEHANDLE ";" . $key;
+                                        print $SELECT_FH ";" . $key;
                                     }
                                     print STDOUT ";" . $key;
                                 }
@@ -741,7 +723,7 @@ sub read_infile_vcf {
 
                         if ( $record{select_transcripts} ) {
 
-                            print $FILEHANDLE ";" . $key . "="
+                            print $SELECT_FH ";" . $key . "="
                               . $record{INFO_addition}{$key};
                         }
                         print STDOUT ";" . $key . "=" . $record{INFO_addition}{$key};
@@ -752,7 +734,7 @@ sub read_infile_vcf {
                           my $key ( keys %{ $record{INFO_addition_select_feature} } )
                         {
 
-                            print $FILEHANDLE ";" . $key . "="
+                            print $SELECT_FH ";" . $key . "="
                               . $record{INFO_addition_select_feature}{$key};
                         }
                     }
@@ -764,7 +746,7 @@ sub read_infile_vcf {
 
                     if ( $record{select_transcripts} ) {
 
-                        print $FILEHANDLE "\t";
+                        print $SELECT_FH "\t";
                     }
                     print STDOUT "\t";
                 }
@@ -772,7 +754,7 @@ sub read_infile_vcf {
 
                     if ( $record{select_transcripts} ) {
 
-                        print $FILEHANDLE
+                        print $SELECT_FH
                           $record{ $vcf_format_columns[$line_elements_counter] } . "\t";
                     }
                     print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }
@@ -781,14 +763,14 @@ sub read_infile_vcf {
             }
             if ( $record{select_transcripts} ) {
 
-                print $FILEHANDLE "\n";
+                print $SELECT_FH "\n";
             }
             print STDOUT "\n";
         }
     }
     if ($select_feature_file) {
 
-        close($FILEHANDLE);
+        close($SELECT_FH);
     }
     $log->info("Finished Processing VCF\n");
 }
@@ -1821,49 +1803,6 @@ sub tree_annotations {
     return %noid_region;
 }
 
-sub add_program_to_meta_data_header {
-
-##add_program_to_meta_data_header
-
-##Function : Adds the program version and run date to the vcf meta-information section
-##Returns  : ""
-##Arguments: $meta_data_href, $vcfparser_version
-##         : $meta_data_href    => Vcf meta data {REF}
-##         : $vcfparser_version => vcfParser version
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $meta_data_href;
-    my $vcfparser_version;
-
-    my $tmpl = {
-        meta_data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$meta_data_href
-        },
-        vcfparser_version => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$vcfparser_version
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my ( $base, $script ) =
-      ( `date +%Y%m%d`, `basename $0` );    #Catches current date and script name
-    chomp( $base, $script );                #Remove \n;
-    push(
-        @{ $meta_data_href->{software}{$script} },
-        "##Software=<ID=" . $script . ",Version=" . $vcfparser_version . ",Date=" . $base
-    );
-}
-
 sub find_af {
 
 ##find_af
@@ -1968,164 +1907,6 @@ sub FindLCAF {
         }
     }
     return $temp_maf;
-}
-
-sub write_meta_data {
-
-##write_meta_data
-
-##Function : Writes metadata to filehandle specified by order in meta_data_sections.
-##Returns  : ""
-##Arguments: $meta_data_href, $FILEHANDLE, $SELECTFILEHANDLE
-##         : $meta_data_href   => Hash for meta_data {REF}
-##         : $FILEHANDLE       => The filehandle to write to
-##         : $SELECTFILEHANDLE => The filehandle to write to {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $meta_data_href;
-    my $FILEHANDLE;
-    my $SELECTFILEHANDLE;
-
-    my $tmpl = {
-        meta_data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$meta_data_href
-        },
-        FILEHANDLE       => { required => 1, defined => 1, store => \$FILEHANDLE },
-        SELECTFILEHANDLE => { store    => \$SELECTFILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Determine order to print for standard records
-    my @meta_data_sections =
-      qw{ fileformat ALT FILTER FORMAT INFO FIX_INFO contig Software };
-    my @lines;
-
-    for (
-        my $line_counter = 0 ;
-        $line_counter < scalar(@meta_data_sections) ;
-        $line_counter++
-      )
-    {
-
-        my $meta_data_record_ref = \$meta_data_sections[$line_counter];    #Alias
-
-        if ( $meta_data_href->{$$meta_data_record_ref} ) {    #MetaDataRecordExists
-
-            if ( $$meta_data_record_ref eq "contig" )
-            {    #Should not be sorted, but printed "as is"
-
-                foreach my $line (
-                    @{ $meta_data_href->{$$meta_data_record_ref}{$$meta_data_record_ref} }
-                  )
-                {
-
-                    say $FILEHANDLE $line;
-
-                    if ( defined($SELECTFILEHANDLE) ) {
-
-                        say $SELECTFILEHANDLE $line;
-                    }
-                }
-                delete( $meta_data_href->{$$meta_data_record_ref} )
-                  ;    #Enable print of rest later
-            }
-            else {
-
-                foreach
-                  my $line ( sort( keys %{ $meta_data_href->{$$meta_data_record_ref} } ) )
-                {
-
-                    say $FILEHANDLE @{ $meta_data_href->{$$meta_data_record_ref}{$line} };
-
-                    if ( defined($SELECTFILEHANDLE) ) {
-
-                        say $SELECTFILEHANDLE @{ $meta_data_href->{$$meta_data_record_ref}
-                              {$line} };
-                    }
-                }
-                if ( defined($SELECTFILEHANDLE) ) {
-
-                    foreach my $line (
-                        sort(
-                            keys %{ $meta_data_href->{select}{$$meta_data_record_ref} } )
-                      )
-                    {
-
-                        say $SELECTFILEHANDLE @{ $meta_data_href->{select}
-                              {$$meta_data_record_ref}{$line} };
-                    }
-                }
-                foreach my $line (
-                    sort( keys %{ $meta_data_href->{range}{$$meta_data_record_ref} } ) )
-                {
-
-                    say $FILEHANDLE @{ $meta_data_href->{range}
-                          {$$meta_data_record_ref}{$line} };
-                }
-                delete( $meta_data_href->{$$meta_data_record_ref} )
-                  ;    #Enable print of rest later
-
-                if ( $meta_data_href->{select}{$$meta_data_record_ref} ) {
-
-                    delete( $meta_data_href->{select}{$$meta_data_record_ref} );
-                }
-                if ( $meta_data_href->{range}{$$meta_data_record_ref} ) {
-
-                    delete( $meta_data_href->{range}{$$meta_data_record_ref} );
-                }
-            }
-        }
-    }
-    for my $keys ( keys %$meta_data_href ) {
-
-        for my $second_key ( keys %{ $meta_data_href->{$keys} } ) {
-
-            if ( ref( $meta_data_href->{$keys}{$second_key} ) eq "HASH" ) {
-
-                for my $line ( sort( keys %{ $meta_data_href->{$keys}{$second_key} } ) ) {
-
-                    say $FILEHANDLE @{ $meta_data_href->{$keys}{$second_key}{$line} };
-
-                    if ( defined($SELECTFILEHANDLE) ) {
-
-                        say $SELECTFILEHANDLE @{ $meta_data_href->{$keys}
-                              {$second_key}{$line} };
-                    }
-                    delete $meta_data_href->{$keys}{$second_key}{$line};
-                }
-            }
-            elsif ( ref( $meta_data_href->{$keys}{$second_key} ) eq "ARRAY" ) {
-
-                foreach my $element ( @{ $meta_data_href->{$keys}{$second_key} } ) {
-
-                    say $element;
-
-                    if ( defined($SELECTFILEHANDLE) ) {
-
-                        say $SELECTFILEHANDLE $element;
-                    }
-                }
-                delete $meta_data_href->{$keys}{$second_key};
-            }
-            else {
-
-                say $FILEHANDLE @{ $meta_data_href->{$keys}{$second_key} };
-
-                if ( defined($SELECTFILEHANDLE) ) {
-
-                    say $SELECTFILEHANDLE @{ $meta_data_href->{$keys}{$second_key} };
-                }
-                delete $meta_data_href->{$keys}{$second_key};
-            }
-        }
-    }
 }
 
 sub uniq_elements {

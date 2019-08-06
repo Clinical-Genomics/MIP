@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_vcf_header  };
@@ -62,7 +62,7 @@ sub parse_vcf_header {
 
     ## Define how to parse meta-data header
     my %vcf_header_regexp = (
-        fileformat   => q{\A [#]{2}(fileformat)},
+        fileformat   => q{\A [#]{2}(fileformat)=(\S+)},
         field_format => q{\A [#]{2}([^=]*)=<ID=([^,]*)},
     );
 
@@ -72,8 +72,8 @@ sub parse_vcf_header {
         my ( $vcf_schema, $vcf_id ) = $meta_data_string =~ /$regexp/sxm;
 
         ## Alias method subs
-        my $add_by_schema_and_id_cref = sub {
-            push @{ $meta_data_href->{$vcf_schema}{$vcf_id} }, $meta_data_string;
+        my $set_by_schema_and_id_cref = sub {
+            $meta_data_href->{$vcf_schema}{$vcf_id} = $meta_data_string;
         };
         my $add_by_schema_cref = sub {
             push @{ $meta_data_href->{$vcf_schema}{$vcf_schema} }, $meta_data_string;
@@ -81,12 +81,12 @@ sub parse_vcf_header {
 
         ## Create dispatch table
         my %add_to_meta_data = (
-            ALT        => $add_by_schema_and_id_cref,
+            ALT        => $set_by_schema_and_id_cref,
             contig     => $add_by_schema_cref,
-            fileformat => $add_by_schema_cref,
-            FILTER     => $add_by_schema_and_id_cref,
-            FORMAT     => $add_by_schema_and_id_cref,
-            INFO       => $add_by_schema_and_id_cref,
+            fileformat => $set_by_schema_and_id_cref,
+            FILTER     => $set_by_schema_and_id_cref,
+            FORMAT     => $set_by_schema_and_id_cref,
+            INFO       => $set_by_schema_and_id_cref,
         );
 
         if ( $vcf_schema and exists $add_to_meta_data{$vcf_schema} ) {
@@ -97,7 +97,7 @@ sub parse_vcf_header {
         }
     }
 
-    ## All other meta-data headers
+    ## All other meta-data headers - Add to array without using regexp
     push @{ $meta_data_href->{other}{other} }, $meta_data_string;
     return 1;
 }

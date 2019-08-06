@@ -17,20 +17,24 @@ use Readonly;
 use Set::IntervalTree;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SEMICOLON $SPACE $TAB };
+use MIP::Constants qw{ $PIPE $SEMICOLON $SPACE $TAB };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       add_feature_file_meta_data_to_vcf
+      add_program_to_meta_data_header
       build_interval_tree
       define_select_data_headers
+      parse_vcf_format_line
+      parse_vep_csq_schema
+      write_meta_data
     };
 }
 
@@ -93,10 +97,65 @@ sub add_feature_file_meta_data_to_vcf {
         next ANNOTATION if ( defined $meta_data_href->{INFO}{$annotation} );
 
         ## Add specific feature INFO meta data header
-        push
-          @{ $meta_data_href->{$file_key}{info}{$annotation} },
-          $data_href->{present}{$annotation}{info};
+        $meta_data_href->{$file_key}{INFO}{$annotation} =
+          $data_href->{present}{$annotation}{INFO};
     }
+    return;
+}
+
+sub add_program_to_meta_data_header {
+
+## Function : Adds the program version and run date to the vcf meta data header hash
+## Returns  :
+## Arguments: $add_software_tag  => Write software tag to vcf header switch
+##          : $meta_data_href    => Vcf meta data {REF}
+##          : $vcfparser_version => Vcfparser version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $add_software_tag;
+    my $meta_data_href;
+    my $vcfparser_version;
+
+    my $tmpl = {
+        add_software_tag => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$add_software_tag,
+            strict_type => 1,
+        },
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        vcfparser_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfparser_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use DateTime;
+    use File::Basename qw{ basename };
+
+    return if ( not $add_software_tag );
+
+    ## Get current date
+    my $current_date = DateTime->now->ymd;
+
+    ## Get script name
+    my $program_name = basename($PROGRAM_NAME);
+
+    ## Add to meta_data_href
+    $meta_data_href->{software}{$program_name} =
+      qq{##Software=<ID=$program_name,Version=$vcfparser_version,Date=$current_date};
     return;
 }
 
@@ -191,29 +250,363 @@ sub define_select_data_headers {
 
     my %select_data;
 
-    $select_data{select_file}{HGNC_symbol}{info} =
+    $select_data{select_file}{HGNC_symbol}{INFO} =
       q{##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="The HGNC gene symbol">};
-    $select_data{select_file}{Ensembl_gene_id}{info} =
+    $select_data{select_file}{Ensembl_gene_id}{INFO} =
 q{##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene identifier">};
-    $select_data{select_file}{OMIM_morbid}{info} =
+    $select_data{select_file}{OMIM_morbid}{INFO} =
 q{##INFO=<ID=OMIM_morbid,Number=.,Type=String,Description="OMIM morbid ID associated with gene(s)">};
-    $select_data{select_file}{Phenotypic_disease_model}{info} =
+    $select_data{select_file}{Phenotypic_disease_model}{INFO} =
 q{##INFO=<ID=Phenotypic_disease_model,Number=.,Type=String,Description="Known disease gene(s) phenotype inheritance model">};
-    $select_data{select_file}{Clinical_db_gene_annotation}{info} =
+    $select_data{select_file}{Clinical_db_gene_annotation}{INFO} =
 q{##INFO=<ID=Clinical_db_gene_annotation,Number=.,Type=String,Description="Gene disease group association">};
-    $select_data{select_file}{Reduced_penetrance}{info} =
+    $select_data{select_file}{Reduced_penetrance}{INFO} =
 q{##INFO=<ID=Reduced_penetrance,Number=.,Type=String,Description="Pathogenic gene which can exhibit reduced penetrance">};
-    $select_data{select_file}{Disease_associated_transcript}{info} =
+    $select_data{select_file}{Disease_associated_transcript}{INFO} =
 q{##INFO=<ID=Disease_associated_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene">};
-    $select_data{select_file}{Ensembl_transcript_to_refseq_transcript}{info} =
+    $select_data{select_file}{Ensembl_transcript_to_refseq_transcript}{INFO} =
 q{##INFO=<ID=Ensembl_transcript_to_refseq_transcript,Number=.,Type=String,Description="The link between ensembl transcript and refSeq transcript IDs">};
-    $select_data{select_file}{Gene_description}{info} =
+    $select_data{select_file}{Gene_description}{INFO} =
 q{##INFO=<ID=Gene_description,Number=.,Type=String,Description="The HGNC gene description">};
-    $select_data{select_file}{Genetic_disease_model}{info} =
+    $select_data{select_file}{Genetic_disease_model}{INFO} =
 q{##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene(s) inheritance model">};
-    $select_data{select_file}{No_hgnc_symbol}{info} =
+    $select_data{select_file}{No_hgnc_symbol}{INFO} =
 q{##INFO=<ID=No_hgnc_symbol,Number=.,Type=String,Description="Clinically relevant genetic regions lacking a HGNC_symbol or Ensembl gene ">};
     return %select_data;
+}
+
+sub parse_vcf_format_line {
+
+## Function : Parse VCF format line (#CHROM) and writes line to filehandle(s)
+## Returns  :
+## Arguments: $FILEHANDLE       => The filehandle to write to
+##          : $format_line      => VCF format line
+##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $format_line;
+    my $SELECTFILEHANDLE;
+
+    my $tmpl = {
+        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        format_line => {
+            defined     => 1,
+            required    => 1,
+            store       => \$format_line,
+            strict_type => 1,
+        },
+        SELECTFILEHANDLE => { store => \$SELECTFILEHANDLE, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Split vcf format/schema line
+    my @vcf_format_columns = split $TAB, $format_line;
+
+    ## Write #CHROM header line
+    _write_to_file(
+        {
+            FILEHANDLE       => $FILEHANDLE,
+            meta_data_line   => $format_line,
+            SELECTFILEHANDLE => $SELECTFILEHANDLE,
+        }
+    );
+
+    return @vcf_format_columns;
+}
+
+sub parse_vep_csq_schema {
+
+## Function : Parse VEP CSQ format field and adds the format field index
+## Returns  :
+## Arguments: $meta_data_href               => Vcf meta data {REF}
+##          : $parse_vep                    => Parse VEP output
+##          : $vep_format_field_column_href => Vep format schema {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $meta_data_href;
+    my $parse_vep;
+    my $vep_format_field_column_href;
+
+    ## Default(s)
+
+    my $tmpl = {
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        parse_vep => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$parse_vep,
+            strict_type => 1,
+        },
+        vep_format_field_column_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_format_field_column_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Skip if CSQ line was not present in VCF header
+    return if ( not exists $meta_data_href->{INFO}{CSQ} );
+
+    ## Get "Format" of VEP feature fields within VEP CSQ header line
+    ( my $vep_format ) = $meta_data_href->{INFO}{CSQ} =~ /Format:\s(\S+)"\>/sxm;
+
+    my @vep_format_fields = split /[$PIPE]/sxm, $vep_format;
+
+  FIELD:
+    while ( my ( $field_index, $field ) = each @vep_format_fields ) {
+
+        ## Set order of VEP features fields
+        $vep_format_field_column_href->{$field} = $field_index;
+    }
+
+    return if ( not $parse_vep );
+
+    if (    exists $vep_format_field_column_href->{HGNC_ID}
+        and exists $vep_format_field_column_href->{Consequence} )
+    {
+
+        $meta_data_href->{INFO}{most_severe_consequence} =
+q{##INFO=<ID=most_severe_consequence,Number=.,Type=String,Description="Most severe genomic consequence.">};
+
+    }
+    return 1;
+}
+
+sub write_meta_data {
+
+## Function : Writes metadata to filehandle specified by order in meta_data_sections.
+## Returns  :
+## Arguments: $FILEHANDLE       => The filehandle to write to
+##          : $meta_data_href   => Hash for meta_data {REF}
+##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $meta_data_href;
+    my $SELECTFILEHANDLE;
+
+    my $tmpl = {
+        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        SELECTFILEHANDLE => { store => \$SELECTFILEHANDLE, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Determine order to print for standard vcf schema
+    my @meta_data_vcf_schemas =
+      qw{ fileformat ALT FILTER FORMAT INFO contig software other };
+
+    ## Dispatch table of how to write meta data
+    my %write_record = (
+        contig => \&_write_vcf_schema,    # Written "as is"
+        other  => \&_write_vcf_schema,
+        vcf_id =>
+          \&_write_vcf_schema_id_line, # All standard vcf_schema with vcf_id except contig
+    );
+
+  VCF_SCHEMA:
+    foreach my $vcf_schema (@meta_data_vcf_schemas) {
+
+        ## Meta data record exists
+        next VCF_SCHEMA if ( not exists $meta_data_href->{$vcf_schema} );
+
+        if ( exists $write_record{$vcf_schema} ) {
+
+            $write_record{$vcf_schema}->(
+                {
+                    FILEHANDLE       => $FILEHANDLE,
+                    meta_data_href   => $meta_data_href,
+                    SELECTFILEHANDLE => $SELECTFILEHANDLE,
+                    vcf_schema       => $vcf_schema,
+                }
+            );
+            next VCF_SCHEMA;
+        }
+
+        $write_record{vcf_id}->(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                meta_data_href   => $meta_data_href,
+                SELECTFILEHANDLE => $SELECTFILEHANDLE,
+                vcf_schema       => $vcf_schema,
+            }
+        );
+    }
+    return;
+}
+
+sub _write_to_file {
+
+## Function : Writes metadata line to filehandle(s)
+## Returns  :
+## Arguments: $FILEHANDLE       => The filehandle to write to
+##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+##          : $meta_data_line   => Meta data line
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $meta_data_line;
+    my $SELECTFILEHANDLE;
+
+    my $tmpl = {
+        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        meta_data_line => { defined => 1, required => 1, store => \$meta_data_line, },
+        SELECTFILEHANDLE => { store => \$SELECTFILEHANDLE, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    say {$FILEHANDLE} $meta_data_line;
+
+    if ( defined $SELECTFILEHANDLE ) {
+
+        say {$SELECTFILEHANDLE} $meta_data_line;
+    }
+    return;
+}
+
+sub _write_vcf_schema {
+
+## Function : Writes vcf schema records metadata to filehandle(s)
+## Returns  :
+## Arguments: $FILEHANDLE       => The filehandle to write to
+##          : $meta_data_href   => Hash for meta_data {REF}
+##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+##          : $vcf_schema       => Vcf schema
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $meta_data_href;
+    my $SELECTFILEHANDLE;
+    my $vcf_schema;
+
+    my $tmpl = {
+        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        SELECTFILEHANDLE => { store   => \$SELECTFILEHANDLE, },
+        vcf_schema       => { defined => 1, required => 1, store => \$vcf_schema, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  RECORD_LINE:
+    foreach my $header_line ( @{ $meta_data_href->{$vcf_schema}{$vcf_schema} } ) {
+
+        _write_to_file(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                meta_data_line   => $header_line,
+                SELECTFILEHANDLE => $SELECTFILEHANDLE,
+            }
+        );
+    }
+    return;
+}
+
+sub _write_vcf_schema_id_line {
+
+## Function : Writes vcf id metadata to filehandle(s)
+## Returns  :
+## Arguments: $FILEHANDLE       => The filehandle to write to
+##          : $meta_data_href   => Hash for meta_data {REF}
+##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+##          : $vcf_schema       => Vcf schema
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $meta_data_href;
+    my $SELECTFILEHANDLE;
+    my $vcf_schema;
+
+    my $tmpl = {
+        FILEHANDLE     => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        meta_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$meta_data_href,
+            strict_type => 1,
+        },
+        SELECTFILEHANDLE => { store   => \$SELECTFILEHANDLE, },
+        vcf_schema       => { defined => 1, required => 1, store => \$vcf_schema, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  VCF_ID:
+    foreach my $vcf_id ( sort keys %{ $meta_data_href->{$vcf_schema} } ) {
+
+        my $header_line = $meta_data_href->{$vcf_schema}{$vcf_id};
+
+        _write_to_file(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                meta_data_line   => $header_line,
+                SELECTFILEHANDLE => $SELECTFILEHANDLE,
+            }
+        );
+    }
+
+    ## Map of feature file type and corresponding filehandle
+    my %feature_annotation = (
+        range  => $FILEHANDLE,
+        select => $SELECTFILEHANDLE,
+    );
+
+    ## Add select specific annotations
+  FEATURE_FILE_TYPE:
+    while ( my ( $feature_file_type, $ANNOTATION_FH ) = each %feature_annotation ) {
+
+      VCF_ID:
+        foreach
+          my $vcf_id ( sort keys %{ $meta_data_href->{$feature_file_type}{$vcf_schema} } )
+        {
+
+            my $header_line = $meta_data_href->{$feature_file_type}{$vcf_schema}{$vcf_id};
+            if ( defined $ANNOTATION_FH ) {
+
+                say {$ANNOTATION_FH} $header_line;
+            }
+        }
+    }
+    return;
 }
 
 1;
