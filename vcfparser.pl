@@ -522,7 +522,8 @@ sub read_infile_vcf {
                     format_line      => $line,
                     SELECTFILEHANDLE => $SELECT_FH,
                 }
-            ) next;
+            );
+            next;
         }
         if ( $_ =~ /^(\S+)/ ) {
 
