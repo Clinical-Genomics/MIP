@@ -17,8 +17,6 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Unix::Standard_streams qw{ unix_standard_streams };
-use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
@@ -111,24 +109,6 @@ sub singularity_exec {
         push @commands, @{$singularity_container_cmds_ref};
     }
 
-    push @commands,
-      unix_standard_streams(
-        {
-            stderrfile_path        => $stderrfile_path,
-            stderrfile_path_append => $stderrfile_path_append,
-            stdinfile_path         => $stdinfile_path,
-            stdoutfile_path        => $stdoutfile_path,
-        }
-      );
-
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
-            separator    => $SPACE,
-
-        }
-    );
     return @commands;
 }
 

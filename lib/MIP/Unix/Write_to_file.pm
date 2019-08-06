@@ -64,7 +64,8 @@ sub unix_write_to_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parse::Parameter qw{ parse_commands_for_singularity };
+    #use MIP::Parse::Parameter qw{ parse_commands_for_singularity };
+    use MIP::Parse::Singularity qw{ parse_commands_for_singularity };
 
     # Check if command is to be executed inside a singularity container
     if ($WITH_SINGULARITY) {

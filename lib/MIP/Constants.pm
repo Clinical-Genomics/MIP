@@ -52,6 +52,7 @@ BEGIN {
       $PIPE
       $SEMICOLON
       $SINGLE_QUOTE
+      @SINGULARITY_BIND_PATHS
       %SO_CONSEQUENCE_SEVERITY
       $SPACE
       $TAB
@@ -210,10 +211,24 @@ sub set_analysis_constants {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Clone qw{ clone };
+    use File::Basename;
 
-    Readonly our $WITH_SINGULARITY => $active_parameter_href->{with_singularity};
-    Readonly our %SINGULARITY_CONTAINER =>
-      clone( $active_parameter_href->{singularity_container} );
+    ## For singularity
+    Readonly our $WITH_SINGULARITY       => $active_parameter_href->{with_singularity};
+    Readonly our @SINGULARITY_BIND_PATHS => (
+        $active_parameter_href->{reference_dir},
+        $active_parameter_href->{outdata_ir},
+        keys %{ $active_parameter_href->{infile_dirs} },
+        $active_parameter_href->{temp_directory},
+        dirname( $active_parameter_href->{pedigree_file} ),
+    );
+    if ( $active_parameter_href->{singularity_container} ) {
+        Readonly our %SINGULARITY_CONTAINER =>
+          clone( $active_parameter_href->{singularity_container} );
+    }
+    else {
+        Readonly our %SINGULARITY_CONTAINER => ();
+    }
 
     return;
 

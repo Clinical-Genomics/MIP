@@ -258,16 +258,6 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
     );
 
     option(
-        q{singularity_container} => (
-            cmd_aliases   => [qw{ sic }],
-            cmd_tags      => [q{executable=path/to/container}],
-            documentation => q{Specify path to singularity container for executable},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
         q{start_with_recipe} => (
             cmd_aliases   => [qw{ swr }],
             documentation => q{Start analysis with recipe},
