@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_samtools_subsample_mt };
@@ -169,7 +169,7 @@ sub analysis_samtools_subsample_mt {
     my @infile_paths         = @{ $io{in}{file_paths} };
 
     ## Find Mitochondrial contig infile_path
-    my $infile_path = first_value { / $infile_name_prefix [.]M /sxm } @infile_paths;
+    my $infile_path = first_value { / $infile_name_prefix [.]M|chrM /sxm } @infile_paths;
 
     my $job_id_chain = get_recipe_attributes(
         {

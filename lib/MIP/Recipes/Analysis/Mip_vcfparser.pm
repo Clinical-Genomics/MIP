@@ -304,7 +304,7 @@ sub analysis_mip_vcfparser {
 
         ## Get parameters
         my $padding;
-        if ( $contig =~ / MT | M /xms ) {
+        if ( $contig =~ / MT | M | chrM /xms ) {
 
             # Special case for mitochondrial contig annotation
             $padding = $ANNOTATION_DISTANCE_MT;
