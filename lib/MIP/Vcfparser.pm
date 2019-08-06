@@ -32,6 +32,7 @@ BEGIN {
       add_program_to_meta_data_header
       build_interval_tree
       define_select_data_headers
+      parse_vcf_format_line
       parse_vep_csq_schema
       write_meta_data
     };
@@ -274,6 +275,49 @@ q{##INFO=<ID=No_hgnc_symbol,Number=.,Type=String,Description="Clinically relevan
     return %select_data;
 }
 
+sub parse_vcf_format_line {
+
+## Function : Parse VCF format line (#CHROM) and writes line to filehandle(s)
+## Returns  :
+## Arguments: $FILEHANDLE       => The filehandle to write to
+##          : $format_line      => VCF format line
+##          : $SELECTFILEHANDLE => The select filehandle to write to {Optional}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $format_line;
+    my $SELECTFILEHANDLE;
+
+    my $tmpl = {
+        FILEHANDLE  => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        format_line => {
+            defined     => 1,
+            required    => 1,
+            store       => \$format_line,
+            strict_type => 1,
+        },
+        SELECTFILEHANDLE => { store => \$SELECTFILEHANDLE, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Split vcf format/schema line
+    my @vcf_format_columns = split $TAB, $format_line;
+
+    ## Write #CHROM header line
+    _write_to_file(
+        {
+            FILEHANDLE       => $FILEHANDLE,
+            meta_data_line   => $format_line,
+            SELECTFILEHANDLE => $SELECTFILEHANDLE,
+        }
+    );
+
+    return @vcf_format_columns;
+}
+
 sub parse_vep_csq_schema {
 
 ## Function : Parse VEP CSQ format field and adds the format field index
@@ -379,7 +423,7 @@ sub write_meta_data {
 
     ## Dispatch table of how to write meta data
     my %write_record = (
-        contig => \&_write_vcf_schema,       # Written "as is"
+        contig => \&_write_vcf_schema,    # Written "as is"
         other  => \&_write_vcf_schema,
         vcf_id =>
           \&_write_vcf_schema_id_line, # All standard vcf_schema with vcf_id except contig
@@ -529,7 +573,7 @@ sub _write_vcf_schema_id_line {
   VCF_ID:
     foreach my $vcf_id ( sort keys %{ $meta_data_href->{$vcf_schema} } ) {
 
-      my $header_line = $meta_data_href->{$vcf_schema}{$vcf_id};
+        my $header_line = $meta_data_href->{$vcf_schema}{$vcf_id};
 
         _write_to_file(
             {
@@ -555,7 +599,7 @@ sub _write_vcf_schema_id_line {
           my $vcf_id ( sort keys %{ $meta_data_href->{$feature_file_type}{$vcf_schema} } )
         {
 
-	  my $header_line = $meta_data_href->{$feature_file_type}{$vcf_schema}{$vcf_id};
+            my $header_line = $meta_data_href->{$feature_file_type}{$vcf_schema}{$vcf_id};
             if ( defined $ANNOTATION_FH ) {
 
                 say {$ANNOTATION_FH} $header_line;
