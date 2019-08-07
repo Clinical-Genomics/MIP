@@ -127,34 +127,35 @@ sub parse_sing_bind_paths {
     ## Split to dir path to array
     foreach my $dir_path ( @{$dir_paths_ref} ) {
 
-        push @bind_paths, [ splitdir $dir_path];
+        push @bind_paths, [ splitdir($dir_path) ];
     }
 
     ## Sort according to size
     @bind_paths = sort { @{$a} <=> @{$b} } @bind_paths;
 
     ## Reformat to strings
-    @bind_paths = map { catdir @{$_} } @bind_paths;
+    @bind_paths = map { catdir( @{$_} ) } @bind_paths;
 
     my @reduced_bind_paths;
 
   BIND_PATH:
     while (@bind_paths) {
 
-        ## shift array
+        ## Shift array
         my $bind_path = shift @bind_paths;
 
-        ## save path
+        ## Save path
         push @reduced_bind_paths, $bind_path;
 
-        ## get indexes matching
+        ## Get indexes of all the paths in the array that have an identical beginning to one we are testing
+        ## The \Q and \E in the regex turns of interpolation
         my @match_idxs =
-          grep { $bind_paths[$_] =~ /^\Q$bind_path\E.*/xms } 0 .. $#bind_paths;
+          grep { $bind_paths[$_] =~ / ^\Q$bind_path\E.* /xms } 0 .. $#bind_paths;
 
       MATCH_IDX:
         foreach my $match_idx ( reverse @match_idxs ) {
 
-            ## remove matching elements
+            ## Remove those paths with matching starts
             splice @bind_paths, $match_idx, 1;
         }
     }

@@ -67,8 +67,8 @@ my %active_parameter = (
     pedigree_file         => catfile( dirname($Bin), qw{ t data pedigree } ),
     reference_dir         => catdir( dirname($Bin), qw{ t data references } ),
     singularity_container => {
-        q{TIDDIT.py} => {
-            container_path   => catfile(qw{ path to TIDDIT.simg }),
+        q{test.py} => {
+            container_path   => catfile(qw{ path to test.sif }),
             extra_bind_paths => [ catfile( dirname($Bin), qw{ t data input.bam } ) ],
         },
     },
@@ -80,14 +80,7 @@ my %active_parameter = (
 set_analysis_constants( { active_parameter_href => \%active_parameter, } );
 
 ## Given some commands were some are executables within a singularity container.
-my @commands = (
-    qw{ TIDDIT.py --sv },
-    q{-p 6},
-    q{-o} . $SPACE . catdir(qw{ output path }),
-    q{--ref }
-      . catfile( dirname($Bin), qw{ t data references grch37_homo_sapiens_-d5-.fasta } ),
-    q{--bam } . catfile( dirname($Bin), qw{ t data input.bam } ),
-);
+my @commands = (qw{ test.py });
 
 ## Then construct and prepend singularity command
 my @expected = (
@@ -98,7 +91,7 @@ my @expected = (
       . catdir(qw{ temp folder })
       . $COMMA
       . catdir( dirname($Bin), qw{ t data } ),
-    catfile(qw{ path to TIDDIT.simg }),
+    catfile(qw{ path to test.sif }),
     @commands,
 );
 

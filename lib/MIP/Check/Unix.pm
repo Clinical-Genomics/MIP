@@ -66,25 +66,6 @@ sub check_binary_in_path {
 
     use MIP::Get::Parameter qw{ get_dynamic_conda_path };
 
-    ## Check if the binary has a singularity image
-    if (
-        $active_parameter_href->{with_singularity}
-        and can_run(
-            $active_parameter_href->{singularity_container}{$binary}{container_path}
-        )
-      )
-    {
-
-        ## Broadcast successful scan through PATH for supplied binary
-        _check_binary_broadcast_pass(
-            {
-                binary => catfile($binary),
-                log    => $log,
-            }
-        );
-        return 1;
-    }
-
     ## Search for binary in PATH in any MIP conda env defined by config
     ## or conda base
     my $env_binary_path = get_dynamic_conda_path(
@@ -95,8 +76,31 @@ sub check_binary_in_path {
         }
     );
 
+    ## Check if the binary has a singularity image
+    if (    $active_parameter_href->{with_singularity}
+        and $active_parameter_href->{singularity_container}{$binary} )
+    {
+
+        if (
+            can_run(
+                $active_parameter_href->{singularity_container}{$binary}{container_path}
+            )
+          )
+        {
+
+            ## Broadcast successful scan through PATH for supplied binary
+            _check_binary_broadcast_pass(
+                {
+                    binary => catfile($binary),
+                    log    => $log,
+                }
+            );
+            return 1;
+        }
+    }
+
     ## Search for binary in conda envs path
-    if ( can_run( catfile( $env_binary_path, $binary ) ) ) {
+    elsif ( can_run( catfile( $env_binary_path, $binary ) ) ) {
 
         ## Broadcast successful scan through PATH for supplied binary
         _check_binary_broadcast_pass(
@@ -109,7 +113,7 @@ sub check_binary_in_path {
     }
 
     # Search for binary in PATH
-    if ( can_run($binary) ) {
+    elsif ( can_run($binary) ) {
 
         ## Broadcast successful scan through PATH for supplied binary
         _check_binary_broadcast_pass(

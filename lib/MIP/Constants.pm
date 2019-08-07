@@ -191,7 +191,7 @@ sub set_analysis_constants {
 
 ## Function : Set analysis constants
 ## Returns  :
-## Arguments: $active_parameter_href    => Analysis recipe hash {REF}
+## Arguments: $active_parameter_href => Analysis recipe hash {REF}
 
     my ($arg_href) = @_;
 
