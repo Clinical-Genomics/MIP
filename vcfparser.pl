@@ -415,7 +415,8 @@ sub read_infile_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Vcf qw{ check_vcf_variant_line parse_vcf_header };
+    use MIP::File::Format::Vcf
+      qw{ check_vcf_variant_line parse_vcf_header set_line_elements_in_vcf_record };
     use MIP::Vcfparser qw{
       add_feature_file_meta_data_to_vcf
       add_program_to_meta_data_header
@@ -545,12 +546,14 @@ sub read_infile_vcf {
             }
         );
 
-        ##Add line elements to record hash
-        while ( my ( $element_index, $element ) = each(@line_elements) ) {
-
-            $record{ $vcf_format_columns[$element_index] } =
-              $element;    #Link vcf format headers to the line elements
-        }
+## Adds variant line elements to record hash
+        set_line_elements_in_vcf_record(
+            {
+                line_elements_ref      => \@line_elements,
+                vcf_record_href        => \%record,
+                vcf_format_columns_ref => \@vcf_format_columns,
+            }
+        );
 
         my @info_elements = split( /;/, $record{INFO} );    #Add INFO elements
 

@@ -26,7 +26,8 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_vcf_variant_line parse_vcf_header  };
+    our @EXPORT_OK =
+      qw{ check_vcf_variant_line parse_vcf_header set_line_elements_in_vcf_record  };
 }
 
 ## Constants
@@ -40,7 +41,6 @@ sub check_vcf_variant_line {
 ##          : $log                       => Log object
 ##          : $variant_line              => Variant line
 ##          : $variant_line_elements_ref => Array for variant line elements {REF}
-
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
@@ -157,6 +157,53 @@ sub parse_vcf_header {
     ## All other meta-data headers - Add to array without using regexp
     push @{ $meta_data_href->{other}{other} }, $meta_data_string;
     return 1;
+}
+
+sub set_line_elements_in_vcf_record {
+
+## Function : Adds variant line elements to record hash
+## Returns  :
+## Arguments: $line_elements_ref      => Variant line elements {REF}
+##          : $vcf_format_columns_ref => VCF format colums
+##          : $vcf_record_href        => Hash for variant line data {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+
+    my $line_elements_ref;
+    my $vcf_format_columns_ref;
+    my $vcf_record_href;
+
+    my $tmpl = {
+        line_elements_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$line_elements_ref,
+            strict_type => 1,
+        },
+        vcf_format_columns_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_format_columns_ref,
+            strict_type => 1,
+        },
+        vcf_record_href => {
+            default  => {},
+            defined  => 1,
+            required => 1,
+            store    => \$vcf_record_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add vcf_schema as keys and line elements as value to record hash
+    @{$vcf_record_href}{ @{$vcf_format_columns_ref} } = @{$line_elements_ref};
+
+    return;
 }
 
 1;
