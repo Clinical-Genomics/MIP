@@ -26,7 +26,7 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_vcf_variant_line parse_vcf_header  };
+    our @EXPORT_OK = qw{ check_vcf_variant_line set_line_elements_in_vcf_record parse_vcf_header  };
 }
 
 ## Constants
@@ -40,7 +40,6 @@ sub check_vcf_variant_line {
 ##          : $log                       => Log object
 ##          : $variant_line              => Variant line
 ##          : $variant_line_elements_ref => Array for variant line elements {REF}
-
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
@@ -84,6 +83,49 @@ sub check_vcf_variant_line {
     $log->fatal(qq{No INFO field at line number: $input_line_number});
     $log->fatal(qq{Displaying malformed line: $variant_line});
     exit 1;
+}
+
+sub set_line_elements_in_vcf_record {
+
+## Function : Adds variant line elements to record hash
+## Returns  :
+## Arguments: $line_elements_ref      => Variant line elements {REF}
+##          : $vcf_format_columns_ref => VCF format colums
+##          : $vcf_record_href        => Hash for variant line data {REF}
+
+  my ($arg_href) = @_;
+
+  ## Flatten argument(s)
+
+    my $line_elements_ref;
+    my $vcf_format_columns_ref;
+    my $vcf_record_href;
+
+    my $tmpl = {
+        line_elements_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$line_elements_ref,
+            strict_type => 1,
+        },
+        vcf_format_columns_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_format_columns_ref,
+            strict_type => 1,
+        },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+
+    ## Add vcf_schema as keys and line elements as value to record hash
+    @{$vcf_record_href}{ @{$vcf_format_columns_ref} } = @{$line_elements_ref};
+
+    return;
 }
 
 sub parse_vcf_header {
