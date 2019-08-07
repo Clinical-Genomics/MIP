@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -64,6 +64,7 @@ my $log = test_log( { log_name => uc q{mip_download}, } );
 ## Given a bad reference key
 my %active_parameter =
   test_mip_hashes( { mip_hash_name => q{download_active_parameter}, } );
+
 ## Clean-up since there are already references in there
 delete $active_parameter{reference};
 $active_parameter{reference}{not_a_reference} = [qw{ decoy_5 }];
@@ -79,12 +80,12 @@ trap {
     )
 };
 
-## Then exit and throw FATAL log message
+## Then exit and throw warn log message
 ok( $trap->exit, q{Exit if the reference key cannot be found} );
 like(
     $trap->stderr,
     qr/Cannot \s+ find \s+ reference \s+ key/xms,
-    q{Throw fatal log message if the reference key cannot be found}
+    q{Throw warn log message if the reference key cannot be found}
 );
 
 # Clean-up
@@ -105,12 +106,11 @@ trap {
     )
 };
 
-## Then exit and throw FATAL log message
-ok( $trap->exit, q{Exit if the reference key cannot be found} );
+## Then throw warn log message
 like(
     $trap->stderr,
     qr/Cannot \s+ find \s+ version \s+ key/xms,
-    q{Throw fatal log message if the reference key cannot be found}
+    q{Throw warn log message if the reference key cannot be found}
 );
 
 ## Given an valid reference

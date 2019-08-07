@@ -28,7 +28,7 @@ reference_genome_versions:
   data_type: ARRAY
   default:
    - grch37
-   - hg38
+   - grch38
   element_separator: ,
   type: recipe_argument
 sacct_format_fields:

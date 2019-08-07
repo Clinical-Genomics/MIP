@@ -71,10 +71,10 @@ sub _build_usage {
         q{reference_genome_versions} => (
             cmd_aliases   => [qw{ rg }],
             cmd_flag      => q{reference_genome_versions},
-            cmd_tags      => [q{Default: GRCh37, hg38}],
+            cmd_tags      => [q{Default: grch37, grch38}],
             documentation => q{Reference genomes to download},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
+            isa           => ArrayRef [ enum( [qw{ grch37 grch38 }] ), ],
         ),
     );
 

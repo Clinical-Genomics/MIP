@@ -8,7 +8,7 @@ project_id: development
 reference:
   human_reference:
     - decoy_5
-    - decoy_hla
+    - assembly38
   1000g_all_sv:
     - phase3_v8.20130502
   1000g_all_wgs:
@@ -119,12 +119,12 @@ reference_feature:
         outfile_check_method: md5sum
         outfile_index_check_method: md5sum
     grch38:
-      decoy_hla:
-        file: GRCh38_full_analysis_set_plus_decoy_hla.fa
-        file_index: GRCh38_full_analysis_set_plus_decoy_hla.fa.fai
-        outfile: grch38_homo_sapiens_-decoy_hla-.fasta
-        outfile_index: grch38_homo_sapiens_-decoy_hla-.fasta.fai
-        url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/
+      assembly38:
+        file: Homo_sapiens_assembly38.fasta
+        file_index: Homo_sapiens_assembly38.fasta.fai
+        outfile: grch38_homo_sapiens_-assembly-.fasta
+        outfile_index: grch38_homo_sapiens_-assembly-.fasta.fai
+        url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   1000g_all_sv:
     grch37:
       phase3_v8.20130502:
