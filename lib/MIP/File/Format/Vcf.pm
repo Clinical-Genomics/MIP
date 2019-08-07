@@ -121,7 +121,10 @@ sub set_line_elements_in_vcf_record {
             defined     => 1,
             required    => 1,
             store       => \$vcf_record_href,
+          },
+          };
 
+          check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
     ## Add vcf_schema as keys and line elements as value to record hash
     @{$vcf_record_href}{ @{$vcf_format_columns_ref} } = @{$line_elements_ref};
 
