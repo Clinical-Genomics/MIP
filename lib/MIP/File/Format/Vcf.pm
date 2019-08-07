@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $SPACE $TAB };
 
 BEGIN {
     require Exporter;
@@ -26,7 +26,64 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ parse_vcf_header  };
+    our @EXPORT_OK = qw{ check_vcf_variant_line parse_vcf_header  };
+}
+
+## Constants
+Readonly my $INFO_COL_NR => 7;
+
+sub check_vcf_variant_line {
+
+## Function : Check variant line elements
+## Returns  :
+## Arguments: $input_line_number         => Input line number
+##          : $log                       => Log object
+##          : $variant_line              => Variant line
+##          : $variant_line_elements_ref => Array for variant line elements {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $input_line_number;
+    my $log;
+    my $variant_line;
+    my $variant_line_elements_ref;
+
+    my $tmpl = {
+        input_line_number => {
+            defined     => 1,
+            required    => 1,
+            store       => \$input_line_number,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        variant_line => {
+            defined     => 1,
+            required    => 1,
+            store       => \$variant_line,
+            strict_type => 1,
+        },
+        variant_line_elements_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$variant_line_elements_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Check that we have some data in INFO field
+    return 1 if ( defined $variant_line_elements_ref->[$INFO_COL_NR] );
+
+    $log->fatal(qq{No INFO field at line number: $input_line_number});
+    $log->fatal(qq{Displaying malformed line: $variant_line});
+    exit 1;
 }
 
 sub parse_vcf_header {
