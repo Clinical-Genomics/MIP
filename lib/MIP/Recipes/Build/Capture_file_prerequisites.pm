@@ -6,7 +6,7 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -161,16 +161,16 @@ sub build_capture_file_prerequisites {
     my $submit_switch;
 
     ## Unpack parameters
-    my %recipe_resource = get_recipe_resources(
-        {
-            active_parameter_href => $active_parameter_href,
-            recipe_name           => $recipe_name,
-        }
-    );
     my $interval_list_suffix        = $parameter_build_suffixes_ref->[0];
     my $padded_interval_list_suffix = $parameter_build_suffixes_ref->[1];
     my $recipe_mode                 = $active_parameter_href->{$recipe_name};
-    my $referencefile_path          = $active_parameter_href->{human_genome_reference};
+    my %recipe_resource             = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => q{mip},
+        }
+    );
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
 
     ## No supplied FILEHANDLE i.e. create new sbatch script
     if ( not defined $FILEHANDLE ) {

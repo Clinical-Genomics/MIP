@@ -33,6 +33,7 @@ reference:
   clinvar:
     - 20181028
     - 20190305
+    - 20190731
   dbnsfp:
     - 3.5a
     - 4.0b2a
@@ -288,6 +289,16 @@ reference_feature:
         outfile: grch38_clinvar_-20190305-.vcf.gz
         outfile_check: grch38_clinvar_-20190305-.vcf.gz.md5
         outfile_index: grch38_clinvar_-20190305-.vcf.gz.tbi
+        outfile_check_method: md5sum
+        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2019/
+
+      20190731:
+        file: clinvar_20190731.vcf.gz
+        file_check: clinvar_20190731.vcf.gz.md5
+        file_index: clinvar_20190731.vcf.gz.tbi
+        outfile: grch38_clinvar_-20190731-.vcf.gz
+        outfile_check: grch38_clinvar_-20190731-.vcf.gz.md5
+        outfile_index: grch38_clinvar_-20190731-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2019/
   dbnsfp:

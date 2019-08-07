@@ -789,6 +789,7 @@ sub get_seq_dict_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use IPC::Cmd qw{ run };
     use MIP::Unix::System qw{ system_cmd_call };
 
     ## Build regexp to find contig names
@@ -805,16 +806,19 @@ sub get_seq_dict_contigs {
     $find_contig_name .= q?my $contig_name = $1; ?;
 
     # Write to STDOUT
-    $find_contig_name .= q?print $contig_name, q{,};} }' ?;
+    $find_contig_name .= q?print $contig_name, q{,};} }'?;
 
     # Returns a comma seperated string of sequence contigs from dict file
-    my $find_contig_cmd = qq{$find_contig_name $dict_file_path};
+    my $find_contig_cmd = qq{$find_contig_name $dict_file_path };
 
     # System call
-    my %return = system_cmd_call( { command_string => $find_contig_cmd, } );
+    my (
+        $success_ref,    $error_message_ref, $full_buf_ref,
+        $stdout_buf_ref, $stderr_buf_ref
+    ) = run( command => [$find_contig_cmd], verbose => 0 );
 
     # Save contigs
-    my @contigs = split $COMMA, join $COMMA, @{ $return{output} };
+    my @contigs = split $COMMA, join $COMMA, @{$stdout_buf_ref};
 
     if ( not @contigs ) {
 
