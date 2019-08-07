@@ -415,7 +415,7 @@ sub read_infile_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Vcf qw{ parse_vcf_header };
+    use MIP::File::Format::Vcf qw{ check_vcf_variant_line parse_vcf_header };
     use MIP::Vcfparser qw{
       add_feature_file_meta_data_to_vcf
       add_program_to_meta_data_header
@@ -538,10 +538,10 @@ sub read_infile_vcf {
 
         check_vcf_variant_line(
             {
-                input_line_number => $INPUT_LINE_NUMBER
-                  log             => $log,
+                input_line_number         => $INPUT_LINE_NUMBER,
+                log                       => $log,
                 variant_line              => $line,
-                variant_line_elements_ref => @line_elements,
+                variant_line_elements_ref => \@line_elements,
             }
         );
 
