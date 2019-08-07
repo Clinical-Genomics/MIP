@@ -23,7 +23,7 @@ use MIP::Cli::Utils qw{ run }
   ;    # MooseX::App required sub. Called internally by MooseX::App
 
 # Set the version for version checking
-our $VERSION = 1.08;
+our $VERSION = 1.09;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -282,6 +282,16 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             documentation => q{Set the capture kit acronym shortcut in pedigree file},
             is            => q{rw},
             isa           => HashRef,
+        )
+    );
+
+    option(
+        q{with_singularity} => (
+            cmd_aliases => [qw{ wsi }],
+            documentation =>
+              q{Run programs inside a singularity container where available},
+            is  => q{rw},
+            isa => Bool,
         )
     );
 

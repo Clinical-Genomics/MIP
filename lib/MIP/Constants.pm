@@ -42,6 +42,7 @@ BEGIN {
       $EQUALS
       $ESCAPE
       $FORWARD_SLASH
+      %SINGULARITY_CONTAINER
       $LOG
       $MIP_VERSION
       $MOOSEX_APP_SCEEN_WIDTH
@@ -51,10 +52,13 @@ BEGIN {
       $PIPE
       $SEMICOLON
       $SINGLE_QUOTE
+      @SINGULARITY_BIND_PATHS
       %SO_CONSEQUENCE_SEVERITY
       $SPACE
       $TAB
       $UNDERSCORE
+      $WITH_SINGULARITY
+      set_analysis_constants
     };
 }
 
@@ -182,5 +186,52 @@ Readonly our $SINGLE_QUOTE   => q{'};
 Readonly our $SPACE          => q{ };
 Readonly our $TAB            => qq{\t};
 Readonly our $UNDERSCORE     => q{_};
+
+sub set_analysis_constants {
+
+## Function : Set analysis constants
+## Returns  :
+## Arguments: $active_parameter_href => Analysis recipe hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Clone qw{ clone };
+    use File::Basename;
+
+    ## For singularity
+    Readonly our $WITH_SINGULARITY       => $active_parameter_href->{with_singularity};
+    Readonly our @SINGULARITY_BIND_PATHS => (
+        $active_parameter_href->{reference_dir},
+        $active_parameter_href->{outdata_ir},
+        keys %{ $active_parameter_href->{infile_dirs} },
+        $active_parameter_href->{temp_directory},
+        dirname( $active_parameter_href->{pedigree_file} ),
+    );
+    if ( $active_parameter_href->{singularity_container} ) {
+        Readonly our %SINGULARITY_CONTAINER =>
+          clone( $active_parameter_href->{singularity_container} );
+    }
+    else {
+        Readonly our %SINGULARITY_CONTAINER => ();
+    }
+
+    return;
+
+}
 
 1;
