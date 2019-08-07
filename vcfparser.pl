@@ -545,16 +545,6 @@ sub read_infile_vcf {
             }
         );
 
-<<<<<<< HEAD
-        ##Add line elements to record hash
-        while ( my ( $element_index, $element ) = each(@line_elements) ) {
-
-            $record{ $vcf_format_columns[$element_index] } =
-              $element;    #Link vcf format headers to the line elements
-        }
-
-        my @info_elements = split( /;/, $record{INFO} );    #Add INFO elements
-=======
 ## Adds variant line elements to record hash
             set_line_elements_in_vcf_record(
                 {
@@ -563,7 +553,6 @@ sub read_infile_vcf {
                     vcf_format_columns_ref => \@vcf_format_columns,
                 }
             );
->>>>>>> feat(vcfparser): Set line elements and format line to vcf_record hash
 
         ## Collect key value pairs in INFO field
         foreach my $element (@info_elements) {
