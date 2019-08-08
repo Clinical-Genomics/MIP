@@ -37,6 +37,7 @@ BEGIN {
 
 ## Constants
 Readonly my $ANNOTATION_DISTANCE_MT => $ANALYSIS{ANNOTATION_DISTANCE_MT};
+Readonly my $MT_CONTIG_ID_REG_EXP   => q{MT | M | chrM};
 
 sub analysis_mip_vcfparser {
 
@@ -304,7 +305,7 @@ sub analysis_mip_vcfparser {
 
         ## Get parameters
         my $padding;
-        if ( $contig =~ / MT | M | chrM /xms ) {
+        if ( $contig =~ / $MT_CONTIG_ID_REG_EXP /xms ) {
 
             # Special case for mitochondrial contig annotation
             $padding = $ANNOTATION_DISTANCE_MT;
@@ -1012,7 +1013,7 @@ sub analysis_mip_vcfparser_sv_wgs {
     foreach my $contig (@contigs) {
 
         my $padding;
-        if ( $contig =~ / MT | M | chrM /sxm ) {
+        if ( $contig =~ / $MT_CONTIG_ID_REG_EXP /sxm ) {
 
             ## Special case for mitochondrial contig annotation
             $padding = $ANNOTATION_DISTANCE_MT;
@@ -1245,7 +1246,7 @@ sub _add_all_mt_var_from_research_to_clinical {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $add_all_mt_var and $contig =~ / MT | M | chrM /sxm ) {
+    if ( $add_all_mt_var and $contig =~ / $MT_CONTIG_ID_REG_EXP /sxm ) {
 
         say {$FILEHANDLE} q{## Replacing clinical MT variants with research MT variants};
         gnu_cp(
