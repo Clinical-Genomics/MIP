@@ -49,6 +49,7 @@ BEGIN {
       $OPEN_BRACE
       $OPEN_BRACKET
       $PIPE
+      %PRIMARY_CONTIG
       $SEMICOLON
       $SINGLE_QUOTE
       %SO_CONSEQUENCE_SEVERITY
@@ -154,6 +155,60 @@ Readonly our %SO_CONSEQUENCE_SEVERITY => (
     feature_truncation => { genetic_region_annotation => q{genomic_feature} },
     intergenic_variant => { rank                      => 27 },
     intergenic_variant => { genetic_region_annotation => q{intergenic} },
+);
+
+## Contigs
+Readonly our %PRIMARY_CONTIG => (
+    38 => {
+        contigs => [
+            qw{
+              chr1 chr2 chr3 chr4 chr5 chr6
+              chr7 chr8 chr9 chr10 chr11 chr12
+              chr13 chr14 chr15 chr16 chr17 chr18
+              chr19 chr20 chr21 chr22 chrX chrY
+              chrM },
+        ],
+        contigs_size_ordered => [
+            qw{
+              chr1 chr2 chr3 chr4 chr5 chr6
+              chr7 chrX chr8 chr9 chr10 chr11
+              chr12 chr13 chr14 chr15 chr16 chr17
+              chr18 chr19 chr20 chr21 chr22 chrY
+              chrM }
+        ],
+    },
+    37 => {
+        contigs => [
+            qw{
+              1 2 3 4 5 6 7 8 9 10
+              11 12 13 14 15 16 17 18 19 20
+              21 22 X Y MT },
+        ],
+        contigs_size_ordered => [
+            qw{
+              1 2 3 4 5 6 7 X 8 9
+              10 11 12 13 14 15 16 17 18 19
+              20 21 22 Y MT },
+        ],
+    },
+    19 => {
+        contigs => [
+            qw{
+              chr1 chr2 chr3 chr4 chr5 chr6
+              chr7 chr8 chr9 chr10 chr11 chr12
+              chr13 chr14 chr15 chr16 chr17 chr18
+              chr19 chr20 chr21 chr22 chrX chrY
+              chrM },
+        ],
+        contigs_size_ordered => [
+            qw{
+              chr1 chr2 chr3 chr4 chr5 chr6
+              chr7 chrX chr8 chr9 chr10 chr11
+              chr12 chr13 chr14 chr15 chr16 chr17
+              chr18 chr19 chr20 chr21 chr22 chrY
+              chrM }
+        ],
+    },
 );
 
 ## Symbols
