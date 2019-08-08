@@ -1511,7 +1511,7 @@ cadd_vcf_header_file:
   associated_recipe:
    - cadd_ar
   data_type: SCALAR
-  default: grch37_cadd_to_vcf_header_-1.0-.txt
+  default: cadd_to_vcf_header_-1.0-.txt
   exists_check: file
   reference: reference_dir
   type: path
