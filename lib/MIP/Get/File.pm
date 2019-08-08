@@ -18,12 +18,15 @@ use Readonly;
 use List::MoreUtils qw{ any };
 use Path::Iterator::Rule;
 
+## MIPs lib/
+use MIP::Constants qw{ $COMMA $DOT $NEWLINE $SPACE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -38,12 +41,6 @@ BEGIN {
       get_select_file_contigs
       get_seq_dict_contigs };
 }
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 sub get_exom_target_bed_file {
 

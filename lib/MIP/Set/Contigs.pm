@@ -58,8 +58,14 @@ sub set_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use Readonly;
+
+    ## Make a modifiable copy for downstream use of global constant
+    my %primary_contig_clone = Readonly::Clone %PRIMARY_CONTIG;
+
     ## Get hash of genome build version primary assembly contigs
-    my %primary_contig = map { $_ => 1 } @{ $PRIMARY_CONTIG{$version}{contigs} };
+    my %primary_contig;
+    @primary_contig{ @{ $primary_contig_clone{$version}{contigs} } } = ();
 
     ## Get alternative loci set
     @{ $file_info_href->{alt_loci} } =
@@ -68,9 +74,9 @@ sub set_contigs {
     ## Contigs sets to set for primary assembly
     my @primary_contig_sets = qw{ contigs contigs_size_ordered };
 
-## Set primary contig sets
+    ## Set primary contig sets
     @{$file_info_href}{@primary_contig_sets} =
-      @{ $PRIMARY_CONTIG{$version} }{@primary_contig_sets};
+      @{ $primary_contig_clone{$version} }{@primary_contig_sets};
 
     return;
 }

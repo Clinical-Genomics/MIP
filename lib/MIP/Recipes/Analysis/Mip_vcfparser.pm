@@ -1012,7 +1012,7 @@ sub analysis_mip_vcfparser_sv_wgs {
     foreach my $contig (@contigs) {
 
         my $padding;
-        if ( $contig =~ / MT | M /sxm ) {
+        if ( $contig =~ / MT | M | chrM /sxm ) {
 
             ## Special case for mitochondrial contig annotation
             $padding = $ANNOTATION_DISTANCE_MT;
@@ -1245,7 +1245,7 @@ sub _add_all_mt_var_from_research_to_clinical {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $add_all_mt_var and $contig =~ / MT | M /sxm ) {
+    if ( $add_all_mt_var and $contig =~ / MT | M | chrM /sxm ) {
 
         say {$FILEHANDLE} q{## Replacing clinical MT variants with research MT variants};
         gnu_cp(
