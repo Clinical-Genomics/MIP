@@ -159,6 +159,13 @@ reference_feature:
         outfile_index_check_method: md5sum
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
         user: gsapubftp-anonymous
+    grch38:
+      phase1:
+        file: Homo_sapiens_assembly38.known_indels.vcf.gz
+        file_index: Homo_sapiens_assembly38.known_indels.vcf.gz.tbi
+        outfile: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz
+        outfile_index: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
+        url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   1000g_omni:
     grch37:
       2.5:
@@ -545,6 +552,13 @@ reference_feature:
         outfile: grch37_gnomad.genomes_-r2.0.1-.vcf.gz
         outfile_index: grch37_gnomad.genomes_-r2.0.1-.vcf.gz.tbi
         url_prefix: ftp://ftp.ensembl.org/pub/data_files/homo_sapiens/GRCh37/variation_genotype/
+    grch38:
+      r2.1.1:
+        file: gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf.bgz
+        file_index: gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf.bgz.tbi
+        outfile: grch38_gnomad.genomes_liftover-r2.1.1-.vcf.gz
+        outfile_index: grch38_gnomad.genomes_liftover-r2.1.1-.vcf.gz.tbi
+        url_prefix: https://storage.googleapis.com/gnomad-public/release/2.1.1/liftover_grch38/vcf/genomes/
   gnomad_pli_per_gene:
     grch37:
       r2.1.1:
@@ -601,9 +615,7 @@ reference_feature:
         file_index: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi
         outfile: grch38_mills_and_1000g_-gold_standard_indels-.vcf.gz
         outfile_index: grch38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
-        outfile_decompress: gzip
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
-        user: gsapubftp-anonymous
+        url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   rank_model:
     grch37:
       v1.25:
