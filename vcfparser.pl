@@ -27,7 +27,7 @@ use Set::IntervalTree;
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants
-  qw{ %ANALYSIS $COLON $COMMA $NEWLINE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB };
+  qw{ %ANALYSIS $COLON $COMMA $EMPTY_STR $NEWLINE $SEMICOLON %SO_CONSEQUENCE_SEVERITY $SPACE $TAB };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::File::Format::Pli qw{ load_pli_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
@@ -1553,14 +1553,11 @@ sub tree_annotations {
     my $ref_allele       = $line_elements_ref->[3];
     my $start            = $line_elements_ref->[1];
 
-    ## Range annotations
-    if ( defined $tree_href->{$range_file_key}{$scontig} ) {
-
-        ## Feature to be collected
-        my $feature;
+    ## Feature file annotations
+    if ( defined $tree_href->{$range_file_key}{$contig} ) {
 
         ## Convert precise variant to range coordinates from vcf coordinates
-        $stop = convert_to_range(
+        my $stop = convert_to_range(
             {
                 alt_allele_field => $alt_allele_field,
                 reference_allele => $ref_allele,
@@ -1568,45 +1565,36 @@ sub tree_annotations {
             }
         );
 
-        ## Range input
-        $feature = $tree_href->{$range_file_key}{$scontig}->fetch( $start, $stop );
+        ## ## Feature to be collected for variant range
+        my $features_ref = $tree_href->{$range_file_key}{$contig}->fetch( $start, $stop );
 
         ## Features found in tree
-        if ( @{$feature} ) {
+        if ( @{$features_ref} ) {
 
             ## Collect all features before adding to line
             my %collected_annotation;
 
             ## All features
           FEATURE:
-            for (
-                my $feature_counter = 0 ;
-                $feature_counter < scalar(@$feature) ;
-                $feature_counter++
-              )
-            {
+            while ( my ( $feature_index, $feature ) = each @{$features_ref} ) {
 
-                ## Split feature array ref into annotations
-                my @annotations = split( /;/, @$feature[$feature_counter] );
+                ## Split feature into annotations
+                my @annotations = split $SEMICOLON, $feature;
 
               ANNOTATION:
-                for (
-                    my $annotations_counter = 0 ;
-                    $annotations_counter < scalar(@annotations) ;
-                    $annotations_counter++
-                  )
-                {
+                while ( my ( $annotation_index, $annotation ) = each @annotations ) {
 
-                    if (   ( defined $annotations[$annotations_counter] )
-                        && ( $annotations[$annotations_counter] ne "" ) )
-                    {
+                    next ANNOTATION if ( not defined $annotation );
 
-                        push
-                          @{ $collected_annotation{$annotations_counter} },
-                          $annotations[$annotations_counter];
-                    }
+                    next ANNOTATION if ( $annotation eq $EMPTY_STR );
+
+                    push @{ $collected_annotation{$annotation_index} }, $annotation;
+
                     ## Last for this feature tuple
-                    if ( $feature_counter == ( scalar( @$feature - 1 ) ) ) {
+                    if ( $feature_index == ( scalar( @{$features_ref} - 1 ) ) ) {
+
+                        say STDERR scalar( @{$features_ref} - 1 );
+                        say STDERR @{$#features_ref};
 
                         ## All selected annotations
                       SELECTED_ANNOTATION:
@@ -1614,7 +1602,7 @@ sub tree_annotations {
 
                             ## Correct feature
                             if ( $$data_href{present}{$range_annotation}{column_order} eq
-                                $annotations_counter )
+                                $annotation_index )
                             {
 
                                 ## Special case, which is global and not gene centric
@@ -1625,13 +1613,12 @@ sub tree_annotations {
                                     my $unique_ref = uniq_elements(
                                         {
                                             elements_ref => \@{
-                                                $collected_annotation{
-                                                    $annotations_counter}
+                                                $collected_annotation{$annotation_index}
                                             },
                                         }
                                     );
 
-                                    @{ $collected_annotation{$annotations_counter} } =
+                                    @{ $collected_annotation{$annotation_index} } =
                                       @{$unique_ref};
                                 }
                                 ## Special case, where there is no HGNC or Ensembl gene ID but the region should be included in the select file anyway
@@ -1643,19 +1630,16 @@ sub tree_annotations {
                                 }
                                 if (
                                     (
-                                        defined
-                                        $collected_annotation{$annotations_counter}
+                                        defined $collected_annotation{$annotation_index}
 
                                     )
-                                    && (
-                                        @{ $collected_annotation{$annotations_counter} } )
+                                    && ( @{ $collected_annotation{$annotation_index} } )
                                   )
                                 {
 
                                     $record_href->{ q{INFO_addition_} . $range_file_key }
                                       {$range_annotation} = join( q{,},
-                                        @{ $collected_annotation{$annotations_counter} }
-                                      );
+                                        @{ $collected_annotation{$annotation_index} } );
                                 }
                             }
                         }
