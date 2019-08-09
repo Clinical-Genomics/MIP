@@ -415,8 +415,10 @@ sub read_infile_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Vcf
-      qw{ check_vcf_variant_line parse_vcf_header set_line_elements_in_vcf_record };
+    use MIP::File::Format::Vcf qw{
+      check_vcf_variant_line parse_vcf_header
+      set_info_key_pairs_in_vcf_record
+      set_line_elements_in_vcf_record };
     use MIP::Vcfparser qw{
       add_feature_file_meta_data_to_vcf
       add_program_to_meta_data_header
@@ -546,7 +548,7 @@ sub read_infile_vcf {
             }
         );
 
-## Adds variant line elements to record hash
+        ## Adds variant line elements to record hash
         set_line_elements_in_vcf_record(
             {
                 line_elements_ref      => \@line_elements,
@@ -555,19 +557,11 @@ sub read_infile_vcf {
             }
         );
 
-        my @info_elements = split( /;/, $record{INFO} );    #Add INFO elements
+        ## Adds INFO key value pairs to record hash
+        set_info_key_pairs_in_vcf_record( { vcf_record_href => \%record, } );
 
-        ## Collect key value pairs in INFO field
-        foreach my $element (@info_elements) {
-
-            my @key_value_pairs =
-              split( "=", $element );    #key index = 0 and value index = 1
-
-            $record{INFO_key_value}{ $key_value_pairs[0] } =
-              $key_value_pairs[1];
-        }
-
-        ## Checks if an interval tree exists (per chr) and collects features from input array and adds annotations to line
+        ## Checks if an interval tree exists (per chr) and
+        ## collects features from input array and adds annotations to line
         %noid_region = tree_annotations(
             {
                 tree_href         => $tree_href,

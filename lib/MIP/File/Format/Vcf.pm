@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE $TAB };
+use MIP::Constants qw{ $EQUALS $SEMICOLON $SPACE $TAB };
 
 BEGIN {
     require Exporter;
@@ -26,8 +26,12 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ check_vcf_variant_line parse_vcf_header set_line_elements_in_vcf_record  };
+    our @EXPORT_OK = qw{
+      check_vcf_variant_line
+      parse_vcf_header
+      set_info_key_pairs_in_vcf_record
+      set_line_elements_in_vcf_record
+    };
 }
 
 ## Constants
@@ -159,6 +163,42 @@ sub parse_vcf_header {
     return 1;
 }
 
+sub set_info_key_pairs_in_vcf_record {
+
+## Function : Adds INFO key value pairs to record hash
+## Returns  :
+## Arguments: $vcf_record_href => Hash for variant line data {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $vcf_record_href;
+
+    my $tmpl = {
+        vcf_record_href => {
+            default  => {},
+            defined  => 1,
+            required => 1,
+            store    => \$vcf_record_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add INFO elements
+    my @info_elements = split $SEMICOLON, $vcf_record_href->{INFO};
+
+    ## Collect key value pairs from INFO field elements
+  ELEMENT:
+    foreach my $element (@info_elements) {
+
+        my ( $key, $value ) = split $EQUALS, $element;
+
+        $vcf_record_href->{INFO_key_value}{$key} = $value;
+    }
+    return;
+}
+
 sub set_line_elements_in_vcf_record {
 
 ## Function : Adds variant line elements to record hash
@@ -170,7 +210,6 @@ sub set_line_elements_in_vcf_record {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-
     my $line_elements_ref;
     my $vcf_format_columns_ref;
     my $vcf_record_href;
