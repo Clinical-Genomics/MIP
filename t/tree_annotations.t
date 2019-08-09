@@ -20,7 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $DOT $EMPTY_STR $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $EMPTY_STR $SPACE $TAB $UNDERSCORE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -125,26 +125,30 @@ foreach my $gene_line ( $gene_adk_line, $gene_pax_line, $gene_no_hgnc_id_line ) 
 
 }
 ## Given a snv when no matching tree annotation
-my @no_tree_variant_ann = ( 1, 1, $DOT, qw{ A G } );
 tree_annotations(
     {
+        alt_allele_field  => q{G},
+        contig            => 1,
         data_href         => \%select_data,
-        line_elements_ref => \@no_tree_variant_ann,
         feature_file_type => $feature_file_type,
         record_href       => \%vcf_record,
+        ref_allele        => q{A},
+        start             => 1,
         tree_href         => \%tree,
     }
 );
 is( keys %vcf_record, 0, q{Did not set feature annotation to vcf record} );
 
 ## Given a snv variant line which matches feature line
-my @snv_single_variant_elements = ( $ADK_CHROM_NR, $ADK_VAR_START, $DOT, qw{ A G } );
-my %noid_region                 = tree_annotations(
+my %noid_region = tree_annotations(
     {
+        alt_allele_field  => q{G},
+        contig            => $ADK_CHROM_NR,
         data_href         => \%select_data,
-        line_elements_ref => \@snv_single_variant_elements,
         feature_file_type => $feature_file_type,
         record_href       => \%vcf_record,
+        ref_allele        => q{A},
+        start             => $ADK_VAR_START,
         tree_href         => \%tree,
     }
 );
@@ -158,6 +162,7 @@ my %expected_vcf_record = (
 );
 
 my $expected_variant_id = join $UNDERSCORE, ( $ADK_CHROM_NR, $ADK_VAR_START, qw{ A G } );
+
 ## Then set ADK annotation features to vcf hash
 is_deeply( \%vcf_record, \%expected_vcf_record,
     q{Set ADK annotation features to vcf record hash} );

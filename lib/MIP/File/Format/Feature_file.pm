@@ -435,22 +435,40 @@ sub tree_annotations {
 ## Function : Checks if an interval tree exists (per chr) and collects features
 ##            from input array and adds annotations to line
 ## Returns  :
-## Arguments: $data_href         => Range file hash {REF}
+## Arguments: $alt_allele_field  => Alternativ allele field
+##          : $contig            => Contig
+##          : $data_href         => Range file hash {REF}
 ##          : $feature_file_type => Feature file type
-##          : $line_elements_ref => Infile vcf line elements array {REF}
 ##          : $record_href       => Record hash info {REF}
+##          : $ref_allele        => Reference allele
+##          : $start             => Variant start position
 ##          : $tree_href         => Interval tree hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $alt_allele_field;
+    my $contig;
     my $data_href;
     my $feature_file_type;
-    my $line_elements_ref;
     my $record_href;
+    my $ref_allele;
+    my $start;
     my $tree_href;
 
     my $tmpl = {
+        alt_allele_field => {
+            defined     => 1,
+            required    => 1,
+            store       => \$alt_allele_field,
+            strict_type => 1,
+        },
+        contig => {
+            defined     => 1,
+            required    => 1,
+            store       => \$contig,
+            strict_type => 1,
+        },
         data_href => {
             default     => {},
             defined     => 1,
@@ -464,18 +482,23 @@ sub tree_annotations {
             store       => \$feature_file_type,
             strict_type => 1,
         },
-        line_elements_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$line_elements_ref,
-            strict_type => 1,
-        },
         record_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$record_href,
+            strict_type => 1,
+        },
+        ref_allele => {
+            defined     => 1,
+            required    => 1,
+            store       => \$ref_allele,
+            strict_type => 1,
+        },
+        start => {
+            defined     => 1,
+            required    => 1,
+            store       => \$start,
             strict_type => 1,
         },
         tree_href => {
@@ -491,20 +514,8 @@ sub tree_annotations {
 
     use MIP::File::Format::Vcf qw{ convert_to_range };
 
-    ## Constants
-    Readonly my $ALT_ALLELE_FIELD_INDEX => 4;
-    Readonly my $CHROM_INDEX            => 0;
-    Readonly my $REF_ALLELE_INDEX       => 3;
-    Readonly my $START_INDEX            => 1;
-
-    ## No HGNC_symbol or ensembl gene ID, but still clinically releveant e.g. mtD-loop
+    ## No HGNC_symbol or ensembl gene ID, but still clinically releveant e.g. non_coding_regions
     my %noid_region;
-
-    ## Unpack
-    my $alt_allele_field = $line_elements_ref->[$ALT_ALLELE_FIELD_INDEX];
-    my $contig           = $line_elements_ref->[$CHROM_INDEX];
-    my $ref_allele       = $line_elements_ref->[$REF_ALLELE_INDEX];
-    my $start            = $line_elements_ref->[$START_INDEX];
 
     ## Return if no feature file annotations in interval tree
     return if ( not defined $tree_href->{$feature_file_type}{$contig} );
@@ -548,10 +559,7 @@ sub tree_annotations {
 
                 ## ID = CHROM_START_REF_ALT
                 my $variant_id_key = join $UNDERSCORE,
-                  @{$line_elements_ref}[
-                  $CHROM_INDEX .. $START_INDEX,
-                  $REF_ALLELE_INDEX .. $ALT_ALLELE_FIELD_INDEX
-                  ];
+                  ( $contig, $start, $ref_allele, $alt_allele_field );
                 $noid_region{$variant_id_key}++;
             }
         }
