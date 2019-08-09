@@ -258,8 +258,6 @@ q{##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene iden
 q{##INFO=<ID=OMIM_morbid,Number=.,Type=String,Description="OMIM morbid ID associated with gene(s)">};
     $select_data{select_file}{Phenotypic_disease_model}{INFO} =
 q{##INFO=<ID=Phenotypic_disease_model,Number=.,Type=String,Description="Known disease gene(s) phenotype inheritance model">};
-    $select_data{select_file}{Clinical_db_gene_annotation}{INFO} =
-q{##INFO=<ID=Clinical_db_gene_annotation,Number=.,Type=String,Description="Gene disease group association">};
     $select_data{select_file}{Reduced_penetrance}{INFO} =
 q{##INFO=<ID=Reduced_penetrance,Number=.,Type=String,Description="Pathogenic gene which can exhibit reduced penetrance">};
     $select_data{select_file}{Disease_associated_transcript}{INFO} =
@@ -270,8 +268,8 @@ q{##INFO=<ID=Ensembl_transcript_to_refseq_transcript,Number=.,Type=String,Descri
 q{##INFO=<ID=Gene_description,Number=.,Type=String,Description="The HGNC gene description">};
     $select_data{select_file}{Genetic_disease_model}{INFO} =
 q{##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene(s) inheritance model">};
-    $select_data{select_file}{No_hgnc_symbol}{INFO} =
-q{##INFO=<ID=No_hgnc_symbol,Number=.,Type=String,Description="Clinically relevant genetic regions lacking a HGNC_symbol or Ensembl gene ">};
+    $select_data{select_file}{no_hgnc_symbol}{INFO} =
+q{##INFO=<ID=no_hgnc_symbol,Number=.,Type=String,Description="Clinically relevant genetic regions lacking a HGNC_symbol or Ensembl gene ">};
     return %select_data;
 }
 

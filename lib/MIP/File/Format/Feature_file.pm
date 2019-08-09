@@ -13,10 +13,12 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw{ uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $NEWLINE $SPACE $TAB };
+use MIP::Constants
+  qw{ $COLON $COMMA $EMPTY_STR $NEWLINE $SEMICOLON $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -27,7 +29,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ parse_feature_file_data parse_feature_file_header read_feature_file set_vcf_header_info };
+      qw{ parse_feature_file_data parse_feature_file_header read_feature_file set_vcf_header_info tree_annotations };
 }
 
 sub parse_feature_file_data {
@@ -426,6 +428,157 @@ sub set_vcf_header_info {
       $position;
 
     return;
+}
+
+sub tree_annotations {
+
+## Function : Checks if an interval tree exists (per chr) and collects features
+##            from input array and adds annotations to line
+## Returns  :
+## Arguments: $data_href         => Range file hash {REF}
+##          : $feature_file_type => Feature file type
+##          : $line_elements_ref => Infile vcf line elements array {REF}
+##          : $record_href       => Record hash info {REF}
+##          : $tree_href         => Interval tree hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $data_href;
+    my $feature_file_type;
+    my $line_elements_ref;
+    my $record_href;
+    my $tree_href;
+
+    my $tmpl = {
+        data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$data_href,
+            strict_type => 1,
+        },
+        feature_file_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_file_type,
+            strict_type => 1,
+        },
+        line_elements_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$line_elements_ref,
+            strict_type => 1,
+        },
+        record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$record_href,
+            strict_type => 1,
+        },
+        tree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$tree_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Vcf qw{ convert_to_range };
+
+    ## Constants
+    Readonly my $ALT_ALLELE_FIELD_INDEX => 4;
+    Readonly my $CHROM_INDEX            => 0;
+    Readonly my $REF_ALLELE_INDEX       => 3;
+    Readonly my $START_INDEX            => 1;
+
+    ## No HGNC_symbol or ensembl gene ID, but still clinically releveant e.g. mtD-loop
+    my %noid_region;
+
+    ## Unpack
+    my $alt_allele_field = $line_elements_ref->[$ALT_ALLELE_FIELD_INDEX];
+    my $contig           = $line_elements_ref->[$CHROM_INDEX];
+    my $ref_allele       = $line_elements_ref->[$REF_ALLELE_INDEX];
+    my $start            = $line_elements_ref->[$START_INDEX];
+
+    ## Return if no feature file annotations in interval tree
+    return if ( not defined $tree_href->{$feature_file_type}{$contig} );
+
+    ## Convert precise variant to range coordinates from vcf coordinates
+    my $stop = convert_to_range(
+        {
+            alt_allele_field => $alt_allele_field,
+            reference_allele => $ref_allele,
+            start_position   => $start,
+        }
+    );
+
+    ## Overlapping feature elements to be collected for variant range
+    my $features_ref = $tree_href->{$feature_file_type}{$contig}->fetch( $start, $stop );
+
+    ## If no overlapping features elements returned
+    return if ( not @{$features_ref} );
+
+    ## Collect all overlapping features elebefore adding to line
+    my %collected_annotation;
+
+  FEATURE:
+    while ( my ( $feature_index, $feature ) = each @{$features_ref} ) {
+
+        ## Split feature string into annotations
+        my @annotations = split $SEMICOLON, $feature;
+
+      ANNOTATION:
+        while ( my ( $annotation_index, $annotation ) = each @annotations ) {
+
+            next ANNOTATION if ( not defined $annotation );
+
+            next ANNOTATION if ( $annotation eq $EMPTY_STR );
+
+            push @{ $collected_annotation{$annotation_index} }, $annotation;
+
+            ## Special case, where there is no HGNC or Ensembl gene ID
+            ## but the region should be included in the select file anyway
+            if ( $annotation eq q{no_hgnc_id} ) {
+
+                ## ID = CHROM_START_REF_ALT
+                my $variant_id_key = join $UNDERSCORE,
+                  @{$line_elements_ref}[
+                  $CHROM_INDEX .. $START_INDEX,
+                  $REF_ALLELE_INDEX .. $ALT_ALLELE_FIELD_INDEX
+                  ];
+                $noid_region{$variant_id_key}++;
+            }
+        }
+    }
+
+  COLLECTED_ANNOTATION:
+    while ( my ( $annotation_index, $annotations_ref ) = each %collected_annotation ) {
+
+        next COLLECTED_ANNOTATION if ( not @{$annotations_ref} );
+
+        ## All feature file annotations
+      SELECTED_ANNOTATION:
+        for my $feature_header ( keys %{ $data_href->{present} } ) {
+
+            my $feature_header_col_index =
+              $data_href->{present}{$feature_header}{column_order};
+
+            ## Matching feature file header index and feature index
+            next SELECTED_ANNOTATION
+              if ( not $feature_header_col_index eq $annotation_index );
+
+            ## Set annotation to vcf record
+            $record_href->{ q{INFO_addition_} . $feature_file_type }{$feature_header} =
+              join $COMMA, @{$annotations_ref};
+        }
+    }
+    return %noid_region;
 }
 
 1;

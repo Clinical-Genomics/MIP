@@ -27,7 +27,7 @@ use Set::IntervalTree;
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants
-  qw{ %ANALYSIS $COLON $COMMA $EMPTY_STR $NEWLINE $SEMICOLON %SO_CONSEQUENCE_SEVERITY $SPACE $TAB };
+  qw{ %ANALYSIS $COLON $COMMA $NEWLINE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::File::Format::Pli qw{ load_pli_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
@@ -415,6 +415,7 @@ sub read_infile_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Feature_file qw{ tree_annotations };
     use MIP::File::Format::Vcf qw{
       check_vcf_variant_line parse_vcf_header
       set_info_key_pairs_in_vcf_record
@@ -1483,174 +1484,6 @@ sub add_to_line {
     }
 }
 
-sub tree_annotations {
-
-## Function : Checks if an interval tree exists (per chr) and collects features
-##            from input array and adds annotations to line
-## Returns  :
-## Arguments: $data_href         => Range file hash {REF}
-##          : $line_elements_ref => Infile vcf line elements array {REF}
-##          : $range_file_key    => Range file key
-##          : $record_href       => Record hash info {REF}
-##          : $tree_href         => Interval tree hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $data_href;
-    my $line_elements_ref;
-    my $range_file_key;
-    my $record_href;
-    my $tree_href;
-
-    my $tmpl = {
-        data_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$data_href,
-            strict_type => 1,
-        },
-        line_elements_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$line_elements_ref,
-            strict_type => 1,
-        },
-        range_file_key => {
-            defined     => 1,
-            required    => 1,
-            store       => \$range_file_key,
-            strict_type => 1,
-        },
-        record_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$record_href,
-            strict_type => 1,
-        },
-        tree_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$tree_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::File::Format::Vcf qw{ convert_to_range };
-
-    ## No HGNC_symbol or ensembl gene ID, but still clinically releveant e.g. mtD-loop
-    my %noid_region;
-
-    ## Unpack
-    my $alt_allele_field = $line_elements_ref->[4];
-    my $contig           = $line_elements_ref->[0];
-    my $ref_allele       = $line_elements_ref->[3];
-    my $start            = $line_elements_ref->[1];
-
-    ## Feature file annotations
-    if ( defined $tree_href->{$range_file_key}{$contig} ) {
-
-        ## Convert precise variant to range coordinates from vcf coordinates
-        my $stop = convert_to_range(
-            {
-                alt_allele_field => $alt_allele_field,
-                reference_allele => $ref_allele,
-                start_position   => $start,
-            }
-        );
-
-        ## ## Feature to be collected for variant range
-        my $features_ref = $tree_href->{$range_file_key}{$contig}->fetch( $start, $stop );
-
-        ## Features found in tree
-        if ( @{$features_ref} ) {
-
-            ## Collect all features before adding to line
-            my %collected_annotation;
-
-            ## All features
-          FEATURE:
-            while ( my ( $feature_index, $feature ) = each @{$features_ref} ) {
-
-                ## Split feature into annotations
-                my @annotations = split $SEMICOLON, $feature;
-
-              ANNOTATION:
-                while ( my ( $annotation_index, $annotation ) = each @annotations ) {
-
-                    next ANNOTATION if ( not defined $annotation );
-
-                    next ANNOTATION if ( $annotation eq $EMPTY_STR );
-
-                    push @{ $collected_annotation{$annotation_index} }, $annotation;
-
-                    ## Last for this feature tuple
-                    if ( $feature_index == ( scalar( @{$features_ref} - 1 ) ) ) {
-
-                        say STDERR scalar( @{$features_ref} - 1 );
-                        say STDERR @{$#features_ref};
-
-                        ## All selected annotations
-                      SELECTED_ANNOTATION:
-                        for my $range_annotation ( keys %{ $$data_href{present} } ) {
-
-                            ## Correct feature
-                            if ( $$data_href{present}{$range_annotation}{column_order} eq
-                                $annotation_index )
-                            {
-
-                                ## Special case, which is global and not gene centric
-                                if ( $range_annotation eq q{Clinical_db_gene_annotation} )
-                                {
-
-                                    ## Collect unique elements from array reference and return array reference with unique elements
-                                    my $unique_ref = uniq_elements(
-                                        {
-                                            elements_ref => \@{
-                                                $collected_annotation{$annotation_index}
-                                            },
-                                        }
-                                    );
-
-                                    @{ $collected_annotation{$annotation_index} } =
-                                      @{$unique_ref};
-                                }
-                                ## Special case, where there is no HGNC or Ensembl gene ID but the region should be included in the select file anyway
-                                if ( $range_annotation eq q{No_hgnc_symbol} ) {
-
-                                    my $id_key =
-                                      join( "_", @$line_elements_ref[ 0 .. 1, 3 .. 4 ] );
-                                    $noid_region{$id_key}++;
-                                }
-                                if (
-                                    (
-                                        defined $collected_annotation{$annotation_index}
-
-                                    )
-                                    && ( @{ $collected_annotation{$annotation_index} } )
-                                  )
-                                {
-
-                                    $record_href->{ q{INFO_addition_} . $range_file_key }
-                                      {$range_annotation} = join( q{,},
-                                        @{ $collected_annotation{$annotation_index} } );
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return %noid_region;
-}
-
 sub find_af {
 
 ##find_af
@@ -1755,38 +1588,6 @@ sub FindLCAF {
         }
     }
     return $temp_maf;
-}
-
-sub uniq_elements {
-
-##uniq_elements
-
-##Function : Collect unique elements from array reference and return array reference with unique elements
-##Returns  : "array reference"
-##Arguments: $elements_ref
-##         : $elements_ref => The array whose elements are to be made distinct {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $elements_ref;
-
-    my $tmpl = {
-        elements_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$elements_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my %seen;
-
-    return [ grep { !$seen{$_}++ } @$elements_ref ]
-      ; #For each element in array, see if seen before and only return list distinct elements
 }
 
 sub check_terms {
