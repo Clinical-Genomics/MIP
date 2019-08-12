@@ -538,7 +538,7 @@ sub tree_annotations {
     my %collected_annotation;
 
   FEATURE:
-    while ( my ( $feature_index, $feature ) = each @{$features_ref} ) {
+    foreach my $feature ( @{$features_ref} ) {
 
         ## Split feature string into annotations
         my @annotations = split $SEMICOLON, $feature;
