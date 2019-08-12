@@ -67,7 +67,7 @@ sub run {
       catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
 
     ## %parameter holds all defined parameters for MIP
-    ## mip download rd_dna parameters
+    ## mip install rd_dna parameters
     my %parameter;
 
     ## If no config from cmd

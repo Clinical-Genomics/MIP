@@ -50,8 +50,6 @@ noupdate:
   default: 0
   mandatory: no
   type: mip
-  default: 0
-  mandatory: no
   type: mip
 reference_genome_versions:
   associated_recipe:

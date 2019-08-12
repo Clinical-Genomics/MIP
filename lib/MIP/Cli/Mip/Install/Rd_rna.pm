@@ -48,7 +48,7 @@ sub run {
     ## Input from Cli
     my %active_parameter = %{$arg_href};
 
-    ## Mip analyse rd_dna parameters
+    ## Mip analyse rd_rna parameters
     ## CLI commands inheritance
     my @definition_files = (
         catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
@@ -65,7 +65,7 @@ sub run {
       catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
 
     ## %parameter holds all defined parameters for MIP
-    ## mip download rd_dna parameters
+    ## mip download rd_rna parameters
     my %parameter;
 
     ## If no config from cmd
