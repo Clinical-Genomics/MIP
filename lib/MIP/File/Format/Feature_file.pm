@@ -13,7 +13,6 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use List::MoreUtils qw{ uniq };
 use Readonly;
 
 ## MIPs lib/
