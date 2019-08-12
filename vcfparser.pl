@@ -415,6 +415,7 @@ sub read_infile_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Feature_file qw{ tree_annotations };
     use MIP::File::Format::Vcf qw{
       check_vcf_variant_line parse_vcf_header
       set_info_key_pairs_in_vcf_record
@@ -562,25 +563,30 @@ sub read_infile_vcf {
 
         ## Checks if an interval tree exists (per chr) and
         ## collects features from input array and adds annotations to line
+        ## noid_region is only for selectfile since all variants are passed to research file
         %noid_region = tree_annotations(
             {
-                tree_href         => $tree_href,
+                alt_allele_field  => $record{ALT},
+                contig            => $record{q{#CHROM}},
                 data_href         => $select_data_href,
+                feature_file_type => q{select_feature},
                 record_href       => \%record,
-                line_elements_ref => \@line_elements,
-                range_file_key    => "select_feature",
+                ref_allele        => $record{REF},
+                start             => $record{POS},
+                tree_href         => $tree_href,
             }
-          )
-          ; #noid_region is only for selectfile since all variants are passed to research file
+        );
 
-        ## Checks if an interval tree exists (per chr) and collects features from input array and adds annotations to line
         tree_annotations(
             {
-                tree_href         => $tree_href,
+                alt_allele_field  => $record{ALT},
+                contig            => $record{q{#CHROM}},
                 data_href         => $range_data_href,
+                feature_file_type => q{range_feature},
                 record_href       => \%record,
-                range_file_key    => "range_feature",
-                line_elements_ref => \@line_elements,
+                ref_allele        => $record{REF},
+                start             => $record{POS},
+                tree_href         => $tree_href,
             }
         );
 
@@ -843,6 +849,8 @@ sub parse_vep_csq {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::File::Format::Vcf qw{ set_in_consequence_hash };
+
     ## Convert between hgnc_id and hgnc_symbol
     my %hgnc_map;
 
@@ -879,6 +887,12 @@ sub parse_vep_csq {
                   \$transcript_effects[ $vep_format_field_column_href->{Allele} ]
                   ;    #Alias allele
 
+                ## Set arbitrary primary consequence rank - just to inititate key per hgnc_id and allele
+                if ( not exists $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{rank} ) {
+
+                    $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{rank} = 999;
+                }
+
                 # Split consequence
                 my @consequences = split( /\&/,
                     $transcript_effects[ $vep_format_field_column_href->{Consequence} ] );
@@ -897,70 +911,29 @@ sub parse_vep_csq {
                     my $most_severe_consequence =
                       $$hgnc_id_ref . ":" . $$allele_ref . "|" . $consequence_term;
 
-                    ## Compare to previous record
-                    if ( exists $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score}
-                        && $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score} )
-                    {
+                    ## Map of what to set to consequence
+                    my %set_key = (
+                        most_severe_consequence => $most_severe_consequence,
+                        most_severe_transcript  => $transcript,
+                        rank => $consequence_severity_href->{$consequence_term}{rank},
+                    );
 
-                        ## Collect most severe consequence
-                        if ( $consequence_severity_href->{$consequence_term}{rank} <
-                            $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score} )
+                    ### Compare to previous record
+                    ## If current consequence term has lower rank than set rank
+                    next CONSEQUENCE
+                      if (
+                        not $consequence_severity_href->{$consequence_term}{rank} <
+                        $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{rank} );
+
+                    set_in_consequence_hash(
                         {
-
-                            add_to_consequence_hash(
-                                {
-                                    key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                      {$$allele_ref}{score},
-                                    value_ref =>
-                                      \$consequence_severity_href->{$consequence_term}
-                                      {rank},
-                                }
-                            );
-
-                            add_to_consequence_hash(
-                                {
-                                    key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                      {$$allele_ref}{most_severe_consequence},
-                                    value_ref => \$most_severe_consequence,
-                                }
-                            );
-                            add_to_consequence_hash(
-                                {
-                                    key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                      {$$allele_ref}{most_severe_transcript},
-                                    value_ref => \$transcript,
-                                }
-                            );
+                            allele           => $$allele_ref,
+                            consequence_href => $consequence_href,
+                            hgnc_id          => $$hgnc_id_ref,
+                            set_key_href     => \%set_key,
                         }
-                    }
-                    else {    #First pass
-
-                        add_to_consequence_hash(
-                            {
-                                key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                  {$$allele_ref}{score},
-                                value_ref =>
-                                  \$consequence_severity_href->{$consequence_term}{rank},
-                            }
-                        );
-
-                        add_to_consequence_hash(
-                            {
-                                key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                  {$$allele_ref}{most_severe_consequence},
-                                value_ref => \$most_severe_consequence,
-                            }
-                        );
-                        add_to_consequence_hash(
-                            {
-                                key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                  {$$allele_ref}{most_severe_transcript},
-                                value_ref => \$transcript,
-                            }
-                        );
-                    }
+                    );
                 }
-
                 if ( !$per_gene ) {
 
                     if ( $select_data_href->{$$hgnc_id_ref} )
@@ -1061,44 +1034,6 @@ sub parse_vep_csq {
               $most_severe_range_pli;
         }
     }
-}
-
-sub add_to_consequence_hash {
-
-##add_to_consequence_hash
-
-##Function : Adds the most severe consequence or prediction to gene.
-##Returns  : ""
-##Arguments: $key_ref, $value_ref
-##         : $key_ref   => The hash key to update {REF}
-##         : $value_ref => The value to add to hash key
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $key_ref;
-    my $value_ref;
-
-    my $tmpl = {
-        key_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$key_ref
-        },
-        value_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$value_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    $$key_ref = $$value_ref;
 }
 
 sub add_field_to_element {
@@ -1484,315 +1419,6 @@ sub add_to_line {
     }
 }
 
-sub convert_to_range {
-
-##convert_to_range
-
-##Function : Converts vcf sv to corresponding range coordinates.
-##Returns  : "$final_start_position, $final_stop_position"
-##Arguments: $fields_ref
-##         : $fields_ref => Holds the chromosomal coordinates and allel data
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $fields_ref;
-
-    my $tmpl = {
-        fields_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$fields_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $chromosome         = $fields_ref->[0];
-    my $start_position     = $fields_ref->[1];
-    my $reference_allele   = $fields_ref->[3];
-    my $alternative_allele = $fields_ref->[4];
-
-    my $final_start_position = $start_position; #The most "uppstream" position per variant
-    my $final_stop_position = 0;    #The most "downstream" position per variant
-
-    ## Convert to upper case
-    ( $reference_allele, $alternative_allele ) =
-      ( uc $reference_allele, uc $alternative_allele );
-
-    if ( $alternative_allele eq "." ) {    #No Variant Call
-
-        next;
-    }
-    my @alternative_alleles = split( /,/, $fields_ref->[4] );
-
-    for (
-        my $allel_counter = 0 ;
-        $allel_counter < scalar(@alternative_alleles) ;
-        $allel_counter++
-      )
-    {
-
-        my ( $head, $newstart, $newend, $newref, $newalt );
-
-        if (    length($reference_allele) == 1
-            and length( $alternative_alleles[$allel_counter] ) == 1 )
-        {    #SNV
-
-            ( $newstart, $newend ) =
-              ( $start_position, $start_position + length($reference_allele) - 1 );
-            ( $newref, $newalt ) =
-              ( $reference_allele, $alternative_alleles[$allel_counter] );
-        }
-        elsif (
-            length($reference_allele) >= length( $alternative_alleles[$allel_counter] ) )
-        {    #deletion or block substitution
-
-            $head =
-              substr( $reference_allele, 0,
-                length( $alternative_alleles[$allel_counter] ) );
-
-            if ( $head eq $alternative_alleles[$allel_counter] ) {
-
-                ( $newstart, $newend ) = (
-                    $start_position + length($head),
-                    $start_position + length($reference_allele) - 1
-                );
-                ( $newref, $newalt ) = (
-                    substr(
-                        $reference_allele, length( $alternative_alleles[$allel_counter] )
-                    ),
-                    '-'
-                );
-            }
-            else {
-
-                ( $newstart, $newend ) =
-                  ( $start_position, $start_position + length($reference_allele) - 1 );
-                ( $newref, $newalt ) =
-                  ( $reference_allele, $alternative_alleles[$allel_counter] );
-            }
-        }
-        elsif (
-            length($reference_allele) < length( $alternative_alleles[$allel_counter] ) )
-        {    #insertion or block substitution
-
-            $head = substr( $alternative_alleles[$allel_counter], 0,
-                length($reference_allele) );
-
-            if ( $head eq $reference_allele ) {
-
-                ( $newstart, $newend ) = (
-                    $start_position + length($reference_allele) - 1,
-                    $start_position + length($reference_allele) - 1
-                );
-                ( $newref, $newalt ) = (
-                    '-',
-                    substr(
-                        $alternative_alleles[$allel_counter],
-                        length($reference_allele)
-                    )
-                );
-            }
-            else {
-
-                ( $newstart, $newend ) =
-                  ( $start_position, $start_position + length($reference_allele) - 1 );
-                ( $newref, $newalt ) =
-                  ( $reference_allele, $alternative_alleles[$allel_counter] );
-            }
-        }
-
-        ## Collect largest range per variant based on all alternative_alleles
-        if ( $final_start_position < $newstart ) {    #New start is upstream of old
-
-            $final_start_position = $newstart;
-        }
-        if ( $final_stop_position < $newend ) {       #New end is downstream of old
-
-            $final_stop_position = $newend;
-        }
-    }
-    return $final_start_position, $final_stop_position;
-}
-
-sub tree_annotations {
-
-##tree_annotations
-
-##Function : Checks if an interval tree exists (per chr) and collects features from input array and adds annotations to line.
-##Returns  : ""
-##Arguments: $tree_href, $data_href, $record_href, $line_elements_ref, $range_file_key,
-##         : $tree_href         => Interval tree hash {REF}
-##         : $data_href         => Range file hash {REF}
-##         : $record_href       => Record hash info {REF}
-##         : $line_elements_ref => Infile vcf line elements array {REF}
-##         : $range_file_key    => Range file key
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $tree_href;
-    my $data_href;
-    my $record_href;
-    my $line_elements_ref;
-    my $range_file_key;
-
-    my $tmpl = {
-        tree_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$tree_href
-        },
-        data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$data_href
-        },
-        record_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$record_href
-        },
-        line_elements_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$line_elements_ref
-        },
-        range_file_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$range_file_key
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my %noid_region
-      ;    #No HGNC_symbol or ensemblGeneID, but still clinically releveant e.g. mtD-loop
-
-    if ( defined( $tree_href->{$range_file_key}{ $line_elements_ref->[0] } ) )
-    {      #Range annotations
-
-        my $feature;    #Features to be collected
-
-        ## #Convert SVs to range coordinates from vcf coordinates
-        my ( $start, $stop ) =
-          convert_to_range( { fields_ref => $line_elements_ref, } );
-
-        if ( $start eq $stop ) {    #SNV
-
-            $feature = $tree_href->{$range_file_key}{ $line_elements_ref->[0] }
-              ->fetch( $start, $stop + 1 );    #Add 1 to SNV to create range input.
-        }
-        else {                                 #Range input
-
-            $feature = $tree_href->{$range_file_key}{ $line_elements_ref->[0] }
-              ->fetch( $start, $stop );
-        }
-        if (@$feature) {                       #Features found in tree
-
-            my %collected_annotation;          #Collect all features before adding to line
-
-          FEATURE:
-            for (
-                my $feature_counter = 0 ;
-                $feature_counter < scalar(@$feature) ;
-                $feature_counter++
-              )
-            {                                  #All features
-
-                my @annotations = split( /;/, @$feature[$feature_counter] )
-                  ;                            #Split feature array ref into annotations
-
-              ANNOTATION:
-                for (
-                    my $annotations_counter = 0 ;
-                    $annotations_counter < scalar(@annotations) ;
-                    $annotations_counter++
-                  )
-                {                              #All annotations
-
-                    if (   ( defined( $annotations[$annotations_counter] ) )
-                        && ( $annotations[$annotations_counter] ne "" ) )
-                    {
-
-                        push(
-                            @{ $collected_annotation{$annotations_counter} },
-                            $annotations[$annotations_counter]
-                        );
-                    }
-                    if ( $feature_counter == ( scalar( @$feature - 1 ) ) )
-                    {                          #Last for this feature tuple
-
-                      SELECTED_ANNOTATION:
-                        for my $range_annotation ( keys %{ $$data_href{present} } )
-                        {                      #All selected annotations
-
-                            if ( $$data_href{present}{$range_annotation}{column_order} eq
-                                $annotations_counter )
-                            {                  #Correct feature
-
-                                if ( $range_annotation eq "Clinical_db_gene_annotation" )
-                                {    #Special case, which is global and not gene centric
-
-                                    ## Collect unique elements from array reference and return array reference with unique elements
-                                    my $unique_ref = uniq_elements(
-                                        {
-                                            elements_ref => \@{
-                                                $collected_annotation{
-                                                    $annotations_counter}
-                                            },
-                                        }
-                                    );
-
-                                    @{ $collected_annotation{$annotations_counter} } =
-                                      @{$unique_ref};
-                                }
-                                if ( $range_annotation eq "No_hgnc_symbol" )
-                                { #Special case, where there is no HGNC or Ensembl gene ID but the region should be included in the select file anyway
-
-                                    my $id_key =
-                                      join( "_", @$line_elements_ref[ 0 .. 1, 3 .. 4 ] );
-                                    $noid_region{$id_key}++;
-                                }
-                                if (
-                                    (
-                                        defined(
-                                            $collected_annotation{$annotations_counter}
-                                        )
-                                    )
-                                    && (
-                                        @{ $collected_annotation{$annotations_counter} } )
-                                  )
-                                {
-
-                                    $record_href->{ "INFO_addition_" . $range_file_key }
-                                      {$range_annotation} = join( ",",
-                                        @{ $collected_annotation{$annotations_counter} }
-                                      );
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return %noid_region;
-}
-
 sub find_af {
 
 ##find_af
@@ -1897,38 +1523,6 @@ sub FindLCAF {
         }
     }
     return $temp_maf;
-}
-
-sub uniq_elements {
-
-##uniq_elements
-
-##Function : Collect unique elements from array reference and return array reference with unique elements
-##Returns  : "array reference"
-##Arguments: $elements_ref
-##         : $elements_ref => The array whose elements are to be made distinct {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $elements_ref;
-
-    my $tmpl = {
-        elements_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$elements_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my %seen;
-
-    return [ grep { !$seen{$_}++ } @$elements_ref ]
-      ; #For each element in array, see if seen before and only return list distinct elements
 }
 
 sub check_terms {

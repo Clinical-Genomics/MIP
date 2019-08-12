@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $EQUALS $SEMICOLON $SPACE $TAB };
+use MIP::Constants qw{ $COMMA $DOT $EQUALS $SEMICOLON $SPACE $TAB };
 
 BEGIN {
     require Exporter;
@@ -28,7 +28,9 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_vcf_variant_line
+      convert_to_range
       parse_vcf_header
+      set_in_consequence_hash
       set_info_key_pairs_in_vcf_record
       set_line_elements_in_vcf_record
     };
@@ -45,6 +47,7 @@ sub check_vcf_variant_line {
 ##          : $log                       => Log object
 ##          : $variant_line              => Variant line
 ##          : $variant_line_elements_ref => Array for variant line elements {REF}
+
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
@@ -88,6 +91,84 @@ sub check_vcf_variant_line {
     $log->fatal(qq{No INFO field at line number: $input_line_number});
     $log->fatal(qq{Displaying malformed line: $variant_line});
     exit 1;
+}
+
+sub convert_to_range {
+
+## Function : Converts VCF variants to corresponding range coordinates
+## Returns  : $final_stop_position
+## Arguments: $alt_allele_field => Alternative allele field
+##          : $reference_allele => Reference allele
+##          : $start_position   => Variant start position
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $alt_allele_field;
+    my $reference_allele;
+    my $start_position;
+
+    my $tmpl = {
+        alt_allele_field => {
+            defined     => 1,
+            required    => 1,
+            store       => \$alt_allele_field,
+            strict_type => 1,
+        },
+        reference_allele => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_allele,
+            strict_type => 1,
+        },
+        start_position => {
+            defined     => 1,
+            required    => 1,
+            store       => \$start_position,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## No alternative allele call
+    return if ( $alt_allele_field eq $DOT );
+
+    ## The most "downstream" position per variant
+    my $final_stop_position = 0;
+
+    ## Split into alternative allele(s)
+    my @alt_alleles = split $COMMA, $alt_allele_field;
+
+  ALLELE:
+    foreach my $alt_allele (@alt_alleles) {
+
+        my $stop_position;
+
+        ## SNV
+        if (    length $reference_allele == 1
+            and length $alt_allele == 1 )
+        {
+
+            $stop_position = $start_position + 1;
+        }
+        elsif ( length $reference_allele >= length $alt_allele ) {
+            ## Deletion or block substitution
+            $stop_position = $start_position + length($reference_allele) - 1;
+        }
+        elsif ( length $reference_allele < length $alt_allele ) {
+            ## insertion or block substitution
+            $stop_position = $start_position + length($alt_allele) - 1;
+        }
+
+        ## Collect largest range per variant record based on all alternative_alleles
+        # New end is downstream of old
+        if ( $final_stop_position < $stop_position ) {
+
+            $final_stop_position = $stop_position;
+        }
+    }
+    return $final_stop_position;
 }
 
 sub parse_vcf_header {
@@ -161,6 +242,62 @@ sub parse_vcf_header {
     ## All other meta-data headers - Add to array without using regexp
     push @{ $meta_data_href->{other}{other} }, $meta_data_string;
     return 1;
+}
+
+sub set_in_consequence_hash {
+
+## Function : Adds the most severe consequence or prediction to gene.
+## Returns  :
+## Arguments: $allele           => Allele
+##          : $consequence_href => Consequence hash {REF}
+##          : $hgnc_id          => Hgnc id
+##          : $set_key_href     => Key value pairs to set {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $allele;
+    my $consequence_href;
+    my $hgnc_id;
+    my $set_key_href;
+
+    my $tmpl = {
+        allele => {
+            defined     => 1,
+            required    => 1,
+            store       => \$allele,
+            strict_type => 1,
+        },
+        consequence_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$consequence_href,
+            strict_type => 1,
+        },
+        hgnc_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$hgnc_id,
+            strict_type => 1,
+        },
+        set_key_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$set_key_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %{$set_key_href} ) {
+
+        $consequence_href->{$hgnc_id}{$allele}{$key} = $value;
+    }
+    return;
 }
 
 sub set_info_key_pairs_in_vcf_record {
