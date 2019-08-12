@@ -307,7 +307,7 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
     option(
         q{temp_directory} => (
             cmd_aliases   => [qw{ tmd }],
-            cmd_tags      => [q{Default: "/scratch/$SLURM_JOB_ID"}],
+            cmd_tags      => [q{Default: "$outdata_dir/$SLURM_JOB_ID"}],
             documentation => q{Set the temporary directory for all recipes},
             is            => q{rw},
             isa           => Str,

@@ -58,7 +58,7 @@ BEGIN {
 
 sub pipeline_install_rd_rna {
 
-## Function : Download references recipes for rd_dna pipeline
+## Function : Install recipes for rd_rna pipeline
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
 ##          : $quiet                 => Be quiet
