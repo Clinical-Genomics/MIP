@@ -566,27 +566,27 @@ sub read_infile_vcf {
         ## noid_region is only for selectfile since all variants are passed to research file
         %noid_region = tree_annotations(
             {
-                alt_allele_field => $record{ALT},
-                contig           => $record{q{#CHROM}},
-                data_href        => $select_data_href,
-                range_file_key   => q{select_feature},
-                record_href      => \%record,
-                ref_allele       => $record{REF},
-                start            => $record{POS},
-                tree_href        => $tree_href,
+                alt_allele_field  => $record{ALT},
+                contig            => $record{q{#CHROM}},
+                data_href         => $select_data_href,
+                feature_file_type => q{select_feature},
+                record_href       => \%record,
+                ref_allele        => $record{REF},
+                start             => $record{POS},
+                tree_href         => $tree_href,
             }
         );
 
         tree_annotations(
             {
-                alt_allele_field => $record{ALT},
-                contig           => $record{q{#CHROM}},
-                data_href        => $range_data_href,
-                range_file_key   => q{range_feature},
-                record_href      => \%record,
-                ref_allele       => $record{REF},
-                start            => $record{POS},
-                tree_href        => $tree_href,
+                alt_allele_field  => $record{ALT},
+                contig            => $record{q{#CHROM}},
+                data_href         => $range_data_href,
+                feature_file_type => q{range_feature},
+                record_href       => \%record,
+                ref_allele        => $record{REF},
+                start             => $record{POS},
+                tree_href         => $tree_href,
             }
         );
 
