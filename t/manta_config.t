@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -92,15 +92,18 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    outdirectory_path => {
-        input           => q{outdirectory_path},
-        expected_output => q{--runDir outdirectory_path},
+    call_regions_file_path => {
+        input           => catfile(qw{a region_file.bed.gz}),
+        expected_output => q{--callRegions} . $SPACE . catfile(qw{a region_file.bed.gz}),
     },
     exome_analysis => {
         input           => 1,
         expected_output => q{--exome},
     },
-
+    outdirectory_path => {
+        input           => q{outdirectory_path},
+        expected_output => q{--runDir outdirectory_path},
+    },
 );
 
 ## Coderef - enables generalized use of generate call

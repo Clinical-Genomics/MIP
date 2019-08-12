@@ -743,6 +743,14 @@ manta:
   outfile_suffix: ".vcf"
   recipe_type: structural_variant_callers
   type: recipe
+manta_call_regions_file_path:
+  associated_recipe:
+   - manta
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  reference: reference_dir
+  type: path
 tiddit:
   analysis_mode: case
   associated_recipe:

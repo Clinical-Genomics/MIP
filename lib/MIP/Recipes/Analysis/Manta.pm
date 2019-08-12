@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.11;
+    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_manta };
@@ -260,6 +260,8 @@ sub analysis_manta {
 
     manta_config(
         {
+            call_regions_file_path =>
+              $active_parameter_href->{manta_call_regions_file_path},
             exome_analysis     => $is_exome_analysis,
             FILEHANDLE         => $FILEHANDLE,
             infile_paths_ref   => \@manta_infile_paths,

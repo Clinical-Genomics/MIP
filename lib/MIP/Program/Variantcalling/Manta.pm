@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ manta_config manta_workflow };
@@ -37,8 +37,9 @@ BEGIN {
 sub manta_config {
 
 ## Function : Perl wrapper for writing Manta config recipe to $FILEHANDLE or return commands array. Based on Manta 1.5.0.
-## Returns  : "@commands"
-## Arguments: $exome_analysis         => Set options for WES input: turn off depth filters
+## Returns  : @commands
+## Arguments: $call_regions_file_path => Call regions file path
+##          : $exome_analysis         => Set options for WES input: turn off depth filters
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_paths_ref       => Infile paths {REF}
 ##          : $outdirectory_path      => Outfile path
@@ -49,6 +50,7 @@ sub manta_config {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $call_regions_file_path;
     my $FILEHANDLE;
     my $infile_paths_ref;
     my $outdirectory_path;
@@ -60,6 +62,10 @@ sub manta_config {
     my $exome_analysis;
 
     my $tmpl = {
+        call_regions_file_path => {
+            store       => \$call_regions_file_path,
+            strict_type => 1,
+        },
         exome_analysis => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
@@ -96,6 +102,10 @@ sub manta_config {
         push @commands, q{--referenceFasta} . $SPACE . $referencefile_path;
     }
 
+    if ($call_regions_file_path) {
+
+        push @commands, q{--callRegions} . $SPACE . $call_regions_file_path;
+    }
     if ($exome_analysis) {
 
         push @commands, q{--exome};

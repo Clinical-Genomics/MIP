@@ -94,6 +94,8 @@ reference:
   human_reference:
     - decoy_5
     - assembly38
+  manta_call_regions:
+    - 1.0
   mills_and_1000g_indels:
     - gold_standard_indels
   rank_model:
@@ -581,6 +583,20 @@ reference_feature:
         outfile: grch38_homo_sapiens_-assembly-.fasta
         outfile_index: grch38_homo_sapiens_-assembly-.fasta.fai
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
+  manta_call_regions:
+    grch38:
+      1.0:
+        file: grch38_manta_call_regions_-1.0-.bed.gz
+        file_check: grch38_manta_call_regions_-1.0-.bed.gz.md5
+        file_index: grch38_manta_call_regions_-1.0-.bed.gz.tbi
+        file_index_check: grch38_manta_call_regions_-1.0-.bed.gz.tbi.md5
+        outfile: grch38_manta_call_regions_-1.0-.bed.gz
+        outfile_check: grch38_manta_call_regions_-1.0-.bed.gz.md5
+        outfile_check_method: md5sum
+        outfile_index: grch38_manta_call_regions_-1.0-.bed.gz.tbi
+        outfile_index_check: grch38_manta_call_regions_-1.0-.bed.gz.tbi.md5
+        outfile_index_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
   mills_and_1000g_indels:
     grch37:
       gold_standard_indels:
