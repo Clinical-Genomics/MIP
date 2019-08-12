@@ -881,6 +881,10 @@ sub parse_vep_csq {
                   \$transcript_effects[ $vep_format_field_column_href->{Allele} ]
                   ;    #Alias allele
 
+	if (not exists $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{rank} ) {
+## Set arbitrary primary consequence rank - just to inititate key per hgnc_id and allele 
+	$consequence_href->{$$hgnc_id_ref}{$$allele_ref}{rank} = 999;
+}
                 # Split consequence
                 my @consequences = split( /\&/,
                     $transcript_effects[ $vep_format_field_column_href->{Consequence} ] );
@@ -899,23 +903,18 @@ sub parse_vep_csq {
                     my $most_severe_consequence =
                       $$hgnc_id_ref . ":" . $$allele_ref . "|" . $consequence_term;
 
-                    ## Compare to previous record
-                    if ( exists $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score}
-                        && $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score} )
-                    {
-
-                        ## Collect most severe consequence
-                        if ( $consequence_severity_href->{$consequence_term}{rank} <
-                            $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score} )
-                        {
-
-                            ## Map of what to set
+                            ## Map of what to set to consequence
                             my %set_key = (
                                 most_severe_consequence => $most_severe_consequence,
                                 most_severe_transcript  => $transcript,
-                                score =>
+                                rank =>
                                   $consequence_severity_href->{$consequence_term}{rank},
                             );
+
+                    ### Compare to previous record
+                        ## If current consequence term has lower rank than set rank
+                        next CONSEQUENCE if (not $consequence_severity_href->{$consequence_term}{rank} <
+                            $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{rank} );
 
                             set_in_consequence_hash(
                                 {
@@ -925,36 +924,7 @@ sub parse_vep_csq {
                                     set_key_href     => \%set_key,
                                 }
                             );
-                        }
-                    }
-                    else {    #First pass
-
-                        set_in_consequence_hash(
-                            {
-                                key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                  {$$allele_ref}{score},
-                                value_ref =>
-                                  \$consequence_severity_href->{$consequence_term}{rank},
-                            }
-                        );
-
-                        set_in_consequence_hash(
-                            {
-                                key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                  {$$allele_ref}{most_severe_consequence},
-                                value_ref => \$most_severe_consequence,
-                            }
-                        );
-                        set_in_consequence_hash(
-                            {
-                                key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                  {$$allele_ref}{most_severe_transcript},
-                                value_ref => \$transcript,
-                            }
-                        );
-                    }
                 }
-
                 if ( !$per_gene ) {
 
                     if ( $select_data_href->{$$hgnc_id_ref} )
