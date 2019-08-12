@@ -37,7 +37,7 @@ use MIP::Recipes::Pipeline::Install_rd_dna qw{ pipeline_install_rd_dna };
 use MIP::Recipes::Pipeline::Install_rd_rna qw{ pipeline_install_rd_rna };
 
 ## Constants
-Readonly my $THRE      => 3;
+Readonly my $THREE      => 3;
 Readonly my $MINUS_ONE => -1;
 
 BEGIN {
