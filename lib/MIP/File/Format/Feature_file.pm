@@ -534,7 +534,7 @@ sub tree_annotations {
     ## If no overlapping features elements returned
     return if ( not @{$features_ref} );
 
-    ## Collect all overlapping features elebefore adding to line
+    ## Collect all overlapping features before adding to line
     my %collected_annotation;
 
   FEATURE:
@@ -570,14 +570,14 @@ sub tree_annotations {
         next COLLECTED_ANNOTATION if ( not @{$annotations_ref} );
 
         ## All feature file annotations
-      SELECTED_ANNOTATION:
+      FEATURE_ANNOTATION:
         for my $feature_header ( keys %{ $data_href->{present} } ) {
 
             my $feature_header_col_index =
               $data_href->{present}{$feature_header}{column_order};
 
             ## Matching feature file header index and feature index
-            next SELECTED_ANNOTATION
+            next FEATURE_ANNOTATION
               if ( not $feature_header_col_index eq $annotation_index );
 
             ## Set annotation to vcf record
