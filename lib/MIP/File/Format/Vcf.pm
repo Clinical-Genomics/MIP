@@ -29,6 +29,7 @@ BEGIN {
     our @EXPORT_OK = qw{
       check_vcf_variant_line
       parse_vcf_header
+      set_in_consequence_hash
       set_info_key_pairs_in_vcf_record
       set_line_elements_in_vcf_record
     };
@@ -161,6 +162,62 @@ sub parse_vcf_header {
     ## All other meta-data headers - Add to array without using regexp
     push @{ $meta_data_href->{other}{other} }, $meta_data_string;
     return 1;
+}
+
+sub set_in_consequence_hash {
+
+## Function : Adds the most severe consequence or prediction to gene.
+## Returns  :
+## Arguments: $allele           => Allele
+##          : $consequence_href => Consequence hash {REF}
+##          : $hgnc_id          => Hgnc id
+##          : $set_key_href     => Key value pairs to set {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $allele;
+    my $consequence_href;
+    my $hgnc_id;
+    my $set_key_href;
+
+    my $tmpl = {
+        allele => {
+            defined     => 1,
+            required    => 1,
+            store       => \$allele,
+            strict_type => 1,
+        },
+        consequence_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$consequence_href,
+            strict_type => 1,
+        },
+        hgnc_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$hgnc_id,
+            strict_type => 1,
+        },
+        set_key_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$set_key_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %{$set_key_href} ) {
+
+        $consequence_href->{$hgnc_id}{$allele}{$key} = $value;
+    }
+    return;
 }
 
 sub set_info_key_pairs_in_vcf_record {

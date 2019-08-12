@@ -843,6 +843,8 @@ sub parse_vep_csq {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::File::Format::Vcf qw{ set_in_consequence_hash };
+
     ## Convert between hgnc_id and hgnc_symbol
     my %hgnc_map;
 
@@ -907,35 +909,27 @@ sub parse_vep_csq {
                             $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score} )
                         {
 
-                            add_to_consequence_hash(
-                                {
-                                    key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                      {$$allele_ref}{score},
-                                    value_ref =>
-                                      \$consequence_severity_href->{$consequence_term}
-                                      {rank},
-                                }
+                            ## Map of what to set
+                            my %set_key = (
+                                most_severe_consequence => $most_severe_consequence,
+                                most_severe_transcript  => $transcript,
+                                score =>
+                                  $consequence_severity_href->{$consequence_term}{rank},
                             );
 
-                            add_to_consequence_hash(
+                            set_in_consequence_hash(
                                 {
-                                    key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                      {$$allele_ref}{most_severe_consequence},
-                                    value_ref => \$most_severe_consequence,
-                                }
-                            );
-                            add_to_consequence_hash(
-                                {
-                                    key_ref => \$consequence_href->{$$hgnc_id_ref}
-                                      {$$allele_ref}{most_severe_transcript},
-                                    value_ref => \$transcript,
+                                    allele           => $$allele_ref,
+                                    consequence_href => $consequence_href,
+                                    hgnc_id          => $$hgnc_id_ref,
+                                    set_key_href     => \%set_key,
                                 }
                             );
                         }
                     }
                     else {    #First pass
 
-                        add_to_consequence_hash(
+                        set_in_consequence_hash(
                             {
                                 key_ref => \$consequence_href->{$$hgnc_id_ref}
                                   {$$allele_ref}{score},
@@ -944,14 +938,14 @@ sub parse_vep_csq {
                             }
                         );
 
-                        add_to_consequence_hash(
+                        set_in_consequence_hash(
                             {
                                 key_ref => \$consequence_href->{$$hgnc_id_ref}
                                   {$$allele_ref}{most_severe_consequence},
                                 value_ref => \$most_severe_consequence,
                             }
                         );
-                        add_to_consequence_hash(
+                        set_in_consequence_hash(
                             {
                                 key_ref => \$consequence_href->{$$hgnc_id_ref}
                                   {$$allele_ref}{most_severe_transcript},
@@ -1061,44 +1055,6 @@ sub parse_vep_csq {
               $most_severe_range_pli;
         }
     }
-}
-
-sub add_to_consequence_hash {
-
-##add_to_consequence_hash
-
-##Function : Adds the most severe consequence or prediction to gene.
-##Returns  : ""
-##Arguments: $key_ref, $value_ref
-##         : $key_ref   => The hash key to update {REF}
-##         : $value_ref => The value to add to hash key
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $key_ref;
-    my $value_ref;
-
-    my $tmpl = {
-        key_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$key_ref
-        },
-        value_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$value_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    $$key_ref = $$value_ref;
 }
 
 sub add_field_to_element {
