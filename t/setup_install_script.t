@@ -23,6 +23,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COLON $COMMA $DOT $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
@@ -35,12 +36,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COLON => q{;};
-Readonly my $COMMA => q{,};
-Readonly my $DOT   => q{.};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -48,17 +43,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Language::Shell} => [qw{ create_bash_file }],
-        q{MIP::Test::Fixtures}  => [qw{ test_log test_standard_cli }],
+        q{MIP::Script::Setup_script} => [qw{ setup_install_script }],
+        q{MIP::Test::Fixtures}       => [qw{ test_log test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Language::Shell qw{ create_bash_file };
+use MIP::Script::Setup_script qw{ setup_install_script };
 
-diag(   q{Test create_bash_file from Shell.pm v}
-      . $MIP::Language::Shell::VERSION
+diag(   q{Test setup_install_script from Setup_script.pm v}
+      . $MIP::Script::Setup_script::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -69,7 +64,7 @@ diag(   q{Test create_bash_file from Shell.pm v}
 ## Create test log
 my $log = test_log( {} );
 
-my %parameter = (
+my %active_parameter = (
     slurm_quality_of_service => q{low},
     project_id               => q{cust000},
     core_number              => 1,
@@ -93,17 +88,17 @@ open $FILEHANDLE, q{>}, \$file_content
 
 ## When the sub is launched
 trap {
-    create_bash_file(
+    setup_install_script(
         {
-            FILEHANDLE         => $FILEHANDLE,
-            file_name          => q{test.sh},
-            remove_dir         => catfile( cwd(), $DOT, q{test} ),
-            invoke_login_shell => 0,
-            log                => $log,
-            parameter_href     => \%parameter,
-            sbatch_mode        => 0,
-            set_errexit        => $parameter{bash_set_errexit},
-            set_nounset        => $parameter{bash_set_nounset},
+            FILEHANDLE            => $FILEHANDLE,
+            file_name             => q{test.sh},
+            remove_dir            => catfile( cwd(), $DOT, q{test} ),
+            invoke_login_shell    => 0,
+            log                   => $log,
+            active_parameter_href => \%active_parameter,
+            sbatch_mode           => 0,
+            set_errexit           => $active_parameter{bash_set_errexit},
+            set_nounset           => $active_parameter{bash_set_nounset},
         }
     );
 };
@@ -132,17 +127,17 @@ open $FILEHANDLE_SBATCH, q{>}, \$file_content_sbatch
 
 ## When the sub is launched
 trap {
-    create_bash_file(
+    setup_install_script(
         {
-            FILEHANDLE         => $FILEHANDLE_SBATCH,
-            file_name          => q{test.sh},
-            remove_dir         => catfile( cwd(), $DOT, q{test} ),
-            invoke_login_shell => 1,
-            log                => $log,
-            parameter_href     => \%parameter,
-            sbatch_mode        => 1,
-            set_errexit        => $parameter{bash_set_errexit},
-            set_nounset        => $parameter{bash_set_nounset},
+            FILEHANDLE            => $FILEHANDLE_SBATCH,
+            file_name             => q{test.sh},
+            remove_dir            => catfile( cwd(), $DOT, q{test} ),
+            invoke_login_shell    => 1,
+            log                   => $log,
+            active_parameter_href => \%active_parameter,
+            sbatch_mode           => 1,
+            set_errexit           => $active_parameter{bash_set_errexit},
+            set_nounset           => $active_parameter{bash_set_nounset},
         }
     );
 };
@@ -154,7 +149,7 @@ close $FILEHANDLE_SBATCH;
 ok( $file_content_sbatch =~ / ^(\#SBATCH) /xms, q{Create sbatch headers} );
 
 ### Given faulty input when requesting sbatch headers
-$parameter{project_id} = undef;
+$active_parameter{project_id} = undef;
 
 # Create anonymous filehandle
 my $FILEHANDLE_FAULTY = IO::Handle->new();
@@ -173,17 +168,17 @@ open $FILEHANDLE_FAULTY, q{>}, \$file_content_faulty
 
 ## When the sub is launched
 trap {
-    create_bash_file(
+    setup_install_script(
         {
-            FILEHANDLE         => $FILEHANDLE_FAULTY,
-            file_name          => q{test.sh},
-            remove_dir         => catfile( cwd(), $DOT, q{test} ),
-            invoke_login_shell => 1,
-            log                => $log,
-            parameter_href     => \%parameter,
-            sbatch_mode        => 1,
-            set_errexit        => $parameter{bash_set_errexit},
-            set_nounset        => $parameter{bash_set_nounset},
+            FILEHANDLE            => $FILEHANDLE_FAULTY,
+            file_name             => q{test.sh},
+            remove_dir            => catfile( cwd(), $DOT, q{test} ),
+            invoke_login_shell    => 1,
+            log                   => $log,
+            active_parameter_href => \%active_parameter,
+            sbatch_mode           => 1,
+            set_errexit           => $active_parameter{bash_set_errexit},
+            set_nounset           => $active_parameter{bash_set_nounset},
         }
     );
 };

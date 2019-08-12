@@ -22,11 +22,11 @@ use MooseX::Types::Structured qw{ Dict Optional };
 use Readonly;
 
 ## MIPs lib
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::Main::Install qw{ mip_install };
-use MIP::Script::Utils qw{ nest_hash print_parameter_defaults update_program_versions };
+use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 1.09;
+our $VERSION = 2.0;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -45,43 +45,69 @@ sub run {
     ## Remove Moose::App extra variable
     delete $arg_href->{extra_argv};
 
-    ## Load default parameters from config file
-    my $install_parameters_path = abs_path( $arg_href->config_file );
-    my %parameter               = load_yaml(
-        {
-            yaml_file => $install_parameters_path
-        }
+    ## Input from Cli
+    my %active_parameter = %{$arg_href};
+
+    ## Mip analyse rd_dna parameters
+    ## CLI commands inheritance
+    my @definition_files = (
+        catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
+        catfile( $Bin, qw{ definitions install_parameters.yaml } ),
+        catfile( $Bin, qw{ definitions install_rd_rna_parameters.yaml } ),
     );
 
-    ## Print parameters from config file and exit
-    if ( $arg_href->{print_parameter_default} ) {
+    ## Non mandatory parameter definition keys to check
+    my $non_mandatory_parameter_keys_path =
+      catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } );
 
-        print_parameter_defaults(
-            {
-                parameter_href => \%parameter,
-            }
+    ## Mandatory parameter definition keys to check
+    my $mandatory_parameter_keys_path =
+      catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
+
+    ## %parameter holds all defined parameters for MIP
+    ## mip download rd_dna parameters
+    my %parameter;
+
+    ## If no config from cmd
+    if ( not $active_parameter{config_file} ) {
+
+        ## Use default
+        $active_parameter{config_file} =
+          catfile( $Bin, qw{ templates mip_install_rd_rna_config_-1.0-.yaml } );
+    }
+
+  DEFINITION_FILE:
+    foreach my $definition_file (@definition_files) {
+
+        %parameter = (
+            %parameter,
+            parse_definition_file(
+                {
+                    define_parameters_path        => $definition_file,
+                    mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
+                    non_mandatory_parameter_keys_path =>
+                      $non_mandatory_parameter_keys_path,
+                }
+            ),
         );
     }
 
-    ## Merge arrays and overwrite flat values in config YAML with command line
-    @parameter{ keys %{$arg_href} } = values %{$arg_href};
-
-    ## Nest the command line parameters and overwrite the default
-    nest_hash( { cmd_href => \%parameter } );
-
-    ## Update the program versions with the user input
-    update_program_versions(
+    ## Print parameters from config file and exit
+    print_parameter_defaults(
         {
-            parameter_href => \%parameter,
+            parameter_href          => \%parameter,
+            print_parameter_default => $arg_href->{print_parameter_default},
         }
     );
 
     ## Start generating the installation script
     mip_install(
         {
-            parameter_href => \%parameter,
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
         }
     );
+
     return;
 }
 
@@ -90,6 +116,15 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
+
+    option(
+        q{config_file} => (
+            cmd_aliases   => [qw{ config c }],
+            documentation => q{File with configuration parameters in YAML format},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
 
     option(
         q{environment_name} => (
@@ -107,16 +142,6 @@ sub _build_usage {
             ],
             required => 0,
         ),
-    );
-
-    option(
-        q{config_file} => (
-            cmd_aliases   => [qw{ config c }],
-            documentation => q{File with configuration parameters in YAML format},
-            is            => q{rw},
-            isa           => Str,
-            default => catfile( $Bin, qw{ definitions install_rd_rna_parameters.yaml } ),
-        )
     );
 
     option(
@@ -218,55 +243,6 @@ sub _build_usage {
                     ]
                 ),
             ],
-            required => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_auto_flag} => (
-            cmd_aliases   => [qw{ vepf }],
-            cmd_flag      => q{vep_auto_flag},
-            cmd_tags      => [q{Default: acf}],
-            documentation => q{Set the vep auto installer flags},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_assemblies} => (
-            cmd_aliases   => [qw{ vepa }],
-            cmd_flag      => q{vep_assemblies},
-            cmd_tags      => [q{Default: GRCh37, hg38}],
-            documentation => q{Select the assembly version},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_cache_dir} => (
-            cmd_aliases => [qw{ vepc }],
-            cmd_flag    => q{vep_cache_dir},
-            cmd_tags =>
-              [q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}],
-            documentation => q{Specify the cache directory to use},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_species} => (
-            cmd_aliases   => [qw{ vepsp }],
-            cmd_flag      => q{vep_species},
-            cmd_tags      => [q{Default: homo_sapiens_merged}],
-            documentation => q{Select the vep species to install},
-            is            => q{rw},
-            isa      => ArrayRef [ enum( [qw{ homo_sapiens homo_sapiens_merged }] ), ],
             required => 0,
         ),
     );

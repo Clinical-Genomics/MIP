@@ -130,7 +130,7 @@ sub download_RECIPE_NAME {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger( uc q{mip_download} );
+    my $log = Log::Log4perl->get_logger($LOG);
 
     ## Unpack parameters
     my $reference_dir = $active_parameter_href->{reference_dir};

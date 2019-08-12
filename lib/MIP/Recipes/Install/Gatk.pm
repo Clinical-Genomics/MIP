@@ -1,33 +1,34 @@
 package MIP::Recipes::Install::Gatk;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
+use charnames qw{ :full :short };
+use Cwd;
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
 
-## CPANM
-use Readonly;
+## CPAN
+use autodie qw{ :all };
+
+## MIPs lib/
+use MIP::Constants qw{ $DOT $LOG $NEWLINE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gatk_download };
 }
-
-## Constants
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
 
 sub gatk_download {
 
@@ -42,32 +43,32 @@ sub gatk_download {
 
     ## Flatten argument(s)
     my $gatk_version;
+    my $FILEHANDLE;
     my $quiet;
     my $verbose;
-    my $FILEHANDLE;
 
     ## Default(s)
 
     my $tmpl = {
         gatk_version => {
-            required    => 1,
+            allow       => qr/ \A \d+ \z | \A \d+.\d+ \z /xsm,
             defined     => 1,
-            allow       => qr/ ^\d+$ | ^\d+.\d+$ /xsm,
+            required    => 1,
+            store       => \$gatk_version,
             strict_type => 1,
-            store       => \$gatk_version
         },
         FILEHANDLE => {
-            store => \$FILEHANDLE
+            store => \$FILEHANDLE,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
+            store       => \$quiet,
             strict_type => 1,
-            store       => \$quiet
         },
         verbose => {
             allow       => [ undef, 0, 1 ],
+            store       => \$verbose,
             strict_type => 1,
-            store       => \$verbose
         },
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -85,18 +86,16 @@ sub gatk_download {
     ## NOTE: Since there is no version in the url, we can potentially download
     ## incorrect version of gatk. Gatk-register does not work with the git repo
     ## releases (.zip or .tar.gz)
-    my $gatk_url =
-      q{https://software.broadinstitute.org/gatk/download/auth?package=GATK};
+    my $gatk_url = q{https://software.broadinstitute.org/gatk/download/auth?package=GATK};
     my $gatk_tar_path =
-      catfile( $temp_dir_path,
-        q{GenomeAnalysisTK-} . $gatk_version . $DOT . q{tar.bz2} );
+      catfile( $temp_dir_path, q{GenomeAnalysisTK-} . $gatk_version . $DOT . q{tar.bz2} );
     wget(
         {
-            url          => $gatk_url,
             FILEHANDLE   => $FILEHANDLE,
-            quiet        => $quiet,
-            verbose      => $verbose,
             outfile_path => $gatk_tar_path,
+            quiet        => $quiet,
+            url          => $gatk_url,
+            verbose      => $verbose,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

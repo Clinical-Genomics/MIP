@@ -14,17 +14,26 @@ use warnings qw{ FATAL utf8 };
 use warnings;
 
 ## CPAN
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $DOT $NEWLINE $SPACE };
+use MIP::Check::Installation qw{ check_existing_installation };
+use MIP::Constants qw{ $DASH $DOT $LOG $NEWLINE $SPACE };
+use MIP::Gnu::Bash qw{ gnu_cd };
+use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_rm };
+use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+use MIP::Program::Download::Wget qw{ wget };
+use MIP::Program::Compression::Zip qw{ unzip };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_gtf2bed };
@@ -93,16 +102,6 @@ sub install_gtf2bed {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_rm };
-    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Compression::Zip qw{ unzip };
-
     ## Unpack parameters
     my $program_version = $gtf2bed_parameters_href->{version};
 
@@ -119,7 +118,7 @@ sub install_gtf2bed {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_gtf2bed},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }

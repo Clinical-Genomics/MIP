@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli test_log };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -60,8 +60,8 @@ diag(   q{Test set_conda_env_names_and_paths from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given a test hash with an undefined environment name and date addition request.
-my %parameter = (
-    conda_dir_path   => catdir( $Bin, qw{ data modules miniconda } ),
+my %active_parameter = (
+    conda_path       => catdir( $Bin, qw{ data modules miniconda } ),
     environment_name => {
         etest_env => undef,
     },
@@ -72,17 +72,18 @@ my %parameter = (
 
 set_conda_env_names_and_paths(
     {
-        parameter_href => \%parameter,
+        active_parameter_href => \%active_parameter,
     }
 );
 ## Then construct and set conda environment name
-like( $parameter{environment_name}{etest_env},
+like( $active_parameter{environment_name}{etest_env},
     qr/base_test_env_\d{6}/xms, q{Set environment name} );
 
 is(
-    $parameter{etest_env}{conda_prefix_path},
+    $active_parameter{etest_env}{conda_prefix_path},
     catdir(
-        $parameter{conda_dir_path}, q{envs}, $parameter{environment_name}{etest_env}
+        $active_parameter{conda_path}, q{envs},
+        $active_parameter{environment_name}{etest_env}
     ),
     q{Set environment conda path}
 );

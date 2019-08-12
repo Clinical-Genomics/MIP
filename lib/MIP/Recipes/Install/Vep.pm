@@ -15,24 +15,32 @@ use utf8;
 use warnings qw{ FATAL utf8 };
 use warnings;
 
-## Cpanm
+## CPAN
+use autodie qw{ :all };
 use Readonly;
+
+## MIPs lib/
+use MIP::Check::Installation qw{ check_existing_installation };
+use MIP::Constants qw{ $DASH $DOT $LOG $NEWLINE $SPACE };
+use MIP::Gnu::Bash qw{ gnu_cd gnu_unset };
+use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_rm };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+use MIP::Program::Compression::Tar qw{ tar };
+use MIP::Program::Download::Wget qw{ wget };
+use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor_install };
+use MIP::Versionmanager::Git qw{ git_checkout git_clone };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.13;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
 }
-
-## Constants
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 sub install_vep {
 
@@ -97,17 +105,6 @@ sub install_vep {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Bash qw{ gnu_cd gnu_unset };
-    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_rm };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-    use MIP::Program::Compression::Tar qw{ tar };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor_install };
-    use MIP::Versionmanager::Git qw{ git_checkout git_clone };
-
     ## Unpack parameters
     # Assembly names to use during --AUTO
     my @assemblies = @{ $vep_parameters_href->{vep_assemblies} };
@@ -144,7 +141,7 @@ sub install_vep {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_varianteffectpredictor},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }
@@ -225,9 +222,11 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
     }
 
     ## Set LD_LIBRARY_PATH for VEP installation
-    say {$FILEHANDLE} q{LD_LIBRARY_PATH=} . $conda_prefix_path . q{/lib/:$LD_LIBRARY_PATH};
+    say {$FILEHANDLE} q{LD_LIBRARY_PATH=}
+      . $conda_prefix_path
+      . q{/lib/:$LD_LIBRARY_PATH};
     say {$FILEHANDLE} q{export LD_LIBRARY_PATH} . $NEWLINE;
-    
+
     ## Download VEP
     if ( $auto =~ m/[al]/xms ) {
         ## Move to miniconda environment
@@ -426,7 +425,7 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.tx
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-    
+
     ## Go back to subroutine origin
     say {$FILEHANDLE} q{## Moving back to original working directory};
     gnu_cd(

@@ -23,9 +23,11 @@ use List::MoreUtils qw{ natatime };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $DOUBLE_QUOTE $NEWLINE $LOG $SINGLE_QUOTE $SPACE $TAB };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Get::Parameter qw{ get_env_method_cmds };
 use MIP::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
@@ -33,7 +35,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -43,13 +45,6 @@ BEGIN {
     };
 }
 
-## Constants
-Readonly my $DOUBLE_QUOTE => q{"};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $SPACE        => q{ };
-Readonly my $TAB          => qq{\t};
-
 sub check_program_installations {
 
 ## Function : Write installation check oneliner to open filehandle
@@ -57,7 +52,6 @@ sub check_program_installations {
 ## Arguments: $env_name                   => Program environment name
 ##          : $FILEHANDLE                 => open filehandle
 ##          : $installation               => installation
-##          : $log                        => Log
 ##          : $programs_ref               => Programs to check {REF}
 ##          : $program_test_command_href  => Hash with test commands {REF}
 
@@ -67,7 +61,6 @@ sub check_program_installations {
     my $env_name;
     my $FILEHANDLE;
     my $installation;
-    my $log;
     my $programs_ref;
     my $program_test_command_href;
 
@@ -87,10 +80,6 @@ sub check_program_installations {
             required    => 1,
             store       => \$installation,
             strict_type => 1,
-        },
-        log => {
-            required => 1,
-            store    => \$log,
         },
         programs_ref => {
             default     => [],
@@ -113,6 +102,9 @@ sub check_program_installations {
     Readonly my $COLUMNS      => 4;
     Readonly my $COLUMN_WIDTH => 25;
     Readonly my $HASH_SIGN    => q{#};
+
+    ## Retrieve logger object
+    my $log = retrieve_log( { log_name => $LOG, } );
 
     $log->info(qq{Writing tests for programs installed in environment: $env_name});
 
@@ -370,7 +362,7 @@ q{MIP will not attempt to update config as the specified path does not exist.}
     say {$FILEHANDLE} $NEWLINE;
 
     ## Load config
-    my %config = load_yaml( { yaml_file => $load_config_path, } );
+    my %config             = load_yaml( { yaml_file => $load_config_path, } );
     my %config_environment = %{ $config{load_env} };
 
     ## Broadcast message

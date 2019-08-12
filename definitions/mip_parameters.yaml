@@ -26,13 +26,19 @@ conda_path:
   mandatory: no
   type: path
   update_path: absolute_path
-config_file:
+email:
   associated_recipe:
    - mip
   data_type: SCALAR
-  default: 0
-  type: path
-  update_path: absolute_path
+  mandatory: no
+  type: mip
+email_types:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  element_separator: ,
+  mandatory: no
+  type: mip
 log_file:
   associated_recipe:
    - mip
@@ -64,23 +70,6 @@ node_ram_memory:
   data_type: SCALAR
   default: 128
   type: mip
-project_id:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  type: mip
-reference_dir:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
-temp_directory:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  type: path
 verbose:
   associated_recipe:
    - mip

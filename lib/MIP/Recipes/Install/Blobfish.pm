@@ -1,5 +1,6 @@
 package MIP::Recipes::Install::Blobfish;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
@@ -13,7 +14,17 @@ use warnings qw{ FATAL utf8 };
 use warnings;
 
 ## CPAN
+use autodie qw{ :all };
 use Readonly;
+
+## MIPs lib/
+use MIP::Check::Installation qw{ check_existing_installation };
+use MIP::Constants qw{ $LOG $NEWLINE $SPACE };
+use MIP::Gnu::Bash qw{ gnu_cd };
+use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+use MIP::Versionmanager::Git qw{ git_clone };
 
 BEGIN {
 
@@ -21,15 +32,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_blobfish };
 }
-
-## Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 sub install_blobfish {
 
@@ -94,14 +101,6 @@ sub install_blobfish {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-    use MIP::Versionmanager::Git qw{ git_clone };
-
     ## Unpack parameters
     my $program_url     = $blobfish_parameters_href->{url};
     my $program_version = $blobfish_parameters_href->{version};
@@ -114,7 +113,7 @@ sub install_blobfish {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_blobfish},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }
@@ -183,8 +182,8 @@ sub install_blobfish {
     say {$FILEHANDLE} q{## Linking executable};
     gnu_ln(
         {
-            FILEHANDLE => $FILEHANDLE,
-            link_path  => catfile( $conda_prefix_path, q{bin}, $executable ),
+            FILEHANDLE  => $FILEHANDLE,
+            link_path   => catfile( $conda_prefix_path, q{bin}, $executable ),
             target_path => catfile( $program_directory_path, $executable ),
             symbolic    => 1,
         }

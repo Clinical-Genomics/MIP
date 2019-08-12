@@ -1,19 +1,27 @@
 package MIP::Recipes::Install::Pip;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
+use charnames qw{ :full :short };
+use Cwd;
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
+
+## CPAN
+use autodie qw{ :all };
 use Readonly;
 
-## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
+## MIPs lib/
+use MIP::Constants qw{ $LOG $NEWLINE $SPACE };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+use MIP::Package_manager::Pip qw{ pip_install };
 
 BEGIN {
 
@@ -21,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.3;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_pip_packages };
@@ -66,17 +74,13 @@ sub install_pip_packages {
             strict_type => 1,
         },
         verbose => {
-            allow => [ undef, 0, 1 ],
-            store => \$verbose
+            allow       => [ undef, 0, 1 ],
+            store       => \$verbose,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Local modules
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-    use MIP::Package_manager::Pip qw{ pip_install };
 
     ## Return if no packages are to be installed
     return if not keys %{$pip_packages_href};
@@ -84,7 +88,7 @@ sub install_pip_packages {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_pip_packages},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }

@@ -19,8 +19,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Cli::Utils qw{ run }
-  ;    # MooseX::App required sub. Called internally by MooseX::App
+use MIP::Cli::Utils qw{ run };
 
 our $VERSION = 1.06;
 
@@ -40,28 +39,6 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
-
-    option(
-        q{conda_dir_path} => (
-            cmd_aliases   => [qw{ cdp }],
-            cmd_flag      => q{conda_dir_path},
-            documentation => q{Path to conda_directory},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{conda_update} => (
-            cmd_aliases   => [qw{ cdu }],
-            cmd_flag      => q{conda_update},
-            documentation => q{Update conda},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-        ),
-    );
 
     option(
         q{conda_no_update_dep} => (
@@ -147,6 +124,15 @@ sub _build_usage {
             isa           => Bool,
             required      => 0,
         ),
+    );
+
+    option(
+        q{project_id} => (
+            cmd_aliases   => [qw{ pro }],
+            documentation => q{Project id},
+            is            => q{rw},
+            isa           => Str,
+        )
     );
 
     option(
