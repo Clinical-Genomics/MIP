@@ -849,6 +849,7 @@ sub parse_vep_csq {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Vcfparser qw{ parse_vep_csq_consequence };
     use MIP::File::Format::Vcf qw{ set_in_consequence_hash };
 
     ## Convert between hgnc_id and hgnc_symbol
@@ -887,53 +888,20 @@ sub parse_vep_csq {
                   \$transcript_effects[ $vep_format_field_column_href->{Allele} ]
                   ;    #Alias allele
 
-                ## Set arbitrary primary consequence rank - just to inititate key per hgnc_id and allele
-                if ( not exists $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{rank} ) {
+                my $consequence_field =
+                  $transcript_effects[ $vep_format_field_column_href->{Consequence} ];
 
-                    $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{rank} = 999;
-                }
+                ## Parse the most severe consequence or prediction to gene
+                parse_vep_csq_consequence(
+                    {
+                        allele            => $$allele_ref,
+                        consequence_field => $consequence_field,
+                        consequence_href  => $consequence_href,
+                        hgnc_id           => $$hgnc_id_ref,
+                        transcript        => $transcript,
+                    }
+                );
 
-                # Split consequence
-                my @consequences = split( /\&/,
-                    $transcript_effects[ $vep_format_field_column_href->{Consequence} ] );
-
-              CONSEQUENCE:
-                foreach my $consequence_term (@consequences) {
-
-                    check_terms(
-                        {
-                            data_href          => $consequence_severity_href,
-                            term               => $consequence_term,
-                            data_category_name => q{SO},
-                        }
-                    );
-
-                    my $most_severe_consequence =
-                      $$hgnc_id_ref . ":" . $$allele_ref . "|" . $consequence_term;
-
-                    ## Map of what to set to consequence
-                    my %set_key = (
-                        most_severe_consequence => $most_severe_consequence,
-                        most_severe_transcript  => $transcript,
-                        rank => $consequence_severity_href->{$consequence_term}{rank},
-                    );
-
-                    ### Compare to previous record
-                    ## If current consequence term has lower rank than set rank
-                    next CONSEQUENCE
-                      if (
-                        not $consequence_severity_href->{$consequence_term}{rank} <
-                        $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{rank} );
-
-                    set_in_consequence_hash(
-                        {
-                            allele           => $$allele_ref,
-                            consequence_href => $consequence_href,
-                            hgnc_id          => $$hgnc_id_ref,
-                            set_key_href     => \%set_key,
-                        }
-                    );
-                }
                 if ( !$per_gene ) {
 
                     if ( $select_data_href->{$$hgnc_id_ref} )
@@ -1523,51 +1491,4 @@ sub FindLCAF {
         }
     }
     return $temp_maf;
-}
-
-sub check_terms {
-
-## check_terms
-
-## Function : Check that the found terms in the vcf corresond to known terms - otherwise croak and exit.
-## Returns  : ""
-## Arguments: $data_href, $term, $data_category_name
-##          : $data_href          => The term hash {REF}
-##          : $term               => The found term
-##          : $data_category_name => The origin of the term i.e SO
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $data_href;
-    my $term;
-    my $data_category_name;
-
-    my $tmpl = {
-        data_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$data_href
-        },
-        term => { required => 1, defined => 1, strict_type => 1, store => \$term },
-        data_category_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$data_category_name
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( not exists $data_href->{$term} ) {
-
-        croak(  q{Could not find }
-              . $data_category_name
-              . q{ term from vcf in corresponding hash. Update hash to contain term: '}
-              . $term
-              . q{'\n} );
-    }
 }

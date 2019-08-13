@@ -20,7 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE %SO_CONSEQUENCE_SEVERITY };
+use MIP::Constants qw{ $COLON $COMMA $PIPE %SO_CONSEQUENCE_SEVERITY $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
@@ -40,17 +40,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Vcf} => [qw{ set_in_consequence_hash }],
-        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
+        q{MIP::Vcfparser}      => [qw{ parse_vep_csq_consequence }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Format::Vcf qw{ set_in_consequence_hash };
+use MIP::Vcfparser qw{ parse_vep_csq_consequence };
 
-diag(   q{Test set_in_consequence_hash from Vcf.pm v}
-      . $MIP::File::Format::Vcf::VERSION
+diag(   q{Test parse_vep_csq_consequence from Vcfparser.pm v}
+      . $MIP::Vcfparser::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,35 +62,36 @@ diag(   q{Test set_in_consequence_hash from Vcf.pm v}
 my $hgnc_id = 1;
 my $allele  = q{A};
 my %consequence;
-my $consequence_term = q{missense_variant};
-my $consequence_rank = $SO_CONSEQUENCE_SEVERITY{$consequence_term}{rank};
-my $transcript_id    = q{a_transcript_id};
-my %set_key          = (
-    most_severe_consequence => $consequence_term,
-    most_severe_transcript  => $transcript_id,
-    rank                    => $consequence_rank,
-);
+my $consequence_field = q{missense_variant&intron_variant};
+my $consequence_term  = q{missense_variant};
+my $consequence_rank  = $SO_CONSEQUENCE_SEVERITY{$consequence_term}{rank};
+my $transcript_id     = q{a_transcript_id};
 
-set_in_consequence_hash(
+parse_vep_csq_consequence(
     {
-        allele           => $allele,
-        consequence_href => \%consequence,
-        hgnc_id          => $hgnc_id,
-        set_key_href     => \%set_key,
+        allele            => $allele,
+        consequence_field => $consequence_field,
+        consequence_href  => \%consequence,
+        hgnc_id           => $hgnc_id,
+        transcript        => $transcript_id,
     }
 );
 
-## Then keys should be have values in cosequence hash
 my %expected_consequence = (
     $hgnc_id => {
         $allele => {
-            most_severe_consequence => $consequence_term,
-            most_severe_transcript  => $transcript_id,
-            rank                    => $consequence_rank,
+            most_severe_consequence => $hgnc_id
+              . $COLON
+              . $allele
+              . $PIPE
+              . $consequence_term,
+            most_severe_transcript => $transcript_id,
+            rank                   => $consequence_rank,
         },
     },
 );
 
+## Then
 is_deeply( \%consequence, \%expected_consequence, q{Set score in consequence hash} );
 
 done_testing();
