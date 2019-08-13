@@ -849,6 +849,7 @@ sub parse_vep_csq {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Vcfparser qw{ parse_vep_csq_consequence };
     use MIP::File::Format::Vcf qw{ set_in_consequence_hash };
 
     ## Convert between hgnc_id and hgnc_symbol
@@ -896,7 +897,7 @@ sub parse_vep_csq {
                         allele            => $$allele_ref,
                         consequence_field => $consequence_field,
                         consequence_href  => $consequence_href,
-                        hgnc_id_ref       => $$hgnc_id_ref,
+                        hgnc_id           => $$hgnc_id_ref,
                         transcript        => $transcript,
                     }
                 );
