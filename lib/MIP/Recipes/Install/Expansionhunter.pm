@@ -7,24 +7,29 @@ use Cwd;
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
 use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
 
-## Cpanm
-use Readonly;
+## CPAN
+use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE };
+use MIP::Check::Installation qw{ check_existing_installation };
+use MIP::Constants qw{ $LOG $NEWLINE };
+use MIP::Gnu::Coreutils qw{ gnu_ln gnu_rm };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Program::Compression::Tar qw{ tar };
+use MIP::Program::Download::Wget qw{ wget };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_expansionhunter };
@@ -94,20 +99,13 @@ sub install_expansionhunter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_rm };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Program::Compression::Tar qw{ tar };
-    use MIP::Program::Download::Wget qw{ wget };
-
     ## Unpack parameters
     my $expansionhunter_version = $expansionhunter_parameters_href->{version};
 
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_expansionhunter},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }

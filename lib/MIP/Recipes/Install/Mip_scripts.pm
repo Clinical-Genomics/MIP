@@ -1,36 +1,39 @@
 package MIP::Recipes::Install::Mip_scripts;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
+use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings qw{ FATAL utf8 };
 use warnings;
 
-## Cpanm
+## CPAN
+use autodie qw{ :all };
 use Readonly;
+
+## MIPs lib/
+use MIP::Constants qw{ $DOT $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_cp gnu_ln gnu_mkdir};
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
 }
-
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub install_mip_scripts {
 
@@ -96,19 +99,13 @@ sub install_mip_scripts {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Modules
-    use File::Basename qw{ fileparse };
-    use FindBin qw{ $Bin };
-    use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_cp gnu_ln gnu_mkdir};
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-
     ## Unpack parameters
     my $mip_scripts_version = $mip_scripts_parameters_href->{version};
 
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_mip_scripts},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }

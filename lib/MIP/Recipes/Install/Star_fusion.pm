@@ -1,49 +1,54 @@
 package MIP::Recipes::Install::Star_fusion;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use charnames qw{ :full :short };
 use Cwd;
+use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
 
-## Cpanm
+## CPAN
+use autodie qw{ :all };
 use Readonly;
+
+## MIPs lib/
+use MIP::Check::Installation qw{ check_existing_installation };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Gnu::Coreutils qw{ gnu_ln gnu_rm };
+use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
+use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Program::Compression::Tar qw{ tar };
+use MIP::Program::Download::Wget qw{ wget };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_star_fusion };
 }
 
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
-Readonly my $ASTERISK    => q{*};
-
 sub install_star_fusion {
 
 ## Function : Install STAR-Fusion
 ## Returns  :
-## Arguments: $program_parameters_href => Hash with star_fusion specific parameters {REF}
+## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $conda_environment       => Conda environment
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $noupdate                => Do not update
+##          : $program_parameters_href => Hash with star_fusion specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
-##          : $FILEHANDLE              => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -92,19 +97,9 @@ sub install_star_fusion {
             store       => \$verbose,
             strict_type => 1,
         },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_rm };
-    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
-    use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Program::Compression::Tar qw{ tar };
-    use MIP::Program::Download::Wget qw{ wget };
 
     ## Unpack parameters
     my $star_fusion_version = $star_fusion_parameters_href->{version};
@@ -112,7 +107,7 @@ sub install_star_fusion {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_star_fusion},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }
@@ -125,8 +120,7 @@ sub install_star_fusion {
 
     ## Check if installation exists and remove directory unless a noupdate flag is provided
     my $star_fusion_dir =
-      catdir( $conda_prefix_path, q{share},
-        q{STAR-Fusion-v} . $star_fusion_version );
+      catdir( $conda_prefix_path, q{share}, q{STAR-Fusion-v} . $star_fusion_version );
     my $install_check = check_existing_installation(
         {
             conda_environment      => $conda_environment,
@@ -148,7 +142,7 @@ sub install_star_fusion {
     ## Download
     say {$FILEHANDLE} q{## Download Star-Fusion};
     my $url =
-q{https://github.com/STAR-Fusion/STAR-Fusion/releases/download/STAR-Fusion-v}
+        q{https://github.com/STAR-Fusion/STAR-Fusion/releases/download/STAR-Fusion-v}
       . $star_fusion_version
       . q{/STAR-Fusion-v}
       . $star_fusion_version

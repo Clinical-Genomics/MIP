@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -181,6 +181,8 @@ sub initiate_logger {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Constants qw{ set_log_name_constant };
+
     ## Creates config for the log file
     my $config = create_log4perl_config(
         {
@@ -192,6 +194,10 @@ sub initiate_logger {
 
     Log::Log4perl->init( \$config );
     my $logger = Log::Log4perl->get_logger($log_name);
+
+    ## Set log name as constant
+    set_log_name_constant( { log_name => $log_name, } );
+
     return $logger;
 }
 

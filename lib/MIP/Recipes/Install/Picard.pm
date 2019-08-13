@@ -1,107 +1,104 @@
 package MIP::Recipes::Install::Picard;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use charnames qw{ :full :short };
 use Cwd;
+use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
 
-## Cpanm
+## CPAN
+use autodie qw{ :all };
 use Readonly;
+
+## MIPs lib/
+use MIP::Check::Installation qw{ check_existing_installation };
+use MIP::Constants qw{ $DOT $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mv gnu_rm };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Program::Compression::Zip qw{ unzip };
+use MIP::Program::Download::Wget qw{ wget };
+use MIP::Script::Utils qw{ create_temp_dir };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_picard };
 }
 
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
-
 sub install_picard {
 
 ## Function : Install Picard
 ## Returns  : ""
-## Arguments: $program_parameters_href => Hash with Picard specific parameters {REF}
+## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $conda_environment       => Conda environment
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $noupdate                => Do not update
+##          : $program_parameters_href => Hash with Picard specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
-##          : $FILEHANDLE              => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $picard_parameters_href;
-    my $conda_prefix_path;
     my $conda_environment;
+    my $conda_prefix_path;
+    my $FILEHANDLE;
     my $noupdate;
+    my $picard_parameters_href;
     my $quiet;
     my $verbose;
-    my $FILEHANDLE;
 
     my $tmpl = {
-        program_parameters_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$picard_parameters_href
-        },
         conda_prefix_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$conda_prefix_path,
             strict_type => 1,
-            store       => \$conda_prefix_path
         },
         conda_environment => {
+            store       => \$conda_environment,
             strict_type => 1,
-            store       => \$conda_environment
-        },
-        noupdate => {
-            strict_type => 1,
-            store       => \$noupdate
-        },
-        quiet => {
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$quiet
-        },
-        verbose => {
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$verbose
         },
         FILEHANDLE => {
             required => 1,
+            store    => \$FILEHANDLE,
             defined  => 1,
-            store    => \$FILEHANDLE
+        },
+        noupdate => {
+            store       => \$noupdate,
+            strict_type => 1,
+        },
+        program_parameters_href => {
+            default     => {},
+            required    => 1,
+            store       => \$picard_parameters_href,
+            strict_type => 1,
+        },
+        quiet => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$quiet,
+            strict_type => 1,
+        },
+        verbose => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$verbose,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mv gnu_rm };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Program::Compression::Zip qw{ unzip };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters
     my $picard_version = $picard_parameters_href->{version};
@@ -109,7 +106,7 @@ sub install_picard {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_picard},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }
@@ -121,17 +118,17 @@ sub install_picard {
     say {$FILEHANDLE} q{### Install Picard};
 
     ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $picard_dir_path = catdir( $conda_prefix_path, q{share},
-        q{picard-tools-} . $picard_version );
+    my $picard_dir_path =
+      catdir( $conda_prefix_path, q{share}, q{picard-tools-} . $picard_version );
     my $install_check = check_existing_installation(
         {
-            program_directory_path => $picard_dir_path,
-            program_name           => q{Picard},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
-            noupdate               => $noupdate,
-            log                    => $log,
             FILEHANDLE             => $FILEHANDLE,
+            log                    => $log,
+            noupdate               => $noupdate,
+            program_directory_path => $picard_dir_path,
+            program_name           => q{Picard},
         }
     );
 
@@ -158,11 +155,11 @@ sub install_picard {
       catfile( $temp_dir, q{picard-tools-} . $picard_version . $DOT . q{zip} );
     wget(
         {
-            url          => $url,
             FILEHANDLE   => $FILEHANDLE,
+            outfile_path => $picard_zip_path,
             quiet        => $quiet,
+            url          => $url,
             verbose      => $verbose,
-            outfile_path => $picard_zip_path
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -171,11 +168,11 @@ sub install_picard {
     say {$FILEHANDLE} q{## Extract};
     unzip(
         {
+            FILEHANDLE  => $FILEHANDLE,
             infile_path => $picard_zip_path,
             outdir_path => $temp_dir,
             quiet       => $quiet,
             verbose     => $verbose,
-            FILEHANDLE  => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -184,10 +181,9 @@ sub install_picard {
     say {$FILEHANDLE} q{## Make available from conda environment};
     gnu_mv(
         {
-            infile_path =>
-              catdir( $temp_dir, q{picard-tools-} . $picard_version ),
-            outfile_path => catdir( $conda_prefix_path, q{share} ),
             FILEHANDLE   => $FILEHANDLE,
+            infile_path  => catdir( $temp_dir, q{picard-tools-} . $picard_version ),
+            outfile_path => catdir( $conda_prefix_path, q{share} ),
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -201,10 +197,10 @@ sub install_picard {
     gnu_ln(
         {
             FILEHANDLE  => $FILEHANDLE,
-            target_path => $target_path,
+            force       => 1,
             link_path   => $link_path,
             symbolic    => 1,
-            force       => 1,
+            target_path => $target_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -212,9 +208,9 @@ sub install_picard {
     ## Remove the temporary install directory
     gnu_rm(
         {
+            FILEHANDLE  => $FILEHANDLE,
             infile_path => $temp_dir,
             recursive   => 1,
-            FILEHANDLE  => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE . $NEWLINE;

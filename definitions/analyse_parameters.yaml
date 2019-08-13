@@ -16,6 +16,13 @@ cluster_constant_path:
    - mip
   data_type: SCALAR
   type: path
+config_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: path
+  update_path: absolute_path
 config_file_analysis:
   associated_recipe:
    - mip
@@ -28,21 +35,6 @@ dry_run_all:
    - mip
   data_type: SCALAR
   mandatory: no
-  type: mip
-email:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-email_types:
-  associated_recipe:
-   - mip
-  element_separator: ","
-  data_type: ARRAY
-  mandatory: no
-  default:
-   - FAIL
   type: mip
 exclude_contigs:
   associated_recipe:
@@ -64,6 +56,12 @@ java_use_large_pages:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+load_env:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 node_ram_memory:
   associated_recipe:
    - mip
@@ -106,12 +104,18 @@ print_recipe_mode:
   data_type: SCALAR
   default: 2
   type: mip
-load_env:
+project_id:
   associated_recipe:
    - mip
-  data_type: HASH
-  mandatory: no
+  data_type: SCALAR
   type: mip
+reference_dir:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
 sample_ids:
   associated_recipe:
    - mip
@@ -207,3 +211,8 @@ sacct_format_fields:
    - exitcode
   element_separator: ,
   type: recipe_argument
+temp_directory:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path

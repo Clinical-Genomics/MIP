@@ -1,0 +1,166 @@
+---
+config_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: path
+  update_path: absolute_path
+disable_env_check:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+environment_base_name: 
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+environment_name:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+environment_prefix:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+environment_suffix:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+installations:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  element_separator: ,
+  mandatory: no
+  type: mip
+noupdate:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
+  type: mip
+reference_genome_versions:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  default:
+    - grch37
+    - hg38
+  element_separator: ,
+  mandatory: no
+  type: mip
+core_number:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  mandatory: no
+  type: mip
+prefer_shell:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
+process_time:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 2-00:00:00
+  mandatory: no
+  type: mip
+program_test_command:
+  associated_recipe:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+project_id:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+quiet:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  type: mip
+reference_dir:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  type: path
+  update_path: absolute_path
+sbatch_mode:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
+slurm_quality_of_service:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: low
+  mandatory: no
+  type: mip
+select_programs:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  element_separator: ,
+  mandatory: no
+  type: mip
+shell_install:
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  element_separator: ,
+  mandatory: no
+  type: mip
+skip_programs: 
+  associated_recipe:
+   - mip
+  data_type: ARRAY
+  element_separator: ,
+  mandatory: no
+  type: mip
+temp_directory:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: path
+update_config:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip
+write_config: 
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 0
+  mandatory: no
+  type: mip

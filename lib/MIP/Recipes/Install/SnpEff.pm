@@ -1,118 +1,116 @@
 package MIP::Recipes::Install::SnpEff;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use charnames qw{ :full :short };
 use Cwd;
+use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
 
-## Cpanm
+## CPAN
+use autodie qw{ :all };
+use File::Spec::Functions qw{ catfile };
+use IPC::Cmd qw{ can_run run };
 use Readonly;
+
+## MIPs lib/
+use MIP::Constants qw{ $DOT $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_mv gnu_rm };
+use MIP::Gnu::Findutils qw{ gnu_find };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Program::Compression::Zip qw{ unzip };
+use MIP::Program::Download::Wget qw{ wget };
+use MIP::Program::Variantcalling::Snpeff qw{ snpeff_download };
+use MIP::Script::Utils qw{ create_temp_dir };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_snpeff check_mt_codon_table };
 }
 
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
-
 sub install_snpeff {
 
 ## Function : Install SnpEff
-## Returns  : ""
-## Arguments: $program_parameters_href => Hash with SnpEff specific parameters {REF}
+## Returns  :
+## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $conda_environment       => Conda environment
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $noupdate                => Do not update
+##          : $program_parameters_href => Hash with SnpEff specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
-##          : $FILEHANDLE              => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $snpeff_parameters_href;
-    my $conda_prefix_path;
     my $conda_environment;
+    my $conda_prefix_path;
+    my $FILEHANDLE;
     my $noupdate;
     my $quiet;
+    my $snpeff_parameters_href;
     my $verbose;
-    my $FILEHANDLE;
 
     my $tmpl = {
-        program_parameters_href => {
-            required    => 1,
-            default     => {},
+        conda_environment => {
+            store       => \$conda_environment,
             strict_type => 1,
-            store       => \$snpeff_parameters_href
         },
         conda_prefix_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$conda_prefix_path,
             strict_type => 1,
-            store       => \$conda_prefix_path
         },
-        conda_environment => {
-            strict_type => 1,
-            store       => \$conda_environment
+        FILEHANDLE => {
+            defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
         },
         noupdate => {
+            store       => \$noupdate,
             strict_type => 1,
-            store       => \$noupdate
+        },
+        program_parameters_href => {
+            default     => {},
+            required    => 1,
+            store       => \$snpeff_parameters_href,
+            strict_type => 1,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
+            store       => \$quiet,
             strict_type => 1,
-            store       => \$quiet
         },
         verbose => {
             allow       => [ undef, 0, 1 ],
+            store       => \$verbose,
             strict_type => 1,
-            store       => \$verbose
-        },
-        FILEHANDLE => {
-            required => 1,
-            defined  => 1,
-            store    => \$FILEHANDLE
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_rm };
-    use MIP::Gnu::Findutils qw{ gnu_find };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Program::Compression::Zip qw{ unzip };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Variantcalling::Snpeff qw{ snpeff_download };
-    use MIP::Script::Utils qw{ create_temp_dir };
-
     ## Unpack parameters
-    my $snpeff_version = $snpeff_parameters_href->{version};
-    my @snpeff_genome_versions =
-      @{ $snpeff_parameters_href->{snpeff_genome_versions} };
+    my $snpeff_version         = $snpeff_parameters_href->{version};
+    my @snpeff_genome_versions = @{ $snpeff_parameters_href->{snpeff_genome_versions} };
 
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_snpeff},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }
@@ -128,12 +126,10 @@ sub install_snpeff {
 
     # Check if snpEff.jar exists (assumes that snpSift also exists if true)
     if ( -f catfile( $snpeff_install_path, q{snpEff.jar} ) ) {
-        $log->info(
-            q{SnpEff is already installed in the specified conda environment.});
+        $log->info(q{SnpEff is already installed in the specified conda environment.});
 
         if ($noupdate) {
-            $log->info(
-                q{Skipping writting installation instructions for SnpEffi});
+            $log->info(q{Skipping writting installation instructions for SnpEffi});
             say {$FILEHANDLE}
               q{## Skipping writting installation instructions for SnpEff};
             say {$FILEHANDLE} $NEWLINE;
@@ -147,9 +143,9 @@ sub install_snpeff {
         say {$FILEHANDLE} q{## Removing old SnpEff jar files};
         gnu_rm(
             {
-                infile_path => catfile( $snpeff_install_path, q{*.jar} ),
-                force       => 1,
                 FILEHANDLE  => $FILEHANDLE,
+                force       => 1,
+                infile_path => catfile( $snpeff_install_path, q{*.jar} ),
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -158,10 +154,10 @@ sub install_snpeff {
         say {$FILEHANDLE} q{## Removing old SnpEff links};
         gnu_find(
             {
-                search_path   => catdir( $conda_prefix_path, q{bin} ),
-                test_criteria => q{-xtype l},
                 action        => q{-delete},
                 FILEHANDLE    => $FILEHANDLE,
+                search_path   => catdir( $conda_prefix_path, q{bin} ),
+                test_criteria => q{-xtype l},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -186,11 +182,12 @@ sub install_snpeff {
         q{snpeff} . $UNDERSCORE . $snpeff_version . $UNDERSCORE . q{core.zip} );
     wget(
         {
-            url          => $url,
             FILEHANDLE   => $FILEHANDLE,
-            quiet        => $quiet,
-            verbose      => $verbose,
-            outfile_path => $snpeff_zip_path
+            outfile_path => $snpeff_zip_path,
+            ,
+            quiet   => $quiet,
+            url     => $url,
+            verbose => $verbose,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -199,11 +196,11 @@ sub install_snpeff {
     say {$FILEHANDLE} q{## Extract};
     unzip(
         {
+            FILEHANDLE  => $FILEHANDLE,
             infile_path => $snpeff_zip_path,
             outdir_path => $temp_dir,
             quiet       => $quiet,
             verbose     => $verbose,
-            FILEHANDLE  => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -214,9 +211,9 @@ sub install_snpeff {
         say {$FILEHANDLE} q{## Create dir for SnpEff in conda env};
         gnu_mkdir(
             {
+                FILEHANDLE       => $FILEHANDLE,
                 indirectory_path => $snpeff_install_path,
                 parents          => 1,
-                FILEHANDLE       => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -226,9 +223,9 @@ sub install_snpeff {
     say {$FILEHANDLE} q{## Make available from conda environment};
     gnu_mv(
         {
+            FILEHANDLE   => $FILEHANDLE,
             infile_path  => catfile( $temp_dir, qw{ snpEff *.jar } ),
             outfile_path => $snpeff_install_path,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     print {$FILEHANDLE} $NEWLINE;
@@ -236,9 +233,9 @@ sub install_snpeff {
     if ( not -f catfile( $snpeff_install_path, q{snpEff.config} ) ) {
         gnu_mv(
             {
-                infile_path => catfile( $temp_dir, qw{ snpEff snpEff.config } ),
-                outfile_path => $snpeff_install_path,
                 FILEHANDLE   => $FILEHANDLE,
+                infile_path  => catfile( $temp_dir, qw{ snpEff snpEff.config } ),
+                outfile_path => $snpeff_install_path,
             }
         );
         print {$FILEHANDLE} $NEWLINE;
@@ -251,14 +248,14 @@ sub install_snpeff {
     foreach my $binary (@snpeff_binaries) {
         ## Specifying target and link path
         my $target_path = catfile( $snpeff_install_path, $binary );
-        my $link_path = catfile( $conda_prefix_path, q{bin}, $binary );
+        my $link_path   = catfile( $conda_prefix_path,   q{bin}, $binary );
         gnu_ln(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                target_path => $target_path,
+                force       => 1,
                 link_path   => $link_path,
                 symbolic    => 1,
-                force       => 1,
+                target_path => $target_path,
             }
         );
         print {$FILEHANDLE} $NEWLINE;
@@ -270,11 +267,11 @@ sub install_snpeff {
         ## Check and if required add the vertebrate mitochondrial codon table to SnpEff config
         check_mt_codon_table(
             {
-                FILEHANDLE     => $FILEHANDLE,
-                share_dir      => $snpeff_install_path,
                 config_file    => q{snpEff.config},
+                FILEHANDLE     => $FILEHANDLE,
                 genome_version => $genome_version,
                 quiet          => $quiet,
+                share_dir      => $snpeff_install_path,
                 verbose        => $verbose,
             }
         );
@@ -287,15 +284,14 @@ sub install_snpeff {
         ## This is done by install script to avoid race conditin when doing first analysis run in MIP
 
         say {$FILEHANDLE} q{## Downloading SnpEff database};
-        my $jar_path = catfile( $conda_prefix_path, qw{ bin snpEff.jar} );
-        my $config_file_path =
-          catfile( $conda_prefix_path, qw{bin snpEff.config} );
+        my $jar_path         = catfile( $conda_prefix_path, qw{ bin snpEff.jar} );
+        my $config_file_path = catfile( $conda_prefix_path, qw{bin snpEff.config} );
         snpeff_download(
             {
+                config_file_path        => $config_file_path,
                 FILEHANDLE              => $FILEHANDLE,
                 genome_version_database => $genome_version,
                 jar_path                => $jar_path,
-                config_file_path        => $config_file_path,
                 temp_directory          => 1,
             }
         );
@@ -306,9 +302,9 @@ sub install_snpeff {
     say {$FILEHANDLE} q{## Remove temporary install directory};
     gnu_rm(
         {
+            FILEHANDLE  => $FILEHANDLE,
             infile_path => $temp_dir,
             recursive   => 1,
-            FILEHANDLE  => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE x 2;
@@ -318,67 +314,65 @@ sub install_snpeff {
 
 sub check_mt_codon_table {
 
-##Function : Check and if required add the vertebrate mitochondrial codon table to snpeff config
-##Returns  : ""
-##Arguments: $FILEHANDLE     => FILEHANDLE to write to
-##         : $share_dir      => The conda env shared directory
-##         : $config_file    => The config config_file
-##         : $genome_version => snpeff genome version
+## Function : Check and if required add the vertebrate mitochondrial codon table to snpeff config
+## Returns  :
+## Arguments: $config_file    => The config config_file
+##          : $FILEHANDLE     => FILEHANDLE to write to
+##          : $genome_version => snpeff genome version
+##          : $quiet          => Be quiet
+##          : $share_dir      => The conda env shared directory
+##          : $verbose        => Set verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $share_dir;
     my $config_file;
+    my $FILEHANDLE;
     my $genome_version;
-    my $verbose;
     my $quiet;
+    my $share_dir;
+    my $verbose;
 
     my $tmpl = {
-        FILEHANDLE => {
-            required => 1,
-            defined  => 1,
-            store    => \$FILEHANDLE
-        },
-        share_dir => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$share_dir
-        },
         config_file => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$config_file,
             strict_type => 1,
-            store       => \$config_file
+        },
+        FILEHANDLE => {
+            defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
         },
         genome_version => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$genome_version,
             strict_type => 1,
-            store       => \$genome_version
+        },
+        quiet => {
+            allow => [ undef, 0, 1 ],
+            store => \$quiet,
+        },
+        share_dir => {
+            defined     => 1,
+            required    => 1,
+            store       => \$share_dir,
+            strict_type => 1,
         },
         verbose => {
             allow => [ undef, 0, 1 ],
             store => \$verbose,
         },
-        quiet => {
-            allow => [ undef, 0, 1 ],
-            store => \$quiet,
-        }
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use File::Spec::Functions qw{ catfile };
-    use IPC::Cmd qw{ can_run run };
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
-
     ## Get logger
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_snpeff},
+            log_name => $LOG,
             verbose  => $verbose,
             quiet    => $quiet,
         }
@@ -418,8 +412,8 @@ sub check_mt_codon_table {
     ## Test if config file contains the desired MT codon table
     my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf );
     if ( -f catfile( $share_dir, $config_file ) ) {
-        ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
-            command => $detect_regexp . catfile( $share_dir, $config_file ) );
+        ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
+          run( command => $detect_regexp . catfile( $share_dir, $config_file ) );
     }
 
     #No MT.codonTable in config
@@ -439,9 +433,9 @@ sub check_mt_codon_table {
         my $infile_path = catfile( $share_dir, $config_file . $DOT . q{tmp} );
         gnu_mv(
             {
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $infile_path,
                 outfile_path => catfile( $share_dir, $config_file ),
-                FILEHANDLE   => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;

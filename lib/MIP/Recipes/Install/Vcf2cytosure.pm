@@ -14,7 +14,18 @@ use warnings qw{ FATAL utf8 };
 use warnings;
 
 ## CPAN
+use autodie qw{ :all };
 use Readonly;
+
+## MIPs lib/
+use MIP::Constants qw{ $DASH $DOT $LOG $NEWLINE $SPACE };
+use MIP::Gnu::Bash qw{ gnu_cd };
+use MIP::Gnu::Coreutils qw{ gnu_rm };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+use MIP::Package_manager::Pip qw{ check_pip_package pip_install };
+use MIP::Program::Compression::Zip qw{ unzip };
+use MIP::Program::Download::Wget qw{ wget };
 
 BEGIN {
 
@@ -22,17 +33,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vcf2cytosure };
 }
-
-## Constants
-Readonly my $DASH    => q{-};
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 sub install_vcf2cytosure {
 
@@ -97,15 +102,6 @@ sub install_vcf2cytosure {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Modules
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_rm };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-    use MIP::Package_manager::Pip qw{ check_pip_package pip_install };
-    use MIP::Program::Compression::Zip qw{ unzip };
-    use MIP::Program::Download::Wget qw{ wget };
-
     ## Unpack parameters
     my $program_version = $vcf2cytosure_parameters_href->{version};
     my $program_url =
@@ -117,7 +113,7 @@ sub install_vcf2cytosure {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_vcf2cytosure},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }

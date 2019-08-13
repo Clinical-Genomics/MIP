@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $LOG $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -144,7 +144,7 @@ sub analysis_RECIPE_NAME {
     ### PREPROCESSING:
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG);
 
     ## Unpack parameters
     ## Get the io infiles per chain and id

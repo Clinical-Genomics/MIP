@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
 
@@ -59,6 +59,7 @@ BEGIN {
       $UNDERSCORE
       $WITH_SINGULARITY
       set_analysis_constants
+      set_log_name_constant
     };
 }
 
@@ -76,9 +77,6 @@ Readonly our $MIP_VERSION => q{v7.1.0};
 
 ## Cli
 Readonly our $MOOSEX_APP_SCEEN_WIDTH => 160;
-
-## Log
-Readonly our $LOG => q{MIP_ANALYSE};
 
 ## SO-terms
 Readonly our %SO_CONSEQUENCE_SEVERITY => (
@@ -303,7 +301,34 @@ sub set_analysis_constants {
     }
 
     return;
+}
 
+sub set_log_name_constant {
+
+## Function : Set log name constant for MIP
+## Returns  :
+## Arguments: $log_name => Name of log
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log_name;
+
+    my $tmpl = {
+        log_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$log_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Log
+    Readonly our $LOG => $log_name;
+
+    return;
 }
 
 1;

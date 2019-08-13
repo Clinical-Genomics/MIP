@@ -14,10 +14,11 @@ use warnings qw{ FATAL utf8 };
 use warnings;
 
 ## CPAN
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $DOT $NEWLINE $SPACE };
+use MIP::Constants qw{ $DASH $DOT $LOG $NEWLINE $SPACE };
 
 BEGIN {
     require Exporter;
@@ -140,7 +141,7 @@ sub install_PROGRAM {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_PROGRAM},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }

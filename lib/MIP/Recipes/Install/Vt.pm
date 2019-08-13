@@ -1,107 +1,104 @@
 package MIP::Recipes::Install::Vt;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use charnames qw{ :full :short };
 use Cwd;
+use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
 
-## Cpanm
+## CPAN
+use autodie qw{ :all };
 use Readonly;
+
+## MIPs lib/
+use MIP::Check::Installation qw{ check_existing_installation };
+use MIP::Constants qw{ $DASH $DOT $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_mv gnu_rm };
+use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Script::Utils qw{ create_temp_dir };
+use MIP::Versionmanager::Git qw{ git_clone };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vt };
 }
 
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
-
 sub install_vt {
 
 ## Function : Install vt
-## Returns  : ""
-## Arguments: $program_parameters_href => Hash with vt specific parameters {REF}
+## Returns  :
+## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $conda_environment       => Conda environment
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $noupdate                => Do not update
+##          : $program_parameters_href => Hash with vt specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
-##          : $FILEHANDLE              => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $vt_parameters_href;
-    my $conda_prefix_path;
     my $conda_environment;
+    my $conda_prefix_path;
+    my $FILEHANDLE;
     my $noupdate;
     my $quiet;
     my $verbose;
-    my $FILEHANDLE;
+    my $vt_parameters_href;
 
     my $tmpl = {
-        program_parameters_href => {
-            required    => 1,
-            default     => {},
+        conda_environment => {
+            store       => \$conda_environment,
             strict_type => 1,
-            store       => \$vt_parameters_href
         },
         conda_prefix_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$conda_prefix_path,
             strict_type => 1,
-            store       => \$conda_prefix_path
         },
-        conda_environment => {
-            strict_type => 1,
-            store       => \$conda_environment
+        FILEHANDLE => {
+            defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
         },
         noupdate => {
+            store       => \$noupdate,
             strict_type => 1,
-            store       => \$noupdate
+        },
+        program_parameters_href => {
+            default     => {},
+            required    => 1,
+            store       => \$vt_parameters_href,
+            strict_type => 1,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
+            store       => \$quiet,
             strict_type => 1,
-            store       => \$quiet
         },
         verbose => {
             allow       => [ undef, 0, 1 ],
+            store       => \$verbose,
             strict_type => 1,
-            store       => \$verbose
-        },
-        FILEHANDLE => {
-            required => 1,
-            defined  => 1,
-            store    => \$FILEHANDLE
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_mv gnu_rm };
-    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Script::Utils qw{ create_temp_dir };
-    use MIP::Versionmanager::Git qw{ git_clone };
 
     ## Unpack parameters
     my $vt_version = $vt_parameters_href->{version};
@@ -109,7 +106,7 @@ sub install_vt {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_vt},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }
@@ -121,16 +118,16 @@ sub install_vt {
     say {$FILEHANDLE} q{### Install VT};
 
     ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $vt_dir = catdir( $conda_prefix_path, q{Vt} );
+    my $vt_dir        = catdir( $conda_prefix_path, q{Vt} );
     my $install_check = check_existing_installation(
         {
-            program_directory_path => $vt_dir,
-            program_name           => q{VT},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
-            noupdate               => $noupdate,
-            log                    => $log,
             FILEHANDLE             => $FILEHANDLE,
+            log                    => $log,
+            noupdate               => $noupdate,
+            program_directory_path => $vt_dir,
+            program_name           => q{VT},
         }
     );
 
@@ -149,11 +146,11 @@ sub install_vt {
     say {$FILEHANDLE} q{## Download VT};
     git_clone(
         {
-            url         => q{https://github.com/atks/vt.git},
             FILEHANDLE  => $FILEHANDLE,
-            quiet       => $quiet,
-            verbose     => $verbose,
             outdir_path => $temp_dir,
+            quiet       => $quiet,
+            url         => q{https://github.com/atks/vt.git},
+            verbose     => $verbose,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -162,15 +159,15 @@ sub install_vt {
     say {$FILEHANDLE} q{## Recompile};
     gnu_make(
         {
-            makefile_dir => $temp_dir,
             FILEHANDLE   => $FILEHANDLE,
+            makefile_dir => $temp_dir,
         }
     );
     print {$FILEHANDLE} $NEWLINE;
     gnu_make(
         {
-            makefile_dir => $temp_dir,
             FILEHANDLE   => $FILEHANDLE,
+            makefile_dir => $temp_dir,
             test         => 1,
         }
     );
@@ -180,8 +177,8 @@ sub install_vt {
     say {$FILEHANDLE} q{## Make VT directory in conda env};
     gnu_mkdir(
         {
-            indirectory_path => $vt_dir,
             FILEHANDLE       => $FILEHANDLE,
+            indirectory_path => $vt_dir,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -190,9 +187,9 @@ sub install_vt {
     say {$FILEHANDLE} q{## Make available from conda environment};
     gnu_mv(
         {
+            FILEHANDLE   => $FILEHANDLE,
             infile_path  => catfile( $temp_dir, q{vt} ),
             outfile_path => $vt_dir,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -201,11 +198,11 @@ sub install_vt {
     say {$FILEHANDLE} q{## Create softlink to binary};
     gnu_ln(
         {
-            link_path   => catfile( $conda_prefix_path, q{bin} ),
-            target_path => catfile( $vt_dir,            q{vt} ),
-            symbolic    => 1,
-            force       => 1,
             FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            link_path   => catfile( $conda_prefix_path, q{bin} ),
+            symbolic    => 1,
+            target_path => catfile( $vt_dir, q{vt} ),
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -214,10 +211,10 @@ sub install_vt {
     ## Remove the temporary install directory
     gnu_rm(
         {
-            infile_path => $temp_dir,
-            recursive   => 1,
             FILEHANDLE  => $FILEHANDLE,
             force       => 1,
+            infile_path => $temp_dir,
+            recursive   => 1,
         }
     );
     say {$FILEHANDLE} $NEWLINE . $NEWLINE;

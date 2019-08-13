@@ -1,41 +1,49 @@
 package MIP::Recipes::Install::Tiddit;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ allow check last_error };
+use charnames qw{ :full :short };
 use Cwd;
+use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
 
-## Cpanm
+## CPAN
+use autodie qw{ :all };
 use Readonly;
+
+## MIPs lib/
+use MIP::Check::Installation qw{ check_existing_installation };
+use MIP::Constants qw{ $DOT $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Compile::Cmake qw{ cmake };
+use MIP::Gnu::Bash qw{ gnu_cd };
+use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_mkdir gnu_rm };
+use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+use MIP::Program::Compression::Zip qw{ unzip };
+use MIP::Program::Download::Wget qw{ wget };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_tiddit };
 }
 
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
-
 sub install_tiddit {
 
 ## Function : Install TIDDIT
-## Returns  : ""
+## Returns  :
 ## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $FILEHANDLE              => Filehandle to write to
@@ -57,57 +65,44 @@ sub install_tiddit {
 
     my $tmpl = {
         conda_environment => {
-            strict_type => 1,
             store       => \$conda_environment,
+            strict_type => 1,
         },
 
         conda_prefix_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$conda_prefix_path,
+            strict_type => 1,
         },
         FILEHANDLE => {
-            required => 1,
             defined  => 1,
+            required => 1,
             store    => \$FILEHANDLE,
         },
         noupdate => {
-            strict_type => 1,
             store       => \$noupdate,
+            strict_type => 1,
         },
         program_parameters_href => {
-            required    => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$tiddit_parameters_href,
+            strict_type => 1,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
-            strict_type => 1,
             store       => \$quiet,
+            strict_type => 1,
         },
         verbose => {
             allow       => [ undef, 0, 1 ],
-            strict_type => 1,
             store       => \$verbose,
+            strict_type => 1,
         },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Compile::Cmake qw{ cmake };
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_mkdir gnu_rm };
-    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-    use MIP::Program::Compression::Zip qw{ unzip };
-    use MIP::Program::Download::Wget qw{ wget };
 
     ## Unpack parameters
     my $tiddit_version = $tiddit_parameters_href->{version};
@@ -115,7 +110,7 @@ sub install_tiddit {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_tiddit},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }
@@ -127,7 +122,7 @@ sub install_tiddit {
     say {$FILEHANDLE} q{### Install TIDDIT};
 
     ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $tiddit_dir = catdir( $conda_prefix_path, q{TIDDIT-TIDDIT-} . $tiddit_version );
+    my $tiddit_dir    = catdir( $conda_prefix_path, q{TIDDIT-TIDDIT-} . $tiddit_version );
     my $install_check = check_existing_installation(
         {
             program_directory_path => $tiddit_dir,

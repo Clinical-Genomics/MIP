@@ -23,7 +23,7 @@ use MIP::Cli::Utils qw{ run }
   ;    # MooseX::App required sub. Called internally by MooseX::App
 
 # Set the version for version checking
-our $VERSION = 1.09;
+our $VERSION = 1.10;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -216,6 +216,25 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
     );
 
     option(
+        q{project_id} => (
+            cmd_aliases   => [qw{ pro }],
+            documentation => q{Project id},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{reference_dir} => (
+            cmd_aliases   => [qw{ rd }],
+            cmd_tags      => [q{Default: ""}],
+            documentation => q{Reference directory},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{sacct} => (
             cmd_aliases => [qw{ sac }],
             cmd_tags    => [q{Analysis recipe switch}],
@@ -282,6 +301,16 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             documentation => q{Set the capture kit acronym shortcut in pedigree file},
             is            => q{rw},
             isa           => HashRef,
+        )
+    );
+
+    option(
+        q{temp_directory} => (
+            cmd_aliases   => [qw{ tmd }],
+            cmd_tags      => [q{Default: "$outdata_dir/$SLURM_JOB_ID"}],
+            documentation => q{Set the temporary directory for all recipes},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 

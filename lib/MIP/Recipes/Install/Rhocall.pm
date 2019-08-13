@@ -1,36 +1,43 @@
 package MIP::Recipes::Install::Rhocall;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile splitdir };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings qw{ FATAL utf8 };
 use warnings;
 
-## Cpanm
+## CPAN
+use autodie qw{ :all };
 use Readonly;
+
+## MIPs lib/
+use MIP::Check::Installation qw{ check_existing_installation };
+use MIP::Constants qw{ $DOT $LOG $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Gnu::Bash qw{ gnu_cd };
+use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
+use MIP::Log::MIP_log4perl qw{ retrieve_log };
+use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
+use MIP::Package_manager::Pip qw{ pip_install };
+use MIP::Program::Compression::Zip qw{ unzip };
+use MIP::Program::Download::Wget qw{ wget };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_rhocall };
 }
-
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
 
 sub install_rhocall {
 
@@ -95,16 +102,6 @@ sub install_rhocall {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Modules
-    use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda qw{ conda_activate conda_deactivate };
-    use MIP::Package_manager::Pip qw{ pip_install };
-    use MIP::Program::Compression::Zip qw{ unzip };
-    use MIP::Program::Download::Wget qw{ wget };
-
     ## Unpack parameters
     my $rhocall_path    = $rhocall_parameters_href->{path};
     my $rhocall_version = $rhocall_parameters_href->{version};
@@ -117,7 +114,7 @@ sub install_rhocall {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::install_rhocall},
+            log_name => $LOG,
             quiet    => $quiet,
             verbose  => $verbose,
         }

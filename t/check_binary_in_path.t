@@ -65,8 +65,7 @@ diag(   q{Test check_binary_in_path from Unix.pm v}
 ## Given existing binary
 my %active_parameter =
   ( conda_path =>
-      catdir( dirname($Bin), qw{ t data modules miniconda envs test_env bin } ),
-  );
+      catdir( dirname($Bin), qw{ t data modules miniconda envs test_env bin } ), );
 my $binary       = q{samtools};
 my $program_name = q{samtools};
 
@@ -91,7 +90,7 @@ trap {
             binary                => $no_binary,
             program_name          => $program_name,
         }
-      )
+    );
 };
 
 ## Then exit and throw FATAL log message

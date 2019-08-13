@@ -3,13 +3,15 @@ package MIP::Script::Setup_script;
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
+use Cwd;
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname };
+use File::Basename qw{ dirname fileparse };
 use File::Path qw{ make_path };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
+use Time::Piece;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -19,7 +21,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $EMPTY_STR $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $EMPTY_STR $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -27,11 +29,190 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ setup_script write_return_to_environment write_return_to_conda_environment write_source_environment_command };
+      qw{ setup_install_script setup_script write_return_to_environment write_return_to_conda_environment write_source_environment_command };
+}
+
+sub setup_install_script {
+
+## Function : Build bash file with header
+## Returns  :
+## Arguments: $active_parameter_href => Master hash, used when running in sbatch mode {REF}
+##          : $file_name             => File name
+##          : $FILEHANDLE            => Filehandle to write to
+##          : $remove_dir            => Directory to remove when caught by trap function
+##          : $log                   => Log object to write to
+##          : $invoke_login_shell    => Invoked as a login shell. Reinitilize bashrc and bash_profile
+##          : $sbatch_mode           => Create headers for sbatch submission;
+##          : $set_errexit           => Halt script if command has non-zero exit code (-e)
+##          : $set_nounset           => Halt script if variable is uninitialised (-u)
+##          : $set_pipefail          => Detect errors within pipes (-o pipefail)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_name;
+    my $FILEHANDLE;
+    my $log;
+    my $remove_dir;
+
+    ## Default(s)
+    my $invoke_login_shell;
+    my $sbatch_mode;
+    my $set_errexit;
+    my $set_nounset;
+    my $set_pipefail;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+        invoke_login_shell => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$invoke_login_shell,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        remove_dir => {
+            allow       => qr/ ^\S+$ /xsm,
+            store       => \$remove_dir,
+            strict_type => 1,
+        },
+        sbatch_mode => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$sbatch_mode,
+            strict_type => 1,
+        },
+        set_errexit => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$set_errexit,
+            strict_type => 1,
+        },
+        set_nounset => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$set_nounset,
+            strict_type => 1,
+        },
+        set_pipefail => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$set_pipefail,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Gnu::Bash qw{ gnu_set };
+    use MIP::Workloadmanager::Slurm qw{ slurm_build_sbatch_header };
+
+    ## Set $bash_bin_path default
+    my $bash_bin_path =
+      catfile( dirname( dirname( devnull() ) ), qw{ usr bin env bash } );
+
+    if ($sbatch_mode) {
+        $bash_bin_path =
+          catfile( dirname( dirname( devnull() ) ), qw{ bin bash } );
+    }
+
+    ## Build bash shebang line
+    build_shebang(
+        {
+            bash_bin_path      => $bash_bin_path,
+            FILEHANDLE         => $FILEHANDLE,
+            invoke_login_shell => $invoke_login_shell,
+        }
+    );
+
+    ## Set shell attributes
+    gnu_set(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            set_errexit  => $set_errexit,
+            set_nounset  => $set_nounset,
+            set_pipefail => $set_pipefail,
+        }
+    );
+
+    if ($sbatch_mode) {
+
+        ## Get local time
+        my $date_time       = localtime;
+        my $date_time_stamp = $date_time->datetime;
+
+        ## Get bash_file_name minus suffix and add time stamp.
+        my $job_name =
+          fileparse( $file_name, qr/\.[^.]*/xms ) . $UNDERSCORE . $date_time_stamp;
+
+        ## Set STDERR/STDOUT paths
+        my $stderrfile_path = catfile( cwd(), $job_name . $DOT . q{stderr.txt} );
+        my $stdoutfile_path = catfile( cwd(), $job_name . $DOT . q{stdout.txt} );
+
+        slurm_build_sbatch_header(
+            {
+                core_number     => $active_parameter_href->{core_number},
+                email           => $active_parameter_href->{email},
+                email_types_ref => $active_parameter_href->{email_types},
+                FILEHANDLE      => $FILEHANDLE,
+                job_name        => $job_name,
+                process_time    => $active_parameter_href->{process_time},
+                project_id      => $active_parameter_href->{project_id},
+                slurm_quality_of_service =>
+                  $active_parameter_href->{slurm_quality_of_service},
+                stderrfile_path => $stderrfile_path,
+                stdoutfile_path => $stdoutfile_path,
+            }
+        );
+    }
+
+    ## Create housekeeping function which removes entire directory when finished
+    create_housekeeping_function(
+        {
+            FILEHANDLE         => $FILEHANDLE,
+            remove_dir         => $remove_dir,
+            trap_function_name => q{finish},
+        }
+    );
+
+    ## Create debug trap
+    enable_trap(
+        {
+            FILEHANDLE         => $FILEHANDLE,
+            trap_function_call => q{previous_command="$BASH_COMMAND"},
+            trap_signals_ref   => [qw{ DEBUG }],
+        }
+    );
+
+    ## Create error handling function and trap
+    create_error_trap_function( { FILEHANDLE => $FILEHANDLE, } );
+
+    $log->info( q{Created bash file: '} . catfile($file_name), $SINGLE_QUOTE );
+
+    return;
 }
 
 sub setup_script {
