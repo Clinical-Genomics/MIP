@@ -20,7 +20,7 @@ use List::MoreUtils qw { all any uniq };
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COMMA $DOLLAR_SIGN $DOT $FORWARD_SLASH $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $COMMA $DOLLAR_SIGN $DOT $FORWARD_SLASH $LOG $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -32,6 +32,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      check_active_installation_parameters
       check_allowed_array_values
       check_allowed_temp_directory
       check_cmd_config_vs_definition_file
@@ -60,6 +61,50 @@ BEGIN {
       check_vep_custom_annotation
       check_vep_directories
     };
+}
+
+sub check_active_installation_parameters {
+
+## Function : Some active_parameter checks that are common to both installations. Returns "1" if all is OK
+## Returns  : $install_check
+## Arguments: $conda_environment      => Conda environment
+##          : $conda_prefix_path      => Path to conda environment
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $log                    => Log to write messages to
+##          : $noupdate               => Do not update
+##          : $program_directory_path => Path to program directory
+##          : $program_name                => Program name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $log = Log::Log4perl->get_logger($LOG);
+
+    ## Check that a project id has been set if SBATCH mode
+    if ( $active_parameter_href->{sbatch_mode}
+        and not $active_parameter_href->{project_id} )
+    {
+        $log->fatal(
+q{The parameter "project_id" must be set when a sbatch installation has been requested}
+        );
+        exit 1;
+    }
+
+    return 1;
 }
 
 sub check_allowed_array_values {

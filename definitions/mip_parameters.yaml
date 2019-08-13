@@ -36,6 +36,8 @@ email_types:
   associated_recipe:
    - mip
   data_type: ARRAY
+  default:
+   - FAIL
   element_separator: ,
   mandatory: no
   type: mip

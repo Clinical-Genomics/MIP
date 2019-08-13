@@ -15,15 +15,12 @@ use warnings qw{ FATAL utf8 };
 use warnings;
 
 ## Cpanm
-use IPC::Cmd qw{ can_run run };
+use IPC::Cmd qw{ run };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $LOG $NEWLINE $SPACE };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
-
-## Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 BEGIN {
 
@@ -87,12 +84,8 @@ sub conda_check_env_status {
 ## Function  : Check if a conda environment is active (returns name of env if true).
 ## Returns   :
 ## Arguments : $disable_env_check => Disable environment check
-##           : $log               => Log
 
     my ($arg_href) = @_;
-
-    ## Flatten arguments
-    my $log;
 
     ## Default(s)
     my $disable_env_check;
@@ -104,14 +97,11 @@ sub conda_check_env_status {
             store       => \$disable_env_check,
             strict_type => 1,
         },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $log = Log::Log4perl->get_logger($LOG);
 
     ### Require deactivate any activate env prior to installation
 

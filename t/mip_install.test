@@ -102,7 +102,7 @@ use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
-my $conda_dir_path;
+my $conda_path;
 my $verbose = 1;
 our $VERSION = q{1.3.0};
 
@@ -110,7 +110,7 @@ Readonly my $EMPTY_STRING => q{};
 
 ###User Options
 GetOptions(
-    q{cdp|conda_dir_path:s} => \$conda_dir_path,
+    q{cdp|conda_dir_path:s} => \$conda_path,
     q{vb|verbose}           => $verbose,
     q{h|help}               => sub {
         done_testing();
@@ -153,13 +153,13 @@ foreach my $pipeline ( keys %install_file ) {
     );
 
     ## Test execution of install script
-    my $cmds_ref = [
-        q{perl}, catfile( dirname($Bin), q{mip} ), q{install}, $pipeline, qw{ --dec }
-    ];
-    if ($conda_dir_path) {
+    my $cmds_ref =
+      [ q{perl}, catfile( dirname($Bin), q{mip} ), q{install}, $pipeline, qw{ --dec } ];
+    if ($conda_path) {
 
-        push @{$cmds_ref}, q{--conda_dir_path}, $conda_dir_path;
+        push @{$cmds_ref}, q{--conda_path}, $conda_path;
     }
+    push @{$cmds_ref}, q{--log_file}, catfile( cwd(), qw{mip_install_test.log} );
 
     foreach my $installation_mode (@installation_modes) {
         if ( $installation_mode eq q{prefer_shell} ) {
@@ -180,7 +180,7 @@ foreach my $pipeline ( keys %install_file ) {
 }
 
 ## Clean-up mip_install.pl output
-my @outfiles = qw{ mip.sh mip_install_*.log };
+my @outfiles = (qw{ mip.sh mip_install_test.log });
 
 OUTFILE:
 foreach my $outfile (@outfiles) {

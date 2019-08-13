@@ -57,15 +57,15 @@ sub setup_install_script {
     my $active_parameter_href;
     my $file_name;
     my $FILEHANDLE;
-    my $remove_dir;
     my $log;
+    my $remove_dir;
 
     ## Default(s)
     my $invoke_login_shell;
+    my $sbatch_mode;
     my $set_errexit;
     my $set_nounset;
     my $set_pipefail;
-    my $sbatch_mode;
 
     my $tmpl = {
         active_parameter_href => {
@@ -159,17 +159,6 @@ sub setup_install_script {
     );
 
     if ($sbatch_mode) {
-
-        ## Check that a project id has been set
-        if ( not $active_parameter_href->{project_id} ) {
-            $log->fatal(
-q{The parameter "project_id" must be set when a sbatch installation has been requested}
-            );
-            $log->fatal(
-q{It is also recommended that the parameter "process_time" has been set to an approrpriate time (default: 2-00:00:00)}
-            );
-            exit 1;
-        }
 
         ## Get local time
         my $date_time       = localtime;

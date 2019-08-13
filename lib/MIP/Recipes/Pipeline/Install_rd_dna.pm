@@ -104,13 +104,10 @@ sub pipeline_install_rd_dna {
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger($LOG);
 
-    ## Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
     ## Installation instruction file
     my $file_name_path = catfile( cwd(), q{mip.sh} );
 
-    open $FILEHANDLE, q{>}, $file_name_path
+    open my $FILEHANDLE, q{>}, $file_name_path
       or $log->logcroak( q{Cannot write to}
           . $SPACE
           . $SINGLE_QUOTE
@@ -124,11 +121,11 @@ sub pipeline_install_rd_dna {
     ## Create bash file for writing install instructions
     setup_install_script(
         {
-            FILEHANDLE            => $FILEHANDLE,
+            active_parameter_href => $active_parameter_href,
             file_name             => $file_name_path,
+            FILEHANDLE            => $FILEHANDLE,
             invoke_login_shell    => $active_parameter_href->{sbatch_mode},
             log                   => $log,
-            active_parameter_href => $active_parameter_href,
             remove_dir            => catfile( cwd(), $DOT . q{MIP} ),
             sbatch_mode           => $active_parameter_href->{sbatch_mode},
             set_errexit           => $active_parameter_href->{bash_set_errexit},
@@ -155,20 +152,19 @@ sub pipeline_install_rd_dna {
         push @{ $active_parameter_href->{installations} }, q{ecnvnator};
     }
 
-    ## Loop over the selected installations
+  INSTALLATION:
     foreach my $installation ( @{ $active_parameter_href->{installations} } ) {
         my $env_name = $active_parameter_href->{environment_name}{$installation};
 
-        ## Create some space
         $log->info( $OPEN_BRACKET . $installation . $CLOSE_BRACKET );
         $log->info( q{Working on environment: } . $env_name );
 
         ## Process input parameters to get a correct combination of programs that are to be installed
         set_programs_for_installation(
             {
+                active_parameter_href => $active_parameter_href,
                 installation          => $installation,
                 log                   => $log,
-                active_parameter_href => $active_parameter_href,
             }
         );
 
@@ -263,6 +259,7 @@ sub pipeline_install_rd_dna {
     }
 
     ## Write tests
+  INSTALLATION:
     foreach my $installation ( @{ $active_parameter_href->{installations} } ) {
         ## Get the programs that mip has tried to install
         my @programs_to_test = (

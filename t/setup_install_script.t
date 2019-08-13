@@ -148,46 +148,4 @@ close $FILEHANDLE_SBATCH;
 ## Then '--account' should  be part of the header
 ok( $file_content_sbatch =~ / ^(\#SBATCH) /xms, q{Create sbatch headers} );
 
-### Given faulty input when requesting sbatch headers
-$active_parameter{project_id} = undef;
-
-# Create anonymous filehandle
-my $FILEHANDLE_FAULTY = IO::Handle->new();
-
-# For storing info to write
-my $file_content_faulty;
-
-# Store file content in memory by using referenced variable
-open $FILEHANDLE_FAULTY, q{>}, \$file_content_faulty
-  or croak q{Cannot write to}
-  . $SPACE
-  . $file_content_faulty
-  . $COLON
-  . $SPACE
-  . $OS_ERROR;
-
-## When the sub is launched
-trap {
-    setup_install_script(
-        {
-            FILEHANDLE            => $FILEHANDLE_FAULTY,
-            file_name             => q{test.sh},
-            remove_dir            => catfile( cwd(), $DOT, q{test} ),
-            invoke_login_shell    => 1,
-            log                   => $log,
-            active_parameter_href => \%active_parameter,
-            sbatch_mode           => 1,
-            set_errexit           => $active_parameter{bash_set_errexit},
-            set_nounset           => $active_parameter{bash_set_nounset},
-        }
-    );
-};
-
-# Close the filehandle
-close $FILEHANDLE_FAULTY;
-
-## Then exit and throw FATAL log message
-ok( $trap->exit, q{Exit on missing project_id} );
-like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message} );
-
 done_testing();

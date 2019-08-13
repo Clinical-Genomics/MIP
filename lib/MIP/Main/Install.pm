@@ -21,7 +21,8 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Check::Parameter qw{ check_cmd_config_vs_definition_file };
+use MIP::Check::Parameter
+  qw{ check_active_installation_parameters check_cmd_config_vs_definition_file };
 use MIP::Constants
   qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 use MIP::File::Format::Yaml qw{ load_yaml };
@@ -37,14 +38,14 @@ use MIP::Recipes::Pipeline::Install_rd_dna qw{ pipeline_install_rd_dna };
 use MIP::Recipes::Pipeline::Install_rd_rna qw{ pipeline_install_rd_rna };
 
 ## Constants
-Readonly my $THREE      => 3;
+Readonly my $THREE     => 3;
 Readonly my $MINUS_ONE => -1;
 
 BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{2.0};
+    our $VERSION = q{2.00};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -53,7 +54,7 @@ BEGIN {
 
 sub mip_install {
 
-## Function : Main script for generating MIP download scripts
+## Function : Main script for generating MIP install scripts
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $parameter_href        => Parameter hash {REF}
@@ -87,7 +88,7 @@ sub mip_install {
     # Parameters to include in each download run
     my %active_parameter = %{$active_parameter_href};
 
-    # All parameters MIP download knows
+    # All parameters MIP install knows
     my %parameter = %{$parameter_href};
 
     ## Get local time
@@ -96,10 +97,11 @@ sub mip_install {
     my $date            = $date_time->ymd;
 
     # Catches name of current script
-    my $script = ( split /::/xms, ( caller(0) )[$THREE] )[$MINUS_ONE];
+    my $script = _this_sub();
 
     ## Catches name of the calling module
-    my $pipeline = ( split /::/xms, ( caller(0) )[0] )[-1];
+    my $pipeline = _parent_module();
+
     $pipeline = q{install} . $UNDERSCORE . lc $pipeline;
 
     ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
@@ -192,12 +194,18 @@ sub mip_install {
                 active_parameter_href => \%active_parameter,
                 associated_recipes_ref =>
                   \@{ $parameter{$parameter_name}{associated_recipe} },
-                log            => $log,
                 parameter_href => \%parameter,
                 parameter_name => $parameter_name,
             }
         );
     }
+
+    ## Installation specific checks of active_parameter hash
+    check_active_installation_parameters(
+        {
+            active_parameter_href => \%active_parameter,
+        }
+    );
 
     ## Set path to conda
     set_conda_path(
@@ -211,7 +219,6 @@ sub mip_install {
     conda_check_env_status(
         {
             disable_env_check => $active_parameter{disable_env_check},
-            log               => $log
         }
     );
 
@@ -222,7 +229,7 @@ sub mip_install {
         }
     );
 
-    ## Store some information
+    ## Store script amnd pipeline for broadcasting later
     $active_parameter{script}   = $script;
     $active_parameter{pipeline} = $pipeline;
 
@@ -241,6 +248,36 @@ sub mip_install {
         }
     );
     return;
+}
+
+sub _this_sub {
+
+## Function : Returns the name of the current subroutine
+## Returns  : $this_sub
+## Arguments:
+
+    ## Get full path to subroutine
+    my $this_sub = ( caller 1 )[$THREE];
+
+    ## Isolate subroutine
+    $this_sub = ( split /::/xms, $this_sub )[$MINUS_ONE];
+
+    return $this_sub;
+}
+
+sub _parent_module {
+
+## Function : Returns the name of the module that called this one
+## Returns  : $parent_module
+## Arguments:
+
+    ## Get full path to module
+    my $parent_module = ( caller 1 )[0];
+
+    ## Isolate module
+    $parent_module = ( split /::/xms, $parent_module )[$MINUS_ONE];
+
+    return $parent_module;
 }
 
 1;

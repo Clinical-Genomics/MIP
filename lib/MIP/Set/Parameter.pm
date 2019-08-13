@@ -20,7 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $COLON $COMMA $CLOSE_BRACE $NEWLINE $OPEN_BRACE $SPACE $TAB $UNDERSCORE };
+  qw{ $COLON $COMMA $CLOSE_BRACE $LOG $NEWLINE $OPEN_BRACE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -197,7 +197,7 @@ sub set_custom_default_to_active_parameter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger($LOG);
 
     ## Set default value only to active_parameter
     my %set_to_active_parameter = (
@@ -210,9 +210,9 @@ sub set_custom_default_to_active_parameter {
         reference_dir                  => \&_set_reference_dir,
         rtg_vcfeval_reference_genome   => \&_set_human_genome,
         salmon_quant_reference_genome  => \&_set_human_genome,
-        select_programs                => \&_set_select_programs,
-        shell_install                  => \&_set_shell_install,
-        skip_programs                  => \&_set_skip_programs,
+        select_programs                => \&_set_uninitialized_parameter,
+        shell_install                  => \&_set_uninitialized_parameter,
+        skip_programs                  => \&_set_uninitialized_parameter,
         star_aln_reference_genome      => \&_set_human_genome,
         snpeff_path                    => \&_set_dynamic_path,
         temp_directory                 => \&_set_temp_directory,
@@ -311,7 +311,6 @@ sub set_default_to_active_parameter {
 ## Returns  :
 ## Arguments: $active_parameter_href  => Holds all set parameter for analysis
 ##          : $associated_recipes_ref => The parameters recipe {REF}
-##          : $log                    => Log object
 ##          : $parameter_href         => Holds all parameters
 ##          : $parameter_name         => Parameter name
 
@@ -320,7 +319,6 @@ sub set_default_to_active_parameter {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $associated_recipes_ref;
-    my $log;
     my $parameter_href;
     my $parameter_name;
 
@@ -349,11 +347,6 @@ sub set_default_to_active_parameter {
             store       => \$associated_recipes_ref,
             strict_type => 1,
         },
-        log => {
-            required => 1,
-            defined  => 1,
-            store    => \$log
-        },
         parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
         case_id        => {
             default     => $arg_href->{active_parameter_href}{case_id},
@@ -363,6 +356,8 @@ sub set_default_to_active_parameter {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $log = Log::Log4perl->get_logger($LOG);
 
     my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
 
@@ -1600,7 +1595,7 @@ sub _set_temp_directory {
     return;
 }
 
-sub _set_select_programs {
+sub _set_uninitialized_parameter {
 
 ## Function : Initiate hash keys for install
 ## Returns  :
@@ -1626,85 +1621,14 @@ sub _set_select_programs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( exists $active_parameter_href->{select_programs} ) {
+    if ( exists $active_parameter_href->{$parameter_name} ) {
 
         return;
     }
 
-    $active_parameter_href->{select_programs} = [];
+    $active_parameter_href->{$parameter_name} = [];
 
     return;
 }
 
-sub _set_shell_install {
-
-## Function : Initiate hash keys for install
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( exists $active_parameter_href->{shell_install} ) {
-
-        return;
-    }
-
-    $active_parameter_href->{shell_install} = [];
-
-    return;
-}
-
-sub _set_skip_programs {
-
-## Function : Initiate hash keys for install
-## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $parameter_name        => Parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( exists $active_parameter_href->{skip_programs} ) {
-
-        return;
-    }
-
-    $active_parameter_href->{skip_programs} = [];
-
-    return;
-}
 1;

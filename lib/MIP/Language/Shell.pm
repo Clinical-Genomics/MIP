@@ -19,6 +19,10 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants
+  qw{ $AMPERSAND $COMMA $DOT $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
@@ -39,17 +43,6 @@ BEGIN {
       track_progress
     };
 }
-
-## Constants
-Readonly my $AMPERSAND    => q{&};
-Readonly my $COMMA        => q{,};
-Readonly my $DOT          => q{.};
-Readonly my $NEWLINE      => qq{\n};
-Readonly my $PIPE         => q{|};
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $SPACE        => q{ };
-Readonly my $TAB          => qq{\t};
-Readonly my $UNDERSCORE   => q{_};
 
 sub build_shebang {
 
@@ -72,7 +65,7 @@ sub build_shebang {
 
     my $tmpl = {
         bash_bin_path => {
-            allow   => qr/ ^\S+$ /sxm,
+            allow   => qr/ \A \S+ \z /sxm,
             default => catfile( dirname( dirname( devnull() ) ), qw{ usr bin env bash } ),
             store   => \$bash_bin_path,
             strict_type => 1,
