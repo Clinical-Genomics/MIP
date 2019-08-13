@@ -17,7 +17,8 @@ use Readonly;
 use Set::IntervalTree;
 
 ## MIPs lib/
-use MIP::Constants qw{ $PIPE $SEMICOLON $SPACE $TAB };
+use MIP::Constants
+  qw{ $AMPERSAND $COLON $NEWLINE $PIPE $SEMICOLON $SINGLE_QUOTE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB };
 
 BEGIN {
     require Exporter;
@@ -31,8 +32,10 @@ BEGIN {
       add_feature_file_meta_data_to_vcf
       add_program_to_meta_data_header
       build_interval_tree
+      check_data_terms
       define_select_data_headers
       parse_vcf_format_line
+      parse_vep_csq_consequence
       parse_vep_csq_schema
       write_meta_data
     };
@@ -242,6 +245,48 @@ sub build_interval_tree {
     return;
 }
 
+sub check_data_terms {
+
+## Function : Check the found terms in the vcf correspond to known terms - otherwise croak and exit.
+## Returns  :
+## Arguments: $data_category_name => Origin of the term i.e SO
+##          : $data_href          => Term hash {REF}
+##          : $term               => Current term
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $data_category_name;
+    my $data_href;
+    my $term;
+
+    my $tmpl = {
+        data_category_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$data_category_name,
+            strict_type => 1,
+        },
+        data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$data_href,
+            strict_type => 1,
+        },
+        term => { required => 1, store => \$term, strict_type => 1, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return 1 if exists $data_href->{$term};
+
+    croak(  q{Could not find }
+          . $data_category_name
+          . q{ term from vcf in corresponding hash. Update hash to contain term}
+          . qq{$COLON $SINGLE_QUOTE $term $SINGLE_QUOTE $NEWLINE} );
+}
+
 sub define_select_data_headers {
 
 ## Function : Defines arbitrary INFO fields headers based on information in select file
@@ -314,6 +359,122 @@ sub parse_vcf_format_line {
     );
 
     return @vcf_format_columns;
+}
+
+sub parse_vep_csq_consequence {
+
+## Function : Parse the most severe consequence or prediction to gene
+## Returns  :
+## Arguments: $allele            => Allele
+##          : $consequence_field => Consequence field from transcript
+##          : $consequence_href  => Consequence hash {REF}
+##          : $hgnc_id           => Hgnc id
+##          : $transcript        => Transcript
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $allele;
+    my $consequence_field;
+    my $consequence_href;
+    my $hgnc_id;
+    my $transcript;
+
+    my $tmpl = {
+        allele => {
+            defined     => 1,
+            required    => 1,
+            store       => \$allele,
+            strict_type => 1,
+        },
+        consequence_field => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consequence_field,
+            strict_type => 1,
+        },
+        consequence_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$consequence_href,
+            strict_type => 1,
+        },
+        hgnc_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$hgnc_id,
+            strict_type => 1,
+        },
+        transcript => {
+            defined     => 1,
+            required    => 1,
+            store       => \$transcript,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Vcf qw{ set_in_consequence_hash };
+
+    ## Constants
+    Readonly my $SO_RANK_INIT => 999;
+
+    my %consequence_severity = %SO_CONSEQUENCE_SEVERITY;
+
+    ## Alias set rank
+    my $set_so_rank_ref = \$consequence_href->{$hgnc_id}{$allele}{rank};
+
+    ## Initilialize arbitrary rank if unset
+    if ( not ${$set_so_rank_ref} ) {
+        ${$set_so_rank_ref} = $SO_RANK_INIT;
+    }
+
+    # Split consequence field for transcript
+    my @consequences = split $AMPERSAND, $consequence_field;
+
+  CONSEQUENCE:
+    foreach my $consequence_term (@consequences) {
+
+        check_data_terms(
+            {
+                data_href          => \%consequence_severity,
+                term               => $consequence_term,
+                data_category_name => q{SO},
+            }
+        );
+
+        ## Build most severe consequence format
+        my $most_severe_consequence =
+          $hgnc_id . $COLON . $allele . $PIPE . $consequence_term;
+
+        ## Unpack
+        my $current_so_rank = $consequence_severity{$consequence_term}{rank};
+
+        ## Map of what to set to consequence
+        my %set_key = (
+            most_severe_consequence => $most_severe_consequence,
+            most_severe_transcript  => $transcript,
+            rank                    => $current_so_rank,
+        );
+
+        ### Compare to previous set so consequence term
+        ## Set new rank if $current_so_rank has lower rank than set_so_rank
+        next CONSEQUENCE
+          if ( $current_so_rank > ${$set_so_rank_ref} );
+
+        ## Set most severe consequence key set in hash
+        set_in_consequence_hash(
+            {
+                allele           => $allele,
+                consequence_href => $consequence_href,
+                hgnc_id          => $hgnc_id,
+                set_key_href     => \%set_key,
+            }
+        );
+    }
+    return;
 }
 
 sub parse_vep_csq_schema {

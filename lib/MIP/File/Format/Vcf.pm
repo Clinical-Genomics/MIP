@@ -246,7 +246,7 @@ sub parse_vcf_header {
 
 sub set_in_consequence_hash {
 
-## Function : Adds the most severe consequence or prediction to gene.
+## Function : Set most severe consequence key set in hash
 ## Returns  :
 ## Arguments: $allele           => Allele
 ##          : $consequence_href => Consequence hash {REF}
