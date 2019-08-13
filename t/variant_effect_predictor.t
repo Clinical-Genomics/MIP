@@ -20,10 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -31,10 +32,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -164,12 +161,16 @@ my %specific_argument = (
         expected_output => q{--plugin LoFtool} . $SPACE . q{--plugin LoF},
     },
     reference_path => {
-        input           => catfile( q{test_dir},                       q{hum_ref.pl} ),
+        input           => catfile( q{test_dir}, q{hum_ref.pl} ),
         expected_output => q{--fasta} . $SPACE . catfile( q{test_dir}, q{hum_ref.pl} ),
     },
     regions_ref => {
         inputs_ref      => [qw{ 1 2 }],
         expected_output => q{--chr} . $SPACE . q{1,2},
+    },
+    synonyms_file_path => {
+        input           => catfile(qw{a synonym_file.tsv}),
+        expected_output => q{--synonyms} . $SPACE . catfile(qw{a synonym_file.tsv}),
     },
     vep_features_ref => {
         inputs_ref      => [qw{ tsl hgvs}],
@@ -188,10 +189,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
-            function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }
