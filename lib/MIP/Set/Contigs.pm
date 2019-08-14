@@ -58,8 +58,6 @@ sub set_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Readonly;
-
     ## Make a modifiable copy for downstream use of global constant
     my %primary_contig_clone = Readonly::Clone %PRIMARY_CONTIG;
 

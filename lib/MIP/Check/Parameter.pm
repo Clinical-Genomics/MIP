@@ -1733,7 +1733,7 @@ sub check_select_file_contigs {
         $log->fatal( q{Option 'vcfparser_select_file' contig(s): } . join $SPACE,
             @unique_select_contigs );
         $log->fatal(
-            q{Is not a subset of the humen genome reference contigs: } . join $SPACE,
+            q{Is not a subset of the human genome reference contigs: } . join $SPACE,
             @{$contigs_ref} );
         exit 1;
     }

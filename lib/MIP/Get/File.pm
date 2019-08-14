@@ -787,7 +787,6 @@ sub get_seq_dict_contigs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use IPC::Cmd qw{ run };
-    use MIP::Unix::System qw{ system_cmd_call };
 
     ## Build regexp to find contig names
     # Execute perl
