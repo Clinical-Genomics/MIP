@@ -122,6 +122,7 @@ sub download_gnomad {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Program::Rtg qw{ rtg_vcfsubset };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -181,6 +182,28 @@ sub download_gnomad {
             reference_href => $reference_href,
             quiet          => $quiet,
             verbose        => $verbose,
+        }
+    );
+
+## Map of key names to keep from reference vcf
+    my %info_key = (
+        q{r2.0.1} => [ qw{AF AF_POPMAX}, ],
+        q{r2.1.1} => [ qw{AF AF_popmax}, ],
+    );
+
+    my $reformated_outfile = join $UNDERSCORE,
+      (
+        $genome_version, $recipe_name, q{reformated},
+        q{-} . $reference_version . q{-.vcf.gz}
+      );
+    my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
+
+    rtg_vcfsubset(
+        {
+            FILEHANDLE         => $FILEHANDLE,
+            infile_path        => catfile( $reference_dir, $reference_href->{outfile} ),
+            keep_info_keys_ref => $info_key{$reference_version},
+            outfile_path       => $reformated_outfile_path,
         }
     );
 
