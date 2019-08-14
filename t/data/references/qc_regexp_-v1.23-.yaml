@@ -41,8 +41,6 @@ fastqc:
   sequence_length: "perl -nae' if ($_=~/Sequence length\\s(\\d+)/) {print $1;last;}' "
   total_number_of_reads: "perl -nae' if ($_=~/Total Sequences\\s(\\d+)/) {print $1;last;}' "
   version: "perl -nae' if ($_=~/##FastQC\\s+(\\S+)/) {print $1;last;}' "
-freebayes:
-  version: "perl -nae 'if($_=~/source=freeBayes\\s(\\S+)/) {print $1;last;}' "
 genmod:
   version: "perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\\d+.\\d+.\\d+|\\d+.\\d+)/) {print $1;last;}' "
 inbreeding_factor:

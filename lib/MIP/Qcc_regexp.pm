@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_qcc_regexp_recipe_attribute regexp_to_yaml };
@@ -420,10 +420,6 @@ q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print 
     # Return Bcftools version
     $regexp{bcftools}{version} =
       q?perl -nae 'if($_=~/bcftools_\w+Version=(\S+)/) {print $1;last;}' ?;
-
-    # Return Freebayes version
-    $regexp{freebayes}{version} =
-      q?perl -nae 'if($_=~/source=freeBayes\s(\S+)/) {print $1;last;}' ?;
 
     # Return Delly version
     $regexp{delly}{version} =

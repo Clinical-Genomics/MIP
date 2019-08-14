@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.0;
+our $VERSION = 2.01;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -192,7 +192,7 @@ q{Default: mip7_rd-dna mip7_rd-dna_cnvnator mip7_rd-dna_delly mip7_rd-dna_peddy 
                     [
                         qw{ bcftools bedtools bwa bwakit chanjo cmake cnvnator
                           cramtools cutadapt delly expansionhunter fastqc
-                          freebayes gatk gatk4 genmod gcc htslib libxml2 libxslt
+                          gatk gatk4 genmod gcc htslib libxml2 libxslt
                           manta mip_scripts multiqc numpy peddy picard pip
                           plink python rhocall rtg-tools sambamba samtools
                           scikit-learn snpeff snpsift stranger svdb tiddit

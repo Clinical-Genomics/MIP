@@ -12,19 +12,16 @@ chanjo:
 chanjo_sexcheck:
   gender: "perl -nae 'if( ($F[0]!~/^#/) && ($F[2] =~/\\S+/) ) {print $F[2];}' "
 collecthsmetrics:
-  header_info:
-    data: "perl -nae' if ( ($. ==8) && ($_ =~/(\\S+)/) ) {print $_;last;}' "
-    header: "perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' "
+  data: "perl -nae' if ( ($. ==8) && ($_ =~/(\\S+)/) ) {print $_;last;}' "
+  header: "perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' "
 collectmultiplemetrics:
-  header_info:
-    first_of_pair: "perl -nae' if ($_ =~/^FIRST_OF_PAIR/ ) {print $_;last;}' "
-    header: "perl -nae' if ($_ =~/^CATEGORY/ ) {print $_;last;}' "
-    pair: "perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  "
-    second_of_pair: "perl -nae' if ($_ =~/^SECOND_OF_PAIR/ ) {print $_;last;}' "
+  first_of_pair: "perl -nae' if ($_ =~/^FIRST_OF_PAIR/ ) {print $_;last;}' "
+  header: "perl -nae' if ($_ =~/^CATEGORY/ ) {print $_;last;}' "
+  pair: "perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  "
+  second_of_pair: "perl -nae' if ($_ =~/^SECOND_OF_PAIR/ ) {print $_;last;}' "
 collectmultiplemetricsinsertsize:
-  header_info:
-    data: "perl -nae' if ( ($. ==8) && ($_ =~/(\\S+)/) ) {print $_;last;}' "
-    header: "perl -nae' if ($_ =~/^MEDIAN_INSERT_SIZE/ ) {print $_;last;}' "
+  data: "perl -nae' if ( ($. ==8) && ($_ =~/(\\S+)/) ) {print $_;last;}' "
+  header: "perl -nae' if ($_ =~/^MEDIAN_INSERT_SIZE/ ) {print $_;last;}' "
 delly:
   version: "perl -nae 'if($_=~/SVMETHOD=EMBL\\.DELLY(v\\d+\\.\\d+\\.\\d+)/) {print $1;last }' "
 fastqc:
@@ -44,8 +41,6 @@ fastqc:
   sequence_length: "perl -nae' if ($_=~/Sequence length\\s(\\d+)/) {print $1;last;}' "
   total_number_of_reads: "perl -nae' if ($_=~/Total Sequences\\s(\\d+)/) {print $1;last;}' "
   version: "perl -nae' if ($_=~/##FastQC\\s+(\\S+)/) {print $1;last;}' "
-freebayes:
-  version: "perl -nae 'if($_=~/source=freeBayes\\s(\\S+)/) {print $1;last;}' "
 genmod:
   version: "perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\\d+.\\d+.\\d+|\\d+.\\d+)/) {print $1;last;}' "
 inbreeding_factor:
@@ -86,10 +81,10 @@ svdb:
   version: "perl -nae 'if($_=~/^##SVDB_version=(\\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' "
 tiddit:
   version: "perl -nae 'if($_=~/^##source=TIDDIT-(\\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' "
-father:
+variant_integrity_ar_father:
   common_variants: "perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' "
   fraction_of_common_variants: "perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' "
-mendel:
+variant_integrity_ar_mendel:
   fraction_of_errors: "perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' "
   mendelian_errors: "perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' "
 varianteffectpredictor:
@@ -103,41 +98,34 @@ varianteffectpredictor:
   sift: "perl -nae 'if($_=~/##VEP=/ && $_=~/sift=sift(\\S+)/) {print $1;last;}' "
   version: "perl -nae 'if($_=~/##VEP=\"(\\w+)\"/) {print $1;last;}' "
 variantevalall: &1
-  comp_overlap_header:
-    comp_overlap_data_all: "perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print $_;last;}' "
-    comp_overlap_data_known: "perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/known\\s/) ) {print $_;last;}' "
-    comp_overlap_data_novel: "perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
-    comp_overlap_header: "perl -nae' if ($_ =~/^CompOverlap\\s+CompRod/ ) {print $_;last;}' "
-  count_variants_header:
-    count_variants_data_all: "perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/all\\s/) ) {print $_;last;}' "
-    count_variants_data_known: "perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/known\\s/) ) {print $_;last;}' "
-    count_variants_data_novel: "perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
-    count_variants_header: "perl -nae' if ($_ =~/^CountVariants\\s+CompRod/ ) {print $_;last;}' "
-  indel_summary_header:
-    indel_summary_data_all: "perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/all\\s/) ) {print $_;last;}' "
-    indel_summary_data_known: "perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/known\\s/) ) {print $_;last;}' "
-    indel_summary_data_novel: "perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
-    indel_summary_header: "perl -nae' if ($_ =~/^IndelSummary\\s+CompRod/ ) {print $_;last;}' "
-  multiallelic_summary_header:
-    multiallelic_summary_data_all: "perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\\s/) ) {print $_;last;}' "
-    multiallelic_summary_data_known: "perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\\s/) ) {print $_;last;}' "
-    multiallelic_summary_data_novel: "perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
-    multiallelic_summary_header: "perl -nae' if ($_ =~/^MultiallelicSummary\\s+CompRod/ ) {print $_;last;}' "
-  titv_variant_evaluator_header:
-    titv_variant_evaluator_data_all: "perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/all\\s/) ) {print $_;last;}' "
-    titv_variant_evaluator_data_known: "perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/known\\s/) ) {print $_;last;}' "
-    titv_variant_evaluator_data_novel: "perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
-    titv_variant_evaluator_header: "perl -nae' if ($_ =~/^TiTvVariantEvaluator\\s+CompRod/ ) {print $_;last;}' "
-  validation_report_header:
-    validation_report_data_all: "perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/all\\s/) && ($_ =~/none\\s/)) {print $_;last;}' "
-    validation_report_data_known: "perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/known\\s/) ) {print $_;last;}' "
-    validation_report_data_novel: "perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
-    validation_report_header: "perl -nae' if ($_ =~/^ValidationReport\\s+CompRod/ ) {print $_;last;}' "
-  variant_summary_header:
-    variant_summary_data_all: "perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\\s/) ) {print $_;last;}' "
-    variant_summary_data_known: "perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\\s/) ) {print $_;last;}' "
-    variant_summary_data_novel: "perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
-    variant_summary_header: "perl -nae' if ($_ =~/^VariantSummary\\s+CompRod/ ) {print $_;last;}' "
+  comp_overlap_data_all: "perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print $_;last;}' "
+  comp_overlap_data_header: "perl -nae' if ($_ =~/^CompOverlap\\s+CompFeatureInput/ ) {print $_;last;}' "
+  comp_overlap_data_known: "perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  comp_overlap_data_novel: "perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  count_variants_data_all: "perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/all\\s/) ) {print $_;last;}' "
+  count_variants_data_header: "perl -nae' if ($_ =~/^CountVariants\\s+CompFeatureInput/ ) {print $_;last;}' "
+  count_variants_data_known: "perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  count_variants_data_novel: "perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  indel_summary_data_all: "perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/all\\s/) ) {print $_;last;}' "
+  indel_summary_data_header: "perl -nae' if ($_ =~/^IndelSummary\\s+CompFeatureInput/ ) {print $_;last;}' "
+  indel_summary_data_known: "perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  indel_summary_data_novel: "perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  multiallelic_summary_data_all: "perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\\s/) ) {print $_;last;}' "
+  multiallelic_summary_data_header: "perl -nae' if ($_ =~/^MultiallelicSummary\\s+CompFeatureInput/ ) {print $_;last;}' "
+  multiallelic_summary_data_known: "perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  multiallelic_summary_data_novel: "perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  titv_variant_evaluator_data_all: "perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/all\\s/) ) {print $_;last;}' "
+  titv_variant_evaluator_data_header: "perl -nae' if ($_ =~/^TiTvVariantEvaluator\\s+CompFeatureInput/ ) {print $_;last;}' "
+  titv_variant_evaluator_data_known: "perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  titv_variant_evaluator_data_novel: "perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  validation_report_data_all: "perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/all\\s/) && ($_ =~/none\\s/)) {print $_;last;}' "
+  validation_report_data_known: "perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  validation_report_data_novel: "perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  validation_report_header: "perl -nae' if ($_ =~/^ValidationReport\\s+CompFeatureInput/ ) {print $_;last;}' "
+  variant_summary_data_all: "perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\\s/) ) {print $_;last;}' "
+  variant_summary_data_known: "perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  variant_summary_data_novel: "perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  variant_summary_header: "perl -nae' if ($_ =~/^VariantSummary\\s+CompFeatureInput/ ) {print $_;last;}' "
 variantevalexome: *1
 vcf2cytosure_version:
   version: "perl -nae 'if($_=~/cytosure\\s+(\\d+[.]\\d+[.]\\d+)/xsm) { print $1;last; }' "

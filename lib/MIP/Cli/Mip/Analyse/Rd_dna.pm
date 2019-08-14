@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.25;
+our $VERSION = 1.27;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -1252,36 +1252,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{freebayes_ar} => (
-            cmd_aliases   => [qw{ frb }],
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Variant calling using Freebayes},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{freebayes_filter_variant} => (
-            cmd_aliases   => [qw{ frbfv }],
-            cmd_flag      => q{freebayes_fil_var},
-            documentation => q{Use standard bcftools filters},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{freebayes_keep_unnormalised} => (
-            cmd_aliases   => [qw{ frbkn }],
-            cmd_flag      => q{freebayes_keep_unn},
-            documentation => q{Do not normalise variants},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{gatk_haplotypecaller} => (
             cmd_aliases   => [qw{ ghc }],
             cmd_tags      => [q{Analysis recipe switch}],
@@ -1613,7 +1583,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
             cmd_flag      => q{gatk_combinevar_prio_cal},
             documentation => q{Prioritization order of variant callers},
             is            => q{rw},
-            isa           => enum( [qw{ gatk bcftools freebayes }] ),
+            isa           => enum( [qw{ gatk bcftools }] ),
         )
     );
 
