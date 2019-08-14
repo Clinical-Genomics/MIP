@@ -2,8 +2,6 @@
 bash_set_errexit: '0'
 bash_set_nounset: '0'
 bash_set_pipefail: '0'
-conda_path: /home/proj/bin/conda
-config_file: /home/anders.jemt/MIP/templates/mip_install_rd_dna_config_-1.0-.yaml
 core_number: '1'
 core_ram_memory: '5'
 disable_env_check: '0'
@@ -15,7 +13,6 @@ ecnvnator:
     pip: ~
     python: '2.7'
     samtools: 1.6=h4da6232_1
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_cnvnator
   pip: {}
   shell:
     cnvnator:
@@ -66,7 +63,6 @@ emip:
     snpsift: 4.3.1t=1
     vcfanno: 0.3.1=0
     vt: 2015.11.10
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna
   pip: {}
   shell:
     mip_scripts:
@@ -93,7 +89,6 @@ epeddy:
     peddy: 0.4.2=py_0
     pip: ~
     python: '2.7'
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_peddy
   pip: {}
   shell: {}
   snpeff_genome_versions: ~
@@ -110,7 +105,6 @@ eperl5:
     python: '2.7'
     sambamba: 0.6.8=h682856c_0
     samtools: 1.9=h8571acd_11
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_perl5
   pip: {}
   shell: {}
   snpeff_genome_versions: ~
@@ -120,7 +114,6 @@ epy3:
     ldc: 1.11.0=hb2c9046_0
     pip: ~
     sambamba: 0.6.8=h682856c_0
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_py3
   pip:
     chanjo: 4.2.0
     genmod: 3.7.3
@@ -136,7 +129,6 @@ esvdb:
   conda:
     pip: ~
     python: '2.7'
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_svdb
   pip: {}
   shell:
     svdb:
@@ -156,7 +148,6 @@ etiddit:
     pip: ~
     python: '2.7'
     scipy: 1.2.0=py27_blas_openblashb06ca3d_200
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_tiddit
   pip: {}
   shell:
     tiddit:
@@ -175,7 +166,6 @@ evep:
     htslib: 1.9=hc238db4_4
     pip: ~
     python: '2.7'
-  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_vep
   pip: {}
   shell:
     vep:
@@ -205,7 +195,6 @@ installations:
   - esvdb
   - etiddit
   - ecnvnator
-log_file: /home/anders.jemt/MIP/mip_log/2019-08-14/mip_install_2019-08-14T10:15:32.log
 max_cores_per_node: '36'
 mip: 1
 node_ram_memory: '128'
