@@ -217,7 +217,7 @@ sub test_mip_hashes {
           catfile( $Bin, qw{ data test_data download_active_parameters.yaml } ),
         file_info => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
         install_parameter =>
-          catfile( $Bin, qw{ data test_data install_rd_dna_parameters.yaml } ),
+          catfile( $Bin, qw{ data test_data install_rd_dna_active_parameters.yaml } ),
         io               => catfile( $Bin, qw{ data test_data io.yaml } ),
         job_id           => catfile( $Bin, qw{ data test_data job_id.yaml } ),
         recipe_parameter => catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
