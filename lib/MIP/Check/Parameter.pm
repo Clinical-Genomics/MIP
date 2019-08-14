@@ -57,6 +57,7 @@ BEGIN {
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       check_sample_id_in_parameter_value
+      check_select_file_contigs
       check_snpsift_keys
       check_vep_custom_annotation
       check_vep_directories
@@ -1724,6 +1725,62 @@ sub check_sample_id_in_parameter_value {
                 exit 1;
             }
         }
+    }
+    return 1;
+}
+
+sub check_select_file_contigs {
+
+## Function : Check that select file contigs is a subset of primary contigs
+## Returns  :
+## Arguments: $contigs_ref             => Primary contigs of the human genome reference
+##          : $log                     => Log object to write to
+##          : $select_file_contigs_ref => Select file contigs
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $contigs_ref;
+    my $log;
+    my $select_file_contigs_ref;
+
+    my $tmpl = {
+        contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$contigs_ref,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        select_file_contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$select_file_contigs_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Array::Utils qw{ array_minus };
+
+    ## Check that select file contigs are a subset of primary contigs
+    my @unique_select_contigs =
+      array_minus( @{$select_file_contigs_ref}, @{$contigs_ref} );
+    if (@unique_select_contigs) {
+
+        $log->fatal( q{Option 'vcfparser_select_file' contig(s): } . join $SPACE,
+            @unique_select_contigs );
+        $log->fatal(
+            q{Is not a subset of the human genome reference contigs: } . join $SPACE,
+            @{$contigs_ref} );
+        exit 1;
     }
     return 1;
 }

@@ -16,6 +16,7 @@ use warnings;
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,15 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ variant_effect_predictor variant_effect_predictor_install };
 }
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 sub variant_effect_predictor {
 
@@ -55,6 +52,7 @@ sub variant_effect_predictor {
 ##          : $stderrfile_path         => Stderr file path to write to {OPTIONAL}
 ##          : $stderrfile_path_append  => Append stderr info to file path
 ##          : $stdoutfile_path         => Stdoutfile path
+##          : $synonyms_file_path      => Contig synonyms
 ##          : $vep_features_ref        => Features to add to VEP
 
     my ($arg_href) = @_;
@@ -74,6 +72,7 @@ sub variant_effect_predictor {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $synonyms_file_path;
     my $vep_features_ref;
 
     ## Default(s)
@@ -166,6 +165,10 @@ sub variant_effect_predictor {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        synonyms_file_path => {
+            store       => \$synonyms_file_path,
+            strict_type => 1,
+        },
         vep_features_ref => {
             default     => [],
             store       => \$vep_features_ref,
@@ -217,6 +220,10 @@ sub variant_effect_predictor {
 
         push @commands, q{--chr} . $SPACE . join $COMMA, @{$regions_ref};
     }
+    if ($synonyms_file_path) {
+
+        push @commands, q{--synonyms} . $SPACE . $synonyms_file_path;
+    }
     if ($plugins_dir_path) {
         push @commands, q{--dir_plugins} . $SPACE . $plugins_dir_path;
     }
@@ -254,8 +261,8 @@ sub variant_effect_predictor {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
         }
     );
@@ -380,8 +387,8 @@ sub variant_effect_predictor_install {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
         }
     );

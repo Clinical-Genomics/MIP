@@ -161,6 +161,13 @@ human_reference:
   data_type: SCALAR
   default: 1
   type: recipe
+manta_call_regions:
+  analysis_mode: case
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 mills_and_1000g_indels:
   analysis_mode: case
   associated_recipe:
@@ -209,6 +216,7 @@ recipe_core_number:
     gnomad_pli_per_gene: 1
     human_reference: 1
     hapmap: 1
+    manta_call_regions: 1
     mills_and_1000g_indels: 1
     gatk_mitochondrial_ref: 1
     rank_model: 1
@@ -240,10 +248,11 @@ recipe_time:
     genbank_haplogroup: 1
     genomic_superdups: 1
     giab: 1
-    gnomad: 1
+    gnomad: 15
     gnomad_pli_per_gene: 1
     hapmap: 1
     human_reference: 1
+    manta_call_regions: 1
     mills_and_1000g_indels: 1
     gatk_mitochondrial_ref: 1
     rank_model: 1

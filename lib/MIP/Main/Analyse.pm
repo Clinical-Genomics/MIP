@@ -654,8 +654,8 @@ sub mip_analyse {
 ## Set contig prefix and contig names depending on reference used
     set_contigs(
         {
-            file_info_href         => \%file_info,
-            human_genome_reference => $active_parameter{human_genome_reference},
+            file_info_href => \%file_info,
+            version        => $file_info{human_genome_reference_version},
         }
     );
 

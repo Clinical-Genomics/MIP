@@ -123,7 +123,7 @@ sub check_dragen_rd_dna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter
-      qw{ check_sample_id_in_hash_parameter check_snpsift_keys check_vep_directories };
+      qw{ check_sample_id_in_hash_parameter check_select_file_contigs check_snpsift_keys check_vep_directories };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Get::File qw{ get_select_file_contigs };
@@ -167,6 +167,15 @@ sub check_dragen_rd_dna {
                 log => $log,
                 select_file_path =>
                   catfile( $active_parameter_href->{vcfparser_select_file} ),
+            }
+        );
+
+        ## Check that select file contigs is a subset of primary contigs
+        check_select_file_contigs(
+            {
+                contigs_ref             => $file_info_href->{contigs},
+                select_file_contigs_ref => $file_info_href->{select_file_contigs},
+                log                     => $log,
             }
         );
     }
@@ -376,6 +385,7 @@ sub check_rd_dna {
     use MIP::Check::Parameter qw{ check_mutually_exclusive_parameters
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
+      check_select_file_contigs
       check_snpsift_keys
       check_vep_custom_annotation
       check_vep_directories };
@@ -448,6 +458,15 @@ sub check_rd_dna {
                 log => $log,
                 select_file_path =>
                   catfile( $active_parameter_href->{vcfparser_select_file} ),
+            }
+        );
+
+        ## Check that select file contigs is a subset of primary contigs
+        check_select_file_contigs(
+            {
+                contigs_ref             => $file_info_href->{contigs},
+                select_file_contigs_ref => $file_info_href->{select_file_contigs},
+                log                     => $log,
             }
         );
     }
@@ -720,7 +739,7 @@ sub check_rd_dna_vcf_rerun {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Parameter
-      qw{ check_sample_id_in_hash_parameter check_snpsift_keys check_vep_directories };
+      qw{ check_sample_id_in_hash_parameter check_select_file_contigs check_snpsift_keys check_vep_directories };
     use MIP::Check::Reference qw{ check_parameter_metafiles };
     use MIP::File::Format::Config qw{ write_mip_config };
     use MIP::Get::File qw{ get_select_file_contigs };
@@ -762,6 +781,14 @@ sub check_rd_dna_vcf_rerun {
                 log => $log,
                 select_file_path =>
                   catfile( $active_parameter_href->{vcfparser_select_file} ),
+            }
+        );
+        ## Check that select file contigs is a subset of primary contigs
+        check_select_file_contigs(
+            {
+                contigs_ref             => $file_info_href->{contigs},
+                select_file_contigs_ref => $file_info_href->{select_file_contigs},
+                log                     => $log,
             }
         );
     }

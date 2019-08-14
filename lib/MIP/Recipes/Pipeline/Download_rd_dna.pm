@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_download_rd_dna };
@@ -105,6 +105,7 @@ sub pipeline_download_rd_dna {
     use MIP::Recipes::Download::Gnomad_pli_per_gene qw{ download_gnomad_pli_per_gene };
     use MIP::Recipes::Download::Hapmap qw{ download_hapmap };
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
+    use MIP::Recipes::Download::Manta_call_regions qw{ download_manta_call_regions };
     use MIP::Recipes::Download::Mills_and_1000g_indels
       qw{ download_mills_and_1000g_indels };
     use MIP::Recipes::Download::Rank_model qw{ download_rank_model };
@@ -142,6 +143,7 @@ sub pipeline_download_rd_dna {
         gnomad_pli_per_gene    => \&download_gnomad_pli_per_gene,
         hapmap                 => \&download_hapmap,
         human_reference        => \&download_human_reference,
+        manta_call_regions     => \&download_manta_call_regions,
         mills_and_1000g_indels => \&download_mills_and_1000g_indels,
         rank_model             => \&download_rank_model,
         reduced_penetrance     => \&download_reduced_penetrance,

@@ -16,23 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rtg_prerequisites };
 
 }
-
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub build_rtg_prerequisites {
 
@@ -156,6 +154,7 @@ sub build_rtg_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Qc::Rtg qw{ rtg_format };
@@ -168,8 +167,14 @@ sub build_rtg_prerequisites {
     Readonly my $PROCESSING_TIME   => 3;
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$recipe_name}{chain};
-    my $recipe_mode  = $active_parameter_href->{$recipe_name};
+    my $job_id_chain    = $parameter_href->{$recipe_name}{chain};
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => q{mip},
+        }
+    );
 
     ## FILEHANDLES
     # Create anonymous filehandle
@@ -182,13 +187,15 @@ sub build_rtg_prerequisites {
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
+            core_number           => $active_parameter_href->{max_cores_per_node},
             FILEHANDLE            => $FILEHANDLE,
             directory_id          => $case_id,
             job_id_href           => $job_id_href,
             log                   => $log,
+            process_time          => $PROCESSING_TIME,
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
-            process_time          => $PROCESSING_TIME,
+            source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );
 

@@ -20,7 +20,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.25;
+our $VERSION = 1.26;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -816,6 +816,15 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Structural variant calling using Manta},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{manta_call_regions_file_path} => (
+            cmd_aliases   => [qw{ mna_cr }],
+            documentation => q{Path to manta call regions file},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 

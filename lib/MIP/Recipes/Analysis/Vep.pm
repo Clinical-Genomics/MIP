@@ -21,6 +21,7 @@ use Readonly;
 ## MIPs lib/
 use MIP::Constants
   qw{ %ANALYSIS $ASTERISK $COMMA $DOT $EMPTY_STR $MIP_VERSION $NEWLINE $SPACE $UNDERSCORE };
+use MIP::File::Format::Vep qw{ create_vep_synonyms_file };
 
 BEGIN {
 
@@ -28,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -184,8 +185,9 @@ sub analysis_vep {
     my %infile_path        = %{ $io{in}{file_path_href} };
     my $infile_suffix      = $io{in}{file_suffix};
 
-    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain         = get_recipe_attributes(
+    my @contigs_size_ordered     = @{ $file_info_href->{contigs_size_ordered} };
+    my $genome_reference_version = $file_info_href->{human_genome_reference_version};
+    my $job_id_chain             = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -218,10 +220,10 @@ sub analysis_vep {
             }
         )
     );
-
-    my %outfile_path   = %{ $io{out}{file_path_href} };
-    my @outfile_paths  = @{ $io{out}{file_paths} };
-    my $outfile_suffix = $io{out}{file_suffix};
+    my $outdir_path_prefix = $io{out}{dir_path_prefix};
+    my %outfile_path       = %{ $io{out}{file_path_href} };
+    my @outfile_paths      = @{ $io{out}{file_paths} };
+    my $outfile_suffix     = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -270,11 +272,20 @@ sub analysis_vep {
 
     ### SHELL:
 
+    ## Get the vep synonyms file path for if required (grch38)
+    my $vep_synonyms_file_path = create_vep_synonyms_file(
+        {
+            log          => $log,
+            outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
+            version      => $genome_reference_version,
+        }
+    );
+
     ## Varianteffectpredictor
     say {$FILEHANDLE} q{## Varianteffectpredictor};
 
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
+    my $assembly_version =
+      $file_info_href->{human_genome_reference_source} . $genome_reference_version;
 
     ## Get genome source and version to be compatible with VEP
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version } );
@@ -386,11 +397,12 @@ sub analysis_vep {
                 outfile_path           => $outfile_path{$contig},
                 plugins_dir_path       => $active_parameter_href->{vep_plugins_dir_path},
                 plugins_ref            => \@plugins,
-                reference_path   => $active_parameter_href->{human_genome_reference},
-                regions_ref      => [$contig],
-                stderrfile_path  => $stderrfile_path,
-                stdoutfile_path  => $stdoutfile_path,
-                vep_features_ref => \@vep_features_ref,
+                reference_path     => $active_parameter_href->{human_genome_reference},
+                regions_ref        => [$contig],
+                stderrfile_path    => $stderrfile_path,
+                stdoutfile_path    => $stdoutfile_path,
+                synonyms_file_path => $vep_synonyms_file_path,
+                vep_features_ref   => \@vep_features_ref,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -583,8 +595,9 @@ sub analysis_vep_sv_wes {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $consensus_analysis_type  = $parameter_href->{cache}{consensus_analysis_type};
+    my $genome_reference_version = $file_info_href->{human_genome_reference_version};
+    my $job_id_chain             = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -677,11 +690,20 @@ sub analysis_vep_sv_wes {
         }
     );
 
-    ## varianteffectpredictor
+    ## Get the vep synonyms file path for if required (grch38)
+    my $vep_synonyms_file_path = create_vep_synonyms_file(
+        {
+            log          => $log,
+            outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
+            version      => $genome_reference_version,
+        }
+    );
+
+    ## Varianteffectpredictor
     say {$FILEHANDLE} q{## Varianteffectpredictor};
 
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
+    my $assembly_version =
+      $file_info_href->{human_genome_reference_source} . $genome_reference_version;
 
     ## Get genome source and version to be compatible with VEP
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
@@ -743,21 +765,22 @@ sub analysis_vep_sv_wes {
     my $stdoutfile_path = $recipe_file_path . $DOT . q{stdout.txt};
     variant_effect_predictor(
         {
-            assembly         => $assembly_version,
-            buffer_size      => 100,
-            cache_directory  => $active_parameter_href->{vep_directory_cache},
-            FILEHANDLE       => $FILEHANDLE,
-            fork             => $VEP_FORK_NUMBER,
-            infile_format    => substr( $infile_suffix, 1 ),
-            infile_path      => $vep_infile_path,
-            outfile_format   => substr( $outfile_suffix, 1 ),
-            outfile_path     => $outfile_path,
-            plugins_dir_path => $active_parameter_href->{vep_plugins_dir_path},
-            plugins_ref      => \@plugins,
-            reference_path   => $active_parameter_href->{human_genome_reference},
-            stderrfile_path  => $stderrfile_path,
-            stdoutfile_path  => $stdoutfile_path,
-            vep_features_ref => \@vep_features_ref,
+            assembly           => $assembly_version,
+            buffer_size        => 100,
+            cache_directory    => $active_parameter_href->{vep_directory_cache},
+            FILEHANDLE         => $FILEHANDLE,
+            fork               => $VEP_FORK_NUMBER,
+            infile_format      => substr( $infile_suffix, 1 ),
+            infile_path        => $vep_infile_path,
+            outfile_format     => substr( $outfile_suffix, 1 ),
+            outfile_path       => $outfile_path,
+            plugins_dir_path   => $active_parameter_href->{vep_plugins_dir_path},
+            plugins_ref        => \@plugins,
+            reference_path     => $active_parameter_href->{human_genome_reference},
+            stderrfile_path    => $stderrfile_path,
+            stdoutfile_path    => $stdoutfile_path,
+            synonyms_file_path => $vep_synonyms_file_path,
+            vep_features_ref   => \@vep_features_ref,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -936,9 +959,11 @@ sub analysis_vep_sv_wgs {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-    my $contigs_ref             = \@{ $file_info_href->{contigs} };
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
+    my $contigs_ref              = \@{ $file_info_href->{contigs} };
+    my $consensus_analysis_type  = $parameter_href->{cache}{consensus_analysis_type};
+    my $genome_reference_version = $file_info_href->{human_genome_reference_version};
+
+    my $job_id_chain = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -1034,11 +1059,20 @@ sub analysis_vep_sv_wgs {
         }
     );
 
-    ## varianteffectpredictor
+    ## Get the vep synonyms file path for if required (grch38)
+    my $vep_synonyms_file_path = create_vep_synonyms_file(
+        {
+            log          => $log,
+            outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
+            version      => $genome_reference_version,
+        }
+    );
+
+    ## Varianteffectpredictor
     say {$FILEHANDLE} q{## Varianteffectpredictor};
 
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
+    my $assembly_version =
+      $file_info_href->{human_genome_reference_source} . $genome_reference_version;
 
     ## Get genome source and version to be compatible with VEP
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
@@ -1148,23 +1182,24 @@ sub analysis_vep_sv_wgs {
         my $stdoutfile_path = $vep_xargs_file_path_prefix . $DOT . q{stdout.txt};
         variant_effect_predictor(
             {
-                assembly         => $assembly_version,
-                buffer_size      => 100,
-                cache_directory  => $active_parameter_href->{vep_directory_cache},
-                distance         => $distance,
-                FILEHANDLE       => $XARGSFILEHANDLE,
-                fork             => $VEP_FORK_NUMBER,
-                infile_format    => substr( $infile_suffix, 1 ),
-                infile_path      => $vep_infile_path,
-                outfile_format   => substr( $outfile_suffix, 1 ),
-                outfile_path     => $outfile_path{$contig},
-                plugins_dir_path => $active_parameter_href->{vep_plugins_dir_path},
-                plugins_ref      => \@plugins,
-                regions_ref      => \@regions,
-                reference_path   => $active_parameter_href->{human_genome_reference},
-                stderrfile_path  => $stderrfile_path,
-                stdoutfile_path  => $stdoutfile_path,
-                vep_features_ref => \@vep_features_ref,
+                assembly           => $assembly_version,
+                buffer_size        => 100,
+                cache_directory    => $active_parameter_href->{vep_directory_cache},
+                distance           => $distance,
+                FILEHANDLE         => $XARGSFILEHANDLE,
+                fork               => $VEP_FORK_NUMBER,
+                infile_format      => substr( $infile_suffix, 1 ),
+                infile_path        => $vep_infile_path,
+                outfile_format     => substr( $outfile_suffix, 1 ),
+                outfile_path       => $outfile_path{$contig},
+                plugins_dir_path   => $active_parameter_href->{vep_plugins_dir_path},
+                plugins_ref        => \@plugins,
+                regions_ref        => \@regions,
+                reference_path     => $active_parameter_href->{human_genome_reference},
+                stderrfile_path    => $stderrfile_path,
+                stdoutfile_path    => $stdoutfile_path,
+                synonyms_file_path => $vep_synonyms_file_path,
+                vep_features_ref   => \@vep_features_ref,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
