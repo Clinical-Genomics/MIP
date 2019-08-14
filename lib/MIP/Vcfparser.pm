@@ -31,8 +31,10 @@ BEGIN {
     our @EXPORT_OK = qw{
       add_feature_file_meta_data_to_vcf
       add_program_to_meta_data_header
+      add_transcript_to_feature_file
       build_interval_tree
       check_data_terms
+      %CSQ_FIELD_MAP
       define_select_data_headers
       parse_vcf_format_line
       parse_vep_csq_consequence
@@ -40,6 +42,15 @@ BEGIN {
       write_meta_data
     };
 }
+
+## Constants
+Readonly our %CSQ_FIELD_MAP => (
+    Allele      => q{allele},
+    Consequence => q{consequence_field},
+    Feature     => q{transcript_id},
+    HGNC_ID     => q{hgnc_id},
+    SYMBOL      => q{hgnc_symbol},
+);
 
 sub add_feature_file_meta_data_to_vcf {
 
@@ -159,6 +170,64 @@ sub add_program_to_meta_data_header {
     ## Add to meta_data_href
     $meta_data_href->{software}{$program_name} =
       qq{##Software=<ID=$program_name,Version=$vcfparser_version,Date=$current_date};
+    return;
+}
+
+sub add_transcript_to_feature_file {
+
+## Function : Adds INFO key value pairs to record hash
+## Returns  :
+## Arguments: $hgnc_id          => Hgnc id
+##          : $select_data_href => Select file data {REF}
+##          : $transcript       => Transcript
+##          : $vcf_record_href  => Hash for variant line data {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $hgnc_id;
+    my $select_data_href;
+    my $transcript;
+    my $vcf_record_href;
+
+    my $tmpl = {
+        hgnc_id => {
+            store       => \$hgnc_id,
+            strict_type => 1,
+        },
+        select_data_href => {
+            default     => {},
+            store       => \$select_data_href,
+            strict_type => 1,
+        },
+        transcript => {
+            defined     => 1,
+            required    => 1,
+            store       => \$transcript,
+            strict_type => 1,
+        },
+        vcf_record_href => {
+            default  => {},
+            defined  => 1,
+            required => 1,
+            store    => \$vcf_record_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add all transcripts to range transcripts
+    push @{ $vcf_record_href->{range_transcripts} }, $transcript;
+
+    ## Do not add to select feature
+    return if ( not keys %{$select_data_href} or not defined $hgnc_id );
+
+    ## Return if gene is not part of selected features
+    return if ( not $select_data_href->{$hgnc_id} );
+
+    ## Add all transcripts to selected transcripts
+    push @{ $vcf_record_href->{select_transcripts} }, $transcript;
+
     return;
 }
 
@@ -532,6 +601,19 @@ sub parse_vep_csq_schema {
 
         ## Set order of VEP features fields
         $vep_format_field_column_href->{$field} = $field_index;
+    }
+
+    ## Check that VEP FORMAT field schema match constant vcfparser CSQ map
+  CSQ_FIELD:
+    foreach my $csq_format_field_key ( keys %CSQ_FIELD_MAP ) {
+
+        check_data_terms(
+            {
+                data_category_name => q{VEP_CSQ},
+                data_href          => $vep_format_field_column_href,
+                term               => $csq_format_field_key,
+            }
+        );
     }
 
     return if ( not $parse_vep );
