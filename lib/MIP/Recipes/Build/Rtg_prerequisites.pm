@@ -16,6 +16,9 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
@@ -28,11 +31,6 @@ BEGIN {
     our @EXPORT_OK = qw{ build_rtg_prerequisites };
 
 }
-
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub build_rtg_prerequisites {
 
@@ -158,7 +156,7 @@ sub build_rtg_prerequisites {
 
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Qc::Rtg qw{ rtg_format };
+    use MIP::Program::Rtg qw{ rtg_format };
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
