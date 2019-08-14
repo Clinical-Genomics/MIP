@@ -204,30 +204,18 @@ sub get_transcript_effects {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Vcfparser qw{ check_data_terms };
+    use MIP::Vcfparser qw{ %CSQ_FIELD_MAP };
 
     my %csq;
 
-    ## Standard VEP keys => vcfparser keys
-    my %csq_field_map = (Allele => q{allele},
-			 Consequence => q{consequence_field},
-			 Feature => q{transcript_id},
-			 HGNC_ID => q{hgnc_id},
-			 SYMBOL => q{hgnc_symbol},
-);
+  CSQ_FIELD:
+    while ( my ( $csq_format_field_key, $csq_key_id ) = each %CSQ_FIELD_MAP ) {
 
-CSQ_FIELD:
-    while ( my ($csq_format_field_key, $csq_key_id) = each %csq_field_map ) {
-
-      check_data_terms({data_category_name => q{VEP_CSQ},
-		      data_href => $vep_format_field_column_href,
-		       term => $csq_format_field_key,
-});
-
-      my $transcript_index = $vep_format_field_column_href->{$csq_format_field_key};
-      $csq{$csq_key_id} = $transcript_effects_ref->[$transcript_index];
+        ## Get where CSQ annotation is in transcript_effects according to VEP CSQ Schema
+        my $annotation_index = $vep_format_field_column_href->{$csq_format_field_key};
+        $csq{$csq_key_id} = $transcript_effects_ref->[$annotation_index];
     }
-return %csq;
+    return %csq;
 }
 
 sub parse_vcf_header {

@@ -34,6 +34,7 @@ BEGIN {
       add_transcript_to_feature_file
       build_interval_tree
       check_data_terms
+      %CSQ_FIELD_MAP
       define_select_data_headers
       parse_vcf_format_line
       parse_vep_csq_consequence
@@ -41,6 +42,15 @@ BEGIN {
       write_meta_data
     };
 }
+
+## Constants
+Readonly our %CSQ_FIELD_MAP => (
+    Allele      => q{allele},
+    Consequence => q{consequence_field},
+    Feature     => q{transcript_id},
+    HGNC_ID     => q{hgnc_id},
+    SYMBOL      => q{hgnc_symbol},
+);
 
 sub add_feature_file_meta_data_to_vcf {
 
@@ -591,6 +601,19 @@ sub parse_vep_csq_schema {
 
         ## Set order of VEP features fields
         $vep_format_field_column_href->{$field} = $field_index;
+    }
+
+    ## Check that VEP FORMAT field schema match constant vcfparser CSQ map
+  CSQ_FIELD:
+    foreach my $csq_format_field_key ( keys %CSQ_FIELD_MAP ) {
+
+        check_data_terms(
+            {
+                data_category_name => q{VEP_CSQ},
+                data_href          => $vep_format_field_column_href,
+                term               => $csq_format_field_key,
+            }
+        );
     }
 
     return if ( not $parse_vep );
