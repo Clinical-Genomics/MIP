@@ -870,8 +870,12 @@ sub parse_vep_csq {
             ## Split transcript into VEP CSQ fields
             my @transcript_effects = split( /\|/, $transcript );
 
-	    my %transcript_csq = get_transcript_effects({transcript_effects_ref => \@transcript_effects,
-vep_format_field_column_href => $vep_format_field_column_href});
+            my %transcript_csq = get_transcript_effects(
+                {
+                    transcript_effects_ref       => \@transcript_effects,
+                    vep_format_field_column_href => $vep_format_field_column_href
+                }
+            );
 
             ## If gene
             if ( defined $transcript_csq{hgnc_id}
@@ -879,7 +883,7 @@ vep_format_field_column_href => $vep_format_field_column_href});
             {
 
                 ## Set symbol to hgnc map
-                $hgnc_map{$transcript_csq{hgnc_id}} = $transcript_csq{hgnc_symbol};
+                $hgnc_map{ $transcript_csq{hgnc_id} } = $transcript_csq{hgnc_symbol};
 
                 ## Parse the most severe consequence or prediction to gene
                 parse_vep_csq_consequence(
@@ -897,9 +901,9 @@ vep_format_field_column_href => $vep_format_field_column_href});
                 add_transcript_to_feature_file(
                     {
                         hgnc_id          => $transcript_csq{hgnc_id},
-                        vcf_record_href  => $record_href,
                         select_data_href => $select_data_href,
                         transcript       => $transcript,
+                        vcf_record_href  => $record_href,
                     }
                 );
                 next TRANSCRIPT;
@@ -908,8 +912,8 @@ vep_format_field_column_href => $vep_format_field_column_href});
             ## Not part of a coding region
             add_transcript_to_feature_file(
                 {
-                    vcf_record_href => $record_href,
                     transcript      => $transcript,
+                    vcf_record_href => $record_href,
                 }
             );
         }
