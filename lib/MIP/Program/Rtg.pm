@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $COMMA $EQUALS $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -28,7 +28,7 @@ BEGIN {
     our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ rtg_format rtg_vcfeval };
+    our @EXPORT_OK = qw{ rtg_format rtg_vcfeval rtg_vcfsubset };
 }
 
 sub rtg_format {
@@ -269,6 +269,99 @@ sub rtg_vcfeval {
     push @commands, q{--output-mode=} . $output_mode;
 
     push @commands, q(--output=) . $outputdirectory_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
+sub rtg_vcfsubset {
+
+## Function : Perl wrapper for rtg tools 3.9.1.
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Input file path
+##          : $keep_info_keys_ref     => Keep INFO key value pairs
+##          : $outfile_path           => Directory name of output SDF
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $keep_info_keys_ref;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        keep_info_keys_ref => {
+            default     => [],
+            store       => \$keep_info_keys_ref,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ rtg vcfsubset };
+
+    if ( @{$keep_info_keys_ref} ) {
+
+        push @commands, q{--keep-info} . $EQUALS . join $COMMA, @{$keep_info_keys_ref};
+    }
+    push @commands, q{--input} . $EQUALS . $infile_path;
+
+    push @commands, q{--output} . $EQUALS . $outfile_path;
 
     push @commands,
       unix_standard_streams(
