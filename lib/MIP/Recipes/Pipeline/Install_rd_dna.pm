@@ -176,7 +176,6 @@ sub pipeline_install_rd_dna {
                   $active_parameter_href->{$installation}{conda_prefix_path},
                 conda_no_update_dep => $active_parameter_href->{conda_no_update_dep},
                 conda_packages_href => $active_parameter_href->{$installation}{conda},
-                conda_update        => $active_parameter_href->{conda_update},
                 FILEHANDLE          => $FILEHANDLE,
                 snpeff_genome_versions_ref =>
                   $active_parameter_href->{$installation}{snpeff_genome_versions},

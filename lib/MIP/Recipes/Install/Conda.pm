@@ -32,7 +32,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_conda_packages };
@@ -47,7 +47,6 @@ sub install_conda_packages {
 ##           : $conda_env_path             => Path to conda environment (default: conda root)
 ##           : $conda_no_update_dep        => Do not update dependencies
 ##           : $conda_packages_href        => Hash holding conda packages and their version numbers {REF}
-##           : $conda_update               => Update Conda if defined
 ##           : $FILEHANDLE                 => Filehandle to write to
 ##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
 ##           : $quiet                      => Log only warnings and above
@@ -59,7 +58,6 @@ sub install_conda_packages {
     my $conda_env;
     my $conda_env_path;
     my $conda_packages_href;
-    my $conda_update;
     my $FILEHANDLE;
     my $quiet;
     my $snpeff_genome_versions_ref;
@@ -90,9 +88,6 @@ sub install_conda_packages {
             required    => 1,
             store       => \$conda_packages_href,
             strict_type => 1,
-        },
-        conda_update => {
-            store => \$conda_update,
         },
         FILEHANDLE => {
             required => 1,
@@ -129,18 +124,6 @@ sub install_conda_packages {
             verbose  => $verbose,
         }
     );
-
-    ## Optionally update conda
-    if ($conda_update) {
-
-        say {$FILEHANDLE} q{## Updating Conda};
-        conda_update(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
 
     ## Create an array for conda packages that are to be installed from provided hash
     my @packages = _create_package_array(

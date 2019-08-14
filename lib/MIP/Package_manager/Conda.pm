@@ -28,11 +28,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ conda_activate conda_check_env_status conda_create conda_deactivate conda_install conda_uninstall conda_update };
+      qw{ conda_activate conda_check_env_status conda_create conda_deactivate conda_install };
 }
 
 sub conda_activate {
@@ -390,142 +390,6 @@ sub conda_install {
             separator    => $SPACE,
         }
     );
-    return @commands;
-}
-
-sub conda_uninstall {
-
-##Function : Uninstall packages from conda environment
-##Returns  : @commands
-##Arguments: $env_name        => Name of environment to create
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $no_confirmation => Do not ask for confirmation
-##         : $packages_ref    => Packages to be installed
-##         : $quiet           => Do not display progress bar
-##         : $verbose         => Verbose output
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $env_name;
-    my $FILEHANDLE;
-    my $no_confirmation;
-    my $packages_ref;
-    my $quiet;
-    my $verbose;
-
-    my $tmpl = {
-        env_name => {
-            default     => undef,
-            store       => \$env_name,
-            strict_type => 1,
-        },
-        FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE,
-        },
-        no_confirmation => {
-            allow       => [ 0, 1 ],
-            default     => 1,
-            store       => \$no_confirmation,
-            strict_type => 1,
-        },
-        packages_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$packages_ref,
-            strict_type => 1,
-        },
-        quiet => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$quiet,
-            strict_type => 1,
-        },
-        verbose => {
-            allow       => [ undef, 0, 1 ],
-            default     => 1,
-            store       => \$verbose,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @commands = qw{ conda uninstall };
-
-    if ($env_name) {
-        push @commands, q{--name} . $SPACE . $env_name;
-    }
-
-    # Do not display progress bar
-    if ($quiet) {
-        push @commands, q{--quiet};
-    }
-
-    if ($verbose) {
-        push @commands, q{--verbose};
-    }
-
-    if ($no_confirmation) {
-        push @commands, q{--yes};
-    }
-
-    push @commands, join $SPACE, @{$packages_ref};
-
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
-            separator    => $SPACE,
-        }
-    );
-    return @commands;
-}
-
-sub conda_update {
-
-## Function  : Update conda
-## Returns   : @commands
-## Arguments : $FILEHANDLE      => Filehandle to write to
-##           : $no_confirmation => Do not ask for confirmation
-
-    my ($arg_href) = @_;
-
-    ## Flatten arguments
-    my $FILEHANDLE;
-    my $no_confirmation;
-
-    my $tmpl = {
-        FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE,
-        },
-        no_confirmation => {
-            allow       => [ 0, 1 ],
-            default     => 1,
-            store       => \$no_confirmation,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @commands = qw{ conda update };
-
-    if ($no_confirmation) {
-        push @commands, q{--yes};
-    }
-
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            FILEHANDLE   => $FILEHANDLE,
-            separator    => $SPACE,
-        }
-    );
-
     return @commands;
 }
 

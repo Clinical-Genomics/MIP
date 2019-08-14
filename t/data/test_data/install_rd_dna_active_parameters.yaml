@@ -1,0 +1,351 @@
+---
+bash_set_errexit: '0'
+bash_set_nounset: '0'
+bash_set_pipefail: '0'
+conda_path: /home/proj/bin/conda
+config_file: /home/anders.jemt/MIP/templates/mip_install_rd_dna_config_-1.0-.yaml
+core_number: '1'
+core_ram_memory: '5'
+disable_env_check: '0'
+ecnvnator:
+  conda:
+    bcftools: 1.6=1
+    gcc: 4.8.5
+    openssl: 1.0.2p
+    pip: ~
+    python: '2.7'
+    samtools: 1.6=h4da6232_1
+  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_cnvnator
+  pip: {}
+  shell:
+    cnvnator:
+      cnvnator_root_binary: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz
+      conda_dependency:
+        gcc: ~
+      version: 0.3.3
+  snpeff_genome_versions: ~
+edelly:
+  conda:
+    bcftools: 1.9=ha228f0b_4
+    delly: 0.8.1=h4037b6b_0
+    picard: 2.18.14=0
+    pip: ~
+    python: '2.7'
+  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_delly
+  pip: {}
+  shell: {}
+  snpeff_genome_versions: ~
+email_types:
+  - FAIL
+emip:
+  conda:
+    R: 3.3.1
+    bcftools: 1.9=ha228f0b_4
+    bedtools: 2.27.1=he941832_2
+    cmake: 3.3.1
+    cramtools: 3.0.b127=2
+    cutadapt: 1.18=py27_0
+    cython: 0.29.1=py27hfc679d8_0
+    cyvcf2: 0.10.0=py27h355e19c_0
+    gatk: 3.8=5
+    gatk4: 4.1.2.0=1
+    gcc: 4.8.5
+    htslib: 1.9=hc238db4_4
+    ldc: 1.11.0=hb2c9046_0
+    libstdcxx-ng: '8.2'
+    manta: 1.5.0=py27_0
+    numpy: ~
+    picard: 2.18.14=0
+    pip: ~
+    plink2: 1.90b3.35
+    python: '2.7'
+    rtg-tools: 3.9.1=1
+    sambamba: 0.6.8=h682856c_0
+    samtools: 1.9=h8571acd_11
+    snpeff: 4.3.1t=1
+    snpsift: 4.3.1t=1
+    vcfanno: 0.3.1=0
+    vt: 2015.11.10
+  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna
+  pip: {}
+  shell:
+    mip_scripts:
+      version: Your current MIP version
+    rhocall:
+      version: '0.4'
+  snpeff_genome_versions:
+    - GRCh37.75
+    - GRCh38.86
+environment_base_name: mip7_rd-dna
+environment_name:
+  ecnvnator: mip7_rd-dna_cnvnator
+  edelly: mip7_rd-dna_delly
+  emip: mip7_rd-dna
+  epeddy: mip7_rd-dna_peddy
+  eperl5: mip7_rd-dna_perl5
+  epy3: mip7_rd-dna_py3
+  esvdb: mip7_rd-dna_svdb
+  etiddit: mip7_rd-dna_tiddit
+  evep: mip7_rd-dna_vep
+epeddy:
+  conda:
+    bcftools: 1.9=ha228f0b_4
+    peddy: 0.4.2=py_0
+    pip: ~
+    python: '2.7'
+  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_peddy
+  pip: {}
+  shell: {}
+  snpeff_genome_versions: ~
+eperl5:
+  conda:
+    bcftools: 1.9=ha228f0b_4
+    bwa: 0.7.17=ha92aebf_3
+    bwakit: 0.7.15=1
+    fastqc: 0.11.8=0
+    freebayes: 1.2.0=py27h82df9c4_3
+    gatk4: 4.1.2.0=1
+    ldc: 1.11.0=hb2c9046_0
+    pip: ~
+    python: '2.7'
+    sambamba: 0.6.8=h682856c_0
+    samtools: 1.9=h8571acd_11
+  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_perl5
+  pip: {}
+  shell: {}
+  snpeff_genome_versions: ~
+epy3:
+  conda:
+    bcftools: 1.9=ha228f0b_4
+    ldc: 1.11.0=hb2c9046_0
+    pip: ~
+    sambamba: 0.6.8=h682856c_0
+  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_py3
+  pip:
+    chanjo: 4.2.0
+    genmod: 3.7.3
+    multiqc: '1.6'
+    stranger: 0.5.4
+    variant_integrity: 0.0.4
+  shell:
+    expansionhunter:
+      conda_dependency: ~
+      version: 3.0.0
+  snpeff_genome_versions: ~
+esvdb:
+  conda:
+    pip: ~
+    python: '2.7'
+  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_svdb
+  pip: {}
+  shell:
+    svdb:
+      conda_dependency:
+        pip: ~
+        python: '2.7'
+      version: 2.0.0
+  snpeff_genome_versions: ~
+etiddit:
+  conda:
+    bcftools: 1.9=ha228f0b_4
+    cmake: 3.13.2=h011004d_0
+    cython: 0.29.1=py27hfc679d8_0
+    cyvcf2: 0.10.0=py27h355e19c_0
+    gcc: ~
+    numpy: 1.15.4=py27_blas_openblashb06ca3d_0
+    pip: ~
+    python: '2.7'
+    scipy: 1.2.0=py27_blas_openblashb06ca3d_200
+  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_tiddit
+  pip: {}
+  shell:
+    tiddit:
+      conda_dependency:
+        cmake: 3.13.2=h011004d_0
+        gcc: ~
+        numpy: 1.15.4=py27_blas_openblashb06ca3d_0
+        python: '2.7'
+      version: 2.7.1
+    vcf2cytosure:
+      version: 0.4.3
+  snpeff_genome_versions: ~
+evep:
+  conda:
+    bcftools: 1.9=ha228f0b_4
+    htslib: 1.9=hc238db4_4
+    pip: ~
+    python: '2.7'
+  conda_prefix_path: /home/proj/bin/conda/envs/mip7_rd-dna_vep
+  pip: {}
+  shell:
+    vep:
+      conda_dependency:
+        bcftools: ~
+        htslib: ~
+      vep_assemblies:
+        - GRCh37
+        - GRCh38
+      vep_auto_flag: acfp
+      vep_cache_dir: ~
+      vep_plugins:
+        - ExACpLI
+        - LoFtool
+        - MaxEntScan
+      vep_species:
+        - homo_sapiens_merged
+      version: '95'
+  snpeff_genome_versions: ~
+installations:
+  - edelly
+  - emip
+  - epeddy
+  - eperl5
+  - epy3
+  - evep
+  - esvdb
+  - etiddit
+  - ecnvnator
+log_file: /home/anders.jemt/MIP/mip_log/2019-08-14/mip_install_2019-08-14T10:15:32.log
+max_cores_per_node: '36'
+mip: 1
+node_ram_memory: '128'
+noupdate: '0'
+pipeline: install_rd_dna
+prefer_shell: '0'
+process_time: 2-00:00:00
+program_test_command:
+  bcftools:
+    execution: bcftools --version
+    path: bcftools
+  bedtools:
+    execution: bedtools
+    path: bedtools
+  bwa:
+    execution: ~
+    path: bwa
+  bwakit:
+    execution: ~
+    path: run-bwamem
+  chanjo:
+    execution: chanjo
+    path: chanjo
+  cnvnator:
+    execution: ~
+    path: cnvnator
+  cramtools:
+    execution: cramtools
+    path: cramtools
+  cutadapt:
+    execution: cutadapt --version
+    path: cutadapt
+  cython:
+    execution: python -c "import cython"
+    path: ~
+  delly:
+    execution: delly
+    path: delly
+  expansionhunter:
+    execution: ExpansionHunter --version
+    path: ExpansionHunter
+  fastqc:
+    execution: fastqc --version
+    path: fastqc
+  freebayes:
+    execution: freebayes --version
+    path: freebayes
+  gatk:
+    execution: gatk3 --version
+    path: gatk3
+  gatk4:
+    execution: gatk
+    path: gatk
+  genmod:
+    execution: genmod
+    path: genmod
+  htslib:
+    execution: bgzip --version
+    path: bgzip
+  manta:
+    execution: configManta.py --version
+    path: configManta.py
+  mip_scripts:
+    execution: mip --help
+    path: mip
+  multiqc:
+    execution: multiqc --version
+    path: multiqc
+  numpy:
+    execution: python -c "import numpy"
+    path: ~
+  peddy:
+    execution: peddy --version
+    path: peddy
+  picard:
+    execution: ~
+    path: picard
+  plink2:
+    execution: plink2 --version
+    path: plink2
+  rhocall:
+    execution: rhocall
+    path: rhocall
+  rtg-tools:
+    execution: rtg --version
+    path: rtg
+  sambamba:
+    execution: sambamba --version
+    path: sambamba
+  samtools:
+    execution: samtools --version
+    path: samtools
+  scipy:
+    execution: python -c "import scipy"
+    path: ~
+  snpeff:
+    execution: snpEff -version
+    path: snpEff
+  snpsift:
+    execution: ~
+    path: SnpSift
+  stranger:
+    execution: stranger --version
+    path: stranger
+  svdb:
+    execution: svdb
+    path: svdb
+  tiddit:
+    execution: TIDDIT.py
+    path: TIDDIT.py
+  variant_integrity:
+    execution: variant_integrity
+    path: variant_integrity
+  vcf2cytosure:
+    execution: vcf2cytosure --version
+    path: vcf2cytosure
+  vcfanno:
+    execution: vcfanno
+    path: vcfanno
+  vep:
+    execution: vep
+    path: vep
+  vt:
+    execution: vt
+    path: vt
+python3_programs:
+  - chanjo
+  - genmod
+  - variant_integrity
+  - multiqc
+reference_genome_versions:
+  - grch37
+  - hg38
+sbatch_mode: '0'
+script: mip_install
+select_programs: []
+shell_install: []
+skip_programs: []
+slurm_quality_of_service: low
+update_config: '0'
+verbose: '0'
+write_config: '0'
+
