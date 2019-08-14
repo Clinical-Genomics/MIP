@@ -849,7 +849,7 @@ sub parse_vep_csq {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use MIP::Vcfparser qw{ parse_vep_csq_consequence };
+    use MIP::Vcfparser qw{ add_transcript_to_feature_file parse_vep_csq_consequence };
     use MIP::File::Format::Vcf qw{ set_in_consequence_hash };
 
     ## Convert between hgnc_id and hgnc_symbol
@@ -857,13 +857,18 @@ sub parse_vep_csq {
 
     if ( $record_href->{INFO_key_value}{CSQ} ) {
 
-        my %most_severe_transcript;    #Collect most severe transcript per gene
-        my @transcripts =
-          split( /,/, $record_href->{INFO_key_value}{CSQ} );    #Split into transcripts
+        ## Collect most severe transcript per gene
+        my %most_severe_transcript;
 
+        ## Split into transcripts
+        my @transcripts =
+          split /,/, $record_href->{INFO_key_value}{CSQ};
+
+      TRANSCRIPT:
         foreach my $transcript (@transcripts) {
 
-            my @transcript_effects = split( /\|/, $transcript );    #Split in "|"
+            ## Split transcript into VEP CSQ fields
+            my @transcript_effects = split( /\|/, $transcript );
 
             ## Alias hgnc_id column number
             my $hgnc_id_column_ref = \$vep_format_field_column_href->{HGNC_ID};
@@ -902,24 +907,27 @@ sub parse_vep_csq {
                     }
                 );
 
-                if ( !$per_gene ) {
+                next TRANSCRIPT if ($per_gene);
 
-                    if ( $select_data_href->{$$hgnc_id_ref} )
-                    {    #Exists in selected Features
-
-                        push( @{ $record_href->{select_transcripts} }, $transcript )
-                          ;    #Add all transcripts to selected transcripts
+                add_transcript_to_feature_file(
+                    {
+                        hgnc_id          => $$hgnc_id_ref,
+                        vcf_record_href  => $record_href,
+                        select_data_href => $select_data_href,
+                        transcript       => $transcript,
                     }
-                    push( @{ $record_href->{range_transcripts} }, $transcript )
-                      ;        #Add all transcripts to range transcripts
-                }
+                );
+                next TRANSCRIPT;
             }
-            else {
 
-                ## Intergenic
-                push( @{ $record_href->{range_transcripts} }, $transcript )
-                  ;            #Add all transcripts to range transcripts
-            }
+            ## Not part of a coding region
+            add_transcript_to_feature_file(
+                {
+                    hgnc_id         => $$hgnc_id_ref,
+                    vcf_record_href => $record_href,
+                    transcript      => $transcript,
+                }
+            );
         }
         my @most_severe_range_consequences;
         my @most_severe_select_consequences;

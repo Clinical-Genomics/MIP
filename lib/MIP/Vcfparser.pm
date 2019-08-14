@@ -31,6 +31,7 @@ BEGIN {
     our @EXPORT_OK = qw{
       add_feature_file_meta_data_to_vcf
       add_program_to_meta_data_header
+      add_transcript_to_feature_file
       build_interval_tree
       check_data_terms
       define_select_data_headers
@@ -159,6 +160,66 @@ sub add_program_to_meta_data_header {
     ## Add to meta_data_href
     $meta_data_href->{software}{$program_name} =
       qq{##Software=<ID=$program_name,Version=$vcfparser_version,Date=$current_date};
+    return;
+}
+
+sub add_transcript_to_feature_file {
+
+## Function : Adds INFO key value pairs to record hash
+## Returns  :
+## Arguments: $hgnc_id          => Hgnc id
+##          : $select_data_href => Select file data {REF}
+##          : $transcript       => Transcript
+##          : $vcf_record_href  => Hash for variant line data {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $hgnc_id;
+    my $select_data_href;
+    my $transcript;
+    my $vcf_record_href;
+
+    my $tmpl = {
+        hgnc_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$hgnc_id,
+            strict_type => 1,
+        },
+        select_data_href => {
+            default     => {},
+            store       => \$select_data_href,
+            strict_type => 1,
+        },
+        transcript => {
+            defined     => 1,
+            required    => 1,
+            store       => \$transcript,
+            strict_type => 1,
+        },
+        vcf_record_href => {
+            default  => {},
+            defined  => 1,
+            required => 1,
+            store    => \$vcf_record_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Add all transcripts to range transcripts
+    push @{ $vcf_record_href->{range_transcripts} }, $transcript;
+
+    ## Do not add to select feature
+    return if ( not keys %{$select_data_href} );
+
+    ## Return if gene is not part of selected features
+    return if ( not $select_data_href->{$hgnc_id} );
+
+    ## Add all transcripts to selected transcripts
+    push @{ $vcf_record_href->{select_transcripts} }, $transcript;
+
     return;
 }
 
