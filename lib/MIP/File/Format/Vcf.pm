@@ -29,6 +29,7 @@ BEGIN {
     our @EXPORT_OK = qw{
       check_vcf_variant_line
       convert_to_range
+      get_transcript_effects
       parse_vcf_header
       set_in_consequence_hash
       set_info_key_pairs_in_vcf_record
@@ -169,6 +170,64 @@ sub convert_to_range {
         }
     }
     return $final_stop_position;
+}
+
+sub get_transcript_effects {
+
+## Function : Set and return csq hash per transcript
+## Returns  :
+## Arguments: $transcript_effects_ref       => Transcript effects {REF}
+##          : $vep_format_field_column_href => VEP format columns {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $transcript_effects_ref;
+    my $vep_format_field_column_href;
+
+    my $tmpl = {
+        transcript_effects_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$transcript_effects_ref,
+            strict_type => 1,
+        },
+        vep_format_field_column_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_format_field_column_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Vcfparser qw{ check_data_terms };
+
+    my %csq;
+
+    ## Standard VEP keys => vcfparser keys
+    my %csq_field_map = (Allele => q{allele},
+			 Consequence => q{consequence_field},
+			 Feature => q{transcript_id},
+			 HGNC_ID => q{hgnc_id},
+			 SYMBOL => q{hgnc_symbol},
+);
+
+CSQ_FIELD:
+    while ( my ($csq_format_field_key, $csq_key_id) = each %csq_field_map ) {
+
+      check_data_terms({data_category_name => q{VEP_CSQ},
+		      data_href => $vep_format_field_column_href,
+		       term => $csq_format_field_key,
+});
+
+      my $transcript_index = $vep_format_field_column_href->{$csq_format_field_key};
+      $csq{$csq_key_id} = $transcript_effects_ref->[$transcript_index];
+    }
+return %csq;
 }
 
 sub parse_vcf_header {

@@ -850,7 +850,7 @@ sub parse_vep_csq {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Vcfparser qw{ add_transcript_to_feature_file parse_vep_csq_consequence };
-    use MIP::File::Format::Vcf qw{ set_in_consequence_hash };
+    use MIP::File::Format::Vcf qw{ get_transcript_effects };
 
     ## Convert between hgnc_id and hgnc_symbol
     my %hgnc_map;
@@ -870,39 +870,24 @@ sub parse_vep_csq {
             ## Split transcript into VEP CSQ fields
             my @transcript_effects = split( /\|/, $transcript );
 
-            ## Alias hgnc_id column number
-            my $hgnc_id_column_ref = \$vep_format_field_column_href->{HGNC_ID};
-
-            ## Alias hgnc_symbol column number
-            my $hgnc_symbol_column_ref = \$vep_format_field_column_href->{SYMBOL};
+	    my %transcript_csq = get_transcript_effects({transcript_effects_ref => \@transcript_effects,
+vep_format_field_column_href => $vep_format_field_column_href});
 
             ## If gene
-            if ( ( defined( $transcript_effects[$$hgnc_id_column_ref] ) )
-                && $transcript_effects[$$hgnc_id_column_ref] ne "" )
+            if ( defined $transcript_csq{hgnc_id}
+                && $transcript_csq{hgnc_id} ne "" )
             {
 
-                ## Alias HGNC ID
-                my $hgnc_id_ref = \$transcript_effects[$$hgnc_id_column_ref];
-
-                ## Add symbol to hgnc map
-                $hgnc_map{$$hgnc_id_ref} = $transcript_effects[$$hgnc_symbol_column_ref];
-                my $transcript_id_ref =
-                  \$transcript_effects[ $vep_format_field_column_href->{Feature} ]
-                  ;    #Alias transcript_id
-                my $allele_ref =
-                  \$transcript_effects[ $vep_format_field_column_href->{Allele} ]
-                  ;    #Alias allele
-
-                my $consequence_field =
-                  $transcript_effects[ $vep_format_field_column_href->{Consequence} ];
+                ## Set symbol to hgnc map
+                $hgnc_map{$transcript_csq{hgnc_id}} = $transcript_csq{hgnc_symbol};
 
                 ## Parse the most severe consequence or prediction to gene
                 parse_vep_csq_consequence(
                     {
-                        allele            => $$allele_ref,
-                        consequence_field => $consequence_field,
+                        allele            => $transcript_csq{allele},
+                        consequence_field => $transcript_csq{consequence_field},
                         consequence_href  => $consequence_href,
-                        hgnc_id           => $$hgnc_id_ref,
+                        hgnc_id           => $transcript_csq{hgnc_id},
                         transcript        => $transcript,
                     }
                 );
@@ -911,7 +896,7 @@ sub parse_vep_csq {
 
                 add_transcript_to_feature_file(
                     {
-                        hgnc_id          => $$hgnc_id_ref,
+                        hgnc_id          => $transcript_csq{hgnc_id},
                         vcf_record_href  => $record_href,
                         select_data_href => $select_data_href,
                         transcript       => $transcript,
