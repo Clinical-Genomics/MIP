@@ -273,7 +273,7 @@ sub analysis_vep {
     ### SHELL:
 
     ## Get the vep synonyms file path for if required (grch38)
-    my $vep_synonyms_file_path = _get_vep_synonyms_file(
+    my $vep_synonyms_file_path = create_vep_synonyms_file(
         {
             log          => $log,
             outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
@@ -691,7 +691,7 @@ sub analysis_vep_sv_wes {
     );
 
     ## Get the vep synonyms file path for if required (grch38)
-    my $vep_synonyms_file_path = _get_vep_synonyms_file(
+    my $vep_synonyms_file_path = create_vep_synonyms_file(
         {
             log          => $log,
             outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
@@ -1060,7 +1060,7 @@ sub analysis_vep_sv_wgs {
     );
 
     ## Get the vep synonyms file path for if required (grch38)
-    my $vep_synonyms_file_path = _get_vep_synonyms_file(
+    my $vep_synonyms_file_path = create_vep_synonyms_file(
         {
             log          => $log,
             outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
@@ -1595,60 +1595,6 @@ sub _get_assembly_name {
         }
     }
     return $assembly_version;
-}
-
-sub _get_vep_synonyms_file {
-
-## Function : Get the vep synonyms file path for if required (grch38)
-## Returns  : undef or $outfile_path
-## Arguments: $log          => Log object
-##          : $outfile_path => Outfile path to write to
-##          : $version      => Human genome version {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $outfile_path;
-    my $version;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        outfile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfile_path,
-            strict_type => 1,
-        },
-        version => {
-            defined     => 1,
-            required    => 1,
-            store       => \$version,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Constants
-    Readonly my $GB_REQ_SYNONYM_MAP_VERSION => 38;
-
-    ## Currently only required for genome reference version 38
-    return if ( not $version eq $GB_REQ_SYNONYM_MAP_VERSION );
-
-    ## Create synonym file
-    create_vep_synonyms_file(
-        {
-            log          => $log,
-            outfile_path => $outfile_path,
-            version      => $version,
-        }
-    );
-    return $outfile_path;
 }
 
 sub _reformat_sv_with_no_length {

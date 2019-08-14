@@ -80,7 +80,7 @@ is( $is_ok, undef, q{Return if no defined synonyms map} );
 ## Given
 my $valid_version = q{38};
 
-$is_ok = create_vep_synonyms_file(
+my $ret_outfile_path = create_vep_synonyms_file(
     {
         log          => $log,
         outfile_path => $outfile_path,
@@ -88,7 +88,7 @@ $is_ok = create_vep_synonyms_file(
     }
 );
 
-## Then return true
-ok( $is_ok,           q{Return true if defined synonyms map} );
+## Then return outfile_path for synonyms file
+is( $outfile_path, $ret_outfile_path, q{Return outfile_path if defined synonyms map} );
 ok( -e $outfile_path, q{Created synonyms file} );
 done_testing();

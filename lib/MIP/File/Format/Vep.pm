@@ -34,7 +34,7 @@ BEGIN {
 sub create_vep_synonyms_file {
 
 ## Function : Create the synonyms file for VEP option '--synonyms'
-## Returns  :
+## Returns  : undef or $outfile_path
 ## Arguments: $log          => Log object
 ##          : $outfile_path => Outfile path to write to
 ##          : $version      => Human genome version {REF}
@@ -97,7 +97,7 @@ sub create_vep_synonyms_file {
     }
     $log->info( q{Wrote: } . $outfile_path, $NEWLINE );
     close $FILEHANDLE_SYS;
-    return 1;
+    return $outfile_path;
 }
 
 1;
