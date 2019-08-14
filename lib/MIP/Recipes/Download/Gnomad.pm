@@ -123,6 +123,7 @@ sub download_gnomad {
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Program::Rtg qw{ rtg_vcfsubset };
+    use MIP::Program::Utility::Htslib qw{ htslib_tabix };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -206,6 +207,19 @@ sub download_gnomad {
             outfile_path       => $reformated_outfile_path,
         }
     );
+    say {$FILEHANDLE} $NEWLINE;
+
+    htslib_tabix(
+        {
+            begin       => 1,
+            end         => 1,
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => $reformated_outfile_path,
+            sequence    => 0,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
