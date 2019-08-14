@@ -59,13 +59,11 @@ diag(   q{Test add_transcript_to_feature_file from Vcfparser.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given a gene, and transcript when not part of feature file
-my $hgnc_id    = 1;
 my $transcript = q{a transcript id};
 my %vcf_record;
 
 add_transcript_to_feature_file(
     {
-        hgnc_id         => $hgnc_id,
         vcf_record_href => \%vcf_record,
         transcript      => $transcript,
     }
@@ -75,10 +73,30 @@ my %expected_vcf_record = ( range_transcripts => [ $transcript, ], );
 
 ## Then transcript should be added to range features only
 is_deeply( \%vcf_record, \%expected_vcf_record,
-    q{Added transcript to rang feature in hash when no select data} );
+    q{Added transcript to rang feature in hash when no select data hash} );
 
 ## Given a select data hash
 my %select_data;
+
+## Clean-up from previous test
+delete $vcf_record{range_transcripts}[0];
+
+add_transcript_to_feature_file(
+    {
+        vcf_record_href  => \%vcf_record,
+        select_data_href => \%select_data,
+        transcript       => $transcript,
+    }
+);
+
+%expected_vcf_record = ( range_transcripts => [ $transcript, ], );
+
+## Then transcript should be added to range features only
+is_deeply( \%vcf_record, \%expected_vcf_record,
+    q{Added transcript to rang feature in hash when supplied hgnc_id in select data} );
+
+## Given a select data hash when undef $hgnc_id
+my $hgnc_id;
 
 ## Clean-up from previous test
 delete $vcf_record{range_transcripts}[0];
@@ -92,13 +110,13 @@ add_transcript_to_feature_file(
     }
 );
 
-%expected_vcf_record = ( range_transcripts => [ $transcript, ], );
-
 ## Then transcript should be added to range features only
 is_deeply( \%vcf_record, \%expected_vcf_record,
-    q{Added transcript to rang feature in hash when no hgnc_id in select data} );
+    q{Added transcript to rang feature in hash when supplied undef hgnc_id in select data}
+);
 
 ## Given a transcript with gene in select feature
+$hgnc_id = 2;
 $select_data{$hgnc_id} = 1;
 
 ## Clean-up from previous test

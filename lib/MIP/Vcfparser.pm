@@ -182,8 +182,6 @@ sub add_transcript_to_feature_file {
 
     my $tmpl = {
         hgnc_id => {
-            defined     => 1,
-            required    => 1,
             store       => \$hgnc_id,
             strict_type => 1,
         },
@@ -212,7 +210,7 @@ sub add_transcript_to_feature_file {
     push @{ $vcf_record_href->{range_transcripts} }, $transcript;
 
     ## Do not add to select feature
-    return if ( not keys %{$select_data_href} );
+    return if ( not keys %{$select_data_href} or not defined $hgnc_id );
 
     ## Return if gene is not part of selected features
     return if ( not $select_data_href->{$hgnc_id} );

@@ -923,7 +923,6 @@ sub parse_vep_csq {
             ## Not part of a coding region
             add_transcript_to_feature_file(
                 {
-                    hgnc_id         => $$hgnc_id_ref,
                     vcf_record_href => $record_href,
                     transcript      => $transcript,
                 }
