@@ -435,7 +435,7 @@ sub set_most_severe_pli {
 
 ## Function : Set the most severe pli keys for variant genes
 ## Returns  :
-## Arguments: $hgnc_symbol          => Hgnc_symbol
+## Arguments: $hgnc_id              => Hgnc id
 ##          : $most_severe_pli_href => Store most severe pli {REF}
 ##          : $pli_score            => Pli score for gene
 ##          : $select_data_href     => Select file data {REF}
@@ -443,15 +443,15 @@ sub set_most_severe_pli {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $hgnc_symbol;
+    my $hgnc_id;
     my $most_severe_pli_href;
     my $pli_score;
     my $select_data_href;
 
     my $tmpl = {
-        hgnc_symbol => {
+        hgnc_id => {
             required    => 1,
-            store       => \$hgnc_symbol,
+            store       => \$hgnc_id,
             strict_type => 1,
         },
         most_severe_pli_href => {
@@ -478,13 +478,13 @@ sub set_most_severe_pli {
     return if ( not defined $pli_score );
 
     ## For pli value and if current pli is more than stored
-    if ( $most_severe_pli_href->{range_pli} < $pli_score ) {
+    if ( $most_severe_pli_href->{range} < $pli_score ) {
 
-        $most_severe_pli_href->{range_pli} = $pli_score;
+        $most_severe_pli_href->{range} = $pli_score;
 
-        return if ( not exists $select_data_href->{$hgnc_symbol} );
+        return if ( not exists $select_data_href->{$hgnc_id} );
 
-        $most_severe_pli_href->{select_pli} = $pli_score;
+        $most_severe_pli_href->{select} = $pli_score;
 
     }
     return;

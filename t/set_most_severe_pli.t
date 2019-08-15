@@ -59,18 +59,19 @@ diag(   q{Test set_most_severe_pli from Vcfparser.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
+Readonly my $ADK_HGNC_ID   => 257;
 Readonly my $LOW_PLI_SCORE => 0.001;
 Readonly my $MAX_PLI_SCORE => 1.0;
 
 ## Given a gene and undef pli score
-my $hgnc_symbol     = q{ADK};
-my %most_severe_pli = ( range_pli => 0 );
+my $hgnc_id         = $ADK_HGNC_ID;
+my %most_severe_pli = ( range => 0 );
 my $pli_score;
 my %select_data;
 
 my $is_ok = set_most_severe_pli(
     {
-        hgnc_symbol          => $hgnc_symbol,
+        hgnc_id              => $hgnc_id,
         most_severe_pli_href => \%most_severe_pli,
         pli_score            => $pli_score,
         select_data_href     => \%select_data,
@@ -83,32 +84,32 @@ is( $is_ok, undef, q{Return if no pli score} );
 ## Given a defined pli score when a gene is not in select_data
 set_most_severe_pli(
     {
-        hgnc_symbol          => $hgnc_symbol,
+        hgnc_id              => $hgnc_id,
         most_severe_pli_href => \%most_severe_pli,
         pli_score            => $LOW_PLI_SCORE,
         select_data_href     => \%select_data,
     }
 );
 
-my %expected_most_severe_pli = ( range_pli => $LOW_PLI_SCORE );
+my %expected_most_severe_pli = ( range => $LOW_PLI_SCORE );
 
 ## Then set most severe pli score for range feature
 is_deeply( \%most_severe_pli, \%expected_most_severe_pli,
     q{Set most severe pli score for range feature} );
 
 ## Given a defined pli score when a gene is in select_data
-$select_data{$hgnc_symbol} = 1;
+$select_data{$hgnc_id} = 1;
 set_most_severe_pli(
     {
-        hgnc_symbol          => $hgnc_symbol,
+        hgnc_id              => $hgnc_id,
         most_severe_pli_href => \%most_severe_pli,
         pli_score            => $MAX_PLI_SCORE,
         select_data_href     => \%select_data,
     }
 );
 
-$expected_most_severe_pli{range_pli}  = $MAX_PLI_SCORE;
-$expected_most_severe_pli{select_pli} = $MAX_PLI_SCORE;
+$expected_most_severe_pli{range}  = $MAX_PLI_SCORE;
+$expected_most_severe_pli{select} = $MAX_PLI_SCORE;
 
 ## Then set most severe pli score for range feature
 is_deeply( \%most_severe_pli, \%expected_most_severe_pli,
