@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DASH $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -195,7 +195,7 @@ sub download_gnomad {
     my $reformated_outfile = join $UNDERSCORE,
       (
         $genome_version, $recipe_name, q{reformated},
-        q{-} . $reference_version . q{-.vcf.gz}
+        $DASH . $reference_version . q{-.vcf.gz}
       );
     my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
 
