@@ -28,7 +28,7 @@ use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.0;
+our $VERSION = 2.01;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -166,18 +166,6 @@ q{Default: mip7_rd-dna mip7_rd-dna_cnvnator mip7_rd-dna_delly mip7_rd-dna_peddy 
                 ),
             ],
             required => 0,
-        ),
-    );
-
-    option(
-        q{reference_genome_versions} => (
-            cmd_aliases   => [qw{ rg }],
-            cmd_flag      => q{reference_genome_versions},
-            cmd_tags      => [q{Default: GRCh37, hg38}],
-            documentation => q{Reference genomes to download},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
-            required      => 0,
         ),
     );
 

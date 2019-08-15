@@ -26,7 +26,7 @@ use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.0;
+our $VERSION = 2.01;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -153,37 +153,6 @@ sub _build_usage {
             is            => q{rw},
             isa           => ArrayRef [ enum( [qw{ emip epy3 eperl5 evep }] ), ],
             required      => 0,
-        ),
-    );
-
-    option(
-        q{program_versions} => (
-            cmd_aliases   => [qw{ pv }],
-            cmd_flag      => q{program_versions},
-            documentation => q{Set program versions},
-            is            => q{rw},
-            isa           => Dict [
-                bcftools         => Optional [Str],
-                fastqc           => Optional [Str],
-                q{fusion-filter} => Optional [Str],
-                gatk4            => Optional [Str],
-                gffcompare       => Optional [Str],
-                htslib           => Optional [Str],
-                java_jdk         => Optional [Str],
-                multiqc          => Optional [Str],
-                picard           => Optional [Str],
-                pip              => Optional [Str],
-                preseq           => Optional [Str],
-                python           => Optional [Str],
-                rseqc            => Optional [Str],
-                salmon           => Optional [Str],
-                samtools         => Optional [Str],
-                star             => Optional [Str],
-                star_fusion      => Optional [Str],
-                stringtie        => Optional [Str],
-                vep              => Optional [Str],
-            ],
-            required => 0,
         ),
     );
 

@@ -21,7 +21,7 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Cli::Utils qw{ run };
 
-our $VERSION = 1.06;
+our $VERSION = 1.07;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -41,6 +41,17 @@ sub _build_usage {
 ## Arguments:
 
     option(
+        q{add_environment_date} => (
+            cmd_aliases   => [qw{ aed }],
+            cmd_flag      => q{add_environment_date},
+            documentation => q{Add creation date to environment},
+            is            => q{rw},
+            isa           => Bool,
+            required      => 0,
+        ),
+    );
+
+    option(
         q{conda_no_update_dep} => (
             cmd_aliases   => [qw{ cnud }],
             cmd_flag      => q{conda_no_update_dep},
@@ -48,6 +59,17 @@ sub _build_usage {
             is            => q{rw},
             isa           => Bool,
             required      => 0,
+        ),
+    );
+
+    option(
+        q{core_number} => (
+            cmd_tags      => [q{Default: 1}],
+            documentation => q{Number of tasks in sbatch allocation},
+            is            => q{rw},
+            isa           => Int,
+            required      => 0,
+
         ),
     );
 
@@ -93,17 +115,6 @@ sub _build_usage {
     );
 
     option(
-        q{add_environment_date} => (
-            cmd_aliases   => [qw{ aed }],
-            cmd_flag      => q{add_environment_date},
-            documentation => q{Add creation date to environment},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-        ),
-    );
-
-    option(
         q{prefer_shell} => (
             cmd_aliases => [qw{ psh }],
             cmd_flag    => q{prefer_shell},
@@ -127,12 +138,33 @@ sub _build_usage {
     );
 
     option(
+        q{program_test_file} => (
+            cmd_aliases   => [qw{ ptf }],
+            documentation => q{File with test commands in YAML format},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{project_id} => (
             cmd_aliases   => [qw{ pro }],
             documentation => q{Project id},
             is            => q{rw},
             isa           => Str,
         )
+    );
+
+    option(
+        q{reference_genome_versions} => (
+            cmd_aliases   => [qw{ rg }],
+            cmd_flag      => q{reference_genome_versions},
+            cmd_tags      => [q{Default: GRCh37, hg38}],
+            documentation => q{Reference genomes to download},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ grch37 grch38 }] ), ],
+            required      => 0,
+        ),
     );
 
     option(
@@ -143,17 +175,6 @@ sub _build_usage {
             is            => q{rw},
             isa           => Bool,
             required      => 0,
-        ),
-    );
-
-    option(
-        q{core_number} => (
-            cmd_tags      => [q{Default: 1}],
-            documentation => q{Number of tasks in sbatch allocation},
-            is            => q{rw},
-            isa           => Int,
-            required      => 0,
-
         ),
     );
 

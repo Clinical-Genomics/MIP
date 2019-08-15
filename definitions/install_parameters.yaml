@@ -6,6 +6,13 @@ config_file:
   default: 0
   type: path
   update_path: absolute_path
+core_number:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  default: 1
+  mandatory: no
+  type: mip
 disable_env_check:
   associated_recipe:
    - mip
@@ -61,13 +68,6 @@ reference_genome_versions:
   element_separator: ,
   mandatory: no
   type: mip
-core_number:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 1
-  mandatory: no
-  type: mip
 prefer_shell:
   associated_recipe:
    - mip
@@ -75,17 +75,17 @@ prefer_shell:
   default: 0
   mandatory: no
   type: mip
+program_test_file:
+  associated_recipe:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
 process_time:
   associated_recipe:
    - mip
   data_type: SCALAR
   default: 2-00:00:00
-  mandatory: no
-  type: mip
-program_test_command:
-  associated_recipe:
-   - mip
-  data_type: HASH
   mandatory: no
   type: mip
 project_id:

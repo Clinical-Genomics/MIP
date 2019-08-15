@@ -45,7 +45,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{2.00};
+    our $VERSION = 2.01;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -174,7 +174,8 @@ sub mip_install {
             and not ref $active_parameter{$parameter_name} );
 
         ### Special case for parameters that are dependent on other parameters values
-        my @custom_default_parameters = qw{ select_programs shell_install skip_programs };
+        my @custom_default_parameters =
+          qw{ program_test_file select_programs shell_install skip_programs };
 
         if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
 
