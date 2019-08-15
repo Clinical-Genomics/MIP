@@ -849,7 +849,8 @@ sub parse_vep_csq {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use MIP::Vcfparser qw{ add_transcript_to_feature_file parse_vep_csq_consequence };
+    use MIP::Vcfparser
+      qw{ add_transcript_to_feature_file parse_vep_csq_consequence set_most_severe_pli };
     use MIP::File::Format::Vcf qw{ get_transcript_effects };
 
     ## Convert between hgnc_id and hgnc_symbol
@@ -921,17 +922,31 @@ sub parse_vep_csq {
         my @most_severe_select_consequences;
         my $most_severe_range_pli  = 0;
         my $most_severe_select_pli = 0;
+        my %most_severe_pli        = (
+            range_pli  => 0,
+            select_pli => 0,
+        );
 
       GENE:
         for my $gene ( keys %{$consequence_href} ) {
 
+            ## Unpack
+            my $hgnc_symbol = $hgnc_map{$gene};
+            my $pli_score   = $pli_score_href->{$hgnc_symbol};
+
+            ## For pli value and if current pli is more than stored
+            set_most_severe_pli(
+                {
+                    hgnc_symbol          => $hgnc_symbol,
+                    most_severe_pli_href => \%most_severe_pli,
+                    pli_score            => $pli_score,
+                    select_data_href     => \%select_data_href,
+                }
+            );
+
           ALLEL:
             for my $allele ( keys %{ $consequence_href->{$gene} } ) {
 
-                ## Get hgnc_symbol
-                my $hgnc_symbol = $hgnc_map{$gene};
-
-                ## For pli value and if current pli is more than stored
                 if ( exists $pli_score_href->{$hgnc_symbol}
                     and $most_severe_range_pli < $pli_score_href->{$hgnc_symbol} )
                 {
