@@ -39,6 +39,7 @@ BEGIN {
       parse_vcf_format_line
       parse_vep_csq_consequence
       parse_vep_csq_schema
+      set_most_severe_pli
       write_meta_data
     };
 }
@@ -428,6 +429,65 @@ sub parse_vcf_format_line {
     );
 
     return @vcf_format_columns;
+}
+
+sub set_most_severe_pli {
+
+## Function : Set the most severe pli keys for variant genes
+## Returns  :
+## Arguments: $hgnc_id              => Hgnc id
+##          : $most_severe_pli_href => Store most severe pli {REF}
+##          : $pli_score            => Pli score for gene
+##          : $select_data_href     => Select file data {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $hgnc_id;
+    my $most_severe_pli_href;
+    my $pli_score;
+    my $select_data_href;
+
+    my $tmpl = {
+        hgnc_id => {
+            required    => 1,
+            store       => \$hgnc_id,
+            strict_type => 1,
+        },
+        most_severe_pli_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$most_severe_pli_href,
+            strict_type => 1,
+        },
+        pli_score => {
+            required    => 1,
+            store       => \$pli_score,
+            strict_type => 1,
+        },
+        select_data_href => {
+            default     => {},
+            store       => \$select_data_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $pli_score );
+
+    ## For pli value and if current pli is more than stored
+    if ( $most_severe_pli_href->{range} < $pli_score ) {
+
+        $most_severe_pli_href->{range} = $pli_score;
+
+        return if ( not exists $select_data_href->{$hgnc_id} );
+
+        $most_severe_pli_href->{select} = $pli_score;
+
+    }
+    return;
 }
 
 sub parse_vep_csq_consequence {

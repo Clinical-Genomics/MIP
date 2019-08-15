@@ -27,7 +27,7 @@ use Set::IntervalTree;
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants
-  qw{ %ANALYSIS $COLON $COMMA $NEWLINE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB };
+  qw{ %ANALYSIS $COLON $COMMA $NEWLINE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB $UNDERSCORE };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::File::Format::Pli qw{ load_pli_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
@@ -849,11 +849,17 @@ sub parse_vep_csq {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use MIP::Vcfparser qw{ add_transcript_to_feature_file parse_vep_csq_consequence };
+    use MIP::Vcfparser
+      qw{ add_transcript_to_feature_file parse_vep_csq_consequence set_most_severe_pli };
     use MIP::File::Format::Vcf qw{ get_transcript_effects };
 
     ## Convert between hgnc_id and hgnc_symbol
     my %hgnc_map;
+    my @feature_pli_keys = qw{ range select};
+
+    my %most_severe_pli;
+    ## Initilize pli score for feature keys
+    @most_severe_pli{@feature_pli_keys} = 0;
 
     if ( $record_href->{INFO_key_value}{CSQ} ) {
 
@@ -919,29 +925,26 @@ sub parse_vep_csq {
         }
         my @most_severe_range_consequences;
         my @most_severe_select_consequences;
-        my $most_severe_range_pli  = 0;
-        my $most_severe_select_pli = 0;
 
       GENE:
         for my $gene ( keys %{$consequence_href} ) {
 
+            ## Unpack
+            my $hgnc_symbol = $hgnc_map{$gene};
+            my $pli_score   = $pli_score_href->{$hgnc_symbol};
+
+            ## For pli value and if current pli is more than stored
+            set_most_severe_pli(
+                {
+                    hgnc_id              => $gene,
+                    most_severe_pli_href => \%most_severe_pli,
+                    pli_score            => $pli_score,
+                    select_data_href     => $select_data_href,
+                }
+            );
+
           ALLEL:
             for my $allele ( keys %{ $consequence_href->{$gene} } ) {
-
-                ## Get hgnc_symbol
-                my $hgnc_symbol = $hgnc_map{$gene};
-
-                ## For pli value and if current pli is more than stored
-                if ( exists $pli_score_href->{$hgnc_symbol}
-                    and $most_severe_range_pli < $pli_score_href->{$hgnc_symbol} )
-                {
-
-                    if ( $select_data_href->{$gene} ) {
-
-                        $most_severe_select_pli = $pli_score_href->{$hgnc_symbol};
-                    }
-                    $most_severe_range_pli = $pli_score_href->{$hgnc_symbol};
-                }
 
                 ## Exists in selected features
                 if ( $select_data_href->{$gene} ) {
@@ -969,6 +972,7 @@ sub parse_vep_csq {
                 }
             }
         }
+
         if (@most_severe_select_consequences) {
 
             $record_href->{INFO_addition_select_feature}{most_severe_consequence} =
@@ -987,17 +991,20 @@ sub parse_vep_csq {
             ## Add all transcripts to range transcripts
             push( @{ $record_href->{range_transcripts} }, @transcripts );
         }
-        if ($most_severe_select_pli) {
+    }
 
-            $record_href->{INFO_addition_select_feature}{most_severe_pli} =
-              $most_severe_select_pli;
-        }
-        if ($most_severe_range_pli) {
+  FEATURE_PLI_KEY:
+    foreach my $feature_pli_key (@feature_pli_keys) {
 
-            $record_href->{INFO_addition_range_feature}{most_severe_pli} =
-              $most_severe_range_pli;
+        if ( $most_severe_pli{$feature_pli_key} ) {
+
+            my $vcf_key = join $UNDERSCORE,
+              ( qw{INFO addition}, $feature_pli_key, qw{ feature } );
+            $record_href->{$vcf_key}{most_severe_pli} =
+              $most_severe_pli{$feature_pli_key};
         }
     }
+    return;
 }
 
 sub add_field_to_element {
