@@ -50,8 +50,9 @@ sub check_mip_installation {
 
 ## Function : Write installation check oneliner to open filehandle
 ## Returns  :
-## Arguments: $active_parameter_href      => Active parameter hash {REF}
-##          : $FILEHANDLE                 => Open filehandle
+## Arguments: $active_parameter_href => Active parameter hash {REF}
+```suggestion
+##          : $FILEHANDLE            => Open filehandle
 
     my ($arg_href) = @_;
 
