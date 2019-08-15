@@ -20,11 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -33,10 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,18 +41,18 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Qc::Rtg} => [qw{ rtg_vcfeval }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+        q{MIP::Program::Rtg}   => [qw{ rtg_vcfeval }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Qc::Rtg qw{ rtg_vcfeval };
+use MIP::Program::Rtg qw{ rtg_vcfeval };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test rtg_vcfeval from Rtg.pm v}
-      . $MIP::Program::Qc::Rtg::VERSION
+      . $MIP::Program::Rtg::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -18,7 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DASH $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -122,6 +122,8 @@ sub download_gnomad {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Program::Rtg qw{ rtg_vcfsubset };
+    use MIP::Program::Utility::Htslib qw{ htslib_tabix };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
@@ -183,6 +185,41 @@ sub download_gnomad {
             verbose        => $verbose,
         }
     );
+
+## Map of key names to keep from reference vcf
+    my %info_key = (
+        q{r2.0.1} => [ qw{AF AF_POPMAX}, ],
+        q{r2.1.1} => [ qw{AF AF_popmax}, ],
+    );
+
+    my $reformated_outfile = join $UNDERSCORE,
+      (
+        $genome_version, $recipe_name, q{reformated},
+        $DASH . $reference_version . q{-.vcf.gz}
+      );
+    my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
+
+    rtg_vcfsubset(
+        {
+            FILEHANDLE         => $FILEHANDLE,
+            infile_path        => catfile( $reference_dir, $reference_href->{outfile} ),
+            keep_info_keys_ref => $info_key{$reference_version},
+            outfile_path       => $reformated_outfile_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    htslib_tabix(
+        {
+            begin       => 1,
+            end         => 1,
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => $reformated_outfile_path,
+            sequence    => 0,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Close FILEHANDLES
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});

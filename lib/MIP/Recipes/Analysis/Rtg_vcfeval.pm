@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rtg_vcfeval };
@@ -145,7 +145,7 @@ sub analysis_rtg_vcfeval {
     use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bedtools qw{ bedtools_intersectbed };
-    use MIP::Program::Qc::Rtg qw{ rtg_vcfeval };
+    use MIP::Program::Rtg qw{ rtg_vcfeval };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_rename_vcf_samples bcftools_view_and_index_vcf };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
