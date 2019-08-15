@@ -348,7 +348,6 @@ sub mip_analyse {
                 active_parameter_href => \%active_parameter,
                 associated_recipes_ref =>
                   \@{ $parameter{$parameter_name}{associated_recipe} },
-                log            => $log,
                 parameter_href => \%parameter,
                 parameter_name => $parameter_name,
             }

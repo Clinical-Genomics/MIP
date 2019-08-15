@@ -248,7 +248,7 @@ recipe_time:
     genbank_haplogroup: 1
     genomic_superdups: 1
     giab: 1
-    gnomad: 15
+    gnomad: 25
     gnomad_pli_per_gene: 1
     hapmap: 1
     human_reference: 1
