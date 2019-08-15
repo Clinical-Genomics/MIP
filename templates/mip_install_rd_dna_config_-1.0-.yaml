@@ -85,7 +85,6 @@ eperl5:
     bwa: 0.7.17=ha92aebf_3
     bwakit: 0.7.15=1
     fastqc: 0.11.8=0
-    freebayes: 1.2.0=py27h82df9c4_3
     gatk4: 4.1.2.0=1
     ldc: 1.11.0=hb2c9046_0
     sambamba: 0.6.8=h682856c_0

@@ -47,7 +47,6 @@ MIP is currently unable to install the CADD binary for dynamic calculation of in
 - [Expansionhunter] (version 3.0.0)
 - [Delly] (version: 0.8.1)
 - [FastQC] (version: 0.11.8)
-- [Freebayes] (version: 1.2.0)
 - [GATK] (version: 3.8 and 4.1.0)
 - [GENMOD] (version: 3.7.3)
 - [Htslib] (version: 1.9)
@@ -150,7 +149,6 @@ Corresponding MIP references:
 [Expansionhunter]: https://github.com/Illumina/ExpansionHunter
 [Delly]: https://github.com/dellytools/delly/
 [FastQC]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
-[Freebayes]: https://github.com/ekg/freebayes
 [GATK]: http://www.broadinstitute.org/gatk/
 [GENMOD]: https://github.com/moonso/genmod/
 [Htslib]: http://www.htslib.org/

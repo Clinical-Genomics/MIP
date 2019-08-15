@@ -15,16 +15,17 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2017 };
 use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -67,15 +64,14 @@ my $log = test_log( {} );
 
 ## Given active callers, when priority string is ok
 my %active_parameter = (
-    gatk_combinevariants_prioritize_caller => q{gatk,bcftools,freebayes},
     bcftools_mpileup                       => 1,
-    freebayes_ar                           => 1,
+    gatk_combinevariants_prioritize_caller => q{gatk,bcftools},
     gatk_variantrecalibration              => 1,
 );
 
 my %parameter = (
     cache => {
-        variant_callers => [qw{ freebayes_ar bcftools_mpileup gatk_variantrecalibration}],
+        variant_callers => [qw{ bcftools_mpileup gatk_variantrecalibration}],
     },
 );
 
@@ -93,7 +89,7 @@ my $is_ok = check_prioritize_variant_callers(
 ok( $is_ok, q{Passed} );
 
 ## Given a priority string with missing variant caller
-$active_parameter{gatk_combinevariants_prioritize_caller} = q{gatk,freebayes};
+$active_parameter{gatk_combinevariants_prioritize_caller} = q{gatk};
 
 trap {
     check_prioritize_variant_callers(
@@ -114,7 +110,7 @@ like( $trap->stderr, qr/FATAL/xms,
 
 ## Given an not activated variant caller
 $active_parameter{bcftools_mpileup}                       = 0;
-$active_parameter{gatk_combinevariants_prioritize_caller} = q{gatk,bcftools,freebayes};
+$active_parameter{gatk_combinevariants_prioritize_caller} = q{gatk,bcftools};
 
 trap {
     check_prioritize_variant_callers(
@@ -136,7 +132,7 @@ like( $trap->stderr, qr/FATAL/xms,
 ## Given an other variant caller, when not part of priority string
 $active_parameter{bcftools_mpileup} = 1;
 $active_parameter{gatk_combinevariants_prioritize_caller} =
-  q{gatk,bcftools,freebayes, NOT_A_VARIANT_CALLER};
+  q{gatk,bcftools, NOT_A_VARIANT_CALLER};
 
 trap {
     check_prioritize_variant_callers(

@@ -42,7 +42,6 @@ CHAIN_ALL:
    - CHAIN_MAIN:
 # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
       - PARALLEL: 
-         - freebayes_ar
          - bcftools_mpileup
          - GATK_HAPLOTYPECALLER:
             - gatk_haplotypecaller

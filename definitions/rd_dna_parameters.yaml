@@ -97,7 +97,6 @@ human_genome_reference:
    - cnvnator_ar
    - delly_call
    - expansionhunter
-   - freebayes_ar
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
@@ -122,7 +121,6 @@ human_genome_reference_file_endings:
    - cnvnator_ar
    - delly_call
    - expansionhunter
-   - freebayes_ar
    - gatk_baserecalibration
    - gatk_haplotypecaller
    - gatk_genotypegvcfs
@@ -157,7 +155,6 @@ recipe_core_number:
     evaluation: 1
     expansionhunter: 0
     fastqc_ar: 0
-    freebayes_ar: 13
     frequency_filter: 13
     gatk_baserecalibration: 13
     gatk_combinevariantcallsets: 1
@@ -254,7 +251,6 @@ recipe_time:
     evaluation: 3
     expansionhunter: 2
     fastqc_ar: 10
-    freebayes_ar: 30
     frequency_filter: 2
     gatk_baserecalibration: 20
     gatk_combinevariantcallsets: 2
@@ -1099,32 +1095,6 @@ bcftools_mpileup_filter_variant:
 bcftools_mpileup_keep_unnormalised:
   associated_recipe:
    - bcftools_mpileup
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-## Freebayes
-freebayes_ar:
-  analysis_mode: case
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: _freebayes
-  program_executables:
-   - freebayes
-   - bcftools
-  recipe_type: variant_callers
-  outfile_suffix: ".vcf"
-  type: recipe
-freebayes_filter_variant:
-  associated_recipe:
-   - freebayes_ar
-  data_type: SCALAR
-  default: 0
-  type: recipe_argument
-freebayes_keep_unnormalised:
-  associated_recipe:
-   - freebayes_ar
   data_type: SCALAR
   default: 0
   type: recipe_argument

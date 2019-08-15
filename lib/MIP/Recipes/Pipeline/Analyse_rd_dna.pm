@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.16;
+    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna };
@@ -158,7 +158,6 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
-    use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
@@ -260,7 +259,6 @@ sub pipeline_analyse_rd_dna {
         expansionhunter             => \&analysis_expansionhunter,
         evaluation                  => \&analysis_picardtools_genotypeconcordance,
         fastqc_ar                   => \&analysis_fastqc,
-        freebayes_ar                => \&analysis_freebayes_calling,
         frequency_filter            => \&analysis_frequency_filter,
         gatk_baserecalibration      => \&analysis_gatk_baserecalibration,
         gatk_gathervcfs             => \&analysis_gatk_gathervcfs,
