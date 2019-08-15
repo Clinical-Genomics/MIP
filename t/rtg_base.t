@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -41,16 +41,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Rtg}   => [qw{ rtg_vcfsubset }],
+        q{MIP::Program::Rtg}   => [qw{ rtg_base }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Rtg qw{ rtg_vcfsubset };
+use MIP::Program::Rtg qw{ rtg_base };
 
-diag(   q{Test rtg_vcfsubset from Rtg.pm v}
+diag(   q{Test rtg_base from Rtg.pm v}
       . $MIP::Program::Rtg::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -67,50 +67,20 @@ my %base_argument = (
         input           => undef,
         expected_output => \@function_base_commands,
     },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = (
-    infile_path => {
-        input           => catfile(qw{ a infile path.vcf}),
-        expected_output => q{--input} . $EQUALS . catfile(qw{ a infile path.vcf}),
-    },
-    outfile_path => {
-        input           => catfile(qw{ a outfile path.vcf}),
-        expected_output => q{--output} . $EQUALS . catfile(qw{ a outfile path.vcf}),
-    },
-);
 
 my %specific_argument = (
-    keep_info_keys_ref => {
-        inputs_ref      => [qw{ AF AF_popmax }],
-        expected_output => q{--keep-info} . $EQUALS . q{AF,AF_popmax},
-    },
-    infile_path => {
-        input           => catfile(qw{ a infile path.vcf}),
-        expected_output => q{--input} . $EQUALS . catfile(qw{ a infile path.vcf}),
-    },
-    outfile_path => {
-        input           => catfile(qw{ a outfile path.vcf}),
-        expected_output => q{--output} . $EQUALS . catfile(qw{ a outfile path.vcf}),
+    memory => {
+        input           => q{1G},
+        expected_output => q{RTG_MEM} . $EQUALS . q{1G},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&rtg_vcfsubset;
+my $module_function_cref = \&rtg_base;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -124,7 +94,6 @@ foreach my $argument_href (@arguments) {
             do_test_base_command       => 1,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
-            required_argument_href     => \%required_argument,
         }
     );
 }

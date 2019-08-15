@@ -28,7 +28,47 @@ BEGIN {
     our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ rtg_format rtg_vcfeval rtg_vcfsubset };
+    our @EXPORT_OK = qw{ rtg_base rtg_format rtg_vcfeval rtg_vcfsubset };
+}
+
+sub rtg_base {
+
+## Function : Perl wrapper for rtg tools 3.9.1.
+## Returns  : @commands
+## Arguments: $FILEHANDLE   => Filehandle to write to
+##          : $memory       => Amount of JVM memory allocation (G)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $memory;
+
+    my $tmpl = {
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        memory     => {
+            allow       => qr{ \A\d+G\z }sxm,
+            default     => q{16G},
+            store       => \$memory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Stores commands depending on input parameters
+    my @commands = qw{ rtg };
+
+    push @commands, q{RTG_MEM} . $EQUALS . $memory;
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
 }
 
 sub rtg_format {
@@ -97,9 +137,9 @@ sub rtg_format {
     ## Stores commands depending on input parameters
     my @commands = qw{ rtg format };
 
-    push @commands, q{--format=} . $input_format;
+    push @commands, q{--format} . $EQUALS . $input_format;
 
-    push @commands, q{--output=} . $sdf_output_directory;
+    push @commands, q{--output} . $EQUALS . $sdf_output_directory;
 
     push @commands, $reference_genome_path;
 
@@ -246,27 +286,27 @@ sub rtg_vcfeval {
 
     if ($thread_number) {
 
-        push @commands, q{--threads=} . $thread_number;
+        push @commands, q{--threads} . $EQUALS . $thread_number;
     }
 
-    push @commands, q{--baseline=} . $baselinefile_path;
+    push @commands, q{--baseline} . $EQUALS . $baselinefile_path;
 
     if ($bed_regionsfile_path) {
 
-        push @commands, q{--bed-regions=} . $bed_regionsfile_path;
+        push @commands, q{--bed-regions} . $EQUALS . $bed_regionsfile_path;
     }
-    push @commands, q{--calls=} . $callfile_path;
+    push @commands, q{--calls} . $EQUALS . $callfile_path;
 
-    push @commands, q{--evaluation-regions=} . $eval_region_file_path;
+    push @commands, q{--evaluation-regions} . $EQUALS . $eval_region_file_path;
 
-    push @commands, q{--template=} . $sdf_template_file_path;
+    push @commands, q{--template} . $EQUALS . $sdf_template_file_path;
 
     if ($sample_id) {
 
-        push @commands, q{--sample=} . $sample_id;
+        push @commands, q{--sample} . $EQUALS . $sample_id;
     }
 
-    push @commands, q{--output-mode=} . $output_mode;
+    push @commands, q{--output-mode} . $EQUALS . $output_mode;
 
     push @commands, q(--output=) . $outputdirectory_path;
 
@@ -353,7 +393,10 @@ sub rtg_vcfsubset {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = qw{ rtg vcfsubset };
+    my @commands = rtg_base( {} );
+
+    ## Add subcommand after base
+    push @commands, q{vcfsubset};
 
     if ( @{$keep_info_keys_ref} ) {
 
