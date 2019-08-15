@@ -106,16 +106,17 @@ sub check_user_reference {
             ## Require at least one match
             next REFERENCE if ( $cache{$reference_id} );
 
-            $log->fatal(
+            $log->warn(
                 q{Cannot find version key: }
                   . $version
-                  . q{ reference key:}
+                  . q{ for reference key:}
                   . $reference_id
-                  . q{ genome build version:}
+                  . q{ with genome build version: }
                   . join $COMMA,
                 @{ $cache{$version} },
             );
-            exit 1;
+$log->warn(qq{Skipping reference: $reference_id });
+            next REFERENCE;
         }
 
     }

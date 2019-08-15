@@ -16,23 +16,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $DOT $NEWLINE $UNDERSCORE };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_human_genome_prerequisites };
 
 }
-
-## Constants
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
 
 sub build_human_genome_prerequisites {
 
@@ -158,6 +156,7 @@ sub build_human_genome_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Gnu::Coreutils qw{ gnu_rm gnu_ln };
     use MIP::Language::Java qw{ java_core };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
@@ -175,8 +174,14 @@ sub build_human_genome_prerequisites {
     my $recipe_file_path;
     my $submit_switch;
 
-    ## Alias
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    ## Unpack parameters
+    my $recipe_mode     = $active_parameter_href->{$recipe_name};
+    my %recipe_resource = get_recipe_resources(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => q{mip},
+        }
+    );
 
     ## No supplied FILEHANDLE i.e. create new sbatch script
     if ( not defined $FILEHANDLE ) {
@@ -192,13 +197,14 @@ sub build_human_genome_prerequisites {
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         ($recipe_file_path) = setup_script(
             {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $case_id,
-                log                   => $log,
-                recipe_name           => $recipe_name,
-                recipe_directory      => $recipe_name,
+                active_parameter_href           => $active_parameter_href,
+                job_id_href                     => $job_id_href,
+                FILEHANDLE                      => $FILEHANDLE,
+                directory_id                    => $case_id,
+                log                             => $log,
+                recipe_name                     => $recipe_name,
+                recipe_directory                => $recipe_name,
+                source_environment_commands_ref => $recipe_resource{load_env_ref},
             }
         );
     }

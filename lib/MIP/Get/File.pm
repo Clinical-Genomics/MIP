@@ -18,12 +18,15 @@ use Readonly;
 use List::MoreUtils qw{ any };
 use Path::Iterator::Rule;
 
+## MIPs lib/
+use MIP::Constants qw{ $COMMA $DOT $NEWLINE $SPACE };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -38,12 +41,6 @@ BEGIN {
       get_select_file_contigs
       get_seq_dict_contigs };
 }
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 sub get_exom_target_bed_file {
 
@@ -789,7 +786,7 @@ sub get_seq_dict_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Unix::System qw{ system_cmd_call };
+    use IPC::Cmd qw{ run };
 
     ## Build regexp to find contig names
     # Execute perl
@@ -805,16 +802,19 @@ sub get_seq_dict_contigs {
     $find_contig_name .= q?my $contig_name = $1; ?;
 
     # Write to STDOUT
-    $find_contig_name .= q?print $contig_name, q{,};} }' ?;
+    $find_contig_name .= q?print $contig_name, q{,};} }'?;
 
     # Returns a comma seperated string of sequence contigs from dict file
-    my $find_contig_cmd = qq{$find_contig_name $dict_file_path};
+    my $find_contig_cmd = qq{$find_contig_name $dict_file_path };
 
     # System call
-    my %return = system_cmd_call( { command_string => $find_contig_cmd, } );
+    my (
+        $success_ref,    $error_message_ref, $full_buf_ref,
+        $stdout_buf_ref, $stderr_buf_ref
+    ) = run( command => [$find_contig_cmd], verbose => 0 );
 
     # Save contigs
-    my @contigs = split $COMMA, join $COMMA, @{ $return{output} };
+    my @contigs = split $COMMA, join $COMMA, @{$stdout_buf_ref};
 
     if ( not @contigs ) {
 

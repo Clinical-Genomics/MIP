@@ -820,6 +820,15 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
+        q{manta_call_regions_file_path} => (
+            cmd_aliases   => [qw{ mna_cr }],
+            documentation => q{Path to manta call regions file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{tiddit} => (
             cmd_aliases   => [qw{ tid }],
             cmd_tags      => [q{Analysis recipe switch}],

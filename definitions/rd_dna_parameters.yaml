@@ -221,7 +221,7 @@ recipe_memory:
     sambamba_depth: 10
     samtools_subsample_mt: 2
     split_fastq_file: 2
-    sv_annotate: 7
+    sv_annotate: 10
     sv_reformat: 24
     sv_varianteffectpredictor: 8
     tiddit: 8
@@ -739,6 +739,14 @@ manta:
   outfile_suffix: ".vcf"
   recipe_type: structural_variant_callers
   type: recipe
+manta_call_regions_file_path:
+  associated_recipe:
+   - manta
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  reference: reference_dir
+  type: path
 tiddit:
   analysis_mode: case
   associated_recipe:
@@ -1481,7 +1489,7 @@ cadd_vcf_header_file:
   associated_recipe:
    - cadd_ar
   data_type: SCALAR
-  default: grch37_cadd_to_vcf_header_-1.0-.txt
+  default: cadd_to_vcf_header_-1.0-.txt
   exists_check: file
   reference: reference_dir
   type: path
