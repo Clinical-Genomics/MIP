@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -79,12 +79,11 @@ my %base_argument = (
         expected_output => q{2>> stderrfile.test},
     },
     stdoutfile_path => {
-        input => catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
+        input =>
+          catfile(qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
         expected_output => q{1>}
           . $SPACE
-          . catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
+          . catfile(qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
     },
 );
 
@@ -102,10 +101,9 @@ my %specific_argument = (
         expected_output => q{--force},
     },
     infile_path => {
-        input => catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
-        expected_output => catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
+        input => catfile(qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
+        expected_output =>
+          catfile(qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
     },
     write_to_stdout => {
         input           => 1,

@@ -19,7 +19,7 @@ use utf8;
 
 ## CPANM
 use autodie qw{ open close :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use List::Util qw{ any };
 use Readonly;
 

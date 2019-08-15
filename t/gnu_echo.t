@@ -2,7 +2,7 @@
 
 #### Copyright 2017 Henrik Stranneheim
 
-use Modern::Perl qw(2014);
+use Modern::Perl qw{ 2018 };
 use warnings qw(FATAL utf8);
 use autodie;
 use 5.026;    #Require at least perl 5.18
@@ -38,8 +38,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -103,9 +102,7 @@ my %base_argument = (
 my %required_argument = (
     strings_ref => {
         inputs_ref      => [q{This is my test string}],
-        expected_output => $DOUBLE_QUOTE
-          . q{This is my test string}
-          . $DOUBLE_QUOTE,
+        expected_output => $DOUBLE_QUOTE . q{This is my test string} . $DOUBLE_QUOTE,
     },
 );
 
@@ -113,9 +110,7 @@ my %required_argument = (
 my %specific_argument = (
     strings_ref => {
         inputs_ref      => [q{This is my test string}],
-        expected_output => $DOUBLE_QUOTE
-          . q{This is my test string}
-          . $DOUBLE_QUOTE,
+        expected_output => $DOUBLE_QUOTE . q{This is my test string} . $DOUBLE_QUOTE,
     },
     outfile_path => {
         input           => 'outfile.test',

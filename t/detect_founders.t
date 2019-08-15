@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -47,11 +47,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -113,8 +109,7 @@ my $founders_count = detect_founders(
 is( $founders_count, 0, q{Single sample - did not detect founders} );
 
 ## Given more samples than a trio, when one child has a single parent in analysis
-%active_parameter =
-  ( sample_ids => [qw{ child_1 child_2 child_3 father_1 mother_1 }], );
+%active_parameter = ( sample_ids => [qw{ child_1 child_2 child_3 father_1 mother_1 }], );
 
 %sample_info = (
     sample => {
@@ -142,7 +137,7 @@ $founders_count = detect_founders(
 
 ## Then do find one parent due to to many samples
 is( $founders_count, 1,
-q{Three children where one is trio with one parent in analysis - did detect founders}
+    q{Three children where one is trio with one parent in analysis - did detect founders}
 );
 
 ## Given a correct trio, when correct number of samples in analysis

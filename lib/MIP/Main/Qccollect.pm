@@ -18,7 +18,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ open close :all };
-use Modern::Perl qw{ 2017 };
+use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use MIP::File::Format::Yaml qw{ load_yaml };

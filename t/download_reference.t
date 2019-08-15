@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -43,9 +43,8 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Download::Download_reference} =>
-          [qw{ download_reference }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Program::Download::Download_reference} => [qw{ download_reference }],
+        q{MIP::Test::Fixtures}                        => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -90,9 +89,7 @@ my %base_argument = (
 my %required_argument = (
     config_file_path => {
         input           => catfile(qw{ a test file }),
-        expected_output => q{--config_file}
-          . $SPACE
-          . catfile(qw{ a test file }),
+        expected_output => q{--config_file} . $SPACE . catfile(qw{ a test file }),
     },
     FILEHANDLE => {
         input           => undef,
@@ -105,22 +102,18 @@ my %required_argument = (
     reference_genome_versions_ref => {
         inputs_ref => [qw{ test_v1 test_v2 }],
         expected_output =>
-q{--reference_genome_versions test_v1 --reference_genome_versions test_v2},
+          q{--reference_genome_versions test_v1 --reference_genome_versions test_v2},
     },
     reference_dir_path => {
         input           => catdir(qw{ a test path }),
-        expected_output => q{--reference_dir}
-          . $SPACE
-          . catdir(qw{ a test path }),
+        expected_output => q{--reference_dir} . $SPACE . catdir(qw{ a test path }),
     },
 );
 
 my %specific_argument = (
     config_file_path => {
         input           => catfile(qw{ a test file }),
-        expected_output => q{--config_file}
-          . $SPACE
-          . catfile(qw{ a test file }),
+        expected_output => q{--config_file} . $SPACE . catfile(qw{ a test file }),
     },
     pipeline => {
         input           => q{rna},
@@ -129,13 +122,11 @@ my %specific_argument = (
     reference_genome_versions_ref => {
         inputs_ref => [qw{ test_v1 test_v2 }],
         expected_output =>
-q{--reference_genome_versions test_v1 --reference_genome_versions test_v2},
+          q{--reference_genome_versions test_v1 --reference_genome_versions test_v2},
     },
     reference_dir_path => {
         input           => catdir(qw{ a test path }),
-        expected_output => q{--reference_dir}
-          . $SPACE
-          . catdir(qw{ a test path }),
+        expected_output => q{--reference_dir} . $SPACE . catdir(qw{ a test path }),
     },
 );
 

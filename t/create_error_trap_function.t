@@ -18,7 +18,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -75,7 +75,7 @@ my $FILEHANDLE = IO::Handle->new();
 
 # Shell create error trap file
 my $bash_file_path = catfile( cwd(), q{test_create_error_trap_function.sh} );
-my $log_file_path = catdir( cwd(), q{test_create_error_trap_function} );
+my $log_file_path  = catdir( cwd(), q{test_create_error_trap_function} );
 
 # Temporary directory
 my $temp_dir = catdir( cwd(), qw(test_dir .test_create_error_trap_function) );

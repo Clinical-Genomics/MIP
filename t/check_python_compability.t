@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -49,11 +49,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -105,7 +101,7 @@ diag(   q{Test check_pyton3_compability from Installation.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -149,7 +145,7 @@ trap {
             select_programs_ref   => $parameter{select_programs},
             log                   => $log,
         }
-      )
+    )
 };
 
 ## Then nothing special happens
@@ -168,12 +164,11 @@ trap {
             select_programs_ref   => $parameter{select_programs},
             log                   => $log,
         }
-      )
+    )
 };
 
 ## Then print a warning to the log
-like( $trap->stderr, qr/WARN/xms,
-    q{Warn when pyhon is missing from installation} );
+like( $trap->stderr, qr/WARN/xms, q{Warn when pyhon is missing from installation} );
 
 ## Given a python version other than 2 or 3
 foreach my $python_version (qw{ 2,3 4 hmm }) {
@@ -187,7 +182,7 @@ foreach my $python_version (qw{ 2,3 4 hmm }) {
                 select_programs_ref   => $parameter{select_programs},
                 log                   => $log,
             }
-          )
+        )
     };
 
     ## Then print a fatal message to the log and exit
@@ -210,12 +205,11 @@ trap {
             select_programs_ref   => $parameter{select_programs},
             log                   => $log,
         }
-      )
+    )
 };
 
 ## Then print a fatal message to the log and exit
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal message for python incompability} );
+like( $trap->stderr, qr/FATAL/xms, q{Throw fatal message for python incompability} );
 ok( $trap->exit, q{Exit when python version is incompatible with programs} );
 
 done_testing();

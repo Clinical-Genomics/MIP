@@ -25,7 +25,7 @@ $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 ## CPANM
 use autodie qw{ open close :all };
-use Modern::Perl qw{ 2017 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/

@@ -17,7 +17,7 @@ use 5.026;
 
 ## CPANM
 use autodie;
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -50,11 +50,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -106,7 +102,7 @@ diag(   q{Test check_filesystem_objects_and_index_existance from Path.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -120,17 +116,14 @@ my $log = initiate_logger(
 my %active_parameter = (
     gatk_baserecalibration_known_sites =>
       catfile( $Bin, qw{ data references grch37_dbsnp_-138-.vcf} ),
-    human_genome_reference_file_endings =>
-      catfile( $Bin, qw{Should_not_exist_file} ),
+    human_genome_reference_file_endings => catfile( $Bin, qw{Should_not_exist_file} ),
     snpsift_annotation_files =>
       catfile( $Bin, qw{data references grch37_clinvar_-2017-01-04-.vcf.gz} ),
 );
 
 my %parameter = load_yaml(
     {
-        yaml_file => catfile(
-            dirname($Bin), qw{ definitions rd_dna_parameters.yaml}
-        ),
+        yaml_file => catfile( dirname($Bin), qw{ definitions rd_dna_parameters.yaml} ),
     }
 );
 
@@ -143,7 +136,7 @@ my ($exist) = check_filesystem_objects_and_index_existance(
         object_type    => q{file},
         parameter_href => \%parameter,
         parameter_name => q{human_genome_reference_file_endings},
-        path => $active_parameter{human_genome_reference_file_endings},
+        path           => $active_parameter{human_genome_reference_file_endings},
     }
 );
 
@@ -193,13 +186,12 @@ trap {
             parameter_name => q{snpsift_annotation_files},
             path           => $active_parameter{snpsift_annotation_files},
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if file cannot be found} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message if file cannot be found} );
+like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message if file cannot be found} );
 
 ## Given a file with an index that do not exist
 $active_parameter{snpsift_annotation_files} =
@@ -215,7 +207,7 @@ trap {
             parameter_name => q{snpsift_annotation_files},
             path           => $active_parameter{snpsift_annotation_files},
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

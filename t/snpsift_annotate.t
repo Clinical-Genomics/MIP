@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -124,18 +120,15 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     database_path => {
-        input => catfile(qw{ path_to_annotation_file snpsift_annotation_file}),
-        expected_output =>
-          catfile(qw{ path_to_annotation_file snpsift_annotation_file}),
+        input           => catfile(qw{ path_to_annotation_file snpsift_annotation_file}),
+        expected_output => catfile(qw{ path_to_annotation_file snpsift_annotation_file}),
     },
 );
 
 my %specific_argument = (
     config_file_path => {
         input           => catfile(qw{ snpeff_path snpeff.config }),
-        expected_output => q{-config}
-          . $SPACE
-          . catfile(qw{ snpeff_path snpeff.config }),
+        expected_output => q{-config} . $SPACE . catfile(qw{ snpeff_path snpeff.config }),
     },
     infile_path => {
         input           => catfile(qw{ file_path prefix_contig_analysistype}),

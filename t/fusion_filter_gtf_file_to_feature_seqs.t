@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -51,8 +51,7 @@ BEGIN {
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Utility::Fusion_filter
-  qw{ fusion_filter_gtf_file_to_feature_seqs };
+use MIP::Program::Utility::Fusion_filter qw{ fusion_filter_gtf_file_to_feature_seqs };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test fusion_filter_gtf_file_to_feature_seqs from Fusion_filter.pm v}

@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -132,15 +128,11 @@ my %required_argument = (
     },
     genome_dir_path => {
         input           => catfile(qw{ dir genome_dir_path }),
-        expected_output => q{--genomeDir}
-          . $SPACE
-          . catfile(qw{ dir genome_dir_path }),
+        expected_output => q{--genomeDir} . $SPACE . catfile(qw{ dir genome_dir_path }),
     },
     gtf_path => {
         input           => catfile(qw{ dir test_gtf.gtf }),
-        expected_output => q{--sjdbGTFfile}
-          . $SPACE
-          . catfile(qw{ dir test_gtf.gtf }),
+        expected_output => q{--sjdbGTFfile} . $SPACE . catfile(qw{ dir test_gtf.gtf }),
     },
 );
 
@@ -153,15 +145,11 @@ my %specific_argument = (
     },
     genome_dir_path => {
         input           => catfile(qw{ dir genome_dir_path }),
-        expected_output => q{--genomeDir}
-          . $SPACE
-          . catfile(qw{ dir genome_dir_path }),
+        expected_output => q{--genomeDir} . $SPACE . catfile(qw{ dir genome_dir_path }),
     },
     gtf_path => {
         input           => catfile(qw{ dir test_gtf.gtf }),
-        expected_output => q{--sjdbGTFfile}
-          . $SPACE
-          . catfile(qw{ dir test_gtf.gtf }),
+        expected_output => q{--sjdbGTFfile} . $SPACE . catfile(qw{ dir test_gtf.gtf }),
     },
     read_length => {
         input           => $READ_LENGTH,

@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -43,9 +43,8 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Alignment::Picardtools} =>
-          [qw{ picardtools_collecthsmetrics }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Program::Alignment::Picardtools} => [qw{ picardtools_collecthsmetrics }],
+        q{MIP::Test::Fixtures}                  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -77,8 +76,7 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     bait_interval_file_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ indirectory exome_padded_interval_list_1 }) ],
+        inputs_ref      => [ catfile(qw{ indirectory exome_padded_interval_list_1 }) ],
         expected_output => q{BAIT_INTERVALS=}
           . catfile(qw{ indirectory exome_padded_interval_list_1 }),
     },
@@ -96,7 +94,7 @@ my %required_argument = (
         expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
     },
     referencefile_path => {
-        input => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
+        input           => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
         expected_output => q{R=}
           . catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
@@ -108,8 +106,7 @@ my %specific_argument = (
         expected_output => q{CREATE_INDEX=true},
     },
     bait_interval_file_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ indirectory exome_padded_interval_list_1 }) ],
+        inputs_ref      => [ catfile(qw{ indirectory exome_padded_interval_list_1 }) ],
         expected_output => q{BAIT_INTERVALS=}
           . catfile(qw{ indirectory exome_padded_interval_list_1 }),
     },

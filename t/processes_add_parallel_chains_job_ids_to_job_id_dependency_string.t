@@ -2,7 +2,7 @@
 
 #### Copyright 2017 Henrik Stranneheim
 
-use Modern::Perl qw{2014};
+use Modern::Perl qw{ 2018 };
 use warnings qw{FATAL utf8};
 use autodie;
 use 5.026;    #Require at least perl 5.18
@@ -101,7 +101,7 @@ my $sample_id_parallel_chain_key =
 
 my $case_id_chain_key_other = $case_id . $UNDERSCORE . q{OTHER};
 
-my @sample_ids = ( $sample_id, qw{sample4} );
+my @sample_ids      = ( $sample_id, qw{sample4} );
 my @parallel_chains = qw{OTHER};
 
 my %infile_lane_prefix = (

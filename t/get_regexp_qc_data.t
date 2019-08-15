@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -61,7 +61,7 @@ diag(   q{Test get_regexp_qc_data from Qc_data.pm v}
 
 ## Given a valid regexp when file exists
 my $data_file_path = catfile( dirname($Bin), q{mip} );
-my $recipe_name = q{mip};
+my $recipe_name    = q{mip};
 my $regexp = q{perl -nae 'if ($_ =~ /\bour\s\$VERSION\b/xms) {print q{Got version};}'};
 my $regexp_key = q{test_add_data_from_regexp};
 
@@ -72,10 +72,11 @@ my @regexp_returns = get_regexp_qc_data(
     }
 );
 
-my @expected_qc_data =  q{Got version};
+my @expected_qc_data = q{Got version};
 
 ## Then return array with single value
-is_deeply( \@regexp_returns, \@expected_qc_data, q{Got regexp return data from system call} );
+is_deeply( \@regexp_returns, \@expected_qc_data,
+    q{Got regexp return data from system call} );
 
 ## Given a invalid regexp when file exist
 my @returns = get_regexp_qc_data(
@@ -84,6 +85,6 @@ my @returns = get_regexp_qc_data(
         regexp         => q{perl -e 'print STDERR q{Testing catching STDERR}'},
     }
 );
-is_deeply(\@returns, [q{Testing catching STDERR}], q{Return STDERR stream});
+is_deeply( \@returns, [q{Testing catching STDERR}], q{Return STDERR stream} );
 
 done_testing();

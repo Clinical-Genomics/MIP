@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -100,7 +100,7 @@ diag(   q{Test check_pedigree_mandatory_key from Pedigree.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -170,7 +170,7 @@ trap {
             log           => $log,
             pedigree_href => \%pedigree,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -191,7 +191,7 @@ trap {
             log           => $log,
             pedigree_href => \%pedigree,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

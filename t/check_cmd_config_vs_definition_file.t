@@ -16,7 +16,7 @@ use 5.026;
 
 ## CPANM
 use autodie;
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -128,7 +128,7 @@ trap {
             active_parameter_href => \%active_parameter,
             parameter_href        => \%parameter,
         }
-      )
+    )
 };
 
 ## Then fatal message should be thrown

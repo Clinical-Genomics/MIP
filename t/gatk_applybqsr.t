@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -78,8 +78,7 @@ my %base_argument = (
 my %required_argument = (
     base_quality_score_recalibration_file => {
         input           => catfile(qw{ dir infile.bsqr }),
-        expected_output => q{--bqsr-recal-file }
-          . catfile(qw{ dir infile.bsqr }),
+        expected_output => q{--bqsr-recal-file } . catfile(qw{ dir infile.bsqr }),
     },
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),
@@ -94,8 +93,7 @@ my %required_argument = (
 my %specific_argument = (
     base_quality_score_recalibration_file => {
         input           => catfile(qw{ dir infile.bsqr }),
-        expected_output => q{--bqsr-recal-file }
-          . catfile(qw{ dir infile.bsqr }),
+        expected_output => q{--bqsr-recal-file } . catfile(qw{ dir infile.bsqr }),
     },
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),

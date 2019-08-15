@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## Cpanm
 use IPC::Cmd qw{ can_run run};
-use Modern::Perl qw{2014};
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use autodie qw{open close :all};
 

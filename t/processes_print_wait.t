@@ -2,7 +2,7 @@
 
 #### Copyright 2017 Henrik Stranneheim
 
-use Modern::Perl qw(2014);
+use Modern::Perl qw{ 2018 };
 use warnings qw(FATAL utf8);
 use autodie;
 use 5.026;    # Require at least perl 5.18
@@ -39,8 +39,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -118,8 +117,7 @@ close $FILEHANDLE;
 ## Test
 is( $returned_process_batch_count[0], 1, q{Did not print wait} );
 
-is( $returned_process_batch_count[1],
-    2, q{Update process_batches_count for next loop} );
+is( $returned_process_batch_count[1], 2, q{Update process_batches_count for next loop} );
 
 done_testing();
 

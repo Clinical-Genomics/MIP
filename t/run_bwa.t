@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{2014};
+use Modern::Perl qw{ 2018 };
 use warnings qw{FATAL utf8};
 use autodie;
 use 5.026;    #Require at least perl 5.18
@@ -42,8 +42,7 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE, basename($PROGRAM_NAME),
-          $SPACE, $VERSION, $NEWLINE;
+        say {*STDOUT} $NEWLINE, basename($PROGRAM_NAME), $SPACE, $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -148,9 +147,8 @@ my %specific_argument = (
         expected_output => q{-H},
     },
     read_group_header => {
-        input => ( join $SPACE, @read_group_headers ),
-        expected_output =>
-          ( q{-R} . $SPACE . join $SPACE, @read_group_headers ),
+        input           => ( join $SPACE,                  @read_group_headers ),
+        expected_output => ( q{-R} . $SPACE . join $SPACE, @read_group_headers ),
     },
     infile_path => {
         input           => q{test_infile_1.fastq},

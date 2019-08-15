@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -110,7 +110,7 @@ trap {
             non_mandatory_key_href => \%non_mandatory_key,
             file_path              => $definitions_file,
         }
-      )
+    )
 };
 
 ## Then throw FATAL log message and croak
@@ -131,7 +131,7 @@ trap {
             non_mandatory_key_href => \%non_mandatory_key,
             file_path              => $definitions_file,
         }
-      )
+    )
 };
 
 ## Then throw FATAL log message and croak
@@ -152,7 +152,7 @@ trap {
             non_mandatory_key_href => \%non_mandatory_key,
             file_path              => $definitions_file,
         }
-      )
+    )
 };
 
 ## Then throw FATAL log message and croak
@@ -173,7 +173,7 @@ trap {
             non_mandatory_key_href => \%non_mandatory_key,
             file_path              => $definitions_file,
         }
-      )
+    )
 };
 
 ## Then throw FATAL log message and croak

@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -63,7 +63,7 @@ diag(   q{Test set_absolute_path from File.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given an existing path
-my $existing_path = catfile( $Bin, qw{ data test_data qc_sample_info.yaml } );
+my $existing_path  = catfile( $Bin, qw{ data test_data qc_sample_info.yaml } );
 my $parameter_name = q{existing_path};
 
 my $is_ok = set_absolute_path(
@@ -85,7 +85,7 @@ trap {
             parameter_name => $parameter_name,
             path           => $not_existing_path,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

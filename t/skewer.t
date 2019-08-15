@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -125,15 +121,11 @@ my %base_argument = (
 my %required_argument = (
     adapter_sequence => {
         input           => q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
-        expected_output => q{-x}
-          . $SPACE
-          . q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
+        expected_output => q{-x} . $SPACE . q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
     },
     adapter_sequence_second => {
         input           => q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
-        expected_output => q{-y}
-          . $SPACE
-          . q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
+        expected_output => q{-y} . $SPACE . q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
     },
     infile_path => {
         input           => catfile(qw{path to test_infile_1}),
@@ -152,15 +144,11 @@ my %required_argument = (
 my %specific_argument = (
     adapter_sequence => {
         input           => q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
-        expected_output => q{-x}
-          . $SPACE
-          . q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
+        expected_output => q{-x} . $SPACE . q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
     },
     adapter_sequence_second => {
         input           => q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
-        expected_output => q{-y}
-          . $SPACE
-          . q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
+        expected_output => q{-y} . $SPACE . q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
     },
     compress_output => {
         input           => 1,

@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -48,11 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -103,7 +99,7 @@ diag(   q{Test detect_trio from PEDIGREE.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -131,7 +127,7 @@ is( $is_trio, undef, q{Single sample - did not detect trio} );
 
 ## Given sample info when 3 children are present and no parents
 %active_parameter = ( sample_ids => [qw{ child_1 child_2 child_3 }], );
-%sample_info = (
+%sample_info      = (
     sample => {
         child_1 => {
             father => 0,
@@ -187,12 +183,10 @@ $is_trio = detect_trio(
 
 ## Then do not detect trio
 is( $is_trio, undef,
-q{Three children where one is trio but not in analysis - did not detect trio}
-);
+    q{Three children where one is trio but not in analysis - did not detect trio} );
 
 ## Given more samples than a trio, when one child has parents in analysis
-%active_parameter =
-  ( sample_ids => [qw{ child_1 child_2 child_3 father_1 mother_1 }], );
+%active_parameter = ( sample_ids => [qw{ child_1 child_2 child_3 father_1 mother_1 }], );
 
 %sample_info = (
     sample => {

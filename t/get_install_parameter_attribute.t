@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -114,7 +114,7 @@ my $is_ok          = trap {
             parameter_href => \%parameter,
             parameter_name => $does_not_exist,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

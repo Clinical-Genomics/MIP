@@ -1659,8 +1659,7 @@ sub _set_program_test_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return if (not exists $active_parameter_href->{$parameter_name};
-
+    return if ( $active_parameter_href->{$parameter_name} );
 
     $active_parameter_href->{$parameter_name} =
       catfile( $Bin, qw{templates program_test_cmds.yaml } );

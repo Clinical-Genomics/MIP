@@ -2,7 +2,7 @@
 
 #### Copyright 2017 Henrik Stranneheim
 
-use Modern::Perl qw{2014};
+use Modern::Perl qw{ 2018 };
 use warnings qw{FATAL utf8};
 use autodie;
 use 5.026;    #Require at least perl 5.18

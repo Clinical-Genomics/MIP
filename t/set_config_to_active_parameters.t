@@ -16,7 +16,7 @@ use 5.026;
 
 ## CPANM
 use autodie;
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -113,8 +109,7 @@ set_config_to_active_parameters(
 );
 ## Tests
 
-is( $active_parameter{hash}{scalar},
-    q{config_scalar_1}, q{Set hash from config} );
+is( $active_parameter{hash}{scalar}, q{config_scalar_1}, q{Set hash from config} );
 
 is( $active_parameter{array}[0], q{config_array_1}, q{Set array from config} );
 
@@ -136,11 +131,9 @@ set_config_to_active_parameters(
 is( $active_parameter{hash}{scalar},
     q{active_scalar_1}, q{Did not set hash from config} );
 
-is( $active_parameter{array}[0],
-    q{active_array_1}, q{Did not set array from config} );
+is( $active_parameter{array}[0], q{active_array_1}, q{Did not set array from config} );
 
-is( $active_parameter{scalar},
-    q{active_scalar_2}, q{Did not set scalar from config} );
+is( $active_parameter{scalar}, q{active_scalar_2}, q{Did not set scalar from config} );
 
 done_testing();
 

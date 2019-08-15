@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -62,7 +62,7 @@ diag(   q{Test analysis_gzip_fastq from Gzip_fastq.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name = q{gzip_fastq};
+my $recipe_name    = q{gzip_fastq};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -85,7 +85,7 @@ my %file_info = test_mip_hashes(
 );
 $file_info{is_file_uncompressed}{$sample_id} = 1;
 
-my $infile_prefix = q{an_infile_prefix};
+my $infile_prefix      = q{an_infile_prefix};
 my %infile_lane_prefix = ( $sample_id => [q{an_infile_prefix}] );
 my %job_id;
 my %parameter = test_mip_hashes(

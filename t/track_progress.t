@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -73,7 +73,7 @@ open $FILEHANDLE, q{>}, \$file_content
   or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a job_id
-my @job_ids = (qw{job_id_test});
+my @job_ids       = (qw{job_id_test});
 my $log_file_path = catfile( $Bin, qw{ data test_data log_test} );
 
 track_progress(

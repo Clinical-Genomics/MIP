@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use warnings qw{ FATAL utf8 };
 use autodie;
 use 5.026;
@@ -45,11 +45,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -90,8 +86,7 @@ BEGIN {
 use MIP::Program::Fasta::Picardtools qw{ picardtools_createsequencedictionary };
 use MIP::Test::Commands qw{ test_function };
 
-diag(
-    q{Test picardtools_createsequencedictionary from Interval::Picardtools.pm v}
+diag(   q{Test picardtools_createsequencedictionary from Interval::Picardtools.pm v}
       . $MIP::Program::Fasta::Picardtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -130,7 +125,7 @@ my %required_argument = (
         expected_output => q{OUTPUT=} . catfile(qw{ dir outfile }),
     },
     referencefile_path => {
-        input => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
+        input           => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
         expected_output => q{R=}
           . catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
@@ -138,7 +133,7 @@ my %required_argument = (
 
 my %specific_argument = (
     referencefile_path => {
-        input => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
+        input           => catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
         expected_output => q{R=}
           . catfile(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },

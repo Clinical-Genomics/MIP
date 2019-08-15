@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use warnings qw{ FATAL utf8 };
 use autodie;
 use 5.026;
@@ -45,11 +45,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -113,7 +109,7 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     referencefile_path => {
-        input => catdir(qw{ references grch37_homo_sapiens_-d5-.fasta }),
+        input           => catdir(qw{ references grch37_homo_sapiens_-d5-.fasta }),
         expected_output => q{R=}
           . catdir(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },
@@ -125,7 +121,7 @@ my %specific_argument = (
         expected_output => q{CREATE_INDEX=true},
     },
     referencefile_path => {
-        input => catdir(qw{ references grch37_homo_sapiens_-d5-.fasta }),
+        input           => catdir(qw{ references grch37_homo_sapiens_-d5-.fasta }),
         expected_output => q{R=}
           . catdir(qw{ references grch37_homo_sapiens_-d5-.fasta }),
     },

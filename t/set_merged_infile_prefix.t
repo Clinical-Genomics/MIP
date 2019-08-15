@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use warnings qw{ FATAL utf8 };
 use autodie;
 use 5.026;
@@ -47,8 +47,7 @@ GetOptions(
     # Display version number
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },
     'vb|verbose' => $VERBOSE,
@@ -99,10 +98,9 @@ diag(   q{Test set_merged_infile_prefix from File.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $sample_id = q{sample_1};
-my $lanes_id  = q{123};
-my $merged_infile_prefix =
-  $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
+my $sample_id            = q{sample_1};
+my $lanes_id             = q{123};
+my $merged_infile_prefix = $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
 
 my %file_info;
 

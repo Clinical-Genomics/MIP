@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 use 5.026;
 
 ## CPANM
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use autodie;
 use Readonly;
 
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -128,10 +124,8 @@ my %required_argument = (
 
 my %specific_argument = (
     infile_paths_ref => {
-        inputs_ref =>
-          [qw{ infile_path_ref1 infile_path_ref2 infile_path_ref3 }],
-        expected_output =>
-          q{infile_path_ref1 infile_path_ref2 infile_path_ref3},
+        inputs_ref      => [qw{ infile_path_ref1 infile_path_ref2 infile_path_ref3 }],
+        expected_output => q{infile_path_ref1 infile_path_ref2 infile_path_ref3},
     },
     outfile_path => {
         input           => q{outfile.txt},

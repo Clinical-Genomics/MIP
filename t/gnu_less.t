@@ -2,7 +2,7 @@
 
 #### Copyright 2017 Henrik Stranneheim
 
-use Modern::Perl qw(2014);
+use Modern::Perl qw{ 2018 };
 use warnings qw(FATAL utf8);
 use autodie;
 use 5.026;    #Require at least perl 5.18
@@ -37,8 +37,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -79,9 +78,7 @@ BEGIN {
 use MIP::Gnu::Software::Gnu_less qw(gnu_less);
 use MIP::Test::Commands qw(test_function);
 
-diag(
-"Test gnu_less $MIP::Gnu::Software::Gnu_less::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag("Test gnu_less $MIP::Gnu::Software::Gnu_less::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
 ## Base arguments
 my @function_base_commands = 'less';

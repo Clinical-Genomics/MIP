@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -48,11 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -74,7 +70,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
         q{MIP::Script::Utils}     => [qw{ help }],
-        q{MIP::Set::Parameter} => [qw{ set_human_genome_reference_features }],
+        q{MIP::Set::Parameter}    => [qw{ set_human_genome_reference_features }],
     );
 
   PERL_MODULE:
@@ -105,7 +101,7 @@ diag(   q{Test check_human_genome_file_endings from Reference.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -133,11 +129,10 @@ my %file_info = (
 ## Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
 set_human_genome_reference_features(
     {
-        file_info_href => \%file_info,
-        human_genome_reference =>
-          basename( $active_parameter{human_genome_reference} ),
-        log            => $log,
-        parameter_href => \%parameter,
+        file_info_href         => \%file_info,
+        human_genome_reference => basename( $active_parameter{human_genome_reference} ),
+        log                    => $log,
+        parameter_href         => \%parameter,
     }
 );
 

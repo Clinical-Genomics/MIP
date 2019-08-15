@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -80,7 +80,7 @@ trap {
             log                     => $log,
             recipes_ref             => \@recipes,
         }
-      )
+    )
 };
 
 is( $trap->stderr, $EMPTY_STR, q{No updates to recipes mode} );
@@ -93,7 +93,7 @@ trap {
             log                     => $log,
             recipes_ref             => \@recipes,
         }
-      )
+    )
 };
 ## Alias
 my $cnvnator_mode              = $active_parameter{cnvnator_ar};

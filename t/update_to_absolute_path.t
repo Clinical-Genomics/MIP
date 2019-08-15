@@ -17,7 +17,7 @@ use 5.026;
 
 ## CPANM
 use autodie;
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -47,11 +47,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -108,13 +104,8 @@ my %active_parameter = (
     hash => {
         file => q{annotation},
     },
-    array => [
-        catfile(
-            $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta.gz }
-        )
-    ],
-    scalar =>
-      catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta.gz } ),
+    array => [ catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta.gz } ) ],
+    scalar => catfile( $Bin, qw{ data references grch37_homo_sapiens_-d5-.fasta.gz } ),
 );
 
 ## Expected id for hash key after update_to_absolute_path

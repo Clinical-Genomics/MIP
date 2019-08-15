@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -45,7 +45,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Variantcalling::Bcftools} => [qw{ bcftools_annotate }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures}                    => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -67,7 +67,7 @@ diag(   q{Test bcftools_annotate from Bcftools.pm v}
 my @function_base_commands = qw{ bcftools };
 
 my %base_argument = (
-FILEHANDLE => {
+    FILEHANDLE => {
         input           => undef,
         expected_output => \@function_base_commands,
     },
@@ -79,10 +79,10 @@ FILEHANDLE => {
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-		     stdoutfile_path => {
+    stdoutfile_path => {
         input           => q{stdoutfile.test},
         expected_output => q{1> stdoutfile.test},
-},
+    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
@@ -90,11 +90,11 @@ FILEHANDLE => {
 my %required_argument = ();
 
 my %specific_argument = (
-annotations_file_path => {
+    annotations_file_path => {
         input           => q{annotation_file.tsv},
         expected_output => q{--annotations annotation_file.tsv},
     },
-columns_name => {
+    columns_name => {
         input           => q{Chrom,Pos,Ref,Alt,-,CADD},
         expected_output => q{--columns Chrom,Pos,Ref,Alt,-,CADD},
     },

@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -49,11 +49,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -104,7 +100,7 @@ diag(   q{Test check_snpsift_keys from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -118,9 +114,8 @@ my $log = initiate_logger(
 ## Given matching snpsift annotation and outinfo keys
 my %active_parameter = (
     snpsift_annotation_files => {
-        q{grch37_clinvar_reformat_-2017-10-29-.vcf.gz} =>
-          q{CLNSIG,CLNVID,CLNREVSTAT},
-        q{grch37_gnomad.genomes_-r2.0.1-.vcf.gz} => q{AF,AF_POPMAX},
+        q{grch37_clinvar_reformat_-2017-10-29-.vcf.gz} => q{CLNSIG,CLNVID,CLNREVSTAT},
+        q{grch37_gnomad.genomes_-r2.0.1-.vcf.gz}       => q{AF,AF_POPMAX},
         q{grch37_anon-swegen_str_nsphs_-1000samples-.vcf.gz} =>
           q{AF,AC_Hom,AC_Het,AC_Hemi},
         q{grch37_loqusdb_-2017-05-22-.vcf.gz}            => q{Obs,Hom},
@@ -146,8 +141,7 @@ my $is_ok = check_snpsift_keys(
 ok( $is_ok, q{All snpsift files matched} );
 
 ## Given non-matching snpsift annotation and outinfo keys
-$active_parameter{snpsift_annotation_outinfo_key}{not_matching} =
-  q{You shall not pass};
+$active_parameter{snpsift_annotation_outinfo_key}{not_matching} = q{You shall not pass};
 
 trap {
     check_snpsift_keys(
@@ -158,7 +152,7 @@ trap {
             snpsift_annotation_outinfo_key_href =>
               \%{ $active_parameter{snpsift_annotation_outinfo_key} },
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
