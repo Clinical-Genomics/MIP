@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -103,9 +99,9 @@ my $capture_kit = q{latest};
 my %parameter = (
     supported_capture_kit => {
         q{agilent_sureselect.v5} =>
-q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed},
+          q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed},
         latest =>
-q{genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed},
+          q{genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed},
     },
 );
 
@@ -133,8 +129,7 @@ $exome_target_bed_file = get_capture_kit(
         user_supplied_parameter_switch => $user_supply_switch{exome_target_bed},
     }
 );
-is( $exome_target_bed_file, q{agilent_sureselect.v4},
-    q{Got supplied capture kit} );
+is( $exome_target_bed_file, q{agilent_sureselect.v4}, q{Got supplied capture kit} );
 
 ## Test undefined switch but no user info - default capture kit
 $capture_kit        = q{agilent_sureselect.v5};

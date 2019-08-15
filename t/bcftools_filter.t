@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use warnings qw{ FATAL utf8 };
 use autodie;
 use 5.026;
@@ -45,11 +45,7 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -132,9 +128,7 @@ my %specific_argument = (
     },
     exclude => {
         input           => q{%QUAL<10 || (RPB<0.1 && %QUAL<15)},
-        expected_output => q{--exclude}
-          . $SPACE
-          . q{%QUAL<10 || (RPB<0.1 && %QUAL<15)},
+        expected_output => q{--exclude} . $SPACE . q{%QUAL<10 || (RPB<0.1 && %QUAL<15)},
     },
     filter_mode => {
         input           => q{+},

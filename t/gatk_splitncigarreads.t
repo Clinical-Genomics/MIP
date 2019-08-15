@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -83,7 +83,7 @@ my %required_argument = (
         expected_output => q{--output } . catfile(qw{ dir infile.bam }),
     },
     referencefile_path => {
-        input => catfile(qw{ reference_dir human_genome_build.fasta }),
+        input           => catfile(qw{ reference_dir human_genome_build.fasta }),
         expected_output => q{--reference }
           . catfile(qw{ reference_dir human_genome_build.fasta }),
     },
@@ -99,7 +99,7 @@ my %specific_argument = (
         expected_output => q{--output } . catfile(qw{ dir outfile.bam }),
     },
     referencefile_path => {
-        input => catfile(qw{ reference_dir human_genome_build.fasta }),
+        input           => catfile(qw{ reference_dir human_genome_build.fasta }),
         expected_output => q{--reference }
           . catfile(qw{ reference_dir human_genome_build.fasta }),
     },

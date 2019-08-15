@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -63,7 +63,7 @@ diag(   q{Test analysis_analysisrunstatus from Analysisrunstatus.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given build parameters
-my $recipe_name = q{analysisrunstatus};
+my $recipe_name    = q{analysisrunstatus};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -94,8 +94,8 @@ my %parameter = test_mip_hashes(
 );
 @{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
 my %sample_info = (
-    recipe => { varianteffectpredictor => { stderrfile => { path => q{vep_file} }, }, },
-    vcf_file => { clinical => { path => q{clinical_file.vcf}, }, },
+    recipe   => { varianteffectpredictor => { stderrfile => { path => q{vep_file} }, }, },
+    vcf_file => { clinical               => { path       => q{clinical_file.vcf}, }, },
 );
 
 my $is_ok = analysis_analysisrunstatus(

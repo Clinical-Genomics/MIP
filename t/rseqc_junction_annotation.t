@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -91,36 +91,26 @@ my %base_argument = (
 my %required_argument = (
     bed_file_path => {
         input           => catfile(qw{ a test transcripts.bed }),
-        expected_output => q{--refgene}
-          . $EQUAL
-          . catfile(qw{ a test transcripts.bed }),
+        expected_output => q{--refgene} . $EQUAL . catfile(qw{ a test transcripts.bed }),
     },
     infile_path => {
         input           => catfile(qw{ a test infile.bam }),
-        expected_output => q{--input-file}
-          . $EQUAL
-          . catfile(qw{ a test infile.bam }),
+        expected_output => q{--input-file} . $EQUAL . catfile(qw{ a test infile.bam }),
     },
     outfiles_path_prefix => {
         input           => catfile(qw{test outfiles_prefix }),
-        expected_output => q{--out-prefix}
-          . $EQUAL
-          . catfile(qw{ test outfiles_prefix }),
+        expected_output => q{--out-prefix} . $EQUAL . catfile(qw{ test outfiles_prefix }),
     },
 );
 
 my %specific_argument = (
     bed_file_path => {
         input           => catfile(qw{ a test transcripts.bed }),
-        expected_output => q{--refgene}
-          . $EQUAL
-          . catfile(qw{ a test transcripts.bed }),
+        expected_output => q{--refgene} . $EQUAL . catfile(qw{ a test transcripts.bed }),
     },
     infile_path => {
         input           => catfile(qw{ a test infile.bam }),
-        expected_output => q{--input-file}
-          . $EQUAL
-          . catfile(qw{ a test infile.bam }),
+        expected_output => q{--input-file} . $EQUAL . catfile(qw{ a test infile.bam }),
     },
     min_map_quality => {
         input           => $MIN_MAP_QUALITY,
@@ -128,9 +118,7 @@ my %specific_argument = (
     },
     outfiles_path_prefix => {
         input           => catfile(qw{test outfiles_prefix }),
-        expected_output => q{--out-prefix}
-          . $EQUAL
-          . catfile(qw{ test outfiles_prefix }),
+        expected_output => q{--out-prefix} . $EQUAL . catfile(qw{ test outfiles_prefix }),
     },
 );
 

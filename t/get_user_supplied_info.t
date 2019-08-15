@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -83,7 +83,6 @@ is( $user_supply_switch{sample_ids}, 1, q{Got set ARRAY parameter} );
 is( $user_supply_switch{expected_coverage}, 1, q{Got set SCALAR parameter} );
 
 ## and 0 for parameter which was not supplied by user
-is( $user_supply_switch{exome_target_bed},
-    0, q{No user defined input for parameter} );
+is( $user_supply_switch{exome_target_bed}, 0, q{No user defined input for parameter} );
 
 done_testing();

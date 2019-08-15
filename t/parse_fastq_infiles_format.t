@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -47,11 +47,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -134,8 +130,7 @@ $file_name = q{TestFilev2_ADM1059A1_TCCGGAGA_1.fastq};
 %infile_info = parse_fastq_infiles_format( { file_name => $file_name, } );
 
 ## Then return no features from filename
-is( keys %infile_info,
-    0, q{Return 0 features for file not following file convention} );
+is( keys %infile_info, 0, q{Return 0 features for file not following file convention} );
 
 done_testing();
 

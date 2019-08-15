@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie;
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -135,10 +131,8 @@ my %specific_argument = (
         expected_output => q{--annotate_regions},
     },
     cadd_file_paths_ref => {
-        inputs_ref => [
-            catfile(qw{ a test cadd_file_1 }),
-            catfile(qw{ a test cadd_file_2 })
-        ],
+        inputs_ref =>
+          [ catfile(qw{ a test cadd_file_1 }), catfile(qw{ a test cadd_file_2 }) ],
         expected_output => q{--cadd_file}
           . $SPACE
           . catfile(qw{ a test cadd_file_1 })
@@ -157,21 +151,15 @@ my %specific_argument = (
     },
     outfile_path => {
         input           => catfile(qw{ a test outfile }),
-        expected_output => q{--outfile}
-          . $SPACE
-          . catfile(qw{ a test outfile }),
+        expected_output => q{--outfile} . $SPACE . catfile(qw{ a test outfile }),
     },
     temp_directory_path => {
         input           => catfile(qw{ a test directory }),
-        expected_output => q{--temp_dir}
-          . $SPACE
-          . catfile(qw{ a test directory }),
+        expected_output => q{--temp_dir} . $SPACE . catfile(qw{ a test directory }),
     },
     spidex_file_path => {
         input           => catfile(qw{ a test spidex_file }),
-        expected_output => q{--spidex}
-          . $SPACE
-          . catfile(qw{ a test spidex_file }),
+        expected_output => q{--spidex} . $SPACE . catfile(qw{ a test spidex_file }),
     },
     thousand_g_file_path => {
         input           => catfile(qw{ a test thousand_g_file }),

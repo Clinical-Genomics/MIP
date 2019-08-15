@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 use 5.026;
 
 ## CPANM
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use autodie;
 use Readonly;
 
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -131,9 +127,7 @@ my %required_argument = (
     },
     infile_paths_ref => {
         inputs_ref      => [ catfile(qw{dir file_1}), catfile(qw{dir file_2}) ],
-        expected_output => catfile(qw{dir file_1})
-          . $SPACE
-          . catfile(qw{dir file_2}),
+        expected_output => catfile(qw{dir file_1}) . $SPACE . catfile(qw{dir file_2}),
     },
     output_tags_ref => {
         inputs_ref      => [qw{tag1 tag3 etc}],
@@ -141,9 +135,7 @@ my %required_argument = (
     },
     referencefile_path => {
         input           => catfile(qw{ dir genome.fasta}),
-        expected_output => q{--fasta-ref}
-          . $SPACE
-          . catfile(qw{ dir genome.fasta}),
+        expected_output => q{--fasta-ref} . $SPACE . catfile(qw{ dir genome.fasta}),
     },
 );
 

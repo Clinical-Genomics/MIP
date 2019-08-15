@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -62,7 +62,7 @@ diag(   q{Test get_vcf_parser_analysis_suffix from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my @expected_suffix = ($EMPTY_STR);
+my @expected_suffix    = ($EMPTY_STR);
 my @expected_sv_suffix = ( $EMPTY_STR, q{selected} );
 
 ## Given research outfile
@@ -71,8 +71,7 @@ my @analysis_suffix         = get_vcf_parser_analysis_suffix(
     { vcfparser_outfile_count => $vcfparser_outfile_count, } );
 
 ## Then return only $EMPTY_STR suffix
-is_deeply( \@analysis_suffix, \@expected_suffix,
-    q{Get single analysis suffix} );
+is_deeply( \@analysis_suffix, \@expected_suffix, q{Get single analysis suffix} );
 
 ## Given research and select outfiles
 my $sv_vcfparser_outfile_count = 2;
@@ -80,7 +79,6 @@ my @analysis_sv_suffix         = get_vcf_parser_analysis_suffix(
     { vcfparser_outfile_count => $sv_vcfparser_outfile_count, } );
 
 ## Then return both suffixes
-is_deeply( \@analysis_sv_suffix, \@expected_sv_suffix,
-    q{Get both analysis suffixes} );
+is_deeply( \@analysis_sv_suffix, \@expected_sv_suffix, q{Get both analysis suffixes} );
 
 done_testing();

@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -44,9 +44,8 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Utility::Fusion_filter} =>
-          [qw{ fusion_filter_prep_genome_lib }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Program::Utility::Fusion_filter} => [qw{ fusion_filter_prep_genome_lib }],
+        q{MIP::Test::Fixtures}                  => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -97,15 +96,11 @@ my %required_argument = (
     },
     gtf_path => {
         input           => catfile(qw{ a test transcripts_file.gtf }),
-        expected_output => q{--gtf}
-          . $SPACE
-          . catfile(qw{ a test transcripts_file.gtf }),
+        expected_output => q{--gtf} . $SPACE . catfile(qw{ a test transcripts_file.gtf }),
     },
     output_dir_path => {
         input           => catdir(qw{ a test outdir }),
-        expected_output => q{--output_dir}
-          . $SPACE
-          . catdir(qw{ a test outdir }),
+        expected_output => q{--output_dir} . $SPACE . catdir(qw{ a test outdir }),
     },
     referencefile_path => {
         input           => catfile(qw{ a test human_reference.fasta }),
@@ -124,15 +119,11 @@ my %specific_argument = (
     },
     gtf_path => {
         input           => catfile(qw{ a test transcripts_file.gtf }),
-        expected_output => q{--gtf}
-          . $SPACE
-          . catfile(qw{ a test transcripts_file.gtf }),
+        expected_output => q{--gtf} . $SPACE . catfile(qw{ a test transcripts_file.gtf }),
     },
     output_dir_path => {
         input           => catdir(qw{ a test outdir }),
-        expected_output => q{--output_dir}
-          . $SPACE
-          . catdir(qw{ a test outdir }),
+        expected_output => q{--output_dir} . $SPACE . catdir(qw{ a test outdir }),
     },
     referencefile_path => {
         input           => catfile(qw{ a test human_reference.fasta }),

@@ -19,7 +19,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -49,11 +49,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -153,10 +149,8 @@ foreach my $temp_path (@temp_paths) {
 }
 
 ## Make files readable
-my @filehandles = (
-    $COMMAND_FILEHANDLE, $TEMP_FILEHANDLE_1,
-    $TEMP_FILEHANDLE_2,  $TEST_FILEHANDLE
-);
+my @filehandles =
+  ( $COMMAND_FILEHANDLE, $TEMP_FILEHANDLE_1, $TEMP_FILEHANDLE_2, $TEST_FILEHANDLE );
 
 FILEHANDLE:
 foreach my $FILEHANDLE (@filehandles) {
@@ -192,11 +186,9 @@ while ( my $command = <$COMMAND_FILEHANDLE> ) {
         q{Temp file has size} );
     ## Capture md5 sum of files before command
     $pre_test_file_md5 = $md5->addfile($TEST_FILEHANDLE)->hexdigest;
-    $temp_file_md5 =
-      $md5->addfile( $temp_filehandles[$command_counter] )->hexdigest;
+    $temp_file_md5     = $md5->addfile( $temp_filehandles[$command_counter] )->hexdigest;
     ## Test that files start out as different
-    isnt( $pre_test_file_md5, $temp_file_md5,
-        q{Initial files have different md5sums} );
+    isnt( $pre_test_file_md5, $temp_file_md5, q{Initial files have different md5sums} );
 
     ## Run command
     system $command;

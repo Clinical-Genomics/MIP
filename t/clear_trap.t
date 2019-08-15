@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -70,12 +70,7 @@ my $file_content;
 
 ## Store file content in memory by using referenced variable
 open $FILEHANDLE, q{>}, \$file_content
-  or croak q{Cannot write to}
-  . $SPACE
-  . $file_content
-  . $COLON
-  . $SPACE
-  . $OS_ERROR;
+  or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
 
 ## Given a filehandle
 clear_trap( { FILEHANDLE => $FILEHANDLE } );

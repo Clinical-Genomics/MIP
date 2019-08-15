@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -88,8 +88,7 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
+        inputs_ref => [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
         expected_output => q{--vcf}
           . $SPACE
           . catfile(qw{ a test infile_1 })
@@ -100,8 +99,7 @@ my %required_argument = (
 
 my %specific_argument = (
     infile_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
+        inputs_ref => [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
         expected_output => q{--vcf}
           . $SPACE
           . catfile(qw{ a test infile_1 })
@@ -114,9 +112,7 @@ my %specific_argument = (
     },
     priority => {
         input           => q{manta,delly,cnvnator,tiddit},
-        expected_output => q{--priority}
-          . $SPACE
-          . q{manta,delly,cnvnator,tiddit},
+        expected_output => q{--priority} . $SPACE . q{manta,delly,cnvnator,tiddit},
     },
     same_order => {
         input           => q{1},

@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -107,8 +103,7 @@ my ( $is_file_compressed, $read_file_command ) =
 is( $is_file_compressed, 0, q{File was not compressed} );
 
 ## Then set read command to handle uncompressed file
-is( $read_file_command, q{cat},
-    q{Set read file command for uncompressed file} );
+is( $read_file_command, q{cat}, q{Set read file command for uncompressed file} );
 
 ## Given compressed file
 $file_name .= q{.gz};

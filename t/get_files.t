@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -117,8 +113,7 @@ my @expected_files = qw{ 1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz
   8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz };
 
 ## Then skip sub dir
-is_deeply( \@infiles, \@expected_files,
-    q{Found all files when skipping sub dir} );
+is_deeply( \@infiles, \@expected_files, q{Found all files when skipping sub dir} );
 
 ## Given an infile directory, when applying rule file name
 @infiles = get_files(
@@ -148,8 +143,7 @@ my @expected_file_objects = qw{ fastq
   test.txt };
 
 ## Then find all files and dir recursively
-is_deeply( \@infiles, \@expected_file_objects,
-    q{Found all files and dirs recursively} );
+is_deeply( \@infiles, \@expected_file_objects, q{Found all files and dirs recursively} );
 
 done_testing();
 

@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -79,9 +79,8 @@ my %specific_argument = (
         expected_output => q{--pedigree } . catfile(qw{ a pedigree }),
     },
     read_filters_ref => {
-        inputs_ref => [qw{ MalformedRead BadCigar}],
-        expected_output =>
-          q{--read-filter MalformedRead --read-filter BadCigar},
+        inputs_ref      => [qw{ MalformedRead BadCigar}],
+        expected_output => q{--read-filter MalformedRead --read-filter BadCigar},
     },
     referencefile_path => {
         input           => catfile(qw{reference_dir human_genome_build.fasta }),

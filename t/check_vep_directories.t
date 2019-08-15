@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -47,11 +47,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -99,7 +95,7 @@ diag(   q{Test check_vep_directories from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -113,8 +109,8 @@ my $log = initiate_logger(
 ## Given matching vep API and cache version
 my $vep_directory_path =
   catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-vep-91 } );
-my $vep_directory_cache = catdir( $Bin,
-    qw{ data modules miniconda envs test_env ensembl-tools-91 cache } );
+my $vep_directory_cache =
+  catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-tools-91 cache } );
 ## When comparing API and cache version
 my $match = check_vep_directories(
     {
@@ -127,8 +123,8 @@ my $match = check_vep_directories(
 ok( $match, q{Return on matching versions} );
 
 ## Given non matching API and cache
-$vep_directory_cache = catdir( $Bin,
-    qw{ data modules miniconda envs test_env ensembl-tools-92 cache } );
+$vep_directory_cache =
+  catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-tools-92 cache } );
 ## When comparing API and cache version
 trap {
     check_vep_directories(
@@ -137,7 +133,7 @@ trap {
             vep_directory_cache => $vep_directory_cache,
             vep_directory_path  => $vep_directory_path,
         }
-      )
+    )
 };
 ## Then exit and print fatal error message
 ok( $trap->exit, q{Exit on non matching versions} );
@@ -154,7 +150,7 @@ trap {
             vep_directory_cache => $vep_directory_cache,
             vep_directory_path  => $vep_directory_path,
         }
-      )
+    )
 };
 ## Then return and print warning message
 ok( $trap->return, q{Return on unknown cache version} );
@@ -163,8 +159,8 @@ like( $trap->stderr, qr/WARN/xms, q{Warn for unknown VEP cache version} );
 ## Given a directory lacking the version number in the .version/ensembl file
 $vep_directory_path =
   catdir( $Bin, qw{ data modules miniconda envs test_env_1 ensembl-vep } );
-$vep_directory_cache = catdir( $Bin,
-    qw{ data modules miniconda envs test_env ensembl-tools-91 cache } );
+$vep_directory_cache =
+  catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-tools-91 cache } );
 ## When trying to retrieve API version
 trap {
     check_vep_directories(
@@ -173,7 +169,7 @@ trap {
             vep_directory_cache => $vep_directory_cache,
             vep_directory_path  => $vep_directory_path,
         }
-      )
+    )
 };
 ## Then return and print warning message
 ok( $trap->return, q{Return on unknown API version} );

@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -49,11 +49,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -104,7 +100,7 @@ diag(   q{Test reload_previous_pedigree_info from Pedigree.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -135,8 +131,8 @@ my %sample_info = (
     },
 );
 
-my %active_parameter = ( sample_info_file =>
-      catfile( $Bin, qw{data test_data file_does_not_exists} ), );
+my %active_parameter =
+  ( sample_info_file => catfile( $Bin, qw{data test_data file_does_not_exists} ), );
 
 reload_previous_pedigree_info(
     {
@@ -146,13 +142,11 @@ reload_previous_pedigree_info(
     }
 );
 
-is( $sample_info{sample}{sample_1}{analysis_type},
-    q{wes}, q{No qc_sample_info to load} );
+is( $sample_info{sample}{sample_1}{analysis_type}, q{wes}, q{No qc_sample_info to load} );
 
 ## Test for previous info to be reloaded
 %active_parameter =
-  ( sample_info_file => catfile( $Bin, qw{data test_data qc_sample_info.yaml} ),
-  );
+  ( sample_info_file => catfile( $Bin, qw{data test_data qc_sample_info.yaml} ), );
 
 reload_previous_pedigree_info(
     {
@@ -162,8 +156,7 @@ reload_previous_pedigree_info(
     }
 );
 
-is( $sample_info{sample}{sample_1}{analysis_type},
-    q{wes}, q{Updated parameter} );
+is( $sample_info{sample}{sample_1}{analysis_type}, q{wes}, q{Updated parameter} );
 
 is( $sample_info{sample}{sample_1}{capture_kit},
     q{agilent_sureselect.v5},

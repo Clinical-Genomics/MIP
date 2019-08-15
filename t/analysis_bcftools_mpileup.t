@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -62,7 +62,7 @@ diag(   q{Test analysis_bcftools_mpileup from Bcftools_mpileup.pm v}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given ananlysis recipe parameters
-my $recipe_name = q{bcftools_mpileup};
+my $recipe_name    = q{bcftools_mpileup};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -126,7 +126,7 @@ my $is_ok = analysis_bcftools_mpileup(
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
 ## Given recipe parameters when not replacing iupac
-$active_parameter{replace_iupac}                    = 0;
+$active_parameter{replace_iupac} = 0;
 
 $is_ok = analysis_bcftools_mpileup(
     {

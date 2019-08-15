@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -45,7 +45,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Alignment::Samtools} => [qw{ samtools_create_chromosome_files }],
-        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures}               => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -75,12 +75,12 @@ open $FILEHANDLE, q{>}, \$file_content
 ## Given request to index
 samtools_create_chromosome_files(
     {
-        FILEHANDLE => $FILEHANDLE,
-        infile_path => catfile(qw{ path test.fa} ),
+        FILEHANDLE         => $FILEHANDLE,
+        infile_path        => catfile(qw{ path test.fa}),
         max_process_number => 1,
-        regions_ref => [qw{ X Y }],
-        suffix => q{.fai},
-        temp_directory => catdir(qw{ temp }),
+        regions_ref        => [qw{ X Y }],
+        suffix             => q{.fai},
+        temp_directory     => catdir(qw{ temp }),
     }
 );
 
@@ -90,8 +90,7 @@ close $FILEHANDLE;
 ## Then split and index each region
 my @faidx_regexps = (
     qr{samtools\sfaidx\spath\/test\.fa\sX\s>\stemp\/X\.fai}xms,
-    qr{wait}xms,
-    qr{samtools\sfaidx\spath\/test\.fa\sY\s>\stemp\/Y\.fai}xms,
+    qr{wait}xms, qr{samtools\sfaidx\spath\/test\.fa\sY\s>\stemp\/Y\.fai}xms,
 );
 
 my $iterator;

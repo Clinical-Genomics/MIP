@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -97,7 +97,7 @@ my %file_info = (
         base_temp       => { file_paths => \@base_temp_paths, },
         bwa_mem         => { file_paths => \@file_paths, },
         picard_mergesamfiles => { file_paths => \@file_paths_2, },
-        delly_call => { file_paths => \@delly_file_paths, },
+        delly_call           => { file_paths => \@delly_file_paths, },
     },
 );
 my @order_recipes =

@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie;
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -47,11 +47,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -130,9 +126,7 @@ my %required_argument = (
     },
     referencefile_path => {
         input           => catfile(qw{ a test reference_path }),
-        expected_output => q{--ref}
-          . $SPACE
-          . catfile(qw{ a test reference_path }),
+        expected_output => q{--ref} . $SPACE . catfile(qw{ a test reference_path }),
     },
 );
 
@@ -151,9 +145,7 @@ my %specific_argument = (
     },
     referencefile_path => {
         input           => catfile(qw{ a test reference_path }),
-        expected_output => q{--ref}
-          . $SPACE
-          . catfile(qw{ a test reference_path }),
+        expected_output => q{--ref} . $SPACE . catfile(qw{ a test reference_path }),
     },
 );
 

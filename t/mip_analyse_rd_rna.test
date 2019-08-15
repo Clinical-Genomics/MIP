@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## Cpanm
 use IPC::Cmd qw{ can_run run};
-use Modern::Perl qw{2014};
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use autodie qw{open close :all};
 
@@ -35,7 +35,7 @@ Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
 ## Set paths
-my $conda_path = catdir( dirname($Bin), qw{ t data modules miniconda} );
+my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data } );
 my $config_file = catfile( dirname($Bin), qw{ templates mip_rd_rna_config.yaml } );
 my $mip_path    = catfile( dirname($Bin), q{mip} );
@@ -55,11 +55,7 @@ GetOptions(
     ## Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -90,18 +86,15 @@ my $cmds_ref = [
     $cluster_constant_path,
     q{--ifd},
     catfile(
-        $cluster_constant_path,
-        qw{ 118-rnatest test_data 118-1-2A fastq=118-1-2A }
+        $cluster_constant_path, qw{ 118-rnatest test_data 118-1-2A fastq=118-1-2A }
     ),
     q{--ifd},
     catfile(
-        $cluster_constant_path,
-        qw{ 118-rnatest test_data 118-2-1U fastq=118-2-1U }
+        $cluster_constant_path, qw{ 118-rnatest test_data 118-2-1U fastq=118-2-1U }
     ),
     q{--ifd},
     catfile(
-        $cluster_constant_path,
-        qw{ 118-rnatest test_data 118-2-2U fastq=118-2-2U }
+        $cluster_constant_path, qw{ 118-rnatest test_data 118-2-2U fastq=118-2-2U }
     ),
     qw{--dra --vb },
 ];

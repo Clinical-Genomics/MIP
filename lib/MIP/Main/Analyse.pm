@@ -25,7 +25,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ open close :all };
 use IPC::System::Simple;
 use List::MoreUtils qw { any uniq all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Path::Iterator::Rule;
 use Readonly;
 

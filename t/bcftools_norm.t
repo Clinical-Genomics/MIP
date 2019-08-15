@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 use 5.026;
 
 ## CPANM
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use autodie;
 use Readonly;
 
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,

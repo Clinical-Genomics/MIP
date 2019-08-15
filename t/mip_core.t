@@ -15,7 +15,7 @@ use utf8;
 ## CPANM
 use autodie;
 use IPC::Cmd qw{ can_run run };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ##MIPs lib/

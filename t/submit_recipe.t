@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -103,7 +103,7 @@ trap {
             sample_ids_ref     => \@sample_ids,
             submission_profile => q{slurm},
         }
-      )
+    )
 };
 
 ## Then

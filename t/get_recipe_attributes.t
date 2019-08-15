@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -62,7 +62,7 @@ diag(   q{Test get_recipe_attributes from Parameter.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given a program parameter
-my %parameter = test_mip_hashes( { mip_hash_name => q{define_parameter}, } );
+my %parameter   = test_mip_hashes( { mip_hash_name => q{define_parameter}, } );
 my $recipe_name = q{bwa_mem};
 
 my %rec_atr = get_recipe_attributes(

@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -59,11 +59,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -114,7 +110,7 @@ diag(   q{Test get_fastq_file_header_info from File.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -126,11 +122,9 @@ my $log = initiate_logger(
 );
 
 ## Given file, when format is lesser than Casava 1.4
-my $directory =
-  catfile( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq} );
-my $file_format_illumina_v1_4 =
-  q{1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz};
-my $read_file_command = q{zcat};
+my $directory = catfile( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq} );
+my $file_format_illumina_v1_4 = q{1_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz};
+my $read_file_command         = q{zcat};
 
 my %fastq_info_header = get_fastq_file_header_info(
     {
@@ -158,8 +152,7 @@ is_deeply(
 );
 
 ## Given file, when format is greather than Casava 1.8
-my $file_format_illumina_v1_8 =
-  q{8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
+my $file_format_illumina_v1_8 = q{8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
 
 %fastq_info_header = get_fastq_file_header_info(
     {
@@ -200,7 +193,7 @@ trap {
             log               => $log,
             read_file_command => q{cat},
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message

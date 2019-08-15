@@ -16,7 +16,7 @@ use 5.026;
 
 ## CPANM
 use autodie;
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/

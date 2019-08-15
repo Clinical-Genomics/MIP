@@ -17,7 +17,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 use Test::Trap;
 
@@ -49,11 +49,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -104,7 +100,7 @@ diag(   q{Test check_interleaved from File.pm v}
       . $EXECUTABLE_NAME );
 
 ## Create temp logger
-my $test_dir = File::Temp->newdir();
+my $test_dir      = File::Temp->newdir();
 my $test_log_path = catfile( $test_dir, q{test.log} );
 
 ## Creates log object
@@ -117,10 +113,8 @@ my $log = initiate_logger(
 
 ## Given interleaved file, when casava version less than 1.4
 my $sample_id = q{ADM1059A1};
-my $directory =
-  catdir( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq } );
-my $interleaved_file =
-  q{2_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz};
+my $directory = catdir( $Bin, qw{ data 643594-miptest test_data ADM1059A1 fastq } );
+my $interleaved_file  = q{2_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz};
 my $read_file_command = q{zcat};
 
 my @returns = trap {
@@ -130,7 +124,7 @@ my @returns = trap {
             log               => $log,
             read_file_command => $read_file_command,
         }
-      )
+    )
 };
 
 ## Then return true if detected interleaved
@@ -146,13 +140,12 @@ $interleaved_file = q{2_161011_TestFilev2_ADM1059A1_TCCGGAGA_1.fastq.gz};
             log               => $log,
             read_file_command => $read_file_command,
         }
-      )
+    )
 };
 
 ## Then return true if detected interleaved
 ok( $returns[0],
-q{Detected interleaved casava < 1.4 fastq file without dash in instrument id}
-);
+    q{Detected interleaved casava < 1.4 fastq file without dash in instrument id} );
 
 ## Given file, when casava version >= 1.8
 $interleaved_file = q{8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
@@ -164,7 +157,7 @@ $interleaved_file = q{8_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
             log               => $log,
             read_file_command => $read_file_command,
         }
-      )
+    )
 };
 
 ## Then return true if detected interleaved
@@ -180,18 +173,16 @@ $interleaved_file = q{7_161011_HHJJCCCXY_ADM1059A1_NAATGCGC_1.fastq.gz};
             log               => $log,
             read_file_command => $read_file_command,
         }
-      )
+    )
 };
 
 ## Then return true if detected interleaved
 ok( $returns[0],
-q{Detected interleaved casava >= 1.8 fastq file without dash in instrument id}
-);
+    q{Detected interleaved casava >= 1.8 fastq file without dash in instrument id} );
 
 ## Given wrong read direction file
-$directory = catdir( $Bin, qw{ data 643594-miptest test_data bad_input } );
-$interleaved_file =
-  q{3_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz};
+$directory        = catdir( $Bin, qw{ data 643594-miptest test_data bad_input } );
+$interleaved_file = q{3_161011_TestFilev2-Interleaved_ADM1059A1_TCCGGAGA_1.fastq.gz};
 
 trap {
     check_interleaved(
@@ -200,7 +191,7 @@ trap {
             log               => $log,
             read_file_command => $read_file_command,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
@@ -220,13 +211,12 @@ trap {
             log               => $log,
             read_file_command => $read_file_command,
         }
-      )
+    )
 };
 
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if malformed file} );
-like( $trap->stderr, qr/FATAL/xms,
-    q{Throw fatal log message if malformed file} );
+like( $trap->stderr, qr/FATAL/xms, q{Throw fatal log message if malformed file} );
 
 done_testing();
 

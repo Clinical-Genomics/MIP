@@ -16,7 +16,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -132,11 +128,8 @@ GENDER:
 foreach my $found_gender ( keys %expected_result ) {
 
 ## Then all genders count should be one
-    is(
-        $active_parameter{$found_gender},
-        $expected_result{$found_gender},
-        $found_gender
-    );
+    is( $active_parameter{$found_gender}, $expected_result{$found_gender},
+        $found_gender );
 }
 
 ## Given no males or females
@@ -172,11 +165,8 @@ GENDER:
 foreach my $found_gender ( keys %expected_result ) {
 
 ## Then one male should be found and a other count of three
-    is(
-        $active_parameter{$found_gender},
-        $expected_result{$found_gender},
-        $found_gender
-    );
+    is( $active_parameter{$found_gender}, $expected_result{$found_gender},
+        $found_gender );
 }
 
 done_testing();

@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -98,9 +98,7 @@ my %required_argument = (
     },
     query_file_path => {
         input           => catfile(qw{ a test query_file.fa }),
-        expected_output => q{-query}
-          . $SPACE
-          . catfile(qw{ a test query_file.fa }),
+        expected_output => q{-query} . $SPACE . catfile(qw{ a test query_file.fa }),
     },
 );
 
@@ -127,9 +125,7 @@ my %specific_argument = (
     },
     query_file_path => {
         input           => catfile(qw{ a test query_file.fa }),
-        expected_output => q{-query}
-          . $SPACE
-          . catfile(qw{ a test query_file.fa }),
+        expected_output => q{-query} . $SPACE . catfile(qw{ a test query_file.fa }),
     },
     thread_number => {
         input           => $MAX_THREAD_NUMBER,

@@ -18,7 +18,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw { :all };
-use Modern::Perl qw{ 2014 };
+use Modern::Perl qw{ 2018 };
 use Readonly;
 
 ## MIPs lib/
@@ -74,7 +74,7 @@ my $FILEHANDLE = IO::Handle->new();
 
 # Create housekeeping function test sbatch file
 my $bash_file_path = catfile( cwd(), q{test_create_housekeeping_function.sh} );
-my $log_file_path = catdir( cwd(), q{test_create_housekeeping_function} );
+my $log_file_path  = catdir( cwd(), q{test_create_housekeeping_function} );
 
 # Temporary directory
 my $temp_dir = catdir( cwd(), q{.test_create_housekeeping_function} );
