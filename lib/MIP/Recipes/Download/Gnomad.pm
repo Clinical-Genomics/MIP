@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gnomad };
@@ -211,12 +211,10 @@ sub download_gnomad {
 
     htslib_tabix(
         {
-            begin       => 1,
-            end         => 1,
             FILEHANDLE  => $FILEHANDLE,
             force       => 1,
             infile_path => $reformated_outfile_path,
-            sequence    => 0,
+            preset      => q{vcf},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
