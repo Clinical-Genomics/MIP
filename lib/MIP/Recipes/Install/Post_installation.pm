@@ -23,7 +23,7 @@ use List::MoreUtils qw{ natatime };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOUBLE_QUOTE $NEWLINE $LOG $SINGLE_QUOTE $SPACE $TAB };
+use MIP::Constants qw{ $DOUBLE_QUOTE $NEWLINE $LOG $SEMICOLON $SINGLE_QUOTE $SPACE $TAB };
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Get::Parameter qw{ get_env_method_cmds };
 use MIP::Gnu::Coreutils qw{ gnu_cp gnu_echo gnu_printf gnu_rm };
@@ -35,14 +35,73 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       build_perl_program_check_command
+      check_mip_installation
       check_program_installations
       update_config
     };
+}
+
+sub check_mip_installation {
+
+## Function : Write installation check oneliner to open filehandle
+## Returns  :
+## Arguments: $active_parameter_href => Active parameter hash {REF}
+```suggestion
+##          : $FILEHANDLE            => Open filehandle
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %program_test_cmds = load_yaml(
+        {
+            yaml_file => $active_parameter_href->{program_test_file},
+        }
+    );
+
+  INSTALLATION:
+    foreach my $installation ( @{ $active_parameter_href->{installations} } ) {
+        ## Get the programs that mip has tried to install
+        my @programs_to_test = (
+            keys %{ $active_parameter_href->{$installation}{conda} },
+            keys %{ $active_parameter_href->{$installation}{pip} },
+            keys %{ $active_parameter_href->{$installation}{shell} },
+        );
+
+        check_program_installations(
+            {
+                env_name     => $active_parameter_href->{environment_name}{$installation},
+                FILEHANDLE   => $FILEHANDLE,
+                installation => $installation,
+                programs_ref => \@programs_to_test,
+                program_test_command_href => \%program_test_cmds,
+            }
+        );
+    }
+    return;
 }
 
 sub check_program_installations {
@@ -503,7 +562,6 @@ sub build_perl_program_check_command {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Constants
-    Readonly my $SEMICOLON    => q{;};
     Readonly my $OPEN_STRING  => q/q{/;
     Readonly my $CLOSE_STRING => q/}/;
     Readonly my $TIMEOUT      => 20;

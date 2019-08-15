@@ -170,18 +170,6 @@ q{Default: mip7_rd-dna mip7_rd-dna_cnvnator mip7_rd-dna_delly mip7_rd-dna_peddy 
     );
 
     option(
-        q{reference_genome_versions} => (
-            cmd_aliases   => [qw{ rg }],
-            cmd_flag      => q{reference_genome_versions},
-            cmd_tags      => [q{Default: GRCh37, hg38}],
-            documentation => q{Reference genomes to download},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
-            required      => 0,
-        ),
-    );
-
-    option(
         q{select_programs} => (
             cmd_aliases   => [qw{ sp }],
             cmd_flag      => q{select_programs},

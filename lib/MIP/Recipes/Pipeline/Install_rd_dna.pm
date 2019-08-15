@@ -37,8 +37,7 @@ use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
-use MIP::Recipes::Install::Post_installation
-  qw{check_program_installations update_config };
+use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
 use MIP::Recipes::Install::Reference qw{ download_genome_references };
 use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
@@ -55,7 +54,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_dna };
@@ -258,26 +257,12 @@ sub pipeline_install_rd_dna {
     }
 
     ## Write tests
-  INSTALLATION:
-    foreach my $installation ( @{ $active_parameter_href->{installations} } ) {
-        ## Get the programs that mip has tried to install
-        my @programs_to_test = (
-            keys %{ $active_parameter_href->{$installation}{conda} },
-            keys %{ $active_parameter_href->{$installation}{pip} },
-            keys %{ $active_parameter_href->{$installation}{shell} },
-        );
-
-        check_program_installations(
-            {
-                env_name     => $active_parameter_href->{environment_name}{$installation},
-                FILEHANDLE   => $FILEHANDLE,
-                installation => $installation,
-                programs_ref => \@programs_to_test,
-                program_test_command_href =>
-                  $active_parameter_href->{program_test_command},
-            }
-        );
-    }
+    check_mip_installation(
+        {
+            active_parameter_href => $active_parameter_href,
+            FILEHANDLE            => $FILEHANDLE,
+        }
+    );
 
     ## Update/create config
     update_config(

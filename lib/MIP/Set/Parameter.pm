@@ -7,6 +7,7 @@ use Cwd;
 use English qw{ -no_match_vars };
 use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catdir catfile splitpath };
+use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -27,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.14;
+    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -207,6 +208,7 @@ sub set_custom_default_to_active_parameter {
         gatk_path                      => \&_set_dynamic_path,
         infile_dirs                    => \&_set_infile_dirs,
         picardtools_path               => \&_set_dynamic_path,
+        program_test_file              => \&_set_program_test_file,
         reference_dir                  => \&_set_reference_dir,
         rtg_vcfeval_reference_genome   => \&_set_human_genome,
         salmon_quant_reference_genome  => \&_set_human_genome,
@@ -1631,4 +1633,38 @@ sub _set_uninitialized_parameter {
     return;
 }
 
+sub _set_program_test_file {
+
+## Function : Set default path to file with program test commands
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if (not exists $active_parameter_href->{$parameter_name};
+
+
+    $active_parameter_href->{$parameter_name} =
+      catfile( $Bin, qw{templates program_test_cmds.yaml } );
+
+    return;
+}
 1;
