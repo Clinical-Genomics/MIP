@@ -415,6 +415,15 @@ sub analysis_gatk_haplotypecaller {
                 sample_info_href => $sample_info_href,
             }
         );
+        
+        ## Collect QC metadata info for later use
+        set_recipe_outfile_in_sample_info(
+            {
+                path             => $concat_vcf_path,
+                recipe_name      => q{gatk},
+                sample_info_href => $sample_info_href,
+            }
+        );
 
         submit_recipe(
             {
