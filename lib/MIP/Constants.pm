@@ -275,7 +275,7 @@ Readonly our %PRIMARY_CONTIG => (
             chr22 => 22,
             chrX  => q{X},
             chrY  => q{Y},
-            chrM  => q{M},
+            chrM  => q{MT},
         },
     },
     37 => {
