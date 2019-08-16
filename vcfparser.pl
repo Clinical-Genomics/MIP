@@ -785,16 +785,16 @@ sub parse_vep_csq {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-
     ## Flatten argument(s)
     my $consequence_href;
     my $consequence_severity_href;
-    my $per_gene;
     my $pli_score_href;
     my $record_href;
     my $select_data_href;
     my $vep_format_field_column_href;
+
+    ## Default(s)
+    my $per_gene;
 
     my $tmpl = {
         consequence_href => {
@@ -858,6 +858,8 @@ sub parse_vep_csq {
     my @feature_pli_keys = qw{ range select};
 
     my %most_severe_pli;
+    my %most_severe_feature;
+
     ## Initilize pli score for feature keys
     @most_severe_pli{@feature_pli_keys} = 0;
 
@@ -945,6 +947,24 @@ sub parse_vep_csq {
 
           ALLEL:
             for my $allele ( keys %{ $consequence_href->{$gene} } ) {
+
+                ## Unpack
+                my $most_severe_consequence =
+                  $consequence_href->{$gene}{$allele}{most_severe_consequence};
+                my $most_severe_transcript =
+                  $consequence_href->{$gene}{$allele}{most_severe_transcript};
+
+                add_most_severe_csq_to_feature(
+                    {
+                        hgnc_id                  => $gene,
+                        most_severe_consequence  => $most_severe_consequence,
+                        most_severe_feature_href => \%most_severe_feature,
+                        most_severe_transcript   => $most_severe_transcript,
+                        per_gene                 => $per_gene,
+                        vcf_record_href          => $record_href,
+                        select_data_href         => $select_data_href,
+                    }
+                );
 
                 ## Exists in selected features
                 if ( $select_data_href->{$gene} ) {

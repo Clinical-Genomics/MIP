@@ -30,6 +30,7 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       add_feature_file_meta_data_to_vcf
+      add_most_severe_csq_to_feature
       add_program_to_meta_data_header
       add_transcript_to_feature_file
       build_interval_tree
@@ -115,6 +116,95 @@ sub add_feature_file_meta_data_to_vcf {
         $meta_data_href->{$file_key}{INFO}{$annotation} =
           $data_href->{present}{$annotation}{INFO};
     }
+    return;
+}
+
+sub add_most_severe_csq_to_feature {
+
+## Function : Set the most severe pli keys for variant genes
+## Returns  :
+## Arguments: $hgnc_id                  => Hgnc id
+##          : $most_severe_consequence  => Most severe consequence
+##          : $most_severe_feature_href => Store most severe annotation per feature
+##          : $most_severe_transcript   => Most severe transcript
+##          : $per_gene                 => Only collect most severe transcript per gene
+##          : $select_data_href         => Select file data {REF}
+##          : $vcf_record_href          => VCF record {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $hgnc_id;
+    my $most_severe_consequence;
+    my $most_severe_feature_href;
+    my $most_severe_transcript;
+    my $select_data_href;
+    my $vcf_record_href;
+
+    ## Default(s)
+    my $per_gene;
+
+    my $tmpl = {
+        hgnc_id => {
+            required    => 1,
+            store       => \$hgnc_id,
+            strict_type => 1,
+        },
+        most_severe_consequence => {
+            required    => 1,
+            store       => \$most_severe_consequence,
+            strict_type => 1,
+        },
+        most_severe_feature_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$most_severe_feature_href,
+            strict_type => 1,
+        },
+        most_severe_transcript => {
+            required    => 1,
+            store       => \$most_severe_transcript,
+            strict_type => 1,
+        },
+        per_gene => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$per_gene,
+            strict_type => 1,
+        },
+        select_data_href => {
+            default     => {},
+            store       => \$select_data_href,
+            strict_type => 1,
+        },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Exists in selected features
+    if ( $select_data_href->{$hgnc_id} ) {
+
+        push @{ $most_severe_feature_href->{select_consequence} },
+          $most_severe_consequence;
+    }
+    push @{ $most_severe_feature_href->{range_consequence} }, $most_severe_consequence;
+
+    return if ( not $per_gene );
+
+    ## Add to vcf record
+    push @{ $vcf_record_href->{range_transcripts} }, $most_severe_transcript;
+
+    return if ( not $select_data_href->{$hgnc_id} );
+
+    push @{ $vcf_record_href->{select_transcripts} }, $most_severe_transcript;
     return;
 }
 
