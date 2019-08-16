@@ -277,11 +277,11 @@ sub analysis_sambamba_depth {
                 sample_info_href => $sample_info_href,
             }
         );
-        
+
         set_recipe_outfile_in_sample_info(
             {
-                path             => $,
-                recipe_name      => q{sambamba},
+                path          => $,
+                  recipe_name => q{sambamba},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
