@@ -99,7 +99,6 @@ foreach my $parameter_name (@order_parameters) {
             active_parameter_href => \%active_parameter,
             associated_recipes_ref =>
               \@{ $parameter{$parameter_name}{associated_recipe} },
-            log            => $log,
             parameter_href => \%parameter,
             parameter_name => $parameter_name,
         }
@@ -136,7 +135,6 @@ trap {
             active_parameter_href => \%active_parameter,
             associated_recipes_ref =>
               \@{ $parameter{sv_vcfparser_select_file}{associated_recipe} },
-            log            => $log,
             parameter_href => \%parameter,
             parameter_name => q{sv_vcfparser_select_file},
         }
