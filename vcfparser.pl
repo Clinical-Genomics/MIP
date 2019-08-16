@@ -785,16 +785,16 @@ sub parse_vep_csq {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-
     ## Flatten argument(s)
     my $consequence_href;
     my $consequence_severity_href;
-    my $per_gene;
     my $pli_score_href;
     my $record_href;
     my $select_data_href;
     my $vep_format_field_column_href;
+
+    ## Default(s)
+    my $per_gene;
 
     my $tmpl = {
         consequence_href => {
@@ -849,32 +849,36 @@ sub parse_vep_csq {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use MIP::Vcfparser
-      qw{ add_transcript_to_feature_file parse_vep_csq_consequence set_most_severe_pli };
+    use MIP::Vcfparser qw{
+      add_most_severe_csq_to_feature
+      add_transcript_to_feature_file
+      parse_vep_csq_consequence
+      set_most_severe_pli };
     use MIP::File::Format::Vcf qw{ get_transcript_effects };
+
+    my @feature_type_keys = qw{ range select};
 
     ## Convert between hgnc_id and hgnc_symbol
     my %hgnc_map;
-    my @feature_pli_keys = qw{ range select};
 
+    ## Store most severe annotations
     my %most_severe_pli;
+    my %most_severe_feature;
+
     ## Initilize pli score for feature keys
-    @most_severe_pli{@feature_pli_keys} = 0;
+    @most_severe_pli{@feature_type_keys} = 0;
 
     if ( $record_href->{INFO_key_value}{CSQ} ) {
 
-        ## Collect most severe transcript per gene
-        my %most_severe_transcript;
-
         ## Split into transcripts
         my @transcripts =
-          split /,/, $record_href->{INFO_key_value}{CSQ};
+          split $COMMA, $record_href->{INFO_key_value}{CSQ};
 
       TRANSCRIPT:
         foreach my $transcript (@transcripts) {
 
             ## Split transcript into VEP CSQ fields
-            my @transcript_effects = split( /\|/, $transcript );
+            my @transcript_effects = split /[|]/sxm, $transcript;
 
             my %transcript_csq = get_transcript_effects(
                 {
@@ -883,9 +887,9 @@ sub parse_vep_csq {
                 }
             );
 
-            ## If gene
+            ## If hgnc id
             if ( defined $transcript_csq{hgnc_id}
-                && $transcript_csq{hgnc_id} ne "" )
+                and $transcript_csq{hgnc_id} )
             {
 
                 ## Set symbol to hgnc map
@@ -923,20 +927,18 @@ sub parse_vep_csq {
                 }
             );
         }
-        my @most_severe_range_consequences;
-        my @most_severe_select_consequences;
 
-      GENE:
-        for my $gene ( keys %{$consequence_href} ) {
+      HGNC_ID:
+        for my $hgnc_id ( keys %{$consequence_href} ) {
 
             ## Unpack
-            my $hgnc_symbol = $hgnc_map{$gene};
+            my $hgnc_symbol = $hgnc_map{$hgnc_id};
             my $pli_score   = $pli_score_href->{$hgnc_symbol};
 
             ## For pli value and if current pli is more than stored
             set_most_severe_pli(
                 {
-                    hgnc_id              => $gene,
+                    hgnc_id              => $hgnc_id,
                     most_severe_pli_href => \%most_severe_pli,
                     pli_score            => $pli_score,
                     select_data_href     => $select_data_href,
@@ -944,47 +946,29 @@ sub parse_vep_csq {
             );
 
           ALLEL:
-            for my $allele ( keys %{ $consequence_href->{$gene} } ) {
+            for my $allele ( keys %{ $consequence_href->{$hgnc_id} } ) {
 
-                ## Exists in selected features
-                if ( $select_data_href->{$gene} ) {
+                ## Unpack
+                my $most_severe_consequence =
+                  $consequence_href->{$hgnc_id}{$allele}{most_severe_consequence};
+                my $most_severe_transcript =
+                  $consequence_href->{$hgnc_id}{$allele}{most_severe_transcript};
 
-                    push( @most_severe_select_consequences,
-                        $consequence_href->{$gene}{$allele}{most_severe_consequence} );
-
-                    if ($per_gene) {
-
-                        push(
-                            @{ $record_href->{select_transcripts} },
-                            $consequence_href->{$gene}{$allele}{most_severe_transcript}
-                        );
+                add_most_severe_csq_to_feature(
+                    {
+                        hgnc_id                  => $hgnc_id,
+                        most_severe_consequence  => $most_severe_consequence,
+                        most_severe_feature_href => \%most_severe_feature,
+                        most_severe_transcript   => $most_severe_transcript,
+                        per_gene                 => $per_gene,
+                        vcf_record_href          => $record_href,
+                        select_data_href         => $select_data_href,
                     }
-                }
-                push( @most_severe_range_consequences,
-                    $consequence_href->{$gene}{$allele}{most_severe_consequence} );
-
-                if ($per_gene) {
-
-                    push(
-                        @{ $record_href->{range_transcripts} },
-                        $consequence_href->{$gene}{$allele}{most_severe_transcript}
-                    );
-                }
+                );
             }
         }
 
-        if (@most_severe_select_consequences) {
-
-            $record_href->{INFO_addition_select_feature}{most_severe_consequence} =
-              join( ",", @most_severe_select_consequences );
-        }
-        if (@most_severe_range_consequences) {
-
-            $record_href->{INFO_addition_range_feature}{most_severe_consequence} =
-              join( ",", @most_severe_range_consequences );
-        }
-
-        ## Mainly for SV BNDs without consequence and within a gene
+        ## Mainly for SV BNDs without consequence and within a hgnc_id
         if (    not keys %{$consequence_href}
             and not exists $record_href->{range_transcripts} )
         {
@@ -993,16 +977,25 @@ sub parse_vep_csq {
         }
     }
 
-  FEATURE_PLI_KEY:
-    foreach my $feature_pli_key (@feature_pli_keys) {
+  FEATURE_TYPE_KEY:
+    foreach my $feature_type_key (@feature_type_keys) {
 
-        if ( $most_severe_pli{$feature_pli_key} ) {
+        my $vcf_key = join $UNDERSCORE,
+          ( qw{INFO addition}, $feature_type_key, qw{ feature } );
 
-            my $vcf_key = join $UNDERSCORE,
-              ( qw{INFO addition}, $feature_pli_key, qw{ feature } );
+        if ( $most_severe_pli{$feature_type_key} ) {
+
             $record_href->{$vcf_key}{most_severe_pli} =
-              $most_severe_pli{$feature_pli_key};
+              $most_severe_pli{$feature_type_key};
         }
+        if ( exists $most_severe_feature{$feature_type_key}
+            and @{ $most_severe_feature{$feature_type_key} } )
+        {
+
+            $record_href->{$vcf_key}{most_severe_consequence} = join $COMMA,
+              @{ $most_severe_feature{$feature_type_key} };
+        }
+
     }
     return;
 }
