@@ -78,8 +78,7 @@ add_most_severe_csq_to_feature(
     }
 );
 
-my %expected_most_severe_feature =
-  ( range_consequence => [ $most_severe_consequence, ], );
+my %expected_most_severe_feature = ( range => [ $most_severe_consequence, ], );
 my %expected_vcf_record = ( range_transcripts => [ $most_severe_transcript, ], );
 
 ## Then add most severe consequence to range feature
@@ -98,7 +97,7 @@ $select_data{$hgnc_id} = 1;
 
 ## Clean-up from previous test
 delete $vcf_record{range_transcripts};
-delete $most_severe_feature{range_consequence};
+delete $most_severe_feature{range};
 
 add_most_severe_csq_to_feature(
     {
@@ -112,8 +111,8 @@ add_most_severe_csq_to_feature(
     }
 );
 
-$expected_most_severe_feature{select_consequence} = [$most_severe_consequence];
-$expected_vcf_record{select_transcripts}          = [$most_severe_transcript];
+$expected_most_severe_feature{select}    = [$most_severe_consequence];
+$expected_vcf_record{select_transcripts} = [$most_severe_transcript];
 
 ## Then add most severe consequence to features
 is_deeply(
