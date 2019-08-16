@@ -121,7 +121,7 @@ sub add_feature_file_meta_data_to_vcf {
 
 sub add_most_severe_csq_to_feature {
 
-## Function : Set the most severe pli keys for variant genes
+## Function : Set the most severe consequence and transcript for variant genes
 ## Returns  :
 ## Arguments: $hgnc_id                  => Hgnc id
 ##          : $most_severe_consequence  => Most severe consequence
@@ -192,10 +192,9 @@ sub add_most_severe_csq_to_feature {
     ## Exists in selected features
     if ( $select_data_href->{$hgnc_id} ) {
 
-        push @{ $most_severe_feature_href->{select_consequence} },
-          $most_severe_consequence;
+        push @{ $most_severe_feature_href->{select} }, $most_severe_consequence;
     }
-    push @{ $most_severe_feature_href->{range_consequence} }, $most_severe_consequence;
+    push @{ $most_severe_feature_href->{range} }, $most_severe_consequence;
 
     return if ( not $per_gene );
 
