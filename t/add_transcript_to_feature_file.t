@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
+our $VERSION = 1.01;
 
 $VERBOSE = test_standard_cli(
     {
@@ -65,7 +65,7 @@ my %vcf_record;
 add_transcript_to_feature_file(
     {
         vcf_record_href => \%vcf_record,
-        transcript      => $transcript,
+        transcripts_ref => [$transcript],
     }
 );
 
@@ -85,7 +85,7 @@ add_transcript_to_feature_file(
     {
         vcf_record_href  => \%vcf_record,
         select_data_href => \%select_data,
-        transcript       => $transcript,
+        transcripts_ref  => [$transcript],
     }
 );
 
@@ -106,7 +106,7 @@ add_transcript_to_feature_file(
         hgnc_id          => $hgnc_id,
         vcf_record_href  => \%vcf_record,
         select_data_href => \%select_data,
-        transcript       => $transcript,
+        transcripts_ref  => [$transcript],
     }
 );
 
@@ -127,7 +127,7 @@ add_transcript_to_feature_file(
         hgnc_id          => $hgnc_id,
         vcf_record_href  => \%vcf_record,
         select_data_href => \%select_data,
-        transcript       => $transcript,
+        transcripts_ref  => [$transcript],
     }
 );
 

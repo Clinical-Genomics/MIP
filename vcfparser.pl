@@ -912,7 +912,7 @@ sub parse_vep_csq {
                     {
                         hgnc_id          => $transcript_csq{hgnc_id},
                         select_data_href => $select_data_href,
-                        transcript       => $transcript,
+                        transcripts_ref  => [$transcript],
                         vcf_record_href  => $record_href,
                     }
                 );
@@ -922,7 +922,7 @@ sub parse_vep_csq {
             ## Not part of a coding region
             add_transcript_to_feature_file(
                 {
-                    transcript      => $transcript,
+                    transcripts_ref => [$transcript],
                     vcf_record_href => $record_href,
                 }
             );
@@ -972,8 +972,14 @@ sub parse_vep_csq {
         if (    not keys %{$consequence_href}
             and not exists $record_href->{range_transcripts} )
         {
+
             ## Add all transcripts to range transcripts
-            push( @{ $record_href->{range_transcripts} }, @transcripts );
+            add_transcript_to_feature_file(
+                {
+                    transcripts_ref => \@transcripts,
+                    vcf_record_href => $record_href,
+                }
+            );
         }
     }
 

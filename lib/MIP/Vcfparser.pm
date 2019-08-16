@@ -269,7 +269,7 @@ sub add_transcript_to_feature_file {
 ## Returns  :
 ## Arguments: $hgnc_id          => Hgnc id
 ##          : $select_data_href => Select file data {REF}
-##          : $transcript       => Transcript
+##          : $transcripts_ref  => Transcript {REF}
 ##          : $vcf_record_href  => Hash for variant line data {REF}
 
     my ($arg_href) = @_;
@@ -277,7 +277,7 @@ sub add_transcript_to_feature_file {
     ## Flatten argument(s)
     my $hgnc_id;
     my $select_data_href;
-    my $transcript;
+    my $transcripts_ref;
     my $vcf_record_href;
 
     my $tmpl = {
@@ -290,10 +290,11 @@ sub add_transcript_to_feature_file {
             store       => \$select_data_href,
             strict_type => 1,
         },
-        transcript => {
+        transcripts_ref => {
+            default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$transcript,
+            store       => \$transcripts_ref,
             strict_type => 1,
         },
         vcf_record_href => {
@@ -307,7 +308,7 @@ sub add_transcript_to_feature_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Add all transcripts to range transcripts
-    push @{ $vcf_record_href->{range_transcripts} }, $transcript;
+    push @{ $vcf_record_href->{range_transcripts} }, @{$transcripts_ref};
 
     ## Do not add to select feature
     return if ( not keys %{$select_data_href} or not defined $hgnc_id );
@@ -316,7 +317,7 @@ sub add_transcript_to_feature_file {
     return if ( not $select_data_href->{$hgnc_id} );
 
     ## Add all transcripts to selected transcripts
-    push @{ $vcf_record_href->{select_transcripts} }, $transcript;
+    push @{ $vcf_record_href->{select_transcripts} }, @{$transcripts_ref};
 
     return;
 }
