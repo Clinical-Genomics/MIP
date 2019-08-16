@@ -26,6 +26,9 @@ reference:
     - v1.5
   cadd_gnomad_genomes:
     - v1.4
+  cadd_offline_annotations:
+    - v1.4
+    - v1.5
   cadd_to_vcf_header:
     - 1.0
   cadd_whole_genome_snvs:
@@ -218,6 +221,17 @@ reference_feature:
         outfile: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz
         outfile_index: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz.tbi
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+  cadd_offline_annotations:
+    grch37:
+      v1.4:
+        file: annotationsGRCh37.tar.gz
+        outfile: annotationsGRCh37.tar.gz
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+    grch38:
+      v1.5:
+        file: annotationsGRCh38.tar.gz
+        outfile: annotationsGRCh38.tar.gz
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
   cadd_to_vcf_header:
     grch37:
       1.0:
