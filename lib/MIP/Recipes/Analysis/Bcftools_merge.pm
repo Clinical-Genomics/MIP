@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_merge };
@@ -275,6 +275,15 @@ sub analysis_bcftools_merge {
             {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## Collect bcftools version in qccollect
+        set_recipe_outfile_in_sample_info(
+            {
+                path             => $outfile_path,
+                recipe_name      => q{bcftools},
                 sample_info_href => $sample_info_href,
             }
         );

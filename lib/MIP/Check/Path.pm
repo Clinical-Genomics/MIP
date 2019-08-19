@@ -16,13 +16,16 @@ use autodie;
 use List::MoreUtils qw{ any };
 use Readonly;
 
+## MIPs lib
+use MIP::Constants qw{ $DOT $NEWLINE $TAB };
+
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -36,11 +39,6 @@ BEGIN {
       check_vcfanno_toml
     };
 }
-
-## Constants
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $TAB     => qq{\t};
 
 sub check_executable_in_path {
 
@@ -83,18 +81,37 @@ sub check_executable_in_path {
 
     use MIP::Check::Unix qw{check_binary_in_path};
 
-    # Track program paths that have already been checked
-    my %seen;
+  PARAMETER:
+    foreach my $parameter_name ( keys %{$active_parameter_href} ) {
 
-    ## Checking program_executables
-    _check_program_executables(
-        {
-            active_parameter_href => $active_parameter_href,
-            log                   => $log,
-            parameter_href        => $parameter_href,
-            seen_href             => \%seen,
+        ## Only check path(s) for parameters with "type" key
+        next PARAMETER
+          if ( not exists $parameter_href->{$parameter_name}{type} );
+
+        ## Only check path(s) for parameters with type value eq "recipe"
+        next PARAMETER
+          if ( not $parameter_href->{$parameter_name}{type} eq q{recipe} );
+
+        ## Only check path(s) for active recipes
+        next PARAMETER if ( not $active_parameter_href->{$parameter_name} );
+
+        ## Alias
+        my $program_executables_ref =
+          \@{ $parameter_href->{$parameter_name}{program_executables} };
+
+      PROGRAM:
+        foreach my $program ( @{$program_executables_ref} ) {
+
+            check_binary_in_path(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    binary                => $program,
+                    log                   => $log,
+                    program_name          => $parameter_name,
+                }
+            );
         }
-    );
+    }
     return;
 }
 
@@ -665,93 +682,6 @@ sub check_vcfanno_toml {
         );
     }
     return 1;
-}
-
-sub _check_program_executables {
-
-## Function : Checking program executables
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $log                   => Log object
-##          : $parameter_href        => Parameter hash {REF}
-##          : $seen_href             => Track program paths already checked {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $log;
-    my $parameter_href;
-    my $seen_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        seen_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$seen_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Unix qw{check_binary_in_path};
-
-  PARAMETER:
-    foreach my $parameter_name ( keys %{$active_parameter_href} ) {
-
-        ## Only check path(s) for parameters with "type" key
-        next PARAMETER
-          if ( not exists $parameter_href->{$parameter_name}{type} );
-
-        ## Only check path(s) for parameters with type value eq "recipe"
-        next PARAMETER
-          if ( not $parameter_href->{$parameter_name}{type} eq q{recipe} );
-
-        ## Only check path(s) for active recipes
-        next PARAMETER if ( not $active_parameter_href->{$parameter_name} );
-
-        ## Alias
-        my $program_executables_ref =
-          \@{ $parameter_href->{$parameter_name}{program_executables} };
-
-      PROGRAM:
-        foreach my $program ( @{$program_executables_ref} ) {
-
-            ## Only check path once
-            next PROGRAM if ( $seen_href->{$program} );
-
-            $seen_href->{$program} = check_binary_in_path(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    binary                => $program,
-                    log                   => $log,
-                    program_name          => $parameter_name,
-                }
-            );
-        }
-    }
-    return;
 }
 
 1;

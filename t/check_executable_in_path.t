@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.04;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -45,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Check::Path}    => [qw{ check_executable_in_path }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -65,13 +62,13 @@ diag(   q{Test check_executable_in_path from Path.pm v}
 ## Creates log object
 my $log = test_log( {} );
 
-my %active_parameter = (
-    conda_path => catfile( $Bin, qw{ data modules miniconda } ),
-    samtools   => 0,
-);
-my %parameter;
+my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
+$active_parameter{conda_path} = catfile( $Bin, qw{ data modules miniconda } );
+$active_parameter{bwa_mem}    = 0;
 
-## Given switched off active recipe parameter, when no parameter defined
+my %parameter = test_mip_hashes( { mip_hash_name => q{define_parameter}, } );
+
+## Given switched off active recipe parameter
 my $return = check_executable_in_path(
     {
         active_parameter_href => \%active_parameter,
@@ -81,34 +78,10 @@ my $return = check_executable_in_path(
 );
 
 ## Then return undef
-is( $return, undef, q{Skip check when no parameter defined in parameter hash} );
-
-## Given switched off active parameter and defined recipe parameter, when no defined program_executables
-%parameter = ( samtools => { type => q{recipe}, }, );
-
-$return = check_executable_in_path(
-    {
-        active_parameter_href => \%active_parameter,
-        log                   => $log,
-        parameter_href        => \%parameter,
-    }
-);
-
-## Then return undef
-is( $return, undef, q{Skip check when no program_executables defined in parameter hash} );
+is( $return, undef, q{Skip check for inactive recipes} );
 
 ## Given switched on active parameter, defined program and program_executables parameter, when program is in path and executable
-%active_parameter = (
-    conda_path => catfile( $Bin, qw{ data modules miniconda } ),
-    samtools   => 1,
-);
-
-%parameter = (
-    samtools => {
-        program_executables => [qw{ samtools }],
-        type                => q{recipe},
-    },
-);
+$active_parameter{bwa_mem} = 1;
 
 trap {
     check_executable_in_path(
@@ -121,20 +94,11 @@ trap {
 };
 
 ## Then INFO message should broadcast
-like( $trap->stderr, qr/INFO/xms, q{Found bin and executable: Throw INFO log message} );
+like( $trap->stderr, qr/samtools/xms,
+    q{Found bin and executable: Throw INFO log message} );
 
-## Given switched on active parameter, defined recipe and program_executables parameter, when program is in path and executable
-%active_parameter = (
-    conda_path => catfile( $Bin, qw{ data modules miniconda } ),
-    samtools   => 1,
-);
-
-%parameter = (
-    samtools => {
-        program_executables => [qw{ no_binary }],
-        type                => q{recipe},
-    },
-);
+## Given switched on active parameter, defined recipe and program_executables parameter, but no executable
+$parameter{bwa_mem}{program_executables} = [qw{ not_in_path }];
 
 trap {
     check_executable_in_path(
@@ -143,80 +107,11 @@ trap {
             log                   => $log,
             parameter_href        => \%parameter,
         }
-    )
+    );
 };
 
-## Then FATAL message should broadcast
-like( $trap->stderr, qr/FATAL/xms, q{No bin and executable - Throw FATAL log message} );
-
-## Given switched on active parameter, defined recipe and program_executables
-## parameter, when program is in env path and executable for
-## module source environment command
-%active_parameter = (
-    conda_path => catfile( $Bin, qw{ data modules miniconda } ),
-    load_env   => {
-        test_env_1 => {
-            rankvariant => undef,
-            method      => q{conda},
-        },
-    },
-    rankvariant => 1,
-);
-
-%parameter = (
-    rankvariant => {
-        program_executables => [qw{ genmod }],
-        type                => q{recipe},
-    },
-);
-
-trap {
-    check_executable_in_path(
-        {
-            active_parameter_href => \%active_parameter,
-            log                   => $log,
-            parameter_href        => \%parameter,
-        }
-    )
-};
-
-## Then INFO message should broadcast
-like( $trap->stderr, qr/INFO/xms,
-    q{Found bin and executable load env cmd: Throw INFO log message} );
-
-## Given switched on active parameter, defined recipe and program_executables
-## parameter, when program is in env path and not executable for
-## load env command
-%active_parameter = (
-    conda_path => catfile( $Bin, qw{ data modules miniconda } ),
-    load_env   => {
-        test_env_1 => {
-            rankvariant => undef,
-            method      => q{conda},
-        },
-    },
-    rankvariant => 1,
-);
-
-%parameter = (
-    rankvariant => {
-        program_executables => [qw{ no_binary }],
-        type                => q{recipe},
-    },
-);
-
-trap {
-    check_executable_in_path(
-        {
-            active_parameter_href => \%active_parameter,
-            log                   => $log,
-            parameter_href        => \%parameter,
-        }
-    )
-};
-
-## Then FATAL message should broadcast
-like( $trap->stderr, qr/FATAL/xms,
-    q{No bin and executable in load env cmd - Throw FATAL log message} );
-
+## Then exit and trow FATAL message
+ok( $trap->exit, q{exit on no bin} );
+like( $trap->stderr, qr/not_in_path/xms,
+    q{No bin and executable - Throw FATAL log message} );
 done_testing();

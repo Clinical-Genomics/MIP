@@ -21,10 +21,11 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Test::Fixtures qw{ test_standard_cli test_mip_hashes };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -32,10 +33,6 @@ $VERBOSE = test_standard_cli(
         version => $VERSION,
     }
 );
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -45,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Check::Unix}    => [qw{ check_binary_in_path }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli test_mip_hashes}],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -63,9 +60,9 @@ diag(   q{Test check_binary_in_path from Unix.pm v}
       . $EXECUTABLE_NAME );
 
 ## Given existing binary
-my %active_parameter =
-  ( conda_path =>
-      catdir( dirname($Bin), qw{ t data modules miniconda envs test_env bin } ), );
+my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
+$active_parameter{conda_path} =
+  catdir( dirname($Bin), qw{ t data modules miniconda envs test_env bin } );
 my $binary       = q{samtools};
 my $program_name = q{samtools};
 

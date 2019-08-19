@@ -309,12 +309,12 @@ infile_dirs:
 picardtools_path:
   associated_recipe:
    - bwa_mem
-   - picardtools_mergesamfiles
+   - delly_reformat
    - markduplicates
    - picardtools_collecthsmetrics
    - picardtools_collectmultiplemetrics
-   - prepareforvariantannotationblock
-   - delly_reformat
+   - picardtools_mergesamfiles
+   - sv_reformat
   data_type: SCALAR
   exists_check: directory
   type: path
