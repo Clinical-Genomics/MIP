@@ -912,7 +912,7 @@ sub parse_vep_csq {
                     {
                         hgnc_id          => $transcript_csq{hgnc_id},
                         select_data_href => $select_data_href,
-                        transcript       => $transcript,
+                        transcripts_ref  => [$transcript],
                         vcf_record_href  => $record_href,
                     }
                 );
@@ -922,7 +922,7 @@ sub parse_vep_csq {
             ## Not part of a coding region
             add_transcript_to_feature_file(
                 {
-                    transcript      => $transcript,
+                    transcripts_ref => [$transcript],
                     vcf_record_href => $record_href,
                 }
             );
@@ -972,8 +972,14 @@ sub parse_vep_csq {
         if (    not keys %{$consequence_href}
             and not exists $record_href->{range_transcripts} )
         {
+
             ## Add all transcripts to range transcripts
-            push( @{ $record_href->{range_transcripts} }, @transcripts );
+            add_transcript_to_feature_file(
+                {
+                    transcripts_ref => \@transcripts,
+                    vcf_record_href => $record_href,
+                }
+            );
         }
     }
 
@@ -1000,108 +1006,386 @@ sub parse_vep_csq {
     return;
 }
 
-sub find_af {
 
-##find_af
+sub add_field_to_element {
 
-##Function : Adds the least alternative allele(s) frequency to each line
+##add_field_to_element
+
+##Function : Adds adds a field to an element.
 ##Returns  : ""
-##Arguments: $elements_ref, $regexp
-##         : $elements_ref => The INFO array {REF}
-##         : $regexp       => The regexp to used to locate correct ID field
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $elements_ref;
-    my $regexp;
-
-    my $tmpl = {
-        elements_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$elements_ref
-        },
-        regexp => { required => 1, defined => 1, strict_type => 1, store => \$regexp },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my $temp_maf;
-
-    for my $element (@$elements_ref) {
-
-        if ( $element =~ /$regexp/ ) {    #Find the key=value field
-
-            my @value = split( /=/, $element );    #Split key=value pair
-
-            $temp_maf = $value[1]; #Collect whole string to represent all possible alleles
-        }
-    }
-    return $temp_maf;
-}
-
-sub FindLCAF {
-
-##FindLCAF
-
-##Function : Adds the least common alternative allele frequency to each line
-##Returns  : ""
-##Arguments: $elements_ref, $regexp, $frequencyPosition
-##         : $elements_ref      => The INFO array {REF}
-##         : $regexp            => The regexp to used to locate correct ID field
-##         : $frequencyPosition => The position to extract frequency from
+##Arguments: $selected_transcript_tracker_ref, $selected_line_ref, $line_ref, $value_ref, $separator
+##         : $selected_transcript_tracker_ref => The selected transcript tracker for belonging to select file {REF}
+##         : $selected_line_ref               => Selected line to add annotations to {REF}
+##         : $line_ref                        => Variant line to add annotations to {REF}
+##         : $value_ref                       => Field value {REF}
+##         : $separator                       => Separator for field
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $frequencyPosition;
+    my $separator;
 
     ## Flatten argument(s)
-    my $elements_ref;
-    my $regexp;
+    my $selected_transcript_tracker_ref;
+    my $selected_line_ref;
+    my $line_ref;
+    my $value_ref;
 
     my $tmpl = {
-        elements_ref => {
+        selected_transcript_tracker_ref => {
             required    => 1,
             defined     => 1,
-            default     => [],
+            default     => \$$,
             strict_type => 1,
-            store       => \$elements_ref
+            store       => \$selected_transcript_tracker_ref
         },
-        regexp => { required => 1, defined => 1, strict_type => 1, store => \$regexp },
-        frequencyPosition => {
-            default     => 0,
-            allow       => qr/^\d+$/,
+        selected_line_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
             strict_type => 1,
-            store       => \$frequencyPosition
+            store       => \$selected_line_ref
+        },
+        line_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$line_ref
+        },
+        separator => { default => ":", strict_type => 1, store => \$separator },
+        value_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$value_ref
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    my $temp_maf;
+    if ($$selected_transcript_tracker_ref) {
 
-    for my $element (@$elements_ref) {
+        $$selected_line_ref .= $separator . $$value_ref;
+    }
 
-        if ( $element =~ /$regexp/ ) {    #Find the key=value field
+    ## Always include all transcripts in orphan list
+    $$line_ref .= $separator . $$value_ref;
+}
 
-            my @value = split( /=/, $element );    #Split key=value pair
+sub collect_consequence_genes {
 
-            my @temp_mafs =
-              sort { $a <=> $b }
-              grep { $_ ne "." }
-              split( ",", $value[1] )
-              ; #Split on ",", remove entries containing only "." and sort remaining entries numerically ascending order
+##collect_consequence_genes
 
-            if ( scalar(@temp_mafs) > 0 ) {
+##Function : Collects all consequence and predictors per gene and adds info to line to be written.
+##Returns  : ""
+##Arguments: $consequence_href, $select_data_href, $fields_ref, $selected_variant_line_ref, $variantVariantLineRef
+##         : $consequence_href          => Consequence(s) for each gene {REF}
+##         : $select_data_href          => Select file data {REF}
+##         : $fields_ref                => Features to be processed as determined by CSQ {REF}
+##         : $selected_variant_line_ref => Selected line to add annotations to {REF}
+##         : $variantVariantLineRef     => Variant line to add annotations to {REF}
 
-                ## We are interested in the least common allele listed for this position. We cannot connect the frequency position in the list and the multiple alternative alleles. So the best we can do is report the least common allele frequency for multiple alternative allels. Unless the least common frequency is lower than the frequency defined as pathogenic for rare disease (usually 0.01) then this will work. In that case this will be a false positive, but it is better than taking the actual MAF which would be a false negative if the pathogenic variant found in the patient(s) has a lower frequency than the MAF.
-                $temp_maf = $temp_mafs[$frequencyPosition];
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $consequence_href;
+    my $select_data_href;
+    my $fields_ref;
+    my $selected_variant_line_ref;
+    my $variant_line_ref;
+
+    my $tmpl = {
+        consequence_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$consequence_href
+        },
+        select_data_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$select_data_href
+        },
+        fields_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$fields_ref
+        },
+        selected_variant_line_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$selected_variant_line_ref
+        },
+        variant_line_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$variant_line_ref
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+
+    my %gene_counter;
+    my %selected_gene_counter;
+    my @temp_fields;
+    my @selected_temp_fields;
+
+    for (
+        my $field_counter = 0 ;
+        $field_counter < scalar(@$fields_ref) ;
+        $field_counter++
+      )
+    {    #Set transcript counter to "0"
+
+        $selected_gene_counter{$field_counter} = 0;
+        $gene_counter{$field_counter}          = 0;
+    }
+
+  GENES:
+    for my $gene ( keys %$consequence_href ) {
+
+      FIELDS:
+        for (
+            my $field_counter = 0 ;
+            $field_counter < scalar(@$fields_ref) ;
+            $field_counter++
+          )
+        {
+
+            if ( $select_data_href->{$gene} ) {    #Exists in selected Features
+
+                collect_consequence_field(
+                    {
+                        gene_counter_href   => \%selected_gene_counter,
+                        consequence_href    => $consequence_href,
+                        fields_ref          => \@{$fields_ref},
+                        selected_fields_ref => \@selected_temp_fields,
+                        field_counter_ref   => \$field_counter,
+                        gene_ref            => \$gene,
+                    }
+                );
+            }
+
+            ## Always include all transcripts in research list
+            collect_consequence_field(
+                {
+                    gene_counter_href   => \%gene_counter,
+                    consequence_href    => $consequence_href,
+                    fields_ref          => \@{$fields_ref},
+                    selected_fields_ref => \@temp_fields,
+                    field_counter_ref   => \$field_counter,
+                    gene_ref            => \$gene,
+                }
+            );
+        }
+    }
+
+    ## Adds to present line
+    add_to_line(
+        {
+            fields_ref      => \@{$fields_ref},
+            temp_fields_ref => \@selected_temp_fields,
+            line_ref        => \$$selected_variant_line_ref,
+        }
+    );
+
+    ## Adds to present line
+    add_to_line(
+        {
+            fields_ref      => \@{$fields_ref},
+            temp_fields_ref => \@temp_fields,
+            line_ref        => \$$variant_line_ref,
+        }
+    );
+}
+
+sub collect_consequence_field {
+
+##collect_consequence_field
+
+##Function : Collects consequences for features in @feature_fields to temporary array for adding to line once all information are collected.
+##Returns  : ""
+##Arguments: $gene_counter_href, $consequence_href, $fields_ref, $selected_fields_ref, $field_counter_ref, $gene_ref
+##         : $gene_counter_href   => Counts the number of transcripts per gene {REF}
+##         : $consequence_href    => Consequence(s) for each gene {REF}
+##         : $fields_ref          => Features to be processed as determined by CSQ {REF}
+##         : $selected_fields_ref => Selected array {REF}
+##         : $field_counter_ref   => Field number in feature {REF}
+##         : $gene_ref            => The gene symbol {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $gene_counter_href;
+    my $consequence_href;
+    my $fields_ref;
+    my $selected_fields_ref;
+    my $field_counter_ref;
+    my $gene_ref;
+
+    my $tmpl = {
+        gene_counter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$gene_counter_href
+        },
+        consequence_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$consequence_href
+        },
+        fields_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$fields_ref
+        },
+        selected_fields_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$selected_fields_ref
+        },
+        field_counter_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$field_counter_ref
+        },
+        gene_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$gene_ref
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+
+    my $field_ref = \${$fields_ref}[$$field_counter_ref];    #Alias
+
+    if ( !$$gene_counter_href{$$field_counter_ref} ) {       #First time
+
+        my $allel_counter = 0;
+
+      ALLELS:
+        for my $allele ( keys %{ $consequence_href->{$$gene_ref} } ) {    #All alleles
+
+            if ( defined( $$consequence_href{$$gene_ref}{$allele}{$$field_ref} )
+                && ( $$consequence_href{$$gene_ref}{$allele}{$$field_ref} ne "" ) )
+            {    #If feature exists - else do nothing
+
+                if ( !$allel_counter ) {
+
+                    $$selected_fields_ref[$$field_counter_ref] .= ";"
+                      . $$field_ref . "="
+                      . $$gene_ref . ":"
+                      . $allele . "|"
+                      . $$consequence_href{$$gene_ref}{$allele}{$$field_ref};
+                }
+                else {
+
+                    $$selected_fields_ref[$$field_counter_ref] .= ","
+                      . $$gene_ref . ":"
+                      . $allele . "|"
+                      . $$consequence_href{$$gene_ref}{$allele}{$$field_ref};
+                }
+                $$gene_counter_href{$$field_counter_ref}++;
+                $allel_counter++;
             }
         }
     }
-    return $temp_maf;
+    else {    #Subsequent passes
+
+      ALLELS:
+        for my $allele ( keys %{ $consequence_href->{$$gene_ref} } ) {    #All alleles
+
+            if ( defined( $$consequence_href{$$gene_ref}{$allele}{$$field_ref} )
+                && ( $$consequence_href{$$gene_ref}{$allele}{$$field_ref} ne "" ) )
+            {    #If feature exists - else do nothing
+
+                $$selected_fields_ref[$$field_counter_ref] .= ","
+                  . $$gene_ref . ":"
+                  . $allele . "|"
+                  . $$consequence_href{$$gene_ref}{$allele}{$$field_ref};
+            }
+        }
+    }
+}
+
+sub add_to_line {
+
+##add_to_line
+
+##Function : Adds to present line.
+##Returns  : ""
+##Arguments: $fields_ref, $temp_fields_ref, $line_ref
+##         : $fields_ref      => Features to be processed as determined by CSQ {REF}
+##         : $temp_fields_ref => Annotations for feature {REF}
+##         : $line_ref        => Line to add to {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $fields_ref;
+    my $temp_fields_ref;
+    my $line_ref;
+
+    my $tmpl = {
+        fields_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$fields_ref
+        },
+        temp_fields_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$temp_fields_ref
+        },
+        line_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$line_ref
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+
+    for (
+        my $field_counter = 0 ;
+        $field_counter < scalar(@$fields_ref) ;
+        $field_counter++
+      )
+    {
+
+        if ( defined( $$temp_fields_ref[$field_counter] ) ) {
+
+            $$line_ref .= $$temp_fields_ref[$field_counter];
+        }
+    }
 }
