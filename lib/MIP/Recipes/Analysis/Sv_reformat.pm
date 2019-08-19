@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_reformat_sv };
@@ -150,7 +150,8 @@ sub analysis_reformat_sv {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
-    use MIP::Sample_info qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info
+      qw{ set_most_complete_vcf set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -380,6 +381,14 @@ sub analysis_reformat_sv {
 
     if ( $recipe_mode == 1 ) {
 
+        # Save STDERR in sample info
+        set_recipe_outfile_in_sample_info(
+            {
+                path             => $recipe_info_path . $DOT . q{stderr.txt},
+                recipe_name      => q{picard},
+                sample_info_href => $sample_info_href,
+            }
+        );
         submit_recipe(
             {
                 base_command            => $profile_base_command,

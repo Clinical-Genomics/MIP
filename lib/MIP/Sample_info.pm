@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.13;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -1203,8 +1203,6 @@ sub set_in_sample_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_program_version };
-
     ## Add parameter key to sample info
     my @add_keys = qw{ analysis_type expected_coverage };
 
@@ -1216,33 +1214,6 @@ sub set_in_sample_info {
                 active_parameter_href => $active_parameter_href,
                 key_to_add            => $key_to_add,
                 sample_info_href      => $sample_info_href,
-            }
-        );
-    }
-
-    ## Define program features to find version of program that do not print version to log file or can be collected from the parameter
-    my %program_feature =
-      _define_program_features( { active_parameter_href => $active_parameter_href, } );
-
-  PARAMETER:
-    foreach my $parameter_name ( keys %program_feature ) {
-
-        ## Get program version
-        my $version = get_program_version(
-            {
-                active_parameter_href => $active_parameter_href,
-                cmd                   => $program_feature{$parameter_name}{cmd},
-                parameter_name        => $parameter_name,
-                regexp                => $program_feature{$parameter_name}{regexp},
-                sample_info_href      => $sample_info_href,
-            }
-        );
-
-        set_recipe_outfile_in_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                recipe_name      => $program_feature{$parameter_name}{program_name},
-                version          => $version,
             }
         );
     }
@@ -1362,77 +1333,6 @@ sub _file_name_formats {
       $date . $UNDERSCORE . $flowcell . $UNDERSCORE . $lane . $UNDERSCORE . $index;
     return $mip_file_format, $mip_file_format_with_direction,
       $original_file_name_prefix, $run_barcode;
-}
-
-sub _define_program_features {
-
-## Function : Define program features to find version of program
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Define program features
-    my $gatk_cmd   = $EMPTY_STR;
-    my $picard_cmd = $EMPTY_STR;
-
-    if ( exists $active_parameter_href->{gatk_path} ) {
-
-        $gatk_cmd =
-            q{java -jar }
-          . catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} )
-          . $SPACE
-          . q{--version 2>&1};
-    }
-    if ( exists $active_parameter_href->{picardtools_path} ) {
-        $picard_cmd =
-            q{java -jar }
-          . catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} )
-          . $SPACE
-          . q{CreateSequenceDictionary --version 2>&1};
-    }
-    my $sambamba_cmd =
-      q?sambamba 2>&1 | perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
-
-    my %program_feature = (
-        gatk_path => {
-            cmd          => $gatk_cmd,
-            regexp       => q?gatk-([^,]+)?,
-            program_name => q{gatk},
-        },
-        picardtools_path => {
-            cmd          => $picard_cmd,
-            regexp       => q?picard-tools-([^,]+)?,
-            program_name => q{picardtools},
-        },
-        bwa_mem => {
-            cmd          => $sambamba_cmd,     #bwa_mem uses sambamba post alignment
-            regexp       => q?Not relevant?,
-            program_name => q{sambamba},
-        },
-        sambamba_depth => {
-            cmd          => $sambamba_cmd,
-            regexp       => q?Not relevant?,
-            program_name => q{sambamba},
-        },
-    );
-
-    return %program_feature;
 }
 
 1;

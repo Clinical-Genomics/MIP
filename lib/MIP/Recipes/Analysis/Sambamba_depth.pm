@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $NEWLINE $SINGLE_QUOTE $SPACE };
+use MIP::Constants qw{ $ASTERISK $DOT $NEWLINE $SINGLE_QUOTE $SPACE };
 
 BEGIN {
 
@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sambamba_depth };
@@ -206,7 +206,7 @@ sub analysis_sambamba_depth {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
-    my ($recipe_file_path) = setup_script(
+    my ( $recipe_file_path, $recipe_info_path, $recipe_name_version ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
@@ -274,6 +274,17 @@ sub analysis_sambamba_depth {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## Save STDERR to get sambamba version
+        my $stderrfile_path =
+          $recipe_info_path . $recipe_name_version . $DOT . q{stderr.txt};
+        set_recipe_outfile_in_sample_info(
+            {
+                path             => $stderrfile_path,
+                recipe_name      => q{sambamba},
                 sample_info_href => $sample_info_href,
             }
         );

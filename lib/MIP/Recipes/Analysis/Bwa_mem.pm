@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem analysis_run_bwa_mem };
@@ -474,6 +474,15 @@ sub analysis_bwa_mem {
                 }
             );
 
+            ## Store STDERR file for sambamba version
+            set_recipe_outfile_in_sample_info(
+                {
+                    path             => catfile( $directory, $stderr_file ),
+                    recipe_name      => q{sambamba},
+                    sample_info_href => $sample_info_href,
+                }
+            );
+
             submit_recipe(
                 {
                     base_command            => $profile_base_command,
@@ -910,6 +919,15 @@ sub analysis_run_bwa_mem {
                     path             => $qc_bwa_log,
                     recipe_name      => $recipe_name,
                     sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+
+            ## Store STDERR file for sambamba version
+            set_recipe_outfile_in_sample_info(
+                {
+                    path             => catfile( $directory, $stderr_file ),
+                    recipe_name      => q{sambamba},
                     sample_info_href => $sample_info_href,
                 }
             );

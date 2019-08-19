@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.12;
+    our $VERSION = 1.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_mergesamfiles };
@@ -480,6 +480,15 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                 path             => $qc_outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## Store STDERR in Sample info for picard version
+        set_recipe_outfile_in_sample_info(
+            {
+                path             => $recipe_info_path . $DOT . q{stderr.txt},
+                recipe_name      => q{picard},
                 sample_info_href => $sample_info_href,
             }
         );

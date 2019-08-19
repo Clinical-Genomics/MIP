@@ -107,7 +107,7 @@ recipe_time:
   type: mip
 picardtools_path:
   associated_recipe:
-   - prepareforvariantannotationblock
+   - sv_reformat
   data_type: SCALAR
   exists_check: directory
   type: path

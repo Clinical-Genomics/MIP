@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.18;
+    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
@@ -412,6 +412,15 @@ sub analysis_gatk_haplotypecaller {
                 path             => $concat_vcf_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## Collect gatk version in qccollect
+        set_recipe_outfile_in_sample_info(
+            {
+                path             => $concat_vcf_path,
+                recipe_name      => q{gatk},
                 sample_info_href => $sample_info_href,
             }
         );

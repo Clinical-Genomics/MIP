@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_mpileup };
@@ -431,15 +431,6 @@ sub analysis_bcftools_mpileup {
       or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
     if ( $recipe_mode == 1 ) {
-
-        ## Collect bcftools version in qccollect
-        set_recipe_outfile_in_sample_info(
-            {
-                path             => $outfile_path,
-                recipe_name      => q{bcftools},
-                sample_info_href => $sample_info_href,
-            }
-        );
 
         ## Locating bcftools_mpileup file
         set_recipe_outfile_in_sample_info(

@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_qcc_regexp_recipe_attribute regexp_to_yaml };
@@ -86,7 +86,6 @@ sub regexp_to_yaml {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $is_print_regexp;
     my $log;
     my $print_regexp_outfile;
 
@@ -425,9 +424,21 @@ q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print 
     $regexp{delly}{version} =
       q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?;
 
+    # Return GATK version
+    $regexp{gatk}{version} =
+q!perl -nae 'if ($_=~/\A##GATKCommandLine(?:.+)Version="(.+)\",Date/) {print $1; last;}' !;
+
     # Return Manta version
     $regexp{manta}{version} =
       q?perl -nae 'if($_=~/GenerateSVCandidates\s+(\S+)/) {print $1;last}' ?;
+
+    # Return Picard version
+    $regexp{picard}{version} =
+      q?perl -nae 'if($_=~/Picard\sversion:\s(\d+\.\d+\.\d+)/) {print $1;last;}'?;
+
+    # Return Sambamba version
+    $regexp{sambamba_depth}{version} =
+      q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}' ?;
 
     # Return SVVCFAnno version
     $regexp{sv_combinevariantcallsets}{vcfanno} =
