@@ -847,11 +847,12 @@ sub parse_vep_csq {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Vcfparser qw{
       add_most_severe_csq_to_feature
       add_transcript_to_feature_file
+      parse_consequence
       parse_vep_csq_consequence
       set_most_severe_pli };
     use MIP::File::Format::Vcf qw{ get_transcript_effects };
@@ -928,45 +929,19 @@ sub parse_vep_csq {
             );
         }
 
-      HGNC_ID:
-        for my $hgnc_id ( keys %{$consequence_href} ) {
-
-            ## Unpack
-            my $hgnc_symbol = $hgnc_map{$hgnc_id};
-            my $pli_score   = $pli_score_href->{$hgnc_symbol};
-
-            ## For pli value and if current pli is more than stored
-            set_most_severe_pli(
-                {
-                    hgnc_id              => $hgnc_id,
-                    most_severe_pli_href => \%most_severe_pli,
-                    pli_score            => $pli_score,
-                    select_data_href     => $select_data_href,
-                }
-            );
-
-          ALLEL:
-            for my $allele ( keys %{ $consequence_href->{$hgnc_id} } ) {
-
-                ## Unpack
-                my $most_severe_consequence =
-                  $consequence_href->{$hgnc_id}{$allele}{most_severe_consequence};
-                my $most_severe_transcript =
-                  $consequence_href->{$hgnc_id}{$allele}{most_severe_transcript};
-
-                add_most_severe_csq_to_feature(
-                    {
-                        hgnc_id                  => $hgnc_id,
-                        most_severe_consequence  => $most_severe_consequence,
-                        most_severe_feature_href => \%most_severe_feature,
-                        most_severe_transcript   => $most_severe_transcript,
-                        per_gene                 => $per_gene,
-                        vcf_record_href          => $record_href,
-                        select_data_href         => $select_data_href,
-                    }
-                );
+## Parse consequence for most severe annotations
+        parse_consequence(
+            {
+                consequence_href         => $consequence_href,
+                hgnc_map_href            => \%hgnc_map,
+                most_severe_feature_href => \%most_severe_feature,
+                most_severe_pli_href     => \%most_severe_pli,
+                per_gene                 => $per_gene,
+                pli_score_href           => $pli_score_href,
+                select_data_href         => $select_data_href,
+                vcf_record_href          => $record_href,
             }
-        }
+        );
 
         ## Mainly for SV BNDs without consequence and within a hgnc_id
         if (    not keys %{$consequence_href}

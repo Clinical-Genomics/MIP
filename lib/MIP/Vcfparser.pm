@@ -37,6 +37,7 @@ BEGIN {
       check_data_terms
       %CSQ_FIELD_MAP
       define_select_data_headers
+      parse_consequence
       parse_vcf_format_line
       parse_vep_csq_consequence
       parse_vep_csq_schema
@@ -476,6 +477,135 @@ q{##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disea
     $select_data{select_file}{no_hgnc_symbol}{INFO} =
 q{##INFO=<ID=no_hgnc_symbol,Number=.,Type=String,Description="Clinically relevant genetic regions lacking a HGNC_symbol or Ensembl gene ">};
     return %select_data;
+}
+
+sub parse_consequence {
+
+## Function : Parse consequence for most severe annotations
+## Returns  :
+## Arguments: $consequence_href         => Variant consequence {REF}
+##          : $hgnc_map_href            => Hgnc map {REF}
+##          : $most_severe_feature_href => Store most severe annotation per feature file(s)
+##          : $most_severe_pli_href     => Store most severe pli per feature file(s)
+##          : $per_gene                 => Only collect most severe transcript per gene
+##          : $pli_score_href           => Pli score hash
+##          : $vcf_record_href          => VCF record {REF}
+##          : $select_data_href         => Select file data {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $consequence_href;
+    my $hgnc_map_href;
+    my $most_severe_feature_href;
+    my $most_severe_pli_href;
+    my $pli_score_href;
+    my $vcf_record_href;
+    my $select_data_href;
+
+    ## Default(s)
+    my $per_gene;
+
+    my $tmpl = {
+        consequence_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$consequence_href,
+            strict_type => 1,
+        },
+        hgnc_map_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$hgnc_map_href,
+            strict_type => 1,
+        },
+        most_severe_feature_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$most_severe_feature_href,
+            strict_type => 1,
+        },
+        most_severe_pli_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$most_severe_pli_href,
+            strict_type => 1,
+        },
+        per_gene => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$per_gene,
+            strict_type => 1,
+        },
+        pli_score_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$pli_score_href,
+            strict_type => 1,
+        },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+            strict_type => 1,
+        },
+        select_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$select_data_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  HGNC_ID:
+    for my $hgnc_id ( keys %{$consequence_href} ) {
+
+        ## Unpack
+        my $hgnc_symbol = $hgnc_map_href->{$hgnc_id};
+        my $pli_score   = $pli_score_href->{$hgnc_symbol};
+
+        ## For pli value and if current pli is more than stored
+        set_most_severe_pli(
+            {
+                hgnc_id              => $hgnc_id,
+                most_severe_pli_href => $most_severe_pli_href,
+                pli_score            => $pli_score,
+                select_data_href     => $select_data_href,
+            }
+        );
+
+      ALLEL:
+        for my $allele ( keys %{ $consequence_href->{$hgnc_id} } ) {
+
+            ## Unpack
+            my $most_severe_consequence =
+              $consequence_href->{$hgnc_id}{$allele}{most_severe_consequence};
+            my $most_severe_transcript =
+              $consequence_href->{$hgnc_id}{$allele}{most_severe_transcript};
+
+            add_most_severe_csq_to_feature(
+                {
+                    hgnc_id                  => $hgnc_id,
+                    most_severe_consequence  => $most_severe_consequence,
+                    most_severe_feature_href => $most_severe_feature_href,
+                    most_severe_transcript   => $most_severe_transcript,
+                    per_gene                 => $per_gene,
+                    vcf_record_href          => $vcf_record_href,
+                    select_data_href         => $select_data_href,
+                }
+            );
+        }
+    }
+    return 1;
 }
 
 sub parse_vcf_format_line {
