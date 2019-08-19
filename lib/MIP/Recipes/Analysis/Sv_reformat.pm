@@ -226,7 +226,7 @@ sub analysis_reformat_sv {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
-    my ( $recipe_file_path, $recipe_info_path, $test ) = setup_script(
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
             core_number                     => $recipe_resource{core_number},
@@ -381,7 +381,7 @@ sub analysis_reformat_sv {
 
     if ( $recipe_mode == 1 ) {
 
-        # Save STDERR in Sample info
+        # Save STDERR in sample info
         set_recipe_outfile_in_sample_info(
             {
                 path             => $recipe_info_path . $DOT . q{stderr.txt},

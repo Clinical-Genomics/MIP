@@ -110,8 +110,8 @@ trap {
     );
 };
 
-## Then exit and trow FATAL message
-ok( $trap->exit, q{exit on no bin} );
+## Then exit and throw FATAL message
+ok( $trap->exit, q{Exit on no bin} );
 like( $trap->stderr, qr/not_in_path/xms,
     q{No bin and executable - Throw FATAL log message} );
 done_testing();
