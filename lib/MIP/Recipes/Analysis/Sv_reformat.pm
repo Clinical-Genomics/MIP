@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_reformat_sv };
@@ -33,7 +33,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $JAVA_MEMORY_ALLOCATION => 25;
+Readonly my $JAVA_MEMORY_ALLOCATION => 20;
 
 sub analysis_reformat_sv {
 
