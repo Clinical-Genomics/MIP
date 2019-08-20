@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -229,7 +229,7 @@ sub check_python_compability {
 
     ## Cover the case where no program has been actively chosen for installation
     my @programs_to_check;
-    if ( not defined $select_programs_ref ) {
+    if ( scalar @{$select_programs_ref} == 0 ) {
         @programs_to_check = unique(
             keys %{ $installation_set_href->{conda} },
             keys %{ $installation_set_href->{shell} },
