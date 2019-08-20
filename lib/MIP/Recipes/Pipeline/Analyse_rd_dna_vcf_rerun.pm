@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_analyse_rd_dna_vcf_rerun };
@@ -145,7 +145,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
-    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
+    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd analysis_cadd_gb_38 };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
@@ -168,7 +168,8 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     use MIP::Recipes::Build::Human_genome_prerequisites
       qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Rd_dna_vcf_rerun qw{build_rd_dna_vcf_rerun_meta_files};
-    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
+    use MIP::Set::Analysis
+      qw{ set_recipe_cadd set_recipe_on_analysis_type set_rankvariants_ar };
 
     ### Pipeline specific checks
     check_rd_dna_vcf_rerun(
@@ -202,8 +203,8 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        analysisrunstatus                => \&analysis_analysisrunstatus,
-        cadd_ar                          => \&analysis_cadd,
+        analysisrunstatus => \&analysis_analysisrunstatus,
+        cadd_ar => undef,    # Depends on human reference version
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
         frequency_filter                 => \&analysis_frequency_filter,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
@@ -221,6 +222,15 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
         vcfparser_ar              => \&analysis_mip_vcfparser,
         vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
         vt_ar              => \&analysis_vt,
+    );
+
+    ## Set correct cadd recipe depending on version of the human_genome_reference
+    set_recipe_cadd(
+        {
+            analysis_recipe_href => \%analysis_recipe,
+            human_genome_reference_version =>
+              $file_info_href->{human_genome_reference_version},
+        }
     );
 
     ## Special case for rankvariants recipe
