@@ -850,12 +850,9 @@ sub parse_vep_csq {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Vcfparser qw{
-      add_most_severe_csq_to_feature
       add_transcript_to_feature_file
       parse_consequence
-      parse_vep_csq_consequence
-      set_most_severe_pli };
-    use MIP::File::Format::Vcf qw{ get_transcript_effects };
+      parse_vep_csq_transcripts };
 
     my @feature_type_keys = qw{ range select};
 
@@ -875,59 +872,17 @@ sub parse_vep_csq {
         my @transcripts =
           split $COMMA, $record_href->{INFO_key_value}{CSQ};
 
-      TRANSCRIPT:
-        foreach my $transcript (@transcripts) {
-
-            ## Split transcript into VEP CSQ fields
-            my @transcript_effects = split /[|]/sxm, $transcript;
-
-            my %transcript_csq = get_transcript_effects(
-                {
-                    transcript_effects_ref       => \@transcript_effects,
-                    vep_format_field_column_href => $vep_format_field_column_href
-                }
-            );
-
-            ## If hgnc id
-            if ( defined $transcript_csq{hgnc_id}
-                and $transcript_csq{hgnc_id} )
+        parse_vep_csq_transcripts(
             {
-
-                ## Set symbol to hgnc map
-                $hgnc_map{ $transcript_csq{hgnc_id} } = $transcript_csq{hgnc_symbol};
-
-                ## Parse the most severe consequence or prediction to gene
-                parse_vep_csq_consequence(
-                    {
-                        allele            => $transcript_csq{allele},
-                        consequence_field => $transcript_csq{consequence_field},
-                        consequence_href  => $consequence_href,
-                        hgnc_id           => $transcript_csq{hgnc_id},
-                        transcript        => $transcript,
-                    }
-                );
-
-                next TRANSCRIPT if ($per_gene);
-
-                add_transcript_to_feature_file(
-                    {
-                        hgnc_id          => $transcript_csq{hgnc_id},
-                        select_data_href => $select_data_href,
-                        transcripts_ref  => [$transcript],
-                        vcf_record_href  => $record_href,
-                    }
-                );
-                next TRANSCRIPT;
+                consequence_href             => $consequence_href,
+                hgnc_map_href                => \%hgnc_map,
+                per_gene                     => $per_gene,
+                select_data_href             => $select_data_href,
+                transcripts_ref              => \@transcripts,
+                vcf_record_href              => $record_href,
+                vep_format_field_column_href => $vep_format_field_column_href,
             }
-
-            ## Not part of a coding region
-            add_transcript_to_feature_file(
-                {
-                    transcripts_ref => [$transcript],
-                    vcf_record_href => $record_href,
-                }
-            );
-        }
+        );
 
         ## Parse consequence for most severe annotations
         parse_consequence(
