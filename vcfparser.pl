@@ -877,9 +877,9 @@ sub parse_vep_csq {
                 consequence_href             => $consequence_href,
                 hgnc_map_href                => \%hgnc_map,
                 per_gene                     => $per_gene,
-                vcf_record_href              => $record_href,
                 select_data_href             => $select_data_href,
                 transcripts_ref              => \@transcripts,
+                vcf_record_href              => $record_href,
                 vep_format_field_column_href => $vep_format_field_column_href,
             }
         );
