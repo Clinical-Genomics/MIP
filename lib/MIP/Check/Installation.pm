@@ -312,7 +312,7 @@ sub check_and_add_dependencies {
         if ( defined $dependency_href->{$dependency} ) {
 
             ## Exit if the version of the dependency conflicts with what is already part of the conda installation
-            if (    ( defined $conda_program_href->{$dependency} )
+            if ( defined $conda_program_href->{$dependency}
                 and
                 ( $dependency_href->{$dependency} ne $conda_program_href->{$dependency} )
               )
