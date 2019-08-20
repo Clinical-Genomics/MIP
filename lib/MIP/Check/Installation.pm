@@ -15,12 +15,15 @@ use warnings;
 ## Cpanm
 use Readonly;
 
+## MIPs lib/
+use MIP::Constants qw{ $NEWLINE $SPACE $TAB };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -29,11 +32,6 @@ BEGIN {
       check_python_compability
     };
 }
-
-## Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-Readonly my $TAB     => qq{\t};
 
 sub check_existing_installation {
 
@@ -46,7 +44,7 @@ sub check_existing_installation {
 ##          : $log                    => Log to write messages to
 ##          : $noupdate               => Do not update
 ##          : $program_directory_path => Path to program directory
-##          : $program_name                => Program name
+##          : $program_name           => Program name
 
     my ($arg_href) = @_;
 
@@ -78,6 +76,7 @@ sub check_existing_installation {
             strict_type => 1,
         },
         conda_environment => {
+            required    => 1,
             store       => \$conda_environment,
             strict_type => 1,
         },
@@ -103,12 +102,6 @@ sub check_existing_installation {
     ## Modules
     use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Gnu::Findutils qw{ gnu_find };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-
-    ## Set default for conda environment if undef
-    if ( not $conda_environment ) {
-        $conda_environment = q{root/base};
-    }
 
     ## Check if installation directory exists
     if ( -d $program_directory_path ) {
@@ -118,18 +111,16 @@ sub check_existing_installation {
               . $conda_environment );
 
         if ($noupdate) {
-            $log->info( q{Skipping writting installation instructions for }
-                  . $program_name );
-            say {$FILEHANDLE}
-              q{## Skipping writting installation instructions for }
+            $log->info(
+                q{Skipping writing installation instructions for } . $program_name );
+            say {$FILEHANDLE} q{## Skipping writing installation instructions for }
               . $program_name;
             say {$FILEHANDLE} $NEWLINE;
 
             return 1;
         }
 
-        $log->warn(
-            qq{This will overwrite the current $program_name installation});
+        $log->warn(qq{This will overwrite the current $program_name installation});
 
         say {$FILEHANDLE} qq{## Removing old $program_name directory};
         gnu_rm(
@@ -154,8 +145,7 @@ sub check_existing_installation {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    $log->info(
-        qq{Writing instructions for $program_name installation via SHELL});
+    $log->info(qq{Writing instructions for $program_name installation via SHELL});
 
     return 0;
 }
@@ -217,7 +207,7 @@ sub check_python_compability {
     ## Display warning if python isn't part of the installation
     if ( not $python_version ) {
         $log->warn(
-q{Python is not part of the installation. Skipping python compability check.}
+            q{Python is not part of the installation. Skipping python compability check.}
         );
         return;
     }
@@ -232,8 +222,8 @@ q{Python is not part of the installation. Skipping python compability check.}
         }xms
       )
     {
-        $log->fatal( q{Please specify a python 2 or 3 version, given: }
-              . $python_version );
+        $log->fatal(
+            q{Please specify a python 2 or 3 version, given: } . $python_version );
         exit 1;
     }
 
@@ -255,8 +245,7 @@ q{Python is not part of the installation. Skipping python compability check.}
     ## Check if a python 2 environment has been specified and a python 3
     ## program has been specified for installation in that environment
     if ( ( $python_version =~ m/^2/xms ) and ( scalar @conflicts > 0 ) ) {
-        $log->fatal(
-            q{Please use a python 3 environment for:} . $NEWLINE . join $TAB,
+        $log->fatal( q{Please use a python 3 environment for:} . $NEWLINE . join $TAB,
             @conflicts );
         exit 1;
     }
@@ -315,8 +304,7 @@ sub check_and_add_dependencies {
 
         ## Add dependency to conda installation if missing
         if ( not $conda_program_href->{$dependency} ) {
-            $conda_program_href->{$dependency} =
-              $dependency_href->{$dependency};
+            $conda_program_href->{$dependency} = $dependency_href->{$dependency};
             next DEPENDENCY;
         }
 
@@ -324,10 +312,9 @@ sub check_and_add_dependencies {
         if ( defined $dependency_href->{$dependency} ) {
 
             ## Exit if the version of the dependency conflicts with what is already part of the conda installation
-            if (
-                ( defined $conda_program_href->{$dependency} )
-                and ( $dependency_href->{$dependency} ne
-                    $conda_program_href->{$dependency} )
+            if ( defined $conda_program_href->{$dependency}
+                and
+                ( $dependency_href->{$dependency} ne $conda_program_href->{$dependency} )
               )
             {
                 $log->fatal(
