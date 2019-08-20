@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -25,7 +25,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli test_mip_hashes };
 
 my $VERBOSE = 1;
-our $VERSION = 1.03;
+our $VERSION = 1.05;
 
 $VERBOSE = test_standard_cli(
     {
@@ -62,20 +62,22 @@ diag(   q{Test check_binary_in_path from Unix.pm v}
 ## Given existing binary
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
 $active_parameter{conda_path} =
-  catdir( dirname($Bin), qw{ t data modules miniconda envs test_env bin } );
+  catdir( dirname($Bin), qw{ t data modules miniconda } );
 my $binary       = q{samtools};
 my $program_name = q{samtools};
 
-my $is_ok = check_binary_in_path(
-    {
-        active_parameter_href => \%active_parameter,
-        binary                => $binary,
-        program_name          => $program_name,
-    }
-);
+trap {
+    check_binary_in_path(
+        {
+            active_parameter_href => \%active_parameter,
+            binary                => $binary,
+            program_name          => $program_name,
+        }
+    )
+};
 
 ## Then return true
-ok( $is_ok, q{Binary is found} );
+ok( $trap->return, q{Binary is found} );
 
 ## Given no existing binary
 my $no_binary = q{Nothing to see here};
@@ -93,4 +95,21 @@ trap {
 ## Then exit and throw FATAL log message
 ok( $trap->exit, q{Exit if binary cannot be found} );
 
+## Given singularity program
+$active_parameter{with_singularity} = 1;
+$active_parameter{singularity_container}{tiddit}{container_path} =
+  catfile( $active_parameter{conda_path}, qw{ envs test_env container tiddit.sif } );
+
+trap {
+    check_binary_in_path(
+        {
+            active_parameter_href => \%active_parameter,
+            binary                => q{tiddit},
+            program_name          => q{tiddit},
+        }
+    )
+};
+
+## Then return true
+ok( $trap->return, q{Singularity container is found} );
 done_testing();
