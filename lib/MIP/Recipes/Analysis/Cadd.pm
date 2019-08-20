@@ -731,7 +731,6 @@ sub analysis_cadd_gb_38 {
             {
                 FILEHANDLE                => $XARGSFILEHANDLE,
                 synonyms_grch37_to_grch38 => 1,
-                stdinfile_path            => $DASH,
                 stdoutfile_path           => $perl_outfile_path,
             }
         );
@@ -744,6 +743,7 @@ sub analysis_cadd_gb_38 {
                 force           => 1,
                 infile_path     => $perl_outfile_path,
                 stdoutfile_path => $tabix_infile_path,
+                write_to_stdout => 1,
             }
         );
         print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
