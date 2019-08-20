@@ -254,11 +254,13 @@ reference_feature:
       v1.4:
         file: annotationsGRCh37.tar.gz
         outfile: annotationsGRCh37.tar.gz
+        outfile_decompress: tar
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
     grch38:
       v1.5:
         file: annotationsGRCh38.tar.gz
         outfile: annotationsGRCh38.tar.gz
+        outfile_decompress: tar
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
   cadd_to_vcf_header:
     grch37:

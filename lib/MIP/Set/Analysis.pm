@@ -27,7 +27,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_recipe_on_analysis_type set_recipe_bwa_mem set_recipe_gatk_variantrecalibration set_rankvariants_ar };
+      qw{ set_recipe_on_analysis_type set_recipe_bwa_mem set_recipe_cadd set_recipe_gatk_variantrecalibration set_rankvariants_ar };
 }
 
 sub set_recipe_on_analysis_type {
@@ -177,6 +177,55 @@ sub set_recipe_bwa_mem {
     # Use bwa mem recipe
     $analysis_recipe_href->{bwa_mem} = \&analysis_bwa_mem;
 
+    return;
+}
+
+sub set_recipe_cadd {
+
+## Function : Set correct cadd recipe depending on version of the human_genome_reference
+## Returns  :
+## Arguments: $analysis_recipe_href           => Analysis recipe hash {REF}
+##          : $human_genome_reference_version => Human genome reference version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $human_genome_reference_version;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        human_genome_reference_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$human_genome_reference_version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd analysis_cadd_gb_38 };
+
+    ## Constants
+    Readonly my $GENOME_BUILD_NR_38 => 38;
+
+    # Human genome version > grch37
+    if ( $human_genome_reference_version >= $GENOME_BUILD_NR_38 ) {
+
+        # Use cadd recipe for genome build 38
+        $analysis_recipe_href->{cadd_ar} = \&analysis_cadd_gb_38;
+        return;
+    }
+
+    # Human genome version <= grch37
+    $analysis_recipe_href->{cadd_ar} = \&analysis_cadd;
     return;
 }
 

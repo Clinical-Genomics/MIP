@@ -41,17 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Cadd}  => [qw{ cadd }],
+        q{MIP::Language::Perl} => [qw{ perl_nae_oneliners }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Cadd qw{ cadd };
+use MIP::Language::Perl qw{ perl_nae_oneliners };
 
-diag(   q{Test cadd from Cadd.pm v}
-      . $MIP::Program::Cadd::VERSION
+diag(   q{Test perl_nae_oneliners from Perl.pm v}
+      . $MIP::Language::Perl::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -60,7 +60,7 @@ diag(   q{Test cadd from Cadd.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ CADD.sh };
+my @function_base_commands = qw{ perl };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -83,42 +83,23 @@ my %base_argument = (
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = (
-    infile_path => {
-        input           => q{infile.vcf},
-        expected_output => q{infile.vcf},
-    },
-    outfile_path => {
-        input           => q{outfile.tsv.gz},
-        expected_output => q{outfile.tsv.gz},
-    },
-    version => {
-        input           => q{v1.5},
-        expected_output => q{-v} . $SPACE . q{v1.5},
-    },
-);
+my %required_argument = ();
 
 my %specific_argument = (
-    genome_build => {
-        input           => q{GRCh37},
-        expected_output => q{-g GRCh37},
+    synonyms_grch37_to_grch38 => {
+        input => 1,
+        expected_output =>
+          q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?
     },
-    infile_path => {
-        input           => q{infile.vcf},
-        expected_output => q{infile.vcf},
-    },
-    outfile_path => {
-        input           => q{outfile.tsv.gz},
-        expected_output => q{-o outfile.tsv.gz},
-    },
-    version => {
-        input           => q{v1.5},
-        expected_output => q{-v} . $SPACE . q{v1.5},
+    synonyms_grch38_to_grch37 => {
+        input => 1,
+        expected_output =>
+          q?\'if($_=~s/^chrMT/M/g) {} elsif ($_=~s/^chr(.+)/$1/g) {} print $_\'?,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&cadd;
+my $module_function_cref = \&perl_nae_oneliners;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
