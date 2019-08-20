@@ -80,9 +80,9 @@ my %consequence            = (
         },
     },
 );
-my $per_gene;
+my $per_gene    = 1;
 my %pli_score   = ( $hgnc_symbol => 1, );
-my %select_data = ( $hgnc_id     => 1, );
+my %select_data = ( $hgnc_id => 1, );
 my %vcf_record;
 
 my $is_ok = parse_consequence(
