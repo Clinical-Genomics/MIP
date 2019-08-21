@@ -918,7 +918,7 @@ sub parse_vep_csq {
         {
             feature_type_keys_ref    => \@feature_type_keys,
             most_severe_feature_href => \%most_severe_feature,
-            most_severe_pli_href     => \%$most_severe_pli,
+            most_severe_pli_href     => \%most_severe_pli,
             vcf_record_href          => $record_href,
         }
     );
