@@ -852,7 +852,8 @@ sub parse_vep_csq {
     use MIP::Vcfparser qw{
       add_transcript_to_feature_file
       parse_consequence
-      parse_vep_csq_transcripts };
+      parse_vep_csq_transcripts
+      set_most_severe_ann_to_vcf_record };
 
     my @feature_type_keys = qw{ range select};
 
@@ -913,25 +914,14 @@ sub parse_vep_csq {
         }
     }
 
-  FEATURE_TYPE_KEY:
-    foreach my $feature_type_key (@feature_type_keys) {
-
-        my $vcf_key = join $UNDERSCORE,
-          ( qw{INFO addition}, $feature_type_key, qw{ feature } );
-
-        if ( $most_severe_pli{$feature_type_key} ) {
-
-            $record_href->{$vcf_key}{most_severe_pli} =
-              $most_severe_pli{$feature_type_key};
-        }
-        if ( exists $most_severe_feature{$feature_type_key}
-            and @{ $most_severe_feature{$feature_type_key} } )
+    set_most_severe_ann_to_vcf_record(
         {
-
-            $record_href->{$vcf_key}{most_severe_consequence} = join $COMMA,
-              @{ $most_severe_feature{$feature_type_key} };
+            feature_type_keys_ref    => \@feature_type_keys,
+            most_severe_feature_href => \%most_severe_feature,
+            most_severe_pli_href     => \%$most_severe_pli,
+            vcf_record_href          => $record_href,
         }
+    );
 
-    }
     return;
 }

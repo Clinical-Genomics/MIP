@@ -18,7 +18,7 @@ use Set::IntervalTree;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $AMPERSAND $COLON $NEWLINE $PIPE $SEMICOLON $SINGLE_QUOTE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB };
+  qw{ $AMPERSAND $COLON $COMMA $NEWLINE $PIPE $SEMICOLON $SINGLE_QUOTE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -42,6 +42,7 @@ BEGIN {
       parse_vep_csq_consequence
       parse_vep_csq_schema
       parse_vep_csq_transcripts
+      set_most_severe_ann_to_vcf_record
       set_most_severe_pli
       write_meta_data
     };
@@ -786,6 +787,79 @@ sub parse_vep_csq_transcripts {
         );
     }
     return 1;
+}
+
+sub set_most_severe_ann_to_vcf_record {
+
+## Function : Set most severe feature annotations to vcf record
+## Returns  :
+## Arguments: $feature_type_keys_ref    => Feature type keys
+##          : $most_severe_feature_href => Store most severe annotation per feature file(s)
+##          : $most_severe_pli_href     => Store most severe pli per feature file(s)
+##          : $vcf_record_href          => VCF record {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $feature_type_keys_ref;
+    my $most_severe_feature_href;
+    my $most_severe_pli_href;
+    my $vcf_record_href;
+
+    my $tmpl = {
+        feature_type_keys_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$feature_type_keys_ref,
+            strict_type => 1,
+        },
+        most_severe_feature_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$most_severe_feature_href,
+            strict_type => 1,
+        },
+        most_severe_pli_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$most_severe_pli_href,
+            strict_type => 1,
+        },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  FEATURE_TYPE_KEY:
+    foreach my $feature_type_key ( @{$feature_type_keys_ref} ) {
+
+        my $vcf_key = join $UNDERSCORE,
+          ( qw{INFO addition}, $feature_type_key, qw{ feature } );
+
+        if ( $most_severe_pli_href->{$feature_type_key} ) {
+
+            $vcf_record_href->{$vcf_key}{most_severe_pli} =
+              $most_severe_pli_href->{$feature_type_key};
+        }
+        if ( exists $most_severe_feature_href->{$feature_type_key}
+            and @{ $most_severe_feature_href->{$feature_type_key} } )
+        {
+
+            $vcf_record_href->{$vcf_key}{most_severe_consequence} = join $COMMA,
+              @{ $most_severe_feature_href->{$feature_type_key} };
+        }
+    }
+
+    return;
 }
 
 sub set_most_severe_pli {
