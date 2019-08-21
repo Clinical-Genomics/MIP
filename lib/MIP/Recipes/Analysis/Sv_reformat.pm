@@ -33,7 +33,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $JAVA_MEMORY_ALLOCATION => 25;
+Readonly my $JAVA_MEMORY_ALLOCATION => 20;
 
 sub analysis_reformat_sv {
 

@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -20,12 +20,12 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.00;
 
 $VERBOSE = test_standard_cli(
     {
@@ -34,9 +34,6 @@ $VERBOSE = test_standard_cli(
     }
 );
 
-## Constants
-Readonly my $N_PROCESSORS => 4;
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -44,18 +41,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Qc::Peddy} => [qw{ peddy }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
+        q{MIP::Language::Perl} => [qw{ perl_nae_oneliners }],
+        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Qc::Peddy qw{ peddy };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Language::Perl qw{ perl_nae_oneliners };
 
-diag(   q{Test peddy from Peddy.pm v}
-      . $MIP::Program::Qc::Peddy::VERSION
+diag(   q{Test perl_nae_oneliners from Perl.pm v}
+      . $MIP::Language::Perl::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,7 +60,7 @@ diag(   q{Test peddy from Peddy.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ python -m peddy };
+my @function_base_commands = qw{ perl };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -85,48 +81,33 @@ my %base_argument = (
     },
 );
 
-# Can be duplicated with %base_argument and/or %specific_argument
+## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    case_file_path => {
-        input           => catfile(qw{ outcase_file_directory case_id .fam }),
-        expected_output => catfile(qw{ outcase_file_directory case_id .fam }),
-    },
-    infile_path => {
-        input           => catfile(qw{ temp_directory infile_prefix .vcf.gz }),
-        expected_output => catfile(qw{ temp_directory infile_prefix .vcf.gz }),
-    },
-    outfile_prefix_path => {
-        input           => catfile(qw{ outcase_directory case_id }),
-        expected_output => q{--prefix}
-          . $SPACE
-          . catfile(qw{ outcase_directory case_id }),
+    oneliner_name => {
+        input => q{synonyms_grch37_to_grch38},
+        expected_output =>
+          q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?,
     },
 );
 
 my %specific_argument = (
-    genome_site => {
-        input           => q{hg38},
-        expected_output => q{--sites} . $SPACE . q{hg38},
-    },
-    plot => {
-        input           => 1,
-        expected_output => q{--plot},
-    },
-    processor_number => {
-        input           => $N_PROCESSORS,
-        expected_output => q{--procs} . $SPACE . $N_PROCESSORS,
+    oneliner_name => {
+        input => q{synonyms_grch37_to_grch38},
+        expected_output =>
+          q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?,
     },
 );
 
-# Coderef - enables generalized use of generate call
-my $module_function_cref = \&peddy;
+## Coderef - enables generalized use of generate call
+my $module_function_cref = \&perl_nae_oneliners;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
+
     my @commands = test_function(
         {
             argument_href              => $argument_href,
@@ -134,6 +115,25 @@ foreach my $argument_href (@arguments) {
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
             required_argument_href     => \%required_argument,
+        }
+    );
+}
+
+## Given more oneliner_names
+my %oneliner_map = ( synonyms_grch38_to_grch37 =>
+      q?\'if($_=~s/^chrMT/M/g) {} elsif ($_=~s/^chr(.+)/$1/g) {} print $_\'?, );
+
+ONELINER:
+while ( my ( $name, $oneliner ) = each %oneliner_map ) {
+    $specific_argument{oneliner_name}{input}           = $name;
+    $specific_argument{oneliner_name}{expected_output} = $oneliner;
+
+    test_function(
+        {
+            argument_href              => \%specific_argument,
+            do_test_base_command       => 0,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
         }
     );
 }

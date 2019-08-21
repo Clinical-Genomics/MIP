@@ -149,7 +149,7 @@ sub pipeline_analyse_rd_dna {
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
-    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
+    use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd analysis_cadd_gb_38 };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
@@ -209,7 +209,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
     use MIP::Set::Analysis
-      qw{ set_recipe_on_analysis_type set_recipe_bwa_mem set_recipe_gatk_variantrecalibration set_rankvariants_ar };
+      qw{ set_recipe_on_analysis_type set_recipe_bwa_mem set_recipe_cadd set_recipe_gatk_variantrecalibration set_rankvariants_ar };
 
     ### Pipeline specific checks
     check_rd_dna(
@@ -250,11 +250,11 @@ sub pipeline_analyse_rd_dna {
         analysisrunstatus => \&analysis_analysisrunstatus,
         bcftools_mpileup  => \&analysis_bcftools_mpileup,
         bwa_mem           => undef,                          # Depends on genome build
-        cadd_ar           => \&analysis_cadd,
-        chanjo_sexcheck   => \&analysis_chanjo_sex_check,
-        cnvnator_ar       => \&analysis_cnvnator,
-        delly_call        => \&analysis_delly_call,
-        delly_reformat    => \&analysis_delly_reformat,
+        cadd_ar => undef,    # Depends on human reference version
+        chanjo_sexcheck             => \&analysis_chanjo_sex_check,
+        cnvnator_ar                 => \&analysis_cnvnator,
+        delly_call                  => \&analysis_delly_call,
+        delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
         evaluation                  => \&analysis_picardtools_genotypeconcordance,
@@ -328,6 +328,15 @@ sub pipeline_analyse_rd_dna {
             analysis_recipe_href => \%analysis_recipe,
             human_genome_reference_source =>
               $file_info_href->{human_genome_reference_source},
+            human_genome_reference_version =>
+              $file_info_href->{human_genome_reference_version},
+        }
+    );
+
+    ## Set correct cadd recipe depending on version of the human_genome_reference
+    set_recipe_cadd(
+        {
+            analysis_recipe_href => \%analysis_recipe,
             human_genome_reference_version =>
               $file_info_href->{human_genome_reference_version},
         }

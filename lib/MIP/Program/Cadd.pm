@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Cadd;
+package MIP::Program::Cadd;
 
 use 5.026;
 use Carp;
@@ -16,6 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw { $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,14 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ cadd };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub cadd {
 
@@ -45,6 +43,7 @@ sub cadd {
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $version                => Version of CADD script
 
     my ($arg_href) = @_;
 
@@ -57,6 +56,7 @@ sub cadd {
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
+    my $version;
 
     ## Default(s)
 
@@ -94,6 +94,13 @@ sub cadd {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        version => {
+            allow       => [qw{ v1.4 v1.5}],
+            defined     => 1,
+            required    => 1,
+            store       => \$version,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -107,6 +114,10 @@ sub cadd {
         push @commands, q{-o} . $SPACE . $outfile_path;
     }
 
+    if ($version) {
+
+        push @commands, q{-v} . $SPACE . $version;
+    }
     if ($genome_build) {
 
         push @commands, q{-g} . $SPACE . $genome_build;

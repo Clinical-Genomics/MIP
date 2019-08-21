@@ -1,4 +1,4 @@
-package MIP::Program::Variantcalling::Peddy;
+package MIP::Program::Qc::Peddy;
 
 use 5.026;
 use Carp;
@@ -15,6 +15,7 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Constants qw{ $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,14 +24,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ peddy };
 }
-
-## Constants
-Readonly my $SPACE => q{ };
 
 sub peddy {
 
@@ -42,6 +40,7 @@ sub peddy {
 ##          : $outfile_prefix_path    => Outfile path
 ##          : $plot                   => Generate plots
 ##          : $processor_number       => Number of processors to use
+##          : $genome_site           => Sites (either hg38 or file path)
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -53,6 +52,7 @@ sub peddy {
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_prefix_path;
+    my $genome_site;
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -62,19 +62,17 @@ sub peddy {
     my $processor_number;
 
     my $tmpl = {
+        case_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$case_file_path,
+            strict_type => 1,
+        },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-        stdoutfile_path => {
-            store       => \$stdoutfile_path,
-            strict_type => 1,
-        },
-        stderrfile_path => {
-            store       => \$stderrfile_path,
-            strict_type => 1,
-        },
-        stderrfile_path_append => {
-            store       => \$stderrfile_path_append,
+        genome_site => {
+            store       => \$genome_site,
             strict_type => 1,
         },
         infile_path => {
@@ -89,10 +87,10 @@ sub peddy {
             store       => \$outfile_prefix_path,
             strict_type => 1,
         },
-        case_file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$case_file_path,
+        plot => {
+            allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$plot,
             strict_type => 1,
         },
         processor_number => {
@@ -101,10 +99,16 @@ sub peddy {
             store       => \$processor_number,
             strict_type => 1,
         },
-        plot => {
-            allow       => [ 0, 1 ],
-            default     => 1,
-            store       => \$plot,
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
             strict_type => 1,
         },
     };
@@ -115,6 +119,11 @@ sub peddy {
     my @commands = qw{ python -m peddy };
 
     ## Options
+    if ($genome_site) {
+
+        push @commands, q{--sites} . $SPACE . $genome_site;
+    }
+
     if ($processor_number) {
 
         push @commands, q{--procs} . $SPACE . $processor_number;
@@ -145,9 +154,9 @@ sub peddy {
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 

@@ -97,7 +97,7 @@ eperl5:
 epeddy:
   conda:
     bcftools: 1.9=ha228f0b_4
-    peddy: 0.4.2=py_0
+    peddy: 0.4.3=py_0
     pip:
     python: 2.7
   pip:

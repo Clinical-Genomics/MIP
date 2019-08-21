@@ -22,6 +22,9 @@ reference:
     - v1.5
   cadd_gnomad_genomes:
     - v1.4
+  cadd_offline_annotations:
+    - v1.4
+    - v1.5
   cadd_to_vcf_header:
     - 1.0
   cadd_whole_genome_snvs:
@@ -245,6 +248,19 @@ reference_feature:
         outfile: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz
         outfile_index: grch37_cadd_gnomad.genomes.r2.0.1_-v1.4-.tsv.gz.tbi
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+  cadd_offline_annotations:
+    grch37:
+      v1.4:
+        file: annotationsGRCh37.tar.gz
+        outfile: annotationsGRCh37.tar.gz
+        outfile_decompress: tar
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.4/GRCh37/
+    grch38:
+      v1.5:
+        file: annotationsGRCh38.tar.gz
+        outfile: annotationsGRCh38.tar.gz
+        outfile_decompress: tar
+        url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.5/GRCh38/
   cadd_to_vcf_header:
     grch37:
       1.0:
@@ -553,6 +569,43 @@ reference_feature:
         outfile: grch37_nist_hg005_-na24631_v3.3.2-.vcf.gz
         outfile_decompress: gzip
         url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv3.3.2/GRCh37/
+    grch38:
+      na12878_v3.3.2_bed:
+        file: HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed
+        outfile: grch38_nist_hg001_-na12878_v3.3.2-.bed
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh38/
+      na12878_v3.3.2_wgs:
+        file: HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_PGandRTGphasetransfer.vcf.gz
+        outfile: grch38_nist_hg001_-na12878_v3.3.2-.vcf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh38/
+      na24143_v3.3.2_bed:
+        file: HG004_GRCh38_GIAB_highconf_CG-Illfb-IllsentieonHC-Ion-10XsentieonHC_CHROM1-22_v.3.3.2_highconf_noinconsistent.bed
+        outfile: grch38_nist_hg004_-na24143_v3.3.2-.bed
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG004_NA24143_mother/NISTv3.3.2/GRCh38/
+      na24143_v3.3.2_wgs:
+        file: HG004_GRCh38_GIAB_highconf_CG-Illfb-IllsentieonHC-Ion-10XsentieonHC_CHROM1-22_v.3.3.2_highconf.vcf.gz
+        outfile: grch38_nist_hg004_-na24143_v3.3.2-.vcf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG004_NA24143_mother/NISTv3.3.2/GRCh38/
+      na24385_v3.3.2_bed:
+        file: HG002_GRCh38_GIAB_highconf_CG-Illfb-IllsentieonHC-Ion-10XsentieonHC-SOLIDgatkHC_CHROM1-22_v.3.3.2_highconf_noinconsistent.bed
+        outfile: grch38_nist_hg002_-na24385_v3.3.2-.bed
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/NISTv3.3.2/GRCh38/
+      na24385_v3.3.2_wgs:
+        file: HG002_GRCh38_GIAB_highconf_CG-Illfb-IllsentieonHC-Ion-10XsentieonHC-SOLIDgatkHC_CHROM1-22_v.3.3.2_highconf_triophased.vcf.gz
+        outfile: grch38_nist_hg002_-na24385_v3.3.2-.vcf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/NISTv3.3.2/GRCh38/
+      na24631_v3.3.2_bed:
+        file: HG005_GRCh38_GIAB_highconf_CG-Illfb-IllsentieonHC-Ion-10XsentieonHC-SOLIDgatkHC_CHROM1-22_v.3.3.2_highconf.bed
+        outfile: grch38_nist_hg005_-na24631_v3.3.2-.bed
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv3.3.2/GRCh38/
+      na24631_v3.3.2_wgs:
+        file: HG005_GRCh38_GIAB_highconf_CG-Illfb-IllsentieonHC-Ion-10XsentieonHC-SOLIDgatkHC_CHROM1-22_v.3.3.2_highconf.vcf.gz
+        outfile: grch38_nist_hg005_-na24631_v3.3.2-.vcf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv3.3.2/GRCh38/
   gnomad:
     grch37:
       r2.0.1:

@@ -221,7 +221,7 @@ recipe_memory:
     sambamba_depth: 10
     samtools_subsample_mt: 2
     split_fastq_file: 2
-    sv_annotate: 10
+    sv_annotate: 7
     sv_reformat: 24
     sv_varianteffectpredictor: 8
     tiddit: 8
@@ -1816,15 +1816,6 @@ evaluation:
    - gzip
    - bcftools
   type: recipe
-nist_high_confidence_call_set:
-  associated_recipe:
-   - rtg_vcfeval
-   - evaluation
-  default: grch37_nist_hg001_-na12878_v2.19-.vcf
-  data_type: SCALAR
-  exists_check: file
-  reference: reference_dir
-  type: path
 nist_call_set_vcf:
   associated_recipe:
    - rtg_vcfeval
