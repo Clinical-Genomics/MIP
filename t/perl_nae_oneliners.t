@@ -84,16 +84,16 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    names_ref => {
-        inputs_ref => [qw{ synonyms_grch37_to_grch38 }],
+    oneliner_name => {
+        input => q{synonyms_grch37_to_grch38},
         expected_output =>
           q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?,
     },
 );
 
 my %specific_argument = (
-    names_ref => {
-        inputs_ref => [qw{ synonyms_grch37_to_grch38 }],
+    oneliner_name => {
+        input => q{synonyms_grch37_to_grch38},
         expected_output =>
           q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?,
     },
@@ -115,6 +115,25 @@ foreach my $argument_href (@arguments) {
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
             required_argument_href     => \%required_argument,
+        }
+    );
+}
+
+## Given more oneliner_names
+my %oneliner_map = ( synonyms_grch38_to_grch37 =>
+      q?\'if($_=~s/^chrMT/M/g) {} elsif ($_=~s/^chr(.+)/$1/g) {} print $_\'?, );
+
+ONELINER:
+while ( my ( $name, $oneliner ) = each %oneliner_map ) {
+    $specific_argument{oneliner_name}{input}           = $name;
+    $specific_argument{oneliner_name}{expected_output} = $oneliner;
+
+    test_function(
+        {
+            argument_href              => \%specific_argument,
+            do_test_base_command       => 0,
+            function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
         }
     );
 }

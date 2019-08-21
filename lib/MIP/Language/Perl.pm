@@ -93,21 +93,21 @@ sub perl_nae_oneliners {
 
 ## Function : Return predifined one liners
 ## Returns  : @commands
-## Arguments: $autosplit                 => Turns on autosplit mode when used with a -n or -p
-##          : $command_line              => Enter one line of program
-##          : $FILEHANDLE                => Filehandle to write to
-##          : $n                         => Iterate over filename arguments
-##          : $names_ref                 => Perl oneliner name {REF}
-##          : $stderrfile_path           => Stderrfile path
-##          : $stderrfile_path_append    => Append stderr info to file path
-##          : $stdinfile_path            => Stdinfile path
-##          : $stdoutfile_path           => Stdoutfile path
+## Arguments: $autosplit              => Turns on autosplit mode when used with a -n or -p
+##          : $command_line           => Enter one line of program
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $n                      => Iterate over filename arguments
+##          : $oneliner_name          => Perl oneliner name
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdinfile_path         => Stdinfile path
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $names_ref;
+    my $oneliner_name;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -140,11 +140,10 @@ sub perl_nae_oneliners {
             store       => \$n,
             strict_type => 1,
         },
-        names_ref => {
-            default     => [],
+        oneliner_name => {
             defined     => 1,
             required    => 1,
-            store       => \$names_ref,
+            store       => \$oneliner_name,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -181,9 +180,9 @@ sub perl_nae_oneliners {
         }
     );
 
-    if ( exists $oneliner{ $names_ref->[0] } ) {
+    if ( exists $oneliner{$oneliner_name} ) {
 
-        push @commands, $oneliner{ $names_ref->[0] };
+        push @commands, $oneliner{$oneliner_name};
     }
 
     push @commands,
