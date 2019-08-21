@@ -49,19 +49,19 @@ sub perl_base {
 
     my $tmpl = {
         autosplit => {
-            allow       => qr{ \A\d+\z }sxm,
+            allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$autosplit,
             strict_type => 1,
         },
         command_line => {
-            allow       => qr{ \A\d+\z }sxm,
+            allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$command_line,
             strict_type => 1,
         },
         n => {
-            allow       => qr{ \A\d+\z }sxm,
+            allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$n,
             strict_type => 1,
@@ -97,17 +97,17 @@ sub perl_nae_oneliners {
 ##          : $command_line              => Enter one line of program
 ##          : $FILEHANDLE                => Filehandle to write to
 ##          : $n                         => Iterate over filename arguments
+##          : $names_ref                 => Perl oneliner name {REF}
 ##          : $stderrfile_path           => Stderrfile path
 ##          : $stderrfile_path_append    => Append stderr info to file path
 ##          : $stdinfile_path            => Stdinfile path
 ##          : $stdoutfile_path           => Stdoutfile path
-##          : $synonyms_grch37_to_grch38 => Predefined oneliner
-##          : $synonyms_grch38_to_grch37 => Predefined oneliner
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
+    my $names_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -117,18 +117,16 @@ sub perl_nae_oneliners {
     my $autosplit;
     my $command_line;
     my $n;
-    my $synonyms_grch37_to_grch38;
-    my $synonyms_grch38_to_grch37;
 
     my $tmpl = {
         autosplit => {
-            allow       => qr{ \A\d+\z }sxm,
+            allow       => [ undef, 0, 1 ],
             default     => 1,
             store       => \$autosplit,
             strict_type => 1,
         },
         command_line => {
-            allow       => qr{ \A\d+\z }sxm,
+            allow       => [ undef, 0, 1 ],
             default     => 1,
             store       => \$command_line,
             strict_type => 1,
@@ -137,9 +135,16 @@ sub perl_nae_oneliners {
             store => \$FILEHANDLE,
         },
         n => {
-            allow       => qr{ \A\d+\z }sxm,
+            allow       => [ undef, 0, 1 ],
             default     => 1,
             store       => \$n,
+            strict_type => 1,
+        },
+        names_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$names_ref,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -155,21 +160,17 @@ sub perl_nae_oneliners {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
-        synonyms_grch37_to_grch38 => {
-            allow       => qr{ \A\d+\z }sxm,
-            default     => 0,
-            store       => \$synonyms_grch37_to_grch38,
-            strict_type => 1,
-        },
-        synonyms_grch38_to_grch37 => {
-            allow       => qr{ \A\d+\z }sxm,
-            default     => 0,
-            store       => \$synonyms_grch38_to_grch37,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Oneliner map
+    my %oneliner = (
+        synonyms_grch37_to_grch38 =>
+          q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?,
+        synonyms_grch38_to_grch37 =>
+          q?\'if($_=~s/^chrMT/M/g) {} elsif ($_=~s/^chr(.+)/$1/g) {} print $_\'?,
+    );
 
     ## Stores commands depending on input parameters
     my @commands = perl_base(
@@ -180,18 +181,9 @@ sub perl_nae_oneliners {
         }
     );
 
-    ## \' is for xargs
-    if ($synonyms_grch37_to_grch38) {
+    if ( exists $oneliner{ $names_ref->[0] } ) {
 
-        push @commands,
-          q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?;
-    }
-
-    ## \' is for xargs
-    if ($synonyms_grch38_to_grch37) {
-
-        push @commands,
-          q?\'if($_=~s/^chrMT/M/g) {} elsif ($_=~s/^chr(.+)/$1/g) {} print $_\'?;
+        push @commands, $oneliner{ $names_ref->[0] };
     }
 
     push @commands,

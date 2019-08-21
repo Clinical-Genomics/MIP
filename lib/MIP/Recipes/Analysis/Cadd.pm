@@ -659,10 +659,10 @@ sub analysis_cadd_gb_38 {
         ## Perl
         perl_nae_oneliners(
             {
-                FILEHANDLE                => $XARGSFILEHANDLE,
-                synonyms_grch38_to_grch37 => 1,
-                stdinfile_path            => $view_outfile_path,
-                stdoutfile_path           => $synonyms_outfile_path,
+                FILEHANDLE      => $XARGSFILEHANDLE,
+                names_ref       => [qw{ synonyms_grch38_to_grch37 }],
+                stdinfile_path  => $view_outfile_path,
+                stdoutfile_path => $synonyms_outfile_path,
             }
         );
         print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -729,9 +729,9 @@ sub analysis_cadd_gb_38 {
         ## Perl
         perl_nae_oneliners(
             {
-                FILEHANDLE                => $XARGSFILEHANDLE,
-                synonyms_grch37_to_grch38 => 1,
-                stdoutfile_path           => $perl_outfile_path,
+                FILEHANDLE      => $XARGSFILEHANDLE,
+                names_ref       => [qw{ synonyms_grch37_to_grch38 }],
+                stdoutfile_path => $perl_outfile_path,
             }
         );
 

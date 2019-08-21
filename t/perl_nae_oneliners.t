@@ -83,18 +83,19 @@ my %base_argument = (
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = ();
+my %required_argument = (
+    names_ref => {
+        inputs_ref => [qw{ synonyms_grch37_to_grch38 }],
+        expected_output =>
+          q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?,
+    },
+);
 
 my %specific_argument = (
-    synonyms_grch37_to_grch38 => {
-        input => 1,
+    names_ref => {
+        inputs_ref => [qw{ synonyms_grch37_to_grch38 }],
         expected_output =>
-          q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?
-    },
-    synonyms_grch38_to_grch37 => {
-        input => 1,
-        expected_output =>
-          q?\'if($_=~s/^chrMT/M/g) {} elsif ($_=~s/^chr(.+)/$1/g) {} print $_\'?,
+          q?\'if($_=~s/^M/chrMT/g) {} elsif ($_=~s/^(.+)/chr$1/g) {} print $_\'?,
     },
 );
 
