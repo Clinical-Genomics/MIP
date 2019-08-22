@@ -39,6 +39,7 @@ BEGIN {
       define_select_data_headers
       parse_consequence
       parse_vcf_format_line
+      parse_vep_csq
       parse_vep_csq_consequence
       parse_vep_csq_schema
       parse_vep_csq_transcripts
@@ -651,6 +652,151 @@ sub parse_vcf_format_line {
     );
 
     return @vcf_format_columns;
+}
+
+sub parse_vep_csq {
+
+## Function : Parse VEP CSQ field
+## Returns  :
+## Arguments: $consequence_href             => Variant consequence {REF}
+##          : $per_gene                     => Only collect most severe transcript per gene
+##          : $pli_score_href               => Pli score hash
+##          : $record_href                  => VCF record {REF}
+##          : $select_data_href             => Select file data {REF}
+##          : $vep_format_field_column_href => VEP format columns {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $consequence_href;
+    my $pli_score_href;
+    my $record_href;
+    my $select_data_href;
+    my $vep_format_field_column_href;
+
+    ## Default(s)
+    my $per_gene;
+
+    my $tmpl = {
+        consequence_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$consequence_href,
+            strict_type => 1,
+        },
+        per_gene => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$per_gene,
+            strict_type => 1,
+        },
+        pli_score_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$pli_score_href,
+            strict_type => 1,
+        },
+        record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$record_href,
+            strict_type => 1,
+        },
+        select_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$select_data_href,
+            strict_type => 1,
+        },
+        vep_format_field_column_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_format_field_column_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Vcfparser qw{
+      add_transcript_to_feature_file
+      parse_consequence
+      parse_vep_csq_transcripts
+      set_most_severe_ann_to_vcf_record };
+
+    my @feature_type_keys = qw{ range select};
+
+    ## Convert between hgnc_id and hgnc_symbol
+    my %hgnc_map;
+
+    ## Store most severe annotations
+    my %most_severe_pli;
+    my %most_severe_feature;
+
+    ## Initilize pli score for feature keys
+    @most_severe_pli{@feature_type_keys} = 0;
+
+    if ( $record_href->{INFO_key_value}{CSQ} ) {
+
+        ## Split into transcripts
+        my @transcripts =
+          split $COMMA, $record_href->{INFO_key_value}{CSQ};
+
+        parse_vep_csq_transcripts(
+            {
+                consequence_href             => $consequence_href,
+                hgnc_map_href                => \%hgnc_map,
+                per_gene                     => $per_gene,
+                select_data_href             => $select_data_href,
+                transcripts_ref              => \@transcripts,
+                vcf_record_href              => $record_href,
+                vep_format_field_column_href => $vep_format_field_column_href,
+            }
+        );
+
+        ## Parse consequence for most severe annotations
+        parse_consequence(
+            {
+                consequence_href         => $consequence_href,
+                hgnc_map_href            => \%hgnc_map,
+                most_severe_feature_href => \%most_severe_feature,
+                most_severe_pli_href     => \%most_severe_pli,
+                per_gene                 => $per_gene,
+                pli_score_href           => $pli_score_href,
+                select_data_href         => $select_data_href,
+                vcf_record_href          => $record_href,
+            }
+        );
+
+        ## Mainly for SV BNDs without consequence and within a hgnc_id
+        if (    not keys %{$consequence_href}
+            and not exists $record_href->{range_transcripts} )
+        {
+
+            ## Add all transcripts to range transcripts
+            add_transcript_to_feature_file(
+                {
+                    transcripts_ref => \@transcripts,
+                    vcf_record_href => $record_href,
+                }
+            );
+        }
+    }
+
+    set_most_severe_ann_to_vcf_record(
+        {
+            feature_type_keys_ref    => \@feature_type_keys,
+            most_severe_feature_href => \%most_severe_feature,
+            most_severe_pli_href     => \%most_severe_pli,
+            vcf_record_href          => $record_href,
+        }
+    );
+    return 1;
 }
 
 sub parse_vep_csq_transcripts {
