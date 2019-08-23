@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_qccollect mip_vcfparser };
@@ -119,7 +119,7 @@ sub mip_qccollect {
 
     if ($skip_evaluation) {
 
-        push @commands, q{--skip_evaluation} . $SPACE . $skip_evaluation;
+        push @commands, q{--skip_evaluation};
     }
 
     ## Infile
