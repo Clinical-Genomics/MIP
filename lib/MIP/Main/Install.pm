@@ -99,11 +99,11 @@ sub mip_install {
     # Catches name of current script
     my $script = _this_sub();
 
-    ## Catches name of the calling module
-    my $flavour = _parent_module();
+    ## Catches name of the calling module 
+    my $process = _parent_module();
 
     ## Build pipeline name
-    my $pipeline = q{install} . $UNDERSCORE . lc $flavour;
+    my $pipeline = q{install} . $UNDERSCORE . lc $process;
 
     ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
     update_to_absolute_path(
@@ -231,9 +231,9 @@ sub mip_install {
         }
     );
 
-    ## Store script, flavour and pipeline for broadcasting later
+    ## Store script, process and pipeline for broadcasting later
     $active_parameter{script}   = $script;
-    $active_parameter{flavour}  = lc $flavour;
+    $active_parameter{process}  = lc $process;
     $active_parameter{pipeline} = $pipeline;
 
     ## Create dispatch table of pipelines

@@ -230,7 +230,7 @@ sub pipeline_install_rd_rna {
             FILEHANDLE        => $FILEHANDLE,
             installations_ref => $active_parameter_href->{installations},
             log               => $log,
-            pipeline          => $active_parameter_href->{flavour},
+            pipeline          => $active_parameter_href->{pipeline},
             update_config     => $active_parameter_href->{update_config},
             write_config      => $active_parameter_href->{write_config},
         }
