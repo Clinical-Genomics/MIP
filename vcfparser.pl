@@ -605,170 +605,154 @@ sub read_infile_vcf {
             );
         }
 
-        for (
-            my $line_elements_counter = 0 ;
-            $line_elements_counter < scalar(@line_elements) ;
-            $line_elements_counter++
-          )
-        {    #Add until INFO field
+        #        for (
+        #           my $line_elements_counter = 0 ;
+        #            $line_elements_counter < scalar(@line_elements) ;
+        #            $line_elements_counter++
+        #          )
+        #        {
 
-            if ( $line_elements_counter < 7 ) {    #Save fields until INFO field
+        ## Unpack
+        #  my $format_column = $vcf_format_columns[$line_elements_counter];
 
-                if ( $record{select_transcripts} ) {
+        ## Add until INFO field
+        if ( $record{select_transcripts} ) {
 
-                    print $SELECT_FH $record{ $vcf_format_columns[$line_elements_counter]
-                      }
-                      . "\t";
-                }
-                print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }
-                  . "\t";
+            print $SELECT_FH join $TAB, @line_elements[ 0 .. 7 ];
+        }
+        print STDOUT join $TAB, @line_elements[ 0 .. 7 ];
+
+        #          if ( $line_elements_counter == 7 ) {
+
+        if ( !$parse_vep ) {
+
+            if ( $record{select_transcripts} ) {
+
+                print $SELECT_FH $record{INFO};
             }
+            print STDOUT $record{INFO};
+        }
+        else {
 
-            if ( $line_elements_counter == 7 ) {
+            my $counter = 0;
+            foreach my $key ( keys %{ $record{INFO_key_value} } ) {
 
-                if ( !$parse_vep ) {
+                if ( !$counter ) {
 
-                    if ( $record{select_transcripts} ) {
+                    if ( defined( $record{INFO_key_value}{$key} ) ) {
 
-                        print $SELECT_FH
-                          $record{ $vcf_format_columns[$line_elements_counter] };
-                    }
-                    print STDOUT $record{ $vcf_format_columns[$line_elements_counter] };
-                }
-                else {
+                        if ( $key eq "CSQ" ) {
 
-                    my $counter = 0;
-                    foreach my $key ( keys %{ $record{INFO_key_value} } ) {
+                            if ( $record{range_transcripts} ) {
 
-                        if ( !$counter ) {
-
-                            if ( defined( $record{INFO_key_value}{$key} ) ) {
-
-                                if ( $key eq "CSQ" ) {
-
-                                    if ( $record{range_transcripts} ) {
-
-                                        print STDOUT $key . "="
-                                          . join( ",", @{ $record{range_transcripts} } );
-                                    }
-                                    if ( $record{select_transcripts} ) {
-
-                                        print $SELECT_FH $key . "="
-                                          . join( ",", @{ $record{select_transcripts} } );
-                                    }
-                                }
-                                else {
-
-                                    if ( $record{select_transcripts} ) {
-
-                                        print $SELECT_FH $key . "="
-                                          . $record{INFO_key_value}{$key};
-                                    }
-                                    print STDOUT $key . "="
-                                      . $record{INFO_key_value}{$key};
-                                }
+                                print STDOUT $key . "="
+                                  . join( ",", @{ $record{range_transcripts} } );
                             }
-                            else {
+                            if ( $record{select_transcripts} ) {
 
-                                if ( $record{select_transcripts} ) {
-
-                                    print $SELECT_FH $key;
-                                }
-                                print STDOUT $key;
+                                print $SELECT_FH $key . "="
+                                  . join( ",", @{ $record{select_transcripts} } );
                             }
                         }
                         else {
 
-                            if ( defined( $record{INFO_key_value}{$key} ) ) {
+                            if ( $record{select_transcripts} ) {
 
-                                if ( $key eq "CSQ" ) {
-
-                                    if ( $record{range_transcripts} ) {
-
-                                        print STDOUT ";" . $key . "="
-                                          . join( ",", @{ $record{range_transcripts} } );
-                                    }
-                                    if ( $record{select_transcripts} ) {
-
-                                        print $SELECT_FH ";" . $key . "="
-                                          . join( ",", @{ $record{select_transcripts} } );
-                                    }
-                                }
-                                else {
-
-                                    if ( $record{select_transcripts} ) {
-
-                                        print $SELECT_FH ";" . $key . "="
-                                          . $record{INFO_key_value}{$key};
-                                    }
-                                    print STDOUT ";" . $key . "="
-                                      . $record{INFO_key_value}{$key};
-                                }
+                                print $SELECT_FH $key . "="
+                                  . $record{INFO_key_value}{$key};
                             }
-                            else {
+                            print STDOUT $key . "=" . $record{INFO_key_value}{$key};
+                        }
+                    }
+                    else {
 
-                                if ( $record{select_transcripts} ) {
+                        if ( $record{select_transcripts} ) {
 
-                                    print $SELECT_FH ";" . $key;
-                                }
-                                print STDOUT ";" . $key;
+                            print $SELECT_FH $key;
+                        }
+                        print STDOUT $key;
+                    }
+                }
+                else {
+
+                    if ( defined( $record{INFO_key_value}{$key} ) ) {
+
+                        if ( $key eq "CSQ" ) {
+
+                            if ( $record{range_transcripts} ) {
+
+                                print STDOUT ";" . $key . "="
+                                  . join( ",", @{ $record{range_transcripts} } );
+                            }
+                            if ( $record{select_transcripts} ) {
+
+                                print $SELECT_FH ";" . $key . "="
+                                  . join( ",", @{ $record{select_transcripts} } );
                             }
                         }
-                        $counter++;
+                        else {
+
+                            if ( $record{select_transcripts} ) {
+
+                                print $SELECT_FH ";" . $key . "="
+                                  . $record{INFO_key_value}{$key};
+                            }
+                            print STDOUT ";" . $key . "=" . $record{INFO_key_value}{$key};
+                        }
+                    }
+                    else {
+
+                        if ( $record{select_transcripts} ) {
+
+                            print $SELECT_FH ";" . $key;
+                        }
+                        print STDOUT ";" . $key;
                     }
                 }
-
-                foreach my $key ( keys %{ $record{INFO_addition} } ) {
-
-                    if ( $record{select_transcripts} ) {
-
-                        print $SELECT_FH ";" . $key . "=" . $record{INFO_addition}{$key};
-                    }
-                    print STDOUT ";" . $key . "=" . $record{INFO_addition}{$key};
-                }
-                if ( $record{select_transcripts} ) {
-
-                    foreach my $key ( keys %{ $record{INFO_addition_select_feature} } ) {
-
-                        print $SELECT_FH ";" . $key . "="
-                          . $record{INFO_addition_select_feature}{$key};
-                    }
-                }
-                foreach my $key ( keys %{ $record{INFO_addition_range_feature} } ) {
-
-                    print STDOUT ";" . $key . "="
-                      . $record{INFO_addition_range_feature}{$key};
-                }
-
-                if ( $record{select_transcripts} ) {
-
-                    print $SELECT_FH "\t";
-                }
-                print STDOUT "\t";
+                $counter++;
             }
-            if ( $line_elements_counter > 7 ) {
+        }
 
-                if ( $record{select_transcripts} ) {
+        foreach my $key ( keys %{ $record{INFO_addition} } ) {
 
-                    print $SELECT_FH $record{ $vcf_format_columns[$line_elements_counter]
-                      }
-                      . "\t";
-                }
-                print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }
-                  . "\t";
+            if ( $record{select_transcripts} ) {
+
+                print $SELECT_FH ";" . $key . "=" . $record{INFO_addition}{$key};
             }
+            print STDOUT ";" . $key . "=" . $record{INFO_addition}{$key};
         }
         if ( $record{select_transcripts} ) {
 
-            print $SELECT_FH "\n";
+            foreach my $key ( keys %{ $record{INFO_addition_select_feature} } ) {
+
+                print $SELECT_FH ";" . $key . "="
+                  . $record{INFO_addition_select_feature}{$key};
+            }
         }
-        print STDOUT "\n";
+        foreach my $key ( keys %{ $record{INFO_addition_range_feature} } ) {
+
+            print STDOUT ";" . $key . "=" . $record{INFO_addition_range_feature}{$key};
+        }
+
+        if ( $record{select_transcripts} ) {
+
+            print $SELECT_FH "\t";
+        }
+        print STDOUT "\t";
+
+        ## After INFO to the end
+        if ( $record{select_transcripts} ) {
+
+            print $SELECT_FH join( $TAB, @line_elements[ 8 .. $#numbers_array ] ),
+              $NEWLINE;
+        }
+        print STDOUT join( $TAB, @line_elements[ 8 .. $#numbers_array ] ), $NEWLINE;
     }
     if ($select_feature_file) {
 
         close($SELECT_FH);
     }
-    $log->info("Finished Processing VCF\n");
+    $log->info( q{Finished Processing VCF} . $NEWLINE );
 }
 
 sub parse_vep_csq {
