@@ -38,7 +38,6 @@ use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
 use MIP::Recipes::Install::Post_installation qw{check_mip_installation update_config };
-use MIP::Recipes::Install::Reference qw{ download_genome_references };
 use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
 use MIP::Recipes::Install::SnpEff qw{ install_snpeff };
@@ -54,7 +53,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_install_rd_dna };
@@ -233,27 +232,6 @@ sub pipeline_install_rd_dna {
                 }
             );
         }
-
-        ## Download reference genome if requested, only downloads to MIPs main environment
-        if (    ( $active_parameter_href->{reference_dir} )
-            and ( $installation eq q{emip} ) )
-        {
-
-            download_genome_references(
-                {
-                    conda_environment => $active_parameter_href->{environment_name}{emip},
-                    conda_prefix_path =>
-                      $active_parameter_href->{emip}{conda_prefix_path},
-                    FILEHANDLE         => $FILEHANDLE,
-                    pipeline           => $active_parameter_href->{pipeline},
-                    reference_dir_path => $active_parameter_href->{reference_dir},
-                    reference_genome_versions_ref =>
-                      $active_parameter_href->{reference_genome_versions},
-                    quiet   => $active_parameter_href->{quiet},
-                    verbose => $active_parameter_href->{verbose},
-                }
-            );
-        }
     }
 
     ## Write tests
@@ -271,7 +249,7 @@ sub pipeline_install_rd_dna {
             FILEHANDLE        => $FILEHANDLE,
             installations_ref => $active_parameter_href->{installations},
             log               => $log,
-            pipeline          => $active_parameter_href->{pipeline},
+            pipeline          => $active_parameter_href->{flavour},
             update_config     => $active_parameter_href->{update_config},
             write_config      => $active_parameter_href->{write_config},
         }

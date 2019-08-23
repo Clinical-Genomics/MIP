@@ -11,27 +11,33 @@ load_env:
     cadd_ar:
     endvariantannotationblock:
     gatk:
+    installation: emip
     method: conda
     mip:
     picard:
   mip_travis_cnvnator:
     cnvnator_ar: "LD_LIBRARY_PATH=[YOUR_CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [YOUR_CONDA_PATH]/envs/mip_travis_cnvnator/root/bin/thisroot.sh;" 
+    installation: ecnvnator
     method: conda
   mip_travis_delly:
     delly_call:
     delly_reformat:
+    installation: edelly
     method: conda
   mip_travis_eperl5:
     bwa_mem:
     fastqc_ar:
+    installation: eperl5
     method: conda
   mip_travis_peddy:
+    installation: epeddy
     method: conda
     peddy_ar:
   mip_travis_py3:  
     chanjo_sexcheck:
     expansionhunter:
     genmod:
+    installation: epy3
     method: conda
     multiqc_ar:
     rankvariant:
@@ -39,15 +45,18 @@ load_env:
     sv_rankvariant:
     variant_integrity_ar:
   mip_travis_svdb:
+    installation: esvdb
     method: conda
-    svdb:
     sv_annotate:
+    svdb:
   mip_travis_tiddit:
+    installation: etiddit
     method: conda
     tiddit:
     tiddit_coverage:
     vcf2cytosure_ar:
   mip_travis_vep:
+    installation: evep
     method: conda
     sv_varianteffectpredictor: "LD_LIBRARY_PATH=[YOUR_CONDA_PATH]/envs/mip_travis_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"
     varianteffectpredictor: "LD_LIBRARY_PATH=[YOUR_CONDA_PATH]/envs/mip_travis_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH;"

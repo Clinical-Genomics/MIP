@@ -70,6 +70,17 @@ eperl5:
     trim-galore: 0.5.0
   pip:
   shell:
+    star-fusion:
+      version: 1.5.0
+      conda_dependency:
+        star:
+        samtools:
+        perl-db-file:
+        perl-uri:
+        perl-set-intervaltree:
+        perl-carp-assert:
+        perl-json-xs:
+        perl-io-gzip:
 # VEP environment spec
 evep:
   conda:

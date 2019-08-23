@@ -26,7 +26,7 @@ use MIP::File::Format::Parameter qw{ parse_definition_file  };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ print_parameter_defaults };
 
-our $VERSION = 2.01;
+our $VERSION = 2.02;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -157,18 +157,6 @@ sub _build_usage {
     );
 
     option(
-        q{reference_genome_versions} => (
-            cmd_aliases   => [qw{ rg }],
-            cmd_flag      => q{reference_genome_versions},
-            cmd_tags      => [q{Default: GRCh37, hg38}],
-            documentation => q{Reference genomes to download},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
-            required      => 0,
-        ),
-    );
-
-    option(
         q{select_programs} => (
             cmd_aliases   => [qw{ sp }],
             cmd_flag      => q{select_programs},
@@ -192,7 +180,7 @@ sub _build_usage {
             cmd_flag      => q{shell_install},
             documentation => q{Install supplied programs via shell instead of via conda},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ picard }] ), ],
+            isa           => ArrayRef [ enum( [qw{ picard star-fusion }] ), ],
             required      => 0,
         ),
     );
