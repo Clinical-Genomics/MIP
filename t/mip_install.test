@@ -99,14 +99,13 @@ use Test::More;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
+use MIP::Constants qw{ $EMPTY_STR $NEWLINE $SPACE };
 
 our $USAGE = build_usage( {} );
 
 my $conda_path;
 my $verbose = 1;
-our $VERSION = q{1.3.0};
-
-Readonly my $EMPTY_STRING => q{};
+our $VERSION = q{1.3.1};
 
 ###User Options
 GetOptions(
@@ -114,12 +113,12 @@ GetOptions(
     q{vb|verbose}           => $verbose,
     q{h|help}               => sub {
         done_testing();
-        print {*STDOUT} $USAGE, "\n";
+        print {*STDOUT} $USAGE, $NEWLINE;
         exit;
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
+        print {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },    #Display version number
   )
@@ -142,7 +141,7 @@ my %install_file = (
     rd_rna => q{Rd_rna.pm},
 );
 
-my @installation_modes = ( $EMPTY_STRING, q{prefer_shell} );
+my @installation_modes = ( $EMPTY_STR, qw{ --prefer_shell --noupdate --sbatch_mode} );
 
 PIPELINE:
 foreach my $pipeline ( keys %install_file ) {
@@ -153,8 +152,11 @@ foreach my $pipeline ( keys %install_file ) {
     );
 
     ## Test execution of install script
-    my $cmds_ref =
-      [ q{perl}, catfile( dirname($Bin), q{mip} ), q{install}, $pipeline, qw{ --dec } ];
+    my $cmds_ref = [
+        q{perl},    catfile( dirname($Bin), q{mip} ),
+        q{install}, $pipeline,
+        qw{ --dec --write_config}
+    ];
     if ($conda_path) {
 
         push @{$cmds_ref}, q{--conda_path}, $conda_path;
@@ -162,9 +164,11 @@ foreach my $pipeline ( keys %install_file ) {
     push @{$cmds_ref}, q{--log_file}, catfile( cwd(), qw{mip_install_test.log} );
 
     foreach my $installation_mode (@installation_modes) {
-        if ( $installation_mode eq q{prefer_shell} ) {
-            push @{$cmds_ref}, q{--prefer_shell};
+        if ( $installation_mode eq q{--prefer_shell} ) {
+            push @{$cmds_ref}, qw{ --project_id development };
         }
+
+        push @{$cmds_ref}, $installation_mode;
 
         my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
             command => $cmds_ref,

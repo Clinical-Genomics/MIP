@@ -58,16 +58,6 @@ noupdate:
   mandatory: no
   type: mip
   type: mip
-reference_genome_versions:
-  associated_recipe:
-   - mip
-  data_type: ARRAY
-  default:
-    - grch37
-    - hg38
-  element_separator: ,
-  mandatory: no
-  type: mip
 prefer_shell:
   associated_recipe:
    - mip
@@ -101,14 +91,6 @@ quiet:
   exists_check: directory
   mandatory: no
   type: mip
-reference_dir:
-  associated_recipe:
-   - mip
-  data_type: SCALAR
-  exists_check: directory
-  mandatory: no
-  type: path
-  update_path: absolute_path
 sbatch_mode:
   associated_recipe:
    - mip

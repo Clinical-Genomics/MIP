@@ -45,7 +45,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 2.01;
+    our $VERSION = 2.02;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -99,10 +99,11 @@ sub mip_install {
     # Catches name of current script
     my $script = _this_sub();
 
-    ## Catches name of the calling module
-    my $pipeline = _parent_module();
+    ## Catches name of the calling module 
+    my $process = _parent_module();
 
-    $pipeline = q{install} . $UNDERSCORE . lc $pipeline;
+    ## Build pipeline name
+    my $pipeline = q{install} . $UNDERSCORE . lc $process;
 
     ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
     update_to_absolute_path(
@@ -230,8 +231,9 @@ sub mip_install {
         }
     );
 
-    ## Store script amnd pipeline for broadcasting later
+    ## Store script, process and pipeline for broadcasting later
     $active_parameter{script}   = $script;
+    $active_parameter{process}  = lc $process;
     $active_parameter{pipeline} = $pipeline;
 
     ## Create dispatch table of pipelines
