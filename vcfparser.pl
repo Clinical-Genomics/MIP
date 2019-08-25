@@ -425,6 +425,7 @@ sub read_infile_vcf {
       add_program_to_meta_data_header
       parse_vcf_format_line
       parse_vep_csq_schema
+      write_feature_file_csq
       write_meta_data
     };
 
@@ -538,8 +539,6 @@ sub read_infile_vcf {
         my %consequence;
         my %noid_region;
         my %vcf_record;
-        my $selected_variant_line;
-        my $variant_line;
 
         ## Loads vcf file elements
         my @line_elements = split $TAB, $line;
@@ -609,7 +608,7 @@ sub read_infile_vcf {
             );
         }
 
-	## Writing vcf record to files
+        ## Writing vcf record to files
         my $last_index     = $FILTER_COLUMN_INDEX;
         my $last_separator = $TAB;
 
@@ -631,22 +630,14 @@ sub read_infile_vcf {
 
         if ($parse_vep) {
 
-            my $counter = 0;
-            if ( exists $vcf_record{INFO_key_value}{CSQ} and $vcf_record{INFO_key_value}{CSQ} ) {
-
-                if ( $vcf_record{range_transcripts} ) {
-
-                    print {*STDOUT} q{CSQ} . $EQUALS . join $COMMA,
-                      @{ $vcf_record{range_transcripts} };
+            my $counter = write_feature_file_csq(
+                {
+                    FILEHANDLE         => *STDOUT,
+                    info_field_counter => 0,
+                    SELECT_FH          => $SELECT_FH,
+                    vcf_record_href    => \%vcf_record,
                 }
-                if ( $vcf_record{select_transcripts} ) {
-
-                    print {$SELECT_FH} q{CSQ} . $EQUALS . join $COMMA,
-                      @{ $vcf_record{select_transcripts} };
-                }
-                delete $vcf_record{INFO_key_value}{CSQ};
-                $counter++;
-            }
+            );
 
           KEY_VALUE_PAIR:
             while ( my ( $key, $value ) = each %{ $vcf_record{INFO_key_value} } ) {
@@ -709,6 +700,7 @@ sub read_infile_vcf {
         close $SELECT_FH;
     }
     $log->info( q{Finished Processing VCF} . $NEWLINE );
+    return;
 }
 
 sub parse_vep_csq {
