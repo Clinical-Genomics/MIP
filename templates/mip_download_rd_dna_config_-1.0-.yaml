@@ -73,6 +73,7 @@ reference:
     - 20150801
   genomic_superdups:
     - 20181009
+    - 20190826
   giab:
     - na12878_v2.19_bed
     - na12878_v2.19_wgs
@@ -518,9 +519,15 @@ reference_feature:
     grch37:
       20181009:
         file: genomicSuperDups.txt.gz
-        outfile: grch37_genomics_super_dups_-20181009.txt.gz 
+        outfile: grch37_genomics_super_dups_-20181009-.txt.gz 
         outfile_decompress: gzip
         url_prefix: http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/
+    grch38:
+      20190826:
+        file: genomicSuperDups.txt.gz
+        outfile: grch38_genomics_super_dups_-20190826-.txt.gz
+        outfile_decompress: gzip
+        url_prefix: http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/
   giab:
     grch37:
       na12878_v2.19_bed:
