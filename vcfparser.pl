@@ -27,7 +27,7 @@ use Set::IntervalTree;
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Constants
-  qw{ %ANALYSIS $COLON $COMMA $NEWLINE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB $UNDERSCORE };
+  qw{ %ANALYSIS $COLON $COMMA $EQUALS $NEWLINE %SO_CONSEQUENCE_SEVERITY $SEMICOLON $SPACE $TAB $UNDERSCORE };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::File::Format::Pli qw{ load_pli_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
@@ -426,8 +426,14 @@ sub read_infile_vcf {
       parse_vcf_format_line
       parse_vep_csq
       parse_vep_csq_schema
+      write_feature_file_csq
+      write_info_field
       write_meta_data
     };
+
+    ## Constants
+    Readonly my $FILTER_COLUMN_INDEX => 6;
+    Readonly my $FORMAT_COLUMN_INDEX => 8;
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger(q{Vcfparser});
@@ -533,10 +539,7 @@ sub read_infile_vcf {
 
         ## Variant line
         my %consequence;
-        my %noid_region;
-        my %record;
-        my $selected_variant_line;
-        my $variant_line;
+        my %vcf_record;
 
         ## Loads vcf file elements
         my @line_elements = split $TAB, $line;
@@ -550,43 +553,43 @@ sub read_infile_vcf {
             }
         );
 
-        ## Adds variant line elements to record hash
+        ## Adds variant line elements to vcf_record hash
         set_line_elements_in_vcf_record(
             {
                 line_elements_ref      => \@line_elements,
-                vcf_record_href        => \%record,
+                vcf_record_href        => \%vcf_record,
                 vcf_format_columns_ref => \@vcf_format_columns,
             }
         );
 
-        ## Adds INFO key value pairs to record hash
-        set_info_key_pairs_in_vcf_record( { vcf_record_href => \%record, } );
+        ## Adds INFO key value pairs to vcf_record hash
+        set_info_key_pairs_in_vcf_record( { vcf_record_href => \%vcf_record, } );
 
         ## Checks if an interval tree exists (per chr) and
         ## collects features from input array and adds annotations to line
         ## noid_region is only for selectfile since all variants are passed to research file
-        %noid_region = tree_annotations(
+        my %noid_region = tree_annotations(
             {
-                alt_allele_field  => $record{ALT},
-                contig            => $record{q{#CHROM}},
+                alt_allele_field  => $vcf_record{ALT},
+                contig            => $vcf_record{q{#CHROM}},
                 data_href         => $select_data_href,
                 feature_file_type => q{select_feature},
-                record_href       => \%record,
-                ref_allele        => $record{REF},
-                start             => $record{POS},
+                record_href       => \%vcf_record,
+                ref_allele        => $vcf_record{REF},
+                start             => $vcf_record{POS},
                 tree_href         => $tree_href,
             }
         );
 
         tree_annotations(
             {
-                alt_allele_field  => $record{ALT},
-                contig            => $record{q{#CHROM}},
+                alt_allele_field  => $vcf_record{ALT},
+                contig            => $vcf_record{q{#CHROM}},
                 data_href         => $range_data_href,
                 feature_file_type => q{range_feature},
-                record_href       => \%record,
-                ref_allele        => $record{REF},
-                start             => $record{POS},
+                record_href       => \%vcf_record,
+                ref_allele        => $vcf_record{REF},
+                start             => $vcf_record{POS},
                 tree_href         => $tree_href,
             }
         );
@@ -598,175 +601,91 @@ sub read_infile_vcf {
                     consequence_href             => \%consequence,
                     per_gene                     => $per_gene,
                     pli_score_href               => $pli_score_href,
-                    record_href                  => \%record,
+                    record_href                  => \%vcf_record,
                     select_data_href             => $select_data_href,
                     vep_format_field_column_href => \%vep_format_field_column,
                 }
             );
         }
 
-        for (
-            my $line_elements_counter = 0 ;
-            $line_elements_counter < scalar(@line_elements) ;
-            $line_elements_counter++
-          )
-        {    #Add until INFO field
+        ## Writing vcf record to files
+        my $last_index     = $FILTER_COLUMN_INDEX;
+        my $last_separator = $TAB;
 
-            if ( $line_elements_counter < 7 ) {    #Save fields until INFO field
+        ## If we do not need to split the CSQ field we can print the entire vcf
+        ## record line
+        if ( not $parse_vep ) {
 
-                if ( $record{select_transcripts} ) {
-
-                    print $SELECT_FH $record{ $vcf_format_columns[$line_elements_counter]
-                      }
-                      . "\t";
-                }
-                print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }
-                  . "\t";
-            }
-
-            if ( $line_elements_counter == 7 ) {
-
-                if ( !$parse_vep ) {
-
-                    if ( $record{select_transcripts} ) {
-
-                        print $SELECT_FH
-                          $record{ $vcf_format_columns[$line_elements_counter] };
-                    }
-                    print STDOUT $record{ $vcf_format_columns[$line_elements_counter] };
-                }
-                else {
-
-                    my $counter = 0;
-                    foreach my $key ( keys %{ $record{INFO_key_value} } ) {
-
-                        if ( !$counter ) {
-
-                            if ( defined( $record{INFO_key_value}{$key} ) ) {
-
-                                if ( $key eq "CSQ" ) {
-
-                                    if ( $record{range_transcripts} ) {
-
-                                        print STDOUT $key . "="
-                                          . join( ",", @{ $record{range_transcripts} } );
-                                    }
-                                    if ( $record{select_transcripts} ) {
-
-                                        print $SELECT_FH $key . "="
-                                          . join( ",", @{ $record{select_transcripts} } );
-                                    }
-                                }
-                                else {
-
-                                    if ( $record{select_transcripts} ) {
-
-                                        print $SELECT_FH $key . "="
-                                          . $record{INFO_key_value}{$key};
-                                    }
-                                    print STDOUT $key . "="
-                                      . $record{INFO_key_value}{$key};
-                                }
-                            }
-                            else {
-
-                                if ( $record{select_transcripts} ) {
-
-                                    print $SELECT_FH $key;
-                                }
-                                print STDOUT $key;
-                            }
-                        }
-                        else {
-
-                            if ( defined( $record{INFO_key_value}{$key} ) ) {
-
-                                if ( $key eq "CSQ" ) {
-
-                                    if ( $record{range_transcripts} ) {
-
-                                        print STDOUT ";" . $key . "="
-                                          . join( ",", @{ $record{range_transcripts} } );
-                                    }
-                                    if ( $record{select_transcripts} ) {
-
-                                        print $SELECT_FH ";" . $key . "="
-                                          . join( ",", @{ $record{select_transcripts} } );
-                                    }
-                                }
-                                else {
-
-                                    if ( $record{select_transcripts} ) {
-
-                                        print $SELECT_FH ";" . $key . "="
-                                          . $record{INFO_key_value}{$key};
-                                    }
-                                    print STDOUT ";" . $key . "="
-                                      . $record{INFO_key_value}{$key};
-                                }
-                            }
-                            else {
-
-                                if ( $record{select_transcripts} ) {
-
-                                    print $SELECT_FH ";" . $key;
-                                }
-                                print STDOUT ";" . $key;
-                            }
-                        }
-                        $counter++;
-                    }
-                }
-
-                foreach my $key ( keys %{ $record{INFO_addition} } ) {
-
-                    if ( $record{select_transcripts} ) {
-
-                        print $SELECT_FH ";" . $key . "=" . $record{INFO_addition}{$key};
-                    }
-                    print STDOUT ";" . $key . "=" . $record{INFO_addition}{$key};
-                }
-                if ( $record{select_transcripts} ) {
-
-                    foreach my $key ( keys %{ $record{INFO_addition_select_feature} } ) {
-
-                        print $SELECT_FH ";" . $key . "="
-                          . $record{INFO_addition_select_feature}{$key};
-                    }
-                }
-                foreach my $key ( keys %{ $record{INFO_addition_range_feature} } ) {
-
-                    print STDOUT ";" . $key . "="
-                      . $record{INFO_addition_range_feature}{$key};
-                }
-
-                if ( $record{select_transcripts} ) {
-
-                    print $SELECT_FH "\t";
-                }
-                print STDOUT "\t";
-            }
-            if ( $line_elements_counter > 7 ) {
-
-                if ( $record{select_transcripts} ) {
-
-                    print $SELECT_FH $record{ $vcf_format_columns[$line_elements_counter]
-                      }
-                      . "\t";
-                }
-                print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }
-                  . "\t";
-            }
+            $last_index     = $#line_elements;
+            $last_separator = $NEWLINE;
         }
-        if ( $record{select_transcripts} ) {
 
-            print $SELECT_FH "\n";
+        ## Add until INFO field or end of line
+        if ( $vcf_record{select_transcripts} ) {
+
+            print {$SELECT_FH} join( $TAB, @line_elements[ 0 .. $last_index ] ),
+              $last_separator;
         }
-        print STDOUT "\n";
+        print {*STDOUT} join( $TAB, @line_elements[ 0 .. $last_index ] ), $last_separator;
+
+        if ($parse_vep) {
+
+            my $info_field_counter = write_feature_file_csq(
+                {
+                    FILEHANDLE         => *STDOUT,
+                    info_field_counter => 0,
+                    SELECT_FH          => $SELECT_FH,
+                    vcf_record_href    => \%vcf_record,
+                }
+            );
+
+            write_info_field(
+                {
+                    FILEHANDLE         => *STDOUT,
+                    info_field_counter => $info_field_counter,
+                    SELECT_FH          => $SELECT_FH,
+                    vcf_record_href    => \%vcf_record,
+                }
+            );
+
+            foreach my $key ( keys %{ $vcf_record{INFO_addition} } ) {
+
+                if ( $vcf_record{select_transcripts} ) {
+
+                    print {$SELECT_FH} $SEMICOLON . $key . $EQUALS
+                      . $vcf_record{INFO_addition}{$key};
+                }
+                print {*STDOUT} $SEMICOLON . $key . $EQUALS
+                  . $vcf_record{INFO_addition}{$key};
+            }
+            if ( $vcf_record{select_transcripts} ) {
+
+                foreach my $key ( keys %{ $vcf_record{INFO_addition_select_feature} } ) {
+
+                    print {$SELECT_FH} $SEMICOLON . $key . $EQUALS
+                      . $vcf_record{INFO_addition_select_feature}{$key};
+                }
+            }
+            foreach my $key ( keys %{ $vcf_record{INFO_addition_range_feature} } ) {
+
+                print {*STDOUT} $SEMICOLON . $key . $EQUALS
+                  . $vcf_record{INFO_addition_range_feature}{$key};
+            }
+
+            ## After INFO to the final column
+            if ( $vcf_record{select_transcripts} ) {
+
+                say {$SELECT_FH} $TAB, join $TAB,
+                  @line_elements[ $FORMAT_COLUMN_INDEX .. $#line_elements ];
+            }
+            say {*STDOUT} $TAB, join $TAB,
+              @line_elements[ $FORMAT_COLUMN_INDEX .. $#line_elements ];
+        }
     }
     if ($select_feature_file) {
 
-        close($SELECT_FH);
+        close $SELECT_FH;
     }
-    $log->info("Finished Processing VCF\n");
+    $log->info( q{Finished Processing VCF} . $NEWLINE );
+    return;
 }

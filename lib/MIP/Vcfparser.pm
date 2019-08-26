@@ -18,7 +18,7 @@ use Set::IntervalTree;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ $AMPERSAND $COLON $COMMA $NEWLINE $PIPE $SEMICOLON $SINGLE_QUOTE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB $UNDERSCORE };
+  qw{ $AMPERSAND $COLON $COMMA $EQUALS $NEWLINE $PIPE $SEMICOLON $SINGLE_QUOTE %SO_CONSEQUENCE_SEVERITY $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -45,6 +45,8 @@ BEGIN {
       parse_vep_csq_transcripts
       set_most_severe_ann_to_vcf_record
       set_most_severe_pli
+      write_feature_file_csq
+      write_info_field
       write_meta_data
     };
 }
@@ -1198,8 +1200,6 @@ sub parse_vep_csq_schema {
     my $parse_vep;
     my $vep_format_field_column_href;
 
-    ## Default(s)
-
     my $tmpl = {
         meta_data_href => {
             default     => {},
@@ -1264,6 +1264,133 @@ q{##INFO=<ID=most_severe_consequence,Number=.,Type=String,Description="Most seve
 
     }
     return 1;
+}
+
+sub write_feature_file_csq {
+
+## Function : Write vcf record to feature files
+## Returns  : $info_field_counter
+## Arguments: $FILEHANDLE         => The filehandle to write to
+##          : $info_field_counter => Count the number of key_value pairs written
+##          : $SELECT_FH          => The select filehandle to write to {Optional}
+##          : $vcf_record_href    => VCF record {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $SELECT_FH;
+    my $vcf_record_href;
+
+    ## Default(s)
+    my $info_field_counter;
+
+    my $tmpl = {
+        FILEHANDLE         => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        info_field_counter => {
+            allow       => qr{ \A\d+\z }sxm,
+            default     => 0,
+            defined     => 1,
+            required    => 1,
+            store       => \$info_field_counter,
+            strict_type => 1,
+        },
+        SELECT_FH       => { store => \$SELECT_FH, },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return
+      if (  not exists $vcf_record_href->{INFO_key_value}{CSQ}
+        and not $vcf_record_href->{INFO_key_value}{CSQ} );
+
+    if ( $vcf_record_href->{range_transcripts} ) {
+
+        print {$FILEHANDLE} q{CSQ} . $EQUALS . join $COMMA,
+          @{ $vcf_record_href->{range_transcripts} };
+    }
+    if ( $vcf_record_href->{select_transcripts} ) {
+
+        print {$SELECT_FH} q{CSQ} . $EQUALS . join $COMMA,
+          @{ $vcf_record_href->{select_transcripts} };
+    }
+    delete $vcf_record_href->{INFO_key_value}{CSQ};
+    $info_field_counter++;
+
+    return $info_field_counter;
+}
+
+sub write_info_field {
+
+## Function : Write vcf record to feature files
+## Returns  : $info_field_counter
+## Arguments: $FILEHANDLE         => The filehandle to write to
+##          : $info_field_counter => Count the number of key_value pairs written
+##          : $SELECT_FH          => The select filehandle to write to {Optional}
+##          : $vcf_record_href    => VCF record {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $SELECT_FH;
+    my $vcf_record_href;
+
+    ## Default(s)
+    my $info_field_counter;
+
+    my $tmpl = {
+        FILEHANDLE         => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        info_field_counter => {
+            allow       => qr{ \A\d+\z }sxm,
+            default     => 0,
+            defined     => 1,
+            required    => 1,
+            store       => \$info_field_counter,
+            strict_type => 1,
+        },
+        SELECT_FH       => { store => \$SELECT_FH, },
+        vcf_record_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_record_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %{ $vcf_record_href->{INFO_key_value} } ) {
+
+        ## Build key value pair
+        my $info_string = $SEMICOLON . $key;
+        if ( not $info_field_counter ) {
+
+            $info_string = $key;
+        }
+
+        if ( defined $value ) {
+
+            $info_string .= $EQUALS . $value;
+        }
+
+        if ( $vcf_record_href->{select_transcripts} ) {
+
+            print {$SELECT_FH} $info_string;
+        }
+        print {$FILEHANDLE} $info_string;
+        $info_field_counter++;
+    }
+    return $info_field_counter;
 }
 
 sub write_meta_data {
