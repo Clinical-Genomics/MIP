@@ -426,6 +426,7 @@ sub read_infile_vcf {
       parse_vcf_format_line
       parse_vep_csq_schema
       write_feature_file_csq
+      write_info_field
       write_meta_data
     };
 
@@ -537,7 +538,6 @@ sub read_infile_vcf {
 
         ## Variant line
         my %consequence;
-        my %noid_region;
         my %vcf_record;
 
         ## Loads vcf file elements
@@ -567,7 +567,7 @@ sub read_infile_vcf {
         ## Checks if an interval tree exists (per chr) and
         ## collects features from input array and adds annotations to line
         ## noid_region is only for selectfile since all variants are passed to research file
-        %noid_region = tree_annotations(
+        my %noid_region = tree_annotations(
             {
                 alt_allele_field  => $vcf_record{ALT},
                 contig            => $vcf_record{q{#CHROM}},
@@ -620,7 +620,7 @@ sub read_infile_vcf {
             $last_separator = $NEWLINE;
         }
 
-        ## Add until INFO field
+        ## Add until INFO field or end of line
         if ( $vcf_record{select_transcripts} ) {
 
             print {$SELECT_FH} join( $TAB, @line_elements[ 0 .. $last_index ] ),
@@ -630,7 +630,7 @@ sub read_infile_vcf {
 
         if ($parse_vep) {
 
-            my $counter = write_feature_file_csq(
+            my $info_field_counter = write_feature_file_csq(
                 {
                     FILEHANDLE         => *STDOUT,
                     info_field_counter => 0,
@@ -639,27 +639,14 @@ sub read_infile_vcf {
                 }
             );
 
-          KEY_VALUE_PAIR:
-            while ( my ( $key, $value ) = each %{ $vcf_record{INFO_key_value} } ) {
-
-                my $info_string = $SEMICOLON . $key;
-                if ( not $counter ) {
-
-                    $info_string = $key;
+            write_info_field(
+                {
+                    FILEHANDLE         => *STDOUT,
+                    info_field_counter => $info_field_counter,
+                    SELECT_FH          => $SELECT_FH,
+                    vcf_record_href    => \%vcf_record,
                 }
-
-                if ( defined $value ) {
-
-                    $info_string .= $EQUALS . $value;
-                }
-
-                if ( $vcf_record{select_transcripts} ) {
-
-                    print {$SELECT_FH} $info_string;
-                }
-                print {*STDOUT} $info_string;
-                $counter++;
-            }
+            );
 
             foreach my $key ( keys %{ $vcf_record{INFO_addition} } ) {
 
