@@ -46,11 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -99,7 +95,7 @@ diag(   q{Test bedtools_genomecov from Bedtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ bedtools };
+my @function_base_commands = qw{ bedtools genomecov };
 
 my %base_argument = (
     FILEHANDLE => {
@@ -126,30 +122,29 @@ my %required_argument = (
         input           => undef,
         expected_output => \@function_base_commands,
     },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{-ibam infile.test},
-    },
-    referencefile_path => {
-        input           => q{pathToRef.test},
-        expected_output => q{-g pathToRef.test},
-
-    },
 );
 
 ## Specific arguments
 my %specific_argument = (
+    bam_infile_path => {
+        input           => q{infile.bam},
+        expected_output => q{-ibam infile.bam},
+    },
+    depth_each_position => {
+        input           => 1,
+        expected_output => q{-dz},
+    },
     infile_path => {
-        input           => q{infile.test},
-        expected_output => q{-ibam infile.test},
+        input           => q{infile.bed},
+        expected_output => q{-i infile.bed},
     },
     max_coverage => {
-        input           => q{500},
-        expected_output => q{-max 500},
+        input           => 2,
+        expected_output => q{-max 2},
     },
     referencefile_path => {
-        input           => q{pathToRef.test},
-        expected_output => q{-g pathToRef.test},
+        input           => q{path_to_ref.test},
+        expected_output => q{-g path_to_ref.test},
 
     },
 );
@@ -165,9 +160,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
+            do_test_base_command       => 1,
             function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }
