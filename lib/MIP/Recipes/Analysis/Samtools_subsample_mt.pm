@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.10;
+    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_samtools_subsample_mt };
@@ -34,7 +34,6 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $MAX_DEPTH_TRESHOLD          => 500_000;
 Readonly my $MAX_LIMIT_SEED              => 100;
 Readonly my $SAMTOOLS_UNMAPPED_READ_FLAG => 4;
 
@@ -142,8 +141,8 @@ sub analysis_samtools_subsample_mt {
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Language::Awk qw{ awk };
     use MIP::Parse::File qw{ parse_io_outfiles };
-    use MIP::Program::Alignment::Samtools
-      qw{ samtools_depth samtools_index samtools_view };
+    use MIP::Program::Alignment::Samtools qw{ samtools_index samtools_view };
+    use MIP::Program::Bedtools qw{ bedtools_genomecov };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -237,11 +236,11 @@ sub analysis_samtools_subsample_mt {
     print {$FILEHANDLE} q{MT_COVERAGE=} . $BACKTICK;
 
     # Get depth per base
-    samtools_depth(
+    bedtools_genomecov(
         {
-            FILEHANDLE         => $FILEHANDLE,
-            infile_path        => $infile_path,
-            max_depth_treshold => $MAX_DEPTH_TRESHOLD,
+            depth_each_position => 1,
+            FILEHANDLE          => $FILEHANDLE,
+            bam_infile_path     => $infile_path,
         }
     );
 
